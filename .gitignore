@@ -1,0 +1,26 @@
+*~
+*.swp
+
+# Start of IntelliJ IDE files
+.idea
+.idea/*
+*.iml
+*.ipr
+*.iws
+# End of IntelliJ IDE files
+
+/build/
+*.class
+*.pyc
+*.pyo
+target
+
+.DS_Store
+
+# Start of Eclipse IDE files
+.project
+.classpath
+.settings
+.cproject
+eclipse-classes
+# End of Eclipse IDE files

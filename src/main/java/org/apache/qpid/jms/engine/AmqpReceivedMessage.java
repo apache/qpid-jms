@@ -60,12 +60,16 @@ public class AmqpReceivedMessage
         }
     }
 
+    /**
+     * If using proton-j, returns true if locally or remotely settled.
+     * If using proton-c, returns true if remotely settled.
+     * TODO - remove this hack when Proton-J and -C APIs are properly aligned 
+     * The C API defines isSettled as being true if the delivery has been settled locally OR remotely
+     */
     public boolean isSettled()
     {
         synchronized (_amqpReceiver.getAmqpConnection())
         {
-            // TODO - remove this hack when Proton-J and -C APIs are properly aligned 
-            // The C API defines isSettled as being true if the delivery has been settled locally OR remotely
             return _delivery.isSettled() || ((_delivery instanceof DeliveryImpl && ((DeliveryImpl)_delivery).remotelySettled()));
         }
     }

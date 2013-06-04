@@ -39,6 +39,7 @@
       <artifactId>proton-api</artifactId>
       <version>${proton-version}</version>
     </dependency>
+    <!-- TODO remove compile-time dependency once proton-c/j agree on what Delivery.isSettled() represents -->
 	<dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>proton-j-impl</artifactId>
@@ -57,6 +58,22 @@
           <optimize>true</optimize>
           <showDeprecation>true</showDeprecation>
           <showWarnings>true</showWarnings>
+        </configuration>
+      </plugin>
+      
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>java</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <mainClass>org.apache.qpid.jms.Main</mainClass>
         </configuration>
       </plugin>
     </plugins>

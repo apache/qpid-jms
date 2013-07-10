@@ -23,6 +23,7 @@ package org.apache.qpid.jms.impl;
 import org.apache.qpid.jms.engine.AmqpConnection;
 import org.apache.qpid.jms.engine.AmqpLink;
 import org.apache.qpid.jms.engine.ConnectionException;
+import org.apache.qpid.jms.engine.LinkException;
 import org.apache.qpid.proton.TimeoutException;
 
 public class LinkImpl
@@ -38,16 +39,20 @@ public class LinkImpl
         _amqpLink = amqpLink;
     }
 
-    public void establish() throws TimeoutException, InterruptedException
+    public void establish() throws TimeoutException, InterruptedException, LinkException
     {
-        _connectionImpl.waitUntil(new SimplePredicate("Link is closed", _amqpLink)
+        _connectionImpl.waitUntil(new SimplePredicate("Link is established or failed", _amqpLink)
         {
             @Override
             public boolean test()
             {
-                return _amqpLink.isEstablished();
+                return _amqpLink.isEstablished() || _amqpLink.getLinkError();
             }
         }, AmqpConnection.TIMEOUT);
+        if(!_amqpLink.isEstablished())
+        {
+            throw new LinkException("Failed to establish link " + _amqpLink); // TODO make message less verbose
+        }
     }
 
     public void close() throws TimeoutException, InterruptedException, ConnectionException

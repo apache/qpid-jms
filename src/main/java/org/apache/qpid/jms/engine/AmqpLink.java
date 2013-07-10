@@ -33,7 +33,9 @@ public abstract class AmqpLink
     private final AmqpSession _amqpSession;
     private final Link _protonLink;
     private boolean _established;
+    private boolean _linkError;
     private boolean _closed;
+
 
     public AmqpLink(AmqpSession amqpSession, Link protonLink)
     {
@@ -50,6 +52,16 @@ public abstract class AmqpLink
     void setEstablished()
     {
         _established = true;
+    }
+
+    public boolean getLinkError()
+    {
+        return _linkError;
+    }
+
+    public void setLinkError()
+    {
+        _linkError = true;
     }
 
     AmqpConnection getAmqpConnection()
@@ -83,4 +95,5 @@ public abstract class AmqpLink
     {
         return _closed;
     }
+
 }

@@ -25,6 +25,7 @@ import org.apache.qpid.jms.engine.AmqpReceiver;
 import org.apache.qpid.jms.engine.AmqpSender;
 import org.apache.qpid.jms.engine.AmqpSession;
 import org.apache.qpid.jms.engine.ConnectionException;
+import org.apache.qpid.jms.engine.LinkException;
 import org.apache.qpid.proton.TimeoutException;
 
 public class SessionImpl
@@ -40,7 +41,7 @@ public class SessionImpl
 
     public void establish() throws TimeoutException, InterruptedException
     {
-        _connectionImpl.waitUntil(new SimplePredicate("Session established")
+        _connectionImpl.waitUntil(new SimplePredicate("Session established", _amqpSession)
         {
             @Override
             public boolean test()
@@ -85,7 +86,7 @@ public class SessionImpl
         return _connectionImpl;
     }
 
-    public SenderImpl createSender(String name, String address) throws TimeoutException, InterruptedException
+    public SenderImpl createSender(String name, String address) throws TimeoutException, InterruptedException, LinkException
     {
         _connectionImpl.lock();
         try
@@ -102,7 +103,7 @@ public class SessionImpl
         }
     }
 
-    public ReceiverImpl createReceiver(String name, String address) throws TimeoutException, InterruptedException
+    public ReceiverImpl createReceiver(String name, String address) throws TimeoutException, InterruptedException, LinkException
     {
         _connectionImpl.lock();
         try

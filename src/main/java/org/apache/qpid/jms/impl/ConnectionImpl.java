@@ -21,6 +21,8 @@
 package org.apache.qpid.jms.impl;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.qpid.jms.engine.AmqpConnection;
 import org.apache.qpid.jms.engine.AmqpConnectionDriver;
@@ -30,7 +32,11 @@ import org.apache.qpid.proton.TimeoutException;
 
 public class ConnectionImpl
 {
+    private static final Logger _logger = Logger.getLogger(ConnectionImpl.class.getName());
+
     private AmqpConnection _amqpConnection;
+
+    /** The driver dedicated to this connection */
     private AmqpConnectionDriver _amqpConnectionDriver;
     private ConnectionLock _connectionLock;
 
@@ -54,10 +60,10 @@ public class ConnectionImpl
         _connectionLock = new ConnectionLock(this);
         _connectionLock.setConnectionStateChangeListener(new ConnectionStateChangeListener()
         {
+            @Override
             public void stateChanged(ConnectionImpl connection)
             {
-                connection._amqpConnectionDriver.updated(connection._amqpConnection);                
-                connection._amqpConnectionDriver.wakeup();
+                connection._amqpConnectionDriver.setLocallyUpdated(connection._amqpConnection);
             }
         });
     }
@@ -74,6 +80,12 @@ public class ConnectionImpl
         {
             while (first || (!done && wait))
             {
+                if(_logger.isLoggable(Level.FINER))
+                {
+                    _logger.log(Level.FINER,
+                            "About to waitUntil {0}. first={1}, done={2}, wait={3}",
+                            new Object[] {condition, first, done, wait});
+                }
                 if (wait && !done && !first)
                 {
                     _amqpConnection.wait(timeoutMillis < 0 ? 0 : deadline - System.currentTimeMillis());
@@ -83,9 +95,16 @@ public class ConnectionImpl
                 done = done || condition.test();
                 first = false;
             }
+            if(_logger.isLoggable(Level.FINER))
+            {
+                _logger.log(Level.FINER,
+                        "Finished waitUntil {0}. first={1}, done={2}, wait={3}",
+                        new Object[] {condition, first, done, wait});
+            }
+
             if (!done)
             {
-                throw new TimeoutException(timeoutMillis, condition.toString());
+                throw new TimeoutException(timeoutMillis, condition.getCurrentState());
             }
         }
     }
@@ -97,6 +116,7 @@ public class ConnectionImpl
         {
             waitUntil(new SimplePredicate("Connection established or failed", _amqpConnection)
             {
+                @Override
                 public boolean test()
                 {
                     return _amqpConnection.isConnected() || _amqpConnection.isAuthenticationError() || _amqpConnection.getConnectionError().getCondition() != null;
@@ -131,16 +151,16 @@ public class ConnectionImpl
         {
             _amqpConnection.close();
             stateChanged();
-            while(!_amqpConnection.isClosed())
+            waitUntil(new SimplePredicate("Connection is closed", _amqpConnection)
             {
-                waitUntil(new SimplePredicate("Connection is closed", _amqpConnection)
+                @Override
+                public boolean test()
                 {
-                    public boolean test()
-                    {
-                        return _amqpConnection.isClosed();
-                    }
-                }, AmqpConnection.TIMEOUT);
-            }
+                    return _amqpConnection.isClosed();
+                }
+            }, AmqpConnection.TIMEOUT);
+
+            _amqpConnectionDriver.stop();
 
             if(_amqpConnection.getConnectionError().getCondition() != null)
             {

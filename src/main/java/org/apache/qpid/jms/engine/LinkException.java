@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.jms.engine;
 
-//TODO make me (or wrap me in) a JMSException
-public class ConnectionException extends Exception
+// TODO make me (or wrap me in) a JMSException
+public class LinkException extends Exception
 {
     private static final long serialVersionUID = 419676688719664719L;
 
-    public ConnectionException(String msg)
+    public LinkException(String msg)
     {
         super(msg);
     }

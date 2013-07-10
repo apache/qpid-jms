@@ -21,7 +21,6 @@
 package org.apache.qpid.jms.engine;
 
 import java.util.ArrayList;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -35,7 +34,9 @@ import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.EngineFactory;
 import org.apache.qpid.proton.engine.Link;
+import org.apache.qpid.proton.engine.Receiver;
 import org.apache.qpid.proton.engine.Sasl;
+import org.apache.qpid.proton.engine.Sender;
 import org.apache.qpid.proton.engine.Session;
 import org.apache.qpid.proton.message.MessageFactory;
 
@@ -170,12 +171,21 @@ public class AmqpConnection
         _password = password;
     }
 
+    /**
+     * For all the the "pending" AmqpXXX objects, update their state to reflect the remote state of their
+     * Proton counterparts, and remove them from the pending set.
+     *
+     * The "pending" AmqpXXX objects are the ones that whose local modifications are expected to cause a
+     * remote state change, e.g. newly created sessions.
+     *
+     * @return true if any AmqpXXX objects were updated by this method
+     */
     public synchronized boolean process()
     {
         boolean updated = false;
         //Connection
-        EndpointState remoteState = _connection.getRemoteState();
-        if (!_connected && (remoteState == EndpointState.UNINITIALIZED))
+        EndpointState connectionRemoteState = _connection.getRemoteState();
+        if (!_connected && (connectionRemoteState == EndpointState.UNINITIALIZED))
         {
             if(_sasl != null)
             {
@@ -183,14 +193,14 @@ public class AmqpConnection
             }
         }
 
-        if (!_connected && (remoteState == EndpointState.ACTIVE))
+        if (!_connected && (connectionRemoteState == EndpointState.ACTIVE))
         {
             _logger.log(Level.FINEST, "Set connected to true");
             updated = true;
             _connected = true;
         }
 
-        if(_connected && (_connection.getLocalState() == EndpointState.CLOSED && remoteState == EndpointState.CLOSED))
+        if(_connected && (_connection.getLocalState() == EndpointState.CLOSED && connectionRemoteState == EndpointState.CLOSED))
         {
             _closed = true;
             _connected = false;
@@ -232,13 +242,29 @@ public class AmqpConnection
         while(pendingLinks.hasNext())
         {
             l = pendingLinks.next();
-            if(l.getRemoteState() != EndpointState.UNINITIALIZED)
+
+            EndpointState linkRemoteState = l.getRemoteState();
+            if(linkRemoteState == EndpointState.ACTIVE || linkRemoteState == EndpointState.CLOSED)
             {
                 AmqpLink amqpLink = (AmqpLink) l.getContext();
-                amqpLink.setEstablished();
+                if(linkRemoteState == EndpointState.ACTIVE && getRemoteNode(l) != null)
+                {
+                    amqpLink.setEstablished();
+                }
+                else
+                {
+                    amqpLink.setLinkError();
+                    amqpLink.setClosed();
+                }
+
                 pendingLinks.remove();
                 updated = true;
             }
+            else
+            {
+                // no nothing
+            }
+
         }
 
         Iterator<Link> pendingCloseLinks = _pendingCloseLinks.iterator();
@@ -256,6 +282,22 @@ public class AmqpConnection
 
         notifyAll();
         return updated;
+    }
+
+    private Object getRemoteNode(Link link)
+    {
+        if(link instanceof Sender)
+        {
+            return  link.getRemoteTarget();
+        }
+        else if(link instanceof Receiver)
+        {
+            return link.getRemoteSource();
+        }
+        else
+        {
+            throw new IllegalArgumentException(String.format("%s is not a %s or a %s", link, Sender.class, Receiver.class));
+        }
     }
 
     private boolean processSasl()

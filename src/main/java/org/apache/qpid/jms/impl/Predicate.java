@@ -22,11 +22,16 @@ package org.apache.qpid.jms.impl;
 
 /**
  * A simple predicate.
- *
- * Used for general purpose logic so should provide a useful toString() implementation
- * for logging purposes.
  */
 interface Predicate
 {
+    /**
+     * Returns whether the predicate is true.
+     */
     boolean test();
+
+    /**
+     * Returns the current state, primarily for logging purposes if something goes wrong
+     */
+    String getCurrentState();
 }

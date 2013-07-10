@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.jms;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.qpid.jms.impl.ConnectionImpl;
@@ -43,48 +44,54 @@ import org.junit.Test;
 public class JmsTest
 {
     //TODO: use another logger
-    private static Logger _logger = Logger.getLogger("qpid.jms-client.connection");
+    private static Logger _logger = Logger.getLogger(JmsTest.class.getName());
 
     private final MessageFactory _messageFactory = new ProtonFactoryLoader<MessageFactory>(MessageFactory.class).loadFactory();
 
     @Test
     public void test() throws Exception
     {
-        System.out.println("PHDEBUG " + System.getProperty("java.util.logging.config.file"));
-        ConnectionImpl connection =  new ConnectionImpl("clientName", "localhost", 5672, "guest", "guest");
-        connection.connect();
+        try
+        {
+            ConnectionImpl connection =  new ConnectionImpl("clientName", "localhost", 5672, "guest", "guest");
+            connection.connect();
 
-        SessionImpl session = connection.createSession();
-        session.establish();
+            SessionImpl session = connection.createSession();
+            session.establish();
 
-        SenderImpl sender = session.createSender("1","queue");
-        sender.establish();
+            SenderImpl sender = session.createSender("1","queue");
+            sender.establish();
 
-        Message message = _messageFactory.createMessage();
-        AmqpValue body = new AmqpValue("Hello World!");
-        message.setBody(body);
-        sender.sendMessage(message);
+            Message message = _messageFactory.createMessage();
+            AmqpValue body = new AmqpValue("Hello World!");
+            message.setBody(body);
+            sender.sendMessage(message);
 
-        sender.close();
+            sender.close();
 
-        ReceiverImpl receiver = session.createReceiver("1", "queue");
-        receiver.credit(5);
-        receiver.establish();
-        ReceivedMessageImpl receivedMessage = receiver.receive(5000);
-        receivedMessage.accept(true);
+            ReceiverImpl receiver = session.createReceiver("1", "queue");
+            receiver.credit(5);
+            receiver.establish();
+            ReceivedMessageImpl receivedMessage = receiver.receive(5000);
+            receivedMessage.accept(true);
 
-        _logger.info("=========================");
-        _logger.info(receivedMessage.getMessage().getBody().toString());
-        _logger.info("=========================");
+            _logger.info("Received message:");
+            _logger.info("=========================");
+            _logger.info(receivedMessage.getMessage().getBody().toString());
+            _logger.info("=========================");
 
-        receiver.close();
+            receiver.close();
 
-        session.close();
+            session.close();
 
-        _logger.info("About to close " + connection);
-
-        connection.close();
-        _logger.info("Closed connection.");
+            connection.close();
+        }
+        catch (Exception e)
+        {
+            // log the error so its timestamp is recorded - useful for timeout-type errors
+            _logger.log(Level.SEVERE, "Test failed", e);
+            throw e;
+        }
     }
 
 }

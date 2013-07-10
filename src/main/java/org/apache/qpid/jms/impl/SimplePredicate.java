@@ -41,16 +41,20 @@ abstract class SimplePredicate implements Predicate
         _predicatedObjects = predicatedObjects;
     }
 
-    /** intended to be overridden to provide more useful information */
-    protected Object getCurrentState()
+    @Override
+    public String getCurrentState()
     {
-        return getPredicatedObjects();
+        StringBuilder builder = new StringBuilder("CurrentState [")
+            .append(this)
+            .append(getPredicatedObjects())
+            .append("]");
+        return builder.toString();
     }
 
     /**
      * Returns the predicated objects as a list, or null if none exist
      */
-    protected Object getPredicatedObjects()
+    private Object getPredicatedObjects()
     {
         if(_predicatedObjects == null)
         {
@@ -65,9 +69,9 @@ abstract class SimplePredicate implements Predicate
     @Override
     public String toString()
     {
-        StringBuilder builder = new StringBuilder();
-        builder.append("SimplePredicate [_description=").append(_description)
-            .append(", currentState=").append(getCurrentState()).append("]");
+        StringBuilder builder = new StringBuilder(super.toString())
+            .append(" [_description=").append(_description)
+            .append("]");
         return builder.toString();
     }
 }

@@ -37,7 +37,7 @@ public class SentMessageImpl
 
     public void waitUntilAccepted() throws TimeoutException, InterruptedException
     {
-        _sender.getConnectionImpl().waitUntil(new Predicate()
+        _sender.getConnectionImpl().waitUntil(new SimplePredicate("Remote delivery state exists", _sentMessage)
         {
             @Override
             public boolean test()
@@ -46,5 +46,20 @@ public class SentMessageImpl
             }
         }, AmqpConnection.TIMEOUT);
     }
+
+    /**
+     * {@inheritDoc}
+     * <br/>
+     * Not thread-safe
+     */
+    @Override
+    public String toString()
+    {
+        StringBuilder builder = new StringBuilder();
+        builder.append("SentMessageImpl [_sentMessage=").append(_sentMessage)
+            .append("]");
+        return builder.toString();
+    }
+
 
 }

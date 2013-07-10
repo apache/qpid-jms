@@ -55,7 +55,7 @@ public class ReceivedMessageImpl
     }
 
     public void settle()
-    {       
+    {
         _receiverImpl.getConnectionImpl().lock();
         try
         {
@@ -73,7 +73,7 @@ public class ReceivedMessageImpl
         _receiverImpl.getConnectionImpl().lock();
         try
         {
-            _receiverImpl.getConnectionImpl().waitUntil(new Predicate()
+            _receiverImpl.getConnectionImpl().waitUntil(new SimplePredicate("Message is settled", _amqpMessage)
             {
                 @Override
                 public boolean test()

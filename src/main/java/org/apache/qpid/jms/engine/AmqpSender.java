@@ -32,9 +32,9 @@ public class AmqpSender extends AmqpLink
     private byte[] _buffer = new byte[1024];
     private final Sender _protonSender;
 
-    public AmqpSender(AmqpSession amqpSession, Sender protonSender) 
+    public AmqpSender(AmqpSession amqpSession, Sender protonSender)
     {
-        super(amqpSession, protonSender);        
+        super(amqpSession, protonSender);
         _protonSender = protonSender;
     }
 
@@ -70,5 +70,15 @@ public class AmqpSender extends AmqpLink
 
             return amqpSentMessage;
         }
+    }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder builder = new StringBuilder();
+        builder.append("AmqpSender [tag=").append(tag)
+            .append(", _protonSender=").append(_protonSender)
+            .append("]");
+        return builder.toString();
     }
 }

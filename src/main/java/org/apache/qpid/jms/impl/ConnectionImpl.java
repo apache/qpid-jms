@@ -62,9 +62,9 @@ public class ConnectionImpl
         });
     }
 
-    void waitUntil(Predicate condition, long timeout) throws TimeoutException, InterruptedException
+    void waitUntil(Predicate condition, long timeoutMillis) throws TimeoutException, InterruptedException
     {
-        long deadline = timeout < 0 ? Long.MAX_VALUE : System.currentTimeMillis() + timeout;
+        long deadline = timeoutMillis < 0 ? Long.MAX_VALUE : System.currentTimeMillis() + timeoutMillis;
 
         boolean wait = deadline > System.currentTimeMillis();
         boolean first = true;
@@ -76,17 +76,17 @@ public class ConnectionImpl
             {
                 if (wait && !done && !first)
                 {
-                    _amqpConnection.wait(timeout < 0 ? 0 : deadline - System.currentTimeMillis());
+                    _amqpConnection.wait(timeoutMillis < 0 ? 0 : deadline - System.currentTimeMillis());
                 }
 
                 wait = deadline > System.currentTimeMillis();
                 done = done || condition.test();
                 first = false;
             }
-        }
-        if (!done)
-        {
-            throw new TimeoutException();
+            if (!done)
+            {
+                throw new TimeoutException(timeoutMillis, condition.toString());
+            }
         }
     }
 
@@ -95,7 +95,7 @@ public class ConnectionImpl
         lock();
         try
         {
-            waitUntil(new Predicate()
+            waitUntil(new SimplePredicate("Connection established or failed", _amqpConnection)
             {
                 public boolean test()
                 {
@@ -133,7 +133,7 @@ public class ConnectionImpl
             stateChanged();
             while(!_amqpConnection.isClosed())
             {
-                waitUntil(new Predicate()
+                waitUntil(new SimplePredicate("Connection is closed", _amqpConnection)
                 {
                     public boolean test()
                     {

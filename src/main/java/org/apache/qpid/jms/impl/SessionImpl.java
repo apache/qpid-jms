@@ -40,8 +40,9 @@ public class SessionImpl
 
     public void establish() throws TimeoutException, InterruptedException
     {
-        _connectionImpl.waitUntil(new Predicate()
+        _connectionImpl.waitUntil(new SimplePredicate("Session established")
         {
+            @Override
             public boolean test()
             {
                 return _amqpSession.isEstablished();
@@ -51,15 +52,16 @@ public class SessionImpl
 
     public void close() throws TimeoutException, InterruptedException, ConnectionException
     {
-        _connectionImpl.lock();        
+        _connectionImpl.lock();
         try
         {
             _amqpSession.close();
             _connectionImpl.stateChanged();
             while(!_amqpSession.isClosed())
             {
-                _connectionImpl.waitUntil(new Predicate()
+                _connectionImpl.waitUntil(new SimplePredicate("Session is closed", _amqpSession)
                 {
+                    @Override
                     public boolean test()
                     {
                         return _amqpSession.isClosed();

@@ -40,8 +40,9 @@ public class LinkImpl
 
     public void establish() throws TimeoutException, InterruptedException
     {
-        _connectionImpl.waitUntil(new Predicate()
+        _connectionImpl.waitUntil(new SimplePredicate("Link is closed", _amqpLink)
         {
+            @Override
             public boolean test()
             {
                 return _amqpLink.isEstablished();
@@ -51,15 +52,16 @@ public class LinkImpl
 
     public void close() throws TimeoutException, InterruptedException, ConnectionException
     {
-        _connectionImpl.lock();        
+        _connectionImpl.lock();
         try
         {
             _amqpLink.close();
             _connectionImpl.stateChanged();
             while(!_amqpLink.isClosed())
             {
-                _connectionImpl.waitUntil(new Predicate()
+                _connectionImpl.waitUntil(new SimplePredicate("Link is closed", _amqpLink)
                 {
+                    @Override
                     public boolean test()
                     {
                         return _amqpLink.isClosed();

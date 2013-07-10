@@ -31,7 +31,7 @@ public class AmqpReceiver extends AmqpLink
 
     public AmqpReceiver(AmqpSession amqpSession, Receiver protonReceiver)
     {
-        super(amqpSession, protonReceiver);        
+        super(amqpSession, protonReceiver);
         _protonReceiver = protonReceiver;
     }
 
@@ -79,10 +79,19 @@ public class AmqpReceiver extends AmqpLink
                         _protonReceiver.advance();
                         return amqpMessage;
                     }
-                }                
+                }
             }
         }
         return null;
+    }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder builder = new StringBuilder();
+        builder.append("AmqpReceiver [_protonReceiver=").append(_protonReceiver)
+            .append("]");
+        return builder.toString();
     }
 
 }

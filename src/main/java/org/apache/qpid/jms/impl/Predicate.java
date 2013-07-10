@@ -20,6 +20,12 @@
  */
 package org.apache.qpid.jms.impl;
 
+/**
+ * A simple predicate.
+ *
+ * Used for general purpose logic so should provide a useful toString() implementation
+ * for logging purposes.
+ */
 interface Predicate
 {
     boolean test();

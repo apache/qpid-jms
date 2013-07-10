@@ -65,9 +65,14 @@ public class ReceiverImpl extends LinkImpl
         }
     }
 
-    private final class MessageReceivedPredicate implements Predicate
+    private final class MessageReceivedPredicate extends SimplePredicate
     {
         AmqpReceivedMessage _message;
+
+        public MessageReceivedPredicate()
+        {
+            super("Message received", _amqpReceiver);
+        }
 
         @Override
         public boolean test()
@@ -76,7 +81,7 @@ public class ReceiverImpl extends LinkImpl
             {
                 _message = _amqpReceiver.receiveNoWait();
             }
-            return _message != null;            
+            return _message != null;
         }
 
         public AmqpReceivedMessage getReceivedMessage()

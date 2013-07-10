@@ -42,7 +42,8 @@ import org.apache.qpid.proton.message.MessageFactory;
 @SuppressWarnings("rawtypes")
 public class AmqpConnection
 {
-    public static final long TIMEOUT = 30000L;
+    /** default timeout in milliseconds */
+    public static final long TIMEOUT = 10000L;
 
     private static Logger _logger = Logger.getLogger("qpid.jms-client.connection");
 
@@ -209,7 +210,7 @@ public class AmqpConnection
                 amqpSession.setEstablished();
                 pendingSessions.remove();
                 updated = true;
-            }            
+            }
         }
 
         Iterator<Session> pendingCloseSessions = _pendingCloseSessions.iterator();
@@ -222,7 +223,7 @@ public class AmqpConnection
                 amqpSession.setClosed();
                 pendingCloseSessions.remove();
                 updated = true;
-            }            
+            }
         }
 
         //Links
@@ -258,7 +259,7 @@ public class AmqpConnection
     }
 
     private boolean processSasl()
-    {        
+    {
         boolean updated = false;
         switch(_sasl.getState())
         {
@@ -308,7 +309,7 @@ public class AmqpConnection
                 {
                     _authenticationError = true;
                     updated = true;
-                }                
+                }
                 break;
             default:
         }

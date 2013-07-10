@@ -51,4 +51,13 @@ public class AmqpSentMessage
             _delivery.settle();
         }
     }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder builder = new StringBuilder();
+        builder.append("AmqpSentMessage [_delivery=").append(_delivery)
+            .append("]");
+        return builder.toString();
+    }
 }

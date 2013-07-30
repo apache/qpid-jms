@@ -1,1 +1,3 @@
 QPIDJMS-2: test svn to JIRA integration with basic commit message
+
+QPIDJMS-2: test svn to JIRA integration with cross-project reference to QPID-4891

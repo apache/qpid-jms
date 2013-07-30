@@ -1,0 +1,1 @@
+QPIDJMS-2: test svn to JIRA integration with basic commit message

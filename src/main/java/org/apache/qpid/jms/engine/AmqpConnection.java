@@ -40,11 +40,12 @@ import org.apache.qpid.proton.engine.Sender;
 import org.apache.qpid.proton.engine.Session;
 import org.apache.qpid.proton.message.MessageFactory;
 
+// TODO tightly define the thread-safety of this class, e.g. should setSasl etc be synchronized?
 @SuppressWarnings("rawtypes")
 public class AmqpConnection
 {
     /** default timeout in milliseconds */
-    public static final long TIMEOUT = 10000L;
+    public static final long TIMEOUT = 10_000L;
 
     private static Logger _logger = Logger.getLogger("qpid.jms-client.connection");
 

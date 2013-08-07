@@ -213,6 +213,7 @@ public class AmqpConnectionDriver
         public void requestStop()
         {
             _stopRequested = true;
+            _driver.wakeup();
         }
 
         public AmqpDriverState getState()

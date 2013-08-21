@@ -93,5 +93,35 @@ public class DispositionMatcher extends FrameWithNoPayloadMatchingHandler
         return this;
     }
 
+    public Object getReceivedRole()
+    {
+        return getReceivedFields().get(FIELD_ROLE);
+    }
+
+    public Object getReceivedFirst()
+    {
+        return getReceivedFields().get(FIELD_FIRST);
+    }
+
+    public Object getReceivedLast()
+    {
+        return getReceivedFields().get(FIELD_LAST);
+    }
+
+    public Object getReceivedSettled()
+    {
+        return getReceivedFields().get(FIELD_SETTLED);
+    }
+
+    public Object getReceivedState()
+    {
+        return getReceivedFields().get(FIELD_STATE);
+    }
+
+    public Object getReceivedBatchable()
+    {
+        return getReceivedFields().get(FIELD_BATCHABLE);
+    }
+
 }
 

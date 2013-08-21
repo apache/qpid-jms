@@ -18,6 +18,8 @@
  */
 package org.apache.qpid.jms.test.testpeer;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+
 import java.util.Map;
 
 import org.apache.qpid.proton.amqp.Binary;
@@ -25,10 +27,12 @@ import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
 import org.hamcrest.Matcher;
 
-public class FrameWithNoPayloadMatchingHandler extends AbstractFrameFieldAndPayloadMatchingHandler
+public class FrameWithPayloadMatchingHandler extends AbstractFrameFieldAndPayloadMatchingHandler
 {
+    private Matcher<Binary> _payloadMatcher;
+    private Binary _receivedPayload;
 
-    protected FrameWithNoPayloadMatchingHandler(FrameType frameType,
+    protected FrameWithPayloadMatchingHandler(FrameType frameType,
                                                 int channel,
                                                 UnsignedLong numericDescriptor,
                                                 Symbol symbolicDescriptor,
@@ -38,12 +42,23 @@ public class FrameWithNoPayloadMatchingHandler extends AbstractFrameFieldAndPayl
         super(frameType, channel, numericDescriptor, symbolicDescriptor, matchers, onSuccess);
     }
 
+    public void setPayloadMatcher(Matcher<Binary> payloadMatcher)
+    {
+        _payloadMatcher = payloadMatcher;
+    }
+
     @Override
     protected void verifyPayload(Binary payload)
     {
-        if(payload != null && payload.getLength() > 0)
+        if(_payloadMatcher != null)
         {
-            throw new IllegalArgumentException("Expected no payload but received payload of length: " + payload.getLength());
+            assertThat("Payload should match", payload, _payloadMatcher);
         }
+        _receivedPayload = payload;
+    }
+
+    public Binary getReceivedPayload()
+    {
+        return _receivedPayload;
     }
 }

@@ -20,31 +20,54 @@ package org.apache.qpid.jms.test.testpeer;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-import org.apache.qpid.jms.test.testpeer.frames.CloseFrame;
-import org.apache.qpid.jms.test.testpeer.frames.OpenFrame;
-import org.apache.qpid.jms.test.testpeer.frames.SaslMechanismsFrame;
-import org.apache.qpid.jms.test.testpeer.frames.SaslOutcomeFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
+import org.apache.qpid.jms.test.testpeer.describedtypes.AttachFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.BeginFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.CloseFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.DispositionFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.FlowFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.OpenFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.SaslMechanismsFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.SaslOutcomeFrame;
+import org.apache.qpid.jms.test.testpeer.matchers.AttachMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.BeginMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.CloseMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.OpenMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.SaslInitMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.TransferMatcher;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
+import org.apache.qpid.proton.amqp.UnsignedInteger;
+import org.apache.qpid.proton.amqp.UnsignedShort;
 import org.apache.qpid.proton.engine.impl.AmqpHeader;
+import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 
 
 public class TestAmqpPeer implements AutoCloseable
 {
+    /** Roles are represented as booleans - see AMQP spec 2.8.1*/
+    private static final boolean SENDER_ROLE = false;
+
+    /** Roles are represented as booleans - see AMQP spec 2.8.1*/
+    private static final boolean RECEIVER_ROLE = true;
+
+    private static final UnsignedByte ATTACH_SND_SETTLE_MODE_UNSETTLED = UnsignedByte.valueOf((byte) 0);
+
+    private static final UnsignedByte ATTACH_RCV_SETTLE_MODE_FIRST = UnsignedByte.valueOf((byte)0);
+
     private final TestAmqpPeerRunner _driverRunnable;
     private final Thread _driverThread;
-    private final List<Handler> _handlers = new ArrayList<>();
+    private final List<Handler> _handlers = Collections.synchronizedList(new ArrayList<Handler>());
 
     public TestAmqpPeer(int port) throws IOException
     {
@@ -174,5 +197,119 @@ public class TestAmqpPeer implements AutoCloseable
             .onSuccess(new FrameSender(this, FrameType.AMQP, 0,
                     new CloseFrame(),
                     null)));
+    }
+
+    public void expectBegin()
+    {
+        final BeginMatcher beginMatcher = new BeginMatcher()
+                .withRemoteChannel(nullValue())
+                .withNextOutgoingId(notNullValue())
+                .withIncomingWindow(notNullValue())
+                .withOutgoingWindow(notNullValue());
+
+        // the response will have its remote channel dynamically set based on incoming value
+        final BeginFrame beginResponse = new BeginFrame()
+            .setNextOutgoingId(UnsignedInteger.valueOf(0))
+            .setIncomingWindow(UnsignedInteger.valueOf(0))
+            .setOutgoingWindow(UnsignedInteger.valueOf(0));
+
+        beginMatcher.onSuccess(
+                new FrameSender(this, FrameType.AMQP, 0, beginResponse, null)
+                    .setValueProvider(new ValueProvider()
+                        {
+                            @Override
+                            public void setValues()
+                            {
+                                beginResponse.setRemoteChannel(
+                                        UnsignedShort.valueOf((short) beginMatcher.getActualChannel()));
+                            }
+                        }));
+
+        _handlers.add(beginMatcher);
+    }
+
+    public void expectSenderAttach()
+    {
+        expectAttach(SENDER_ROLE);
+    }
+
+    private void expectAttach(boolean role)
+    {
+        final AttachMatcher attachMatcher = new AttachMatcher()
+                .withName(notNullValue())
+                .withHandle(notNullValue())
+                .withRole(equalTo(role))
+                .withSndSettleMode(equalTo(ATTACH_SND_SETTLE_MODE_UNSETTLED))
+                .withRcvSettleMode(equalTo(ATTACH_RCV_SETTLE_MODE_FIRST))
+                .withSource(notNullValue())
+                .withTarget(notNullValue());
+
+        UnsignedInteger linkHandle = UnsignedInteger.valueOf(101);
+        final AttachFrame attachResponse = new AttachFrame()
+                            .setHandle(linkHandle)
+                            .setRole(!role)
+                            .setSndSettleMode(ATTACH_SND_SETTLE_MODE_UNSETTLED)
+                            .setRcvSettleMode(ATTACH_RCV_SETTLE_MODE_FIRST);
+
+        FrameSender attachResponseSender = new FrameSender(this, FrameType.AMQP, 0, attachResponse, null)
+                            .setValueProvider(new ValueProvider()
+                            {
+                                @Override
+                                public void setValues()
+                                {
+                                    attachResponse.setName(attachMatcher.getReceivedName());
+                                    attachResponse.setSource(attachMatcher.getReceivedSource());
+                                    attachResponse.setTarget(attachMatcher.getReceivedTarget());
+                                }
+                            });
+
+        final FlowFrame flowFrame = new FlowFrame().setNextIncomingId(UnsignedInteger.valueOf(0))
+                .setIncomingWindow(UnsignedInteger.valueOf(2048))
+                .setNextOutgoingId(UnsignedInteger.valueOf(0))
+                .setOutgoingWindow(UnsignedInteger.valueOf(2048))
+                .setLinkCredit(UnsignedInteger.valueOf(100))
+                .setHandle(linkHandle);
+
+        FrameSender flowFrameSender = new FrameSender(this, FrameType.AMQP, 0, flowFrame, null)
+                            .setValueProvider(new ValueProvider()
+                            {
+                                @Override
+                                public void setValues()
+                                {
+                                    flowFrame.setDeliveryCount(attachMatcher.getReceivedInitialDeliveryCount());
+                                }
+                            });
+
+        CompositeAmqpPeerRunnable composite = new CompositeAmqpPeerRunnable();
+        composite.add(attachResponseSender);
+        composite.add(flowFrameSender);
+
+        attachMatcher.onSuccess(composite);
+
+        _handlers.add(attachMatcher);
+    }
+
+    public void expectTransfer(Matcher<Binary> expectedPayloadMatcher)
+    {
+        final TransferMatcher transferMatcher = new TransferMatcher();
+        transferMatcher.setPayloadMatcher(expectedPayloadMatcher);
+
+        final DispositionFrame dispositionFrame = new DispositionFrame()
+                                                   .setRole(RECEIVER_ROLE)
+                                                   .setSettled(true)
+                                                   .setState(new Accepted());
+
+        FrameSender dispositionFrameSender = new FrameSender(this, FrameType.AMQP, 0, dispositionFrame, null)
+                            .setValueProvider(new ValueProvider()
+                            {
+                                @Override
+                                public void setValues()
+                                {
+                                    dispositionFrame.setFirst(transferMatcher.getReceivedDeliveryId());
+                                }
+                            });
+        transferMatcher.onSuccess(dispositionFrameSender);
+
+        _handlers.add(transferMatcher);
     }
 }

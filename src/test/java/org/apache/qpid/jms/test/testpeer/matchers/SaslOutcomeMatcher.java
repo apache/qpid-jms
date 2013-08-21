@@ -65,5 +65,15 @@ public class SaslOutcomeMatcher extends FrameWithNoPayloadMatchingHandler
         return this;
     }
 
+    public Object getReceivedCode()
+    {
+        return getReceivedFields().get(FIELD_CODE);
+    }
+
+    public Object getReceivedAdditionalData()
+    {
+        return getReceivedFields().get(FIELD_ADDITIONAL_DATA);
+    }
+
 }
 

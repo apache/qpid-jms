@@ -42,7 +42,7 @@ public class SentMessageImpl
             @Override
             public boolean test()
             {
-                return _sentMessage.getRemoteDeliveryState() != null;
+                return _sentMessage.getRemoteDeliveryState() != null; //TODO: should we actually check it is *accepted*?
             }
         }, AmqpConnection.TIMEOUT);
     }

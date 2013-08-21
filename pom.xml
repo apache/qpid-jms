@@ -36,6 +36,12 @@
 
   <dependencies>
     <dependency>
+      <!-- TODO use JMS 2 API instead once it's available -->
+      <groupId>org.apache.geronimo.specs</groupId>
+      <artifactId>geronimo-jms_1.1_spec</artifactId>
+      <version>1.1.1</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>proton-api</artifactId>
       <version>${proton-version}</version>

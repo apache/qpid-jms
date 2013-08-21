@@ -121,5 +121,55 @@ public class OpenMatcher extends FrameWithNoPayloadMatchingHandler
         return this;
     }
 
+    public Object getReceivedContainerId()
+    {
+        return getReceivedFields().get(FIELD_CONTAINER_ID);
+    }
+
+    public Object getReceivedHostname()
+    {
+        return getReceivedFields().get(FIELD_HOSTNAME);
+    }
+
+    public Object getReceivedMaxFrameSize()
+    {
+        return getReceivedFields().get(FIELD_MAX_FRAME_SIZE);
+    }
+
+    public Object getReceivedChannelMax()
+    {
+        return getReceivedFields().get(FIELD_CHANNEL_MAX);
+    }
+
+    public Object getReceivedIdleTimeOut()
+    {
+        return getReceivedFields().get(FIELD_IDLE_TIME_OUT);
+    }
+
+    public Object getReceivedOutgoingLocales()
+    {
+        return getReceivedFields().get(FIELD_OUTGOING_LOCALES);
+    }
+
+    public Object getReceivedIncomingLocales()
+    {
+        return getReceivedFields().get(FIELD_INCOMING_LOCALES);
+    }
+
+    public Object getReceivedOfferedCapabilities()
+    {
+        return getReceivedFields().get(FIELD_OFFERED_CAPABILITIES);
+    }
+
+    public Object getReceivedDesiredCapabilities()
+    {
+        return getReceivedFields().get(FIELD_DESIRED_CAPABILITIES);
+    }
+
+    public Object getReceivedProperties()
+    {
+        return getReceivedFields().get(FIELD_PROPERTIES);
+    }
+
 }
 

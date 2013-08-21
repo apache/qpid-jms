@@ -20,9 +20,10 @@
  */
 package org.apache.qpid.jms.impl;
 
+import javax.jms.JMSException;
+
 import org.apache.qpid.jms.engine.AmqpConnection;
 import org.apache.qpid.jms.engine.AmqpLink;
-import org.apache.qpid.jms.engine.ConnectionException;
 import org.apache.qpid.jms.engine.LinkException;
 import org.apache.qpid.proton.TimeoutException;
 
@@ -55,7 +56,7 @@ public class LinkImpl
         }
     }
 
-    public void close() throws TimeoutException, InterruptedException, ConnectionException
+    public void close() throws JMSException
     {
         _connectionImpl.lock();
         try
@@ -64,14 +65,31 @@ public class LinkImpl
             _connectionImpl.stateChanged();
             while(!_amqpLink.isClosed())
             {
-                _connectionImpl.waitUntil(new SimplePredicate("Link is closed", _amqpLink)
+                try
                 {
-                    @Override
-                    public boolean test()
+                    _connectionImpl.waitUntil(new SimplePredicate("Link is closed", _amqpLink)
                     {
-                        return _amqpLink.isClosed();
-                    }
-                }, AmqpConnection.TIMEOUT);
+                        @Override
+                        public boolean test()
+                        {
+                            return _amqpLink.isClosed();
+                        }
+                    }, AmqpConnection.TIMEOUT);
+                }
+                catch (TimeoutException e)
+                {
+                    JMSException jmse = new JMSException("Unable to close link");
+                    jmse.setLinkedException(e);
+                    throw jmse;
+                }
+                catch(InterruptedException e)
+                {
+                    Thread.currentThread().interrupt();
+                    JMSException jmse = new JMSException("Interrupted while trying to close link");
+                    jmse.setLinkedException(e);
+                    throw jmse;
+                }
+
             }
 
             //TODO: link errors? E.g:

@@ -63,6 +63,8 @@ class TestAmqpPeerRunner implements Runnable
 
             int bytesRead;
             byte[] networkInputBytes = new byte[1024];
+
+            _logger.finest("Attempting read");
             while((bytesRead = networkInputStream.read(networkInputBytes)) != -1)
             {
                 ByteBuffer networkInputByteBuffer = ByteBuffer.wrap(networkInputBytes, 0, bytesRead);
@@ -70,13 +72,23 @@ class TestAmqpPeerRunner implements Runnable
                 _logger.info("Read: " + new Binary(networkInputBytes, 0, bytesRead));
 
                 _testFrameParser.input(networkInputByteBuffer);
+                _logger.finest("Attempting read");
             }
+
+            _logger.finest("Exited read loop");
         }
         catch (Exception e)
         {
-            _logger.log(Level.SEVERE, "Problem in peer", e);
-            e.printStackTrace(); // TODO make this a logger call
-            _exception = e;
+            if(!_serverSocket.isClosed())
+            {
+                _logger.log(Level.SEVERE, "Problem in peer", e);
+                e.printStackTrace(); // TODO make this a logger call
+                _exception = e;
+            }
+            else
+            {
+                _logger.log(Level.FINE, "Caught exception, ignoring as socket is closed: " + e);
+            }
         }
         finally
         {
@@ -99,7 +111,10 @@ class TestAmqpPeerRunner implements Runnable
         }
         finally
         {
-            _clientSocket.close();
+            if(_clientSocket != null)
+            {
+                _clientSocket.close();
+            }
         }
     }
 

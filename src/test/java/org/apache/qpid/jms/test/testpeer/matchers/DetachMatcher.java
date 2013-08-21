@@ -72,5 +72,20 @@ public class DetachMatcher extends FrameWithNoPayloadMatchingHandler
         return this;
     }
 
+    public Object getReceivedHandle()
+    {
+        return getReceivedFields().get(FIELD_HANDLE);
+    }
+
+    public Object getReceivedClosed()
+    {
+        return getReceivedFields().get(FIELD_CLOSED);
+    }
+
+    public Object getReceivedError()
+    {
+        return getReceivedFields().get(FIELD_ERROR);
+    }
+
 }
 

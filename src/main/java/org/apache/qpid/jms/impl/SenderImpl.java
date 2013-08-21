@@ -20,12 +20,17 @@
  */
 package org.apache.qpid.jms.impl;
 
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageProducer;
+
+import org.apache.qpid.jms.engine.AmqpMessage;
 import org.apache.qpid.jms.engine.AmqpSender;
 import org.apache.qpid.jms.engine.AmqpSentMessage;
 import org.apache.qpid.proton.TimeoutException;
-import org.apache.qpid.proton.message.Message;
 
-public class SenderImpl extends LinkImpl
+public class SenderImpl extends LinkImpl implements MessageProducer
 {
     private AmqpSender _amqpSender;
 
@@ -35,12 +40,15 @@ public class SenderImpl extends LinkImpl
         _amqpSender = amqpSender;
     }
 
-    public void sendMessage(Message message) throws TimeoutException, InterruptedException
+    @Override
+    public void send(Message message) throws JMSException
     {
         getConnectionImpl().lock();
         try
         {
-            AmqpSentMessage sentMessage = _amqpSender.sendMessage(message);
+            AmqpMessage amqpMessage = getAmqpMessageFromJmsMessage(message);
+
+            AmqpSentMessage sentMessage = _amqpSender.sendMessage(amqpMessage);
 
             getConnectionImpl().stateChanged();
 
@@ -48,10 +56,134 @@ public class SenderImpl extends LinkImpl
             sentMessageImpl.waitUntilAccepted();
             sentMessage.settle();
         }
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+            JMSException jmse = new JMSException("Interrupted while trying to send messages");
+            jmse.setLinkedException(e);
+            throw jmse;
+        }
+        catch (TimeoutException e)
+        {
+            JMSException jmse = new JMSException("Timed out during send");
+            e.printStackTrace();
+            jmse.setLinkedException(e);
+            throw jmse;
+        }
         finally
         {
             getConnectionImpl().releaseLock();
         }
 
+    }
+
+    private AmqpMessage getAmqpMessageFromJmsMessage(Message message)
+    {
+        if(message instanceof MessageImpl)
+        {
+            return ((MessageImpl)message).getAmqpMessage();
+        }
+        else
+        {
+            throw new UnsupportedOperationException("cross-vendor message support has yet to be implemented");
+        }
+    }
+
+    @Override
+    public void setDisableMessageID(boolean value) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public boolean getDisableMessageID() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setDisableMessageTimestamp(boolean value) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public boolean getDisableMessageTimestamp() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setDeliveryMode(int deliveryMode) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public int getDeliveryMode() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setPriority(int defaultPriority) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public int getPriority() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setTimeToLive(long timeToLive) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public long getTimeToLive() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public Destination getDestination() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void send(Destination destination, Message message) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void send(Message message, int deliveryMode, int priority, long timeToLive) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
     }
 }

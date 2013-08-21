@@ -19,6 +19,9 @@
 package org.apache.qpid.jms.test.testpeer;
 
 import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
@@ -27,13 +30,20 @@ import org.apache.qpid.proton.amqp.UnsignedLong;
 
 abstract class FrameMatchingHandler implements FrameHandler
 {
+    private static Logger LOGGER = Logger.getLogger(FrameMatchingHandler.class.getName());
+
     public static int ANY_CHANNEL = -1;
 
     private final UnsignedLong _numericDescriptor;
     private final Symbol _symbolicDescriptor;
     private final FrameType _frameType;
-    private int _channel;
+
+    /** The expected channel number, or {@link #ANY_CHANNEL} if we don't care */
+    private int _expectedChannel;
+    private int _actualChannel;
+
     private Runnable _onSuccessAction;
+    private boolean _isComplete;
 
     protected FrameMatchingHandler(FrameType frameType,
                                    int channel,
@@ -43,7 +53,7 @@ abstract class FrameMatchingHandler implements FrameHandler
         _frameType = frameType;
         _numericDescriptor = numericDescriptor;
         _symbolicDescriptor = symbolicDescriptor;
-        _channel = channel;
+        _expectedChannel = channel;
         _onSuccessAction = onSuccessAction;
     }
 
@@ -52,10 +62,11 @@ abstract class FrameMatchingHandler implements FrameHandler
     public void frame(int type, int ch, DescribedType dt, Binary payload, TestAmqpPeer peer)
     {
         if(type == _frameType.ordinal()
-           && (_channel == -1 || _channel == ch)
+           && (_expectedChannel == -1 || _expectedChannel == ch)
            && (_numericDescriptor.equals(dt.getDescriptor()) || _symbolicDescriptor.equals(dt.getDescriptor()))
            && (dt.getDescribed() instanceof List))
         {
+            _actualChannel = ch;
             frame((List<Object>)dt.getDescribed(),payload);
         }
         else
@@ -64,14 +75,23 @@ abstract class FrameMatchingHandler implements FrameHandler
                     "Frame was not as expected. Expected: " +
                     "type=%s, channel=%s, descriptor=%s/%s but got: " +
                     "type=%s, channel=%s, descriptor=%s",
-                    _frameType.ordinal(), _channel, _symbolicDescriptor, _numericDescriptor,
+                    _frameType.ordinal(), _expectedChannel, _symbolicDescriptor, _numericDescriptor,
                     type, ch, dt.getDescriptor()));
         }
     }
 
     protected void succeeded()
     {
-        _onSuccessAction.run();
+        if(_onSuccessAction != null)
+        {
+            _onSuccessAction.run();
+        }
+        else
+        {
+            LOGGER.log(Level.INFO, "No onSuccess action, doing nothing.");
+        }
+
+        _isComplete = true;
     }
 
     public Runnable getOnSuccessAction()
@@ -85,12 +105,24 @@ abstract class FrameMatchingHandler implements FrameHandler
         return this;
     }
 
-
     public FrameMatchingHandler onChannel(int channel)
     {
-        _channel = channel;
+        _expectedChannel = channel;
         return this;
     }
 
+    public int getActualChannel()
+    {
+        return _actualChannel;
+    }
+
+    @Override
+    public boolean isComplete()
+    {
+        return _isComplete;
+    }
+
     protected abstract void frame(List<Object> described, Binary payload);
+
+    protected abstract Map<Integer,Object> getReceivedFields();
 }

@@ -128,5 +128,60 @@ public class FlowMatcher extends FrameWithNoPayloadMatchingHandler
         return this;
     }
 
+    public Object getReceivedNextIncomingId()
+    {
+        return getReceivedFields().get(FIELD_NEXT_INCOMING_ID);
+    }
+
+    public Object getReceivedIncomingWindow()
+    {
+        return getReceivedFields().get(FIELD_INCOMING_WINDOW);
+    }
+
+    public Object getReceivedNextOutgoingId()
+    {
+        return getReceivedFields().get(FIELD_NEXT_OUTGOING_ID);
+    }
+
+    public Object getReceivedOutgoingWindow()
+    {
+        return getReceivedFields().get(FIELD_OUTGOING_WINDOW);
+    }
+
+    public Object getReceivedHandle()
+    {
+        return getReceivedFields().get(FIELD_HANDLE);
+    }
+
+    public Object getReceivedDeliveryCount()
+    {
+        return getReceivedFields().get(FIELD_DELIVERY_COUNT);
+    }
+
+    public Object getReceivedLinkCredit()
+    {
+        return getReceivedFields().get(FIELD_LINK_CREDIT);
+    }
+
+    public Object getReceivedAvailable()
+    {
+        return getReceivedFields().get(FIELD_AVAILABLE);
+    }
+
+    public Object getReceivedDrain()
+    {
+        return getReceivedFields().get(FIELD_DRAIN);
+    }
+
+    public Object getReceivedEcho()
+    {
+        return getReceivedFields().get(FIELD_ECHO);
+    }
+
+    public Object getReceivedProperties()
+    {
+        return getReceivedFields().get(FIELD_PROPERTIES);
+    }
+
 }
 

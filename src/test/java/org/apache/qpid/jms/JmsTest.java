@@ -23,11 +23,14 @@ package org.apache.qpid.jms;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
+
 import org.apache.qpid.jms.impl.ConnectionImpl;
 import org.apache.qpid.jms.impl.ReceivedMessageImpl;
 import org.apache.qpid.jms.impl.ReceiverImpl;
 import org.apache.qpid.jms.impl.SenderImpl;
-import org.apache.qpid.jms.impl.SessionImpl;
 import org.apache.qpid.proton.ProtonFactoryLoader;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.message.Message;
@@ -53,23 +56,22 @@ public class JmsTest
     @Ignore("PHTODO reinstate me")
     public void test() throws Exception
     {
+        /*
         try
         {
             ConnectionImpl connection =  new ConnectionImpl("clientName", "localhost", 5672, "guest", "guest");
-            connection.connect();
 
-            SessionImpl session = connection.createSession();
-            session.establish();
+            Session session = connection.createSession();
 
-            SenderImpl sender = session.createSender("1","queue");
-            sender.establish();
+            Queue queue = session.createQueue("queue");
+            MessageProducer producer = session.createProducer(queue);
 
             Message message = _messageFactory.createMessage();
             AmqpValue body = new AmqpValue("Hello World!");
             message.setBody(body);
-            sender.sendMessage(message);
+            producer.sendMessage(message);
 
-            sender.close();
+            producer.close();
 
             ReceiverImpl receiver = session.createReceiver("1", "queue");
             receiver.credit(5);
@@ -94,6 +96,7 @@ public class JmsTest
             _logger.log(Level.SEVERE, "Test failed", e);
             throw e;
         }
+        */
     }
 
 }

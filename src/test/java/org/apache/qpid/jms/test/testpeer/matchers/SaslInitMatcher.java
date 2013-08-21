@@ -72,5 +72,20 @@ public class SaslInitMatcher extends FrameWithNoPayloadMatchingHandler
         return this;
     }
 
+    public Object getReceivedMechanism()
+    {
+        return getReceivedFields().get(FIELD_MECHANISM);
+    }
+
+    public Object getReceivedInitialResponse()
+    {
+        return getReceivedFields().get(FIELD_INITIAL_RESPONSE);
+    }
+
+    public Object getReceivedHostname()
+    {
+        return getReceivedFields().get(FIELD_HOSTNAME);
+    }
+
 }
 

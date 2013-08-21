@@ -40,7 +40,17 @@ import org.apache.qpid.proton.engine.Sender;
 import org.apache.qpid.proton.engine.Session;
 import org.apache.qpid.proton.message.MessageFactory;
 
-// TODO tightly define the thread-safety of this class, e.g. should setSasl etc be synchronized?
+/**
+ * An AMQP connection.
+ *
+ * This class is thread-safe.
+ *
+ * The other classes in this package are not thread-safe unless explicitly stated.
+ * Obtain the {@link AmqpConnection} lock first to use them in a thread-safe
+ * manner.
+ *
+ * TODO more tightly define the thread-safety of this class, e.g. should setSasl etc be synchronized?
+ */
 @SuppressWarnings("rawtypes")
 public class AmqpConnection
 {

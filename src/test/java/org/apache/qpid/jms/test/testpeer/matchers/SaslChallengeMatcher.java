@@ -58,5 +58,10 @@ public class SaslChallengeMatcher extends FrameWithNoPayloadMatchingHandler
         return this;
     }
 
+    public Object getReceivedChallenge()
+    {
+        return getReceivedFields().get(FIELD_CHALLENGE);
+    }
+
 }
 

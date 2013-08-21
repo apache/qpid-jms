@@ -18,28 +18,45 @@
  */
 package org.apache.qpid.jms.test.testpeer;
 
+import java.util.logging.Logger;
+
 import org.apache.qpid.proton.amqp.Binary;
 
 class FrameSender implements AmqpPeerRunnable
 {
+    private static final Logger _logger = Logger.getLogger(FrameSender.class.getName());
+
     private final TestAmqpPeer _testAmqpPeer;
     private final FrameType _type;
     private final int _channel;
-    private final Frame _frame;
+    private final ListDescribedType _listDescribedType;
     private final Binary _payload;
+    private ValueProvider _valueProvider;
 
-    FrameSender(TestAmqpPeer testAmqpPeer, FrameType type, int channel, Frame frame, Binary payload)
+    FrameSender(TestAmqpPeer testAmqpPeer, FrameType type, int channel, ListDescribedType listDescribedType, Binary payload)
     {
         _testAmqpPeer = testAmqpPeer;
         _type = type;
         _channel = channel;
-        _frame = frame;
+        _listDescribedType = listDescribedType;
         _payload = payload;
     }
 
     @Override
     public void run()
     {
-        _testAmqpPeer.sendFrame(_type, _channel, _frame, _payload);
+        if(_valueProvider != null)
+        {
+            _logger.info("About to dynamically set values before sending frame");
+            _valueProvider.setValues();
+        }
+
+        _testAmqpPeer.sendFrame(_type, _channel, _listDescribedType, _payload);
+    }
+
+    public FrameSender setValueProvider(ValueProvider valueProvider)
+    {
+        _valueProvider = valueProvider;
+        return this;
     }
 }

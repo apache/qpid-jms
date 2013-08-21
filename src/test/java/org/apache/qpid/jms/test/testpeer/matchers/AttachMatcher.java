@@ -149,5 +149,75 @@ public class AttachMatcher extends FrameWithNoPayloadMatchingHandler
         return this;
     }
 
+    public Object getReceivedName()
+    {
+        return getReceivedFields().get(FIELD_NAME);
+    }
+
+    public Object getReceivedHandle()
+    {
+        return getReceivedFields().get(FIELD_HANDLE);
+    }
+
+    public Object getReceivedRole()
+    {
+        return getReceivedFields().get(FIELD_ROLE);
+    }
+
+    public Object getReceivedSndSettleMode()
+    {
+        return getReceivedFields().get(FIELD_SND_SETTLE_MODE);
+    }
+
+    public Object getReceivedRcvSettleMode()
+    {
+        return getReceivedFields().get(FIELD_RCV_SETTLE_MODE);
+    }
+
+    public Object getReceivedSource()
+    {
+        return getReceivedFields().get(FIELD_SOURCE);
+    }
+
+    public Object getReceivedTarget()
+    {
+        return getReceivedFields().get(FIELD_TARGET);
+    }
+
+    public Object getReceivedUnsettled()
+    {
+        return getReceivedFields().get(FIELD_UNSETTLED);
+    }
+
+    public Object getReceivedIncompleteUnsettled()
+    {
+        return getReceivedFields().get(FIELD_INCOMPLETE_UNSETTLED);
+    }
+
+    public Object getReceivedInitialDeliveryCount()
+    {
+        return getReceivedFields().get(FIELD_INITIAL_DELIVERY_COUNT);
+    }
+
+    public Object getReceivedMaxMessageSize()
+    {
+        return getReceivedFields().get(FIELD_MAX_MESSAGE_SIZE);
+    }
+
+    public Object getReceivedOfferedCapabilities()
+    {
+        return getReceivedFields().get(FIELD_OFFERED_CAPABILITIES);
+    }
+
+    public Object getReceivedDesiredCapabilities()
+    {
+        return getReceivedFields().get(FIELD_DESIRED_CAPABILITIES);
+    }
+
+    public Object getReceivedProperties()
+    {
+        return getReceivedFields().get(FIELD_PROPERTIES);
+    }
+
 }
 

@@ -20,9 +20,13 @@
  */
 package org.apache.qpid.jms.engine;
 
+import java.util.UUID;
+
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
+import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
+import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Receiver;
 import org.apache.qpid.proton.engine.Sender;
 import org.apache.qpid.proton.engine.Session;
@@ -67,12 +71,25 @@ public class AmqpSession
         return _amqpConnection;
     }
 
-    public AmqpSender createAmqpSender(String name, String address)
+    public AmqpSender createAmqpSender(String address)
     {
-        Sender protonSender = _protonSession.sender(name);
+        String sourceAddress = UUID.randomUUID().toString();
+        org.apache.qpid.proton.amqp.messaging.Source source = new Source();
+        source.setAddress(sourceAddress);
+
         Target target = new Target();
         target.setAddress(address);
+
+        String senderName = address + "<-" + sourceAddress;
+        Sender protonSender = _protonSession.sender(senderName);
+
+        protonSender.setSource(source);
         protonSender.setTarget(target);
+
+        // set settle modes to give "at-least-once" semantics
+        protonSender.setSenderSettleMode(SenderSettleMode.UNSETTLED);
+        protonSender.setReceiverSettleMode(ReceiverSettleMode.FIRST);
+
         AmqpSender amqpSender = new AmqpSender(this, protonSender);
         protonSender.setContext(amqpSender);
         protonSender.open();

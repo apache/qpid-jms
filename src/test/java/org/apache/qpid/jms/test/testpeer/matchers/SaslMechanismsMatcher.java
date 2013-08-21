@@ -58,5 +58,10 @@ public class SaslMechanismsMatcher extends FrameWithNoPayloadMatchingHandler
         return this;
     }
 
+    public Object getReceivedSaslServerMechanisms()
+    {
+        return getReceivedFields().get(FIELD_SASL_SERVER_MECHANISMS);
+    }
+
 }
 

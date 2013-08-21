@@ -107,5 +107,45 @@ public class BeginMatcher extends FrameWithNoPayloadMatchingHandler
         return this;
     }
 
+    public Object getReceivedRemoteChannel()
+    {
+        return getReceivedFields().get(FIELD_REMOTE_CHANNEL);
+    }
+
+    public Object getReceivedNextOutgoingId()
+    {
+        return getReceivedFields().get(FIELD_NEXT_OUTGOING_ID);
+    }
+
+    public Object getReceivedIncomingWindow()
+    {
+        return getReceivedFields().get(FIELD_INCOMING_WINDOW);
+    }
+
+    public Object getReceivedOutgoingWindow()
+    {
+        return getReceivedFields().get(FIELD_OUTGOING_WINDOW);
+    }
+
+    public Object getReceivedHandleMax()
+    {
+        return getReceivedFields().get(FIELD_HANDLE_MAX);
+    }
+
+    public Object getReceivedOfferedCapabilities()
+    {
+        return getReceivedFields().get(FIELD_OFFERED_CAPABILITIES);
+    }
+
+    public Object getReceivedDesiredCapabilities()
+    {
+        return getReceivedFields().get(FIELD_DESIRED_CAPABILITIES);
+    }
+
+    public Object getReceivedProperties()
+    {
+        return getReceivedFields().get(FIELD_PROPERTIES);
+    }
+
 }
 

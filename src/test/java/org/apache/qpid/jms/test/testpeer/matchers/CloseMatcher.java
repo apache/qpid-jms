@@ -58,5 +58,10 @@ public class CloseMatcher extends FrameWithNoPayloadMatchingHandler
         return this;
     }
 
+    public Object getReceivedError()
+    {
+        return getReceivedFields().get(FIELD_ERROR);
+    }
+
 }
 

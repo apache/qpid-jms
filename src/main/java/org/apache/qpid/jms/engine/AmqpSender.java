@@ -38,10 +38,11 @@ public class AmqpSender extends AmqpLink
         _protonSender = protonSender;
     }
 
-    public AmqpSentMessage sendMessage(Message message)
+    public AmqpSentMessage sendMessage(AmqpMessage amqpMessage)
     {
         synchronized (getAmqpConnection())
         {
+            Message message = amqpMessage.getMessage();
             byte[] bufferBytes = new byte[8];
             ByteBuffer buffer = ByteBuffer.wrap(bufferBytes);
 

@@ -18,14 +18,10 @@
  */
 package org.apache.qpid.jms.test.testpeer;
 
-import java.util.logging.Logger;
-
 import org.apache.qpid.proton.amqp.Binary;
 
 class FrameSender implements AmqpPeerRunnable
 {
-    private static final Logger _logger = Logger.getLogger(FrameSender.class.getName());
-
     private final TestAmqpPeer _testAmqpPeer;
     private final FrameType _type;
     private final int _channel;
@@ -47,7 +43,6 @@ class FrameSender implements AmqpPeerRunnable
     {
         if(_valueProvider != null)
         {
-            _logger.info("About to dynamically set values before sending frame");
             _valueProvider.setValues();
         }
 

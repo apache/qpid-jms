@@ -32,8 +32,11 @@ import org.hamcrest.Matcher;
  */
 public class SaslResponseMatcher extends FrameWithNoPayloadMatchingHandler
 {
-
-    private static final int FIELD_RESPONSE = 0;
+    /** Note that the ordinals of the Field enums match the order specified in the spec */
+    public enum Field
+    {
+        RESPONSE,
+    }
 
     public SaslResponseMatcher()
     {
@@ -41,7 +44,7 @@ public class SaslResponseMatcher extends FrameWithNoPayloadMatchingHandler
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000043L),
               Symbol.valueOf("amqp:sasl-response:list"),
-              new HashMap<Integer, Matcher<?>>(),
+              new HashMap<Enum<?>, Matcher<?>>(),
               null);
     }
 
@@ -54,14 +57,19 @@ public class SaslResponseMatcher extends FrameWithNoPayloadMatchingHandler
 
     public SaslResponseMatcher withResponse(Matcher<?> m)
     {
-        getMatchers().put(FIELD_RESPONSE, m);
+        getMatchers().put(Field.RESPONSE, m);
         return this;
     }
 
     public Object getReceivedResponse()
     {
-        return getReceivedFields().get(FIELD_RESPONSE);
+        return getReceivedFields().get(Field.RESPONSE);
     }
 
+    @Override
+    protected Enum<?> getField(int fieldIndex)
+    {
+        return Field.values()[fieldIndex];
+    }
 }
 

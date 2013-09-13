@@ -72,8 +72,12 @@ import org.hamcrest.Matcher;
  */
 public class <xsl:value-of select="$classname"/> extends <xsl:value-of select="$superclass"/>
 {
+    /** Note that the ordinals of the Field enums match the order specified in the AMQP spec */
+    public enum Field
+    {
 <xsl:for-each select="descendant::node()[name()='field']">
-    private static final int FIELD_<xsl:call-template name="toUpperDashToUnderscore"><xsl:with-param name="input" select="@name"/></xsl:call-template> = <xsl:value-of select="count(preceding-sibling::node()[name()='field'])"/>;</xsl:for-each>
+<xsl:text>        </xsl:text><xsl:call-template name="toUpperDashToUnderscore"><xsl:with-param name="input" select="@name"/></xsl:call-template>,
+</xsl:for-each>    }
 
     public <xsl:value-of select="$classname"/>()
     {
@@ -81,7 +85,7 @@ public class <xsl:value-of select="$classname"/> extends <xsl:value-of select="$
               ANY_CHANNEL,
               UnsignedLong.valueOf(<xsl:value-of select="concat(substring(descendant::node()[name()='descriptor']/@code,1,10),substring(descendant::node()[name()='descriptor']/@code,14))"/>L),
               Symbol.valueOf("<xsl:value-of select="descendant::node()[name()='descriptor']/@name"/>"),
-              new HashMap&lt;Integer, Matcher&lt;?&gt;&gt;(),
+              new HashMap&lt;Enum&lt;?&gt;, Matcher&lt;?&gt;&gt;(),
               null);
     }
 
@@ -94,16 +98,21 @@ public class <xsl:value-of select="$classname"/> extends <xsl:value-of select="$
 <xsl:for-each select="descendant::node()[name()='field']">
     public <xsl:value-of select="$classname"/> with<xsl:call-template name="dashToCamel"><xsl:with-param name="input" select="@name"/></xsl:call-template>(Matcher&lt;?&gt; m)
     {
-        getMatchers().put(FIELD_<xsl:call-template name="toUpperDashToUnderscore"><xsl:with-param name="input" select="@name"/></xsl:call-template>, m);
+        getMatchers().put(Field.<xsl:call-template name="toUpperDashToUnderscore"><xsl:with-param name="input" select="@name"/></xsl:call-template>, m);
         return this;
     }
 </xsl:for-each>
 <xsl:for-each select="descendant::node()[name()='field']">
     public Object getReceived<xsl:call-template name="dashToCamel"><xsl:with-param name="input" select="@name"/></xsl:call-template>()
     {
-        return getReceivedFields().get(FIELD_<xsl:call-template name="toUpperDashToUnderscore"><xsl:with-param name="input" select="@name"/></xsl:call-template>);
+        return getReceivedFields().get(Field.<xsl:call-template name="toUpperDashToUnderscore"><xsl:with-param name="input" select="@name"/></xsl:call-template>);
     }
 </xsl:for-each>
+    @Override
+    protected Enum&lt;?&gt; getField(int fieldIndex)
+    {
+        return Field.values()[fieldIndex];
+    }
 }
 
 </exsl:document>

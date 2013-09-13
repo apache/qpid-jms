@@ -30,7 +30,7 @@ import org.apache.qpid.proton.amqp.UnsignedLong;
 
 abstract class FrameMatchingHandler implements FrameHandler
 {
-    private static Logger LOGGER = Logger.getLogger(FrameMatchingHandler.class.getName());
+    private static final Logger _logger = Logger.getLogger(FrameMatchingHandler.class.getName());
 
     public static int ANY_CHANNEL = -1;
 
@@ -43,7 +43,7 @@ abstract class FrameMatchingHandler implements FrameHandler
     private int _actualChannel;
 
     private Runnable _onSuccessAction;
-    private boolean _isComplete;
+    private volatile boolean _isComplete;
 
     protected FrameMatchingHandler(FrameType frameType,
                                    int channel,
@@ -57,6 +57,14 @@ abstract class FrameMatchingHandler implements FrameHandler
         _onSuccessAction = onSuccessAction;
     }
 
+    protected abstract Map<Enum<?>,Object> getReceivedFields();
+
+    /**
+     * Handle the supplied frame and its payload, e.g. by checking that it matches what we expect
+     * @throws RuntimeException or a subclass thereof if the frame does not match what we expect
+     */
+    protected abstract void verifyFrame(List<Object> described, Binary payload);
+
     @SuppressWarnings("unchecked")
     @Override
     public void frame(int type, int ch, DescribedType dt, Binary payload, TestAmqpPeer peer)
@@ -67,7 +75,8 @@ abstract class FrameMatchingHandler implements FrameHandler
            && (dt.getDescribed() instanceof List))
         {
             _actualChannel = ch;
-            frame((List<Object>)dt.getDescribed(),payload);
+            verifyFrame((List<Object>)dt.getDescribed(),payload);
+            succeeded();
         }
         else
         {
@@ -80,7 +89,7 @@ abstract class FrameMatchingHandler implements FrameHandler
         }
     }
 
-    protected void succeeded()
+    private void succeeded()
     {
         if(_onSuccessAction != null)
         {
@@ -88,7 +97,7 @@ abstract class FrameMatchingHandler implements FrameHandler
         }
         else
         {
-            LOGGER.log(Level.INFO, "No onSuccess action, doing nothing.");
+            _logger.log(Level.INFO, "No onSuccess action, doing nothing.");
         }
 
         _isComplete = true;
@@ -122,7 +131,11 @@ abstract class FrameMatchingHandler implements FrameHandler
         return _isComplete;
     }
 
-    protected abstract void frame(List<Object> described, Binary payload);
-
-    protected abstract Map<Integer,Object> getReceivedFields();
+    @Override
+    public String toString()
+    {
+        return "FrameMatchingHandler [_symbolicDescriptor=" + _symbolicDescriptor
+                + ", _expectedChannel=" + (_expectedChannel == ANY_CHANNEL ? "<any>":String.valueOf(_expectedChannel))
+                + "]";
+    }
 }

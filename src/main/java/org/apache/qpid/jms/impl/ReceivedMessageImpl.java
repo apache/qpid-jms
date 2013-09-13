@@ -20,76 +20,357 @@
  */
 package org.apache.qpid.jms.impl;
 
-import org.apache.qpid.jms.engine.AmqpConnection;
-import org.apache.qpid.jms.engine.AmqpReceivedMessage;
-import org.apache.qpid.proton.TimeoutException;
-import org.apache.qpid.proton.message.Message;
+import java.util.Enumeration;
 
-public class ReceivedMessageImpl
+import javax.jms.Destination;
+import javax.jms.JMSException;
+
+import org.apache.qpid.jms.engine.AmqpMessage;
+
+public class ReceivedMessageImpl implements javax.jms.Message // TODO inherit from sendable base class
 {
-    private AmqpReceivedMessage _amqpMessage;
-    private ReceiverImpl _receiverImpl;
+    private final AmqpMessage _amqpMessage;
+    private final SessionImpl _sessionImpl;
+    private final ConnectionImpl _connectionImpl;
 
-    public ReceivedMessageImpl(AmqpReceivedMessage amqpMessage, ReceiverImpl receiverImpl)
+    public ReceivedMessageImpl(AmqpMessage amqpMessage, SessionImpl sessionImpl)
     {
         _amqpMessage = amqpMessage;
-        _receiverImpl = receiverImpl;
+        _sessionImpl = sessionImpl;
+        _connectionImpl = _sessionImpl.getConnectionImpl();
     }
 
     public void accept(boolean settle)
     {
-        _receiverImpl.getConnectionImpl().lock();
+        _connectionImpl.lock();
         try
         {
-            _amqpMessage.accept();
-            if(settle)
-            {
-                _amqpMessage.settle();
-            }
-            _receiverImpl.getConnectionImpl().stateChanged();
+            _amqpMessage.accept(settle);
+            _connectionImpl.stateChanged();
         }
         finally
         {
-            _receiverImpl.getConnectionImpl().releaseLock();
+            _connectionImpl.releaseLock();
         }
     }
 
-    public void settle()
+    AmqpMessage getAmqpMessage()
     {
-        _receiverImpl.getConnectionImpl().lock();
-        try
-        {
-            _amqpMessage.settle();
-            _receiverImpl.getConnectionImpl().stateChanged();
-        }
-        finally
-        {
-            _receiverImpl.getConnectionImpl().releaseLock();
-        }
+        return _amqpMessage;
     }
 
-    public void waitUntilSettled() throws TimeoutException, InterruptedException
+    @Override
+    public String getJMSMessageID() throws JMSException
     {
-        _receiverImpl.getConnectionImpl().lock();
-        try
-        {
-            _receiverImpl.getConnectionImpl().waitUntil(new SimplePredicate("Message is settled", _amqpMessage)
-            {
-                @Override
-                public boolean test()
-                {
-                    return _amqpMessage.isSettled();
-                }
-            }, AmqpConnection.TIMEOUT);
-        }
-        finally
-        {
-            _receiverImpl.getConnectionImpl().releaseLock();
-        }
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
     }
 
-    public Message getMessage()
+    @Override
+    public void setJMSMessageID(String id) throws JMSException
     {
-        return _amqpMessage.getMessage();
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public long getJMSTimestamp() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setJMSTimestamp(long timestamp) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public byte[] getJMSCorrelationIDAsBytes() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setJMSCorrelationIDAsBytes(byte[] correlationID) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setJMSCorrelationID(String correlationID) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public String getJMSCorrelationID() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public Destination getJMSReplyTo() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setJMSReplyTo(Destination replyTo) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public Destination getJMSDestination() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setJMSDestination(Destination destination) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public int getJMSDeliveryMode() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setJMSDeliveryMode(int deliveryMode) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public boolean getJMSRedelivered() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setJMSRedelivered(boolean redelivered) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public String getJMSType() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setJMSType(String type) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public long getJMSExpiration() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setJMSExpiration(long expiration) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public int getJMSPriority() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setJMSPriority(int priority) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void clearProperties() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public boolean propertyExists(String name) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public boolean getBooleanProperty(String name) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public byte getByteProperty(String name) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public short getShortProperty(String name) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public int getIntProperty(String name) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public long getLongProperty(String name) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public float getFloatProperty(String name) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public double getDoubleProperty(String name) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public String getStringProperty(String name) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public Object getObjectProperty(String name) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public Enumeration getPropertyNames() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setBooleanProperty(String name, boolean value) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setByteProperty(String name, byte value) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setShortProperty(String name, short value) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setIntProperty(String name, int value) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setLongProperty(String name, long value) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setFloatProperty(String name, float value) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setDoubleProperty(String name, double value) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setStringProperty(String name, String value) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setObjectProperty(String name, Object value) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void acknowledge() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void clearBody() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
     }
 }

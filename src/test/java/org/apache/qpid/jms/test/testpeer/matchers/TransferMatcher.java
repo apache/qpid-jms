@@ -32,18 +32,21 @@ import org.hamcrest.Matcher;
  */
 public class TransferMatcher extends FrameWithPayloadMatchingHandler
 {
-
-    private static final int FIELD_HANDLE = 0;
-    private static final int FIELD_DELIVERY_ID = 1;
-    private static final int FIELD_DELIVERY_TAG = 2;
-    private static final int FIELD_MESSAGE_FORMAT = 3;
-    private static final int FIELD_SETTLED = 4;
-    private static final int FIELD_MORE = 5;
-    private static final int FIELD_RCV_SETTLE_MODE = 6;
-    private static final int FIELD_STATE = 7;
-    private static final int FIELD_RESUME = 8;
-    private static final int FIELD_ABORTED = 9;
-    private static final int FIELD_BATCHABLE = 10;
+    /** Note that the ordinals of the Field enums match the order specified in the spec */
+    public enum Field
+    {
+        HANDLE,
+        DELIVERY_ID,
+        DELIVERY_TAG,
+        MESSAGE_FORMAT,
+        SETTLED,
+        MORE,
+        RCV_SETTLE_MODE,
+        STATE,
+        RESUME,
+        ABORTED,
+        BATCHABLE,
+    }
 
     public TransferMatcher()
     {
@@ -51,7 +54,7 @@ public class TransferMatcher extends FrameWithPayloadMatchingHandler
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000014L),
               Symbol.valueOf("amqp:transfer:list"),
-              new HashMap<Integer, Matcher<?>>(),
+              new HashMap<Enum<?>, Matcher<?>>(),
               null);
     }
 
@@ -64,124 +67,129 @@ public class TransferMatcher extends FrameWithPayloadMatchingHandler
 
     public TransferMatcher withHandle(Matcher<?> m)
     {
-        getMatchers().put(FIELD_HANDLE, m);
+        getMatchers().put(Field.HANDLE, m);
         return this;
     }
 
     public TransferMatcher withDeliveryId(Matcher<?> m)
     {
-        getMatchers().put(FIELD_DELIVERY_ID, m);
+        getMatchers().put(Field.DELIVERY_ID, m);
         return this;
     }
 
     public TransferMatcher withDeliveryTag(Matcher<?> m)
     {
-        getMatchers().put(FIELD_DELIVERY_TAG, m);
+        getMatchers().put(Field.DELIVERY_TAG, m);
         return this;
     }
 
     public TransferMatcher withMessageFormat(Matcher<?> m)
     {
-        getMatchers().put(FIELD_MESSAGE_FORMAT, m);
+        getMatchers().put(Field.MESSAGE_FORMAT, m);
         return this;
     }
 
     public TransferMatcher withSettled(Matcher<?> m)
     {
-        getMatchers().put(FIELD_SETTLED, m);
+        getMatchers().put(Field.SETTLED, m);
         return this;
     }
 
     public TransferMatcher withMore(Matcher<?> m)
     {
-        getMatchers().put(FIELD_MORE, m);
+        getMatchers().put(Field.MORE, m);
         return this;
     }
 
     public TransferMatcher withRcvSettleMode(Matcher<?> m)
     {
-        getMatchers().put(FIELD_RCV_SETTLE_MODE, m);
+        getMatchers().put(Field.RCV_SETTLE_MODE, m);
         return this;
     }
 
     public TransferMatcher withState(Matcher<?> m)
     {
-        getMatchers().put(FIELD_STATE, m);
+        getMatchers().put(Field.STATE, m);
         return this;
     }
 
     public TransferMatcher withResume(Matcher<?> m)
     {
-        getMatchers().put(FIELD_RESUME, m);
+        getMatchers().put(Field.RESUME, m);
         return this;
     }
 
     public TransferMatcher withAborted(Matcher<?> m)
     {
-        getMatchers().put(FIELD_ABORTED, m);
+        getMatchers().put(Field.ABORTED, m);
         return this;
     }
 
     public TransferMatcher withBatchable(Matcher<?> m)
     {
-        getMatchers().put(FIELD_BATCHABLE, m);
+        getMatchers().put(Field.BATCHABLE, m);
         return this;
     }
 
     public Object getReceivedHandle()
     {
-        return getReceivedFields().get(FIELD_HANDLE);
+        return getReceivedFields().get(Field.HANDLE);
     }
 
     public Object getReceivedDeliveryId()
     {
-        return getReceivedFields().get(FIELD_DELIVERY_ID);
+        return getReceivedFields().get(Field.DELIVERY_ID);
     }
 
     public Object getReceivedDeliveryTag()
     {
-        return getReceivedFields().get(FIELD_DELIVERY_TAG);
+        return getReceivedFields().get(Field.DELIVERY_TAG);
     }
 
     public Object getReceivedMessageFormat()
     {
-        return getReceivedFields().get(FIELD_MESSAGE_FORMAT);
+        return getReceivedFields().get(Field.MESSAGE_FORMAT);
     }
 
     public Object getReceivedSettled()
     {
-        return getReceivedFields().get(FIELD_SETTLED);
+        return getReceivedFields().get(Field.SETTLED);
     }
 
     public Object getReceivedMore()
     {
-        return getReceivedFields().get(FIELD_MORE);
+        return getReceivedFields().get(Field.MORE);
     }
 
     public Object getReceivedRcvSettleMode()
     {
-        return getReceivedFields().get(FIELD_RCV_SETTLE_MODE);
+        return getReceivedFields().get(Field.RCV_SETTLE_MODE);
     }
 
     public Object getReceivedState()
     {
-        return getReceivedFields().get(FIELD_STATE);
+        return getReceivedFields().get(Field.STATE);
     }
 
     public Object getReceivedResume()
     {
-        return getReceivedFields().get(FIELD_RESUME);
+        return getReceivedFields().get(Field.RESUME);
     }
 
     public Object getReceivedAborted()
     {
-        return getReceivedFields().get(FIELD_ABORTED);
+        return getReceivedFields().get(Field.ABORTED);
     }
 
     public Object getReceivedBatchable()
     {
-        return getReceivedFields().get(FIELD_BATCHABLE);
+        return getReceivedFields().get(Field.BATCHABLE);
     }
 
+    @Override
+    protected Enum<?> getField(int fieldIndex)
+    {
+        return Field.values()[fieldIndex];
+    }
 }
 

@@ -32,8 +32,12 @@ public abstract class MessageImpl implements Message
 
     protected MessageImpl()
     {
-        //TODO: move to AmqpSession.createMessage()?
         _amqpMessage = new AmqpMessage();
+    }
+
+    AmqpMessage getAmqpMessage()
+    {
+        return _amqpMessage;
     }
 
     @Override
@@ -351,9 +355,5 @@ public abstract class MessageImpl implements Message
         throw new UnsupportedOperationException("PHTODO");
     }
 
-    public AmqpMessage getAmqpMessage()
-    {
-        return _amqpMessage;
-    }
 
 }

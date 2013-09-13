@@ -32,10 +32,13 @@ import org.hamcrest.Matcher;
  */
 public class SaslInitMatcher extends FrameWithNoPayloadMatchingHandler
 {
-
-    private static final int FIELD_MECHANISM = 0;
-    private static final int FIELD_INITIAL_RESPONSE = 1;
-    private static final int FIELD_HOSTNAME = 2;
+    /** Note that the ordinals of the Field enums match the order specified in the spec */
+    public enum Field
+    {
+        MECHANISM,
+        INITIAL_RESPONSE,
+        HOSTNAME,
+    }
 
     public SaslInitMatcher()
     {
@@ -43,7 +46,7 @@ public class SaslInitMatcher extends FrameWithNoPayloadMatchingHandler
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000041L),
               Symbol.valueOf("amqp:sasl-init:list"),
-              new HashMap<Integer, Matcher<?>>(),
+              new HashMap<Enum<?>, Matcher<?>>(),
               null);
     }
 
@@ -56,36 +59,41 @@ public class SaslInitMatcher extends FrameWithNoPayloadMatchingHandler
 
     public SaslInitMatcher withMechanism(Matcher<?> m)
     {
-        getMatchers().put(FIELD_MECHANISM, m);
+        getMatchers().put(Field.MECHANISM, m);
         return this;
     }
 
     public SaslInitMatcher withInitialResponse(Matcher<?> m)
     {
-        getMatchers().put(FIELD_INITIAL_RESPONSE, m);
+        getMatchers().put(Field.INITIAL_RESPONSE, m);
         return this;
     }
 
     public SaslInitMatcher withHostname(Matcher<?> m)
     {
-        getMatchers().put(FIELD_HOSTNAME, m);
+        getMatchers().put(Field.HOSTNAME, m);
         return this;
     }
 
     public Object getReceivedMechanism()
     {
-        return getReceivedFields().get(FIELD_MECHANISM);
+        return getReceivedFields().get(Field.MECHANISM);
     }
 
     public Object getReceivedInitialResponse()
     {
-        return getReceivedFields().get(FIELD_INITIAL_RESPONSE);
+        return getReceivedFields().get(Field.INITIAL_RESPONSE);
     }
 
     public Object getReceivedHostname()
     {
-        return getReceivedFields().get(FIELD_HOSTNAME);
+        return getReceivedFields().get(Field.HOSTNAME);
     }
 
+    @Override
+    protected Enum<?> getField(int fieldIndex)
+    {
+        return Field.values()[fieldIndex];
+    }
 }
 

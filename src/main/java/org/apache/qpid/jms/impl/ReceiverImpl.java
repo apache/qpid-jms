@@ -20,30 +20,58 @@
  */
 package org.apache.qpid.jms.impl;
 
-import org.apache.qpid.jms.engine.AmqpReceivedMessage;
-import org.apache.qpid.jms.engine.AmqpReceiver;
-import org.apache.qpid.proton.TimeoutException;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
 
-public class ReceiverImpl extends LinkImpl
+import org.apache.qpid.jms.engine.AmqpMessage;
+import org.apache.qpid.jms.engine.AmqpReceiver;
+
+public class ReceiverImpl extends LinkImpl implements MessageConsumer
 {
     private final AmqpReceiver _amqpReceiver;
+    private final SessionImpl _sessionImpl;
 
-    public ReceiverImpl(SessionImpl sessionImpl, AmqpReceiver amqpReceiver)
+    public ReceiverImpl(ConnectionImpl connectionImpl, SessionImpl sessionImpl, AmqpReceiver amqpReceiver)
     {
-        super(sessionImpl, amqpReceiver);
+        super(connectionImpl, amqpReceiver);
+        _sessionImpl = sessionImpl;
         _amqpReceiver = amqpReceiver;
     }
 
-    public ReceivedMessageImpl receive(long timeout) throws TimeoutException, InterruptedException
+    @Override
+    public Message receive() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public Message receive(long timeout) throws JMSException
     {
         getConnectionImpl().lock();
         try
         {
+            if(!getConnectionImpl().isStarted())
+            {
+                return null;
+            }
+
             MessageReceivedPredicate messageReceievedCondition = new MessageReceivedPredicate();
             getConnectionImpl().waitUntil(messageReceievedCondition, timeout);
-            getConnectionImpl().stateChanged();
 
-            return new ReceivedMessageImpl(messageReceievedCondition.getReceivedMessage(), this);
+            //TODO: decide what if any particular message impl class to instantiate
+            //TODO: accepting/settling will be acknowledge-mode dependent
+            ReceivedMessageImpl receivedMessageImpl = new ReceivedMessageImpl(messageReceievedCondition.getReceivedMessage(), _sessionImpl);
+            receivedMessageImpl.accept(true);
+            getConnectionImpl().stateChanged();
+            return receivedMessageImpl;
+        }
+        catch (JmsTimeoutException e)
+        {
+            //No message in allotted time, return null to signal this
+            return null;
         }
         finally
         {
@@ -67,7 +95,7 @@ public class ReceiverImpl extends LinkImpl
 
     private final class MessageReceivedPredicate extends SimplePredicate
     {
-        AmqpReceivedMessage _message;
+        AmqpMessage _message;
 
         public MessageReceivedPredicate()
         {
@@ -84,10 +112,38 @@ public class ReceiverImpl extends LinkImpl
             return _message != null;
         }
 
-        public AmqpReceivedMessage getReceivedMessage()
+        public AmqpMessage getReceivedMessage()
         {
             return _message;
         }
+    }
+
+    @Override
+    public String getMessageSelector() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public MessageListener getMessageListener() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public void setMessageListener(MessageListener listener) throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
+    }
+
+    @Override
+    public Message receiveNoWait() throws JMSException
+    {
+        // PHTODO Auto-generated method stub
+        throw new UnsupportedOperationException("PHTODO");
     }
 
 }

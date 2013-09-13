@@ -21,8 +21,6 @@ package org.apache.qpid.jms.impl;
 import javax.jms.JMSException;
 import javax.jms.TextMessage;
 
-import org.apache.qpid.proton.amqp.messaging.AmqpValue;
-
 public class TextMessageImpl extends MessageImpl implements TextMessage
 {
     public TextMessageImpl() throws JMSException
@@ -45,10 +43,7 @@ public class TextMessageImpl extends MessageImpl implements TextMessage
     @Override
     public void setText(String string) throws JMSException
     {
-        AmqpValue body = new AmqpValue(string);
-
-        //TODO: stop accessing the Proton Message directly
-        getAmqpMessage().getMessage().setBody(body);
+        getAmqpMessage().setText(string);
     }
 
 }

@@ -32,9 +32,12 @@ import org.hamcrest.Matcher;
  */
 public class SaslOutcomeMatcher extends FrameWithNoPayloadMatchingHandler
 {
-
-    private static final int FIELD_CODE = 0;
-    private static final int FIELD_ADDITIONAL_DATA = 1;
+    /** Note that the ordinals of the Field enums match the order specified in the spec */
+    public enum Field
+    {
+        CODE,
+        ADDITIONAL_DATA,
+    }
 
     public SaslOutcomeMatcher()
     {
@@ -42,7 +45,7 @@ public class SaslOutcomeMatcher extends FrameWithNoPayloadMatchingHandler
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000044L),
               Symbol.valueOf("amqp:sasl-outcome:list"),
-              new HashMap<Integer, Matcher<?>>(),
+              new HashMap<Enum<?>, Matcher<?>>(),
               null);
     }
 
@@ -55,25 +58,30 @@ public class SaslOutcomeMatcher extends FrameWithNoPayloadMatchingHandler
 
     public SaslOutcomeMatcher withCode(Matcher<?> m)
     {
-        getMatchers().put(FIELD_CODE, m);
+        getMatchers().put(Field.CODE, m);
         return this;
     }
 
     public SaslOutcomeMatcher withAdditionalData(Matcher<?> m)
     {
-        getMatchers().put(FIELD_ADDITIONAL_DATA, m);
+        getMatchers().put(Field.ADDITIONAL_DATA, m);
         return this;
     }
 
     public Object getReceivedCode()
     {
-        return getReceivedFields().get(FIELD_CODE);
+        return getReceivedFields().get(Field.CODE);
     }
 
     public Object getReceivedAdditionalData()
     {
-        return getReceivedFields().get(FIELD_ADDITIONAL_DATA);
+        return getReceivedFields().get(Field.ADDITIONAL_DATA);
     }
 
+    @Override
+    protected Enum<?> getField(int fieldIndex)
+    {
+        return Field.values()[fieldIndex];
+    }
 }
 

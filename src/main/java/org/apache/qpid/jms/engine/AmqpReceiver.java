@@ -40,7 +40,7 @@ public class AmqpReceiver extends AmqpLink
         _protonReceiver.flow(credit);
     }
 
-    public AmqpReceivedMessage receiveNoWait()
+    public AmqpMessage receiveNoWait()
     {
         synchronized (getAmqpConnection())
         {
@@ -74,7 +74,7 @@ public class AmqpReceiver extends AmqpLink
                         Message message = getAmqpConnection().getMessageFactory().createMessage();
                         message.decode(_buffer, 0, total);
 
-                        AmqpReceivedMessage amqpMessage = new AmqpReceivedMessage(currentDelivery, message, this);
+                        AmqpMessage amqpMessage = new AmqpMessage(currentDelivery, message, this);
                         currentDelivery.setContext(amqpMessage);
                         _protonReceiver.advance();
                         return amqpMessage;

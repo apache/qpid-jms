@@ -21,8 +21,14 @@ package org.apache.qpid.jms.test.testpeer;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
+import java.util.logging.Logger;
+
+import org.apache.qpid.proton.amqp.Binary;
+
 class HeaderHandlerImpl implements HeaderHandler
 {
+    private static final Logger _logger = Logger.getLogger(HeaderHandlerImpl.class.getName());
+
     private final byte[] _expectedHeader;
     private final byte[] _response;
     private final Runnable _onSuccess;
@@ -49,6 +55,8 @@ class HeaderHandlerImpl implements HeaderHandler
     @Override
     public void header(byte[] header, TestAmqpPeer peer)
     {
+        _logger.fine("About to check received header " + new Binary(header));
+
         assertThat("Header should match", header, equalTo(_expectedHeader));
         peer.sendHeader(_response);
         if(_onSuccess !=null)
@@ -56,5 +64,11 @@ class HeaderHandlerImpl implements HeaderHandler
             _onSuccess.run();
         }
         _isComplete = true;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "HeaderHandlerImpl [_expectedHeader=" + new Binary(_expectedHeader) + "]";
     }
 }

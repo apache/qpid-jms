@@ -41,4 +41,10 @@ public abstract class ListDescribedType implements DescribedType
     {
         return _fields;
     }
+
+    @Override
+    public String toString()
+    {
+        return "ListDescribedType [descriptor=" + getDescriptor() + " fields=" + Arrays.toString(_fields) + "]";
+    }
 }

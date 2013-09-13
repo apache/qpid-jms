@@ -18,14 +18,17 @@
  */
 package org.apache.qpid.jms.test.testpeer;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
 import org.apache.qpid.jms.test.testpeer.describedtypes.AttachFrame;
@@ -36,25 +39,33 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.FlowFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.OpenFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.SaslMechanismsFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.SaslOutcomeFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.TransferFrame;
 import org.apache.qpid.jms.test.testpeer.matchers.AttachMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.BeginMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.CloseMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.DispositionMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.FlowMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.OpenMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.SaslInitMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.TransferMatcher;
+import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.UnsignedShort;
+import org.apache.qpid.proton.codec.Data;
 import org.apache.qpid.proton.engine.impl.AmqpHeader;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
+import org.junit.Assert;
 
-
+// TODO should expectXXXYYYZZZ methods just be expect(matcher)?
 public class TestAmqpPeer implements AutoCloseable
 {
+    private static final Logger _logger = Logger.getLogger(TestAmqpPeer.class.getName());
+
     /** Roles are represented as booleans - see AMQP spec 2.8.1*/
     private static final boolean SENDER_ROLE = false;
 
@@ -67,7 +78,19 @@ public class TestAmqpPeer implements AutoCloseable
 
     private final TestAmqpPeerRunner _driverRunnable;
     private final Thread _driverThread;
-    private final List<Handler> _handlers = Collections.synchronizedList(new ArrayList<Handler>());
+
+    /**
+     * Guarded by {@link #_handlersLock}
+     */
+    private final List<Handler> _handlers = new ArrayList<Handler>();
+    private final Object _handlersLock = new Object();
+
+    /**
+     * Guarded by {@link #_handlersLock}
+     */
+    private CountDownLatch _handlersCompletedLatch;
+
+    private int _nextLinkHandle = 100;
 
     public TestAmqpPeer(int port) throws IOException
     {
@@ -76,8 +99,13 @@ public class TestAmqpPeer implements AutoCloseable
         _driverThread.start();
     }
 
+    /**
+     * Shuts down the test peer, throwing any Exception
+     * that occurred on the peer, or validating that no
+     * unused matchers remain.
+     */
     @Override
-    public void close() throws IOException
+    public void close() throws Exception
     {
         _driverRunnable.stop();
 
@@ -88,6 +116,20 @@ public class TestAmqpPeer implements AutoCloseable
         catch (InterruptedException e)
         {
             Thread.currentThread().interrupt();
+        }
+        finally
+        {
+            if(getException() == null)
+            {
+                synchronized(_handlersLock)
+                {
+                    assertThat(_handlers, Matchers.empty());
+                }
+            }
+            else
+            {
+                throw getException();
+            }
         }
     }
 
@@ -104,7 +146,7 @@ public class TestAmqpPeer implements AutoCloseable
             ((HeaderHandler)handler).header(header,this);
             if(handler.isComplete())
             {
-                _handlers.remove(0);
+                removeFirstHandler();
             }
         }
         else
@@ -121,7 +163,7 @@ public class TestAmqpPeer implements AutoCloseable
             ((FrameHandler)handler).frame(type, channel, describedType, payload, this);
             if(handler.isComplete())
             {
-                _handlers.remove(0);
+                removeFirstHandler();
             }
         }
         else
@@ -130,22 +172,64 @@ public class TestAmqpPeer implements AutoCloseable
         }
     }
 
+    private void removeFirstHandler()
+    {
+        synchronized(_handlersLock)
+        {
+            Handler h = _handlers.remove(0);
+            if(_handlersCompletedLatch != null)
+            {
+                _handlersCompletedLatch.countDown();
+            }
+            _logger.finest("Removed completed handler: " + h);
+        }
+    }
+
+    private void addHandler(Handler handler)
+    {
+        synchronized(_handlersLock)
+        {
+            _handlers.add(handler);
+            _logger.fine("Added handler " + handler);
+        }
+    }
+
     private Handler getFirstHandler()
     {
-        if(_handlers.isEmpty())
+        synchronized(_handlersLock)
         {
-            throw new IllegalStateException("No handlers");
+            if(_handlers.isEmpty())
+            {
+                throw new IllegalStateException("No handlers");
+            }
+            return _handlers.get(0);
         }
-        return _handlers.get(0);
+    }
+
+    public void waitForAllHandlersToComplete() throws InterruptedException
+    {
+        final int timeoutSeconds = 5;
+
+        synchronized(_handlersLock)
+        {
+            _handlersCompletedLatch = new CountDownLatch(_handlers.size());
+        }
+
+        boolean countedDownOk = _handlersCompletedLatch.await(timeoutSeconds, TimeUnit.SECONDS);
+
+        Assert.assertTrue(
+                "All handlers should have completed within the " + timeoutSeconds + "s timeout", countedDownOk);
     }
 
     void sendHeader(byte[] header)
     {
+        _logger.fine("About to send header "+ new Binary(header));
         _driverRunnable.sendBytes(header);
     }
 
     public void sendFrame(FrameType type, int channel, DescribedType describedType, Binary payload)
     {
+        _logger.fine("About to send "+ describedType);
         byte[] output = AmqpDataFramer.encodeFrame(type, channel, describedType, payload);
         _driverRunnable.sendBytes(output);
     }
@@ -153,7 +237,7 @@ public class TestAmqpPeer implements AutoCloseable
     public void expectPlainConnect(String username, String password, boolean authorize)
     {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(Symbol.valueOf("PLAIN"));
-        _handlers.add(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
+        addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
                                             new FrameSender(
                                                     this, FrameType.SASL, 0,
                                                     saslMechanismsFrame, null)));
@@ -164,7 +248,7 @@ public class TestAmqpPeer implements AutoCloseable
         System.arraycopy(usernameBytes, 0, data, 1, usernameBytes.length);
         System.arraycopy(passwordBytes, 0, data, 2 + usernameBytes.length, passwordBytes.length);
 
-        _handlers.add(new SaslInitMatcher()
+        addHandler(new SaslInitMatcher()
             .withMechanism(equalTo(Symbol.valueOf("PLAIN")))
             .withInitialResponse(equalTo(new Binary(data)))
             .onSuccess(new AmqpPeerRunnable()
@@ -180,9 +264,9 @@ public class TestAmqpPeer implements AutoCloseable
                 }
             }));
 
-        _handlers.add(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
+        addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
 
-        _handlers.add(new OpenMatcher()
+        addHandler(new OpenMatcher()
             .withContainerId(notNullValue(String.class))
             .onSuccess(new FrameSender(
                     this, FrameType.AMQP, 0,
@@ -192,7 +276,7 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectClose()
     {
-        _handlers.add(new CloseMatcher()
+        addHandler(new CloseMatcher()
             .withError(Matchers.nullValue())
             .onSuccess(new FrameSender(this, FrameType.AMQP, 0,
                     new CloseFrame(),
@@ -209,9 +293,9 @@ public class TestAmqpPeer implements AutoCloseable
 
         // the response will have its remote channel dynamically set based on incoming value
         final BeginFrame beginResponse = new BeginFrame()
-            .setNextOutgoingId(UnsignedInteger.valueOf(0))
-            .setIncomingWindow(UnsignedInteger.valueOf(0))
-            .setOutgoingWindow(UnsignedInteger.valueOf(0));
+            .setNextOutgoingId(UnsignedInteger.ZERO)
+            .setIncomingWindow(UnsignedInteger.ZERO)
+            .setOutgoingWindow(UnsignedInteger.ZERO);
 
         beginMatcher.onSuccess(
                 new FrameSender(this, FrameType.AMQP, 0, beginResponse, null)
@@ -225,29 +309,24 @@ public class TestAmqpPeer implements AutoCloseable
                             }
                         }));
 
-        _handlers.add(beginMatcher);
+        addHandler(beginMatcher);
     }
 
     public void expectSenderAttach()
     {
-        expectAttach(SENDER_ROLE);
-    }
-
-    private void expectAttach(boolean role)
-    {
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())
                 .withHandle(notNullValue())
-                .withRole(equalTo(role))
+                .withRole(equalTo(SENDER_ROLE))
                 .withSndSettleMode(equalTo(ATTACH_SND_SETTLE_MODE_UNSETTLED))
                 .withRcvSettleMode(equalTo(ATTACH_RCV_SETTLE_MODE_FIRST))
                 .withSource(notNullValue())
                 .withTarget(notNullValue());
 
-        UnsignedInteger linkHandle = UnsignedInteger.valueOf(101);
+        UnsignedInteger linkHandle = UnsignedInteger.valueOf(_nextLinkHandle++);
         final AttachFrame attachResponse = new AttachFrame()
                             .setHandle(linkHandle)
-                            .setRole(!role)
+                            .setRole(RECEIVER_ROLE)
                             .setSndSettleMode(ATTACH_SND_SETTLE_MODE_UNSETTLED)
                             .setRcvSettleMode(ATTACH_RCV_SETTLE_MODE_FIRST);
 
@@ -263,9 +342,9 @@ public class TestAmqpPeer implements AutoCloseable
                                 }
                             });
 
-        final FlowFrame flowFrame = new FlowFrame().setNextIncomingId(UnsignedInteger.valueOf(0))
+        final FlowFrame flowFrame = new FlowFrame().setNextIncomingId(UnsignedInteger.ZERO)
                 .setIncomingWindow(UnsignedInteger.valueOf(2048))
-                .setNextOutgoingId(UnsignedInteger.valueOf(0))
+                .setNextOutgoingId(UnsignedInteger.ZERO)
                 .setOutgoingWindow(UnsignedInteger.valueOf(2048))
                 .setLinkCredit(UnsignedInteger.valueOf(100))
                 .setHandle(linkHandle);
@@ -286,7 +365,86 @@ public class TestAmqpPeer implements AutoCloseable
 
         attachMatcher.onSuccess(composite);
 
-        _handlers.add(attachMatcher);
+        addHandler(attachMatcher);
+    }
+
+    public void expectReceiverAttach()
+    {
+        final AttachMatcher attachMatcher = new AttachMatcher()
+                .withName(notNullValue())
+                .withHandle(notNullValue())
+                .withRole(equalTo(RECEIVER_ROLE))
+                .withSndSettleMode(equalTo(ATTACH_SND_SETTLE_MODE_UNSETTLED))
+                .withRcvSettleMode(equalTo(ATTACH_RCV_SETTLE_MODE_FIRST))
+                .withSource(notNullValue())
+                .withTarget(notNullValue());
+
+        UnsignedInteger linkHandle = UnsignedInteger.valueOf(_nextLinkHandle++);
+        final AttachFrame attachResponse = new AttachFrame()
+                            .setHandle(linkHandle)
+                            .setRole(SENDER_ROLE)
+                            .setSndSettleMode(ATTACH_SND_SETTLE_MODE_UNSETTLED)
+                            .setRcvSettleMode(ATTACH_RCV_SETTLE_MODE_FIRST)
+                            .setInitialDeliveryCount(UnsignedInteger.ZERO);
+
+        FrameSender attachResponseSender = new FrameSender(this, FrameType.AMQP, 0, attachResponse, null)
+                            .setValueProvider(new ValueProvider()
+                            {
+                                @Override
+                                public void setValues()
+                                {
+                                    attachResponse.setName(attachMatcher.getReceivedName());
+                                    attachResponse.setSource(attachMatcher.getReceivedSource());
+                                    attachResponse.setTarget(attachMatcher.getReceivedTarget());
+                                }
+                            });
+
+        attachMatcher.onSuccess(attachResponseSender);
+
+        addHandler(attachMatcher);
+    }
+
+    public void expectLinkFlowRespondWithTransfer()
+    {
+        final FlowMatcher flowMatcher = new FlowMatcher()
+                        .withLinkCredit(Matchers.greaterThan(UnsignedInteger.ZERO));
+
+        final TransferFrame transferResponse = new TransferFrame()
+            .setHandle(UnsignedInteger.valueOf(_nextLinkHandle - 1)) // TODO: this needs to be the value used in the attach response
+            .setDeliveryId(UnsignedInteger.ZERO) // TODO: we shouldn't assume this is the first transfer on the session
+            .setDeliveryTag(new Binary("theDeliveryTag".getBytes()))
+            .setMessageFormat(UnsignedInteger.ZERO)
+            .setSettled(false);
+
+        Data payloadData = Proton.data(1024);
+
+        // TODO: create an actual AmqpValue described type?
+        payloadData.putDescribedType(new DescribedType()
+        {
+            @Override
+            public Object getDescriptor()
+            {
+                return  Symbol.valueOf("amqp:amqp-value:*");
+            }
+
+            @Override
+            public Object getDescribed()
+            {
+                return "Hello World";
+            }
+        });
+        Binary payload = payloadData.encode();
+
+        FrameSender transferResponseSender = new FrameSender(
+                this,
+                FrameType.AMQP,
+                0, // TODO use correct channel number (and check for dodgy hard-coded zeros elsewhere)
+                transferResponse,
+                payload);
+
+        flowMatcher.onSuccess(transferResponseSender);
+
+        addHandler(flowMatcher);
     }
 
     public void expectTransfer(Matcher<Binary> expectedPayloadMatcher)
@@ -310,6 +468,13 @@ public class TestAmqpPeer implements AutoCloseable
                             });
         transferMatcher.onSuccess(dispositionFrameSender);
 
-        _handlers.add(transferMatcher);
+        addHandler(transferMatcher);
+    }
+
+    public void expectDispositionThatIsAcceptedAndSettled()
+    {
+        addHandler(new DispositionMatcher()
+            .withSettled(equalTo(true))
+            .withState(new DescriptorMatcher(Accepted.DESCRIPTOR_CODE, Accepted.DESCRIPTOR_SYMBOL)));
     }
 }

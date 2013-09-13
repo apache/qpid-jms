@@ -82,12 +82,14 @@ public class AmqpConnectionDriver
         int port = amqpConnection.getPort();
 
         SocketChannel channel = null;
+        String threadName = null;
         try
         {
             channel = SocketChannel.open();
             channel.configureBlocking(true);
             channel.connect(new InetSocketAddress(remoteHost, port));
             channel.configureBlocking(false);
+            threadName = "DriverRunnable-" + channel.getLocalAddress() + "/" + channel.getRemoteAddress();
         }
         catch (IOException e)
         {
@@ -108,7 +110,8 @@ public class AmqpConnectionDriver
         amqpConnection.setSasl(sasl);
 
         _driverRunnable = new DriverRunnable();
-        _driverThread = new Thread(_driverRunnable); // TODO set a sensible thread name
+        _driverThread = new Thread(_driverRunnable);
+        _driverThread.setName(threadName);
         _driverThread.start();
     }
 

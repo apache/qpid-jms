@@ -32,17 +32,20 @@ import org.hamcrest.Matcher;
  */
 public class OpenMatcher extends FrameWithNoPayloadMatchingHandler
 {
-
-    private static final int FIELD_CONTAINER_ID = 0;
-    private static final int FIELD_HOSTNAME = 1;
-    private static final int FIELD_MAX_FRAME_SIZE = 2;
-    private static final int FIELD_CHANNEL_MAX = 3;
-    private static final int FIELD_IDLE_TIME_OUT = 4;
-    private static final int FIELD_OUTGOING_LOCALES = 5;
-    private static final int FIELD_INCOMING_LOCALES = 6;
-    private static final int FIELD_OFFERED_CAPABILITIES = 7;
-    private static final int FIELD_DESIRED_CAPABILITIES = 8;
-    private static final int FIELD_PROPERTIES = 9;
+    /** Note that the ordinals of the Field enums match the order specified in the spec */
+    public enum Field
+    {
+        CONTAINER_ID,
+        HOSTNAME,
+        MAX_FRAME_SIZE,
+        CHANNEL_MAX,
+        IDLE_TIME_OUT,
+        OUTGOING_LOCALES,
+        INCOMING_LOCALES,
+        OFFERED_CAPABILITIES,
+        DESIRED_CAPABILITIES,
+        PROPERTIES,
+    }
 
     public OpenMatcher()
     {
@@ -50,7 +53,7 @@ public class OpenMatcher extends FrameWithNoPayloadMatchingHandler
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000010L),
               Symbol.valueOf("amqp:open:list"),
-              new HashMap<Integer, Matcher<?>>(),
+              new HashMap<Enum<?>, Matcher<?>>(),
               null);
     }
 
@@ -63,113 +66,118 @@ public class OpenMatcher extends FrameWithNoPayloadMatchingHandler
 
     public OpenMatcher withContainerId(Matcher<?> m)
     {
-        getMatchers().put(FIELD_CONTAINER_ID, m);
+        getMatchers().put(Field.CONTAINER_ID, m);
         return this;
     }
 
     public OpenMatcher withHostname(Matcher<?> m)
     {
-        getMatchers().put(FIELD_HOSTNAME, m);
+        getMatchers().put(Field.HOSTNAME, m);
         return this;
     }
 
     public OpenMatcher withMaxFrameSize(Matcher<?> m)
     {
-        getMatchers().put(FIELD_MAX_FRAME_SIZE, m);
+        getMatchers().put(Field.MAX_FRAME_SIZE, m);
         return this;
     }
 
     public OpenMatcher withChannelMax(Matcher<?> m)
     {
-        getMatchers().put(FIELD_CHANNEL_MAX, m);
+        getMatchers().put(Field.CHANNEL_MAX, m);
         return this;
     }
 
     public OpenMatcher withIdleTimeOut(Matcher<?> m)
     {
-        getMatchers().put(FIELD_IDLE_TIME_OUT, m);
+        getMatchers().put(Field.IDLE_TIME_OUT, m);
         return this;
     }
 
     public OpenMatcher withOutgoingLocales(Matcher<?> m)
     {
-        getMatchers().put(FIELD_OUTGOING_LOCALES, m);
+        getMatchers().put(Field.OUTGOING_LOCALES, m);
         return this;
     }
 
     public OpenMatcher withIncomingLocales(Matcher<?> m)
     {
-        getMatchers().put(FIELD_INCOMING_LOCALES, m);
+        getMatchers().put(Field.INCOMING_LOCALES, m);
         return this;
     }
 
     public OpenMatcher withOfferedCapabilities(Matcher<?> m)
     {
-        getMatchers().put(FIELD_OFFERED_CAPABILITIES, m);
+        getMatchers().put(Field.OFFERED_CAPABILITIES, m);
         return this;
     }
 
     public OpenMatcher withDesiredCapabilities(Matcher<?> m)
     {
-        getMatchers().put(FIELD_DESIRED_CAPABILITIES, m);
+        getMatchers().put(Field.DESIRED_CAPABILITIES, m);
         return this;
     }
 
     public OpenMatcher withProperties(Matcher<?> m)
     {
-        getMatchers().put(FIELD_PROPERTIES, m);
+        getMatchers().put(Field.PROPERTIES, m);
         return this;
     }
 
     public Object getReceivedContainerId()
     {
-        return getReceivedFields().get(FIELD_CONTAINER_ID);
+        return getReceivedFields().get(Field.CONTAINER_ID);
     }
 
     public Object getReceivedHostname()
     {
-        return getReceivedFields().get(FIELD_HOSTNAME);
+        return getReceivedFields().get(Field.HOSTNAME);
     }
 
     public Object getReceivedMaxFrameSize()
     {
-        return getReceivedFields().get(FIELD_MAX_FRAME_SIZE);
+        return getReceivedFields().get(Field.MAX_FRAME_SIZE);
     }
 
     public Object getReceivedChannelMax()
     {
-        return getReceivedFields().get(FIELD_CHANNEL_MAX);
+        return getReceivedFields().get(Field.CHANNEL_MAX);
     }
 
     public Object getReceivedIdleTimeOut()
     {
-        return getReceivedFields().get(FIELD_IDLE_TIME_OUT);
+        return getReceivedFields().get(Field.IDLE_TIME_OUT);
     }
 
     public Object getReceivedOutgoingLocales()
     {
-        return getReceivedFields().get(FIELD_OUTGOING_LOCALES);
+        return getReceivedFields().get(Field.OUTGOING_LOCALES);
     }
 
     public Object getReceivedIncomingLocales()
     {
-        return getReceivedFields().get(FIELD_INCOMING_LOCALES);
+        return getReceivedFields().get(Field.INCOMING_LOCALES);
     }
 
     public Object getReceivedOfferedCapabilities()
     {
-        return getReceivedFields().get(FIELD_OFFERED_CAPABILITIES);
+        return getReceivedFields().get(Field.OFFERED_CAPABILITIES);
     }
 
     public Object getReceivedDesiredCapabilities()
     {
-        return getReceivedFields().get(FIELD_DESIRED_CAPABILITIES);
+        return getReceivedFields().get(Field.DESIRED_CAPABILITIES);
     }
 
     public Object getReceivedProperties()
     {
-        return getReceivedFields().get(FIELD_PROPERTIES);
+        return getReceivedFields().get(Field.PROPERTIES);
     }
 
+    @Override
+    protected Enum<?> getField(int fieldIndex)
+    {
+        return Field.values()[fieldIndex];
+    }
 }
 

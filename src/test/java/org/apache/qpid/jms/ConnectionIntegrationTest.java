@@ -29,8 +29,7 @@ import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.junit.Test;
 
 // TODO find a way to make the test abort immediately if the TestAmqpPeer throws an exception
-// TODO add tests such as testBrokerDoesNotRespond and testBrokerSendsWrongFrame
-public class ConnectionIntegrationTest
+public class ConnectionIntegrationTest extends QpidJmsTestCase
 {
     private final IntegrationTestFixture _testFixture = new IntegrationTestFixture();
 

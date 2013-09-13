@@ -32,15 +32,18 @@ import org.hamcrest.Matcher;
  */
 public class BeginMatcher extends FrameWithNoPayloadMatchingHandler
 {
-
-    private static final int FIELD_REMOTE_CHANNEL = 0;
-    private static final int FIELD_NEXT_OUTGOING_ID = 1;
-    private static final int FIELD_INCOMING_WINDOW = 2;
-    private static final int FIELD_OUTGOING_WINDOW = 3;
-    private static final int FIELD_HANDLE_MAX = 4;
-    private static final int FIELD_OFFERED_CAPABILITIES = 5;
-    private static final int FIELD_DESIRED_CAPABILITIES = 6;
-    private static final int FIELD_PROPERTIES = 7;
+    /** Note that the ordinals of the Field enums match the order specified in the spec */
+    public enum Field
+    {
+        REMOTE_CHANNEL,
+        NEXT_OUTGOING_ID,
+        INCOMING_WINDOW,
+        OUTGOING_WINDOW,
+        HANDLE_MAX,
+        OFFERED_CAPABILITIES,
+        DESIRED_CAPABILITIES,
+        PROPERTIES,
+    }
 
     public BeginMatcher()
     {
@@ -48,7 +51,7 @@ public class BeginMatcher extends FrameWithNoPayloadMatchingHandler
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000011L),
               Symbol.valueOf("amqp:begin:list"),
-              new HashMap<Integer, Matcher<?>>(),
+              new HashMap<Enum<?>, Matcher<?>>(),
               null);
     }
 
@@ -61,91 +64,96 @@ public class BeginMatcher extends FrameWithNoPayloadMatchingHandler
 
     public BeginMatcher withRemoteChannel(Matcher<?> m)
     {
-        getMatchers().put(FIELD_REMOTE_CHANNEL, m);
+        getMatchers().put(Field.REMOTE_CHANNEL, m);
         return this;
     }
 
     public BeginMatcher withNextOutgoingId(Matcher<?> m)
     {
-        getMatchers().put(FIELD_NEXT_OUTGOING_ID, m);
+        getMatchers().put(Field.NEXT_OUTGOING_ID, m);
         return this;
     }
 
     public BeginMatcher withIncomingWindow(Matcher<?> m)
     {
-        getMatchers().put(FIELD_INCOMING_WINDOW, m);
+        getMatchers().put(Field.INCOMING_WINDOW, m);
         return this;
     }
 
     public BeginMatcher withOutgoingWindow(Matcher<?> m)
     {
-        getMatchers().put(FIELD_OUTGOING_WINDOW, m);
+        getMatchers().put(Field.OUTGOING_WINDOW, m);
         return this;
     }
 
     public BeginMatcher withHandleMax(Matcher<?> m)
     {
-        getMatchers().put(FIELD_HANDLE_MAX, m);
+        getMatchers().put(Field.HANDLE_MAX, m);
         return this;
     }
 
     public BeginMatcher withOfferedCapabilities(Matcher<?> m)
     {
-        getMatchers().put(FIELD_OFFERED_CAPABILITIES, m);
+        getMatchers().put(Field.OFFERED_CAPABILITIES, m);
         return this;
     }
 
     public BeginMatcher withDesiredCapabilities(Matcher<?> m)
     {
-        getMatchers().put(FIELD_DESIRED_CAPABILITIES, m);
+        getMatchers().put(Field.DESIRED_CAPABILITIES, m);
         return this;
     }
 
     public BeginMatcher withProperties(Matcher<?> m)
     {
-        getMatchers().put(FIELD_PROPERTIES, m);
+        getMatchers().put(Field.PROPERTIES, m);
         return this;
     }
 
     public Object getReceivedRemoteChannel()
     {
-        return getReceivedFields().get(FIELD_REMOTE_CHANNEL);
+        return getReceivedFields().get(Field.REMOTE_CHANNEL);
     }
 
     public Object getReceivedNextOutgoingId()
     {
-        return getReceivedFields().get(FIELD_NEXT_OUTGOING_ID);
+        return getReceivedFields().get(Field.NEXT_OUTGOING_ID);
     }
 
     public Object getReceivedIncomingWindow()
     {
-        return getReceivedFields().get(FIELD_INCOMING_WINDOW);
+        return getReceivedFields().get(Field.INCOMING_WINDOW);
     }
 
     public Object getReceivedOutgoingWindow()
     {
-        return getReceivedFields().get(FIELD_OUTGOING_WINDOW);
+        return getReceivedFields().get(Field.OUTGOING_WINDOW);
     }
 
     public Object getReceivedHandleMax()
     {
-        return getReceivedFields().get(FIELD_HANDLE_MAX);
+        return getReceivedFields().get(Field.HANDLE_MAX);
     }
 
     public Object getReceivedOfferedCapabilities()
     {
-        return getReceivedFields().get(FIELD_OFFERED_CAPABILITIES);
+        return getReceivedFields().get(Field.OFFERED_CAPABILITIES);
     }
 
     public Object getReceivedDesiredCapabilities()
     {
-        return getReceivedFields().get(FIELD_DESIRED_CAPABILITIES);
+        return getReceivedFields().get(Field.DESIRED_CAPABILITIES);
     }
 
     public Object getReceivedProperties()
     {
-        return getReceivedFields().get(FIELD_PROPERTIES);
+        return getReceivedFields().get(Field.PROPERTIES);
     }
 
+    @Override
+    protected Enum<?> getField(int fieldIndex)
+    {
+        return Field.values()[fieldIndex];
+    }
 }
 

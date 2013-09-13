@@ -24,23 +24,19 @@ import javax.jms.JMSException;
 
 import org.apache.qpid.jms.engine.AmqpConnection;
 import org.apache.qpid.jms.engine.AmqpLink;
-import org.apache.qpid.jms.engine.LinkException;
-import org.apache.qpid.proton.TimeoutException;
 
 public class LinkImpl
 {
-    private SessionImpl _sessionImpl;
     private ConnectionImpl _connectionImpl;
     private AmqpLink _amqpLink;
 
-    public LinkImpl(SessionImpl sessionImpl, AmqpLink amqpLink)
+    public LinkImpl(ConnectionImpl connectionImpl, AmqpLink amqpLink)
     {
-        _sessionImpl = sessionImpl;
-        _connectionImpl = _sessionImpl.getConnectionImpl();
+        _connectionImpl = connectionImpl;
         _amqpLink = amqpLink;
     }
 
-    public void establish() throws TimeoutException, InterruptedException, LinkException
+    public void establish() throws LinkException, JmsTimeoutException, JmsInterruptedException
     {
         _connectionImpl.waitUntil(new SimplePredicate("Link is established or failed", _amqpLink)
         {
@@ -52,7 +48,7 @@ public class LinkImpl
         }, AmqpConnection.TIMEOUT);
         if(!_amqpLink.isEstablished())
         {
-            throw new LinkException("Failed to establish link " + _amqpLink); // TODO make message less verbose
+            throw new LinkException("Failed to establish link " + _amqpLink);
         }
     }
 
@@ -63,40 +59,14 @@ public class LinkImpl
         {
             _amqpLink.close();
             _connectionImpl.stateChanged();
-            while(!_amqpLink.isClosed())
+            _connectionImpl.waitUntil(new SimplePredicate("Link is closed", _amqpLink)
             {
-                try
+                @Override
+                public boolean test()
                 {
-                    _connectionImpl.waitUntil(new SimplePredicate("Link is closed", _amqpLink)
-                    {
-                        @Override
-                        public boolean test()
-                        {
-                            return _amqpLink.isClosed();
-                        }
-                    }, AmqpConnection.TIMEOUT);
+                    return _amqpLink.isClosed();
                 }
-                catch (TimeoutException e)
-                {
-                    JMSException jmse = new JMSException("Unable to close link");
-                    jmse.setLinkedException(e);
-                    throw jmse;
-                }
-                catch(InterruptedException e)
-                {
-                    Thread.currentThread().interrupt();
-                    JMSException jmse = new JMSException("Interrupted while trying to close link");
-                    jmse.setLinkedException(e);
-                    throw jmse;
-                }
-
-            }
-
-            //TODO: link errors? E.g:
-            //            if(_amqpSender.getLinkError().getCondition() != null)
-            //            {
-            //                throw new ConnectionException("Sender close failed: " + _amqpSender.getLinkError());
-            //            }
+            }, AmqpConnection.TIMEOUT);
         }
         finally
         {

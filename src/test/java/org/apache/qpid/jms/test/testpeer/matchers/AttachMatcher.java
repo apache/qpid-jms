@@ -32,21 +32,24 @@ import org.hamcrest.Matcher;
  */
 public class AttachMatcher extends FrameWithNoPayloadMatchingHandler
 {
-
-    private static final int FIELD_NAME = 0;
-    private static final int FIELD_HANDLE = 1;
-    private static final int FIELD_ROLE = 2;
-    private static final int FIELD_SND_SETTLE_MODE = 3;
-    private static final int FIELD_RCV_SETTLE_MODE = 4;
-    private static final int FIELD_SOURCE = 5;
-    private static final int FIELD_TARGET = 6;
-    private static final int FIELD_UNSETTLED = 7;
-    private static final int FIELD_INCOMPLETE_UNSETTLED = 8;
-    private static final int FIELD_INITIAL_DELIVERY_COUNT = 9;
-    private static final int FIELD_MAX_MESSAGE_SIZE = 10;
-    private static final int FIELD_OFFERED_CAPABILITIES = 11;
-    private static final int FIELD_DESIRED_CAPABILITIES = 12;
-    private static final int FIELD_PROPERTIES = 13;
+    /** Note that the ordinals of the Field enums match the order specified in the spec */
+    public enum Field
+    {
+        NAME,
+        HANDLE,
+        ROLE,
+        SND_SETTLE_MODE,
+        RCV_SETTLE_MODE,
+        SOURCE,
+        TARGET,
+        UNSETTLED,
+        INCOMPLETE_UNSETTLED,
+        INITIAL_DELIVERY_COUNT,
+        MAX_MESSAGE_SIZE,
+        OFFERED_CAPABILITIES,
+        DESIRED_CAPABILITIES,
+        PROPERTIES,
+    }
 
     public AttachMatcher()
     {
@@ -54,7 +57,7 @@ public class AttachMatcher extends FrameWithNoPayloadMatchingHandler
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000012L),
               Symbol.valueOf("amqp:attach:list"),
-              new HashMap<Integer, Matcher<?>>(),
+              new HashMap<Enum<?>, Matcher<?>>(),
               null);
     }
 
@@ -67,157 +70,162 @@ public class AttachMatcher extends FrameWithNoPayloadMatchingHandler
 
     public AttachMatcher withName(Matcher<?> m)
     {
-        getMatchers().put(FIELD_NAME, m);
+        getMatchers().put(Field.NAME, m);
         return this;
     }
 
     public AttachMatcher withHandle(Matcher<?> m)
     {
-        getMatchers().put(FIELD_HANDLE, m);
+        getMatchers().put(Field.HANDLE, m);
         return this;
     }
 
     public AttachMatcher withRole(Matcher<?> m)
     {
-        getMatchers().put(FIELD_ROLE, m);
+        getMatchers().put(Field.ROLE, m);
         return this;
     }
 
     public AttachMatcher withSndSettleMode(Matcher<?> m)
     {
-        getMatchers().put(FIELD_SND_SETTLE_MODE, m);
+        getMatchers().put(Field.SND_SETTLE_MODE, m);
         return this;
     }
 
     public AttachMatcher withRcvSettleMode(Matcher<?> m)
     {
-        getMatchers().put(FIELD_RCV_SETTLE_MODE, m);
+        getMatchers().put(Field.RCV_SETTLE_MODE, m);
         return this;
     }
 
     public AttachMatcher withSource(Matcher<?> m)
     {
-        getMatchers().put(FIELD_SOURCE, m);
+        getMatchers().put(Field.SOURCE, m);
         return this;
     }
 
     public AttachMatcher withTarget(Matcher<?> m)
     {
-        getMatchers().put(FIELD_TARGET, m);
+        getMatchers().put(Field.TARGET, m);
         return this;
     }
 
     public AttachMatcher withUnsettled(Matcher<?> m)
     {
-        getMatchers().put(FIELD_UNSETTLED, m);
+        getMatchers().put(Field.UNSETTLED, m);
         return this;
     }
 
     public AttachMatcher withIncompleteUnsettled(Matcher<?> m)
     {
-        getMatchers().put(FIELD_INCOMPLETE_UNSETTLED, m);
+        getMatchers().put(Field.INCOMPLETE_UNSETTLED, m);
         return this;
     }
 
     public AttachMatcher withInitialDeliveryCount(Matcher<?> m)
     {
-        getMatchers().put(FIELD_INITIAL_DELIVERY_COUNT, m);
+        getMatchers().put(Field.INITIAL_DELIVERY_COUNT, m);
         return this;
     }
 
     public AttachMatcher withMaxMessageSize(Matcher<?> m)
     {
-        getMatchers().put(FIELD_MAX_MESSAGE_SIZE, m);
+        getMatchers().put(Field.MAX_MESSAGE_SIZE, m);
         return this;
     }
 
     public AttachMatcher withOfferedCapabilities(Matcher<?> m)
     {
-        getMatchers().put(FIELD_OFFERED_CAPABILITIES, m);
+        getMatchers().put(Field.OFFERED_CAPABILITIES, m);
         return this;
     }
 
     public AttachMatcher withDesiredCapabilities(Matcher<?> m)
     {
-        getMatchers().put(FIELD_DESIRED_CAPABILITIES, m);
+        getMatchers().put(Field.DESIRED_CAPABILITIES, m);
         return this;
     }
 
     public AttachMatcher withProperties(Matcher<?> m)
     {
-        getMatchers().put(FIELD_PROPERTIES, m);
+        getMatchers().put(Field.PROPERTIES, m);
         return this;
     }
 
     public Object getReceivedName()
     {
-        return getReceivedFields().get(FIELD_NAME);
+        return getReceivedFields().get(Field.NAME);
     }
 
     public Object getReceivedHandle()
     {
-        return getReceivedFields().get(FIELD_HANDLE);
+        return getReceivedFields().get(Field.HANDLE);
     }
 
     public Object getReceivedRole()
     {
-        return getReceivedFields().get(FIELD_ROLE);
+        return getReceivedFields().get(Field.ROLE);
     }
 
     public Object getReceivedSndSettleMode()
     {
-        return getReceivedFields().get(FIELD_SND_SETTLE_MODE);
+        return getReceivedFields().get(Field.SND_SETTLE_MODE);
     }
 
     public Object getReceivedRcvSettleMode()
     {
-        return getReceivedFields().get(FIELD_RCV_SETTLE_MODE);
+        return getReceivedFields().get(Field.RCV_SETTLE_MODE);
     }
 
     public Object getReceivedSource()
     {
-        return getReceivedFields().get(FIELD_SOURCE);
+        return getReceivedFields().get(Field.SOURCE);
     }
 
     public Object getReceivedTarget()
     {
-        return getReceivedFields().get(FIELD_TARGET);
+        return getReceivedFields().get(Field.TARGET);
     }
 
     public Object getReceivedUnsettled()
     {
-        return getReceivedFields().get(FIELD_UNSETTLED);
+        return getReceivedFields().get(Field.UNSETTLED);
     }
 
     public Object getReceivedIncompleteUnsettled()
     {
-        return getReceivedFields().get(FIELD_INCOMPLETE_UNSETTLED);
+        return getReceivedFields().get(Field.INCOMPLETE_UNSETTLED);
     }
 
     public Object getReceivedInitialDeliveryCount()
     {
-        return getReceivedFields().get(FIELD_INITIAL_DELIVERY_COUNT);
+        return getReceivedFields().get(Field.INITIAL_DELIVERY_COUNT);
     }
 
     public Object getReceivedMaxMessageSize()
     {
-        return getReceivedFields().get(FIELD_MAX_MESSAGE_SIZE);
+        return getReceivedFields().get(Field.MAX_MESSAGE_SIZE);
     }
 
     public Object getReceivedOfferedCapabilities()
     {
-        return getReceivedFields().get(FIELD_OFFERED_CAPABILITIES);
+        return getReceivedFields().get(Field.OFFERED_CAPABILITIES);
     }
 
     public Object getReceivedDesiredCapabilities()
     {
-        return getReceivedFields().get(FIELD_DESIRED_CAPABILITIES);
+        return getReceivedFields().get(Field.DESIRED_CAPABILITIES);
     }
 
     public Object getReceivedProperties()
     {
-        return getReceivedFields().get(FIELD_PROPERTIES);
+        return getReceivedFields().get(Field.PROPERTIES);
     }
 
+    @Override
+    protected Enum<?> getField(int fieldIndex)
+    {
+        return Field.values()[fieldIndex];
+    }
 }
 

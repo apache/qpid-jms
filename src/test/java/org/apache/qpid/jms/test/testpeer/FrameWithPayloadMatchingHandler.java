@@ -36,7 +36,7 @@ public class FrameWithPayloadMatchingHandler extends AbstractFrameFieldAndPayloa
                                                 int channel,
                                                 UnsignedLong numericDescriptor,
                                                 Symbol symbolicDescriptor,
-                                                Map<Integer, Matcher<?>> matchers,
+                                                Map<Enum<?>, Matcher<?>> matchers,
                                                 Runnable onSuccess)
     {
         super(frameType, channel, numericDescriptor, symbolicDescriptor, matchers, onSuccess);

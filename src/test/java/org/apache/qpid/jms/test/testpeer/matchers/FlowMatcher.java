@@ -32,18 +32,21 @@ import org.hamcrest.Matcher;
  */
 public class FlowMatcher extends FrameWithNoPayloadMatchingHandler
 {
-
-    private static final int FIELD_NEXT_INCOMING_ID = 0;
-    private static final int FIELD_INCOMING_WINDOW = 1;
-    private static final int FIELD_NEXT_OUTGOING_ID = 2;
-    private static final int FIELD_OUTGOING_WINDOW = 3;
-    private static final int FIELD_HANDLE = 4;
-    private static final int FIELD_DELIVERY_COUNT = 5;
-    private static final int FIELD_LINK_CREDIT = 6;
-    private static final int FIELD_AVAILABLE = 7;
-    private static final int FIELD_DRAIN = 8;
-    private static final int FIELD_ECHO = 9;
-    private static final int FIELD_PROPERTIES = 10;
+    /** Note that the ordinals of the Field enums match the order specified in the spec */
+    public enum Field
+    {
+        NEXT_INCOMING_ID,
+        INCOMING_WINDOW,
+        NEXT_OUTGOING_ID,
+        OUTGOING_WINDOW,
+        HANDLE,
+        DELIVERY_COUNT,
+        LINK_CREDIT,
+        AVAILABLE,
+        DRAIN,
+        ECHO,
+        PROPERTIES,
+    }
 
     public FlowMatcher()
     {
@@ -51,7 +54,7 @@ public class FlowMatcher extends FrameWithNoPayloadMatchingHandler
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000013L),
               Symbol.valueOf("amqp:flow:list"),
-              new HashMap<Integer, Matcher<?>>(),
+              new HashMap<Enum<?>, Matcher<?>>(),
               null);
     }
 
@@ -64,124 +67,129 @@ public class FlowMatcher extends FrameWithNoPayloadMatchingHandler
 
     public FlowMatcher withNextIncomingId(Matcher<?> m)
     {
-        getMatchers().put(FIELD_NEXT_INCOMING_ID, m);
+        getMatchers().put(Field.NEXT_INCOMING_ID, m);
         return this;
     }
 
     public FlowMatcher withIncomingWindow(Matcher<?> m)
     {
-        getMatchers().put(FIELD_INCOMING_WINDOW, m);
+        getMatchers().put(Field.INCOMING_WINDOW, m);
         return this;
     }
 
     public FlowMatcher withNextOutgoingId(Matcher<?> m)
     {
-        getMatchers().put(FIELD_NEXT_OUTGOING_ID, m);
+        getMatchers().put(Field.NEXT_OUTGOING_ID, m);
         return this;
     }
 
     public FlowMatcher withOutgoingWindow(Matcher<?> m)
     {
-        getMatchers().put(FIELD_OUTGOING_WINDOW, m);
+        getMatchers().put(Field.OUTGOING_WINDOW, m);
         return this;
     }
 
     public FlowMatcher withHandle(Matcher<?> m)
     {
-        getMatchers().put(FIELD_HANDLE, m);
+        getMatchers().put(Field.HANDLE, m);
         return this;
     }
 
     public FlowMatcher withDeliveryCount(Matcher<?> m)
     {
-        getMatchers().put(FIELD_DELIVERY_COUNT, m);
+        getMatchers().put(Field.DELIVERY_COUNT, m);
         return this;
     }
 
     public FlowMatcher withLinkCredit(Matcher<?> m)
     {
-        getMatchers().put(FIELD_LINK_CREDIT, m);
+        getMatchers().put(Field.LINK_CREDIT, m);
         return this;
     }
 
     public FlowMatcher withAvailable(Matcher<?> m)
     {
-        getMatchers().put(FIELD_AVAILABLE, m);
+        getMatchers().put(Field.AVAILABLE, m);
         return this;
     }
 
     public FlowMatcher withDrain(Matcher<?> m)
     {
-        getMatchers().put(FIELD_DRAIN, m);
+        getMatchers().put(Field.DRAIN, m);
         return this;
     }
 
     public FlowMatcher withEcho(Matcher<?> m)
     {
-        getMatchers().put(FIELD_ECHO, m);
+        getMatchers().put(Field.ECHO, m);
         return this;
     }
 
     public FlowMatcher withProperties(Matcher<?> m)
     {
-        getMatchers().put(FIELD_PROPERTIES, m);
+        getMatchers().put(Field.PROPERTIES, m);
         return this;
     }
 
     public Object getReceivedNextIncomingId()
     {
-        return getReceivedFields().get(FIELD_NEXT_INCOMING_ID);
+        return getReceivedFields().get(Field.NEXT_INCOMING_ID);
     }
 
     public Object getReceivedIncomingWindow()
     {
-        return getReceivedFields().get(FIELD_INCOMING_WINDOW);
+        return getReceivedFields().get(Field.INCOMING_WINDOW);
     }
 
     public Object getReceivedNextOutgoingId()
     {
-        return getReceivedFields().get(FIELD_NEXT_OUTGOING_ID);
+        return getReceivedFields().get(Field.NEXT_OUTGOING_ID);
     }
 
     public Object getReceivedOutgoingWindow()
     {
-        return getReceivedFields().get(FIELD_OUTGOING_WINDOW);
+        return getReceivedFields().get(Field.OUTGOING_WINDOW);
     }
 
     public Object getReceivedHandle()
     {
-        return getReceivedFields().get(FIELD_HANDLE);
+        return getReceivedFields().get(Field.HANDLE);
     }
 
     public Object getReceivedDeliveryCount()
     {
-        return getReceivedFields().get(FIELD_DELIVERY_COUNT);
+        return getReceivedFields().get(Field.DELIVERY_COUNT);
     }
 
     public Object getReceivedLinkCredit()
     {
-        return getReceivedFields().get(FIELD_LINK_CREDIT);
+        return getReceivedFields().get(Field.LINK_CREDIT);
     }
 
     public Object getReceivedAvailable()
     {
-        return getReceivedFields().get(FIELD_AVAILABLE);
+        return getReceivedFields().get(Field.AVAILABLE);
     }
 
     public Object getReceivedDrain()
     {
-        return getReceivedFields().get(FIELD_DRAIN);
+        return getReceivedFields().get(Field.DRAIN);
     }
 
     public Object getReceivedEcho()
     {
-        return getReceivedFields().get(FIELD_ECHO);
+        return getReceivedFields().get(Field.ECHO);
     }
 
     public Object getReceivedProperties()
     {
-        return getReceivedFields().get(FIELD_PROPERTIES);
+        return getReceivedFields().get(Field.PROPERTIES);
     }
 
+    @Override
+    protected Enum<?> getField(int fieldIndex)
+    {
+        return Field.values()[fieldIndex];
+    }
 }
 

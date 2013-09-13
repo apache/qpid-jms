@@ -21,7 +21,6 @@ package org.apache.qpid.jms.test.testpeer;
 import static org.apache.qpid.proton.engine.TransportResultFactory.error;
 
 import java.nio.ByteBuffer;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.qpid.proton.ProtonFactoryLoader;
@@ -35,8 +34,7 @@ import org.apache.qpid.proton.engine.TransportResultFactory;
 
 class TestFrameParser
 {
-    // PHTODO replace logger
-    private static final Logger TRACE_LOGGER = Logger.getLogger("proton.trace");
+    private static final Logger _logger = Logger.getLogger(TestFrameParser.class.getName());
 
     private enum State
     {
@@ -320,7 +318,7 @@ class TestFrameParser
                             }
 
                             DescribedType describedType = data.getDescribedType();
-                            TRACE_LOGGER.info("Received described type: " + describedType);
+                            _logger.finer("Received described type: " + describedType);
 
                             Binary payload;
 
@@ -339,10 +337,7 @@ class TestFrameParser
                         }
                         else
                         {
-                            if(TRACE_LOGGER.isLoggable(Level.FINEST))
-                            {
-                                TRACE_LOGGER.finest("Ignored empty frame");
-                            }
+                            _logger.finest("Ignored empty frame");
                         }
                         _size = 0;
                         currentInput = nextFramesInput;
@@ -369,7 +364,7 @@ class TestFrameParser
 
         if(_state == State.ERROR)
         {
-            // PHTODO throw non-proton exception
+            // TODO throw non-proton exception
             if(frameParsingError != null)
             {
                 frameParsingError.checkIsOk();

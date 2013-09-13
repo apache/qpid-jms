@@ -38,6 +38,7 @@ class TestAmqpPeerRunner implements Runnable
     private Socket _clientSocket;
     private OutputStream _networkOutputStream;
 
+    private final Object _inputHandlingLock = new Object();
     private final TestFrameParser _testFrameParser;
 
     private volatile Exception _exception;
@@ -67,11 +68,15 @@ class TestAmqpPeerRunner implements Runnable
             _logger.finest("Attempting read");
             while((bytesRead = networkInputStream.read(networkInputBytes)) != -1)
             {
-                ByteBuffer networkInputByteBuffer = ByteBuffer.wrap(networkInputBytes, 0, bytesRead);
+                //prevent stop() from killing the socket while the frame parser might be using it handling input
+                synchronized(_inputHandlingLock)
+                {
+                    ByteBuffer networkInputByteBuffer = ByteBuffer.wrap(networkInputBytes, 0, bytesRead);
 
-                _logger.info("Read: " + new Binary(networkInputBytes, 0, bytesRead));
+                    _logger.finer("Read: " + new Binary(networkInputBytes, 0, bytesRead));
 
-                _testFrameParser.input(networkInputByteBuffer);
+                    _testFrameParser.input(networkInputByteBuffer);
+                }
                 _logger.finest("Attempting read");
             }
 
@@ -82,12 +87,11 @@ class TestAmqpPeerRunner implements Runnable
             if(!_serverSocket.isClosed())
             {
                 _logger.log(Level.SEVERE, "Problem in peer", e);
-                e.printStackTrace(); // TODO make this a logger call
                 _exception = e;
             }
             else
             {
-                _logger.log(Level.FINE, "Caught exception, ignoring as socket is closed: " + e);
+                _logger.fine("Caught exception, ignoring as socket is closed: " + e);
             }
         }
         finally
@@ -105,15 +109,19 @@ class TestAmqpPeerRunner implements Runnable
 
     public void stop() throws IOException
     {
-        try
+        //wait for the frame parser to handle any input it already had
+        synchronized(_inputHandlingLock)
         {
-            _serverSocket.close();
-        }
-        finally
-        {
-            if(_clientSocket != null)
+            try
             {
-                _clientSocket.close();
+                _serverSocket.close();
+            }
+            finally
+            {
+                if(_clientSocket != null)
+                {
+                    _clientSocket.close();
+                }
             }
         }
     }
@@ -125,8 +133,7 @@ class TestAmqpPeerRunner implements Runnable
 
     public void sendBytes(byte[] bytes)
     {
-        //TODO remove
-        _logger.info("Sending: " + new Binary(bytes));
+        _logger.finer("Sending: " + new Binary(bytes));
         try
         {
             _networkOutputStream.write(bytes);

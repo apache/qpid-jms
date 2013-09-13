@@ -98,12 +98,21 @@ public class AmqpSession
         return amqpSender;
     }
 
-    public AmqpReceiver createAmqpReceiver(String name, String address)
+    public AmqpReceiver createAmqpReceiver(String address)
     {
+        String name = address + "->" + UUID.randomUUID().toString();
         Receiver protonReceiver = _protonSession.receiver(name);
+
         Source source = new Source();
         source.setAddress(address);
         protonReceiver.setSource(source);
+
+        Target target = new Target();
+        protonReceiver.setTarget(target);
+
+        protonReceiver.setSenderSettleMode(SenderSettleMode.UNSETTLED);
+        protonReceiver.setReceiverSettleMode(ReceiverSettleMode.FIRST);
+
         AmqpReceiver amqpReceiver = new AmqpReceiver(this, protonReceiver);
         protonReceiver.setContext(amqpReceiver);
         protonReceiver.open();

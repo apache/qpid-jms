@@ -32,8 +32,11 @@ import org.hamcrest.Matcher;
  */
 public class EndMatcher extends FrameWithNoPayloadMatchingHandler
 {
-
-    private static final int FIELD_ERROR = 0;
+    /** Note that the ordinals of the Field enums match the order specified in the spec */
+    public enum Field
+    {
+        ERROR,
+    }
 
     public EndMatcher()
     {
@@ -41,7 +44,7 @@ public class EndMatcher extends FrameWithNoPayloadMatchingHandler
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000017L),
               Symbol.valueOf("amqp:end:list"),
-              new HashMap<Integer, Matcher<?>>(),
+              new HashMap<Enum<?>, Matcher<?>>(),
               null);
     }
 
@@ -54,14 +57,19 @@ public class EndMatcher extends FrameWithNoPayloadMatchingHandler
 
     public EndMatcher withError(Matcher<?> m)
     {
-        getMatchers().put(FIELD_ERROR, m);
+        getMatchers().put(Field.ERROR, m);
         return this;
     }
 
     public Object getReceivedError()
     {
-        return getReceivedFields().get(FIELD_ERROR);
+        return getReceivedFields().get(Field.ERROR);
     }
 
+    @Override
+    protected Enum<?> getField(int fieldIndex)
+    {
+        return Field.values()[fieldIndex];
+    }
 }
 

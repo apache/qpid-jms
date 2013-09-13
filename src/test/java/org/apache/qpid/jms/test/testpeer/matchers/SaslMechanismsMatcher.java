@@ -32,8 +32,11 @@ import org.hamcrest.Matcher;
  */
 public class SaslMechanismsMatcher extends FrameWithNoPayloadMatchingHandler
 {
-
-    private static final int FIELD_SASL_SERVER_MECHANISMS = 0;
+    /** Note that the ordinals of the Field enums match the order specified in the spec */
+    public enum Field
+    {
+        SASL_SERVER_MECHANISMS,
+    }
 
     public SaslMechanismsMatcher()
     {
@@ -41,7 +44,7 @@ public class SaslMechanismsMatcher extends FrameWithNoPayloadMatchingHandler
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000040L),
               Symbol.valueOf("amqp:sasl-mechanisms:list"),
-              new HashMap<Integer, Matcher<?>>(),
+              new HashMap<Enum<?>, Matcher<?>>(),
               null);
     }
 
@@ -54,14 +57,19 @@ public class SaslMechanismsMatcher extends FrameWithNoPayloadMatchingHandler
 
     public SaslMechanismsMatcher withSaslServerMechanisms(Matcher<?> m)
     {
-        getMatchers().put(FIELD_SASL_SERVER_MECHANISMS, m);
+        getMatchers().put(Field.SASL_SERVER_MECHANISMS, m);
         return this;
     }
 
     public Object getReceivedSaslServerMechanisms()
     {
-        return getReceivedFields().get(FIELD_SASL_SERVER_MECHANISMS);
+        return getReceivedFields().get(Field.SASL_SERVER_MECHANISMS);
     }
 
+    @Override
+    protected Enum<?> getField(int fieldIndex)
+    {
+        return Field.values()[fieldIndex];
+    }
 }
 

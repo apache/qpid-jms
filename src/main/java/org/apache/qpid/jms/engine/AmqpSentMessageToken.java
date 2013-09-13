@@ -23,13 +23,13 @@ package org.apache.qpid.jms.engine;
 import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.engine.Delivery;
 
-public class AmqpSentMessage
+public class AmqpSentMessageToken
 {
     private Delivery _delivery;
     private AmqpSender _amqpSender;
     private AmqpConnection _amqpConnection;
 
-    public AmqpSentMessage(Delivery delivery, AmqpSender sender)
+    public AmqpSentMessageToken(Delivery delivery, AmqpSender sender)
     {
         _delivery = delivery;
         _amqpSender = sender;

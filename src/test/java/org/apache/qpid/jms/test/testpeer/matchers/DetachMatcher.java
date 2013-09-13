@@ -32,10 +32,13 @@ import org.hamcrest.Matcher;
  */
 public class DetachMatcher extends FrameWithNoPayloadMatchingHandler
 {
-
-    private static final int FIELD_HANDLE = 0;
-    private static final int FIELD_CLOSED = 1;
-    private static final int FIELD_ERROR = 2;
+    /** Note that the ordinals of the Field enums match the order specified in the spec */
+    public enum Field
+    {
+        HANDLE,
+        CLOSED,
+        ERROR,
+    }
 
     public DetachMatcher()
     {
@@ -43,7 +46,7 @@ public class DetachMatcher extends FrameWithNoPayloadMatchingHandler
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000016L),
               Symbol.valueOf("amqp:detach:list"),
-              new HashMap<Integer, Matcher<?>>(),
+              new HashMap<Enum<?>, Matcher<?>>(),
               null);
     }
 
@@ -56,36 +59,41 @@ public class DetachMatcher extends FrameWithNoPayloadMatchingHandler
 
     public DetachMatcher withHandle(Matcher<?> m)
     {
-        getMatchers().put(FIELD_HANDLE, m);
+        getMatchers().put(Field.HANDLE, m);
         return this;
     }
 
     public DetachMatcher withClosed(Matcher<?> m)
     {
-        getMatchers().put(FIELD_CLOSED, m);
+        getMatchers().put(Field.CLOSED, m);
         return this;
     }
 
     public DetachMatcher withError(Matcher<?> m)
     {
-        getMatchers().put(FIELD_ERROR, m);
+        getMatchers().put(Field.ERROR, m);
         return this;
     }
 
     public Object getReceivedHandle()
     {
-        return getReceivedFields().get(FIELD_HANDLE);
+        return getReceivedFields().get(Field.HANDLE);
     }
 
     public Object getReceivedClosed()
     {
-        return getReceivedFields().get(FIELD_CLOSED);
+        return getReceivedFields().get(Field.CLOSED);
     }
 
     public Object getReceivedError()
     {
-        return getReceivedFields().get(FIELD_ERROR);
+        return getReceivedFields().get(Field.ERROR);
     }
 
+    @Override
+    protected Enum<?> getField(int fieldIndex)
+    {
+        return Field.values()[fieldIndex];
+    }
 }
 

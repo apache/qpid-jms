@@ -49,16 +49,17 @@ import org.apache.qpid.proton.message.MessageFactory;
  * Obtain the {@link AmqpConnection} lock first to use them in a thread-safe
  * manner.
  *
- * TODO more tightly define the thread-safety of this class, e.g. should setSasl etc be synchronized?
  */
 @SuppressWarnings("rawtypes")
 public class AmqpConnection
 {
-    /** default timeout in milliseconds */
-    public static final long TIMEOUT = 10_000L;
-
     private static Logger _logger = Logger.getLogger("qpid.jms-client.connection");
 
+    /**
+     * Default timeout in milliseconds.
+     * TODO define a proper way for the timeout to be specified.
+     */
+    public static final long TIMEOUT = Long.getLong("org.apache.qpid.jms.connection.timeout", 10_000L);
 
     private static final ProtonFactoryLoader protonFactoryLoader = new ProtonFactoryLoader();
 
@@ -153,7 +154,7 @@ public class AmqpConnection
     /**
      * @return the username
      */
-    public String getUsername()
+    public synchronized String getUsername()
     {
         return _username;
     }
@@ -161,7 +162,7 @@ public class AmqpConnection
     /**
      * @param username the username to set
      */
-    public void setUsername(String username)
+    public synchronized void setUsername(String username)
     {
         _username = username;
     }
@@ -169,7 +170,7 @@ public class AmqpConnection
     /**
      * @return the password
      */
-    public String getPassword()
+    public synchronized String getPassword()
     {
         return _password;
     }
@@ -177,7 +178,7 @@ public class AmqpConnection
     /**
      * @param password the password to set
      */
-    public void setPassword(String password)
+    public synchronized void setPassword(String password)
     {
         _password = password;
     }
@@ -387,7 +388,7 @@ public class AmqpConnection
         return (MessageFactory) protonFactoryLoader.loadFactory(MessageFactory.class);
     }
 
-    public void setSasl(Sasl sasl)
+    public synchronized void setSasl(Sasl sasl)
     {
         _sasl = sasl;
     }

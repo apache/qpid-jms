@@ -18,16 +18,20 @@
  */
 package org.apache.qpid.jms;
 
+import static org.junit.Assert.assertNotNull;
+
 import javax.jms.Connection;
 import javax.jms.Message;
+import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
+import org.apache.qpid.jms.impl.ReceivedMessageImpl;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.junit.Test;
 
-public class SessionIntegrationTest
+public class SessionIntegrationTest extends QpidJmsTestCase
 {
     private final IntegrationTestFixture _testFixture = new IntegrationTestFixture();
 
@@ -65,6 +69,33 @@ public class SessionIntegrationTest
             Message message = session.createTextMessage(text);
 
             producer.send(message);
+        }
+    }
+
+    @Test
+    public void testSendReceiveTextMessageWithContent() throws Exception
+    {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
+        {
+            Connection connection = _testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer();
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+
+            // TODO check that it's a TextMessage with expected content: String expectedText = "myMessage";
+            ReceivedMessageImpl receivedMessage = (ReceivedMessageImpl) messageConsumer.receive(1000);
+            assertNotNull(receivedMessage);
+
+            testPeer.waitForAllHandlersToComplete();
         }
     }
 }

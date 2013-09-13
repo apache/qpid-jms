@@ -27,8 +27,7 @@ import javax.jms.MessageProducer;
 
 import org.apache.qpid.jms.engine.AmqpMessage;
 import org.apache.qpid.jms.engine.AmqpSender;
-import org.apache.qpid.jms.engine.AmqpSentMessage;
-import org.apache.qpid.proton.TimeoutException;
+import org.apache.qpid.jms.engine.AmqpSentMessageToken;
 
 public class SenderImpl extends LinkImpl implements MessageProducer
 {
@@ -36,7 +35,7 @@ public class SenderImpl extends LinkImpl implements MessageProducer
 
     public SenderImpl(SessionImpl sessionImpl, AmqpSender amqpSender)
     {
-        super(sessionImpl, amqpSender);
+        super(sessionImpl.getConnectionImpl(), amqpSender);
         _amqpSender = amqpSender;
     }
 
@@ -48,27 +47,13 @@ public class SenderImpl extends LinkImpl implements MessageProducer
         {
             AmqpMessage amqpMessage = getAmqpMessageFromJmsMessage(message);
 
-            AmqpSentMessage sentMessage = _amqpSender.sendMessage(amqpMessage);
+            AmqpSentMessageToken sentMessage = _amqpSender.sendMessage(amqpMessage);
 
             getConnectionImpl().stateChanged();
 
-            SentMessageImpl sentMessageImpl = new SentMessageImpl(sentMessage, this);
+            SentMessageTokenImpl sentMessageImpl = new SentMessageTokenImpl(sentMessage, this);
             sentMessageImpl.waitUntilAccepted();
             sentMessage.settle();
-        }
-        catch (InterruptedException e)
-        {
-            Thread.currentThread().interrupt();
-            JMSException jmse = new JMSException("Interrupted while trying to send messages");
-            jmse.setLinkedException(e);
-            throw jmse;
-        }
-        catch (TimeoutException e)
-        {
-            JMSException jmse = new JMSException("Timed out during send");
-            e.printStackTrace();
-            jmse.setLinkedException(e);
-            throw jmse;
         }
         finally
         {

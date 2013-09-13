@@ -32,13 +32,16 @@ import org.hamcrest.Matcher;
  */
 public class DispositionMatcher extends FrameWithNoPayloadMatchingHandler
 {
-
-    private static final int FIELD_ROLE = 0;
-    private static final int FIELD_FIRST = 1;
-    private static final int FIELD_LAST = 2;
-    private static final int FIELD_SETTLED = 3;
-    private static final int FIELD_STATE = 4;
-    private static final int FIELD_BATCHABLE = 5;
+    /** Note that the ordinals of the Field enums match the order specified in the spec */
+    public enum Field
+    {
+        ROLE,
+        FIRST,
+        LAST,
+        SETTLED,
+        STATE,
+        BATCHABLE,
+    }
 
     public DispositionMatcher()
     {
@@ -46,7 +49,7 @@ public class DispositionMatcher extends FrameWithNoPayloadMatchingHandler
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000015L),
               Symbol.valueOf("amqp:disposition:list"),
-              new HashMap<Integer, Matcher<?>>(),
+              new HashMap<Enum<?>, Matcher<?>>(),
               null);
     }
 
@@ -59,69 +62,74 @@ public class DispositionMatcher extends FrameWithNoPayloadMatchingHandler
 
     public DispositionMatcher withRole(Matcher<?> m)
     {
-        getMatchers().put(FIELD_ROLE, m);
+        getMatchers().put(Field.ROLE, m);
         return this;
     }
 
     public DispositionMatcher withFirst(Matcher<?> m)
     {
-        getMatchers().put(FIELD_FIRST, m);
+        getMatchers().put(Field.FIRST, m);
         return this;
     }
 
     public DispositionMatcher withLast(Matcher<?> m)
     {
-        getMatchers().put(FIELD_LAST, m);
+        getMatchers().put(Field.LAST, m);
         return this;
     }
 
     public DispositionMatcher withSettled(Matcher<?> m)
     {
-        getMatchers().put(FIELD_SETTLED, m);
+        getMatchers().put(Field.SETTLED, m);
         return this;
     }
 
     public DispositionMatcher withState(Matcher<?> m)
     {
-        getMatchers().put(FIELD_STATE, m);
+        getMatchers().put(Field.STATE, m);
         return this;
     }
 
     public DispositionMatcher withBatchable(Matcher<?> m)
     {
-        getMatchers().put(FIELD_BATCHABLE, m);
+        getMatchers().put(Field.BATCHABLE, m);
         return this;
     }
 
     public Object getReceivedRole()
     {
-        return getReceivedFields().get(FIELD_ROLE);
+        return getReceivedFields().get(Field.ROLE);
     }
 
     public Object getReceivedFirst()
     {
-        return getReceivedFields().get(FIELD_FIRST);
+        return getReceivedFields().get(Field.FIRST);
     }
 
     public Object getReceivedLast()
     {
-        return getReceivedFields().get(FIELD_LAST);
+        return getReceivedFields().get(Field.LAST);
     }
 
     public Object getReceivedSettled()
     {
-        return getReceivedFields().get(FIELD_SETTLED);
+        return getReceivedFields().get(Field.SETTLED);
     }
 
     public Object getReceivedState()
     {
-        return getReceivedFields().get(FIELD_STATE);
+        return getReceivedFields().get(Field.STATE);
     }
 
     public Object getReceivedBatchable()
     {
-        return getReceivedFields().get(FIELD_BATCHABLE);
+        return getReceivedFields().get(Field.BATCHABLE);
     }
 
+    @Override
+    protected Enum<?> getField(int fieldIndex)
+    {
+        return Field.values()[fieldIndex];
+    }
 }
 

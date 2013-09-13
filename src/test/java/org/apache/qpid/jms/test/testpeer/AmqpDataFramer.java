@@ -31,7 +31,7 @@ import org.apache.qpid.proton.codec.Data;
  */
 public class AmqpDataFramer
 {
-    private static final int CAPACITY = 1024;
+    private static final int CAPACITY = 2024;
     private static final byte FRAME_PREAMBLE_SIZE_IN_FOUR_BYTE_WORDS = 2;
 
     public static byte[] encodeFrame(FrameType type, int channel, DescribedType describedType, Binary payload)
@@ -43,7 +43,10 @@ public class AmqpDataFramer
         Data frameBody = Proton.data(CAPACITY);
         frameBody.putDescribedType(describedType);
         frameBody.encode(buffer);
-        //TODO: cope with payload
+        if(payload != null)
+        {
+            buffer.put(payload.asByteBuffer());
+        }
 
         int frameSize = buffer.position();
         buffer.rewind();

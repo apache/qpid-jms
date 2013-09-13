@@ -32,8 +32,11 @@ import org.hamcrest.Matcher;
  */
 public class SaslChallengeMatcher extends FrameWithNoPayloadMatchingHandler
 {
-
-    private static final int FIELD_CHALLENGE = 0;
+    /** Note that the ordinals of the Field enums match the order specified in the spec */
+    public enum Field
+    {
+        CHALLENGE,
+    }
 
     public SaslChallengeMatcher()
     {
@@ -41,7 +44,7 @@ public class SaslChallengeMatcher extends FrameWithNoPayloadMatchingHandler
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000042L),
               Symbol.valueOf("amqp:sasl-challenge:list"),
-              new HashMap<Integer, Matcher<?>>(),
+              new HashMap<Enum<?>, Matcher<?>>(),
               null);
     }
 
@@ -54,14 +57,19 @@ public class SaslChallengeMatcher extends FrameWithNoPayloadMatchingHandler
 
     public SaslChallengeMatcher withChallenge(Matcher<?> m)
     {
-        getMatchers().put(FIELD_CHALLENGE, m);
+        getMatchers().put(Field.CHALLENGE, m);
         return this;
     }
 
     public Object getReceivedChallenge()
     {
-        return getReceivedFields().get(FIELD_CHALLENGE);
+        return getReceivedFields().get(Field.CHALLENGE);
     }
 
+    @Override
+    protected Enum<?> getField(int fieldIndex)
+    {
+        return Field.values()[fieldIndex];
+    }
 }
 

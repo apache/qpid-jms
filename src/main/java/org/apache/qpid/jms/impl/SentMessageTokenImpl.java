@@ -21,28 +21,31 @@
 package org.apache.qpid.jms.impl;
 
 import org.apache.qpid.jms.engine.AmqpConnection;
-import org.apache.qpid.jms.engine.AmqpSentMessage;
-import org.apache.qpid.proton.TimeoutException;
+import org.apache.qpid.jms.engine.AmqpSentMessageToken;
+import org.apache.qpid.proton.amqp.messaging.Accepted;
+import org.apache.qpid.proton.amqp.transport.DeliveryState;
 
-public class SentMessageImpl
+public class SentMessageTokenImpl
 {
-    private AmqpSentMessage _sentMessage;
+    private AmqpSentMessageToken _sentMessage;
     private SenderImpl _sender;
 
-    public SentMessageImpl(AmqpSentMessage sentMessage, SenderImpl sender)
+    public SentMessageTokenImpl(AmqpSentMessageToken sentMessage, SenderImpl sender)
     {
         _sentMessage = sentMessage;
         _sender = sender;
     }
 
-    public void waitUntilAccepted() throws TimeoutException, InterruptedException
+    public void waitUntilAccepted() throws JmsTimeoutException, JmsInterruptedException
     {
         _sender.getConnectionImpl().waitUntil(new SimplePredicate("Remote delivery state exists", _sentMessage)
         {
             @Override
             public boolean test()
             {
-                return _sentMessage.getRemoteDeliveryState() != null; //TODO: should we actually check it is *accepted*?
+                DeliveryState remoteDeliveryState = _sentMessage.getRemoteDeliveryState();
+                return remoteDeliveryState != null && Accepted.getInstance().equals(remoteDeliveryState);
+                //TODO: throw an exception if it isn't accepted.
             }
         }, AmqpConnection.TIMEOUT);
     }

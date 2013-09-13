@@ -37,8 +37,6 @@ import javax.jms.Topic;
 import org.apache.qpid.jms.engine.AmqpConnection;
 import org.apache.qpid.jms.engine.AmqpConnectionDriver;
 import org.apache.qpid.jms.engine.AmqpSession;
-import org.apache.qpid.jms.engine.ConnectionException;
-import org.apache.qpid.proton.TimeoutException;
 
 /**
  * A JMS connection.
@@ -48,6 +46,8 @@ import org.apache.qpid.proton.TimeoutException;
  * <li>Other internal classes must use the connection's lock and state-change methods -
  *     see {@link #lock()}/{@link #releaseLock()} and {@link #stateChanged()} for details.</li>
  * </ul>
+ *
+ * TODO wherever we throws JMSException, throw a subclass that has the cause set
  */
 public class ConnectionImpl implements Connection
 {
@@ -59,6 +59,8 @@ public class ConnectionImpl implements Connection
     private AmqpConnectionDriver _amqpConnectionDriver;
 
     private ConnectionLock _connectionLock;
+
+    private volatile boolean _isStarted;
 
     /**
      * TODO: accept a client id
@@ -87,22 +89,13 @@ public class ConnectionImpl implements Connection
 
             connect();
         }
-        catch(InterruptedException e)
+        catch (IOException e)
         {
-            Thread.currentThread().interrupt();
-            JMSException jmse = new JMSException("Interrupted while trying to create connection");
-            jmse.setLinkedException(e);
-            throw jmse;
-        }
-        catch (TimeoutException | IOException | ConnectionException e)
-        {
-            JMSException jmse = new JMSException("Unable to create connection");
-            jmse.setLinkedException(e);
-            throw jmse;
+            throw new QpidJmsException("Unable to create connection", e);
         }
     }
 
-    void waitUntil(Predicate condition, long timeoutMillis) throws TimeoutException, InterruptedException
+    void waitUntil(Predicate condition, long timeoutMillis) throws JmsTimeoutException, JmsInterruptedException
     {
         long deadline = timeoutMillis < 0 ? Long.MAX_VALUE : System.currentTimeMillis() + timeoutMillis;
 
@@ -122,7 +115,19 @@ public class ConnectionImpl implements Connection
                 }
                 if (wait && !done && !first)
                 {
-                    _amqpConnection.wait(timeoutMillis < 0 ? 0 : deadline - System.currentTimeMillis());
+                    try
+                    {
+                        _amqpConnection.wait(timeoutMillis < 0 ? 0 : deadline - System.currentTimeMillis());
+                    }
+                    catch (InterruptedException e)
+                    {
+                        //Note we are not setting the interrupted status, as it
+                        //is likely that user code will reenter the client code to
+                        //perform e.g close/rollback/etc and setting the status
+                        //could erroneously make those fail.
+                        throw new JmsInterruptedException("Interrupted while waiting for conditition: "
+                                                            + condition.getCurrentState() , e);
+                    }
                 }
 
                 wait = deadline > System.currentTimeMillis();
@@ -138,12 +143,12 @@ public class ConnectionImpl implements Connection
 
             if (!done)
             {
-                throw new TimeoutException(timeoutMillis, condition.getCurrentState());
+                throw new JmsTimeoutException(timeoutMillis, condition.getCurrentState());
             }
         }
     }
 
-    private void connect() throws IOException, ConnectionException, TimeoutException, InterruptedException
+    private void connect() throws IOException, ConnectionException, JmsTimeoutException, JmsInterruptedException
     {
         lock();
         try
@@ -157,19 +162,20 @@ public class ConnectionImpl implements Connection
                 }
             }, AmqpConnection.TIMEOUT);
 
+            //TODO: sort out exception throwing
             if(_amqpConnection.getConnectionError().getCondition() != null)
             {
-                throw new ConnectionException("Connection failed: 1 " + _amqpConnection.getConnectionError());
+                throw new ConnectionException("Connection failed: " + _amqpConnection.getConnectionError());
             }
 
             if(_amqpConnection.isAuthenticationError())
             {
-                throw new ConnectionException("Connection failed: 2");
+                throw new ConnectionException("Connection failed: authentication failure");
             }
 
             if(!_amqpConnection.isConnected())
             {
-                throw new ConnectionException("Connection failed: 3");
+                throw new ConnectionException("Connection failed");
             }
         }
         finally
@@ -204,16 +210,7 @@ public class ConnectionImpl implements Connection
         }
         catch(InterruptedException e)
         {
-            Thread.currentThread().interrupt();
-            JMSException jmse = new JMSException("Interrupted while trying to close connection");
-            jmse.setLinkedException(e);
-            throw jmse;
-        }
-        catch (TimeoutException | ConnectionException e)
-        {
-            JMSException jmse = new JMSException("Unable to close connection");
-            jmse.setLinkedException(e);
-            throw jmse;
+            throw new JmsInterruptedException("Interrupted while trying to close connection", e);
         }
         finally
         {
@@ -221,9 +218,6 @@ public class ConnectionImpl implements Connection
         }
     }
 
-    /**
-     * TODO the params are ignored - fix this
-     */
     @Override
     public SessionImpl createSession(boolean transacted, int acknowledgeMode) throws JMSException
     {
@@ -247,31 +241,10 @@ public class ConnectionImpl implements Connection
 
             return session;
         }
-        catch (TimeoutException e)
-        {
-            JMSException jmse = new JMSException("Unable to create session");
-            jmse.setLinkedException(e);
-            throw jmse;
-        }
-        catch(InterruptedException e)
-        {
-            Thread.currentThread().interrupt();
-            JMSException jmse = new JMSException("Interrupted while trying to create session");
-            jmse.setLinkedException(e);
-            throw jmse;
-        }
         finally
         {
             releaseLock();
         }
-    }
-
-    /**
-     * TODO add @Override when we start implementing the JMS2 API.
-     */
-    public Session createSession() throws JMSException
-    {
-        return createSession(false, Session.AUTO_ACKNOWLEDGE);
     }
 
     /**
@@ -351,8 +324,7 @@ public class ConnectionImpl implements Connection
     @Override
     public void start() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        _isStarted = true;
     }
 
     @Override
@@ -376,4 +348,8 @@ public class ConnectionImpl implements Connection
         throw new UnsupportedOperationException("PHTODO");
     }
 
+    boolean isStarted()
+    {
+        return _isStarted;
+    }
 }

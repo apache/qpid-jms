@@ -18,15 +18,14 @@
  * under the License.
  *
  */
-package org.apache.qpid.jms.engine;
+package org.apache.qpid.jms.impl;
 
-// TODO make me (or wrap me in) a JMSException
-public class LinkException extends Exception
+public class JmsTimeoutException extends QpidJmsException
 {
-    private static final long serialVersionUID = 419676688719664719L;
+    private static final long serialVersionUID = 7486676055343430641L;
 
-    public LinkException(String msg)
+    public JmsTimeoutException(long timeoutMillis, String pendingCondition)
     {
-        super(msg);
+        super("Timed out after " + timeoutMillis + " ms waiting for condition: " + pendingCondition);
     }
 }

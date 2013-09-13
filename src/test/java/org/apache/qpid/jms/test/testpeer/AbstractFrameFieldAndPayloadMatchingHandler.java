@@ -23,6 +23,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
@@ -31,59 +32,79 @@ import org.hamcrest.Matcher;
 
 public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends FrameMatchingHandler
 {
-    private final Map<Integer, Matcher<?>> _matchers;
-    private Map<Integer, Object> _receivedFields;
+    private final Logger _logger = Logger.getLogger(getClass().getName());
 
+    private final Map<Enum<?>, Matcher<?>> _fieldMatchers;
+    private Map<Enum<?>, Object> _receivedFields;
+
+    /**
+     * @param fieldMatchers a map of field matchers, keyed by enums representing the fields
+     * (the enums just need to have an ordinal number matching the AMQP spec field order,
+     * and preferably a sensible name)
+     */
     protected AbstractFrameFieldAndPayloadMatchingHandler(FrameType frameType,
                                                 int channel,
                                                 UnsignedLong numericDescriptor,
                                                 Symbol symbolicDescriptor,
-                                                Map<Integer, Matcher<?>> matchers,
+                                                Map<Enum<?>, Matcher<?>> fieldMatchers,
                                                 Runnable onSuccess)
     {
         super(frameType, channel, numericDescriptor, symbolicDescriptor, onSuccess);
-        _matchers = matchers;
+        _fieldMatchers = fieldMatchers;
     }
 
-    protected Map<Integer, Matcher<?>> getMatchers()
+    protected Map<Enum<?>, Matcher<?>> getMatchers()
     {
-        return _matchers;
+        return _fieldMatchers;
     }
 
+    /**
+     * Returns the received values, keyed by enums representing the fields
+     * (the enums have an ordinal number matching the AMQP spec field order,
+     * and a sensible name)
+     */
     @Override
-    protected Map<Integer, Object> getReceivedFields()
+    protected Map<Enum<?>, Object> getReceivedFields()
     {
         return _receivedFields;
     }
 
     @Override
-    protected void frame(List<Object> described, Binary payload)
+    protected void verifyFrame(List<Object> described, Binary payload)
     {
         verifyPayload(payload);
         verifyFields(described);
-
-        succeeded();
     }
 
     protected void verifyFields(List<Object> described)
     {
-        int i = 0;
-        HashMap<Integer, Object> valueMap = new HashMap<>();
+        int fieldNumber = 0;
+        HashMap<Enum<?>, Object> valueMap = new HashMap<>();
         for(Object value : described)
         {
-            valueMap.put(i++, value);
+            valueMap.put(getField(fieldNumber++), value);
         }
 
         _receivedFields = valueMap;
 
-        for(Map.Entry<Integer, Matcher<?>> entry : _matchers.entrySet())
+        _logger.fine("About to check the fields of the described type."
+                + "\n  Received:" + valueMap
+                + "\n  Expectations: " + _fieldMatchers);
+        for(Map.Entry<Enum<?>, Matcher<?>> entry : _fieldMatchers.entrySet())
         {
             @SuppressWarnings("unchecked")
             Matcher<Object> matcher = (Matcher<Object>) entry.getValue();
-            Integer field = entry.getKey();
-
-            assertThat("Field value should match", valueMap.get(field), matcher);
+            Enum<?> field = entry.getKey();
+            assertThat("Field " + field + " value should match", valueMap.get(field), matcher);
         }
+    }
+
+    /**
+     * Intended to be overridden in most cases (but not necessarily all - hence not marked as abstract)
+     */
+    protected Enum<?> getField(int fieldIndex)
+    {
+        throw new UnsupportedOperationException("getFieldName is expected to be overridden by subclass if it is required");
     }
 
     protected abstract void verifyPayload(Binary payload);

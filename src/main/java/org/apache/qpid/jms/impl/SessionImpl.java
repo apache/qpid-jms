@@ -21,10 +21,10 @@
 package org.apache.qpid.jms.impl;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 import javax.jms.BytesMessage;
 import javax.jms.Destination;
+import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.MapMessage;
 import javax.jms.Message;
@@ -46,12 +46,10 @@ import org.apache.qpid.jms.engine.AmqpConnection;
 import org.apache.qpid.jms.engine.AmqpReceiver;
 import org.apache.qpid.jms.engine.AmqpSender;
 import org.apache.qpid.jms.engine.AmqpSession;
-import org.apache.qpid.jms.engine.ConnectionException;
-import org.apache.qpid.jms.engine.LinkException;
-import org.apache.qpid.proton.TimeoutException;
 
 public class SessionImpl implements Session
 {
+    private static final int INITIAL_RECEIVER_CREDIT = 1;
     private AmqpSession _amqpSession;
     private ConnectionImpl _connectionImpl;
 
@@ -61,7 +59,7 @@ public class SessionImpl implements Session
         _connectionImpl = connectionImpl;
     }
 
-    public void establish() throws TimeoutException, InterruptedException
+    public void establish() throws JmsTimeoutException, JmsInterruptedException
     {
         _connectionImpl.waitUntil(new SimplePredicate("Session established", _amqpSession)
         {
@@ -98,19 +96,6 @@ public class SessionImpl implements Session
                 throw new ConnectionException("Session close failed: " + _amqpSession.getSessionError());
             }
         }
-        catch(InterruptedException e)
-        {
-            Thread.currentThread().interrupt();
-            JMSException jmse = new JMSException("Interrupted while trying to close session");
-            jmse.setLinkedException(e);
-            throw jmse;
-        }
-        catch (TimeoutException | ConnectionException e)
-        {
-            JMSException jmse = new JMSException("Unable to close session");
-            jmse.setLinkedException(e);
-            throw jmse;
-        }
         finally
         {
             _connectionImpl.releaseLock();
@@ -133,8 +118,7 @@ public class SessionImpl implements Session
         else if (destination instanceof Queue)
         {
             Queue queue = (Queue) destination;
-            String senderName = "producer-" + queue.getQueueName() + "-" + UUID.randomUUID();
-            return createSender(senderName, queue.getQueueName());
+            return createSender(queue.getQueueName());
         }
         else if(destination instanceof Topic)
         {
@@ -147,7 +131,7 @@ public class SessionImpl implements Session
 
     }
 
-    private SenderImpl createSender(String senderName, String address) throws JMSException
+    private SenderImpl createSender(String address) throws JMSException
     {
         _connectionImpl.lock();
         try
@@ -158,34 +142,51 @@ public class SessionImpl implements Session
             sender.establish();
             return sender;
         }
-        catch (InterruptedException e)
-        {
-            Thread.currentThread().interrupt();
-            JMSException jmse = new JMSException("Interrupted while trying to create sender");
-            jmse.setLinkedException(e);
-            throw jmse;
-        }
-        catch (TimeoutException | LinkException e)
-        {
-            JMSException jmse = new JMSException("Unable to create sender: " + e.getMessage());
-            jmse.setLinkedException(e);
-            throw jmse;
-        }
         finally
         {
             _connectionImpl.releaseLock();
         }
     }
 
-    public ReceiverImpl createReceiver(String name, String address) throws TimeoutException, InterruptedException, LinkException
+    @Override
+    public MessageConsumer createConsumer(Destination destination) throws JMSException
+    {
+        if(destination == null)
+        {
+            throw new InvalidDestinationException("Null destination provided");
+        }
+        else if (destination instanceof Queue)
+        {
+            Queue queue = (Queue) destination;
+            return createReceiver(queue.getQueueName());
+        }
+        else if(destination instanceof Topic)
+        {
+            throw new UnsupportedOperationException("Topics are not yet supported");
+        }
+        else
+        {
+            throw new IllegalArgumentException("Destination expected to be a Queue or a Topic but was: " + destination.getClass());
+        }
+    }
+
+    private ReceiverImpl createReceiver(String address) throws JMSException
     {
         _connectionImpl.lock();
         try
         {
-            AmqpReceiver amqpReceiver = _amqpSession.createAmqpReceiver(name, address);
-            ReceiverImpl receiver = new ReceiverImpl(this, amqpReceiver);
+            AmqpReceiver amqpReceiver = _amqpSession.createAmqpReceiver(address);
+            ReceiverImpl receiver = new ReceiverImpl(_connectionImpl, this, amqpReceiver);
             _connectionImpl.stateChanged();
             receiver.establish();
+
+            if(_connectionImpl.isStarted())
+            {
+                //issue initial flow for the consumer
+                amqpReceiver.credit(INITIAL_RECEIVER_CREDIT);
+                _connectionImpl.stateChanged();
+            }
+
             return receiver;
         }
         finally
@@ -299,13 +300,6 @@ public class SessionImpl implements Session
 
     @Override
     public void run()
-    {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
-    }
-
-    @Override
-    public MessageConsumer createConsumer(Destination destination) throws JMSException
     {
         // PHTODO Auto-generated method stub
         throw new UnsupportedOperationException("PHTODO");

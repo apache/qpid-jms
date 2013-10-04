@@ -235,7 +235,7 @@ public class ConnectionImpl implements Connection
         {
             AmqpSession amqpSession = _amqpConnection.createSession();
 
-            SessionImpl session = new SessionImpl(amqpSession, this);
+            SessionImpl session = new SessionImpl(acknowledgeMode, amqpSession, this);
             stateChanged();
             session.establish();
 
@@ -289,36 +289,36 @@ public class ConnectionImpl implements Connection
     @Override
     public String getClientID() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public void setClientID(String clientID) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public ConnectionMetaData getMetaData() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public ExceptionListener getExceptionListener() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public void setExceptionListener(ExceptionListener listener) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
@@ -330,22 +330,22 @@ public class ConnectionImpl implements Connection
     @Override
     public void stop() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public ConnectionConsumer createConnectionConsumer(Destination destination, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public ConnectionConsumer createDurableConnectionConsumer(Topic topic, String subscriptionName, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     boolean isStarted()

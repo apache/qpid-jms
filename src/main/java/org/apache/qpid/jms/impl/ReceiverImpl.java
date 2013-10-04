@@ -24,6 +24,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
+import javax.jms.Session;
 
 import org.apache.qpid.jms.engine.AmqpMessage;
 import org.apache.qpid.jms.engine.AmqpReceiver;
@@ -43,8 +44,8 @@ public class ReceiverImpl extends LinkImpl implements MessageConsumer
     @Override
     public Message receive() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
@@ -62,10 +63,22 @@ public class ReceiverImpl extends LinkImpl implements MessageConsumer
             getConnectionImpl().waitUntil(messageReceievedCondition, timeout);
 
             //TODO: decide what if any particular message impl class to instantiate
+
+            AmqpMessage receivedAmqpMessage = messageReceievedCondition.getReceivedMessage();
+            MessageImpl receivedMessageImpl = new MessageImpl(receivedAmqpMessage, _sessionImpl, getConnectionImpl());
+
             //TODO: accepting/settling will be acknowledge-mode dependent
-            ReceivedMessageImpl receivedMessageImpl = new ReceivedMessageImpl(messageReceievedCondition.getReceivedMessage(), _sessionImpl);
-            receivedMessageImpl.accept(true);
+            if(_sessionImpl.getAcknowledgeMode() == Session.AUTO_ACKNOWLEDGE)
+            {
+                receivedAmqpMessage.accept(true);
+            }
+            else
+            {
+                throw new UnsupportedOperationException("Only Auto-Ack currently supported");
+            }
+
             getConnectionImpl().stateChanged();
+
             return receivedMessageImpl;
         }
         catch (JmsTimeoutException e)
@@ -121,29 +134,29 @@ public class ReceiverImpl extends LinkImpl implements MessageConsumer
     @Override
     public String getMessageSelector() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public MessageListener getMessageListener() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public void setMessageListener(MessageListener listener) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public Message receiveNoWait() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
 }

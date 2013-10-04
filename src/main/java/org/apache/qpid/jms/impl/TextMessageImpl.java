@@ -23,21 +23,22 @@ import javax.jms.TextMessage;
 
 public class TextMessageImpl extends MessageImpl implements TextMessage
 {
-    public TextMessageImpl() throws JMSException
+    public TextMessageImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
-        super();
+        super(sessionImpl, connectionImpl);
     }
 
-    public TextMessageImpl(String text) throws JMSException
+    public TextMessageImpl(String text, SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
+        this(sessionImpl, connectionImpl);
         setText(text);
     }
 
     @Override
     public String getText() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override

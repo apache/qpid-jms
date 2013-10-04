@@ -50,11 +50,14 @@ import org.apache.qpid.jms.engine.AmqpSession;
 public class SessionImpl implements Session
 {
     private static final int INITIAL_RECEIVER_CREDIT = 1;
+
+    private int _acknowledgeMode;
     private AmqpSession _amqpSession;
     private ConnectionImpl _connectionImpl;
 
-    public SessionImpl(AmqpSession amqpSession, ConnectionImpl connectionImpl)
+    public SessionImpl(int acknowledgeMode, AmqpSession amqpSession, ConnectionImpl connectionImpl)
     {
+        _acknowledgeMode = acknowledgeMode;
         _amqpSession = amqpSession;
         _connectionImpl = connectionImpl;
     }
@@ -162,6 +165,7 @@ public class SessionImpl implements Session
         }
         else if(destination instanceof Topic)
         {
+            //TODO: support Topic destinations
             throw new UnsupportedOperationException("Topics are not yet supported");
         }
         else
@@ -182,7 +186,8 @@ public class SessionImpl implements Session
 
             if(_connectionImpl.isStarted())
             {
-                //issue initial flow for the consumer
+                //Issue initial flow for the consumer.
+                //TODO: decide on prefetch behaviour, i.e. whether we defer flow or do it now, and what value to use.
                 amqpReceiver.credit(INITIAL_RECEIVER_CREDIT);
                 _connectionImpl.stateChanged();
             }
@@ -198,125 +203,125 @@ public class SessionImpl implements Session
     @Override
     public BytesMessage createBytesMessage() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public MapMessage createMapMessage() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public Message createMessage() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public ObjectMessage createObjectMessage() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public ObjectMessage createObjectMessage(Serializable object) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public StreamMessage createStreamMessage() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public TextMessage createTextMessage() throws JMSException
     {
-        return new TextMessageImpl();
+        return new TextMessageImpl(this, _connectionImpl);
     }
 
     @Override
     public TextMessage createTextMessage(String text) throws JMSException
     {
-        return new TextMessageImpl(text);
+        return new TextMessageImpl(text, this, _connectionImpl);
     }
 
     @Override
     public boolean getTransacted() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public int getAcknowledgeMode() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO do we need to throw an exceptions (e.g. if closed)?
+        return _acknowledgeMode;
     }
 
     @Override
     public void commit() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public void rollback() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public void recover() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public MessageListener getMessageListener() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public void setMessageListener(MessageListener listener) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public void run()
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public MessageConsumer createConsumer(Destination destination, String messageSelector) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean NoLocal) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
@@ -328,56 +333,56 @@ public class SessionImpl implements Session
     @Override
     public Topic createTopic(String topicName) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public TopicSubscriber createDurableSubscriber(Topic topic, String name, String messageSelector, boolean noLocal) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public QueueBrowser createBrowser(Queue queue) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public QueueBrowser createBrowser(Queue queue, String messageSelector) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public TemporaryQueue createTemporaryQueue() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public TemporaryTopic createTemporaryTopic() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public void unsubscribe(String name) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 }

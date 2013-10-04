@@ -27,7 +27,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
-import org.apache.qpid.jms.impl.ReceivedMessageImpl;
+import org.apache.qpid.jms.impl.MessageImpl;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.junit.Test;
 
@@ -92,7 +92,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase
             MessageConsumer messageConsumer = session.createConsumer(queue);
 
             // TODO check that it's a TextMessage with expected content: String expectedText = "myMessage";
-            ReceivedMessageImpl receivedMessage = (ReceivedMessageImpl) messageConsumer.receive(1000);
+            MessageImpl receivedMessage = (MessageImpl) messageConsumer.receive(1000);
             assertNotNull(receivedMessage);
 
             testPeer.waitForAllHandlersToComplete();

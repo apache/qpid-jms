@@ -77,98 +77,98 @@ public class SenderImpl extends LinkImpl implements MessageProducer
     @Override
     public void setDisableMessageID(boolean value) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public boolean getDisableMessageID() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public void setDisableMessageTimestamp(boolean value) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public boolean getDisableMessageTimestamp() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public void setDeliveryMode(int deliveryMode) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public int getDeliveryMode() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public void setPriority(int defaultPriority) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public int getPriority() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public void setTimeToLive(long timeToLive) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public long getTimeToLive() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public Destination getDestination() throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public void send(Destination destination, Message message) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public void send(Message message, int deliveryMode, int priority, long timeToLive) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 
     @Override
     public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive) throws JMSException
     {
-        // PHTODO Auto-generated method stub
-        throw new UnsupportedOperationException("PHTODO");
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
     }
 }

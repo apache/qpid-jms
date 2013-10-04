@@ -24,6 +24,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import javax.jms.Session;
+
 import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.jms.engine.AmqpMessage;
 import org.apache.qpid.jms.engine.AmqpReceiver;
@@ -56,12 +58,13 @@ public class ReceiverImplTest extends QpidJmsTestCase
         Mockito.when(_mockConnection.isStarted()).thenReturn(true);
         Mockito.when(_mockAmqpReceiver.receiveNoWait()).thenReturn(_mockAmqpMessage);
         Mockito.when(_mockSession.getConnectionImpl()).thenReturn(_mockConnection);
+        Mockito.when(_mockSession.getAcknowledgeMode()).thenReturn(Session.AUTO_ACKNOWLEDGE);
 
         ImmediateWaitUntil.mockWaitUntil(_mockConnection);
 
         ReceiverImpl receiver = new ReceiverImpl(_mockConnection, _mockSession, _mockAmqpReceiver);
 
-        ReceivedMessageImpl messageImpl = (ReceivedMessageImpl) receiver.receive(1);
+        MessageImpl messageImpl = (MessageImpl) receiver.receive(1);
         assertNotNull("Should not receive a message when connection is not started", messageImpl);
         assertEquals("Underlying AmqpMessage should be the one provided", _mockAmqpMessage, messageImpl.getAmqpMessage());
     }

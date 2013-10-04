@@ -37,7 +37,10 @@ public class AmqpReceiver extends AmqpLink
 
     public void credit(int credit)
     {
-        _protonReceiver.flow(credit);
+        synchronized (getAmqpConnection())
+        {
+            _protonReceiver.flow(credit);
+        }
     }
 
     public AmqpMessage receiveNoWait()

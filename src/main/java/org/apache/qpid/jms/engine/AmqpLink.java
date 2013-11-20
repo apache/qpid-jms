@@ -37,11 +37,11 @@ public abstract class AmqpLink
     private boolean _closed;
 
 
-    public AmqpLink(AmqpSession amqpSession, Link protonLink)
+    public AmqpLink(AmqpSession amqpSession, Link protonLink, AmqpConnection amqpConnection)
     {
         _amqpSession = amqpSession;
         _protonLink = protonLink;
-        _amqpConnection = _amqpSession.getAmqpConnection();
+        _amqpConnection = amqpConnection;
     }
 
     public boolean isEstablished()

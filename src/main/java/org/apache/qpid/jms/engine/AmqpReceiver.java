@@ -29,9 +29,9 @@ public class AmqpReceiver extends AmqpLink
     private Receiver _protonReceiver;
     private byte[] _buffer = new byte[1024];
 
-    public AmqpReceiver(AmqpSession amqpSession, Receiver protonReceiver)
+    public AmqpReceiver(AmqpSession amqpSession, Receiver protonReceiver, AmqpConnection amqpConnection)
     {
-        super(amqpSession, protonReceiver);
+        super(amqpSession, protonReceiver, amqpConnection);
         _protonReceiver = protonReceiver;
     }
 
@@ -74,10 +74,12 @@ public class AmqpReceiver extends AmqpLink
                                 break;
                             }
                         }
+
                         Message message = getAmqpConnection().getMessageFactory().createMessage();
                         message.decode(_buffer, 0, total);
 
-                        AmqpMessage amqpMessage = new AmqpMessage(currentDelivery, message, this);
+                        //TODO: dont create a new factory for every message
+                        AmqpMessage amqpMessage = new AmqpMessageFactory().createAmqpMessage(currentDelivery, message, getAmqpConnection());
                         currentDelivery.setContext(amqpMessage);
                         _protonReceiver.advance();
                         return amqpMessage;

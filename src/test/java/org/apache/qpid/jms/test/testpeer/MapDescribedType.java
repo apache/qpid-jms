@@ -18,42 +18,22 @@
  */
 package org.apache.qpid.jms.test.testpeer;
 
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.qpid.proton.amqp.DescribedType;
 
-public abstract class ListDescribedType implements DescribedType
+public abstract class MapDescribedType implements DescribedType
 {
-    private final Object[] _fields;
+    private final Map<Object,Object> _fields;
 
-    public ListDescribedType(int numberOfFields)
+    public MapDescribedType()
     {
-        _fields = new Object[numberOfFields];
+        _fields = new HashMap<Object,Object>();
     }
 
     @Override
-    public Object getDescribed()
-    {
-        //Return a List containing only the 'used fields' (i.e up to the highest field used)
-        int numUsedFields = 0;
-        for(int i = 0; i < _fields.length; i++)
-        {
-            if(_fields[i] != null)
-            {
-                numUsedFields = i + 1;
-            }
-        }
-
-        Object[] usedFields = new Object[numUsedFields];
-        for(int j = 0; j < numUsedFields; j++)
-        {
-            usedFields[j] = _fields[j];
-        }
-
-        return Arrays.asList(usedFields);
-    }
-
-    protected Object[] getFields()
+    public Map<Object, Object> getDescribed()
     {
         return _fields;
     }
@@ -61,6 +41,6 @@ public abstract class ListDescribedType implements DescribedType
     @Override
     public String toString()
     {
-        return "ListDescribedType [descriptor=" + getDescriptor() + " fields=" + Arrays.toString(_fields) + "]";
+        return "MapDescribedType [descriptor=" + getDescriptor() + " fields=" + _fields + "]";
     }
 }

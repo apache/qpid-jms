@@ -26,28 +26,30 @@ import javax.jms.Message;
 
 import org.apache.qpid.jms.engine.AmqpMessage;
 
-public class MessageImpl implements Message
+public abstract class MessageImpl<T extends AmqpMessage> implements Message
 {
-    private final AmqpMessage _amqpMessage;
-    private final SessionImpl _sessionImpl;
-    private final ConnectionImpl _connectionImpl;
+    private final T _amqpMessage;
 
-    public MessageImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl)
-    {
-        this(new AmqpMessage(), sessionImpl, connectionImpl);
-    }
-
-    public MessageImpl(AmqpMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl)
+    public MessageImpl(T amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl)
     {
         _amqpMessage = amqpMessage;
-        _sessionImpl = sessionImpl;
-        _connectionImpl = connectionImpl;
     }
 
-    AmqpMessage getAmqpMessage()
+    T getUnderlyingAmqpMessage(boolean prepareForSending)
     {
-        return _amqpMessage;
+        if(prepareForSending)
+        {
+            return prepareUnderlyingAmqpMessageForSending(_amqpMessage);
+        }
+        else
+        {
+            return _amqpMessage;
+        }
     }
+
+    protected abstract T prepareUnderlyingAmqpMessageForSending(T amqpMessage);
+
+    //======= JMS Methods =======
 
     @Override
     public String getJMSMessageID() throws JMSException
@@ -363,5 +365,4 @@ public class MessageImpl implements Message
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Not Implemented");
     }
-
 }

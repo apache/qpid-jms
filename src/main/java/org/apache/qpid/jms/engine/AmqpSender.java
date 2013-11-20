@@ -32,9 +32,9 @@ public class AmqpSender extends AmqpLink
     private byte[] _buffer = new byte[1024];
     private final Sender _protonSender;
 
-    public AmqpSender(AmqpSession amqpSession, Sender protonSender)
+    public AmqpSender(AmqpSession amqpSession, Sender protonSender, AmqpConnection amqpConnection)
     {
-        super(amqpSession, protonSender);
+        super(amqpSession, protonSender, amqpConnection);
         _protonSender = protonSender;
     }
 
@@ -46,7 +46,7 @@ public class AmqpSender extends AmqpLink
             byte[] bufferBytes = new byte[8];
             ByteBuffer buffer = ByteBuffer.wrap(bufferBytes);
 
-            buffer.putLong(0,tag++);
+            buffer.putLong(0, tag++);
 
             Delivery del = _protonSender.delivery(bufferBytes);
 
@@ -66,10 +66,10 @@ public class AmqpSender extends AmqpLink
             _protonSender.send(_buffer, 0, encoded);
             _protonSender.advance();
 
-            AmqpSentMessageToken amqpSentMessage = new AmqpSentMessageToken(del, this);
-            del.setContext(amqpSentMessage);
+            AmqpSentMessageToken amqpSentMessageToken = new AmqpSentMessageToken(del, this);
+            del.setContext(amqpSentMessageToken);
 
-            return amqpSentMessage;
+            return amqpSentMessageToken;
         }
     }
 

@@ -61,11 +61,10 @@ public class ReceiverImpl extends LinkImpl implements MessageConsumer
 
             MessageReceivedPredicate messageReceievedCondition = new MessageReceivedPredicate();
             getConnectionImpl().waitUntil(messageReceievedCondition, timeout);
-
-            //TODO: decide what if any particular message impl class to instantiate
-
             AmqpMessage receivedAmqpMessage = messageReceievedCondition.getReceivedMessage();
-            MessageImpl receivedMessageImpl = new MessageImpl(receivedAmqpMessage, _sessionImpl, getConnectionImpl());
+
+            //TODO: don't create a new factory for every message
+            Message receivedMessage = new MessageFactoryImpl().createJmsMessage(receivedAmqpMessage, _sessionImpl, getConnectionImpl());
 
             //TODO: accepting/settling will be acknowledge-mode dependent
             if(_sessionImpl.getAcknowledgeMode() == Session.AUTO_ACKNOWLEDGE)
@@ -79,7 +78,7 @@ public class ReceiverImpl extends LinkImpl implements MessageConsumer
 
             getConnectionImpl().stateChanged();
 
-            return receivedMessageImpl;
+            return receivedMessage;
         }
         catch (JmsTimeoutException e)
         {

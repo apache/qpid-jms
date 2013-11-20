@@ -21,30 +21,48 @@ package org.apache.qpid.jms.impl;
 import javax.jms.JMSException;
 import javax.jms.TextMessage;
 
-public class TextMessageImpl extends MessageImpl implements TextMessage
+import org.apache.qpid.jms.engine.AmqpTextMessage;
+
+public class TextMessageImpl extends MessageImpl<AmqpTextMessage> implements TextMessage
 {
     public TextMessageImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
-        super(sessionImpl, connectionImpl);
+        this((String) null, sessionImpl, connectionImpl);
     }
 
     public TextMessageImpl(String text, SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
-        this(sessionImpl, connectionImpl);
+        this(new AmqpTextMessage(), sessionImpl, connectionImpl);
         setText(text);
     }
+
+    public TextMessageImpl(AmqpTextMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
+    {
+        super(amqpMessage, sessionImpl, connectionImpl);
+    }
+
+    @Override
+    protected AmqpTextMessage prepareUnderlyingAmqpMessageForSending(AmqpTextMessage amqpMessage)
+    {
+        //Nothing to do here currently, the message operations are all
+        //already operating on the AmqpMessage directly
+
+        //TODO: do we need to do anything later with properties/headers etc?
+        return amqpMessage;
+    }
+
+    //======= JMS Methods =======
 
     @Override
     public String getText() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        return getUnderlyingAmqpMessage(false).getText();
     }
 
     @Override
-    public void setText(String string) throws JMSException
+    public void setText(String text) throws JMSException
     {
-        getAmqpMessage().setText(string);
+        //TODO: checkWritable();
+        getUnderlyingAmqpMessage(false).setText(text);
     }
-
 }

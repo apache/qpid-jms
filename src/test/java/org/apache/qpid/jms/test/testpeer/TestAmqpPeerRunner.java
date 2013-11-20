@@ -41,7 +41,7 @@ class TestAmqpPeerRunner implements Runnable
     private final Object _inputHandlingLock = new Object();
     private final TestFrameParser _testFrameParser;
 
-    private volatile Exception _exception;
+    private volatile Throwable _throwable;
 
     public TestAmqpPeerRunner(int port, TestAmqpPeer peer) throws IOException
     {
@@ -82,16 +82,16 @@ class TestAmqpPeerRunner implements Runnable
 
             _logger.finest("Exited read loop");
         }
-        catch (Exception e)
+        catch (Throwable t)
         {
             if(!_serverSocket.isClosed())
             {
-                _logger.log(Level.SEVERE, "Problem in peer", e);
-                _exception = e;
+                _logger.log(Level.SEVERE, "Problem in peer", t);
+                _throwable = t;
             }
             else
             {
-                _logger.fine("Caught exception, ignoring as socket is closed: " + e);
+                _logger.fine("Caught throwable, ignoring as socket is closed: " + t);
             }
         }
         finally
@@ -145,8 +145,8 @@ class TestAmqpPeerRunner implements Runnable
         }
     }
 
-    public Exception getException()
+    public Throwable getException()
     {
-        return _exception;
+        return _throwable;
     }
 }

@@ -66,10 +66,11 @@ public class SenderImpl extends LinkImpl implements MessageProducer
     {
         if(message instanceof MessageImpl)
         {
-            return ((MessageImpl)message).getAmqpMessage();
+            return ((MessageImpl<?>)message).getUnderlyingAmqpMessage(true);
         }
         else
         {
+            //TODO
             throw new UnsupportedOperationException("cross-vendor message support has yet to be implemented");
         }
     }

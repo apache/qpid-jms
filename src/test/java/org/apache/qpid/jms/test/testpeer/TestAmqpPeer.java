@@ -40,6 +40,9 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.OpenFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.SaslMechanismsFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.SaslOutcomeFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.TransferFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.HeaderDescribedType;
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.MessageAnnotationsDescribedType;
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.AttachMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.BeginMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.CloseMatcher;
@@ -100,7 +103,7 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     /**
-     * Shuts down the test peer, throwing any Exception
+     * Shuts down the test peer, throwing any Throwable
      * that occurred on the peer, or validating that no
      * unused matchers remain.
      */
@@ -119,7 +122,8 @@ public class TestAmqpPeer implements AutoCloseable
         }
         finally
         {
-            if(getException() == null)
+            Throwable throwable = getThrowable();
+            if(throwable == null)
             {
                 synchronized(_handlersLock)
                 {
@@ -128,12 +132,13 @@ public class TestAmqpPeer implements AutoCloseable
             }
             else
             {
-                throw getException();
+                //AutoClosable can't handle throwing Throwables, so we wrap it.
+                throw new RuntimeException("TestPeer caught throwable during run", throwable);
             }
         }
     }
 
-    public Exception getException()
+    public Throwable getThrowable()
     {
         return _driverRunnable.getException();
     }
@@ -206,19 +211,17 @@ public class TestAmqpPeer implements AutoCloseable
         }
     }
 
-    public void waitForAllHandlersToComplete() throws InterruptedException
+    public void waitForAllHandlersToComplete(int timeoutMillis) throws InterruptedException
     {
-        final int timeoutSeconds = 5;
-
         synchronized(_handlersLock)
         {
             _handlersCompletedLatch = new CountDownLatch(_handlers.size());
         }
 
-        boolean countedDownOk = _handlersCompletedLatch.await(timeoutSeconds, TimeUnit.SECONDS);
+        boolean countedDownOk = _handlersCompletedLatch.await(timeoutMillis, TimeUnit.MILLISECONDS);
 
         Assert.assertTrue(
-                "All handlers should have completed within the " + timeoutSeconds + "s timeout", countedDownOk);
+                "All handlers should have completed within the " + timeoutMillis + "ms timeout", countedDownOk);
     }
 
     void sendHeader(byte[] header)
@@ -404,7 +407,10 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(attachMatcher);
     }
 
-    public void expectLinkFlowRespondWithTransfer()
+    public void expectLinkFlowRespondWithTransfer(final HeaderDescribedType headerDescribedType,
+                                                  final MessageAnnotationsDescribedType messageAnnotationsDescribedType,
+                                                  final PropertiesDescribedType propertiesDescribedType,
+                                                  final DescribedType content)
     {
         final FlowMatcher flowMatcher = new FlowMatcher()
                         .withLinkCredit(Matchers.greaterThan(UnsignedInteger.ZERO));
@@ -418,21 +424,26 @@ public class TestAmqpPeer implements AutoCloseable
 
         Data payloadData = Proton.data(1024);
 
-        // TODO: create an actual AmqpValue described type?
-        payloadData.putDescribedType(new DescribedType()
+        if(headerDescribedType != null)
         {
-            @Override
-            public Object getDescriptor()
-            {
-                return  Symbol.valueOf("amqp:amqp-value:*");
-            }
+            payloadData.putDescribedType(headerDescribedType);
+        }
 
-            @Override
-            public Object getDescribed()
-            {
-                return "Hello World";
-            }
-        });
+        if(messageAnnotationsDescribedType != null)
+        {
+            payloadData.putDescribedType(messageAnnotationsDescribedType);
+        }
+
+        if(propertiesDescribedType != null)
+        {
+            payloadData.putDescribedType(propertiesDescribedType);
+        }
+
+        if(content != null)
+        {
+            payloadData.putDescribedType(content);
+        }
+
         Binary payload = payloadData.encode();
 
         FrameSender transferResponseSender = new FrameSender(

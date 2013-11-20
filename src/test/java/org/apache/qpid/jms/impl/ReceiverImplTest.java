@@ -23,21 +23,34 @@ package org.apache.qpid.jms.impl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
+import javax.jms.Message;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
+import org.apache.qpid.jms.engine.AmqpGenericMessage;
 import org.apache.qpid.jms.engine.AmqpMessage;
 import org.apache.qpid.jms.engine.AmqpReceiver;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 public class ReceiverImplTest extends QpidJmsTestCase
 {
-    private final ConnectionImpl _mockConnection = Mockito.mock(ConnectionImpl.class);
-    private final AmqpReceiver _mockAmqpReceiver = Mockito.mock(AmqpReceiver.class);
-    private final SessionImpl _mockSession = Mockito.mock(SessionImpl.class);
-    private final AmqpMessage _mockAmqpMessage = Mockito.mock(AmqpMessage.class);
+    private ConnectionImpl _mockConnection;
+    private AmqpReceiver _mockAmqpReceiver;
+    private SessionImpl _mockSession;
+    private AmqpMessage _mockAmqpMessage;
+
+    @Before
+    public void setUp() throws Exception
+    {
+        _mockConnection = Mockito.mock(ConnectionImpl.class);
+        _mockAmqpReceiver = Mockito.mock(AmqpReceiver.class);
+        _mockSession = Mockito.mock(SessionImpl.class);
+        _mockAmqpMessage = Mockito.mock(AmqpGenericMessage.class);
+    }
 
     @Test
     public void testNoMessageReceivedWhenConnectionNotStarted() throws Exception
@@ -64,8 +77,9 @@ public class ReceiverImplTest extends QpidJmsTestCase
 
         ReceiverImpl receiver = new ReceiverImpl(_mockConnection, _mockSession, _mockAmqpReceiver);
 
-        MessageImpl messageImpl = (MessageImpl) receiver.receive(1);
-        assertNotNull("Should not receive a message when connection is not started", messageImpl);
-        assertEquals("Underlying AmqpMessage should be the one provided", _mockAmqpMessage, messageImpl.getAmqpMessage());
+        Message message = receiver.receive(1);
+        assertNotNull("Should receive a message when connection is started", message);
+        assertTrue("Unexpected message implementation", message instanceof MessageImpl<?>);
+        assertEquals("Underlying AmqpMessage should be the one provided", _mockAmqpMessage, ((MessageImpl<?>)message).getUnderlyingAmqpMessage(false));
     }
 }

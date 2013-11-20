@@ -16,27 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.jms;
+package org.apache.qpid.jms.engine;
 
-import static org.junit.Assert.assertNull;
+import org.apache.qpid.proton.engine.Delivery;
+import org.apache.qpid.proton.message.Message;
 
-import javax.jms.Connection;
-import javax.jms.JMSException;
-
-import org.apache.qpid.jms.impl.ConnectionImpl;
-import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
-
-public class IntegrationTestFixture
+public class AmqpMapMessage extends AmqpMessage
 {
-    static final int PORT = 25672;
-
-    Connection establishConnecton(TestAmqpPeer testPeer) throws JMSException
+    public AmqpMapMessage()
     {
-        testPeer.expectPlainConnect("guest", "guest", true);
+        super();
+    }
 
-        Connection connection =  new ConnectionImpl("clientName", "localhost", PORT, "guest", "guest");
-
-        assertNull(testPeer.getThrowable());
-        return connection;
+    public AmqpMapMessage(Delivery delivery, Message message, AmqpConnection amqpConnection)
+    {
+        super(message, delivery, amqpConnection);
     }
 }

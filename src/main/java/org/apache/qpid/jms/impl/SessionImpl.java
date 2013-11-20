@@ -203,8 +203,7 @@ public class SessionImpl implements Session
     @Override
     public BytesMessage createBytesMessage() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        return new BytesMessageImpl(this, getConnectionImpl());
     }
 
     @Override

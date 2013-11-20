@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,28 +16,34 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
-package org.apache.qpid.jms;
+package org.apache.qpid.jms.test.testpeer.describedtypes.sections;
 
-import static org.junit.Assert.assertNull;
+import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.amqp.DescribedType;
+import org.apache.qpid.proton.amqp.Symbol;
 
-import javax.jms.Connection;
-import javax.jms.JMSException;
-
-import org.apache.qpid.jms.impl.ConnectionImpl;
-import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
-
-public class IntegrationTestFixture
+public class DataDescribedType implements DescribedType
 {
-    static final int PORT = 25672;
+    private static final Symbol DESCIPTOR_SYMBOL = Symbol.valueOf("amqp:data:binary");
+    private Binary _described;
 
-    Connection establishConnecton(TestAmqpPeer testPeer) throws JMSException
+    public DataDescribedType(Binary described)
     {
-        testPeer.expectPlainConnect("guest", "guest", true);
-
-        Connection connection =  new ConnectionImpl("clientName", "localhost", PORT, "guest", "guest");
-
-        assertNull(testPeer.getThrowable());
-        return connection;
+        _described = described;
     }
+
+    @Override
+    public Object getDescriptor()
+    {
+        return DESCIPTOR_SYMBOL;
+    }
+
+    @Override
+    public Object getDescribed()
+    {
+        return _described;
+    }
+
 }

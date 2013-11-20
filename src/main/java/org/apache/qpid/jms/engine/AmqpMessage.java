@@ -20,9 +20,12 @@
  */
 package org.apache.qpid.jms.engine;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
-import org.apache.qpid.proton.amqp.messaging.AmqpValue;
+import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.impl.DeliveryImpl;
 import org.apache.qpid.proton.message.Message;
@@ -31,28 +34,40 @@ import org.apache.qpid.proton.message.Message;
  * Thread-safe (all state is guarded by the corresponding {@link AmqpConnection} monitor)
  *
  */
-public class AmqpMessage
+public abstract class AmqpMessage
 {
+    public static final String MESSAGE_ANNOTATION_TYPE_KEY_NAME = "x-opt-jms-message-type";
 
-    private final AmqpReceiver _amqpReceiver;
     private final Delivery _delivery;
     private final Message _message;
+    private final AmqpConnection _amqpConnection;
 
-    public AmqpMessage(Delivery delivery, Message message, AmqpReceiver amqpReceiver)
-    {
-        _delivery = delivery;
-        _amqpReceiver = amqpReceiver;
-        _message = message;
-    }
+    private volatile MessageAnnotations _messageAnnotations;
+    private volatile Map<Object,Object> _messageAnnotationsMap;
 
     /**
-     * Currently used when creating a message that we intend to send
+     * Used when creating a message that we intend to send
      */
     public AmqpMessage()
     {
-        _message = Proton.message();
-        _amqpReceiver = null;
-        _delivery = null;
+        this(Proton.message(), null, null);
+    }
+
+    /**
+     * Used when creating a message that has been received
+     */
+    @SuppressWarnings("unchecked")
+    public AmqpMessage(Message message, Delivery delivery, AmqpConnection amqpConnection)
+    {
+        _delivery = delivery;
+        _amqpConnection = amqpConnection;
+        _message = message;
+
+        _messageAnnotations = _message.getMessageAnnotations();
+        if(_messageAnnotations != null)
+        {
+            _messageAnnotationsMap = _messageAnnotations.getValue();
+        }
     }
 
     Message getMessage()
@@ -62,19 +77,19 @@ public class AmqpMessage
 
     public void accept(boolean settle)
     {
-        synchronized (_amqpReceiver.getAmqpConnection())
+        synchronized (_amqpConnection)
         {
             _delivery.disposition(Accepted.getInstance());
             if(settle)
             {
-                _delivery.settle();
+                settle();
             }
         }
     }
 
     public void settle()
     {
-        synchronized (_amqpReceiver.getAmqpConnection())
+        synchronized (_amqpConnection)
         {
             _delivery.settle();
         }
@@ -88,15 +103,78 @@ public class AmqpMessage
      */
     public boolean isSettled()
     {
-        synchronized (_amqpReceiver.getAmqpConnection())
+        synchronized (_amqpConnection)
         {
             return _delivery.isSettled() || ((_delivery instanceof DeliveryImpl && ((DeliveryImpl)_delivery).remotelySettled()));
         }
     }
 
-    public void setText(String string)
+    public void setContentType(String contentType)
     {
-        AmqpValue body = new AmqpValue(string);
-        _message.setBody(body);
+        //TODO: do we need to synchronise this?
+        _message.setContentType(contentType);
     }
+
+    public boolean messageAnnotationExists(Object key)
+    {
+        //TODO: this isn't thread-safe, does it need to be?
+        Map<Object,Object> msgAnnotations = _messageAnnotationsMap;
+        if(msgAnnotations == null)
+        {
+            return false;
+        }
+
+        return msgAnnotations.containsKey(key);
+    }
+
+    public void clearMessageAnnotation(Object key)
+    {
+        //TODO: this isnt thread-safe, does it need to be?
+        if(_messageAnnotationsMap == null)
+        {
+            return;
+        }
+
+        _messageAnnotationsMap.remove(key);
+
+        //If there are now no annotations, clear the field on
+        //the Proton message to avoid encoding an empty map
+        if(_messageAnnotationsMap.isEmpty())
+        {
+            clearAllMessageAnnotations();
+        }
+    }
+
+    public void clearAllMessageAnnotations()
+    {
+        //TODO: this isnt thread-safe, does it need to be?
+        _messageAnnotations = null;
+        _message.setMessageAnnotations(null);
+    }
+
+    public void setMessageAnnotation(Object key, Object value)
+    {
+        //TODO: this isnt thread-safe, does it need to be?
+        if(_messageAnnotationsMap == null)
+        {
+            _messageAnnotationsMap = new HashMap<Object,Object>();
+        }
+
+        _messageAnnotationsMap.put(key, value);
+
+        //If there were previously no annotations, we need to
+        //set the related field on the Proton message now
+        if(_messageAnnotations == null)
+        {
+            setMessageAnnotations();
+        }
+    }
+
+    private void setMessageAnnotations()
+    {
+        //TODO: this isnt thread-safe, does it need to be?
+        _messageAnnotations = new MessageAnnotations(_messageAnnotationsMap);
+        _message.setMessageAnnotations(_messageAnnotations);
+    }
+
 }

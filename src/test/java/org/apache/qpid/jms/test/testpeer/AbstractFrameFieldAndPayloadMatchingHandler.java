@@ -72,8 +72,8 @@ public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends FrameM
     @Override
     protected void verifyFrame(List<Object> described, Binary payload)
     {
-        verifyPayload(payload);
         verifyFields(described);
+        verifyPayload(payload);
     }
 
     protected void verifyFields(List<Object> described)

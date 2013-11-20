@@ -16,64 +16,74 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.jms;
+package org.apache.qpid.jms.test.testpeer.matchers.types;
 
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
-import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.codec.Data;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 
-public class EncodedAmqpValueMatcher extends TypeSafeMatcher<Binary>
+public abstract class EncodedAmqpTypeMatcher extends TypeSafeMatcher<Binary>
 {
-    private static final Symbol DESCRIPTOR_SYMBOL = Symbol.valueOf("amqp:amqp-value:*");
-    private static final UnsignedLong DESCRIPTOR_CODE = UnsignedLong.valueOf(0x0000000000000077L);
+    private final Symbol _descriptorSymbol;
+    private final UnsignedLong _descriptorCode;
     private final Object _expectedValue;
+    private boolean _permitTrailingBytes;
     private DescribedType _decodedDescribedType;
+    private boolean _unexpectedTrailingBytes;
 
-    /**
-     * @param expectedValue the value that is expected to be in the
-     * received {@link AmqpValue}
-     */
-    public EncodedAmqpValueMatcher(Object expectedValue)
+    public EncodedAmqpTypeMatcher(Symbol symbol, UnsignedLong code, Object expectedValue)
     {
+        this(symbol, code, expectedValue, false);
+    }
+
+    public EncodedAmqpTypeMatcher(Symbol symbol, UnsignedLong code, Object expectedValue, boolean permitTrailingBytes)
+    {
+        _descriptorSymbol = symbol;
+        _descriptorCode = code;
         _expectedValue = expectedValue;
+        _permitTrailingBytes = permitTrailingBytes;
+    }
+
+    protected Object getExpectedValue()
+    {
+        return _expectedValue;
     }
 
     @Override
     protected boolean matchesSafely(Binary receivedBinary)
     {
-        Data data = Proton.data(receivedBinary.getLength());
-        data.decode(receivedBinary.asByteBuffer());
+        int length = receivedBinary.getLength();
+        Data data = Proton.data(length);
+        long decoded = data.decode(receivedBinary.asByteBuffer());
         _decodedDescribedType = data.getDescribedType();
         Object descriptor = _decodedDescribedType.getDescriptor();
-        if(DESCRIPTOR_CODE.equals(descriptor) || DESCRIPTOR_SYMBOL.equals(descriptor))
-        {
-            if(_expectedValue.equals(_decodedDescribedType.getDescribed()))
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        else
+
+        if(!(_descriptorCode.equals(descriptor) || _descriptorSymbol.equals(descriptor)))
         {
             return false;
         }
-    }
 
-    @Override
-    public void describeTo(Description description)
-    {
-        description
-            .appendText("a Binary encoding of an AmqpValue that wraps ")
-            .appendValue(_expectedValue);
+        if(_expectedValue == null && _decodedDescribedType.getDescribed() != null)
+        {
+            return false;
+        }
+        else if(_expectedValue != null && !_expectedValue.equals(_decodedDescribedType.getDescribed()))
+        {
+            return false;
+        }
+
+        if(decoded < length && !_permitTrailingBytes)
+        {
+            _unexpectedTrailingBytes = true;
+            return false;
+        }
+
+        return true;
     }
 
     @Override
@@ -84,13 +94,21 @@ public class EncodedAmqpValueMatcher extends TypeSafeMatcher<Binary>
         if(_decodedDescribedType != null)
         {
             mismatchDescription.appendText("\nExpected descriptor: ")
-                .appendValue(DESCRIPTOR_SYMBOL)
+                .appendValue(_descriptorSymbol)
                 .appendText(" / ")
-                .appendValue(DESCRIPTOR_CODE);
+                .appendValue(_descriptorCode);
 
             mismatchDescription.appendText("\nActual described type: ").appendValue(_decodedDescribedType);
         }
+
+        if(_unexpectedTrailingBytes)
+        {
+            mismatchDescription.appendText("\nUnexpected trailing bytes in provided bytes after decoding!");
+        }
     }
 
-
+    /**
+     * Provide a description of this matcher.
+     */
+    public abstract void describeTo(Description description);
 }

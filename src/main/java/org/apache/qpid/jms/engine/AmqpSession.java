@@ -39,9 +39,9 @@ public class AmqpSession
 
     private boolean _closed;
 
-    public AmqpSession(AmqpConnection amqpConn, Session protonSession)
+    public AmqpSession(AmqpConnection amqpConnection, Session protonSession)
     {
-        _amqpConnection = amqpConn;
+        _amqpConnection = amqpConnection;
         _protonSession = protonSession;
     }
 
@@ -90,7 +90,7 @@ public class AmqpSession
         protonSender.setSenderSettleMode(SenderSettleMode.UNSETTLED);
         protonSender.setReceiverSettleMode(ReceiverSettleMode.FIRST);
 
-        AmqpSender amqpSender = new AmqpSender(this, protonSender);
+        AmqpSender amqpSender = new AmqpSender(this, protonSender, _amqpConnection);
         protonSender.setContext(amqpSender);
         protonSender.open();
         _amqpConnection.addPendingLink(protonSender);
@@ -113,7 +113,7 @@ public class AmqpSession
         protonReceiver.setSenderSettleMode(SenderSettleMode.UNSETTLED);
         protonReceiver.setReceiverSettleMode(ReceiverSettleMode.FIRST);
 
-        AmqpReceiver amqpReceiver = new AmqpReceiver(this, protonReceiver);
+        AmqpReceiver amqpReceiver = new AmqpReceiver(this, protonReceiver, _amqpConnection);
         protonReceiver.setContext(amqpReceiver);
         protonReceiver.open();
         _amqpConnection.addPendingLink(protonReceiver);

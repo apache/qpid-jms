@@ -16,27 +16,30 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.jms;
+package org.apache.qpid.jms.impl;
 
-import static org.junit.Assert.assertNull;
-
-import javax.jms.Connection;
 import javax.jms.JMSException;
+import javax.jms.Message;
 
-import org.apache.qpid.jms.impl.ConnectionImpl;
-import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
+import org.apache.qpid.jms.engine.AmqpGenericMessage;
 
-public class IntegrationTestFixture
+public class GenericAmqpMessageImpl extends MessageImpl<AmqpGenericMessage> implements Message
 {
-    static final int PORT = 25672;
-
-    Connection establishConnecton(TestAmqpPeer testPeer) throws JMSException
+    public GenericAmqpMessageImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
-        testPeer.expectPlainConnect("guest", "guest", true);
-
-        Connection connection =  new ConnectionImpl("clientName", "localhost", PORT, "guest", "guest");
-
-        assertNull(testPeer.getThrowable());
-        return connection;
+        this(new AmqpGenericMessage(), sessionImpl, connectionImpl);
     }
+
+    public GenericAmqpMessageImpl(AmqpGenericMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
+    {
+        super(amqpMessage, sessionImpl, connectionImpl);
+    }
+
+    @Override
+    protected AmqpGenericMessage prepareUnderlyingAmqpMessageForSending(AmqpGenericMessage amqpMessage)
+    {
+        //TODO
+        throw new UnsupportedOperationException("Not Implemented");
+    }
+
 }

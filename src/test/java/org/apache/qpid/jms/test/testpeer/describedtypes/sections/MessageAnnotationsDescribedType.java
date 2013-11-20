@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,28 +16,31 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
-package org.apache.qpid.jms;
+package org.apache.qpid.jms.test.testpeer.describedtypes.sections;
 
-import static org.junit.Assert.assertNull;
+import org.apache.qpid.jms.test.testpeer.MapDescribedType;
+import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.UnsignedLong;
 
-import javax.jms.Connection;
-import javax.jms.JMSException;
-
-import org.apache.qpid.jms.impl.ConnectionImpl;
-import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
-
-public class IntegrationTestFixture
+public class MessageAnnotationsDescribedType extends MapDescribedType
 {
-    static final int PORT = 25672;
+    private static final Symbol DESCIPTOR_SYMBOL = Symbol.valueOf("amqp:message-annotations:map");
 
-    Connection establishConnecton(TestAmqpPeer testPeer) throws JMSException
+    @Override
+    public Object getDescriptor()
     {
-        testPeer.expectPlainConnect("guest", "guest", true);
+        return DESCIPTOR_SYMBOL;
+    }
 
-        Connection connection =  new ConnectionImpl("clientName", "localhost", PORT, "guest", "guest");
+    public void setSymbolKeyedAnnotation(String name, Object value)
+    {
+        getDescribed().put(Symbol.valueOf(name), value);
+    }
 
-        assertNull(testPeer.getThrowable());
-        return connection;
+    public void setUnsignedLongKeyedAnnotation(UnsignedLong name, Object value)
+    {
+        throw new UnsupportedOperationException("UnsignedLong keys are currently reserved");
     }
 }

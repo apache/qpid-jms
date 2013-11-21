@@ -60,6 +60,7 @@ public class AmqpSender extends AmqpLink
                 }
                 catch (java.nio.BufferOverflowException e)
                 {
+                    //TODO: if this gets really large, should we reduce it again later?
                     _buffer = new byte[_buffer.length * 2];
                 }
             }

@@ -20,11 +20,14 @@
  */
 package org.apache.qpid.jms.engine;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
+import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.impl.DeliveryImpl;
@@ -42,6 +45,8 @@ public abstract class AmqpMessage
 
     private volatile MessageAnnotations _messageAnnotations;
     private volatile Map<Object,Object> _messageAnnotationsMap;
+
+    private volatile Map<String,Object> _applicationPropertiesMap;
 
     /**
      * Used when creating a message that we intend to send
@@ -65,6 +70,11 @@ public abstract class AmqpMessage
         if(_messageAnnotations != null)
         {
             _messageAnnotationsMap = _messageAnnotations.getValue();
+        }
+
+        if(_message.getApplicationProperties() != null)
+        {
+            _applicationPropertiesMap = _message.getApplicationProperties().getValue();
         }
     }
 
@@ -175,4 +185,63 @@ public abstract class AmqpMessage
         _message.setMessageAnnotations(_messageAnnotations);
     }
 
+    //===== Application Properties ======
+
+    private void createApplicationProperties()
+    {
+        _applicationPropertiesMap = new HashMap<String,Object>();
+        _message.setApplicationProperties(new ApplicationProperties(_applicationPropertiesMap));
+    }
+
+    public Set<String> getApplicationPropertyNames()
+    {
+        if(_applicationPropertiesMap != null)
+        {
+           return _applicationPropertiesMap.keySet();
+        }
+        else
+        {
+            return Collections.emptySet();
+        }
+    }
+
+    public boolean applicationPropertyExists(String key)
+    {
+        if(_applicationPropertiesMap != null)
+        {
+           return _applicationPropertiesMap.containsKey(key);
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    public Object getApplicationProperty(String key)
+    {
+        if(_applicationPropertiesMap != null)
+        {
+           return _applicationPropertiesMap.get(key);
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    public void setApplicationProperty(String key, Object value)
+    {
+        if(_applicationPropertiesMap == null)
+        {
+            createApplicationProperties();
+        }
+
+        _applicationPropertiesMap.put(key, value);
+    }
+
+    public void clearAllApplicationProperties()
+    {
+        _applicationPropertiesMap = null;
+        _message.setApplicationProperties(null);
+    }
 }

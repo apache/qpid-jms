@@ -40,6 +40,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.OpenFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.SaslMechanismsFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.SaslOutcomeFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.TransferFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.ApplicationPropertiesDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.HeaderDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.MessageAnnotationsDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescribedType;
@@ -410,6 +411,7 @@ public class TestAmqpPeer implements AutoCloseable
     public void expectLinkFlowRespondWithTransfer(final HeaderDescribedType headerDescribedType,
                                                   final MessageAnnotationsDescribedType messageAnnotationsDescribedType,
                                                   final PropertiesDescribedType propertiesDescribedType,
+                                                  final ApplicationPropertiesDescribedType appPropertiesDescribedType,
                                                   final DescribedType content)
     {
         final FlowMatcher flowMatcher = new FlowMatcher()
@@ -437,6 +439,11 @@ public class TestAmqpPeer implements AutoCloseable
         if(propertiesDescribedType != null)
         {
             payloadData.putDescribedType(propertiesDescribedType);
+        }
+
+        if(appPropertiesDescribedType != null)
+        {
+            payloadData.putDescribedType(appPropertiesDescribedType);
         }
 
         if(content != null)

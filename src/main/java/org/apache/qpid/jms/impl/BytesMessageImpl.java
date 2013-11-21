@@ -18,7 +18,6 @@
  */
 package org.apache.qpid.jms.impl;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -37,7 +36,6 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     private ByteArrayOutputStream _bytesOut;
     private DataOutputStream _dataAsOutput;
     private DataInputStream _dataIn;
-    private ByteArrayInputStream _bytesIn;
 
     //message to be sent
     public BytesMessageImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException

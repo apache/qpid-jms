@@ -39,6 +39,8 @@ public class TransferPayloadCompositeMatcher extends TypeSafeMatcher<Binary>
     private String _propsMatcherFailureDescription;
     private Matcher<Binary> _msgContentMatcher;
     private String _msgContentMatcherFailureDescription;
+    private ApplicationPropertiesSectionMatcher _appPropsMatcher;
+    private String _appPropsMatcherFailureDescription;
 
     public TransferPayloadCompositeMatcher()
     {
@@ -84,6 +86,22 @@ public class TransferPayloadCompositeMatcher extends TypeSafeMatcher<Binary>
             }
         }
 
+        //Application Properties Section
+        if(_appPropsMatcher != null)
+        {
+            Binary appPropsEtcSubBinary = receivedBinary.subBinary(bytesConsumed, origLength - bytesConsumed);
+            try
+            {
+                bytesConsumed += _appPropsMatcher.verify(appPropsEtcSubBinary);
+            }
+            catch(Throwable t)
+            {
+                _propsMatcherFailureDescription = "\nActual encoded form of remaining bytes passed to ApplicationPropertiesMatcher: " + appPropsEtcSubBinary;
+                _propsMatcherFailureDescription += "\nApplicationPropertiesMatcher generated throwable: " + t;
+
+                return false;
+            }
+        }
         //Message Content Body Section, already a Matcher<Binary>
         if(_msgContentMatcher != null)
         {
@@ -134,6 +152,14 @@ public class TransferPayloadCompositeMatcher extends TypeSafeMatcher<Binary>
             return;
         }
 
+        //Application Properties Section
+        if(_appPropsMatcherFailureDescription != null)
+        {
+            mismatchDescription.appendText("\nApplicationPropertiesMatcherFailed!");
+            mismatchDescription.appendText(_appPropsMatcherFailureDescription);
+            return;
+        }
+
         //Message Content Body Section
         if(_msgContentMatcherFailureDescription != null)
         {
@@ -156,5 +182,10 @@ public class TransferPayloadCompositeMatcher extends TypeSafeMatcher<Binary>
     public void setMessageContentMatcher(Matcher<Binary> msgContentMatcher)
     {
         _msgContentMatcher = msgContentMatcher;
+    }
+
+    public void setApplicationPropertiesMatcher(ApplicationPropertiesSectionMatcher appPropsMatcher)
+    {
+        _appPropsMatcher = appPropsMatcher;
     }
 }

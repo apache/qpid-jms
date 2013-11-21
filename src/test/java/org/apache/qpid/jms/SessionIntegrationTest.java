@@ -36,14 +36,10 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 
 import org.apache.qpid.jms.engine.AmqpBytesMessage;
-import org.apache.qpid.jms.engine.AmqpMessage;
-import org.apache.qpid.jms.engine.AmqpTextMessage;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.DataDescribedType;
-import org.apache.qpid.jms.test.testpeer.describedtypes.sections.MessageAnnotationsDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescribedType;
-import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
@@ -86,7 +82,9 @@ public class SessionIntegrationTest extends QpidJmsTestCase
             MessageProducer producer = session.createProducer(queue);
 
             String text = "myMessage";
-            testPeer.expectTransfer(new EncodedAmqpValueMatcher(text));
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(text));
+            testPeer.expectTransfer(messageMatcher);
 
             Message message = session.createTextMessage(text);
 
@@ -111,7 +109,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase
             DescribedType amqpValueStringContent = new AmqpValueDescribedType(expectedMessageContent);
 
             testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, amqpValueStringContent);
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueStringContent);
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
@@ -163,7 +161,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase
             DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
 
             testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, amqpValueNullContent);
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent);
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
@@ -226,7 +224,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase
             DescribedType dataContent = new DataDescribedType(new Binary(expectedContent));
 
             testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlowRespondWithTransfer(null, null, properties, dataContent);
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, properties, null, dataContent);
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);

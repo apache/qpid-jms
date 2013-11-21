@@ -18,11 +18,13 @@
  */
 package org.apache.qpid.jms.impl;
 
+import java.util.Collections;
 import java.util.Enumeration;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.MessageFormatException;
 
 import org.apache.qpid.jms.engine.AmqpMessage;
 
@@ -48,6 +50,34 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     }
 
     protected abstract T prepareUnderlyingAmqpMessageForSending(T amqpMessage);
+
+    private void checkPropertyNameIsValid(String propertyName) throws IllegalArgumentException
+    {
+        if (propertyName == null)
+        {
+            throw new IllegalArgumentException("Property name must not be null");
+        }
+        else if (propertyName.length() == 0)
+        {
+            throw new IllegalArgumentException("Property name must not be the empty string");
+        }
+
+        //TODO: validate name format?
+        //checkPropertyNameFormat(propertyName);
+    }
+
+    private boolean checkObjectPropertyValueIsValid(Object object) throws MessageFormatException
+    {
+        boolean valid = object instanceof Boolean || object instanceof Byte || object instanceof Short ||
+                        object instanceof Integer || object instanceof Long || object instanceof Float ||
+                        object instanceof Double || object instanceof String|| object == null;
+        if(!valid)
+        {
+            throw new MessageFormatException("Invalid object property value type: " + object.getClass());
+        }
+
+        return true;
+    }
 
     //======= JMS Methods =======
 
@@ -215,8 +245,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public boolean propertyExists(String name) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        return _amqpMessage.applicationPropertyExists(name);
     }
 
     @Override
@@ -278,15 +307,17 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public Object getObjectProperty(String name) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        checkPropertyNameIsValid(name);
+
+        //TODO: type conversion if any?
+        //TODO: handle non-JMS types?
+        return _amqpMessage.getApplicationProperty(name);
     }
 
     @Override
     public Enumeration<?> getPropertyNames() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        return Collections.enumeration(_amqpMessage.getApplicationPropertyNames());
     }
 
     @Override
@@ -348,8 +379,10 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public void setObjectProperty(String name, Object value) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        checkPropertyNameIsValid(name);
+        checkObjectPropertyValueIsValid(value);
+
+        _amqpMessage.setApplicationProperty(name, value);
     }
 
     @Override

@@ -138,9 +138,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase
             MessageProducer producer = session.createProducer(queue);
 
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
-            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true)
-                                    .withEntry(Symbol.valueOf(AmqpMessage.MESSAGE_ANNOTATION_TYPE_KEY_NAME), equalTo(AmqpTextMessage.MSG_TYPE_ANNOTATION_VALUE));
-            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
             messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(null));
             testPeer.expectTransfer(messageMatcher);
 
@@ -163,12 +160,10 @@ public class SessionIntegrationTest extends QpidJmsTestCase
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
-            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessage.MESSAGE_ANNOTATION_TYPE_KEY_NAME,  AmqpTextMessage.MSG_TYPE_ANNOTATION_VALUE);
             DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
 
             testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlowRespondWithTransfer(null, msgAnnotations, null, amqpValueNullContent);
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, amqpValueNullContent);
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);

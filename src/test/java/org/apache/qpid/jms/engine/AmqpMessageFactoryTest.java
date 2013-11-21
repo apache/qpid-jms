@@ -201,39 +201,15 @@ public class AmqpMessageFactoryTest
    }
 
    /**
-    * Test that an amqp-value body containing a null, but with the
-    * {@value AmqpTextMessage#MESSAGE_ANNOTATION_TYPE_KEY_NAME} message annotation
-    * set to {@value AmqpTextMessage#MSG_TYPE_ANNOTATION_VALUE} results in a text message
+    * Test that an amqp-value body containing a null results in a text message
     */
    @Test
-   public void testCreateAmqpTextMessageFromAmqpValueWithNullAndMessageTypeAnnotation() throws Exception
+   public void testCreateAmqpTextMessageFromAmqpValueWithNull() throws Exception
    {
-       Map<Symbol,Object> annotationsMap = new HashMap<Symbol, Object>();
-       annotationsMap.put(Symbol.valueOf(AmqpMessage.MESSAGE_ANNOTATION_TYPE_KEY_NAME),
-               AmqpTextMessage.MSG_TYPE_ANNOTATION_VALUE);
-
        Message message = Proton.message();
        message.setBody(new AmqpValue(null));
-       message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
-
        AmqpMessage amqpMessage = _amqpMessageFactory.createAmqpMessage(_mockDelivery, message, _mockAmqpConnection);
        assertEquals(AmqpTextMessage.class, amqpMessage.getClass());
-   }
-
-   /**
-    * Test that an amqp-value body containing a null, but WITHOUT the
-    * {@value AmqpTextMessage#MESSAGE_ANNOTATION_TYPE_KEY_NAME} message
-    * annotation set results in a generic message being created (as
-    * we can't assume it is text).
-    */
-   @Test
-   public void testCreateAmqpGenericMessageFromAmqpValueWithNullAndNoDifferentiator() throws Exception
-   {
-       Message message = Proton.message();
-       message.setBody(new AmqpValue(null));
-
-       AmqpMessage amqpMessage = _amqpMessageFactory.createAmqpMessage(_mockDelivery, message, _mockAmqpConnection);
-       assertEquals(AmqpGenericMessage.class, amqpMessage.getClass());
    }
 
    /**

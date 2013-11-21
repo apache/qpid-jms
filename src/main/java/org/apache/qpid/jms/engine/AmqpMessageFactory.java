@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.proton.amqp.Binary;
-import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.Section;
@@ -31,25 +30,13 @@ import org.apache.qpid.proton.message.Message;
 
 public class AmqpMessageFactory
 {
-    //TODO: use switch statements
-    @SuppressWarnings("unchecked")
     AmqpMessage createAmqpMessage(Delivery delivery, Message message, AmqpConnection amqpConnection)
     {
         Section body = message.getBody();
 
-        Map<Object,Object> messageAnnotationsMap = null;
-        if(message.getMessageAnnotations() != null)
-        {
-            messageAnnotationsMap = message.getMessageAnnotations().getValue();
-        };
-
         if(body == null)
         {
-            if(isJMSMessageType(AmqpTextMessage.MSG_TYPE_ANNOTATION_VALUE, messageAnnotationsMap))
-            {
-                return new AmqpTextMessage(delivery, message, amqpConnection);
-            }
-            else if(isContentType(AmqpTextMessage.CONTENT_TYPE, message))
+            if(isContentType(AmqpTextMessage.CONTENT_TYPE, message))
             {
                 return new AmqpTextMessage(delivery, message, amqpConnection);
             }
@@ -81,14 +68,7 @@ public class AmqpMessageFactory
         {
             Object value = ((AmqpValue) body).getValue();
 
-            if(value == null)
-            {
-                if(isJMSMessageType(AmqpTextMessage.MSG_TYPE_ANNOTATION_VALUE, messageAnnotationsMap))
-                {
-                    return new AmqpTextMessage(delivery, message, amqpConnection);
-                }
-            }
-            else if(value instanceof String)
+            if(value == null || value instanceof String)
             {
                 return new AmqpTextMessage(delivery, message, amqpConnection);
             }
@@ -108,24 +88,6 @@ public class AmqpMessageFactory
 
         //Unable to determine a specific message type, return the generic message
         return new AmqpGenericMessage(delivery, message, amqpConnection);
-    }
-
-    private boolean isJMSMessageType(String messageType, Map<Object, Object> messageAnnotationsMap)
-    {
-        Symbol key = Symbol.valueOf(AmqpMessage.MESSAGE_ANNOTATION_TYPE_KEY_NAME);
-        Object value = getAnnotation(messageAnnotationsMap, key);
-
-        return messageType.equals(value);
-    }
-
-    private Object getAnnotation(Map<Object,Object> annotations, Symbol symbolKey)
-    {
-        if(annotations == null || !annotations.containsKey(symbolKey))
-        {
-            return null;
-        }
-
-        return annotations.get(symbolKey);
     }
 
     private boolean isContentType(String contentType, Message message)

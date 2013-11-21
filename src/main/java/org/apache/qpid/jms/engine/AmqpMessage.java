@@ -36,8 +36,6 @@ import org.apache.qpid.proton.message.Message;
  */
 public abstract class AmqpMessage
 {
-    public static final String MESSAGE_ANNOTATION_TYPE_KEY_NAME = "x-opt-jms-message-type";
-
     private final Delivery _delivery;
     private final Message _message;
     private final AmqpConnection _amqpConnection;

@@ -18,7 +18,6 @@
  */
 package org.apache.qpid.jms.engine;
 
-import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.Section;
@@ -54,16 +53,6 @@ public class AmqpTextMessage extends AmqpMessage
     {
         AmqpValue body = new AmqpValue(text);
         getMessage().setBody(body);
-
-        Symbol msgTypeAnnotationKey = Symbol.valueOf(MESSAGE_ANNOTATION_TYPE_KEY_NAME);
-        if(text == null && !messageAnnotationExists(msgTypeAnnotationKey))
-        {
-            setMessageAnnotation(msgTypeAnnotationKey, MSG_TYPE_ANNOTATION_VALUE);
-        }
-        else if(text != null && messageAnnotationExists(msgTypeAnnotationKey))
-        {
-            clearMessageAnnotation(msgTypeAnnotationKey);
-        }
     }
 
     public String getText()

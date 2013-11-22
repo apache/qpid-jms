@@ -229,8 +229,16 @@ public abstract class AmqpMessage
         }
     }
 
-    public void setApplicationProperty(String key, Object value)
+    /**
+     * @throws IllegalArgumentException if the provided key is null
+     */
+    public void setApplicationProperty(String key, Object value) throws IllegalArgumentException
     {
+        if(key == null)
+        {
+            throw new IllegalArgumentException("Property key must not be null");
+        }
+
         if(_applicationPropertiesMap == null)
         {
             createApplicationProperties();

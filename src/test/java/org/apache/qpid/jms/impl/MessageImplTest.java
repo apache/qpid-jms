@@ -24,6 +24,7 @@ import static org.junit.Assert.*;
 
 import java.util.Enumeration;
 
+import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
 
 import org.apache.qpid.jms.engine.TestAmqpMessage;
@@ -46,7 +47,7 @@ public class MessageImplTest
     }
 
     @Test
-    public void testSetPropertyWithNullOrEmptyNameThrowsIAE() throws Exception
+    public void testSetObjectPropertyWithNullOrEmptyNameThrowsIAE() throws Exception
     {
         try
         {
@@ -84,7 +85,7 @@ public class MessageImplTest
     }
 
     @Test
-    public void testSetObjectProperty() throws Exception
+    public void testSetGetObjectProperty() throws Exception
     {
         String propertyName = "myProperty";
 
@@ -148,5 +149,348 @@ public class MessageImplTest
         assertTrue(name1 instanceof String);
         assertTrue(propertyName.equals(name1));
         assertFalse(names.hasMoreElements());
+    }
+
+    // ======= String Properties =========
+
+    @Test
+    public void testSetGetStringProperty() throws Exception
+    {
+        //null property value
+        String propertyName = "myNullProperty";
+        String propertyValue = null;
+
+        assertFalse(_testMessage.propertyExists(propertyName));
+        _testMessage.setStringProperty(propertyName, propertyValue);
+        assertTrue(_testMessage.propertyExists(propertyName));
+        assertEquals(propertyValue, _testMessage.getStringProperty(propertyName));
+
+        //non-null property value
+        propertyName = "myProperty";
+        propertyValue = "myPropertyValue";
+
+        assertFalse(_testMessage.propertyExists(propertyName));
+        _testMessage.setStringProperty(propertyName, propertyValue);
+        assertTrue(_testMessage.propertyExists(propertyName));
+        assertEquals(propertyValue, _testMessage.getStringProperty(propertyName));
+    }
+
+    @Test
+    public void testSetStringGetLegalProperty() throws Exception
+    {
+        String propertyName = "myProperty";
+        String propertyValue;
+
+        //boolean
+        propertyValue =  "true";
+        _testMessage.setStringProperty(propertyName, propertyValue);
+        assertGetPropertyEquals(_testMessage, propertyName, Boolean.valueOf(propertyValue), Boolean.class);
+
+        //byte
+        propertyValue =  String.valueOf(Byte.MAX_VALUE);
+        _testMessage.setStringProperty(propertyName, propertyValue);
+        assertGetPropertyEquals(_testMessage, propertyName, Byte.valueOf(propertyValue), Byte.class);
+
+        //short
+        propertyValue =  String.valueOf(Short.MAX_VALUE);
+        _testMessage.setStringProperty(propertyName, propertyValue);
+        assertGetPropertyEquals(_testMessage, propertyName, Short.valueOf(propertyValue), Short.class);
+
+        //int
+        propertyValue =  String.valueOf(Integer.MAX_VALUE);
+        _testMessage.setStringProperty(propertyName, propertyValue);
+        assertGetPropertyEquals(_testMessage, propertyName, Integer.valueOf(propertyValue), Integer.class);
+
+        //long
+        propertyValue =  String.valueOf(Long.MAX_VALUE);
+        _testMessage.setStringProperty(propertyName, propertyValue);
+        assertGetPropertyEquals(_testMessage, propertyName, Long.valueOf(propertyValue), Long.class);
+
+        //float
+        propertyValue =  String.valueOf(Float.MAX_VALUE);
+        _testMessage.setStringProperty(propertyName, propertyValue);
+        assertGetPropertyEquals(_testMessage, propertyName, Float.valueOf(propertyValue), Float.class);
+
+        //double
+        propertyValue =  String.valueOf(Double.MAX_VALUE);
+        _testMessage.setStringProperty(propertyName, propertyValue);
+        assertGetPropertyEquals(_testMessage, propertyName, Double.valueOf(propertyValue), Double.class);
+    }
+
+    // ======= boolean Properties =========
+
+    @Test
+    public void testSetBooleanGetLegalProperty() throws Exception
+    {
+        String propertyName = "myProperty";
+        boolean propertyValue = true;
+
+        _testMessage.setBooleanProperty(propertyName, propertyValue);
+        assertEquals(propertyValue, _testMessage.getBooleanProperty(propertyName));
+
+        assertGetPropertyEquals(_testMessage, propertyName, String.valueOf(propertyValue), String.class);
+    }
+
+    @Test
+    public void testSetBooleanGetIllegalProperty() throws Exception
+    {
+        String propertyName = "myProperty";
+        boolean propertyValue = true;
+
+        _testMessage.setBooleanProperty(propertyName, propertyValue);
+
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Byte.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Short.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Integer.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Long.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Float.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Double.class);
+    }
+
+    // ======= byte Properties =========
+
+    @Test
+    public void testSetByteGetLegalProperty() throws Exception
+    {
+        String propertyName = "myProperty";
+        byte propertyValue = (byte)1;
+
+        _testMessage.setByteProperty(propertyName, propertyValue);
+        assertEquals(propertyValue, _testMessage.getByteProperty(propertyName));
+
+        assertGetPropertyEquals(_testMessage, propertyName, String.valueOf(propertyValue), String.class);
+        assertGetPropertyEquals(_testMessage, propertyName, Short.valueOf(propertyValue), Short.class);
+        assertGetPropertyEquals(_testMessage, propertyName, Integer.valueOf(propertyValue), Integer.class);
+        assertGetPropertyEquals(_testMessage, propertyName, Long.valueOf(propertyValue), Long.class);
+    }
+
+    @Test
+    public void testSetByteGetIllegalPropertyThrowsMFE() throws Exception
+    {
+        String propertyName = "myProperty";
+        byte propertyValue = (byte)1;
+
+        _testMessage.setByteProperty(propertyName, propertyValue);
+
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Boolean.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Float.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Double.class);
+    }
+
+    // ======= short Properties =========
+
+    @Test
+    public void testSetShortGetLegalProperty() throws Exception
+    {
+        String propertyName = "myProperty";
+        short propertyValue = (short)1;
+
+        _testMessage.setShortProperty(propertyName, propertyValue);
+        assertEquals(propertyValue, _testMessage.getShortProperty(propertyName));
+
+        assertGetPropertyEquals(_testMessage, propertyName, String.valueOf(propertyValue), String.class);
+        assertGetPropertyEquals(_testMessage, propertyName, Integer.valueOf(propertyValue), Integer.class);
+        assertGetPropertyEquals(_testMessage, propertyName, Long.valueOf(propertyValue), Long.class);
+    }
+
+    @Test
+    public void testSetShortGetIllegalPropertyThrowsMFE() throws Exception
+    {
+        String propertyName = "myProperty";
+        short propertyValue = (short)1;
+
+        _testMessage.setShortProperty(propertyName, propertyValue);
+
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Boolean.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Byte.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Float.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Double.class);
+    }
+
+    // ======= int Properties =========
+
+    @Test
+    public void testSetIntGetLegalProperty() throws Exception
+    {
+        String propertyName = "myProperty";
+        int propertyValue = (int)1;
+
+        _testMessage.setIntProperty(propertyName, propertyValue);
+        assertEquals(propertyValue, _testMessage.getIntProperty(propertyName));
+
+        assertGetPropertyEquals(_testMessage, propertyName, String.valueOf(propertyValue), String.class);
+        assertGetPropertyEquals(_testMessage, propertyName, Long.valueOf(propertyValue), Long.class);
+    }
+
+    @Test
+    public void testSetIntGetIllegalPropertyThrowsMFE() throws Exception
+    {
+        String propertyName = "myProperty";
+        int propertyValue = (int)1;
+
+        _testMessage.setIntProperty(propertyName, propertyValue);
+
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Boolean.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Byte.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Short.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Float.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Double.class);
+    }
+
+    // ======= long Properties =========
+
+    @Test
+    public void testSetLongGetLegalProperty() throws Exception
+    {
+        String propertyName = "myProperty";
+        long propertyValue = Long.MAX_VALUE;
+
+        _testMessage.setLongProperty(propertyName, propertyValue);
+        assertEquals(propertyValue, _testMessage.getLongProperty(propertyName));
+
+        assertGetPropertyEquals(_testMessage, propertyName, String.valueOf(propertyValue), String.class);
+    }
+
+    @Test
+    public void testSetLongGetIllegalPropertyThrowsMFE() throws Exception
+    {
+        String propertyName = "myProperty";
+        long propertyValue = Long.MAX_VALUE;
+
+        _testMessage.setLongProperty(propertyName, propertyValue);
+
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Boolean.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Byte.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Short.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Integer.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Float.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Double.class);
+    }
+
+    // ======= float Properties =========
+
+    @Test
+    public void testSetFloatGetLegalProperty() throws Exception
+    {
+        String propertyName = "myProperty";
+        float propertyValue = Float.MAX_VALUE;
+
+        _testMessage.setFloatProperty(propertyName, propertyValue);
+        assertEquals(propertyValue, _testMessage.getFloatProperty(propertyName), 0.0);
+
+        assertGetPropertyEquals(_testMessage, propertyName, String.valueOf(propertyValue), String.class);
+        assertGetPropertyEquals(_testMessage, propertyName, Double.valueOf(propertyValue), Double.class);
+    }
+
+    @Test
+    public void testSetFloatGetIllegalPropertyThrowsMFE() throws Exception
+    {
+        String propertyName = "myProperty";
+        float propertyValue = Float.MAX_VALUE;
+
+        _testMessage.setFloatProperty(propertyName, propertyValue);
+
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Boolean.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Byte.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Short.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Integer.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Long.class);
+    }
+
+    // ======= double Properties =========
+
+    @Test
+    public void testSetDoubleGetLegalProperty() throws Exception
+    {
+        String propertyName = "myProperty";
+        double propertyValue = Double.MAX_VALUE;
+
+        _testMessage.setDoubleProperty(propertyName, propertyValue);
+        assertEquals(propertyValue, _testMessage.getDoubleProperty(propertyName), 0.0);
+
+        assertGetPropertyEquals(_testMessage, propertyName, String.valueOf(propertyValue), String.class);
+    }
+
+    @Test
+    public void testSetDoubleGetIllegalPropertyThrowsMFE() throws Exception
+    {
+        String propertyName = "myProperty";
+        double propertyValue = Double.MAX_VALUE;
+
+        _testMessage.setDoubleProperty(propertyName, propertyValue);
+
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Boolean.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Byte.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Short.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Integer.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Long.class);
+        assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Float.class);
+    }
+
+    // ====== utility methods =======
+
+    private void assertGetPropertyThrowsMessageFormatException(TestMessageImpl testMessage,
+                                                               String propertyName,
+                                                               Class<?> clazz) throws JMSException
+    {
+        try
+        {
+            getMessagePropertyUsingTypeMethod(testMessage, propertyName, clazz);
+
+            fail("expected exception to be thrown");
+        }
+        catch(MessageFormatException jmsMFE)
+        {
+            //expected
+        }
+    }
+
+    private Object getMessagePropertyUsingTypeMethod(TestMessageImpl testMessage, String propertyName, Class<?> clazz) throws JMSException
+    {
+        if(clazz == Boolean.class)
+        {
+            return testMessage.getBooleanProperty(propertyName);
+        }
+        else if(clazz == Byte.class)
+        {
+            return testMessage.getByteProperty(propertyName);
+        }
+        else if(clazz == Short.class)
+        {
+            return testMessage.getShortProperty(propertyName);
+        }
+        else if(clazz == Integer.class)
+        {
+            return testMessage.getIntProperty(propertyName);
+        }
+        else if(clazz == Long.class)
+        {
+            return testMessage.getLongProperty(propertyName);
+        }
+        else if(clazz == Float.class)
+        {
+            return testMessage.getFloatProperty(propertyName);
+        }
+        else if(clazz == Double.class)
+        {
+            return testMessage.getDoubleProperty(propertyName);
+        }
+        else if(clazz == String.class)
+        {
+            return testMessage.getStringProperty(propertyName);
+        }
+        else
+        {
+          throw new RuntimeException("Unexpected property type class");
+        }
+    }
+
+    private void assertGetPropertyEquals(TestMessageImpl testMessage,
+                                         String propertyName,
+                                         Object expectedValue,
+                                         Class<?> clazz) throws JMSException
+    {
+        Object actualValue = getMessagePropertyUsingTypeMethod(testMessage, propertyName, clazz);
+        assertEquals(expectedValue, actualValue);
     }
 }

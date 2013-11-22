@@ -139,4 +139,22 @@ public class AmqpMessageTest
         testAmqpMessage.setApplicationProperty(TEST_PROP_A, TEST_VALUE_STRING_A);
         assertEquals(TEST_VALUE_STRING_A, testAmqpMessage.getApplicationProperty(TEST_PROP_A));
     }
+
+    @Test
+    public void testSetApplicationPropertyUsingNullKeyCausesIAE()
+    {
+        Message message = Proton.message();
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        try
+        {
+            testAmqpMessage.setApplicationProperty(null, "value");
+            fail("expected exception not thrown");
+        }
+        catch(IllegalArgumentException iae)
+        {
+            //expected
+        }
+    }
+
 }

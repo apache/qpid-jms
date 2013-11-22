@@ -79,7 +79,25 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         return true;
     }
 
+    private void setApplicationProperty(String name, Object value) throws MessageFormatException
+    {
+        checkPropertyNameIsValid(name);
+        checkObjectPropertyValueIsValid(value);
+
+        _amqpMessage.setApplicationProperty(name, value);
+    }
+
+    private Object getApplicationProperty(String name)
+    {
+        checkPropertyNameIsValid(name);
+
+        //TODO: handle non-JMS types?
+        return _amqpMessage.getApplicationProperty(name);
+    }
+
+
     //======= JMS Methods =======
+
 
     @Override
     public String getJMSMessageID() throws JMSException
@@ -251,67 +269,192 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public boolean getBooleanProperty(String name) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        Object value = getApplicationProperty(name);
+
+        if (value instanceof Boolean)
+        {
+            return ((Boolean) value).booleanValue();
+        }
+        else if ((value instanceof String) || (value == null))
+        {
+            return Boolean.valueOf((String) value);
+        }
+        else
+        {
+            throw new MessageFormatException("Property " + name + " of type " + value.getClass().getName()
+                + " cannot be converted to boolean.");
+        }
     }
 
     @Override
     public byte getByteProperty(String name) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        Object value = getApplicationProperty(name);
+
+        if (value instanceof Byte)
+        {
+            return ((Byte) value).byteValue();
+        }
+        else if ((value instanceof String) || (value == null))
+        {
+            return Byte.valueOf((String) value).byteValue();
+        }
+        else
+        {
+            throw new MessageFormatException("Property " + name + " of type " + value.getClass().getName()
+                + " cannot be converted to byte.");
+        }
     }
 
     @Override
     public short getShortProperty(String name) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        Object value = getApplicationProperty(name);
+
+        if (value instanceof Short)
+        {
+            return ((Short) value).shortValue();
+        }
+        else if (value instanceof Byte)
+        {
+            return ((Byte) value).shortValue();
+        }
+        else if ((value instanceof String) || (value == null))
+        {
+            return Short.valueOf((String) value).shortValue();
+        }
+        else
+        {
+            throw new MessageFormatException("Property " + name + " of type " + value.getClass().getName()
+                + " cannot be converted to short.");
+        }
     }
 
     @Override
     public int getIntProperty(String name) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        Object value = getApplicationProperty(name);
+
+        if (value instanceof Integer)
+        {
+            return ((Integer) value).intValue();
+        }
+        else if (value instanceof Short)
+        {
+            return ((Short) value).intValue();
+        }
+        else if (value instanceof Byte)
+        {
+            return ((Byte) value).intValue();
+        }
+        else if ((value instanceof String) || (value == null))
+        {
+            return Integer.valueOf((String) value).intValue();
+        }
+        else
+        {
+            throw new MessageFormatException("Property " + name + " of type " + value.getClass().getName()
+                + " cannot be converted to int.");
+        }
     }
 
     @Override
     public long getLongProperty(String name) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        Object value = getApplicationProperty(name);
+
+        if (value instanceof Long)
+        {
+            return ((Long) value).longValue();
+        }
+        else if (value instanceof Integer)
+        {
+            return ((Integer) value).longValue();
+        }
+        else if (value instanceof Short)
+        {
+            return ((Short) value).longValue();
+        }
+        else if (value instanceof Byte)
+        {
+            return ((Byte) value).longValue();
+        }
+        else if ((value instanceof String) || (value == null))
+        {
+            return Long.valueOf((String) value).longValue();
+        }
+        else
+        {
+            throw new MessageFormatException("Property " + name + " of type " + value.getClass().getName()
+                + " cannot be converted to long.");
+        }
     }
 
     @Override
     public float getFloatProperty(String name) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        Object value = getApplicationProperty(name);
+
+        if (value instanceof Float)
+        {
+            return ((Float) value).floatValue();
+        }
+        else if ((value instanceof String) || (value == null))
+        {
+            return Float.valueOf((String) value).floatValue();
+        }
+        else
+        {
+            throw new MessageFormatException("Property " + name + " of type " + value.getClass().getName()
+                + " cannot be converted to float.");
+        }
     }
 
     @Override
     public double getDoubleProperty(String name) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        Object value = getApplicationProperty(name);
+
+        if (value instanceof Double)
+        {
+            return ((Double) value).doubleValue();
+        }
+        else if (value instanceof Float)
+        {
+            return ((Float) value).doubleValue();
+        }
+        else if ((value instanceof String) || (value == null))
+        {
+            return Double.valueOf((String) value).doubleValue();
+        }
+        else
+        {
+            throw new MessageFormatException("Property " + name + " of type " + value.getClass().getName()
+                + " cannot be converted to double.");
+        }
     }
 
     @Override
     public String getStringProperty(String name) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        Object value = getApplicationProperty(name);
+
+        if ((value instanceof String) || (value == null))
+        {
+            return (String) value;
+        }
+        else
+        {
+            //TODO: verify it is a JMS type?
+            return value.toString();
+        }
     }
 
     @Override
     public Object getObjectProperty(String name) throws JMSException
     {
-        checkPropertyNameIsValid(name);
-
-        //TODO: type conversion if any?
-        //TODO: handle non-JMS types?
-        return _amqpMessage.getApplicationProperty(name);
+        //TODO: verify it is a JMS type?
+        return getApplicationProperty(name);
     }
 
     @Override
@@ -323,66 +466,55 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public void setBooleanProperty(String name, boolean value) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        setApplicationProperty(name, value);
     }
 
     @Override
     public void setByteProperty(String name, byte value) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        setApplicationProperty(name, value);
     }
 
     @Override
     public void setShortProperty(String name, short value) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        setApplicationProperty(name, value);
     }
 
     @Override
     public void setIntProperty(String name, int value) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        setApplicationProperty(name, value);
     }
 
     @Override
     public void setLongProperty(String name, long value) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        setApplicationProperty(name, value);
     }
 
     @Override
     public void setFloatProperty(String name, float value) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        setApplicationProperty(name, value);
     }
 
     @Override
     public void setDoubleProperty(String name, double value) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        setApplicationProperty(name, value);
     }
 
     @Override
     public void setStringProperty(String name, String value) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        setApplicationProperty(name, value);
     }
 
     @Override
     public void setObjectProperty(String name, Object value) throws JMSException
     {
-        checkPropertyNameIsValid(name);
-        checkObjectPropertyValueIsValid(value);
-
-        _amqpMessage.setApplicationProperty(name, value);
+        setApplicationProperty(name, value);
     }
 
     @Override

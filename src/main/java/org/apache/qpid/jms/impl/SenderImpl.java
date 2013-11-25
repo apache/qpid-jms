@@ -33,18 +33,23 @@ public class SenderImpl extends LinkImpl implements MessageProducer
 {
     private AmqpSender _amqpSender;
 
-    public SenderImpl(SessionImpl sessionImpl, AmqpSender amqpSender)
+    public SenderImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl, AmqpSender amqpSender)
     {
-        super(sessionImpl.getConnectionImpl(), amqpSender);
+        super(connectionImpl, amqpSender);
         _amqpSender = amqpSender;
     }
 
-    @Override
-    public void send(Message message) throws JMSException
+    private void sendMessage(Message message, int deliveryMode, int priority, long timeToLive) throws JMSException
     {
         getConnectionImpl().lock();
         try
         {
+            //set the DeliveryMode if necessary
+            if(deliveryMode != message.getJMSDeliveryMode())
+            {
+                message.setJMSDeliveryMode(deliveryMode);
+            }
+
             AmqpMessage amqpMessage = getAmqpMessageFromJmsMessage(message);
 
             AmqpSentMessageToken sentMessage = _amqpSender.sendMessage(amqpMessage);
@@ -59,7 +64,6 @@ public class SenderImpl extends LinkImpl implements MessageProducer
         {
             getConnectionImpl().releaseLock();
         }
-
     }
 
     private AmqpMessage getAmqpMessageFromJmsMessage(Message message)
@@ -74,6 +78,10 @@ public class SenderImpl extends LinkImpl implements MessageProducer
             throw new UnsupportedOperationException("cross-vendor message support has yet to be implemented");
         }
     }
+
+
+    //======= JMS Methods =======
+
 
     @Override
     public void setDisableMessageID(boolean value) throws JMSException
@@ -150,6 +158,12 @@ public class SenderImpl extends LinkImpl implements MessageProducer
     {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Not Implemented");
+    }
+
+    @Override
+    public void send(Message message) throws JMSException
+    {
+        sendMessage(message, Message.DEFAULT_DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
     }
 
     @Override

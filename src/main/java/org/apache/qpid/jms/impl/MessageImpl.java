@@ -21,6 +21,7 @@ package org.apache.qpid.jms.impl;
 import java.util.Collections;
 import java.util.Enumeration;
 
+import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -186,15 +187,27 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public int getJMSDeliveryMode() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        if(getUnderlyingAmqpMessage(false).isDurable())
+        {
+            return DeliveryMode.PERSISTENT;
+        }
+        else
+        {
+            return DeliveryMode.NON_PERSISTENT;
+        }
     }
 
     @Override
     public void setJMSDeliveryMode(int deliveryMode) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        if(DeliveryMode.PERSISTENT == deliveryMode)
+        {
+            getUnderlyingAmqpMessage(false).setDurable(true);
+        }
+        else
+        {
+            getUnderlyingAmqpMessage(false).setDurable(false);
+        }
     }
 
     @Override

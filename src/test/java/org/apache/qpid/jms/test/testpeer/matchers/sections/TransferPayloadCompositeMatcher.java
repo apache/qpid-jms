@@ -33,6 +33,9 @@ import org.hamcrest.TypeSafeMatcher;
  */
 public class TransferPayloadCompositeMatcher extends TypeSafeMatcher<Binary>
 {
+    private MessageHeaderSectionMatcher _msgHeadersMatcher;
+    private String _msgHeaderMatcherFailureDescription;
+
     private MessageAnnotationsSectionMatcher _msgAnnotationsMatcher;
     private String _msgAnnotationsMatcherFailureDescription;
     private MessagePropertiesSectionMatcher _propsMatcher;
@@ -52,6 +55,23 @@ public class TransferPayloadCompositeMatcher extends TypeSafeMatcher<Binary>
         int origLength = receivedBinary.getLength();
         int bytesConsumed = 0;
 
+        //MessageHeader Section
+        if(_msgHeadersMatcher != null)
+        {
+            Binary msgHeaderEtcSubBinary = receivedBinary.subBinary(bytesConsumed, origLength - bytesConsumed);
+            try
+            {
+                bytesConsumed += _msgHeadersMatcher.verify(msgHeaderEtcSubBinary);
+            }
+            catch(Throwable t)
+            {
+                _msgHeaderMatcherFailureDescription = "\nActual encoded form of remaining bytes passed to MessageHeaderMatcher: " + msgHeaderEtcSubBinary;
+                _msgHeaderMatcherFailureDescription += "\nMessageHeaderMatcher generated throwable: " + t;
+
+                return false;
+            }
+        }
+
         //MessageAnnotations Section
         if(_msgAnnotationsMatcher != null)
         {
@@ -62,8 +82,8 @@ public class TransferPayloadCompositeMatcher extends TypeSafeMatcher<Binary>
             }
             catch(Throwable t)
             {
-                _propsMatcherFailureDescription = "\nActual encoded form of remaining bytes passed to MessageAnnotationsMatcher: " + msgAnnotationsEtcSubBinary;
-                _propsMatcherFailureDescription += "\nMessageAnnotationsMatcher generated throwable: " + t;
+                _msgAnnotationsMatcherFailureDescription = "\nActual encoded form of remaining bytes passed to MessageAnnotationsMatcher: " + msgAnnotationsEtcSubBinary;
+                _msgAnnotationsMatcherFailureDescription += "\nMessageAnnotationsMatcher generated throwable: " + t;
 
                 return false;
             }
@@ -96,8 +116,8 @@ public class TransferPayloadCompositeMatcher extends TypeSafeMatcher<Binary>
             }
             catch(Throwable t)
             {
-                _propsMatcherFailureDescription = "\nActual encoded form of remaining bytes passed to ApplicationPropertiesMatcher: " + appPropsEtcSubBinary;
-                _propsMatcherFailureDescription += "\nApplicationPropertiesMatcher generated throwable: " + t;
+                _appPropsMatcherFailureDescription = "\nActual encoded form of remaining bytes passed to ApplicationPropertiesMatcher: " + appPropsEtcSubBinary;
+                _appPropsMatcherFailureDescription += "\nApplicationPropertiesMatcher generated throwable: " + t;
 
                 return false;
             }
@@ -136,6 +156,14 @@ public class TransferPayloadCompositeMatcher extends TypeSafeMatcher<Binary>
     {
         mismatchDescription.appendText("\nActual encoded form of the full Transfer frame payload: ").appendValue(item);
 
+        //MessageHeaders Section
+        if(_msgHeaderMatcherFailureDescription != null)
+        {
+            mismatchDescription.appendText("\nMessageHeadersMatcherFailed!");
+            mismatchDescription.appendText(_msgHeaderMatcherFailureDescription);
+            return;
+        }
+
         //MessageAnnotations Section
         if(_msgAnnotationsMatcherFailureDescription != null)
         {
@@ -169,6 +197,11 @@ public class TransferPayloadCompositeMatcher extends TypeSafeMatcher<Binary>
         }
     }
 
+    public void setHeadersMatcher(MessageHeaderSectionMatcher msgHeadersMatcher)
+    {
+        _msgHeadersMatcher = msgHeadersMatcher;
+    }
+
     public void setMessageAnnotationsMatcher(MessageAnnotationsSectionMatcher msgAnnotationsMatcher)
     {
         _msgAnnotationsMatcher = msgAnnotationsMatcher;
@@ -179,13 +212,13 @@ public class TransferPayloadCompositeMatcher extends TypeSafeMatcher<Binary>
         _propsMatcher = propsMatcher;
     }
 
-    public void setMessageContentMatcher(Matcher<Binary> msgContentMatcher)
-    {
-        _msgContentMatcher = msgContentMatcher;
-    }
-
     public void setApplicationPropertiesMatcher(ApplicationPropertiesSectionMatcher appPropsMatcher)
     {
         _appPropsMatcher = appPropsMatcher;
+    }
+
+    public void setMessageContentMatcher(Matcher<Binary> msgContentMatcher)
+    {
+        _msgContentMatcher = msgContentMatcher;
     }
 }

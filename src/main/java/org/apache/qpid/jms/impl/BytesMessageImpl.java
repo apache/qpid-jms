@@ -55,6 +55,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     protected AmqpBytesMessage prepareUnderlyingAmqpMessageForSending(AmqpBytesMessage amqpMessage)
     {
+        //TODO: we might be re-sending 'dataIn'
         amqpMessage.setBytes(_bytesOut.toByteArray());
 
         //TODO: do we need to do anything later with properties/headers etc?

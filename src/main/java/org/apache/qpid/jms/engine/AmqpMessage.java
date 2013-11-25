@@ -49,11 +49,13 @@ public abstract class AmqpMessage
     private volatile Map<String,Object> _applicationPropertiesMap;
 
     /**
-     * Used when creating a message that we intend to send
+     * Used when creating a message that we intend to send.
+     * Sets the AMQP durable header to true.
      */
     public AmqpMessage()
     {
         this(Proton.message(), null, null);
+        setDurable(true);
     }
 
     /**
@@ -115,6 +117,16 @@ public abstract class AmqpMessage
         {
             return _delivery.isSettled() || ((_delivery instanceof DeliveryImpl && ((DeliveryImpl)_delivery).remotelySettled()));
         }
+    }
+
+    public void setDurable(boolean durable)
+    {
+        _message.setDurable(durable);
+    }
+
+    public boolean isDurable()
+    {
+        return _message.isDurable();
     }
 
     public void setContentType(String contentType)

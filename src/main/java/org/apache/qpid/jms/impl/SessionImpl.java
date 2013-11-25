@@ -140,7 +140,7 @@ public class SessionImpl implements Session
         try
         {
             AmqpSender amqpSender = _amqpSession.createAmqpSender(address);
-            SenderImpl sender = new SenderImpl(this, amqpSender);
+            SenderImpl sender = new SenderImpl(this, _connectionImpl, amqpSender);
             _connectionImpl.stateChanged();
             sender.establish();
             return sender;

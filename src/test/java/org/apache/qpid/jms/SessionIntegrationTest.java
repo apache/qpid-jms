@@ -40,6 +40,7 @@ import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.DataDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescribedType;
+import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
@@ -82,7 +83,9 @@ public class SessionIntegrationTest extends QpidJmsTestCase
             MessageProducer producer = session.createProducer(queue);
 
             String text = "myMessage";
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
             messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(text));
             testPeer.expectTransfer(messageMatcher);
 
@@ -135,7 +138,9 @@ public class SessionIntegrationTest extends QpidJmsTestCase
             Queue queue = session.createQueue("myQueue");
             MessageProducer producer = session.createProducer(queue);
 
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
             messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(null));
             testPeer.expectTransfer(messageMatcher);
 
@@ -189,9 +194,11 @@ public class SessionIntegrationTest extends QpidJmsTestCase
 
             byte[] content = "myBytes".getBytes();
 
-            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
             MessagePropertiesSectionMatcher propertiesMatcher = new MessagePropertiesSectionMatcher(true);
             propertiesMatcher.withContentType(equalTo(Symbol.valueOf(AmqpBytesMessage.CONTENT_TYPE)));
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
             messageMatcher.setPropertiesMatcher(propertiesMatcher);
             messageMatcher.setMessageContentMatcher(new EncodedDataMatcher(new Binary(content)));
 

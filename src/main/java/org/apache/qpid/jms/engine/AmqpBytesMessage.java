@@ -46,9 +46,13 @@ public class AmqpBytesMessage extends AmqpMessage
     public void setBytes(byte[] bytes)
     {
         getMessage().setBody(new Data(new Binary(bytes)));
+        //TODO: set the content type in the case we received an amqp-value section containing binary
     }
 
-    public ByteArrayInputStream getByteArrayInputStream()
+    /**
+     * @throws IllegalStateException if the underlying message content can't be retrieved as bytes
+     */
+    public ByteArrayInputStream getByteArrayInputStream() throws IllegalStateException
     {
         Section body = getMessage().getBody();
 
@@ -66,7 +70,7 @@ public class AmqpBytesMessage extends AmqpMessage
                 _length = 0;
                 return createEmptyByteArrayInputStream();
             }
-            if(value instanceof Binary)
+            else if(value instanceof Binary)
             {
                 Binary b = (Binary)value;
                 _length = b.getLength();
@@ -74,18 +78,26 @@ public class AmqpBytesMessage extends AmqpMessage
             }
             else
             {
-                throw new RuntimeException("Unexpected body content type: " + value.getClass().getSimpleName());
+                throw new IllegalStateException("Unexpected amqp-value body content type: " + value.getClass().getSimpleName());
             }
         }
         else if(body instanceof Data)
         {
             Binary b = ((Data) body).getValue();
-            _length = b.getLength();
-            return new ByteArrayInputStream(b.getArray(), b.getArrayOffset(), b.getLength());
+            if(b == null)
+            {
+                _length = 0;
+                return createEmptyByteArrayInputStream();
+            }
+            else
+            {
+                _length = b.getLength();
+                return new ByteArrayInputStream(b.getArray(), b.getArrayOffset(), b.getLength());
+            }
         }
         else
         {
-            throw new RuntimeException("Unexpected message body type: " + body.getClass().getSimpleName());
+            throw new IllegalStateException("Unexpected message body type: " + body.getClass().getSimpleName());
         }
     }
 
@@ -94,11 +106,12 @@ public class AmqpBytesMessage extends AmqpMessage
         return new ByteArrayInputStream(new byte[0]);
     }
 
-    public long getBytesLength()
+    /**
+     * @throws IllegalStateException if the underlying message content can't be retrieved as bytes
+     */
+    public long getBytesLength() throws IllegalStateException
     {
         getByteArrayInputStream();
         return _length;
     }
-
-    //TODO: methods to access/set content
 }

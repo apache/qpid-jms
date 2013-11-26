@@ -27,20 +27,23 @@ import java.util.Enumeration;
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
 
+import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.jms.engine.TestAmqpMessage;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-public class MessageImplTest
+public class MessageImplTest extends QpidJmsTestCase
 {
     private ConnectionImpl _mockConnectionImpl;
     private SessionImpl _mockSessionImpl;
     private TestMessageImpl _testMessage;
 
     @Before
+    @Override
     public void setUp() throws Exception
     {
+        super.setUp();
         _mockConnectionImpl = Mockito.mock(ConnectionImpl.class);
         _mockSessionImpl = Mockito.mock(SessionImpl.class);
         _testMessage = new TestMessageImpl(new TestAmqpMessage(), _mockSessionImpl, _mockConnectionImpl);

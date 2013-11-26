@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.jms.engine.AmqpMessage;
 import org.apache.qpid.jms.engine.AmqpTextMessage;
 import org.apache.qpid.proton.Proton;
@@ -39,15 +40,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-public class AmqpMessageFactoryTest
+public class AmqpMessageFactoryTest extends QpidJmsTestCase
 {
    private AmqpConnection _mockAmqpConnection;
    private Delivery _mockDelivery;
    private AmqpMessageFactory _amqpMessageFactory;
 
    @Before
+   @Override
    public void setUp() throws Exception
    {
+       super.setUp();
        _mockAmqpConnection = Mockito.mock(AmqpConnection.class);
        _mockDelivery = Mockito.mock(Delivery.class);
        _amqpMessageFactory = new AmqpMessageFactory();

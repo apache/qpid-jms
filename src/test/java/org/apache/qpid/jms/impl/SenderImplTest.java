@@ -41,8 +41,10 @@ public class SenderImplTest extends QpidJmsTestCase
     private SessionImpl _mockSession;
 
     @Before
+    @Override
     public void setUp() throws Exception
     {
+        super.setUp();
         _mockConnection = Mockito.mock(ConnectionImpl.class);
         _mockAmqpSender = Mockito.mock(AmqpSender.class);
         _mockSession = Mockito.mock(SessionImpl.class);

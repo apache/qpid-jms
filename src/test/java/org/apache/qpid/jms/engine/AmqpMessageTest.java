@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
 import org.apache.qpid.proton.engine.Delivery;
@@ -34,7 +35,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-public class AmqpMessageTest
+public class AmqpMessageTest extends QpidJmsTestCase
 {
     private static final String TEST_PROP_A = "TEST_PROP_A";
     private static final String TEST_PROP_B = "TEST_PROP_B";
@@ -45,8 +46,10 @@ public class AmqpMessageTest
     private Delivery _mockDelivery;
 
     @Before
+    @Override
     public void setUp() throws Exception
     {
+        super.setUp();
         _mockAmqpConnection = Mockito.mock(AmqpConnection.class);
         _mockDelivery = Mockito.mock(Delivery.class);
     }

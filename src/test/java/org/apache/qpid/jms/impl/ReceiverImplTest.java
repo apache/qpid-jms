@@ -44,8 +44,10 @@ public class ReceiverImplTest extends QpidJmsTestCase
     private AmqpMessage _mockAmqpMessage;
 
     @Before
+    @Override
     public void setUp() throws Exception
     {
+        super.setUp();
         _mockConnection = Mockito.mock(ConnectionImpl.class);
         _mockAmqpReceiver = Mockito.mock(AmqpReceiver.class);
         _mockSession = Mockito.mock(SessionImpl.class);

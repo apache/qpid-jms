@@ -22,9 +22,10 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 
+import org.apache.qpid.jms.QpidJmsTestCase;
 import org.junit.Test;
 
-public class SimplePredicateTest
+public class SimplePredicateTest extends QpidJmsTestCase
 {
     private static final String DESCRIPTION = "description1";
     private static final String PREDICATED_OBJECT = "predicatedObject1";

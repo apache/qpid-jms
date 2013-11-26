@@ -25,6 +25,7 @@ import static org.junit.Assert.*;
 import javax.jms.JMSException;
 import javax.jms.Message;
 
+import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.jms.engine.AmqpBytesMessage;
 import org.apache.qpid.jms.engine.AmqpGenericMessage;
 import org.apache.qpid.jms.engine.AmqpListMessage;
@@ -36,7 +37,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-public class MessageFactoryImplTest
+public class MessageFactoryImplTest extends QpidJmsTestCase
 {
 
     private ConnectionImpl _mockConnection;
@@ -44,8 +45,10 @@ public class MessageFactoryImplTest
     private MessageFactoryImpl _messageFactoryImpl;
 
     @Before
+    @Override
     public void setUp() throws Exception
     {
+        super.setUp();
         _mockConnection = Mockito.mock(ConnectionImpl.class);
         _mockSession = Mockito.mock(SessionImpl.class);
         _messageFactoryImpl = new MessageFactoryImpl();

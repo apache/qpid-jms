@@ -18,9 +18,13 @@
  */
 package org.apache.qpid.jms.engine;
 
+import java.nio.ByteBuffer;
+
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.Section;
+import org.apache.qpid.proton.codec.impl.DataImpl;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.message.Message;
 
@@ -53,9 +57,15 @@ public class AmqpTextMessage extends AmqpMessage
     {
         AmqpValue body = new AmqpValue(text);
         getMessage().setBody(body);
+
+        //TODO: clear the content-type in the case where we had received
+        //a message containing Data+ContentType
     }
 
-    public String getText()
+    /**
+     * @throws IllegalStateException if the underlying message content can't be retrieved as a String or null
+     */
+    public String getText() throws IllegalStateException
     {
         Section body = getMessage().getBody();
 
@@ -65,8 +75,29 @@ public class AmqpTextMessage extends AmqpMessage
         }
         else if(body instanceof Data)
         {
-            //TODO
-            return null;
+            Data data = (Data) body;
+            if(data.getValue() == null || data.getValue().getLength() == 0)
+            {
+                return null;
+            }
+            else
+            {
+                Binary b = data.getValue();
+
+                ByteBuffer buf = ByteBuffer.wrap(b.getArray(), b.getArrayOffset(), b.getLength());
+                org.apache.qpid.proton.codec.Data codecData = new DataImpl();
+                codecData.decode(buf);
+
+                if(codecData.isNull())
+                {
+                    return null;
+                }
+                else
+                {
+                    return codecData.getString();
+                }
+            }
+
         }
         else if(body instanceof AmqpValue)
         {
@@ -78,12 +109,12 @@ public class AmqpTextMessage extends AmqpMessage
             }
             else
             {
-                throw new RuntimeException("Unexpected body content type: " + value.getClass().getSimpleName());
+                throw new IllegalStateException("Unexpected amqp-value body content type: " + value.getClass().getSimpleName());
             }
         }
         else
         {
-            throw new RuntimeException("Unexpected message body type: " + body.getClass().getSimpleName());
+            throw new IllegalStateException("Unexpected message body type: " + body.getClass().getSimpleName());
         }
     }
 }

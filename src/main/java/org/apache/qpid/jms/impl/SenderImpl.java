@@ -32,11 +32,13 @@ import org.apache.qpid.jms.engine.AmqpSentMessageToken;
 public class SenderImpl extends LinkImpl implements MessageProducer
 {
     private AmqpSender _amqpSender;
+    private Destination _destination;
 
-    public SenderImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl, AmqpSender amqpSender)
+    public SenderImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl, AmqpSender amqpSender, Destination destination)
     {
         super(connectionImpl, amqpSender);
         _amqpSender = amqpSender;
+        _destination = destination;
     }
 
     private void sendMessage(Message message, int deliveryMode, int priority, long timeToLive) throws JMSException
@@ -44,6 +46,9 @@ public class SenderImpl extends LinkImpl implements MessageProducer
         getConnectionImpl().lock();
         try
         {
+            //set the Destination
+            message.setJMSDestination(_destination);
+
             //set the DeliveryMode if necessary
             if(deliveryMode != message.getJMSDeliveryMode())
             {

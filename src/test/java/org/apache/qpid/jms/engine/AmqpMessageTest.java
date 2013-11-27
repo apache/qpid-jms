@@ -28,7 +28,9 @@ import java.util.Set;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.proton.Proton;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
+import org.apache.qpid.proton.amqp.messaging.Properties;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.message.Message;
 import org.junit.Before;
@@ -160,4 +162,77 @@ public class AmqpMessageTest extends QpidJmsTestCase
         }
     }
 
+    @Test
+    public void testGetToWithReceivedMessageWithNoProperties()
+    {
+        Message message = Proton.message();
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        String toAddress = testAmqpMessage.getTo();
+        assertNull(toAddress);
+    }
+
+    @Test
+    public void testGetToWithReceivedMessageWithPropertiesButNoTo()
+    {
+        Message message = Proton.message();
+
+        Properties props = new Properties();
+        props.setContentType(Symbol.valueOf("content-type"));
+        message.setProperties(props);
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        String toAddress = testAmqpMessage.getTo();
+        assertNull(toAddress);
+    }
+
+    @Test
+    public void testGetToWithReceivedMessage()
+    {
+        String testToAddress = "myTestAddress";
+
+        Message message = Proton.message();
+
+        Properties props = new Properties();
+        props.setTo(testToAddress);
+        message.setProperties(props);
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        String toAddress = testAmqpMessage.getTo();
+        assertNotNull(toAddress);
+        assertEquals(testToAddress, testAmqpMessage.getTo());
+    }
+
+    @Test
+    public void testSetTo()
+    {
+        String testToAddress = "myTestAddress";
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+
+        Message underlyingMessage = testAmqpMessage.getMessage();
+        assertNull(underlyingMessage.getAddress());
+
+        testAmqpMessage.setTo(testToAddress);
+
+        assertNotNull(underlyingMessage.getAddress());
+        assertEquals(testToAddress, underlyingMessage.getAddress());
+    }
+
+    @Test
+    public void testSetGetTo()
+    {
+        String testToAddress = "myTestAddress";
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+
+        assertNull(testAmqpMessage.getTo());
+
+        testAmqpMessage.setTo(testToAddress);
+
+        assertNotNull(testAmqpMessage.getTo());
+        assertEquals(testToAddress, testAmqpMessage.getTo());
+    }
 }

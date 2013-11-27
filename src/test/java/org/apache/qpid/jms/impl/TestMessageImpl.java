@@ -10,10 +10,9 @@ public class TestMessageImpl extends MessageImpl<TestAmqpMessage>
     }
 
     @Override
-    protected TestAmqpMessage prepareUnderlyingAmqpMessageForSending(
-            TestAmqpMessage amqpMessage)
+    protected TestAmqpMessage prepareUnderlyingAmqpMessageForSending(TestAmqpMessage amqpMessage)
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        //NO-OP
+        return amqpMessage;
     }
 }

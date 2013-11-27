@@ -27,11 +27,13 @@ import org.apache.qpid.jms.engine.AmqpObjectMessage;
 
 public class ObjectMessageImpl extends MessageImpl<AmqpObjectMessage> implements ObjectMessage
 {
+    //message to be sent
     public ObjectMessageImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
         this(new AmqpObjectMessage(), sessionImpl, connectionImpl);
     }
 
+    //message just received
     public ObjectMessageImpl(AmqpObjectMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
         super(amqpMessage, sessionImpl, connectionImpl);

@@ -25,11 +25,13 @@ import org.apache.qpid.jms.engine.AmqpListMessage;
 
 public class StreamMessageImpl extends MessageImpl<AmqpListMessage> implements StreamMessage
 {
+    //message to be sent
     public StreamMessageImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
         this(new AmqpListMessage(), sessionImpl, connectionImpl);
     }
 
+    //message just received
     public StreamMessageImpl(AmqpListMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
         super(amqpMessage, sessionImpl, connectionImpl);

@@ -27,11 +27,13 @@ import org.apache.qpid.jms.engine.AmqpMapMessage;
 
 public class MapMessageImpl extends MessageImpl<AmqpMapMessage> implements MapMessage
 {
+    //message to be sent
     public MapMessageImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
         this(new AmqpMapMessage(), sessionImpl, connectionImpl);
     }
 
+    //message just received
     public MapMessageImpl(AmqpMapMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
         super(amqpMessage, sessionImpl, connectionImpl);

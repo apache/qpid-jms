@@ -25,11 +25,13 @@ import org.apache.qpid.jms.engine.AmqpGenericMessage;
 
 public class GenericAmqpMessageImpl extends MessageImpl<AmqpGenericMessage> implements Message
 {
+    //message to be sent
     public GenericAmqpMessageImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
         this(new AmqpGenericMessage(), sessionImpl, connectionImpl);
     }
 
+    //message just received
     public GenericAmqpMessageImpl(AmqpGenericMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
         super(amqpMessage, sessionImpl, connectionImpl);

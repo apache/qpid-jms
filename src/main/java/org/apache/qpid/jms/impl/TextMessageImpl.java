@@ -25,17 +25,13 @@ import org.apache.qpid.jms.engine.AmqpTextMessage;
 
 public class TextMessageImpl extends MessageImpl<AmqpTextMessage> implements TextMessage
 {
+    //message to be sent
     public TextMessageImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
-        this((String) null, sessionImpl, connectionImpl);
-    }
-
-    public TextMessageImpl(String text, SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
-    {
         this(new AmqpTextMessage(), sessionImpl, connectionImpl);
-        setText(text);
     }
 
+    //message just received
     public TextMessageImpl(AmqpTextMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
         super(amqpMessage, sessionImpl, connectionImpl);

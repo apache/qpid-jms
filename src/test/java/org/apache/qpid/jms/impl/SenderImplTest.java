@@ -21,8 +21,11 @@
 package org.apache.qpid.jms.impl;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 
 import javax.jms.DeliveryMode;
+import javax.jms.Queue;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.jms.engine.AmqpMessage;
@@ -39,6 +42,8 @@ public class SenderImplTest extends QpidJmsTestCase
     private ConnectionImpl _mockConnection;
     private AmqpSender _mockAmqpSender;
     private SessionImpl _mockSession;
+    private Queue _mockQueue;
+    private String _mockQueueName = "mockQueueName";
 
     @Before
     @Override
@@ -48,6 +53,10 @@ public class SenderImplTest extends QpidJmsTestCase
         _mockConnection = Mockito.mock(ConnectionImpl.class);
         _mockAmqpSender = Mockito.mock(AmqpSender.class);
         _mockSession = Mockito.mock(SessionImpl.class);
+
+        _mockQueueName = "mockQueueName";
+        _mockQueue = Mockito.mock(Queue.class);
+        Mockito.when(_mockQueue.getQueueName()).thenReturn(_mockQueueName);
     }
 
     @Test
@@ -59,18 +68,10 @@ public class SenderImplTest extends QpidJmsTestCase
         Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
         ImmediateWaitUntil.mockWaitUntil(_mockConnection);
 
-        SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender);
+        SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
         TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
-        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, null, null)
-        {
-            @Override
-            protected TestAmqpMessage prepareUnderlyingAmqpMessageForSending(TestAmqpMessage amqpMessage)
-            {
-                //NO-OP
-                return amqpMessage;
-            }
-        };
+        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, null, null);
 
         testMessage.setJMSDeliveryMode(DeliveryMode.NON_PERSISTENT);
         assertEquals(DeliveryMode.NON_PERSISTENT, testMessage.getJMSDeliveryMode());
@@ -78,5 +79,26 @@ public class SenderImplTest extends QpidJmsTestCase
         senderImpl.send(testMessage);
 
         assertEquals(DeliveryMode.PERSISTENT, testMessage.getJMSDeliveryMode());
+    }
+
+    @Test
+    public void testSenderSetsJMSDestinationOnMessage() throws Exception
+    {
+        //Create mock sent message token, ensure that it is immediately marked as Accepted
+        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
+        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
+        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
+        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+
+        SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, null, null);
+
+        assertNull(testMessage.getJMSDestination());
+
+        senderImpl.send(testMessage);
+
+        assertSame(_mockQueue, testMessage.getJMSDestination());
     }
 }

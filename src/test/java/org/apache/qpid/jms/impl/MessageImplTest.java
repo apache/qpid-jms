@@ -26,6 +26,7 @@ import java.util.Enumeration;
 
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
+import javax.jms.Queue;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.jms.engine.TestAmqpMessage;
@@ -38,6 +39,9 @@ public class MessageImplTest extends QpidJmsTestCase
     private ConnectionImpl _mockConnectionImpl;
     private SessionImpl _mockSessionImpl;
     private TestMessageImpl _testMessage;
+    private TestAmqpMessage _testAmqpMessage;
+    private String _mockQueueName;
+    private Queue _mockQueue;
 
     @Before
     @Override
@@ -46,7 +50,12 @@ public class MessageImplTest extends QpidJmsTestCase
         super.setUp();
         _mockConnectionImpl = Mockito.mock(ConnectionImpl.class);
         _mockSessionImpl = Mockito.mock(SessionImpl.class);
-        _testMessage = new TestMessageImpl(new TestAmqpMessage(), _mockSessionImpl, _mockConnectionImpl);
+        _testAmqpMessage = new TestAmqpMessage();
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl);
+
+        _mockQueueName = "mockQueueName";
+        _mockQueue = Mockito.mock(Queue.class);
+        Mockito.when(_mockQueue.getQueueName()).thenReturn(_mockQueueName);
     }
 
     @Test
@@ -428,6 +437,47 @@ public class MessageImplTest extends QpidJmsTestCase
         assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Integer.class);
         assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Long.class);
         assertGetPropertyThrowsMessageFormatException(_testMessage, propertyName, Float.class);
+    }
+
+    // ====== JMSDestination =======
+
+    @Test
+    public void testGetJMSDestinationOnNewMessage() throws Exception
+    {
+        //Should be null as it has not been set explicitly, and
+        // the message has not been sent anywhere
+        assertNull(_testMessage.getJMSDestination());
+    }
+
+    @Test
+    public void testSetJMSDestinationOnNewMessage() throws Exception
+    {
+        assertNull(_testAmqpMessage.getTo());
+
+        _testMessage.setJMSDestination(_mockQueue);
+
+        assertNotNull(_testAmqpMessage.getTo());
+        assertEquals(_mockQueueName, _testAmqpMessage.getTo());
+    }
+
+    @Test
+    public void testSetGetJMSDestinationOnNewMessage() throws Exception
+    {
+        _testMessage.setJMSDestination(_mockQueue);
+        assertNotNull(_testMessage.getJMSDestination());
+        assertSame(_mockQueue, _testMessage.getJMSDestination());
+    }
+
+    @Test
+    public void testGetJMSDestinationOnRecievedMessageWithTo() throws Exception
+    {
+        _testAmqpMessage.setTo(_mockQueueName);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl);
+
+        assertNotNull("expected JMSDestination value not present", _testMessage.getJMSDestination());
+
+        QueueImpl newQueueExpected = new QueueImpl(_mockQueueName);
+        assertEquals(newQueueExpected, _testMessage.getJMSDestination());
     }
 
     // ====== utility methods =======

@@ -119,6 +119,8 @@ public abstract class AmqpMessage
         }
     }
 
+    //===== Header ======
+
     public void setDurable(boolean durable)
     {
         _message.setDurable(durable);
@@ -129,11 +131,7 @@ public abstract class AmqpMessage
         return _message.isDurable();
     }
 
-    public void setContentType(String contentType)
-    {
-        //TODO: do we need to synchronise this?
-        _message.setContentType(contentType);
-    }
+    //===== MessageAnnotations ======
 
     public boolean messageAnnotationExists(Object key)
     {
@@ -167,14 +165,12 @@ public abstract class AmqpMessage
 
     public void clearAllMessageAnnotations()
     {
-        //TODO: this isnt thread-safe, does it need to be?
         _messageAnnotations = null;
         _message.setMessageAnnotations(null);
     }
 
     public void setMessageAnnotation(Object key, Object value)
     {
-        //TODO: this isnt thread-safe, does it need to be?
         if(_messageAnnotationsMap == null)
         {
             _messageAnnotationsMap = new HashMap<Object,Object>();
@@ -192,9 +188,26 @@ public abstract class AmqpMessage
 
     private void setMessageAnnotations()
     {
-        //TODO: this isnt thread-safe, does it need to be?
         _messageAnnotations = new MessageAnnotations(_messageAnnotationsMap);
         _message.setMessageAnnotations(_messageAnnotations);
+    }
+
+
+    //===== Properties ======
+
+    public void setContentType(String contentType)
+    {
+        _message.setContentType(contentType);
+    }
+
+    public String getTo()
+    {
+        return _message.getAddress();
+    }
+
+    public void setTo(String to)
+    {
+        _message.setAddress(to);
     }
 
     //===== Application Properties ======

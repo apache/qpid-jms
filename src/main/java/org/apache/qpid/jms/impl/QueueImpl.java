@@ -27,9 +27,13 @@ class QueueImpl implements Queue
 
     public QueueImpl(String queueName)
     {
+        if(queueName == null)
+        {
+            throw new IllegalArgumentException("Queue name must be specified");
+        }
+
         _queueName = queueName;
     }
-
 
     @Override
     public String getQueueName() throws JMSException
@@ -41,5 +45,27 @@ class QueueImpl implements Queue
     public String toString()
     {
         return _queueName;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return _queueName.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+
+        return _queueName.equals(((QueueImpl)o)._queueName);
     }
 }

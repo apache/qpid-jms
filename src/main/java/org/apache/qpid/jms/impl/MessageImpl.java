@@ -32,10 +32,25 @@ import org.apache.qpid.jms.engine.AmqpMessage;
 public abstract class MessageImpl<T extends AmqpMessage> implements Message
 {
     private final T _amqpMessage;
+    private Destination _destination;
 
     public MessageImpl(T amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl)
     {
         _amqpMessage = amqpMessage;
+        String to = _amqpMessage.getTo();
+        if(to != null)
+        {
+            //TODO: don't create a new DestinationHelper for every call.
+            _destination = new DestinationHelper().decodeDestination(to, null);
+        }
+        else
+        {
+            //TODO:
+            //Message doesn't have a To. If this message was received via a
+            //consumer (i.e we aren't creating this message to send), as a fallback
+            //we could set the Destination used to create the consumer itself. That
+            //responsibility might fall to the consumer though.
+        }
     }
 
     T getUnderlyingAmqpMessage(boolean prepareForSending)
@@ -173,15 +188,28 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public Destination getJMSDestination() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        return _destination;
     }
 
     @Override
-    public void setJMSDestination(Destination destination) throws JMSException
+    public void setJMSDestination(final Destination destination) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        //TODO: don't create a new DestinationHelper for every call.
+        DestinationHelper destinationHelper = new DestinationHelper();
+
+        _destination = destination;
+
+        Destination dest = destination;
+        if(dest != null && !destinationHelper.isQpidDestination(dest))
+        {
+            dest = destinationHelper.convertToQpidDestination(destination);
+        }
+
+        String to = destinationHelper.decodeAddress(destination);
+
+        _amqpMessage.setTo(to);
+
+        //TODO: set the x-opt-to-type message annotation
     }
 
     @Override

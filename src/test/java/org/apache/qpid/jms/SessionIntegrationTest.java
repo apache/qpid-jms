@@ -79,13 +79,16 @@ public class SessionIntegrationTest extends QpidJmsTestCase
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Queue queue = session.createQueue("myQueue");
+            String queueName = "myQueue";
+            Queue queue = session.createQueue(queueName);
             MessageProducer producer = session.createProducer(queue);
 
             String text = "myMessage";
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true).withTo(equalTo(queueName));
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
             messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(text));
             testPeer.expectTransfer(messageMatcher);
 
@@ -135,12 +138,15 @@ public class SessionIntegrationTest extends QpidJmsTestCase
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Queue queue = session.createQueue("myQueue");
+            String queueName = "myQueue";
+            Queue queue = session.createQueue(queueName);
             MessageProducer producer = session.createProducer(queue);
 
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true).withTo(equalTo(queueName));
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
             messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(null));
             testPeer.expectTransfer(messageMatcher);
 

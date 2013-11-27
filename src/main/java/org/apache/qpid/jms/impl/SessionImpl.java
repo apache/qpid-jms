@@ -62,7 +62,7 @@ public class SessionImpl implements Session
         _connectionImpl = connectionImpl;
     }
 
-    void establish() throws JmsTimeoutException, JmsInterruptedException
+     void establish() throws JmsTimeoutException, JmsInterruptedException
     {
         _connectionImpl.waitUntil(new SimplePredicate("Session established", _amqpSession)
         {
@@ -79,13 +79,13 @@ public class SessionImpl implements Session
         return _connectionImpl;
     }
 
-    private SenderImpl createSender(String address) throws JMSException
+    private SenderImpl createSender(String address, Destination destination) throws JMSException
     {
         _connectionImpl.lock();
         try
         {
             AmqpSender amqpSender = _amqpSession.createAmqpSender(address);
-            SenderImpl sender = new SenderImpl(this, _connectionImpl, amqpSender);
+            SenderImpl sender = new SenderImpl(this, _connectionImpl, amqpSender, destination);
             _connectionImpl.stateChanged();
             sender.establish();
             return sender;
@@ -160,6 +160,7 @@ public class SessionImpl implements Session
     @Override
     public MessageProducer createProducer(Destination destination) throws JMSException
     {
+        //TODO: use destination helper to perform conversion, extract address etc.
         if(destination == null)
         {
             throw new UnsupportedOperationException("Unspecified destinations are not yet supported");
@@ -167,7 +168,8 @@ public class SessionImpl implements Session
         else if (destination instanceof Queue)
         {
             Queue queue = (Queue) destination;
-            return createSender(queue.getQueueName());
+
+            return createSender(queue.getQueueName(), destination);
         }
         else if(destination instanceof Topic)
         {
@@ -247,13 +249,19 @@ public class SessionImpl implements Session
     @Override
     public TextMessage createTextMessage() throws JMSException
     {
-        return new TextMessageImpl(this, _connectionImpl);
+        return createTextMessage(null);
     }
 
     @Override
     public TextMessage createTextMessage(String text) throws JMSException
     {
-        return new TextMessageImpl(text, this, _connectionImpl);
+        TextMessage msg = new TextMessageImpl(this, _connectionImpl);
+        if(text != null)
+        {
+            msg.setText(text);
+        }
+
+        return msg;
     }
 
     @Override

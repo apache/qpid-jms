@@ -62,7 +62,7 @@ public class SessionImpl implements Session
         _connectionImpl = connectionImpl;
     }
 
-    public void establish() throws JmsTimeoutException, JmsInterruptedException
+    void establish() throws JmsTimeoutException, JmsInterruptedException
     {
         _connectionImpl.waitUntil(new SimplePredicate("Session established", _amqpSession)
         {
@@ -73,6 +73,58 @@ public class SessionImpl implements Session
             }
         }, AmqpConnection.TIMEOUT);
     }
+
+    ConnectionImpl getConnectionImpl()
+    {
+        return _connectionImpl;
+    }
+
+    private SenderImpl createSender(String address) throws JMSException
+    {
+        _connectionImpl.lock();
+        try
+        {
+            AmqpSender amqpSender = _amqpSession.createAmqpSender(address);
+            SenderImpl sender = new SenderImpl(this, _connectionImpl, amqpSender);
+            _connectionImpl.stateChanged();
+            sender.establish();
+            return sender;
+        }
+        finally
+        {
+            _connectionImpl.releaseLock();
+        }
+    }
+
+    private ReceiverImpl createReceiver(String address) throws JMSException
+    {
+        _connectionImpl.lock();
+        try
+        {
+            AmqpReceiver amqpReceiver = _amqpSession.createAmqpReceiver(address);
+            ReceiverImpl receiver = new ReceiverImpl(_connectionImpl, this, amqpReceiver);
+            _connectionImpl.stateChanged();
+            receiver.establish();
+
+            if(_connectionImpl.isStarted())
+            {
+                //Issue initial flow for the consumer.
+                //TODO: decide on prefetch behaviour, i.e. whether we defer flow or do it now, and what value to use.
+                amqpReceiver.credit(INITIAL_RECEIVER_CREDIT);
+                _connectionImpl.stateChanged();
+            }
+
+            return receiver;
+        }
+        finally
+        {
+            _connectionImpl.releaseLock();
+        }
+    }
+
+
+    //======= JMS Methods =======
+
 
     @Override
     public void close() throws JMSException
@@ -105,12 +157,6 @@ public class SessionImpl implements Session
         }
     }
 
-    ConnectionImpl getConnectionImpl()
-    {
-        return _connectionImpl;
-    }
-
-
     @Override
     public MessageProducer createProducer(Destination destination) throws JMSException
     {
@@ -134,23 +180,6 @@ public class SessionImpl implements Session
 
     }
 
-    private SenderImpl createSender(String address) throws JMSException
-    {
-        _connectionImpl.lock();
-        try
-        {
-            AmqpSender amqpSender = _amqpSession.createAmqpSender(address);
-            SenderImpl sender = new SenderImpl(this, _connectionImpl, amqpSender);
-            _connectionImpl.stateChanged();
-            sender.establish();
-            return sender;
-        }
-        finally
-        {
-            _connectionImpl.releaseLock();
-        }
-    }
-
     @Override
     public MessageConsumer createConsumer(Destination destination) throws JMSException
     {
@@ -171,32 +200,6 @@ public class SessionImpl implements Session
         else
         {
             throw new IllegalArgumentException("Destination expected to be a Queue or a Topic but was: " + destination.getClass());
-        }
-    }
-
-    private ReceiverImpl createReceiver(String address) throws JMSException
-    {
-        _connectionImpl.lock();
-        try
-        {
-            AmqpReceiver amqpReceiver = _amqpSession.createAmqpReceiver(address);
-            ReceiverImpl receiver = new ReceiverImpl(_connectionImpl, this, amqpReceiver);
-            _connectionImpl.stateChanged();
-            receiver.establish();
-
-            if(_connectionImpl.isStarted())
-            {
-                //Issue initial flow for the consumer.
-                //TODO: decide on prefetch behaviour, i.e. whether we defer flow or do it now, and what value to use.
-                amqpReceiver.credit(INITIAL_RECEIVER_CREDIT);
-                _connectionImpl.stateChanged();
-            }
-
-            return receiver;
-        }
-        finally
-        {
-            _connectionImpl.releaseLock();
         }
     }
 

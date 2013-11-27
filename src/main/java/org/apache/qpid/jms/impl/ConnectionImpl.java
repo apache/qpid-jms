@@ -148,6 +148,11 @@ public class ConnectionImpl implements Connection
         }
     }
 
+    boolean isStarted()
+    {
+        return _isStarted;
+    }
+
     private void connect() throws IOException, ConnectionException, JmsTimeoutException, JmsInterruptedException
     {
         lock();
@@ -183,6 +188,49 @@ public class ConnectionImpl implements Connection
             releaseLock();
         }
     }
+
+    /**
+     * <p>
+     * Acquire the connection lock.
+     * </p>
+     * <p>
+     * Must be held by an application thread before reading or modifying
+     * the state of this connection or any of its associated child objects
+     * (e.g. sessions, senders, receivers, links, and messages).
+     * Also must be held when calling {@link #stateChanged()}.
+     * </p>
+     * <p>
+     * Following these rules ensures that this lock is acquired BEFORE the lock(s) managed by {@link AmqpConnection}.
+     * </p>
+     *
+     * @see #releaseLock()
+     */
+    void lock()
+    {
+        _connectionLock.lock();
+    }
+
+    /**
+     * @see #lock()
+     */
+    void releaseLock()
+    {
+        _connectionLock.unlock();
+    }
+
+    /**
+     * Inform the connection that its state has been locally changed so that, for example,
+     * it can schedule network I/O to occur.
+     * The caller must first acquire the connection lock (via {@link #lock()}).
+     */
+    void stateChanged()
+    {
+        _connectionLock.stateChanged();
+    }
+
+
+    //======= JMS Methods =======
+
 
     @Override
     public void close() throws JMSException
@@ -247,45 +295,6 @@ public class ConnectionImpl implements Connection
         }
     }
 
-    /**
-     * <p>
-     * Acquire the connection lock.
-     * </p>
-     * <p>
-     * Must be held by an application thread before reading or modifying
-     * the state of this connection or any of its associated child objects
-     * (e.g. sessions, senders, receivers, links, and messages).
-     * Also must be held when calling {@link #stateChanged()}.
-     * </p>
-     * <p>
-     * Following these rules ensures that this lock is acquired BEFORE the lock(s) managed by {@link AmqpConnection}.
-     * </p>
-     *
-     * @see #releaseLock()
-     */
-    void lock()
-    {
-        _connectionLock.lock();
-    }
-
-    /**
-     * @see #lock()
-     */
-    void releaseLock()
-    {
-        _connectionLock.unlock();
-    }
-
-    /**
-     * Inform the connection that its state has been locally changed so that, for example,
-     * it can schedule network I/O to occur.
-     * The caller must first acquire the connection lock (via {@link #lock()}).
-     */
-    void stateChanged()
-    {
-        _connectionLock.stateChanged();
-    }
-
     @Override
     public String getClientID() throws JMSException
     {
@@ -346,10 +355,5 @@ public class ConnectionImpl implements Connection
     {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Not Implemented");
-    }
-
-    boolean isStarted()
-    {
-        return _isStarted;
     }
 }

@@ -30,6 +30,7 @@ import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
+import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Properties;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.message.Message;
@@ -55,6 +56,8 @@ public class AmqpMessageTest extends QpidJmsTestCase
         _mockAmqpConnection = Mockito.mock(AmqpConnection.class);
         _mockDelivery = Mockito.mock(Delivery.class);
     }
+
+    // ====== Application Properties =======
 
     @Test
     public void testGetApplicationPropertyNames()
@@ -162,6 +165,8 @@ public class AmqpMessageTest extends QpidJmsTestCase
         }
     }
 
+    // ====== Properties =======
+
     @Test
     public void testGetToWithReceivedMessageWithNoProperties()
     {
@@ -234,5 +239,196 @@ public class AmqpMessageTest extends QpidJmsTestCase
 
         assertNotNull(testAmqpMessage.getTo());
         assertEquals(testToAddress, testAmqpMessage.getTo());
+    }
+
+    // ====== Message Annotations =======
+
+    @Test
+    public void testMessageAnnotationExistsUsingReceivedMessageWithoutMessageAnnotationsSection()
+    {
+        String symbolKeyName = "myTestSymbolName";
+
+        Message message = Proton.message();
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        assertFalse(testAmqpMessage.messageAnnotationExists(symbolKeyName));
+    }
+
+    @Test
+    public void testMessageAnnotationExistsUsingReceivedMessageWithMessageAnnotationsSection()
+    {
+        String symbolKeyName = "myTestSymbolName";
+        String value = "myTestValue";
+
+        Message message = Proton.message();
+
+        Map<Object,Object> annotationsMap = new HashMap<Object,Object>();
+        annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
+        message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        assertTrue(testAmqpMessage.messageAnnotationExists(symbolKeyName));
+        assertFalse(testAmqpMessage.messageAnnotationExists("otherName"));
+    }
+
+    @Test
+    public void testGetMessageAnnotationUsingReceivedMessageWithoutMessageAnnotationsSection()
+    {
+        String symbolKeyName = "myTestSymbolName";
+
+        Message message = Proton.message();
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        assertNull(testAmqpMessage.getMessageAnnotation(symbolKeyName));
+    }
+
+    @Test
+    public void testGetMessageAnnotationUsingReceivedMessageWithMessageAnnotationsSection()
+    {
+        String symbolKeyName = "myTestSymbolName";
+        String value = "myTestValue";
+
+        Message message = Proton.message();
+
+        Map<Object,Object> annotationsMap = new HashMap<Object,Object>();
+        annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
+        message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        assertEquals(value, testAmqpMessage.getMessageAnnotation(symbolKeyName));
+        assertNull(testAmqpMessage.getMessageAnnotation("otherName"));
+    }
+
+    @Test
+    public void testNewMessageHasNoUnderlyingMessageAnnotationsSection()
+    {
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+
+        Message underlying = testAmqpMessage.getMessage();
+        assertNull(underlying.getMessageAnnotations());
+    }
+
+    @Test
+    public void testSetMessageAnnotationOnNewMessage()
+    {
+        String symbolKeyName = "myTestSymbolName";
+        String symbolKeyName2 = "myTestSymbolName2";
+        String value = "myTestValue";
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+
+        //check setting first annotation creates the annotations section
+        testAmqpMessage.setMessageAnnotation(symbolKeyName, value);
+
+        MessageAnnotations underlyingAnnotations = testAmqpMessage.getMessage().getMessageAnnotations();
+        assertNotNull(underlyingAnnotations);
+
+        assertEquals(1, underlyingAnnotations.getValue().size());
+        assertTrue(underlyingAnnotations.getValue().containsKey(Symbol.valueOf(symbolKeyName)));
+        assertEquals(value, underlyingAnnotations.getValue().get(Symbol.valueOf(symbolKeyName)));
+
+        //set another
+        testAmqpMessage.setMessageAnnotation(symbolKeyName2, value);
+
+        assertEquals(2, underlyingAnnotations.getValue().size());
+        assertTrue(underlyingAnnotations.getValue().containsKey(Symbol.valueOf(symbolKeyName)));
+        assertTrue(underlyingAnnotations.getValue().containsKey(Symbol.valueOf(symbolKeyName2)));
+    }
+
+    @Test
+    public void testClearMessageAnnotation()
+    {
+        String symbolKeyName = "myTestSymbolName";
+        String value = "myTestValue";
+
+        Message message = Proton.message();
+
+        Map<Object,Object> annotationsMap = new HashMap<Object,Object>();
+        annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
+        message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        assertEquals(value, testAmqpMessage.getMessageAnnotation(symbolKeyName));
+        assertNull(testAmqpMessage.getMessageAnnotation("otherName"));
+
+        testAmqpMessage.clearMessageAnnotation(symbolKeyName);
+        assertNull(testAmqpMessage.getMessageAnnotation(symbolKeyName));
+    }
+
+    @Test
+    public void testClearMessageAnnotationONMessageWithNoMessageAnnotationSectionDoesntThrowException()
+    {
+        Message message = Proton.message();
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        testAmqpMessage.clearMessageAnnotation("keyName");
+    }
+
+    @Test
+    public void testClearAllMessageAnnotationsUsingNewMessage()
+    {
+        Message message = Proton.message();
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        testAmqpMessage.clearAllMessageAnnotations();
+
+        Message underlying = testAmqpMessage.getMessage();
+        assertNull(underlying.getMessageAnnotations());
+    }
+
+    @Test
+    public void testClearAllMessageAnnotationsUsingReceivedMessageWithMessageAnnotationsSection()
+    {
+        String symbolKeyName = "myTestSymbolName";
+        String value = "myTestValue";
+
+        Message message = Proton.message();
+
+        Map<Object,Object> annotationsMap = new HashMap<Object,Object>();
+        annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
+        message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        testAmqpMessage.clearAllMessageAnnotations();
+
+        Message underlying = testAmqpMessage.getMessage();
+        assertNull(underlying.getMessageAnnotations());
+    }
+
+    @Test
+    public void testGetMessageAnnotationsCountUsingReceivedMessageWithoutMessageAnnotationsSection()
+    {
+        Message message = Proton.message();
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        assertEquals(0, testAmqpMessage.getMessageAnnotationsCount());
+    }
+
+    @Test
+    public void testGetMessageAnnotationsCountUsingReceivedMessageWithMessageAnnotationsSection()
+    {
+        String symbolKeyName = "myTestSymbolName";
+        String symbolKeyName2 = "myTestSymbolName2";
+        String value = "myTestValue";
+
+        Message message = Proton.message();
+
+        Map<Object,Object> annotationsMap = new HashMap<Object,Object>();
+        annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
+        annotationsMap.put(Symbol.valueOf(symbolKeyName2), value);
+        message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        assertEquals(2, testAmqpMessage.getMessageAnnotationsCount());
+        testAmqpMessage.clearMessageAnnotation(symbolKeyName);
+        assertEquals(1, testAmqpMessage.getMessageAnnotationsCount());
     }
 }

@@ -22,10 +22,12 @@ package org.apache.qpid.jms.engine;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.qpid.proton.Proton;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
@@ -133,65 +135,90 @@ public abstract class AmqpMessage
 
     //===== MessageAnnotations ======
 
-    public boolean messageAnnotationExists(Object key)
+    /**
+     * @param keyName The name of the symbol key
+     * @return true if an annotation exists with the provided symbol name, false otherwise
+     */
+    public boolean messageAnnotationExists(String keyName)
     {
-        //TODO: this isn't thread-safe, does it need to be?
-        Map<Object,Object> msgAnnotations = _messageAnnotationsMap;
-        if(msgAnnotations == null)
+        if(_messageAnnotationsMap == null)
         {
             return false;
         }
 
-        return msgAnnotations.containsKey(key);
+        return _messageAnnotationsMap.containsKey(Symbol.valueOf(keyName));
     }
 
-    public void clearMessageAnnotation(Object key)
+    /**
+     * @param keyName The name of the symbol key
+     * @return the value of the annotation if it exists, or null otherwise
+     */
+    public Object getMessageAnnotation(String keyName)
     {
-        //TODO: this isnt thread-safe, does it need to be?
+        if(_messageAnnotationsMap == null)
+        {
+            return null;
+        }
+
+        return _messageAnnotationsMap.get(Symbol.valueOf(keyName));
+    }
+
+    public void clearMessageAnnotation(String keyName)
+    {
         if(_messageAnnotationsMap == null)
         {
             return;
         }
 
-        _messageAnnotationsMap.remove(key);
-
-        //If there are now no annotations, clear the field on
-        //the Proton message to avoid encoding an empty map
-        if(_messageAnnotationsMap.isEmpty())
-        {
-            clearAllMessageAnnotations();
-        }
+        _messageAnnotationsMap.remove(Symbol.valueOf(keyName));
     }
 
+    /**
+     * @param keyName The name of the symbol key
+     * @param value the annotation value
+     */
+    public void setMessageAnnotation(String keyName, Object value)
+    {
+        if(_messageAnnotationsMap == null)
+        {
+            initializeUnderlyingMessageAnnotations();
+        }
+
+        _messageAnnotationsMap.put(Symbol.valueOf(keyName), value);
+    }
+
+    /**
+     * Clears any previously set annotations and removes the underlying
+     * message annotations section from the message
+     */
     public void clearAllMessageAnnotations()
     {
+        _messageAnnotationsMap = null;
         _messageAnnotations = null;
         _message.setMessageAnnotations(null);
     }
 
-    public void setMessageAnnotation(Object key, Object value)
+    /**
+     * @return the number of MessageAnnotations.
+     */
+    public int getMessageAnnotationsCount()
     {
-        if(_messageAnnotationsMap == null)
+        if(_messageAnnotationsMap != null)
         {
-            _messageAnnotationsMap = new HashMap<Object,Object>();
+            return _messageAnnotationsMap.size();
         }
-
-        _messageAnnotationsMap.put(key, value);
-
-        //If there were previously no annotations, we need to
-        //set the related field on the Proton message now
-        if(_messageAnnotations == null)
+        else
         {
-            setMessageAnnotations();
+            return 0;
         }
     }
 
-    private void setMessageAnnotations()
+    private void initializeUnderlyingMessageAnnotations()
     {
+        _messageAnnotationsMap = new HashMap<Object,Object>();
         _messageAnnotations = new MessageAnnotations(_messageAnnotationsMap);
         _message.setMessageAnnotations(_messageAnnotations);
     }
-
 
     //===== Properties ======
 

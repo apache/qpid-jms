@@ -101,4 +101,27 @@ public class SenderImplTest extends QpidJmsTestCase
 
         assertSame(_mockQueue, testMessage.getJMSDestination());
     }
+
+    @Test
+    public void testSenderSetsJMSTimestampOnMessage() throws Exception
+    {
+        //Create mock sent message token, ensure that it is immediately marked as Accepted
+        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
+        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
+        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
+        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+
+        SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, null, null);
+
+        assertEquals(0, testMessage.getJMSTimestamp());
+        long timestamp = System.currentTimeMillis();
+
+        senderImpl.send(testMessage);
+
+        //verify the timestamp was set, allowing for a 3second delta
+        assertEquals(timestamp, testMessage.getJMSTimestamp(), 3000);
+    }
 }

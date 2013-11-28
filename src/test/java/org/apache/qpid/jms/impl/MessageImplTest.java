@@ -480,6 +480,44 @@ public class MessageImplTest extends QpidJmsTestCase
         assertEquals(newQueueExpected, _testMessage.getJMSDestination());
     }
 
+    // ====== JMSTimestamp =======
+
+    @Test
+    public void testGetJMSTimestampOnNewMessage() throws Exception
+    {
+        assertEquals("expected JMSTimestamp value not present", 0, _testMessage.getJMSTimestamp());
+    }
+
+    @Test
+    public void testSetGetJMSTimestampOnNewMessage() throws Exception
+    {
+        long timestamp = System.currentTimeMillis();
+
+        _testMessage.setJMSTimestamp(timestamp);
+        assertEquals("expected JMSTimestamp value not present", timestamp, _testMessage.getJMSTimestamp());
+    }
+
+    @Test
+    public void testSetJMSTimestampOnNewMessage() throws Exception
+    {
+        assertEquals(0, _testAmqpMessage.getCreationTime());
+
+        long timestamp = System.currentTimeMillis();
+        _testMessage.setJMSTimestamp(timestamp);
+
+        assertEquals(timestamp, _testAmqpMessage.getCreationTime());
+    }
+
+    @Test
+    public void testGetJMSTimestampOnRecievedMessageWithCreationTime() throws Exception
+    {
+        long timestamp = System.currentTimeMillis();
+        _testAmqpMessage.setCreationTime(timestamp);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl);
+
+        assertEquals("expected JMSTimestamp value not present", timestamp, _testMessage.getJMSTimestamp());
+    }
+
     // ====== utility methods =======
 
     private void assertGetPropertyThrowsMessageFormatException(TestMessageImpl testMessage,

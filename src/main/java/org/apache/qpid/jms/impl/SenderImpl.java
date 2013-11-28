@@ -46,6 +46,11 @@ public class SenderImpl extends LinkImpl implements MessageProducer
         getConnectionImpl().lock();
         try
         {
+            long timestamp = System.currentTimeMillis();
+
+            //set the timestamp
+            message.setJMSTimestamp(timestamp);
+
             //set the Destination
             message.setJMSDestination(_destination);
 

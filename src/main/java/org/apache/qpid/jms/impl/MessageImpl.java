@@ -132,15 +132,13 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public long getJMSTimestamp() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        return _amqpMessage.getCreationTime();
     }
 
     @Override
     public void setJMSTimestamp(long timestamp) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        _amqpMessage.setCreationTime(timestamp);
     }
 
     @Override

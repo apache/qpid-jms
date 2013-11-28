@@ -210,6 +210,16 @@ public abstract class AmqpMessage
         _message.setAddress(to);
     }
 
+    public long getCreationTime()
+    {
+        return _message.getCreationTime();
+    }
+
+    public void setCreationTime(long timeInMillis)
+    {
+        _message.setCreationTime(timeInMillis);
+    }
+
     //===== Application Properties ======
 
     private void createApplicationProperties()

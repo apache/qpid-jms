@@ -22,7 +22,6 @@ package org.apache.qpid.jms.engine;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,10 +34,6 @@ import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.impl.DeliveryImpl;
 import org.apache.qpid.proton.message.Message;
 
-/**
- * Thread-safe (all state is guarded by the corresponding {@link AmqpConnection} monitor)
- *
- */
 public abstract class AmqpMessage
 {
     private final Delivery _delivery;

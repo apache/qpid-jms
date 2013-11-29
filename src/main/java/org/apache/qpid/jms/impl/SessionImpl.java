@@ -51,15 +51,17 @@ public class SessionImpl implements Session
 {
     private static final int INITIAL_RECEIVER_CREDIT = 1;
 
-    private int _acknowledgeMode;
-    private AmqpSession _amqpSession;
-    private ConnectionImpl _connectionImpl;
+    private final int _acknowledgeMode;
+    private final AmqpSession _amqpSession;
+    private final ConnectionImpl _connectionImpl;
+    private final DestinationHelper _destinationHelper;
 
-    public SessionImpl(int acknowledgeMode, AmqpSession amqpSession, ConnectionImpl connectionImpl)
+    public SessionImpl(int acknowledgeMode, AmqpSession amqpSession, ConnectionImpl connectionImpl, DestinationHelper destinationHelper)
     {
         _acknowledgeMode = acknowledgeMode;
         _amqpSession = amqpSession;
         _connectionImpl = connectionImpl;
+        _destinationHelper = destinationHelper;
     }
 
      void establish() throws JmsTimeoutException, JmsInterruptedException
@@ -120,6 +122,11 @@ public class SessionImpl implements Session
         {
             _connectionImpl.releaseLock();
         }
+    }
+
+    DestinationHelper getDestinationHelper()
+    {
+        return _destinationHelper;
     }
 
 
@@ -337,7 +344,7 @@ public class SessionImpl implements Session
     @Override
     public Queue createQueue(String queueName) throws JMSException
     {
-        return new QueueImpl(queueName);
+        return _destinationHelper.createQueue(queueName);
     }
 
     @Override

@@ -62,6 +62,8 @@ public class ConnectionImpl implements Connection
 
     private volatile boolean _isStarted;
 
+    private DestinationHelper _destinationHelper;
+
     /**
      * TODO: accept a client id
      * TODO: defer connection to the broker if client has not been set. Defer it until any other method is called.
@@ -93,6 +95,8 @@ public class ConnectionImpl implements Connection
         {
             throw new QpidJmsException("Unable to create connection", e);
         }
+
+        _destinationHelper = new DestinationHelper();
     }
 
     void waitUntil(Predicate condition, long timeoutMillis) throws JmsTimeoutException, JmsInterruptedException
@@ -283,7 +287,7 @@ public class ConnectionImpl implements Connection
         {
             AmqpSession amqpSession = _amqpConnection.createSession();
 
-            SessionImpl session = new SessionImpl(acknowledgeMode, amqpSession, this);
+            SessionImpl session = new SessionImpl(acknowledgeMode, amqpSession, this, _destinationHelper);
             stateChanged();
             session.establish();
 

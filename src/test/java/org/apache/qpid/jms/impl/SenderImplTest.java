@@ -53,6 +53,7 @@ public class SenderImplTest extends QpidJmsTestCase
         _mockConnection = Mockito.mock(ConnectionImpl.class);
         _mockAmqpSender = Mockito.mock(AmqpSender.class);
         _mockSession = Mockito.mock(SessionImpl.class);
+        Mockito.when(_mockSession.getDestinationHelper()).thenReturn(new DestinationHelper());
 
         _mockQueueName = "mockQueueName";
         _mockQueue = Mockito.mock(Queue.class);
@@ -71,7 +72,7 @@ public class SenderImplTest extends QpidJmsTestCase
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
         TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
-        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, null, null);
+        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, _mockSession, null);
 
         testMessage.setJMSDeliveryMode(DeliveryMode.NON_PERSISTENT);
         assertEquals(DeliveryMode.NON_PERSISTENT, testMessage.getJMSDeliveryMode());
@@ -93,7 +94,7 @@ public class SenderImplTest extends QpidJmsTestCase
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
         TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
-        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, null, null);
+        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, _mockSession, null);
 
         assertNull(testMessage.getJMSDestination());
 
@@ -114,7 +115,7 @@ public class SenderImplTest extends QpidJmsTestCase
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
         TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
-        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, null, null);
+        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, _mockSession, null);
 
         assertEquals(0, testMessage.getJMSTimestamp());
         long timestamp = System.currentTimeMillis();

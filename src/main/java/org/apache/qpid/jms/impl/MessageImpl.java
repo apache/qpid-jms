@@ -32,16 +32,19 @@ import org.apache.qpid.jms.engine.AmqpMessage;
 public abstract class MessageImpl<T extends AmqpMessage> implements Message
 {
     private final T _amqpMessage;
+    private final SessionImpl _sessionImpl;
     private Destination _destination;
 
     public MessageImpl(T amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl)
     {
         _amqpMessage = amqpMessage;
+        _sessionImpl = sessionImpl;
+
         String to = _amqpMessage.getTo();
         if(to != null)
         {
-            //TODO: don't create a new DestinationHelper for every call.
-            _destination = new DestinationHelper().decodeDestination(to, null);
+            String typeString = (String) _amqpMessage.getMessageAnnotation(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+            _destination = sessionImpl.getDestinationHelper().decodeDestination(to, typeString);
         }
         else
         {
@@ -192,22 +195,23 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public void setJMSDestination(final Destination destination) throws JMSException
     {
-        //TODO: don't create a new DestinationHelper for every call.
-        DestinationHelper destinationHelper = new DestinationHelper();
-
         _destination = destination;
 
-        Destination dest = destination;
-        if(dest != null && !destinationHelper.isQpidDestination(dest))
-        {
-            dest = destinationHelper.convertToQpidDestination(destination);
-        }
-
-        String to = destinationHelper.decodeAddress(destination);
+        String to = _sessionImpl.getDestinationHelper().decodeAddress(destination);
+        String typeString = _sessionImpl.getDestinationHelper().decodeTypeString(destination);
 
         _amqpMessage.setTo(to);
 
-        //TODO: set the x-opt-to-type message annotation
+        if(to == null || typeString == null)
+        {
+            _amqpMessage.clearMessageAnnotation(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        }
+        else
+        {
+            _amqpMessage.setMessageAnnotation(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, typeString);
+        }
+
+
     }
 
     @Override

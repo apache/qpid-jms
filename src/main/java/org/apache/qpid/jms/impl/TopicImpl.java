@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,22 +16,24 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
 package org.apache.qpid.jms.impl;
 
 import javax.jms.JMSException;
-import javax.jms.Queue;
+import javax.jms.Topic;
 
-class QueueImpl extends DestinationImpl implements Queue
+public class TopicImpl extends DestinationImpl implements Topic
 {
-    public QueueImpl(String queueName)
+    public TopicImpl(String topicName)
     {
-        super(queueName);
+        super(topicName);
     }
 
     @Override
-    public String getQueueName() throws JMSException
+    public String getTopicName() throws JMSException
     {
         return getAddress();
     }
+
 }

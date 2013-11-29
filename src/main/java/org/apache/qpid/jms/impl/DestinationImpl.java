@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,22 +16,58 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
 package org.apache.qpid.jms.impl;
 
-import javax.jms.JMSException;
-import javax.jms.Queue;
+import javax.jms.Destination;
 
-class QueueImpl extends DestinationImpl implements Queue
+public class DestinationImpl implements Destination
 {
-    public QueueImpl(String queueName)
+    private String _address;
+
+    public DestinationImpl(String address)
     {
-        super(queueName);
+        if(address == null)
+        {
+            throw new IllegalArgumentException("Destination address must not be null");
+        }
+
+        _address = address;
+    }
+
+    public String getAddress()
+    {
+        return _address;
     }
 
     @Override
-    public String getQueueName() throws JMSException
+    public String toString()
     {
         return getAddress();
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return getAddress().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+
+        if (o != null && getClass() == o.getClass())
+        {
+            return getAddress().equals(((DestinationImpl)o).getAddress());
+        }
+        else
+        {
+            return false;
+        }
     }
 }

@@ -24,9 +24,11 @@ import static org.junit.Assert.*;
 
 import java.util.Enumeration;
 
+import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
 import javax.jms.Queue;
+import javax.jms.Topic;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.jms.engine.TestAmqpMessage;
@@ -42,6 +44,8 @@ public class MessageImplTest extends QpidJmsTestCase
     private TestAmqpMessage _testAmqpMessage;
     private String _mockQueueName;
     private Queue _mockQueue;
+    private String _mockTopicName;
+    private Topic _mockTopic;
 
     @Before
     @Override
@@ -56,6 +60,10 @@ public class MessageImplTest extends QpidJmsTestCase
         _mockQueueName = "mockQueueName";
         _mockQueue = Mockito.mock(Queue.class);
         Mockito.when(_mockQueue.getQueueName()).thenReturn(_mockQueueName);
+
+        _mockTopicName = "mockTopicName";
+        _mockTopic = Mockito.mock(Topic.class);
+        Mockito.when(_mockTopic.getTopicName()).thenReturn(_mockTopicName);
     }
 
     @Test
@@ -450,34 +458,107 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testSetJMSDestinationOnNewMessage() throws Exception
+    public void testSetJMSDestinationOnNewMessageUsingQueue() throws Exception
     {
+        Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
+
         assertNull(_testAmqpMessage.getTo());
 
         _testMessage.setJMSDestination(_mockQueue);
 
         assertNotNull(_testAmqpMessage.getTo());
         assertEquals(_mockQueueName, _testAmqpMessage.getTo());
+
+        assertTrue(_testAmqpMessage.messageAnnotationExists(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME));
+        assertEquals(DestinationHelper.QUEUE_ATTRIBUTES_STRING,
+                     _testAmqpMessage.getMessageAnnotation(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME));
+    }
+
+    @Test
+    public void testSetJMSDestinationOnNewMessageUsingTopic() throws Exception
+    {
+        Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
+
+        assertNull(_testAmqpMessage.getTo());
+
+        _testMessage.setJMSDestination(_mockTopic);
+
+        assertNotNull(_testAmqpMessage.getTo());
+        assertEquals(_mockTopicName, _testAmqpMessage.getTo());
+
+        assertTrue(_testAmqpMessage.messageAnnotationExists(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME));
+        assertEquals(DestinationHelper.TOPIC_ATTRIBUTES_STRING,
+                     _testAmqpMessage.getMessageAnnotation(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME));
+    }
+
+    @Test
+    public void testSetJMSDestinationNullOnRecievedMessageWithToAndTypeAnnotationClearsTheAnnotation() throws Exception
+    {
+        Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
+        _testAmqpMessage.setTo(_mockTopicName);
+        _testAmqpMessage.setMessageAnnotation(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME,
+                                              DestinationHelper.TOPIC_ATTRIBUTES_STRING);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl);
+
+        assertNotNull("expected JMSDestination value not present", _testMessage.getJMSDestination());
+        assertTrue(_testAmqpMessage.messageAnnotationExists(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME));
+
+        _testMessage.setJMSDestination(null);
+
+        assertNull("expected JMSDestination value to be null", _testMessage.getJMSDestination());
+        assertFalse(_testAmqpMessage.messageAnnotationExists(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME));
     }
 
     @Test
     public void testSetGetJMSDestinationOnNewMessage() throws Exception
     {
+        Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
         _testMessage.setJMSDestination(_mockQueue);
         assertNotNull(_testMessage.getJMSDestination());
         assertSame(_mockQueue, _testMessage.getJMSDestination());
     }
 
     @Test
-    public void testGetJMSDestinationOnRecievedMessageWithTo() throws Exception
+    public void testGetJMSDestinationOnRecievedMessageWithToButWithoutToTypeAnnotation() throws Exception
     {
+        Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
         _testAmqpMessage.setTo(_mockQueueName);
         _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl);
 
         assertNotNull("expected JMSDestination value not present", _testMessage.getJMSDestination());
 
-        QueueImpl newQueueExpected = new QueueImpl(_mockQueueName);
-        assertEquals(newQueueExpected, _testMessage.getJMSDestination());
+        Destination newDestinationExpected = new DestinationImpl(_mockQueueName);
+        assertEquals(newDestinationExpected, _testMessage.getJMSDestination());
+    }
+
+    @Test
+    public void testGetJMSDestinationOnRecievedMessageWithToAndTypeAnnotationForTopic() throws Exception
+    {
+        Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
+        _testAmqpMessage.setTo(_mockTopicName);
+        _testAmqpMessage.setMessageAnnotation(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME,
+                                              DestinationHelper.TOPIC_ATTRIBUTES_STRING);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl);
+
+        assertNotNull("expected JMSDestination value not present", _testMessage.getJMSDestination());
+
+        Topic newDestinationExpected = new DestinationHelper().createTopic(_mockTopicName);
+        assertEquals(newDestinationExpected, _testMessage.getJMSDestination());
+    }
+
+    @Test
+    public void testGetJMSDestinationOnRecievedMessageWithToAndTypeAnnotationForQueue() throws Exception
+    {
+        Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
+        _testAmqpMessage.setTo(_mockQueueName);
+        _testAmqpMessage.setMessageAnnotation(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME,
+                                              DestinationHelper.QUEUE_ATTRIBUTES_STRING);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl);
+
+        assertNotNull("expected JMSDestination value not present", _testMessage.getJMSDestination());
+
+        Queue newDestinationExpected = new DestinationHelper().createQueue(_mockQueueName);
+        assertEquals(newDestinationExpected, _testMessage.getJMSDestination());
     }
 
     // ====== JMSTimestamp =======

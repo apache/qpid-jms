@@ -32,11 +32,14 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
+import org.apache.qpid.jms.impl.DestinationHelper;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
+import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.junit.Test;
 
 public class SenderIntegrationTest extends QpidJmsTestCase
@@ -57,9 +60,11 @@ public class SenderIntegrationTest extends QpidJmsTestCase
             MessageProducer producer = session.createProducer(queue);
 
             //Create and transfer a new message
-            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
             testPeer.expectTransfer(messageMatcher);
 
             Message message = session.createTextMessage();
@@ -86,9 +91,11 @@ public class SenderIntegrationTest extends QpidJmsTestCase
             //Create and transfer a new message, explicitly setting the deliveryMode on the
             //message (which applications shouldn't) to NON_PERSISTENT and sending it to check
             //that the producer ignores this value and sends the message as PERSISTENT(/durable)
-            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
             testPeer.expectTransfer(messageMatcher);
 
             Message message = session.createTextMessage();
@@ -117,9 +124,11 @@ public class SenderIntegrationTest extends QpidJmsTestCase
 
             String text = "myMessage";
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true).withEntry(Symbol.valueOf(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME), equalTo(DestinationHelper.QUEUE_ATTRIBUTES_STRING));
             MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true).withTo(equalTo(queueName));
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
             messageMatcher.setPropertiesMatcher(propsMatcher);
             messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(text));
             testPeer.expectTransfer(messageMatcher);
@@ -147,9 +156,11 @@ public class SenderIntegrationTest extends QpidJmsTestCase
             Date currentTime = Calendar.getInstance().getTime();
             String text = "myMessage";
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
             MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true).withCreationTime(greaterThanOrEqualTo(currentTime));
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
             messageMatcher.setPropertiesMatcher(propsMatcher);
             messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(text));
             testPeer.expectTransfer(messageMatcher);

@@ -20,11 +20,13 @@ package org.apache.qpid.jms;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Calendar;
 import java.util.Date;
 
 import javax.jms.Connection;
+import javax.jms.DeliveryMode;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
@@ -40,6 +42,64 @@ import org.junit.Test;
 public class SenderIntegrationTest extends QpidJmsTestCase
 {
     private final IntegrationTestFixture _testFixture = new IntegrationTestFixture();
+
+    @Test
+    public void testDefaultDeliveryModeProducesDurableMessages() throws Exception
+    {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
+        {
+            Connection connection = _testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            MessageProducer producer = session.createProducer(queue);
+
+            //Create and transfer a new message
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createTextMessage();
+            assertEquals(DeliveryMode.PERSISTENT, message.getJMSDeliveryMode());
+
+            producer.send(message);
+            assertEquals(DeliveryMode.PERSISTENT, message.getJMSDeliveryMode());
+        }
+    }
+
+    @Test
+    public void testProducerOverridesMessageDeliveryMode() throws Exception
+    {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
+        {
+            Connection connection = _testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            MessageProducer producer = session.createProducer(queue);
+
+            //Create and transfer a new message, explicitly setting the deliveryMode on the
+            //message (which applications shouldn't) to NON_PERSISTENT and sending it to check
+            //that the producer ignores this value and sends the message as PERSISTENT(/durable)
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createTextMessage();
+            message.setJMSDeliveryMode(DeliveryMode.NON_PERSISTENT);
+            assertEquals(DeliveryMode.NON_PERSISTENT, message.getJMSDeliveryMode());
+
+            producer.send(message);
+
+            assertEquals(DeliveryMode.PERSISTENT, message.getJMSDeliveryMode());
+        }
+    }
 
     @Test
     public void testSendingMessageSetsJMSDestination() throws Exception

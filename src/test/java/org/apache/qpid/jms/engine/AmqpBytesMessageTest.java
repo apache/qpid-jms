@@ -180,7 +180,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testGetTextUsingReceivedMessageWithDataSectionContainingNullReturnsEmptyBAIS() throws Exception
+    public void testGetTextUsingReceivedMessageWithDataSectionContainingNothingReturnsEmptyBAIS() throws Exception
     {
         Message message = Proton.message();
         message.setBody(new Data(null));

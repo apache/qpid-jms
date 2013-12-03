@@ -26,6 +26,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
@@ -44,6 +45,7 @@ import org.mockito.Mockito;
 
 public class AmqpTextMessageTest extends QpidJmsTestCase
 {
+    private static final String UTF_8 = "UTF-8";
     private AmqpConnection _mockAmqpConnection;
     private Delivery _mockDelivery;
 
@@ -120,40 +122,18 @@ public class AmqpTextMessageTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testGetTextUsingReceivedMessageWithDataSectionContainingNullReturnsNull() throws Exception
+    public void testGetTextUsingReceivedMessageWithDataSectionContainingNothingReturnsEmptyString() throws Exception
     {
         Message message = Proton.message();
         message.setBody(new Data(null));
 
         AmqpTextMessage amqpTextMessage = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
 
-        assertNull("expected null string", amqpTextMessage.getText());
+        assertEquals("expected zero-length string", "", amqpTextMessage.getText());
     }
 
     @Test
-    public void testGetTextUsingReceivedMessageWithDataSectionContainingBinaryEncodedNullReturnsNull() throws Exception
-    {
-        org.apache.qpid.proton.codec.Data nullData = new DataImpl();
-        nullData.putNull();
-        Binary stringBinary = nullData.encode();
-
-        org.apache.qpid.proton.codec.Data payloadData = new DataImpl();
-        payloadData.putDescribedType(new DataDescribedType(stringBinary));
-        Binary b = payloadData.encode();
-
-        System.out.println("Using encoded AMQP message payload: " + b);
-
-        Message message = Proton.message();
-        int decoded = message.decode(b.getArray(), b.getArrayOffset(), b.getLength());
-        assertEquals(decoded, b.getLength());
-
-        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
-
-        assertNull("expected null string", amqpTextMessage.getText());
-    }
-
-    @Test
-    public void testGetTextUsingReceivedMessageWithDataSectionContainingZeroLengthBinaryReturnsNull() throws Exception
+    public void testGetTextUsingReceivedMessageWithDataSectionContainingZeroLengthBinaryReturnsEmptyString() throws Exception
     {
         org.apache.qpid.proton.codec.Data payloadData = new DataImpl();
         payloadData.putDescribedType(new DataDescribedType(new Binary(new byte[0])));
@@ -166,20 +146,17 @@ public class AmqpTextMessageTest extends QpidJmsTestCase
         assertEquals(decoded, b.getLength());
         AmqpTextMessage amqpTextMessage = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
 
-        assertNull("expected null string", amqpTextMessage.getText());
+        assertEquals("expected zero-length string", "", amqpTextMessage.getText());
     }
 
     @Test
-    public void testGetTextUsingReceivedMessageWithDataSectionContainingEncodedString() throws Exception
+    public void testGetTextUsingReceivedMessageWithDataSectionContainingStringBytes() throws Exception
     {
         String encodedString = "myEncodedString";
-
-        org.apache.qpid.proton.codec.Data stringData = new DataImpl();
-        stringData.putString(encodedString);
-        Binary stringBinary = stringData.encode();
+        byte[] encodedBytes = encodedString.getBytes(Charset.forName(UTF_8));
 
         org.apache.qpid.proton.codec.Data payloadData = new DataImpl();
-        payloadData.putDescribedType(new DataDescribedType(stringBinary));
+        payloadData.putDescribedType(new DataDescribedType(new Binary(encodedBytes)));
         Binary b = payloadData.encode();
 
         System.out.println("Using encoded AMQP message payload: " + b);
@@ -215,36 +192,6 @@ public class AmqpTextMessageTest extends QpidJmsTestCase
     {
         Message message = Proton.message();
         message.setBody(new AmqpValue(true));
-        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
-
-        try
-        {
-            amqpTextMessage.getText();
-            fail("expected exception not thrown");
-        }
-        catch(IllegalStateException ise)
-        {
-            //expected
-        }
-    }
-
-    @Test
-    public void testGetTextWithDataSectionContainingNonNullNonStringContentThrowsISE() throws Exception
-    {
-        org.apache.qpid.proton.codec.Data booleanData = new DataImpl();
-        booleanData.putBoolean(true);
-        Binary booleanBinary = booleanData.encode();
-
-        org.apache.qpid.proton.codec.Data payloadData = new DataImpl();
-        payloadData.putDescribedType(new DataDescribedType(booleanBinary));
-        Binary b = payloadData.encode();
-
-        System.out.println("Using encoded AMQP message payload: " + b);
-
-        Message message = Proton.message();
-        int decoded = message.decode(b.getArray(), b.getArrayOffset(), b.getLength());
-        assertEquals(decoded, b.getLength());
-
         AmqpTextMessage amqpTextMessage = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
 
         try

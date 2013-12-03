@@ -31,6 +31,11 @@ public class DataDescribedType implements DescribedType
 
     public DataDescribedType(Binary described)
     {
+        if(described == null)
+        {
+            throw new IllegalArgumentException("provided Binary must not be null");
+        }
+
         _described = described;
     }
 

@@ -19,17 +19,25 @@
 package org.apache.qpid.jms.engine;
 
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
 
+import javax.jms.JMSException;
+
+import org.apache.qpid.jms.impl.QpidJmsException;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.Section;
-import org.apache.qpid.proton.codec.impl.DataImpl;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.message.Message;
 
 public class AmqpTextMessage extends AmqpMessage
 {
+    private static final String UTF_8 = "UTF-8";
+
     /**
      * Content type, only to be used when message uses a data
      * body section, and not when using an amqp-value body section
@@ -41,6 +49,8 @@ public class AmqpTextMessage extends AmqpMessage
      * an amqp-value body section containing a null value, not otherwise.
      */
     public static final String MSG_TYPE_ANNOTATION_VALUE = "TextMessage";
+
+    private CharsetDecoder _decoder =  Charset.forName(UTF_8).newDecoder();
 
     public AmqpTextMessage()
     {
@@ -64,8 +74,9 @@ public class AmqpTextMessage extends AmqpMessage
 
     /**
      * @throws IllegalStateException if the underlying message content can't be retrieved as a String or null
+     * @throws JMSException if the message can't be decoded
      */
-    public String getText() throws IllegalStateException
+    public String getText() throws IllegalStateException, JMSException
     {
         Section body = getMessage().getBody();
 
@@ -78,23 +89,22 @@ public class AmqpTextMessage extends AmqpMessage
             Data data = (Data) body;
             if(data.getValue() == null || data.getValue().getLength() == 0)
             {
-                return null;
+                return "";
             }
             else
             {
                 Binary b = data.getValue();
-
                 ByteBuffer buf = ByteBuffer.wrap(b.getArray(), b.getArrayOffset(), b.getLength());
-                org.apache.qpid.proton.codec.Data codecData = new DataImpl();
-                codecData.decode(buf);
 
-                if(codecData.isNull())
+                try
                 {
-                    return null;
+                    CharBuffer chars = _decoder.decode(buf);
+                    return String.valueOf(chars);
                 }
-                else
+                catch (CharacterCodingException e)
                 {
-                    return codecData.getString();
+                    JMSException jmsException = new QpidJmsException("Cannot decode String in UFT-8", e);
+                    throw jmsException;
                 }
             }
 

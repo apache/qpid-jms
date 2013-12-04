@@ -49,6 +49,7 @@ public class TextMessageImplTest extends QpidJmsTestCase
         _mockAmqpConnection = Mockito.mock(AmqpConnection.class);
         _mockConnectionImpl = Mockito.mock(ConnectionImpl.class);
         _mockSessionImpl = Mockito.mock(SessionImpl.class);
+        Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
     }
 
     @Test
@@ -77,7 +78,7 @@ public class TextMessageImplTest extends QpidJmsTestCase
     {
         Message message = Proton.message();
         AmqpTextMessage testAmqpMessage1 = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
-        TextMessageImpl textMessageImpl = new TextMessageImpl(testAmqpMessage1, _mockSessionImpl,_mockConnectionImpl);
+        TextMessageImpl textMessageImpl = new TextMessageImpl(testAmqpMessage1, _mockSessionImpl,_mockConnectionImpl, null);
 
         assertNull("expected null string", textMessageImpl.getText());
     }
@@ -89,7 +90,7 @@ public class TextMessageImplTest extends QpidJmsTestCase
         String value = "myAmqpValueString";
         message.setBody(new AmqpValue(value));
         AmqpTextMessage testAmqpMessage1 = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
-        TextMessageImpl textMessageImpl = new TextMessageImpl(testAmqpMessage1, _mockSessionImpl,_mockConnectionImpl);
+        TextMessageImpl textMessageImpl = new TextMessageImpl(testAmqpMessage1, _mockSessionImpl,_mockConnectionImpl, null);
 
         assertEquals(value, textMessageImpl.getText());
     }

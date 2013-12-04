@@ -25,6 +25,7 @@ import java.io.EOFException;
 import java.io.IOException;
 
 import javax.jms.BytesMessage;
+import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageEOFException;
 import javax.jms.MessageFormatException;
@@ -40,15 +41,15 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     //message to be sent
     public BytesMessageImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
-        this(new AmqpBytesMessage(), sessionImpl, connectionImpl);
+        super(new AmqpBytesMessage(), sessionImpl, connectionImpl);
         _bytesOut = new ByteArrayOutputStream();
         _dataAsOutput = new DataOutputStream(_bytesOut);
     }
 
     //message just received
-    public BytesMessageImpl(AmqpBytesMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
+    public BytesMessageImpl(AmqpBytesMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl, Destination consumerDestination) throws JMSException
     {
-        super(amqpMessage, sessionImpl, connectionImpl);
+        super(amqpMessage, sessionImpl, connectionImpl, consumerDestination);
         _dataIn = new DataInputStream(amqpMessage.getByteArrayInputStream());
     }
 

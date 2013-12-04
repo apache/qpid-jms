@@ -20,6 +20,7 @@ package org.apache.qpid.jms.impl;
 
 import java.util.Enumeration;
 
+import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MapMessage;
 
@@ -30,13 +31,13 @@ public class MapMessageImpl extends MessageImpl<AmqpMapMessage> implements MapMe
     //message to be sent
     public MapMessageImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
-        this(new AmqpMapMessage(), sessionImpl, connectionImpl);
+        super(new AmqpMapMessage(), sessionImpl, connectionImpl);
     }
 
     //message just received
-    public MapMessageImpl(AmqpMapMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
+    public MapMessageImpl(AmqpMapMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl, Destination consumerDestination) throws JMSException
     {
-        super(amqpMessage, sessionImpl, connectionImpl);
+        super(amqpMessage, sessionImpl, connectionImpl, consumerDestination);
     }
 
     @Override

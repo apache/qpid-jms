@@ -51,6 +51,7 @@ public class MessageFactoryImplTest extends QpidJmsTestCase
         super.setUp();
         _mockConnection = Mockito.mock(ConnectionImpl.class);
         _mockSession = Mockito.mock(SessionImpl.class);
+        Mockito.when(_mockSession.getDestinationHelper()).thenReturn(new DestinationHelper());
         _messageFactoryImpl = new MessageFactoryImpl();
     }
 
@@ -58,7 +59,7 @@ public class MessageFactoryImplTest extends QpidJmsTestCase
     public void testCreateJmsMessageWithAmqpGenericMessage() throws Exception
     {
         AmqpMessage amqpMessage = Mockito.mock(AmqpGenericMessage.class);
-        Message jmsMessage = _messageFactoryImpl.createJmsMessage(amqpMessage, _mockSession, _mockConnection);
+        Message jmsMessage = _messageFactoryImpl.createJmsMessage(amqpMessage, _mockSession, _mockConnection, null);
         assertEquals(GenericAmqpMessageImpl.class, jmsMessage.getClass());
     }
 
@@ -66,7 +67,7 @@ public class MessageFactoryImplTest extends QpidJmsTestCase
     public void testCreateJmsMessageWithAmqpTextMessage() throws Exception
     {
         AmqpMessage amqpMessage = Mockito.mock(AmqpTextMessage.class);
-        Message jmsMessage = _messageFactoryImpl.createJmsMessage(amqpMessage, _mockSession, _mockConnection);
+        Message jmsMessage = _messageFactoryImpl.createJmsMessage(amqpMessage, _mockSession, _mockConnection, null);
         assertEquals(TextMessageImpl.class, jmsMessage.getClass());
     }
 
@@ -74,7 +75,7 @@ public class MessageFactoryImplTest extends QpidJmsTestCase
     public void testCreateJmsMessageWithAmqpBytesMessage() throws Exception
     {
         AmqpMessage amqpMessage = Mockito.mock(AmqpBytesMessage.class);
-        Message jmsMessage = _messageFactoryImpl.createJmsMessage(amqpMessage, _mockSession, _mockConnection);
+        Message jmsMessage = _messageFactoryImpl.createJmsMessage(amqpMessage, _mockSession, _mockConnection, null);
         assertEquals(BytesMessageImpl.class, jmsMessage.getClass());
     }
 
@@ -82,7 +83,7 @@ public class MessageFactoryImplTest extends QpidJmsTestCase
     public void testCreateJmsMessageWithAmqpObjectMessage() throws Exception
     {
         AmqpMessage amqpMessage = Mockito.mock(AmqpObjectMessage.class);
-        Message jmsMessage = _messageFactoryImpl.createJmsMessage(amqpMessage, _mockSession, _mockConnection);
+        Message jmsMessage = _messageFactoryImpl.createJmsMessage(amqpMessage, _mockSession, _mockConnection, null);
         assertEquals(ObjectMessageImpl.class, jmsMessage.getClass());
     }
 
@@ -90,7 +91,7 @@ public class MessageFactoryImplTest extends QpidJmsTestCase
     public void testCreateJmsMessageWithAmqpListMessage() throws Exception
     {
         AmqpMessage amqpMessage = Mockito.mock(AmqpListMessage.class);
-        Message jmsMessage = _messageFactoryImpl.createJmsMessage(amqpMessage, _mockSession, _mockConnection);
+        Message jmsMessage = _messageFactoryImpl.createJmsMessage(amqpMessage, _mockSession, _mockConnection, null);
         assertEquals(StreamMessageImpl.class, jmsMessage.getClass());
     }
 
@@ -98,7 +99,7 @@ public class MessageFactoryImplTest extends QpidJmsTestCase
     public void testCreateJmsMessageWithAmqpMapMessage() throws Exception
     {
         AmqpMessage amqpMessage = Mockito.mock(AmqpMapMessage.class);
-        Message jmsMessage = _messageFactoryImpl.createJmsMessage(amqpMessage, _mockSession, _mockConnection);
+        Message jmsMessage = _messageFactoryImpl.createJmsMessage(amqpMessage, _mockSession, _mockConnection, null);
         assertEquals(MapMessageImpl.class, jmsMessage.getClass());
     }
 
@@ -109,7 +110,7 @@ public class MessageFactoryImplTest extends QpidJmsTestCase
         AmqpMessage amqpMessage = Mockito.mock(AmqpMessage.class);
         try
         {
-            _messageFactoryImpl.createJmsMessage(amqpMessage, _mockSession, _mockConnection);
+            _messageFactoryImpl.createJmsMessage(amqpMessage, _mockSession, _mockConnection, null);
             fail("expected exception was not thrown");
         }
         catch(JMSException jmse)

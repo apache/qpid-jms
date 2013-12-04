@@ -20,6 +20,7 @@ package org.apache.qpid.jms.impl;
 
 import java.io.Serializable;
 
+import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.ObjectMessage;
 
@@ -30,13 +31,13 @@ public class ObjectMessageImpl extends MessageImpl<AmqpObjectMessage> implements
     //message to be sent
     public ObjectMessageImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
-        this(new AmqpObjectMessage(), sessionImpl, connectionImpl);
+        super(new AmqpObjectMessage(), sessionImpl, connectionImpl);
     }
 
     //message just received
-    public ObjectMessageImpl(AmqpObjectMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
+    public ObjectMessageImpl(AmqpObjectMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl, Destination consumerDestination) throws JMSException
     {
-        super(amqpMessage, sessionImpl, connectionImpl);
+        super(amqpMessage, sessionImpl, connectionImpl, consumerDestination);
     }
 
     @Override

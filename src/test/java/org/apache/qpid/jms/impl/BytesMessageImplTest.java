@@ -53,6 +53,7 @@ public class BytesMessageImplTest extends QpidJmsTestCase
         _mockAmqpConnection = Mockito.mock(AmqpConnection.class);
         _mockConnectionImpl = Mockito.mock(ConnectionImpl.class);
         _mockSessionImpl = Mockito.mock(SessionImpl.class);
+        Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
     }
 
     @Test
@@ -60,7 +61,7 @@ public class BytesMessageImplTest extends QpidJmsTestCase
     {
         Message message = Proton.message();
         AmqpBytesMessage testAmqpMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
-        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(testAmqpMessage, _mockSessionImpl,_mockConnectionImpl);
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(testAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
 
         assertEquals(0, bytesMessageImpl.getBodyLength());
     }
@@ -70,7 +71,7 @@ public class BytesMessageImplTest extends QpidJmsTestCase
     {
         Message message = Proton.message();
         AmqpBytesMessage testAmqpMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
-        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(testAmqpMessage, _mockSessionImpl,_mockConnectionImpl);
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(testAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
 
         //verify attempting to read bytes returns -1, i.e EOS
         assertEquals(-1, bytesMessageImpl.readBytes(new byte[2]));
@@ -85,7 +86,7 @@ public class BytesMessageImplTest extends QpidJmsTestCase
         message.setBody(new Data(new Binary(bytes)));
 
         AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
-        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(amqpBytesMessage, _mockSessionImpl,_mockConnectionImpl);
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(amqpBytesMessage, _mockSessionImpl,_mockConnectionImpl, null);
 
         //retrieve the expected bytes, check they match
         byte[] receivedBytes = new byte[bytes.length];
@@ -107,7 +108,7 @@ public class BytesMessageImplTest extends QpidJmsTestCase
         message.setBody(new AmqpValue(new Binary(bytes)));
 
         AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
-        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(amqpBytesMessage, _mockSessionImpl,_mockConnectionImpl);
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(amqpBytesMessage, _mockSessionImpl,_mockConnectionImpl, null);
 
         //retrieve the expected bytes, check they match
         byte[] receivedBytes = new byte[bytes.length];

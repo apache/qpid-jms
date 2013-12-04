@@ -54,23 +54,83 @@ public class DestinationHelperTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testDecodeDestinationWithoutTypeAnnotation() throws Exception
+    public void testDecodeDestinationWithNullAddressAndNullConsumerDestReturnsNull() throws Exception
     {
-        String testAddress = "testAddress";
-        Destination dest = _helper.decodeDestination(testAddress, null);
-        assertNotNull(dest);
-
-        //TODO: this test will need to expand for classification of receiver type in future
-        assertTrue(dest instanceof DestinationImpl);
+        assertNull(_helper.decodeDestination(null, DestinationHelper.QUEUE_ATTRIBUTES_STRING, null, false));
     }
 
     @Test
-    public void testDecodeDestinationWithQueueTypeAnnotation() throws Exception
+    public void testDecodeDestinationWithNullAddressWithConsumerDestReturnsSameConsumerDestObject() throws Exception
+    {
+        String consumerDestString = "consumerDest";
+        Queue consumerDest = _helper.createQueue(consumerDestString);
+        assertSame(consumerDest,_helper.decodeDestination(null, DestinationHelper.QUEUE_ATTRIBUTES_STRING, consumerDest, false));
+    }
+
+    @Test
+    public void testDecodeDestinationWithNullAddressWithConsumerDestReturnsNullWhenUsingConsumerDestForTypeOnly() throws Exception
+    {
+        String consumerDestString = "consumerDest";
+        Queue consumerDest = _helper.createQueue(consumerDestString);
+        assertNull(_helper.decodeDestination(null, DestinationHelper.QUEUE_ATTRIBUTES_STRING, consumerDest, true));
+    }
+
+    @Test
+    public void testDecodeDestinationWithoutTypeAnnotationWithoutConsumerDest() throws Exception
+    {
+        String testAddress = "testAddress";
+        Destination dest = _helper.decodeDestination(testAddress, null, null, false);
+        assertNotNull(dest);
+
+        assertTrue(dest instanceof DestinationImpl);
+        assertEquals(testAddress, ((DestinationImpl) dest).getAddress());
+    }
+
+    @Test
+    public void testDecodeDestinationWithoutTypeAnnotationWithQueueConsumerDest() throws Exception
+    {
+        String testAddress = "testAddress";
+        String consumerDestString = "consumerDest";
+        Queue consumerDest = _helper.createQueue(consumerDestString);
+        Destination dest = _helper.decodeDestination(testAddress, null, consumerDest, false);
+        assertNotNull(dest);
+
+        assertTrue(dest instanceof QueueImpl);
+        assertEquals(testAddress, ((Queue)dest).getQueueName());
+    }
+
+    @Test
+    public void testDecodeDestinationWithoutTypeAnnotationWithTopicConsumerDest() throws Exception
+    {
+        String testAddress = "testAddress";
+        String consumerDestString = "consumerDest";
+        Topic consumerDest = _helper.createTopic(consumerDestString);
+        Destination dest = _helper.decodeDestination(testAddress, null, consumerDest, false);
+        assertNotNull(dest);
+
+        assertTrue(dest instanceof TopicImpl);
+        assertEquals(testAddress, ((Topic)dest).getTopicName());
+    }
+
+    @Test
+    public void testDecodeDestinationWithoutTypeAnnotationWithDestinationConsumerDest() throws Exception
+    {
+        String testAddress = "testAddress";
+        Destination consumerDest = new DestinationImpl(testAddress);
+        Destination dest = _helper.decodeDestination(testAddress, null, consumerDest, false);
+        assertNotNull(dest);
+
+        assertTrue(dest instanceof DestinationImpl);
+        assertEquals(testAddress, ((DestinationImpl) dest).getAddress());
+    }
+
+    @Test
+    public void testDecodeDestinationWithQueueTypeAnnotationWithoutConsumerDest() throws Exception
     {
         String testAddress = "testAddress";
         String testTypeAnnotation = "queue";
 
-        Destination dest = _helper.decodeDestination(testAddress, testTypeAnnotation);
+        Destination dest = _helper.decodeDestination(testAddress, testTypeAnnotation, null, false);
         assertNotNull(dest);
         assertTrue(dest instanceof DestinationImpl);
         assertTrue(dest instanceof QueueImpl);
@@ -79,12 +139,12 @@ public class DestinationHelperTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testDecodeDestinationWithTopicTypeAnnotation() throws Exception
+    public void testDecodeDestinationWithTopicTypeAnnotationWithoutConsumerDest() throws Exception
     {
         String testAddress = "testAddress";
         String testTypeAnnotation = "topic";
 
-        Destination dest = _helper.decodeDestination(testAddress, testTypeAnnotation);
+        Destination dest = _helper.decodeDestination(testAddress, testTypeAnnotation, null, false);
         assertNotNull(dest);
         assertTrue(dest instanceof DestinationImpl);
         assertTrue(dest instanceof TopicImpl);
@@ -102,8 +162,8 @@ public class DestinationHelperTest extends QpidJmsTestCase
 
         try
         {
-            Destination dest = _helper.decodeDestination(testAddress, testTypeAnnotation);
-            fail("expected exceptionnow thrown");
+            _helper.decodeDestination(testAddress, testTypeAnnotation, null, false);
+            fail("expected exception not thrown");
         }
         catch(IllegalArgumentException iae)
         {
@@ -112,8 +172,8 @@ public class DestinationHelperTest extends QpidJmsTestCase
 
         try
         {
-            Destination dest = _helper.decodeDestination(testAddress, testTypeAnnotationBackwards);
-            fail("expected exceptionnow thrown");
+            _helper.decodeDestination(testAddress, testTypeAnnotationBackwards, null, false);
+            fail("expected exception not thrown");
         }
         catch(IllegalArgumentException iae)
         {
@@ -131,8 +191,8 @@ public class DestinationHelperTest extends QpidJmsTestCase
 
         try
         {
-            Destination dest = _helper.decodeDestination(testAddress, testTypeAnnotation);
-            fail("expected exceptionnow thrown");
+            _helper.decodeDestination(testAddress, testTypeAnnotation, null, false);
+            fail("expected exception not thrown");
         }
         catch(IllegalArgumentException iae)
         {
@@ -141,8 +201,8 @@ public class DestinationHelperTest extends QpidJmsTestCase
 
         try
         {
-            Destination dest = _helper.decodeDestination(testAddress, testTypeAnnotationBackwards);
-            fail("expected exceptionnow thrown");
+            _helper.decodeDestination(testAddress, testTypeAnnotationBackwards, null, false);
+            fail("expected exception not thrown");
         }
         catch(IllegalArgumentException iae)
         {
@@ -203,7 +263,7 @@ public class DestinationHelperTest extends QpidJmsTestCase
 
         try
         {
-            Destination dest = _helper.convertToQpidDestination(mockTempQueue);
+            _helper.convertToQpidDestination(mockTempQueue);
             fail("excepted exception not thrown");
         }
         catch(IllegalArgumentException iae)
@@ -222,7 +282,7 @@ public class DestinationHelperTest extends QpidJmsTestCase
 
         try
         {
-            Destination dest = _helper.convertToQpidDestination(mockTempTopic);
+            _helper.convertToQpidDestination(mockTempTopic);
             fail("excepted exception not thrown");
         }
         catch(IllegalArgumentException iae)

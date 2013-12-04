@@ -52,8 +52,11 @@ public class MessageImplTest extends QpidJmsTestCase
     public void setUp() throws Exception
     {
         super.setUp();
+
         _mockConnectionImpl = Mockito.mock(ConnectionImpl.class);
         _mockSessionImpl = Mockito.mock(SessionImpl.class);
+        Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
+
         _testAmqpMessage = new TestAmqpMessage();
         _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl);
 
@@ -460,8 +463,6 @@ public class MessageImplTest extends QpidJmsTestCase
     @Test
     public void testSetJMSDestinationOnNewMessageUsingQueue() throws Exception
     {
-        Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
-
         assertNull(_testAmqpMessage.getTo());
 
         _testMessage.setJMSDestination(_mockQueue);
@@ -477,8 +478,6 @@ public class MessageImplTest extends QpidJmsTestCase
     @Test
     public void testSetJMSDestinationOnNewMessageUsingTopic() throws Exception
     {
-        Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
-
         assertNull(_testAmqpMessage.getTo());
 
         _testMessage.setJMSDestination(_mockTopic);
@@ -494,11 +493,10 @@ public class MessageImplTest extends QpidJmsTestCase
     @Test
     public void testSetJMSDestinationNullOnRecievedMessageWithToAndTypeAnnotationClearsTheAnnotation() throws Exception
     {
-        Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
         _testAmqpMessage.setTo(_mockTopicName);
         _testAmqpMessage.setMessageAnnotation(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME,
                                               DestinationHelper.TOPIC_ATTRIBUTES_STRING);
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertNotNull("expected JMSDestination value not present", _testMessage.getJMSDestination());
         assertTrue(_testAmqpMessage.messageAnnotationExists(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME));
@@ -512,7 +510,6 @@ public class MessageImplTest extends QpidJmsTestCase
     @Test
     public void testSetGetJMSDestinationOnNewMessage() throws Exception
     {
-        Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
         _testMessage.setJMSDestination(_mockQueue);
         assertNotNull(_testMessage.getJMSDestination());
         assertSame(_mockQueue, _testMessage.getJMSDestination());
@@ -521,9 +518,8 @@ public class MessageImplTest extends QpidJmsTestCase
     @Test
     public void testGetJMSDestinationOnRecievedMessageWithToButWithoutToTypeAnnotation() throws Exception
     {
-        Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
         _testAmqpMessage.setTo(_mockQueueName);
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertNotNull("expected JMSDestination value not present", _testMessage.getJMSDestination());
 
@@ -534,11 +530,10 @@ public class MessageImplTest extends QpidJmsTestCase
     @Test
     public void testGetJMSDestinationOnRecievedMessageWithToAndTypeAnnotationForTopic() throws Exception
     {
-        Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
         _testAmqpMessage.setTo(_mockTopicName);
         _testAmqpMessage.setMessageAnnotation(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME,
                                               DestinationHelper.TOPIC_ATTRIBUTES_STRING);
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertNotNull("expected JMSDestination value not present", _testMessage.getJMSDestination());
 
@@ -549,16 +544,121 @@ public class MessageImplTest extends QpidJmsTestCase
     @Test
     public void testGetJMSDestinationOnRecievedMessageWithToAndTypeAnnotationForQueue() throws Exception
     {
-        Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
         _testAmqpMessage.setTo(_mockQueueName);
         _testAmqpMessage.setMessageAnnotation(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME,
                                               DestinationHelper.QUEUE_ATTRIBUTES_STRING);
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertNotNull("expected JMSDestination value not present", _testMessage.getJMSDestination());
 
         Queue newDestinationExpected = new DestinationHelper().createQueue(_mockQueueName);
         assertEquals(newDestinationExpected, _testMessage.getJMSDestination());
+    }
+
+    //TODO:new
+    // ====== JMSReplyTo =======
+
+    @Test
+    public void testGetJMSReplyToOnNewMessage() throws Exception
+    {
+        //Should be null as it has not been set explicitly, and
+        // the message has not been received from anywhere
+        assertNull(_testMessage.getJMSReplyTo());
+    }
+
+    @Test
+    public void testSetJMSJMSReplyToOnNewMessageUsingQueue() throws Exception
+    {
+        assertNull(_testAmqpMessage.getReplyTo());
+
+        _testMessage.setJMSReplyTo(_mockQueue);
+
+        assertNotNull(_testAmqpMessage.getReplyTo());
+        assertEquals(_mockQueueName, _testAmqpMessage.getReplyTo());
+
+        assertTrue(_testAmqpMessage.messageAnnotationExists(DestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME));
+        assertEquals(DestinationHelper.QUEUE_ATTRIBUTES_STRING,
+                     _testAmqpMessage.getMessageAnnotation(DestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME));
+    }
+
+    @Test
+    public void testSetJMSReplyToOnNewMessageUsingTopic() throws Exception
+    {
+        assertNull(_testAmqpMessage.getReplyTo());
+
+        _testMessage.setJMSReplyTo(_mockTopic);
+
+        assertNotNull(_testAmqpMessage.getReplyTo());
+        assertEquals(_mockTopicName, _testAmqpMessage.getReplyTo());
+
+        assertTrue(_testAmqpMessage.messageAnnotationExists(DestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME));
+        assertEquals(DestinationHelper.TOPIC_ATTRIBUTES_STRING,
+                     _testAmqpMessage.getMessageAnnotation(DestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME));
+    }
+
+    @Test
+    public void testSetJMSReplyToNullOnRecievedMessageWithReplyToAndTypeAnnotationClearsTheAnnotation() throws Exception
+    {
+        _testAmqpMessage.setReplyTo(_mockTopicName);
+        _testAmqpMessage.setMessageAnnotation(DestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME,
+                                              DestinationHelper.TOPIC_ATTRIBUTES_STRING);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        assertNotNull("expected JMSReplyTo value not present", _testMessage.getJMSReplyTo());
+        assertTrue(_testAmqpMessage.messageAnnotationExists(DestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME));
+
+        _testMessage.setJMSReplyTo(null);
+
+        assertNull("expected JMSReplyTo value to be null", _testMessage.getJMSReplyTo());
+        assertFalse(_testAmqpMessage.messageAnnotationExists(DestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME));
+    }
+
+    @Test
+    public void testSetGetJMSReplyToNewMessage() throws Exception
+    {
+        _testMessage.setJMSReplyTo(_mockQueue);
+        assertNotNull(_testMessage.getJMSReplyTo());
+        assertSame(_mockQueue, _testMessage.getJMSReplyTo());
+    }
+
+    @Test
+    public void testGetJMSReplyToRecievedMessageWithReplyToButWithoutReplyToTypeAnnotation() throws Exception
+    {
+        _testAmqpMessage.setReplyTo(_mockQueueName);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        assertNotNull("expected JMSReplyTo value not present", _testMessage.getJMSReplyTo());
+
+        Destination newDestinationExpected = new DestinationImpl(_mockQueueName);
+        assertEquals(newDestinationExpected, _testMessage.getJMSReplyTo());
+    }
+
+    @Test
+    public void testGetJMSReplyToOnRecievedMessageWithReplyToAndTypeAnnotationForTopic() throws Exception
+    {
+        _testAmqpMessage.setReplyTo(_mockTopicName);
+        _testAmqpMessage.setMessageAnnotation(DestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME,
+                                              DestinationHelper.TOPIC_ATTRIBUTES_STRING);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        assertNotNull("expected JMSReplyTo value not present", _testMessage.getJMSReplyTo());
+
+        Topic newDestinationExpected = new DestinationHelper().createTopic(_mockTopicName);
+        assertEquals(newDestinationExpected, _testMessage.getJMSReplyTo());
+    }
+
+    @Test
+    public void testGetJMSReplyToRecievedMessageWithReplyToAndTypeAnnotationForQueue() throws Exception
+    {
+        _testAmqpMessage.setReplyTo(_mockQueueName);
+        _testAmqpMessage.setMessageAnnotation(DestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME,
+                                              DestinationHelper.QUEUE_ATTRIBUTES_STRING);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        assertNotNull("expected JMSReplyTo value not present", _testMessage.getJMSReplyTo());
+
+        Queue newDestinationExpected = new DestinationHelper().createQueue(_mockQueueName);
+        assertEquals(newDestinationExpected, _testMessage.getJMSReplyTo());
     }
 
     // ====== JMSTimestamp =======
@@ -594,7 +694,7 @@ public class MessageImplTest extends QpidJmsTestCase
     {
         long timestamp = System.currentTimeMillis();
         _testAmqpMessage.setCreationTime(timestamp);
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertEquals("expected JMSTimestamp value not present", timestamp, _testMessage.getJMSTimestamp());
     }

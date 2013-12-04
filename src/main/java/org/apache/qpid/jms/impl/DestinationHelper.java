@@ -33,6 +33,7 @@ import javax.jms.Topic;
 public class DestinationHelper
 {
     public static final String TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-to-type";
+    public static final String REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-reply-type";
 
     static final String QUEUE_ATTRIBUTE = "queue";
     static final String TOPIC_ATTRIBUTE = "topic";
@@ -57,7 +58,23 @@ public class DestinationHelper
         return new TopicImpl(address);
     }
 
-    public Destination decodeDestination(String address, String typeString)
+    private Destination createBaseDestination(String address)
+    {
+        return new DestinationImpl(address);
+    }
+
+    /**
+     * Decode the provided address, type description, and consumer destination information such that
+     * an appropriate Destination object can be returned.
+     *
+     * If an address and type description is provided then this will be used to create the Destination. If
+     * the type information is missing, it will be derived from the consumer destination if present, or
+     * default to a generic destination if not.
+     *
+     * If the address is null then the consumer destination is returned, unless the
+     * useConsumerDestForTypeOnly flag is true, in which case null will be returned.
+     */
+    public Destination decodeDestination(String address, String typeString, Destination consumerDestination, boolean useConsumerDestForTypeOnly)
     {
         Set<String> typeSet = null;
 
@@ -66,21 +83,17 @@ public class DestinationHelper
             typeSet = splitAttributes(typeString);
         }
 
-        return createDestination(address, typeSet);
+        return createDestination(address, typeSet, consumerDestination, useConsumerDestForTypeOnly);
     }
 
-    private Destination createDestination(String address, Set<String> typeSet)
+    private Destination createDestination(String address, Set<String> typeSet, Destination consumerDestination, boolean useConsumerDestForTypeOnly)
     {
         if(address == null)
         {
-            return null;
+            return useConsumerDestForTypeOnly ? null : consumerDestination;
         }
 
-        if(typeSet == null || typeSet.isEmpty())
-        {
-            //TODO: characterise Destination used to create the receiver, and create that type
-        }
-        else
+        if(typeSet != null && !typeSet.isEmpty())
         {
             if(typeSet.contains(QUEUE_ATTRIBUTE))
             {
@@ -108,8 +121,27 @@ public class DestinationHelper
             }
         }
 
+        if(consumerDestination instanceof TemporaryQueue)
+        {
+            //TODO
+            throw new IllegalArgumentException("Unsupported Destination type: " + consumerDestination.getClass().getName());
+        }
+        else if(consumerDestination instanceof TemporaryTopic)
+        {
+            //TODO
+            throw new IllegalArgumentException("Unsupported Destination type: " + consumerDestination.getClass().getName());
+        }
+        else if(consumerDestination instanceof Queue)
+        {
+            return createQueue(address);
+        }
+        else if(consumerDestination instanceof Topic)
+        {
+            return createTopic(address);
+        }
+
         //fall back to a straight Destination
-        return new DestinationImpl(address);
+        return createBaseDestination(address);
     }
 
     public Destination convertToQpidDestination(Destination dest) throws JMSException

@@ -34,26 +34,28 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     private final T _amqpMessage;
     private final SessionImpl _sessionImpl;
     private Destination _destination;
+    private Destination _replyTo;
 
+    //message to be sent
     public MessageImpl(T amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl)
+    {
+        _amqpMessage = amqpMessage;
+        _sessionImpl = sessionImpl;
+    }
+
+    //message just received
+    public MessageImpl(T amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl, Destination consumerDestination)
     {
         _amqpMessage = amqpMessage;
         _sessionImpl = sessionImpl;
 
         String to = _amqpMessage.getTo();
-        if(to != null)
-        {
-            String typeString = (String) _amqpMessage.getMessageAnnotation(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
-            _destination = sessionImpl.getDestinationHelper().decodeDestination(to, typeString);
-        }
-        else
-        {
-            //TODO:
-            //Message doesn't have a To. If this message was received via a
-            //consumer (i.e we aren't creating this message to send), as a fallback
-            //we could set the Destination used to create the consumer itself. That
-            //responsibility might fall to the consumer though.
-        }
+        String toTypeString = (String) _amqpMessage.getMessageAnnotation(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        _destination = sessionImpl.getDestinationHelper().decodeDestination(to, toTypeString, consumerDestination, false);
+
+        String replyTo = _amqpMessage.getReplyTo();
+        String replyToTypeString = (String) _amqpMessage.getMessageAnnotation(DestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        _replyTo = sessionImpl.getDestinationHelper().decodeDestination(replyTo, replyToTypeString, consumerDestination, true);
     }
 
     T getUnderlyingAmqpMessage(boolean prepareForSending)
@@ -175,15 +177,27 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public Destination getJMSReplyTo() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        return _replyTo;
     }
 
     @Override
     public void setJMSReplyTo(Destination replyTo) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        _replyTo = replyTo;
+
+        String replyToAddress = _sessionImpl.getDestinationHelper().decodeAddress(_replyTo);
+        String typeString = _sessionImpl.getDestinationHelper().decodeTypeString(_replyTo);
+
+        _amqpMessage.setReplyTo(replyToAddress);
+
+        if(replyToAddress == null || typeString == null)
+        {
+            _amqpMessage.clearMessageAnnotation(DestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        }
+        else
+        {
+            _amqpMessage.setMessageAnnotation(DestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, typeString);
+        }
     }
 
     @Override
@@ -210,8 +224,6 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         {
             _amqpMessage.setMessageAnnotation(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, typeString);
         }
-
-
     }
 
     @Override

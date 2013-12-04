@@ -217,6 +217,11 @@ public abstract class AmqpMessage
 
     //===== Properties ======
 
+    public String getContentType()
+    {
+        return _message.getContentType();
+    }
+
     public void setContentType(String contentType)
     {
         _message.setContentType(contentType);
@@ -240,6 +245,16 @@ public abstract class AmqpMessage
     public void setCreationTime(long timeInMillis)
     {
         _message.setCreationTime(timeInMillis);
+    }
+
+    public String getReplyTo()
+    {
+        return _message.getReplyTo();
+    }
+
+    public void setReplyTo(String replyTo)
+    {
+        _message.setReplyTo(replyTo);
     }
 
     //===== Application Properties ======

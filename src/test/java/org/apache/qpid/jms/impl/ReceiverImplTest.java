@@ -51,6 +51,7 @@ public class ReceiverImplTest extends QpidJmsTestCase
         _mockConnection = Mockito.mock(ConnectionImpl.class);
         _mockAmqpReceiver = Mockito.mock(AmqpReceiver.class);
         _mockSession = Mockito.mock(SessionImpl.class);
+        Mockito.when(_mockSession.getDestinationHelper()).thenReturn(new DestinationHelper());
         _mockAmqpMessage = Mockito.mock(AmqpGenericMessage.class);
     }
 
@@ -62,7 +63,7 @@ public class ReceiverImplTest extends QpidJmsTestCase
 
         ImmediateWaitUntil.mockWaitUntil(_mockConnection);
 
-        ReceiverImpl receiver = new ReceiverImpl(_mockConnection, _mockSession, _mockAmqpReceiver);
+        ReceiverImpl receiver = new ReceiverImpl(_mockConnection, _mockSession, _mockAmqpReceiver, null);
 
         assertNull("Should not receive a message when connection is not started", receiver.receive(1));
     }
@@ -77,7 +78,7 @@ public class ReceiverImplTest extends QpidJmsTestCase
 
         ImmediateWaitUntil.mockWaitUntil(_mockConnection);
 
-        ReceiverImpl receiver = new ReceiverImpl(_mockConnection, _mockSession, _mockAmqpReceiver);
+        ReceiverImpl receiver = new ReceiverImpl(_mockConnection, _mockSession, _mockAmqpReceiver, null);
 
         Message message = receiver.receive(1);
         assertNotNull("Should receive a message when connection is started", message);

@@ -98,13 +98,13 @@ public class SessionImpl implements Session
         }
     }
 
-    private ReceiverImpl createReceiver(String address) throws JMSException
+    private ReceiverImpl createReceiver(String address, Destination recieverDestination) throws JMSException
     {
         _connectionImpl.lock();
         try
         {
             AmqpReceiver amqpReceiver = _amqpSession.createAmqpReceiver(address);
-            ReceiverImpl receiver = new ReceiverImpl(_connectionImpl, this, amqpReceiver);
+            ReceiverImpl receiver = new ReceiverImpl(_connectionImpl, this, amqpReceiver, recieverDestination);
             _connectionImpl.stateChanged();
             receiver.establish();
 
@@ -199,7 +199,7 @@ public class SessionImpl implements Session
         else if (destination instanceof Queue)
         {
             Queue queue = (Queue) destination;
-            return createReceiver(queue.getQueueName());
+            return createReceiver(queue.getQueueName(), destination);
         }
         else if(destination instanceof Topic)
         {

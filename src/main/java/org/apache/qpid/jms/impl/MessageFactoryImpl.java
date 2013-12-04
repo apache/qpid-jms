@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.jms.impl;
 
+import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 
@@ -33,31 +34,31 @@ import org.apache.qpid.jms.engine.AmqpTextMessage;
 
 public class MessageFactoryImpl
 {
-    Message createJmsMessage(AmqpMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
+    Message createJmsMessage(AmqpMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl, Destination consumerDestination) throws JMSException
     {
         if(amqpMessage instanceof AmqpTextMessage)
         {
-            return new TextMessageImpl((AmqpTextMessage) amqpMessage, sessionImpl, connectionImpl);
+            return new TextMessageImpl((AmqpTextMessage) amqpMessage, sessionImpl, connectionImpl, consumerDestination);
         }
         else if(amqpMessage instanceof AmqpBytesMessage)
         {
-            return new BytesMessageImpl((AmqpBytesMessage) amqpMessage, sessionImpl, connectionImpl);
+            return new BytesMessageImpl((AmqpBytesMessage) amqpMessage, sessionImpl, connectionImpl, consumerDestination);
         }
         else if(amqpMessage instanceof AmqpObjectMessage)
         {
-            return new ObjectMessageImpl((AmqpObjectMessage) amqpMessage, sessionImpl, connectionImpl);
+            return new ObjectMessageImpl((AmqpObjectMessage) amqpMessage, sessionImpl, connectionImpl, consumerDestination);
         }
         else if(amqpMessage instanceof AmqpListMessage)
         {
-            return new StreamMessageImpl((AmqpListMessage) amqpMessage, sessionImpl, connectionImpl);
+            return new StreamMessageImpl((AmqpListMessage) amqpMessage, sessionImpl, connectionImpl, consumerDestination);
         }
         else if(amqpMessage instanceof AmqpMapMessage)
         {
-            return new MapMessageImpl((AmqpMapMessage) amqpMessage, sessionImpl, connectionImpl);
+            return new MapMessageImpl((AmqpMapMessage) amqpMessage, sessionImpl, connectionImpl, consumerDestination);
         }
         else if(amqpMessage instanceof AmqpGenericMessage)
         {
-            return new GenericAmqpMessageImpl((AmqpGenericMessage) amqpMessage, sessionImpl, connectionImpl);
+            return new GenericAmqpMessageImpl((AmqpGenericMessage) amqpMessage, sessionImpl, connectionImpl, consumerDestination);
         }
         else
         {

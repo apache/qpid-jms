@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.jms.impl;
 
+import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -33,12 +34,14 @@ public class ReceiverImpl extends LinkImpl implements MessageConsumer
 {
     private final AmqpReceiver _amqpReceiver;
     private final SessionImpl _sessionImpl;
+    private final Destination _recieverDestination;
 
-    public ReceiverImpl(ConnectionImpl connectionImpl, SessionImpl sessionImpl, AmqpReceiver amqpReceiver)
+    public ReceiverImpl(ConnectionImpl connectionImpl, SessionImpl sessionImpl, AmqpReceiver amqpReceiver, Destination recieverDestination)
     {
         super(connectionImpl, amqpReceiver);
         _sessionImpl = sessionImpl;
         _amqpReceiver = amqpReceiver;
+        _recieverDestination = recieverDestination;
     }
 
     @Override
@@ -64,7 +67,7 @@ public class ReceiverImpl extends LinkImpl implements MessageConsumer
             AmqpMessage receivedAmqpMessage = messageReceievedCondition.getReceivedMessage();
 
             //TODO: don't create a new factory for every message
-            Message receivedMessage = new MessageFactoryImpl().createJmsMessage(receivedAmqpMessage, _sessionImpl, getConnectionImpl());
+            Message receivedMessage = new MessageFactoryImpl().createJmsMessage(receivedAmqpMessage, _sessionImpl, getConnectionImpl(), _recieverDestination);
 
             //TODO: accepting/settling will be acknowledge-mode dependent
             if(_sessionImpl.getAcknowledgeMode() == Session.AUTO_ACKNOWLEDGE)

@@ -18,6 +18,7 @@
  */
 package org.apache.qpid.jms.impl;
 
+import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.StreamMessage;
 
@@ -28,13 +29,13 @@ public class StreamMessageImpl extends MessageImpl<AmqpListMessage> implements S
     //message to be sent
     public StreamMessageImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
-        this(new AmqpListMessage(), sessionImpl, connectionImpl);
+        super(new AmqpListMessage(), sessionImpl, connectionImpl);
     }
 
     //message just received
-    public StreamMessageImpl(AmqpListMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
+    public StreamMessageImpl(AmqpListMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl, Destination consumerDestination) throws JMSException
     {
-        super(amqpMessage, sessionImpl, connectionImpl);
+        super(amqpMessage, sessionImpl, connectionImpl, consumerDestination);
     }
 
     @Override

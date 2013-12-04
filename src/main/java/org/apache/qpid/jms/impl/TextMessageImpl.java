@@ -18,6 +18,7 @@
  */
 package org.apache.qpid.jms.impl;
 
+import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.TextMessage;
 
@@ -28,13 +29,13 @@ public class TextMessageImpl extends MessageImpl<AmqpTextMessage> implements Tex
     //message to be sent
     public TextMessageImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
-        this(new AmqpTextMessage(), sessionImpl, connectionImpl);
+        super(new AmqpTextMessage(), sessionImpl, connectionImpl);
     }
 
     //message just received
-    public TextMessageImpl(AmqpTextMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
+    public TextMessageImpl(AmqpTextMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl, Destination consumerDestination) throws JMSException
     {
-        super(amqpMessage, sessionImpl, connectionImpl);
+        super(amqpMessage, sessionImpl, connectionImpl, consumerDestination);
     }
 
     @Override

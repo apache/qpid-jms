@@ -43,6 +43,12 @@ public class SenderImpl extends LinkImpl implements MessageProducer
 
     private void sendMessage(Message message, int deliveryMode, int priority, long timeToLive) throws JMSException
     {
+        //TODO
+        if(priority != Message.DEFAULT_PRIORITY)
+        {
+            throw new IllegalArgumentException("Only default priority is currently supported");
+        }
+
         getConnectionImpl().lock();
         try
         {
@@ -60,7 +66,27 @@ public class SenderImpl extends LinkImpl implements MessageProducer
                 message.setJMSDeliveryMode(deliveryMode);
             }
 
+            //set the JMSExpiration if necessary
+            if(timeToLive != Message.DEFAULT_TIME_TO_LIVE)
+            {
+                message.setJMSExpiration(timestamp + timeToLive);
+            }
+            else if(message.getJMSExpiration() != 0)
+            {
+                message.setJMSExpiration(0);
+            }
+
             AmqpMessage amqpMessage = getAmqpMessageFromJmsMessage(message);
+
+            //set the AMQP header TTL if necessary, otehrwise ensure it is clear
+            if(timeToLive != Message.DEFAULT_TIME_TO_LIVE)
+            {
+                amqpMessage.setTtl(timeToLive);
+            }
+            else if(amqpMessage.getTtl() != null)
+            {
+                amqpMessage.setTtl(null);
+            }
 
             AmqpSentMessageToken sentMessage = _amqpSender.sendMessage(amqpMessage);
 
@@ -186,8 +212,7 @@ public class SenderImpl extends LinkImpl implements MessageProducer
     @Override
     public void send(Message message, int deliveryMode, int priority, long timeToLive) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        sendMessage(message, deliveryMode, priority, timeToLive);
     }
 
     @Override

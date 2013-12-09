@@ -29,7 +29,9 @@ import java.util.Set;
 import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
+import org.apache.qpid.proton.amqp.messaging.Header;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Properties;
 import org.apache.qpid.proton.engine.Delivery;
@@ -163,6 +165,67 @@ public class AmqpMessageTest extends QpidJmsTestCase
         {
             //expected
         }
+    }
+
+    // ====== Header =======
+
+    @Test
+    public void testNewMessageHasNoUnderlyingHeaderSection()
+    {
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+
+        Message underlying = testAmqpMessage.getMessage();
+        assertNull(underlying.getHeader());
+    }
+
+    @Test
+    public void testGetTtlIsNullForNewMessage()
+    {
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+
+        assertNull(testAmqpMessage.getTtl());
+    }
+
+    @Test
+    public void testGetTtlOnRecievedMessageWithTtl()
+    {
+        Long ttl = 123L;
+
+        Message message = Proton.message();
+        Header header = new Header();
+        header.setTtl(UnsignedInteger.valueOf(ttl));
+        message.setHeader(header);
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        assertEquals(ttl, testAmqpMessage.getTtl());
+    }
+
+    @Test
+    public void testSetGetTtlOnNewMessage()
+    {
+        Long ttl = 123L;
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+
+        testAmqpMessage.setTtl(ttl);
+
+        assertEquals(ttl.longValue(), testAmqpMessage.getMessage().getHeader().getTtl().longValue());
+        assertEquals(ttl, testAmqpMessage.getTtl());
+    }
+
+    @Test
+    public void testSetTtlNullOnMessageWithExistingTtl()
+    {
+        Long ttl = 123L;
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        testAmqpMessage.setTtl(ttl);
+
+        testAmqpMessage.setTtl(null);
+
+        assertNull(testAmqpMessage.getMessage().getHeader().getTtl());
+        assertNull(testAmqpMessage.getTtl());
     }
 
     // ====== Properties =======
@@ -313,6 +376,85 @@ public class AmqpMessageTest extends QpidJmsTestCase
 
         assertNotNull(testAmqpMessage.getReplyTo());
         assertEquals(testReplyToAddress, testAmqpMessage.getReplyTo());
+    }
+
+    @Test
+    public void testNewMessageHasNoUnderlyingPropertiesSection()
+    {
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+
+        Message underlying = testAmqpMessage.getMessage();
+        assertNull(underlying.getProperties());
+    }
+
+    @Test
+    public void testGetCreationTimeIsNullForNewMessage()
+    {
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+
+        assertNull(testAmqpMessage.getCreationTime());
+    }
+
+    @Test
+    public void testSetCreationTimeOnNewMessage()
+    {
+        Long timestamp = System.currentTimeMillis();
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+
+        testAmqpMessage.setCreationTime(timestamp);
+
+        assertEquals(timestamp.longValue(), testAmqpMessage.getMessage().getProperties().getCreationTime().getTime());
+        assertEquals(timestamp, testAmqpMessage.getCreationTime());
+    }
+
+    @Test
+    public void testSetCreationTimeNullOnMessageWithExistingCreationTime()
+    {
+        Long timestamp = System.currentTimeMillis();
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        testAmqpMessage.setCreationTime(timestamp);
+
+        testAmqpMessage.setCreationTime(null);
+
+        assertNull(testAmqpMessage.getMessage().getProperties().getCreationTime());
+        assertNull(testAmqpMessage.getCreationTime());
+    }
+
+    @Test
+    public void testGetAbsoluteExpiryTimeIsNullForNewMessage()
+    {
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+
+        assertNull(testAmqpMessage.getAbsoluteExpiryTime());
+    }
+
+    @Test
+    public void testSetAbsoluteExpiryTimeOnNewMessage()
+    {
+        Long timestamp = System.currentTimeMillis();
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+
+        testAmqpMessage.setAbsoluteExpiryTime(timestamp);
+
+        assertEquals(timestamp.longValue(), testAmqpMessage.getMessage().getProperties().getAbsoluteExpiryTime().getTime());
+        assertEquals(timestamp, testAmqpMessage.getAbsoluteExpiryTime());
+    }
+
+    @Test
+    public void testSetAbsoluteExpiryTimeNullOnMessageWithExistingExpiryTime()
+    {
+        Long timestamp = System.currentTimeMillis();
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        testAmqpMessage.setAbsoluteExpiryTime(timestamp);
+
+        testAmqpMessage.setAbsoluteExpiryTime(null);
+
+        assertNull(testAmqpMessage.getMessage().getProperties().getAbsoluteExpiryTime());
+        assertNull(testAmqpMessage.getAbsoluteExpiryTime());
     }
 
     // ====== Message Annotations =======

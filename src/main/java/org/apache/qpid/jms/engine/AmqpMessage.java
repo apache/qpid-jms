@@ -21,12 +21,14 @@
 package org.apache.qpid.jms.engine;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
@@ -126,6 +128,51 @@ public abstract class AmqpMessage
     public boolean isDurable()
     {
         return _message.isDurable();
+    }
+
+    /**
+     * @return the ttl in milliseconds, or null if none exists
+     */
+    public Long getTtl()
+    {
+        if(_message.getHeader() == null)
+        {
+            return null;
+        }
+        else
+        {
+            UnsignedInteger ttl = _message.getHeader().getTtl();
+            if(ttl == null)
+            {
+                return null;
+            }
+            else
+            {
+                return ttl.longValue();
+            }
+        }
+    }
+
+    /**
+     * @param timeInMillis the ttl time in milliseconds, or null to clear the field
+     */
+    public void setTtl(Long timeInMillis)
+    {
+        if(timeInMillis == null)
+        {
+            if(_message.getHeader() == null)
+            {
+                return;
+            }
+            else
+            {
+                _message.getHeader().setTtl(null);
+            }
+        }
+        else
+        {
+            _message.setTtl(timeInMillis);
+        }
     }
 
     //===== MessageAnnotations ======
@@ -237,14 +284,43 @@ public abstract class AmqpMessage
         _message.setAddress(to);
     }
 
-    public long getCreationTime()
+    public Long getCreationTime()
     {
-        return _message.getCreationTime();
+        if(_message.getProperties() == null)
+        {
+            return null;
+        }
+        else
+        {
+            Date date = _message.getProperties().getCreationTime();
+            if(date == null)
+            {
+                return null;
+            }
+            else
+            {
+                return date.getTime();
+            }
+        }
     }
 
-    public void setCreationTime(long timeInMillis)
+    public void setCreationTime(Long timeInMillis)
     {
-        _message.setCreationTime(timeInMillis);
+        if(timeInMillis == null)
+        {
+            if(_message.getProperties() == null)
+            {
+                return;
+            }
+            else
+            {
+                _message.getProperties().setCreationTime(null);
+            }
+        }
+        else
+        {
+            _message.setCreationTime(timeInMillis);
+        }
     }
 
     public String getReplyTo()
@@ -255,6 +331,51 @@ public abstract class AmqpMessage
     public void setReplyTo(String replyTo)
     {
         _message.setReplyTo(replyTo);
+    }
+
+    /**
+     * @return the expiration time in milliseconds since the Unix Epoch, or null if none exists
+     */
+    public Long getAbsoluteExpiryTime()
+    {
+        if(_message.getProperties() == null)
+        {
+            return null;
+        }
+        else
+        {
+            Date date = _message.getProperties().getAbsoluteExpiryTime();
+            if(date == null)
+            {
+                return null;
+            }
+            else
+            {
+                return date.getTime();
+            }
+        }
+    }
+
+    /**
+     * @param timeInMillis the expiration time in milliseconds since the Unix Epoch, or null to clear the field
+     */
+    public void setAbsoluteExpiryTime(Long timeInMillis)
+    {
+        if(timeInMillis == null)
+        {
+            if(_message.getProperties() == null)
+            {
+                return;
+            }
+            else
+            {
+                _message.getProperties().setAbsoluteExpiryTime(null);
+            }
+        }
+        else
+        {
+            _message.setExpiryTime(timeInMillis);
+        }
     }
 
     //===== Application Properties ======

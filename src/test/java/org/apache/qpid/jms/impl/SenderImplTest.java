@@ -21,10 +21,12 @@
 package org.apache.qpid.jms.impl;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
 import javax.jms.DeliveryMode;
+import javax.jms.Message;
 import javax.jms.Queue;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
@@ -124,5 +126,98 @@ public class SenderImplTest extends QpidJmsTestCase
 
         //verify the timestamp was set, allowing for a 3second delta
         assertEquals(timestamp, testMessage.getJMSTimestamp(), 3000);
+    }
+
+    @Test
+    public void testSenderSetsAbsoluteExpiryAndTtlFieldsOnUnderlyingMessage() throws Exception
+    {
+        //Create mock sent message token, ensure that it is immediately marked as Accepted
+        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
+        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
+        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
+        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+
+        SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, _mockSession, null);
+
+        assertEquals(0, testMessage.getJMSTimestamp());
+        long timestamp = System.currentTimeMillis();
+        long ttl = 100_000;
+
+        senderImpl.send(testMessage, Message.DEFAULT_DELIVERY_MODE, Message.DEFAULT_PRIORITY, ttl);
+
+        //verify the JMSExpiration is now set, allowing for a 3second delta
+        assertEquals(timestamp + ttl, testMessage.getJMSExpiration(), 3000);
+
+        //more specifically, check the creation-time, ttl, and absolute-expiry fields on the message are set
+        Long creationTime = testMessage.getUnderlyingAmqpMessage(false).getCreationTime();
+        assertNotNull(creationTime);
+        assertEquals(timestamp, creationTime, 3000);
+
+        Long underlyingTtl = testMessage.getUnderlyingAmqpMessage(false).getTtl();
+        assertNotNull(underlyingTtl);
+        assertEquals(ttl, underlyingTtl.longValue());
+
+        Long absoluteExpiryTime = testMessage.getUnderlyingAmqpMessage(false).getAbsoluteExpiryTime();
+        assertNotNull(absoluteExpiryTime);
+        assertEquals(ttl + creationTime, absoluteExpiryTime.longValue());
+    }
+
+    @Test
+    public void testSenderSetsTtlOnUnderlyingAmqpMessage() throws Exception
+    {
+        //Create mock sent message token, ensure that it is immediately marked as Accepted
+        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
+        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
+        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
+        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+
+        SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, _mockSession, null);
+
+        assertEquals(0, testMessage.getJMSTimestamp());
+        long timestamp = System.currentTimeMillis();
+        long ttl = 100_000;
+
+        senderImpl.send(testMessage, Message.DEFAULT_DELIVERY_MODE, Message.DEFAULT_PRIORITY, ttl);
+
+        //verify the expiration was set, allowing for a 3second delta
+        assertEquals(timestamp + ttl, testMessage.getJMSExpiration(), 3000);
+    }
+
+    @Test
+    public void testSenderClearsExistingJMSExpirationAndTtlFieldOnUnderlyingAmqpMessageWhenNotUsingTtl() throws Exception
+    {
+        //Create mock sent message token, ensure that it is immediately marked as Accepted
+        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
+        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
+        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
+        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+
+        SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+
+        Long oldTtl = 456L;
+        testAmqpMessage.setTtl(oldTtl);
+
+        long expiration = System.currentTimeMillis();
+        testAmqpMessage.setAbsoluteExpiryTime(expiration);
+        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, _mockSession, _mockConnection, null);
+
+        //verify JMSExpiration is non-zero
+        assertEquals(expiration, testMessage.getJMSExpiration());
+
+        //send the message without any TTL
+        senderImpl.send(testMessage, Message.DEFAULT_DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+
+        //verify the expiration was cleared, along with the underlying amqp message fields
+        assertEquals(0, testMessage.getJMSExpiration());
+        assertNull(testMessage.getUnderlyingAmqpMessage(false).getTtl());
+        assertNull(testMessage.getUnderlyingAmqpMessage(false).getAbsoluteExpiryTime());
     }
 }

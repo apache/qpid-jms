@@ -681,12 +681,13 @@ public class MessageImplTest extends QpidJmsTestCase
     @Test
     public void testSetJMSTimestampOnNewMessage() throws Exception
     {
-        assertEquals(0, _testAmqpMessage.getCreationTime());
+        assertNull(_testAmqpMessage.getCreationTime());
 
         long timestamp = System.currentTimeMillis();
         _testMessage.setJMSTimestamp(timestamp);
 
-        assertEquals(timestamp, _testAmqpMessage.getCreationTime());
+        assertNotNull(_testAmqpMessage.getCreationTime());
+        assertEquals(timestamp, _testAmqpMessage.getCreationTime().longValue());
     }
 
     @Test
@@ -697,6 +698,143 @@ public class MessageImplTest extends QpidJmsTestCase
         _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertEquals("expected JMSTimestamp value not present", timestamp, _testMessage.getJMSTimestamp());
+    }
+
+    @Test
+    public void testSetJMSTimestampToZeroOnRecievedMessageWithCreationTimeSetsUnderlyingCreationTimeNull() throws Exception
+    {
+        long timestamp = System.currentTimeMillis();
+        _testAmqpMessage.setCreationTime(timestamp);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        _testMessage.setJMSTimestamp(0);
+
+        assertEquals("expected JMSExpiration value not present", 0L, _testMessage.getJMSExpiration());
+        assertNull(_testAmqpMessage.getCreationTime());
+    }
+    // ====== JMSExpiration =======
+
+    @Test
+    public void testGetJMSExpirationOnNewMessage() throws Exception
+    {
+        assertEquals("expected JMSExpiration value not present", 0, _testMessage.getJMSExpiration());
+    }
+
+    @Test
+    public void testSetGetJMSExpirationOnNewMessage() throws Exception
+    {
+        long timestamp = System.currentTimeMillis();
+
+        _testMessage.setJMSExpiration(timestamp);
+        assertEquals("expected JMSExpiration value not present", timestamp, _testMessage.getJMSExpiration());
+    }
+
+    @Test
+    public void testSetJMSExpirationOnNewMessage() throws Exception
+    {
+        assertNull(_testAmqpMessage.getAbsoluteExpiryTime());
+
+        Long timestamp = System.currentTimeMillis();
+        _testMessage.setJMSExpiration(timestamp);
+
+        assertEquals(timestamp, _testAmqpMessage.getAbsoluteExpiryTime());
+    }
+
+    @Test
+    public void testGetJMSExpirationOnRecievedMessageWithAbsoluteExpiryTimeAndTtlAndCreationTime() throws Exception
+    {
+        long creationTime = System.currentTimeMillis();
+        long ttl = 789L;
+        long expiration = creationTime + ttl;
+        _testAmqpMessage.setCreationTime(creationTime);
+        _testAmqpMessage.setTtl(ttl);
+        _testAmqpMessage.setAbsoluteExpiryTime(expiration);
+
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        assertEquals("expected JMSExpiration value not present", expiration, _testMessage.getJMSExpiration());
+    }
+
+    @Test
+    public void testGetJMSExpirationOnRecievedMessageWithAbsoluteExpiryTimeButNoTtlOrCreationTime() throws Exception
+    {
+        long expiration = System.currentTimeMillis();
+        _testAmqpMessage.setAbsoluteExpiryTime(expiration);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        assertEquals("expected JMSExpiration value not present", expiration, _testMessage.getJMSExpiration());
+    }
+
+    @Test
+    public void testGetJMSExpirationOnRecievedMessageWithCreationTimeAndTtlButNoAbsoluteExpiry() throws Exception
+    {
+        long creationTime = System.currentTimeMillis();
+        long ttl = 789L;
+        _testAmqpMessage.setCreationTime(creationTime);
+        _testAmqpMessage.setTtl(ttl);
+
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        assertEquals("expected JMSExpiration value not present", creationTime + ttl, _testMessage.getJMSExpiration());
+    }
+
+    @Test
+    public void testGetJMSExpirationOnRecievedMessageWithTtlButNoCreationTimeOrAbsoluteExpiry() throws Exception
+    {
+        long timestamp = System.currentTimeMillis();
+        long ttl = 789L;
+        _testAmqpMessage.setTtl(ttl);
+
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        assertEquals("expected JMSExpiration value not present", timestamp + ttl, _testMessage.getJMSExpiration(), 3000);
+        //TODO: check calling twice gives the same value
+    }
+
+    @Test
+    public void testSetJMSExpirationToZeroOnRecievedMessageWithAbsoluteExpiryTimeSetsUnderlyingExpiryNull() throws Exception
+    {
+        long timestamp = System.currentTimeMillis();
+        _testAmqpMessage.setAbsoluteExpiryTime(timestamp);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        _testMessage.setJMSExpiration(0);
+
+        assertEquals("expected JMSExpiration value not present", 0L, _testMessage.getJMSExpiration());
+        assertNull(_testAmqpMessage.getAbsoluteExpiryTime());
+    }
+
+    @Test
+    public void testSetJMSExpirationToZeroOnRecievedMessageWithTtlSetsUnderlyingTtlNull() throws Exception
+    {
+        long ttl = 789L;
+        _testAmqpMessage.setTtl(ttl);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        _testMessage.setJMSExpiration(0);
+
+        assertEquals("expected JMSExpiration value not present", 0L, _testMessage.getJMSExpiration());
+        assertNull(_testAmqpMessage.getTtl());
+    }
+
+    /**
+     * As we are basing getJMSExpiration either on the absolute-expiry-time or calculating it based on the ttl field,
+     * ensure that setting JMSExpiration to 0 results in getJMSExpiration returning 0 if an incoming message had both
+     * absolute-expiry-time and ttl fields set.
+     */
+    @Test
+    public void testSetJMSExpirationToZeroOnRecievedMessageWithAbsoluteExpiryAndTtlFieldsRresultsInGetJMSExpirationAsZero() throws Exception
+    {
+        long ttl = 789L;
+        long timestamp = System.currentTimeMillis();
+        _testAmqpMessage.setTtl(ttl);
+        _testAmqpMessage.setAbsoluteExpiryTime(timestamp);
+
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        _testMessage.setJMSExpiration(0);
+
+        assertEquals("expected JMSExpiration value not present", 0L, _testMessage.getJMSExpiration());
     }
 
     // ====== utility methods =======

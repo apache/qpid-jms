@@ -137,13 +137,28 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public long getJMSTimestamp() throws JMSException
     {
-        return _amqpMessage.getCreationTime();
+        Long timestamp = _amqpMessage.getCreationTime();
+        if(timestamp == null)
+        {
+            return 0;
+        }
+        else
+        {
+            return timestamp.longValue();
+        }
     }
 
     @Override
     public void setJMSTimestamp(long timestamp) throws JMSException
     {
-        _amqpMessage.setCreationTime(timestamp);
+        if(timestamp != 0)
+        {
+            _amqpMessage.setCreationTime(timestamp);
+        }
+        else
+        {
+            _amqpMessage.setCreationTime(null);
+        }
     }
 
     @Override
@@ -283,15 +298,52 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public long getJMSExpiration() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        //Use absolute-expiry if present
+        Long absoluteExpiry = _amqpMessage.getAbsoluteExpiryTime();
+        if(absoluteExpiry != null)
+        {
+            return absoluteExpiry;
+        }
+
+        //derive from creation time and ttl field is present
+        Long creationTime = _amqpMessage.getCreationTime();
+        Long ttl = _amqpMessage.getTtl();
+
+        if(ttl != null)
+        {
+            if(creationTime != null)
+            {
+                return creationTime + ttl;
+            }
+            else
+            {
+                //TODO: this will give a different value each time. Use RcvTime equivalent?
+                return System.currentTimeMillis() + ttl;
+            }
+        }
+
+        //failing the above we must say there is no expiration
+        return 0;
     }
 
     @Override
     public void setJMSExpiration(long expiration) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        if(expiration != 0)
+        {
+            _amqpMessage.setAbsoluteExpiryTime(expiration);
+        }
+        else
+        {
+            _amqpMessage.setAbsoluteExpiryTime(null);
+
+            //As we are clearing JMSExpiration we must also clear the TTL field if it is
+            //set, or else it will lead to getJMSExpiration continuing to return a value
+            if(_amqpMessage.getTtl() != null)
+            {
+                _amqpMessage.setTtl(null);
+            }
+        }
     }
 
     @Override

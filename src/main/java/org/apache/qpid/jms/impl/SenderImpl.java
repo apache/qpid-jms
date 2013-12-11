@@ -78,7 +78,7 @@ public class SenderImpl extends LinkImpl implements MessageProducer
 
             AmqpMessage amqpMessage = getAmqpMessageFromJmsMessage(message);
 
-            //set the AMQP header TTL if necessary, otehrwise ensure it is clear
+            //set the AMQP header TTL if necessary, otherwise ensure it is clear
             if(timeToLive != Message.DEFAULT_TIME_TO_LIVE)
             {
                 amqpMessage.setTtl(timeToLive);

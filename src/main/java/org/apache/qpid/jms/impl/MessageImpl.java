@@ -33,6 +33,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
 {
     private final T _amqpMessage;
     private final SessionImpl _sessionImpl;
+    private final long _rcvTime;
     private Destination _destination;
     private Destination _replyTo;
 
@@ -41,6 +42,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     {
         _amqpMessage = amqpMessage;
         _sessionImpl = sessionImpl;
+        _rcvTime = 0;
     }
 
     //message just received
@@ -56,6 +58,16 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         String replyTo = _amqpMessage.getReplyTo();
         String replyToTypeString = (String) _amqpMessage.getMessageAnnotation(DestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         _replyTo = sessionImpl.getDestinationHelper().decodeDestination(replyTo, replyToTypeString, consumerDestination, true);
+
+        //If we have to synthesize JMSExpiration from TTL, we will need a receipt time
+        if(_amqpMessage.getAbsoluteExpiryTime() == null && _amqpMessage.getTtl() != null)
+        {
+            _rcvTime = System.currentTimeMillis();
+        }
+        else
+        {
+            _rcvTime = 0;
+        }
     }
 
     T getUnderlyingAmqpMessage(boolean prepareForSending)
@@ -305,24 +317,14 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
             return absoluteExpiry;
         }
 
-        //derive from creation time and ttl field is present
-        Long creationTime = _amqpMessage.getCreationTime();
+        //derive from the ttl field if present
         Long ttl = _amqpMessage.getTtl();
-
         if(ttl != null)
         {
-            if(creationTime != null)
-            {
-                return creationTime + ttl;
-            }
-            else
-            {
-                //TODO: this will give a different value each time. Use RcvTime equivalent?
-                return System.currentTimeMillis() + ttl;
-            }
+            return _rcvTime + ttl;
         }
 
-        //failing the above we must say there is no expiration
+        //failing the above, there is no expiration
         return 0;
     }
 

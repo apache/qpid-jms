@@ -741,12 +741,11 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testGetJMSExpirationOnRecievedMessageWithAbsoluteExpiryTimeAndTtlAndCreationTime() throws Exception
+    public void testGetJMSExpirationOnRecievedMessageWithAbsoluteExpiryTimeAndTtl() throws Exception
     {
-        long creationTime = System.currentTimeMillis();
+        long creationTime = 123456789;
         long ttl = 789L;
         long expiration = creationTime + ttl;
-        _testAmqpMessage.setCreationTime(creationTime);
         _testAmqpMessage.setTtl(ttl);
         _testAmqpMessage.setAbsoluteExpiryTime(expiration);
 
@@ -756,7 +755,7 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testGetJMSExpirationOnRecievedMessageWithAbsoluteExpiryTimeButNoTtlOrCreationTime() throws Exception
+    public void testGetJMSExpirationOnRecievedMessageWithAbsoluteExpiryTimeButNoTtl() throws Exception
     {
         long expiration = System.currentTimeMillis();
         _testAmqpMessage.setAbsoluteExpiryTime(expiration);
@@ -766,29 +765,23 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testGetJMSExpirationOnRecievedMessageWithCreationTimeAndTtlButNoAbsoluteExpiry() throws Exception
-    {
-        long creationTime = System.currentTimeMillis();
-        long ttl = 789L;
-        _testAmqpMessage.setCreationTime(creationTime);
-        _testAmqpMessage.setTtl(ttl);
-
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
-
-        assertEquals("expected JMSExpiration value not present", creationTime + ttl, _testMessage.getJMSExpiration());
-    }
-
-    @Test
-    public void testGetJMSExpirationOnRecievedMessageWithTtlButNoCreationTimeOrAbsoluteExpiry() throws Exception
+    public void testGetJMSExpirationOnRecievedMessageWithTtlButNoAbsoluteExpiry() throws Exception
     {
         long timestamp = System.currentTimeMillis();
-        long ttl = 789L;
+        long ttl = 999999L;
         _testAmqpMessage.setTtl(ttl);
 
         _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
-        assertEquals("expected JMSExpiration value not present", timestamp + ttl, _testMessage.getJMSExpiration(), 3000);
-        //TODO: check calling twice gives the same value
+        long jmsExpiration = _testMessage.getJMSExpiration();
+
+        //as there is no absolute-expiry-time, JMSExpiration will be based on 'current time' + ttl, so check equality within a given delta
+        assertEquals("expected JMSExpiration value not present", timestamp + ttl, jmsExpiration, 3000);
+
+        Thread.sleep(1);
+
+        //check we get the same value again
+        assertEquals("different JMSExpiration on subsequent calls", jmsExpiration, _testMessage.getJMSExpiration());
     }
 
     @Test
@@ -823,7 +816,7 @@ public class MessageImplTest extends QpidJmsTestCase
      * absolute-expiry-time and ttl fields set.
      */
     @Test
-    public void testSetJMSExpirationToZeroOnRecievedMessageWithAbsoluteExpiryAndTtlFieldsRresultsInGetJMSExpirationAsZero() throws Exception
+    public void testSetJMSExpirationToZeroOnRecievedMessageWithAbsoluteExpiryAndTtlFieldsResultsInGetJMSExpirationReturningZero() throws Exception
     {
         long ttl = 789L;
         long timestamp = System.currentTimeMillis();

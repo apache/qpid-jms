@@ -31,6 +31,8 @@ import org.apache.qpid.jms.engine.AmqpSentMessageToken;
 
 public class SenderImpl extends LinkImpl implements MessageProducer
 {
+    private static final long UINT_MAX = 0xFFFFFFFFL - 1;
+    private static final String JMS_AMQP_TTL = "JMS_AMQP_TTL";
     private AmqpSender _amqpSender;
     private Destination _destination;
 
@@ -78,14 +80,23 @@ public class SenderImpl extends LinkImpl implements MessageProducer
 
             AmqpMessage amqpMessage = getAmqpMessageFromJmsMessage(message);
 
-            //set the AMQP header TTL if necessary, otherwise ensure it is clear
-            if(timeToLive != Message.DEFAULT_TIME_TO_LIVE)
+            if(message.propertyExists(JMS_AMQP_TTL))
             {
-                amqpMessage.setTtl(timeToLive);
+                //use the requested value from the property
+                long propTtl = message.getLongProperty(JMS_AMQP_TTL);
+                amqpMessage.setTtl(propTtl);
             }
-            else if(amqpMessage.getTtl() != null)
+            else
             {
-                amqpMessage.setTtl(null);
+                //set the AMQP header TTL if necessary and possible, otherwise ensure it is clear
+                if(timeToLive != Message.DEFAULT_TIME_TO_LIVE && timeToLive < UINT_MAX)
+                {
+                    amqpMessage.setTtl(timeToLive);
+                }
+                else if(amqpMessage.getTtl() != null)
+                {
+                    amqpMessage.setTtl(null);
+                }
             }
 
             AmqpSentMessageToken sentMessage = _amqpSender.sendMessage(amqpMessage);

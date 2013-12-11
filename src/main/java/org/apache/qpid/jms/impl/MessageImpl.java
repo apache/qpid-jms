@@ -111,6 +111,8 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
 
     private void setApplicationProperty(String name, Object value) throws MessageFormatException
     {
+        //TODO: special case JMS_AMQP_TTL so that it gets set
+        //in the TTL field and not application-properties
         checkPropertyNameIsValid(name);
         checkObjectPropertyValueIsValid(value);
 

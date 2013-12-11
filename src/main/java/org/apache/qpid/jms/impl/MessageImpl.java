@@ -33,7 +33,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
 {
     private final T _amqpMessage;
     private final SessionImpl _sessionImpl;
-    private final long _rcvTime;
+    private Long _jmsExpirationFromTTL = null;
     private Destination _destination;
     private Destination _replyTo;
 
@@ -42,7 +42,6 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     {
         _amqpMessage = amqpMessage;
         _sessionImpl = sessionImpl;
-        _rcvTime = 0;
     }
 
     //message just received
@@ -59,14 +58,12 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         String replyToTypeString = (String) _amqpMessage.getMessageAnnotation(DestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         _replyTo = sessionImpl.getDestinationHelper().decodeDestination(replyTo, replyToTypeString, consumerDestination, true);
 
-        //If we have to synthesize JMSExpiration from TTL, we will need a receipt time
-        if(_amqpMessage.getAbsoluteExpiryTime() == null && _amqpMessage.getTtl() != null)
+        //If we have to synthesize JMSExpiration from only the AMQP TTL header, calculate it now
+        Long ttl = _amqpMessage.getTtl();
+        Long absoluteExpiryTime = _amqpMessage.getAbsoluteExpiryTime();
+        if(absoluteExpiryTime == null && ttl != null)
         {
-            _rcvTime = System.currentTimeMillis();
-        }
-        else
-        {
-            _rcvTime = 0;
+            _jmsExpirationFromTTL = System.currentTimeMillis() + ttl;
         }
     }
 
@@ -317,11 +314,9 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
             return absoluteExpiry;
         }
 
-        //derive from the ttl field if present
-        Long ttl = _amqpMessage.getTtl();
-        if(ttl != null)
+        if(_jmsExpirationFromTTL != null)
         {
-            return _rcvTime + ttl;
+            return _jmsExpirationFromTTL;
         }
 
         //failing the above, there is no expiration
@@ -331,6 +326,9 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public void setJMSExpiration(long expiration) throws JMSException
     {
+        //clear the ttl-derived value in case it was set, we are changing to an explicit value
+        _jmsExpirationFromTTL = null;
+
         if(expiration != 0)
         {
             _amqpMessage.setAbsoluteExpiryTime(expiration);
@@ -338,13 +336,6 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         else
         {
             _amqpMessage.setAbsoluteExpiryTime(null);
-
-            //As we are clearing JMSExpiration we must also clear the TTL field if it is
-            //set, or else it will lead to getJMSExpiration continuing to return a value
-            if(_amqpMessage.getTtl() != null)
-            {
-                _amqpMessage.setTtl(null);
-            }
         }
     }
 

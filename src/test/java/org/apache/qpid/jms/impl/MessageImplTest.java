@@ -797,17 +797,22 @@ public class MessageImplTest extends QpidJmsTestCase
         assertNull(_testAmqpMessage.getAbsoluteExpiryTime());
     }
 
+    /**
+     * As we are basing getJMSExpiration for incoming messages on the ttl field if absolute-expiry-time is missing, and must not set
+     * absolute-expiry-time if JMSExpiration is 0, ensure that setting JMSExpiration to 0 results in getJMSExpiration
+     * returning 0 if an incoming message had only the ttl field set.
+     */
     @Test
-    public void testSetJMSExpirationToZeroOnRecievedMessageWithTtlSetsUnderlyingTtlNull() throws Exception
+    public void testSetJMSExpirationToZeroOnRecievedMessageWithTtlFieldsResultsInGetJMSExpirationReturningZero() throws Exception
     {
         long ttl = 789L;
         _testAmqpMessage.setTtl(ttl);
+
         _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         _testMessage.setJMSExpiration(0);
 
         assertEquals("expected JMSExpiration value not present", 0L, _testMessage.getJMSExpiration());
-        assertNull(_testAmqpMessage.getTtl());
     }
 
     /**

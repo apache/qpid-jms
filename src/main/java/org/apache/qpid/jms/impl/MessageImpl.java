@@ -18,8 +18,13 @@
  */
 package org.apache.qpid.jms.impl;
 
+import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_TTL;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
+import java.util.Set;
 
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
@@ -31,11 +36,18 @@ import org.apache.qpid.jms.engine.AmqpMessage;
 
 public abstract class MessageImpl<T extends AmqpMessage> implements Message
 {
+    private static final long MAX_UINT = 0xFFFFFFFFL;
     private final T _amqpMessage;
     private final SessionImpl _sessionImpl;
     private Long _jmsExpirationFromTTL = null;
     private Destination _destination;
     private Destination _replyTo;
+
+    /**
+     * Used to record the value of JMS_AMQP_TTL property
+     * if it is explicitly set by the application
+     */
+    private Long _propJMS_AMQP_TTL = null;
 
     //message to be sent
     public MessageImpl(T amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl)
@@ -111,9 +123,28 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
 
     private void setApplicationProperty(String name, Object value) throws MessageFormatException
     {
-        //TODO: special case JMS_AMQP_TTL so that it gets set
-        //in the TTL field and not application-properties
         checkPropertyNameIsValid(name);
+
+        if(JMS_AMQP_TTL.equals(name))
+        {
+            Long ttl = null;
+            if(value instanceof Long)
+            {
+                ttl = (Long) value;
+            }
+
+            if(ttl != null && ttl >= 0 && ttl <= MAX_UINT)
+            {
+                _propJMS_AMQP_TTL = ttl;
+            }
+            else
+            {
+                throw new MessageFormatException(JMS_AMQP_TTL + " must be a long with value in range 0 to 2^31 - 1");
+            }
+
+            return;
+        }
+
         checkObjectPropertyValueIsValid(value);
 
         _amqpMessage.setApplicationProperty(name, value);
@@ -122,6 +153,11 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     private Object getApplicationProperty(String name)
     {
         checkPropertyNameIsValid(name);
+
+        if(JMS_AMQP_TTL.equals(name))
+        {
+            return _propJMS_AMQP_TTL;
+        }
 
         //TODO: handle non-JMS types?
         return _amqpMessage.getApplicationProperty(name);
@@ -360,11 +396,18 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Not Implemented");
+
+        //_propJMS_AMQP_TTL = null;
     }
 
     @Override
     public boolean propertyExists(String name) throws JMSException
     {
+        if(JMS_AMQP_TTL.equals(name))
+        {
+            return _propJMS_AMQP_TTL != null;
+        }
+
         return _amqpMessage.applicationPropertyExists(name);
     }
 
@@ -562,7 +605,18 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public Enumeration<?> getPropertyNames() throws JMSException
     {
-        return Collections.enumeration(_amqpMessage.getApplicationPropertyNames());
+        //Get the base names from the underlying AMQP message
+        Set<String> underlyingApplicationPropertyNames = _amqpMessage.getApplicationPropertyNames();
+
+        //Create a new list we can mutate
+        List<String> propNames = new ArrayList<String>(underlyingApplicationPropertyNames);
+
+        if(_propJMS_AMQP_TTL != null)
+        {
+            propNames.add(JMS_AMQP_TTL);
+        }
+
+        return Collections.enumeration(propNames);
     }
 
     @Override

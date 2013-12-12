@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.jms.impl;
 
+import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_TTL;
+
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -31,8 +33,7 @@ import org.apache.qpid.jms.engine.AmqpSentMessageToken;
 
 public class SenderImpl extends LinkImpl implements MessageProducer
 {
-    private static final long UINT_MAX = 0xFFFFFFFFL - 1;
-    private static final String JMS_AMQP_TTL = "JMS_AMQP_TTL";
+    private static final long UINT_MAX = 0xFFFFFFFFL;
     private AmqpSender _amqpSender;
     private Destination _destination;
 
@@ -82,13 +83,21 @@ public class SenderImpl extends LinkImpl implements MessageProducer
 
             if(message.propertyExists(JMS_AMQP_TTL))
             {
-                //use the requested value from the property
+                //Use the requested value from the property. 0 means clear TTL header.
                 long propTtl = message.getLongProperty(JMS_AMQP_TTL);
-                amqpMessage.setTtl(propTtl);
+                if(propTtl != 0)
+                {
+                    amqpMessage.setTtl(propTtl);
+                }
+                else if(amqpMessage.getTtl() != null)
+                {
+                    amqpMessage.setTtl(null);
+                }
             }
             else
             {
-                //set the AMQP header TTL if necessary and possible, otherwise ensure it is clear
+                //Set the AMQP header TTL to any non-default value implied by JMS TTL (if possible),
+                //otherwise ensure TTL header is clear.
                 if(timeToLive != Message.DEFAULT_TIME_TO_LIVE && timeToLive < UINT_MAX)
                 {
                     amqpMessage.setTtl(timeToLive);

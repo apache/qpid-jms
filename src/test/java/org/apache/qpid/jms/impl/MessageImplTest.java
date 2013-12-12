@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.jms.impl;
 
+import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_TTL;
 import static org.junit.Assert.*;
 
 import java.util.Enumeration;
@@ -555,7 +556,6 @@ public class MessageImplTest extends QpidJmsTestCase
         assertEquals(newDestinationExpected, _testMessage.getJMSDestination());
     }
 
-    //TODO:new
     // ====== JMSReplyTo =======
 
     @Test
@@ -712,6 +712,7 @@ public class MessageImplTest extends QpidJmsTestCase
         assertEquals("expected JMSExpiration value not present", 0L, _testMessage.getJMSExpiration());
         assertNull(_testAmqpMessage.getCreationTime());
     }
+
     // ====== JMSExpiration =======
 
     @Test
@@ -833,6 +834,153 @@ public class MessageImplTest extends QpidJmsTestCase
         _testMessage.setJMSExpiration(0);
 
         assertEquals("expected JMSExpiration value not present", 0L, _testMessage.getJMSExpiration());
+    }
+
+    // ====== JMS_AMQP_TTL property =======
+
+    @Test
+    public void testSetJMS_AMQP_TTL_PropertyRejectsNegatives() throws Exception
+    {
+        //check negatives are rejected
+        try
+        {
+            _testMessage.setLongProperty(JMS_AMQP_TTL, -1L);
+            fail("expected exception not thrown");
+        }
+        catch(MessageFormatException mfe)
+        {
+            //expected
+        }
+
+        //check values over 2^32 - 1 are rejected
+        try
+        {
+            _testMessage.setLongProperty(JMS_AMQP_TTL, 0X100000000L);
+            fail("expected exception not thrown");
+        }
+        catch(MessageFormatException mfe)
+        {
+            //expected
+        }
+    }
+
+    @Test
+    public void testSetJMS_AMQP_TTL_PropertyRejectsNonLongValue() throws Exception
+    {
+        //check an int is rejected
+        try
+        {
+            _testMessage.setIntProperty(JMS_AMQP_TTL, 1);
+            fail("expected exception not thrown");
+        }
+        catch(MessageFormatException mfe)
+        {
+            //expected
+        }
+    }
+
+    @Test
+    public void testJMS_AMQP_TTL_PropertyExists() throws Exception
+    {
+        assertFalse(_testMessage.propertyExists(JMS_AMQP_TTL));
+        _testMessage.setLongProperty(JMS_AMQP_TTL, 1L);
+        assertTrue(_testMessage.propertyExists(JMS_AMQP_TTL));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testJMS_AMQP_TTL_GetPropertyNamesOnNewMessage() throws Exception
+    {
+        //verify the name doesn't exist originally
+        Enumeration<String> names = (Enumeration<String>) _testMessage.getPropertyNames();
+        boolean containsJMS_AMQP_TTL = false;
+        while(names.hasMoreElements())
+        {
+            String prop = names.nextElement();
+            if(JMS_AMQP_TTL.equals(prop))
+            {
+                containsJMS_AMQP_TTL = true;
+            }
+        }
+
+        assertFalse(containsJMS_AMQP_TTL);
+
+        //set property
+        _testMessage.setLongProperty(JMS_AMQP_TTL, 1L);
+
+        //verify the namenow exists
+        names = (Enumeration<String>) _testMessage.getPropertyNames();
+        while(names.hasMoreElements())
+        {
+            String prop = names.nextElement();
+            if(JMS_AMQP_TTL.equals(prop))
+            {
+                containsJMS_AMQP_TTL = true;
+            }
+        }
+
+        assertTrue(containsJMS_AMQP_TTL);
+    }
+
+    @Test
+    public void testGetJMS_AMQP_TTL_PropertyOnNewMessage() throws Exception
+    {
+        try
+        {
+            _testMessage.getLongProperty(JMS_AMQP_TTL);
+            fail("expected exception not thrown");
+        }
+        catch(NumberFormatException nfe)
+        {
+            //expected, property isn't set, so it returns null, and so
+            //the null->Long conversion process failure applies
+        }
+    }
+
+    @Test
+    public void testJMS_AMQP_TTL_PropertyBehaviourOnRecievedMessageWithUnderlyingTtlFieldSet() throws Exception
+    {
+        _testAmqpMessage.setTtl(5L);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        //check the propertyExists method
+        assertFalse(_testMessage.propertyExists(JMS_AMQP_TTL));
+
+        //verify the name doesn't exist
+        @SuppressWarnings("unchecked")
+        Enumeration<String> names = (Enumeration<String>) _testMessage.getPropertyNames();
+        boolean containsJMS_AMQP_TTL = false;
+        while(names.hasMoreElements())
+        {
+            String prop = names.nextElement();
+            if(JMS_AMQP_TTL.equals(prop))
+            {
+                containsJMS_AMQP_TTL = true;
+            }
+        }
+        assertFalse(containsJMS_AMQP_TTL);
+
+        //verify getting the value returns a NFE
+        try
+        {
+            _testMessage.getLongProperty(JMS_AMQP_TTL);
+            fail("expected exception not thrown");
+        }
+        catch(NumberFormatException nfe)
+        {
+            //expected, property isn't set, so it returns null, and so
+            //the null->Long conversion process failure applies
+        }
+    }
+
+    @Test
+    public void testSetJMS_AMQP_TTL_PropertyDoesntSetEntryInUnderlyingApplicationProperties() throws Exception
+    {
+        assertFalse(_testAmqpMessage.applicationPropertyExists(JMS_AMQP_TTL));
+
+        _testMessage.setLongProperty(JMS_AMQP_TTL, 5L);
+
+        assertFalse(_testAmqpMessage.applicationPropertyExists(JMS_AMQP_TTL));
     }
 
     // ====== utility methods =======

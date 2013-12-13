@@ -175,6 +175,30 @@ public class MessageImplTest extends QpidJmsTestCase
         assertFalse(names.hasMoreElements());
     }
 
+    @Test
+    public void testClearPropertiesEmptiesProperties() throws Exception
+    {
+        String propertyName = "myProperty";
+
+        _testMessage.setObjectProperty(propertyName, "string");
+
+        _testMessage.clearProperties();
+
+        //check the prop no longer exists, returns null
+        assertFalse(_testMessage.propertyExists(propertyName));
+        assertNull(_testMessage.getObjectProperty(propertyName));
+
+        //check there are no properties
+        Enumeration<?> names = _testMessage.getPropertyNames();
+        int numProps = 0;
+        while(names.hasMoreElements())
+        {
+            numProps++;
+        }
+
+        assertEquals(0, numProps);
+    }
+
     // ======= String Properties =========
 
     @Test
@@ -980,7 +1004,44 @@ public class MessageImplTest extends QpidJmsTestCase
 
         _testMessage.setLongProperty(JMS_AMQP_TTL, 5L);
 
+        //verify that the underlying message doesn't have a JMS_AMQP_TTL entry in its
+        //application-properties section, as we don't transmit the value that way
         assertFalse(_testAmqpMessage.applicationPropertyExists(JMS_AMQP_TTL));
+    }
+
+    @Test
+    public void testJMS_AMQP_TTL_AfterClearProperties() throws Exception
+    {
+        _testMessage.setLongProperty(JMS_AMQP_TTL, 5L);
+
+        assertTrue(_testMessage.propertyExists(JMS_AMQP_TTL));
+
+        _testMessage.clearProperties();
+
+        //check the prop no longer exists
+        assertFalse(_testMessage.propertyExists(JMS_AMQP_TTL));
+
+        //verify getting the value returns a NFE
+        try
+        {
+            _testMessage.getLongProperty(JMS_AMQP_TTL);
+            fail("expected exception not thrown");
+        }
+        catch(NumberFormatException nfe)
+        {
+            //expected, property isn't set, so it returns null, and so
+            //the null->Long conversion process failure applies
+        }
+
+        //check there are no properties
+        Enumeration<?> names = _testMessage.getPropertyNames();
+        int numProps = 0;
+        while(names.hasMoreElements())
+        {
+            numProps++;
+        }
+
+        assertEquals(0, numProps);
     }
 
     // ====== utility methods =======

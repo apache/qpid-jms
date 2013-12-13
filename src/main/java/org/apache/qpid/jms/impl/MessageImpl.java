@@ -123,6 +123,8 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
 
     private void setApplicationProperty(String name, Object value) throws MessageFormatException
     {
+        //TODO: check properties read/write state
+
         checkPropertyNameIsValid(name);
 
         if(JMS_AMQP_TTL.equals(name))
@@ -394,10 +396,10 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public void clearProperties() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        //TODO: toggle properties read/write state
 
-        //_propJMS_AMQP_TTL = null;
+        _amqpMessage.clearAllApplicationProperties();
+        _propJMS_AMQP_TTL = null;
     }
 
     @Override

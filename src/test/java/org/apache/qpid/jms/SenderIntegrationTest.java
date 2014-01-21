@@ -40,6 +40,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSect
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.junit.Test;
 
@@ -206,6 +207,78 @@ public class SenderIntegrationTest extends QpidJmsTestCase
             Message message = session.createTextMessage(text);
 
             producer.send(message, Message.DEFAULT_DELIVERY_MODE, Message.DEFAULT_PRIORITY, ttl);
+        }
+    }
+
+    /**
+     * Test that when a message is sent with default priority of 4, the emitted AMQP message
+     * has no value in the header priority field, since the default for that field is already 4.
+     */
+    @Test
+    public void testDefaultPriorityProducesMessagesWithoutPriorityField() throws Exception
+    {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
+        {
+            Connection connection = _testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            MessageProducer producer = session.createProducer(queue);
+
+            //Create and transfer a new message
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withPriority(equalTo(null));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createTextMessage();
+
+            assertEquals(Message.DEFAULT_PRIORITY, message.getJMSPriority());
+
+            producer.send(message);
+
+            assertEquals(Message.DEFAULT_PRIORITY, message.getJMSPriority());
+        }
+    }
+
+    /**
+     * Test that when a message is sent with a non-default priority, the emitted AMQP message
+     * has that value in the header priority field, and the JMS message has had JMSPriority set.
+     */
+    @Test
+    public void testNonDefaultPriorityProducesMessagesWithPriorityFieldAndSetsJMSPriority() throws Exception
+    {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
+        {
+            Connection connection = _testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            MessageProducer producer = session.createProducer(queue);
+
+            byte priority = 5;
+
+            //Create and transfer a new message
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withPriority(equalTo(UnsignedByte.valueOf(priority)));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createTextMessage();
+
+            assertEquals(Message.DEFAULT_PRIORITY, message.getJMSPriority());
+
+            producer.send(message, DeliveryMode.PERSISTENT, priority, Message.DEFAULT_TIME_TO_LIVE);
+
+            assertEquals(priority, message.getJMSPriority());
         }
     }
 }

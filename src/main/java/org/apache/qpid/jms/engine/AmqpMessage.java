@@ -28,6 +28,7 @@ import java.util.Set;
 
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
@@ -38,6 +39,8 @@ import org.apache.qpid.proton.message.Message;
 
 public abstract class AmqpMessage
 {
+    static final short DEFAULT_PRIORITY = 4;
+
     private final Delivery _delivery;
     private final Message _message;
     private final AmqpConnection _amqpConnection;
@@ -172,6 +175,51 @@ public abstract class AmqpMessage
         else
         {
             _message.setTtl(timeInMillis);
+        }
+    }
+
+    /**
+     * @return the underlying priority, or 4 (the default) if none exists
+     */
+    public short getPriority()
+    {
+        if(_message.getHeader() == null)
+        {
+            return DEFAULT_PRIORITY;
+        }
+        else
+        {
+            UnsignedByte priority = _message.getHeader().getPriority();
+            if(priority == null)
+            {
+                return DEFAULT_PRIORITY;
+            }
+            else
+            {
+                return priority.shortValue();
+            }
+        }
+    }
+
+    /**
+     * @param priority the priority, where a value of 4 clears the underlying field as it is the default
+     */
+    public void setPriority(short priority)
+    {
+        if(priority == DEFAULT_PRIORITY)
+        {
+            if(_message.getHeader() == null)
+            {
+                return;
+            }
+            else
+            {
+                _message.getHeader().setPriority(null);
+            }
+        }
+        else
+        {
+            _message.setPriority(priority);
         }
     }
 

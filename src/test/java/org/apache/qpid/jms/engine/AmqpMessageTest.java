@@ -29,6 +29,7 @@ import java.util.Set;
 import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
 import org.apache.qpid.proton.amqp.messaging.Header;
@@ -226,6 +227,99 @@ public class AmqpMessageTest extends QpidJmsTestCase
 
         assertNull(testAmqpMessage.getMessage().getHeader().getTtl());
         assertNull(testAmqpMessage.getTtl());
+    }
+
+    /**
+     * New messages lack the header section, as tested by {@link #testNewMessageHasNoUnderlyingHeaderSection}.
+     *
+     * In this case, the AMQP spec says the priority has default value of 4.
+     */
+    @Test
+    public void testGetPriorityIs4ForNewMessage()
+    {
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+
+        assertEquals("expected priority value not found", 4, testAmqpMessage.getPriority());
+    }
+
+    /**
+     * When messages have a header section, but lack the priority field,
+     * the AMQP spec says the priority has default value of 4.
+     */
+    @Test
+    public void testGetPriorityIs4ForRecievedMessageWithHeaderButWithoutPriority()
+    {
+        Message message = Proton.message();
+
+        Header header = new Header();
+        message.setHeader(header);
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        assertEquals("expected priority value not found", 4, testAmqpMessage.getPriority());
+    }
+
+    /**
+     * When messages have a header section, which have a priority value, ensure it is returned.
+     */
+    @Test
+    public void testGetPriorityForRecievedMessageWithHeaderWithPriority()
+    {
+        //value over 10
+        byte priority = 11;
+
+        Message message = Proton.message();
+        Header header = new Header();
+        message.setHeader(header);
+        header.setPriority(UnsignedByte.valueOf(priority));
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        assertEquals("expected priority value not found", priority, testAmqpMessage.getPriority());
+    }
+
+    /**
+     * Test that setting the Priority to a non-default value results in the underlying
+     * message field being populated appropriately, and the value being returned from the Getter.
+     */
+    @Test
+    public void testSetGetNonDefaultPriorityForNewMessage()
+    {
+        //value over 10
+        byte priority = 11;
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        testAmqpMessage.setPriority(priority);
+
+        Message underlying = testAmqpMessage.getMessage();
+        assertEquals("expected priority value not found", priority, underlying.getPriority());
+
+        assertEquals("expected priority value not found", priority, testAmqpMessage.getPriority());
+    }
+
+    /**
+     * Receive message which has a header section with a priority value. Ensure the headers
+     * underlying field value is cleared when the priority is set to the default priority of 4.
+     */
+    @Test
+    public void testSetPriorityToDefaultOnRecievedMessageWithPriorityClearsPriorityField()
+    {
+        byte priority = 11;
+
+        Message message = Proton.message();
+        Header header = new Header();
+        message.setHeader(header);
+        header.setPriority(UnsignedByte.valueOf(priority));
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        testAmqpMessage.setPriority(AmqpMessage.DEFAULT_PRIORITY);
+
+        //check the expected value is still returned
+        assertEquals("expected priority value not returned", AmqpMessage.DEFAULT_PRIORITY, testAmqpMessage.getPriority());
+
+        //check the underlying header field was actually cleared rather than set to AmqpMessage.DEFAULT_PRIORITY
+        Message underlying = testAmqpMessage.getMessage();
+        assertNull("underlying header priority field was not cleared", underlying.getHeader().getPriority());
     }
 
     // ====== Properties =======

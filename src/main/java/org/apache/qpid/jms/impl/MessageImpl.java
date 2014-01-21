@@ -36,6 +36,7 @@ import org.apache.qpid.jms.engine.AmqpMessage;
 
 public abstract class MessageImpl<T extends AmqpMessage> implements Message
 {
+    private static final int JMS_MAX_PRIORITY = 9;
     private static final long MAX_UINT = 0xFFFFFFFFL;
     private final T _amqpMessage;
     private final SessionImpl _sessionImpl;
@@ -382,15 +383,24 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public int getJMSPriority() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        short priority = _amqpMessage.getPriority();
+
+        if(priority > JMS_MAX_PRIORITY)
+        {
+            return JMS_MAX_PRIORITY;
+        }
+        else
+        {
+            return priority;
+        }
     }
 
     @Override
     public void setJMSPriority(int priority) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        Integer i = priority;
+
+        _amqpMessage.setPriority(i.shortValue());
     }
 
     @Override

@@ -27,6 +27,7 @@ import java.util.Enumeration;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
+import javax.jms.Message;
 import javax.jms.MessageFormatException;
 import javax.jms.Queue;
 import javax.jms.Topic;
@@ -858,6 +859,44 @@ public class MessageImplTest extends QpidJmsTestCase
         _testMessage.setJMSExpiration(0);
 
         assertEquals("expected JMSExpiration value not present", 0L, _testMessage.getJMSExpiration());
+    }
+
+    // ====== JMSPriority =======
+
+    @Test
+    public void testGetJMSPriorityOnNewMessage() throws Exception
+    {
+        assertEquals("expected JMSPriority value not present", Message.DEFAULT_PRIORITY, _testMessage.getJMSPriority());
+    }
+
+    @Test
+    public void testSetGetJMSPriorityOnNewMessage() throws Exception
+    {
+        int priority = Message.DEFAULT_PRIORITY + 1;
+        _testMessage.setJMSPriority(priority);
+
+        //check value was set on underlying message
+        assertEquals(priority, _testAmqpMessage.getPriority());
+
+        //check retrieving value yeilds expected value
+        assertEquals("expected JMSPriority value not present", priority, _testMessage.getJMSPriority());
+    }
+
+    /**
+     * AMQP supports more priority levels (256, 0-255) than JMS does (10, 0-9). If a message is received
+     * with a priority of over 9, JMSPriority should be capped at 9.
+     * @throws Exception
+     */
+    @Test
+    public void testGetJMSPriorityOnRecievedMessageWithNonJmsPriorityIsCappedAt9() throws Exception
+    {
+        short priority = 200;
+        _testAmqpMessage.setPriority(priority);
+
+        //create a received message
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        assertEquals("expected JMSPriority value to be capped at 9", 9, _testMessage.getJMSPriority());
     }
 
     // ====== JMS_AMQP_TTL property =======

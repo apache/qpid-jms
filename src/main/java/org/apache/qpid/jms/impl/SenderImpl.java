@@ -46,16 +46,13 @@ public class SenderImpl extends LinkImpl implements MessageProducer
 
     private void sendMessage(Message message, int deliveryMode, int priority, long timeToLive) throws JMSException
     {
-        //TODO
-        if(priority != Message.DEFAULT_PRIORITY)
-        {
-            throw new IllegalArgumentException("Only default priority is currently supported");
-        }
-
         getConnectionImpl().lock();
         try
         {
             long timestamp = System.currentTimeMillis();
+
+            //set the priority
+            message.setJMSPriority(priority);
 
             //set the timestamp
             message.setJMSTimestamp(timestamp);

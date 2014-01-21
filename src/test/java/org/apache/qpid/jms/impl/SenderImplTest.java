@@ -130,6 +130,29 @@ public class SenderImplTest extends QpidJmsTestCase
     }
 
     @Test
+    public void testSenderSetsJMSPriorityOnMessage() throws Exception
+    {
+        //Create mock sent message token, ensure that it is immediately marked as Accepted
+        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
+        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
+        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
+        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+
+        SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, _mockSession, null);
+
+        assertEquals(Message.DEFAULT_PRIORITY, testMessage.getJMSPriority());
+
+        int priority = 9;
+        senderImpl.send(testMessage, Message.DEFAULT_DELIVERY_MODE, priority, Message.DEFAULT_TIME_TO_LIVE);
+
+        //verify the priority used to send the message was set
+        assertEquals("sender failed to set JMSPriority", priority, testMessage.getJMSPriority());
+    }
+
+    @Test
     public void testSenderSetsAbsoluteExpiryAndTtlFieldsOnUnderlyingMessage() throws Exception
     {
         //Create mock sent message token, ensure that it is immediately marked as Accepted

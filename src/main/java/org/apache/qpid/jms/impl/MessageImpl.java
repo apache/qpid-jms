@@ -19,6 +19,7 @@
 package org.apache.qpid.jms.impl;
 
 import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_TTL;
+import static org.apache.qpid.jms.impl.MessageIdHelper.JMS_ID_PREFIX;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -173,15 +174,35 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public String getJMSMessageID() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        MessageIdHelper messageIdHelper = _sessionImpl.getMessageIdHelper();
+
+        String baseIdString = messageIdHelper.toBaseMessageIdString(_amqpMessage.getMessageId());
+
+        if(baseIdString == null)
+        {
+            return null;
+        }
+        else
+        {
+            return JMS_ID_PREFIX + baseIdString;
+        }
     }
 
     @Override
     public void setJMSMessageID(String id) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        MessageIdHelper messageIdHelper = _sessionImpl.getMessageIdHelper();
+
+        //We permit null, but otherwise ensure that the value starts "ID:"
+        if(id != null && !messageIdHelper.hasMessageIdPrefix(id))
+        {
+            throw new QpidJmsException("Provided JMSMessageID does not have required '" + JMS_ID_PREFIX + "' prefix");
+        }
+
+        String stripped = messageIdHelper.stripMessageIdPrefix(id);
+        //TODO: convert the string if necessary, i.e. it indicates an encoded AMQP type
+
+        _amqpMessage.setMessageId(stripped);
     }
 
     @Override

@@ -58,6 +58,7 @@ public class MessageImplTest extends QpidJmsTestCase
         _mockConnectionImpl = Mockito.mock(ConnectionImpl.class);
         _mockSessionImpl = Mockito.mock(SessionImpl.class);
         Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
+        Mockito.when(_mockSessionImpl.getMessageIdHelper()).thenReturn(new MessageIdHelper());
 
         _testAmqpMessage = new TestAmqpMessage();
         _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl);
@@ -897,6 +898,130 @@ public class MessageImplTest extends QpidJmsTestCase
         _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertEquals("expected JMSPriority value to be capped at 9", 9, _testMessage.getJMSPriority());
+    }
+
+    //TODO: remove this marker comment
+    // ====== JMSMessageID =======
+
+    @Test
+    public void testGetJMSMessageIDOnNewMessage() throws Exception
+    {
+        //Should be null as it has not been set explicitly, and
+        //the message has not been sent anywhere
+        assertNull(_testMessage.getJMSMessageID());
+    }
+
+    /**
+     * Test that {@link MessageImpl#setJMSMessageID(String)} accepts null and clears an existing value
+     */
+    @Test
+    public void testSetJMSMessageIDAcceptsNull() throws Exception
+    {
+        //test setting null on fresh message is accepted
+        _testMessage.setJMSMessageID(null);
+        assertNull("JMSMessageID should still be null", _testMessage.getJMSMessageID());
+
+        //test that setting null clears an existing value
+        _testMessage.setJMSMessageID("ID:something");
+        assertNotNull("JMSMessageID should not be null anymore", _testMessage.getJMSMessageID());
+        assertNotNull("Underlying message id should not be null anymore", _testAmqpMessage.getMessageId());
+
+        _testMessage.setJMSMessageID(null);
+        assertNull("JMSMessageID should be null again", _testMessage.getJMSMessageID());
+        assertNull("Underlying message id should be null again", _testAmqpMessage.getMessageId());
+    }
+
+    /**
+     * Test that {@link MessageImpl#setJMSMessageID(String)} throws JMSException when
+     * the provided non-null value doesn't begin with "ID:".
+     */
+    @Test
+    public void testSetJMSMessageIDOnNewMessageThrowsExceptionForNonIdValues() throws Exception
+    {
+        try
+        {
+            //"ID:" is present, but in the middle instead of required prefix
+            _testMessage.setJMSMessageID("Central:ID:Included");
+            fail("Expected exception when setting non-null value without the required JMSMessageID 'ID:' prefix");
+        }
+        catch(JMSException jmse)
+        {
+            //expected
+        }
+
+        try
+        {
+            //"ID:" isn't present at all.
+            _testMessage.setJMSMessageID("MissingEntirely");
+            fail("Expected exception when setting non-null value without the required JMSMessageID 'ID:' prefix");
+        }
+        catch(JMSException jmse)
+        {
+            //expected
+        }
+
+        try
+        {
+            //Prefix exists, but with the wrong case (it must be "ID:").
+            _testMessage.setJMSMessageID("id:WrongCase");
+            fail("Expected exception when setting non-null value without the required JMSMessageID 'ID:' prefix");
+        }
+        catch(JMSException jmse)
+        {
+            //expected
+        }
+    }
+
+    /**
+     * Test that {@link MessageImpl#setJMSMessageID(String)} sets the expected value
+     * on the underlying message, i.e the JMS message ID minus the "ID:" prefix.
+     */
+    @Test
+    public void testSetJMSMessageIDSetsUnderlyingMessageWithString() throws Exception
+    {
+        String baseId = "something";
+        String jmsId = "ID:" + baseId;
+
+        _testMessage.setJMSMessageID(jmsId);
+
+        assertNotNull("Underlying message id should not be null", _testAmqpMessage.getMessageId());
+        assertEquals("Underlying message id value was not as expected", baseId, _testAmqpMessage.getMessageId());
+    }
+
+    /**
+     * Test that receiving a message with a string typed message-id value results in the
+     * expected JMSMessageID value being returned, i.e. the base string plus the JMS "ID:" prefix.
+     */
+    @Test
+    public void testGetJMSMessageIdOnRecievedMessageWithString() throws Exception
+    {
+        getJMSMessageIdOnRecievedMessageWithStringTestImpl(false);
+    }
+
+    /**
+     * Test that receiving a message with a string typed message-id value results in the
+     * expected JMSMessageID value being returned, i.e. the base string plus the JMS "ID:" prefix.
+     */
+    @Test
+    public void testGetJMSMessageIdOnRecievedMessageWithStringAlreadyContainingPrefix() throws Exception
+    {
+        getJMSMessageIdOnRecievedMessageWithStringTestImpl(true);
+    }
+
+    private void getJMSMessageIdOnRecievedMessageWithStringTestImpl(boolean prefixAlreadyExists) throws JMSException
+    {
+        String baseId = "something";
+        if(prefixAlreadyExists)
+        {
+            baseId = "ID:" + baseId;
+        }
+
+        String expectedJmsMessageId = "ID:" + baseId;
+
+        _testAmqpMessage.setMessageId(baseId);
+        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        assertEquals("expected JMSMessageID value not present", expectedJmsMessageId, _testMessage.getJMSMessageID());
     }
 
     // ====== JMS_AMQP_TTL property =======

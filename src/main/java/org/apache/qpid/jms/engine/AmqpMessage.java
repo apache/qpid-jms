@@ -20,16 +20,21 @@
  */
 package org.apache.qpid.jms.engine;
 
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import org.apache.qpid.proton.Proton;
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
+import org.apache.qpid.proton.amqp.UnsignedLong;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
@@ -424,6 +429,82 @@ public abstract class AmqpMessage
         {
             _message.setExpiryTime(timeInMillis);
         }
+    }
+
+    /**
+     * Get the MessageId.
+     *
+     * If present, the returned object may be a String, UUID,
+     * ByteBuffer (representing binary), or BigInteger (representing ulong).
+     *
+     * @return the messageId, or null if there isn't any
+     */
+    public Object getMessageId()
+    {
+        Object underlyingMessageId = _message.getMessageId();
+
+        if(underlyingMessageId instanceof Binary)
+        {
+            return ((Binary) underlyingMessageId).asByteBuffer();
+        }
+        else if(underlyingMessageId instanceof UnsignedLong)
+        {
+            return ((UnsignedLong) underlyingMessageId).bigIntegerValue();
+        }
+        else
+        {
+            return underlyingMessageId;
+        }
+    }
+
+    /**
+     * Set a string message-id value on the message.
+     */
+    public void setMessageId(String messageId)
+    {
+        setUnderlyingMessageId(messageId);
+    }
+
+    /**
+     * Set a uuid message-id value on the message.
+     */
+    public void setMessageId(UUID messageId)
+    {
+        setUnderlyingMessageId(messageId);
+    }
+
+    /**
+     * Set an ulong (represented here as a BigInteger) message-id value on the message.
+     *
+     * @param messageId the value to set
+     * @throws IllegalArgumentException if the value is not within the ulong range of [0 - 2^64)
+     */
+    public void setMessageId(BigInteger messageId) throws IllegalArgumentException
+    {
+        if(messageId.signum() == -1 || messageId.bitLength() > 64)
+        {
+            throw new IllegalArgumentException("Value \""+messageId+"\" lies outside the range [0 - 2^64).");
+        }
+
+        //TODO: add UnsignedLong.valueOf(BigInteger)?
+        setUnderlyingMessageId(UnsignedLong.valueOf(messageId.toString()));
+    }
+
+    /**
+     * Set a Binary (represented here as a ByteBuffer) message-id value on the message.
+     *
+     * @param messageId the value to set
+     */
+    public void setMessageId(ByteBuffer messageId)
+    {
+        Binary bin = Binary.create(messageId);
+
+        setUnderlyingMessageId(bin);
+    }
+
+    private void setUnderlyingMessageId(Object messageId)
+    {
+        _message.setMessageId(messageId);
     }
 
     //===== Application Properties ======

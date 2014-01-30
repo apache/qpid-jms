@@ -63,6 +63,7 @@ public class ConnectionImpl implements Connection
     private volatile boolean _isStarted;
 
     private DestinationHelper _destinationHelper;
+    private MessageIdHelper _messageIdHelper;
 
     /**
      * TODO: accept a client id
@@ -97,6 +98,7 @@ public class ConnectionImpl implements Connection
         }
 
         _destinationHelper = new DestinationHelper();
+        _messageIdHelper = new MessageIdHelper();
     }
 
     void waitUntil(Predicate condition, long timeoutMillis) throws JmsTimeoutException, JmsInterruptedException
@@ -287,7 +289,7 @@ public class ConnectionImpl implements Connection
         {
             AmqpSession amqpSession = _amqpConnection.createSession();
 
-            SessionImpl session = new SessionImpl(acknowledgeMode, amqpSession, this, _destinationHelper);
+            SessionImpl session = new SessionImpl(acknowledgeMode, amqpSession, this, _destinationHelper, _messageIdHelper);
             stateChanged();
             session.establish();
 

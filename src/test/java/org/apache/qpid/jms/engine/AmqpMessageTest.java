@@ -22,15 +22,20 @@ package org.apache.qpid.jms.engine;
 
 import static org.junit.Assert.*;
 
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.proton.Proton;
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
+import org.apache.qpid.proton.amqp.UnsignedLong;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
 import org.apache.qpid.proton.amqp.messaging.Header;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
@@ -47,6 +52,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     private static final String TEST_PROP_B = "TEST_PROP_B";
     private static final String TEST_VALUE_STRING_A = "TEST_VALUE_STRING_A";
     private static final String TEST_VALUE_STRING_B = "TEST_VALUE_STRING_B";
+    private static final byte[] TWO_TO_64_BYTES = new byte[] { (byte) 1, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0 };
 
     private AmqpConnection _mockAmqpConnection;
     private Delivery _mockDelivery;
@@ -549,6 +555,188 @@ public class AmqpMessageTest extends QpidJmsTestCase
 
         assertNull(testAmqpMessage.getMessage().getProperties().getAbsoluteExpiryTime());
         assertNull(testAmqpMessage.getAbsoluteExpiryTime());
+    }
+
+    //TODO: delete this marker comment
+    @Test
+    public void testGetMessageIdIsNullOnNewMessage()
+    {
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+
+        assertNull("Expected messageId to be null on new message", testAmqpMessage.getMessageId());
+    }
+
+    /**
+     * Test that setting then getting a String as the messageId returns the expected value
+     */
+    @Test
+    public void testSetGetMessageIdOnNewMessageWithString()
+    {
+        String testMessageId = "myStringMessageId";
+
+        AmqpMessage testAmqpMessage = new TestAmqpMessage();
+        testAmqpMessage.setMessageId(testMessageId);
+
+        assertEquals("Expected messageId not returned", testMessageId, testAmqpMessage.getMessageId());
+    }
+
+    /**
+     * Test that getting the messageId when using an underlying received message with a
+     * String message id returns the expected value.
+     */
+    @Test
+    public void testGetMessageIdOnReceivedMessageWithString()
+    {
+        messageIdOnReceivedMessageTestImpl("myMessageIdString");
+    }
+
+    /**
+     * Test that setting then getting a UUID as the messageId returns the expected value
+     */
+    @Test
+    public void testSetGetMessageIdOnNewMessageWithUUID()
+    {
+        UUID testMessageId = UUID.randomUUID();
+
+        AmqpMessage testAmqpMessage = new TestAmqpMessage();
+        testAmqpMessage.setMessageId(testMessageId);
+
+        assertEquals("Expected messageId not returned", testMessageId, testAmqpMessage.getMessageId());
+    }
+
+    /**
+     * Test that getting the messageId when using an underlying received message with a
+     * UUID message id returns the expected value.
+     */
+    @Test
+    public void testGetMessageIdOnReceivedMessageWithUUID()
+    {
+        messageIdOnReceivedMessageTestImpl(UUID.randomUUID());
+    }
+
+    /**
+     * Test that setting then getting a ulong messageId (using BigInteger) returns the expected value
+     */
+    @Test
+    public void testSetGetMessageIdOnNewMessageWithULong()
+    {
+        BigInteger testMessageId = BigInteger.valueOf(123456789);
+
+        AmqpMessage testAmqpMessage = new TestAmqpMessage();
+        testAmqpMessage.setMessageId(testMessageId);
+
+        assertEquals("Expected messageId not returned", testMessageId, testAmqpMessage.getMessageId());
+    }
+
+    /**
+     * Test that getting the messageId when using an underlying received message with a
+     * ulong message id (using BigInteger) returns the expected value.
+     */
+    @Test
+    public void testGetMessageIdOnReceivedMessageWithLong()
+    {
+        messageIdOnReceivedMessageTestImpl(BigInteger.valueOf(123456789L));
+    }
+
+    /**
+     * Test that attempting to set a ulong messageId (using BigInteger) with a value
+     * outwith the allowed [0 - 2^64) range results in an IAE being thrown
+     */
+    @Test
+    public void testSetMessageIdOnNewMessageWithULongOurOfRangeThrowsIAE()
+    {
+        //negative value
+        AmqpMessage testAmqpMessage = new TestAmqpMessage();
+        try
+        {
+            testAmqpMessage.setMessageId(BigInteger.valueOf(-1));
+            fail("expected exception was not thrown");
+        }
+        catch(IllegalArgumentException iae)
+        {
+            //expected
+        }
+
+        //value 1 over max
+        BigInteger aboveLimit = new BigInteger(TWO_TO_64_BYTES);
+        try
+        {
+            testAmqpMessage.setMessageId(aboveLimit);
+            fail("expected exception was not thrown");
+        }
+        catch(IllegalArgumentException iae)
+        {
+            //expected
+        }
+
+        //confirm subtracting 1 to get the max value then allows success
+        BigInteger onLimit = aboveLimit.subtract(BigInteger.ONE);
+        testAmqpMessage.setMessageId(onLimit);
+    }
+
+    /**
+     * Test that setting then getting binary as the messageId returns the expected value
+     */
+    @Test
+    public void testSetGetMessageIdOnNewMessageWithBinary()
+    {
+        ByteBuffer testMessageId = createByteBufferForBinaryId();
+
+        AmqpMessage testAmqpMessage = new TestAmqpMessage();
+        testAmqpMessage.setMessageId(testMessageId);
+
+        assertEquals("Expected messageId not returned", testMessageId, testAmqpMessage.getMessageId());
+    }
+
+    /**
+     * Test that getting the messageId when using an underlying received message with a
+     * Binary message id returns the expected ByteBuffer value.
+     */
+    @Test
+    public void testGetMessageIdOnReceivedMessageWithBinary()
+    {
+        ByteBuffer testMessageId = createByteBufferForBinaryId();
+
+        messageIdOnReceivedMessageTestImpl(testMessageId);
+    }
+
+    private void messageIdOnReceivedMessageTestImpl(Object testMessageId)
+    {
+        Object underlyingIdObject = testMessageId;
+        if(testMessageId instanceof ByteBuffer)
+        {
+            //The proton message uses a Binary wrapper for binary ids, not a ByteBuffer
+            underlyingIdObject = Binary.create((ByteBuffer) testMessageId);
+        }
+        else if(testMessageId instanceof BigInteger)
+        {
+            //The proton message uses an UnsignedLong wrapper
+            underlyingIdObject = UnsignedLong.valueOf(((BigInteger) testMessageId).toString());
+        }
+
+        Message message = Proton.message();
+
+        Properties props = new Properties();
+        props.setMessageId(underlyingIdObject);
+        message.setProperties(props);
+
+        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        assertNotNull("Expected a messageId on received message", testAmqpMessage.getMessageId());
+
+        assertEquals("Incorrect messageId value received", testMessageId, testAmqpMessage.getMessageId());
+    }
+
+    private ByteBuffer createByteBufferForBinaryId()
+    {
+        byte length = 10;
+        byte[] idBytes = new byte[length];
+        for(int i = 0; i < length; i++)
+        {
+            idBytes[i] = (byte) (length - i);
+        }
+
+        return ByteBuffer.wrap(idBytes);
     }
 
     // ====== Message Annotations =======

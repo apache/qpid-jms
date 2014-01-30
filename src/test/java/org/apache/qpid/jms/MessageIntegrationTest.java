@@ -25,7 +25,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.math.BigInteger;
 import java.util.Date;
+import java.util.UUID;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -38,6 +40,7 @@ import javax.jms.TextMessage;
 import javax.jms.Topic;
 
 import org.apache.qpid.jms.impl.DestinationHelper;
+import org.apache.qpid.jms.impl.MessageIdHelper;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.ApplicationPropertiesDescribedType;
@@ -50,6 +53,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSect
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.DescribedType;
+import org.apache.qpid.proton.amqp.UnsignedLong;
 import org.junit.Test;
 
 public class MessageIntegrationTest extends QpidJmsTestCase
@@ -447,6 +451,74 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             assertNotNull(receivedMessage);
             assertEquals(timestamp, receivedMessage.getJMSExpiration());
+        }
+    }
+
+    /**
+     * Tests that receiving a message with a string typed message-id results in returning the
+     * expected value for JMSMessageId where the JMS "ID:" prefix has been added.
+     */
+    @Test
+    public void testReceivedMessageWithStringMessageIdReturnsExpectedJMSMessageID() throws Exception
+    {
+        receivedMessageWithMessageIdTestImpl("myTestMessageIdString");
+    }
+
+    /**
+     * Tests that receiving a message with a UUID typed message-id results in returning the
+     * expected value for JMSMessageId where the JMS "ID:" prefix has been added to the UUID.tostring()
+     */
+    @Test
+    public void testReceivedMessageWithUUIDMessageIdReturnsExpectedJMSMessageID() throws Exception
+    {
+        receivedMessageWithMessageIdTestImpl(UUID.randomUUID());
+    }
+
+    /**
+     * Tests that receiving a message with a UUID typed message-id results in returning the
+     * expected value for JMSMessageId where the JMS "ID:" prefix has been added to the UUID.tostring()
+     */
+    @Test
+    public void testReceivedMessageWithLongMessageIdReturnsExpectedJMSMessageID() throws Exception
+    {
+        receivedMessageWithMessageIdTestImpl(BigInteger.valueOf(123456789L));
+    }
+
+    private void receivedMessageWithMessageIdTestImpl(Object messageId) throws Exception
+    {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
+        {
+            Connection connection = _testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            Object underlyingAmqpMessageId = messageId;
+            if(underlyingAmqpMessageId instanceof BigInteger)
+            {
+                //Proton uses UnsignedLong
+                underlyingAmqpMessageId = UnsignedLong.valueOf(underlyingAmqpMessageId.toString());
+            }
+
+            PropertiesDescribedType props = new PropertiesDescribedType();
+            props.setMessageId(underlyingAmqpMessageId);
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, props, null, amqpValueNullContent);
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+            Message receivedMessage = messageConsumer.receive(1000);
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            assertNotNull(receivedMessage);
+            String expectedBaseIdString = new MessageIdHelper().toBaseMessageIdString(underlyingAmqpMessageId);
+
+            assertEquals("ID:" + expectedBaseIdString, receivedMessage.getJMSMessageID());
         }
     }
 }

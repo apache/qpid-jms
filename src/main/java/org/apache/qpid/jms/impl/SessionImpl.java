@@ -55,13 +55,15 @@ public class SessionImpl implements Session
     private final AmqpSession _amqpSession;
     private final ConnectionImpl _connectionImpl;
     private final DestinationHelper _destinationHelper;
+    private final MessageIdHelper _messageIdHelper;
 
-    public SessionImpl(int acknowledgeMode, AmqpSession amqpSession, ConnectionImpl connectionImpl, DestinationHelper destinationHelper)
+    public SessionImpl(int acknowledgeMode, AmqpSession amqpSession, ConnectionImpl connectionImpl, DestinationHelper destinationHelper, MessageIdHelper messageIdHelper)
     {
         _acknowledgeMode = acknowledgeMode;
         _amqpSession = amqpSession;
         _connectionImpl = connectionImpl;
         _destinationHelper = destinationHelper;
+        _messageIdHelper = messageIdHelper;
     }
 
      void establish() throws JmsTimeoutException, JmsInterruptedException
@@ -122,6 +124,11 @@ public class SessionImpl implements Session
         {
             _connectionImpl.releaseLock();
         }
+    }
+
+    public MessageIdHelper getMessageIdHelper()
+    {
+        return _messageIdHelper;
     }
 
     DestinationHelper getDestinationHelper()

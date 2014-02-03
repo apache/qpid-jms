@@ -36,6 +36,9 @@
     <hamcrest-version>1.3</hamcrest-version>
     <junit-version>4.10</junit-version>
     <mockito-version>1.9.5</mockito-version>
+
+    <!-- plugin versions -->
+    <apache-rat-plugin-version>0.10</apache-rat-plugin-version>
   </properties>
 
   <dependencies>
@@ -73,6 +76,17 @@
   </dependencies>
 
   <build>
+    <pluginManagement>
+      <plugins>
+        <!-- override the parent pom, set versions etc -->
+        <plugin>
+          <groupId>org.apache.rat</groupId>
+          <artifactId>apache-rat-plugin</artifactId>
+          <version>${apache-rat-plugin-version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -96,6 +110,11 @@
           </systemPropertyVariables>
         </configuration>
       </plugin>
+
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+      </plugin>
     </plugins>
   </build>
 
@@ -110,6 +129,12 @@
           <threshold>Low</threshold>
           <effort>Max</effort>
         </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <version>${apache-rat-plugin-version}</version>
       </plugin>
     </plugins>
   </reporting>

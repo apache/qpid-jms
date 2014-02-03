@@ -33,6 +33,7 @@ import javax.jms.Queue;
 import javax.jms.Topic;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
+import org.apache.qpid.jms.engine.AmqpMessage;
 import org.apache.qpid.jms.engine.TestAmqpMessage;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,8 +43,8 @@ public class MessageImplTest extends QpidJmsTestCase
 {
     private ConnectionImpl _mockConnectionImpl;
     private SessionImpl _mockSessionImpl;
-    private TestMessageImpl _testMessage;
-    private TestAmqpMessage _testAmqpMessage;
+    private MessageImpl<TestAmqpMessage> _testMessage;
+    private AmqpMessage _testAmqpMessage;
     private String _mockQueueName;
     private Queue _mockQueue;
     private String _mockTopicName;
@@ -60,8 +61,8 @@ public class MessageImplTest extends QpidJmsTestCase
         Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
         Mockito.when(_mockSessionImpl.getMessageIdHelper()).thenReturn(new MessageIdHelper());
 
-        _testAmqpMessage = new TestAmqpMessage();
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl);
+        _testAmqpMessage = TestAmqpMessage.createNewMessage();
+        _testMessage = TestMessageImpl.createNewMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl);
 
         _mockQueueName = "mockQueueName";
         _mockQueue = Mockito.mock(Queue.class);
@@ -518,12 +519,12 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testSetJMSDestinationNullOnRecievedMessageWithToAndTypeAnnotationClearsTheAnnotation() throws Exception
+    public void testSetJMSDestinationNullOnReceivedMessageWithToAndTypeAnnotationClearsTheAnnotation() throws Exception
     {
         _testAmqpMessage.setTo(_mockTopicName);
         _testAmqpMessage.setMessageAnnotation(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME,
                                               DestinationHelper.TOPIC_ATTRIBUTES_STRING);
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertNotNull("expected JMSDestination value not present", _testMessage.getJMSDestination());
         assertTrue(_testAmqpMessage.messageAnnotationExists(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME));
@@ -543,10 +544,10 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testGetJMSDestinationOnRecievedMessageWithToButWithoutToTypeAnnotation() throws Exception
+    public void testGetJMSDestinationOnReceivedMessageWithToButWithoutToTypeAnnotation() throws Exception
     {
         _testAmqpMessage.setTo(_mockQueueName);
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertNotNull("expected JMSDestination value not present", _testMessage.getJMSDestination());
 
@@ -555,12 +556,12 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testGetJMSDestinationOnRecievedMessageWithToAndTypeAnnotationForTopic() throws Exception
+    public void testGetJMSDestinationOnReceivedMessageWithToAndTypeAnnotationForTopic() throws Exception
     {
         _testAmqpMessage.setTo(_mockTopicName);
         _testAmqpMessage.setMessageAnnotation(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME,
                                               DestinationHelper.TOPIC_ATTRIBUTES_STRING);
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertNotNull("expected JMSDestination value not present", _testMessage.getJMSDestination());
 
@@ -569,12 +570,12 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testGetJMSDestinationOnRecievedMessageWithToAndTypeAnnotationForQueue() throws Exception
+    public void testGetJMSDestinationOnReceivedMessageWithToAndTypeAnnotationForQueue() throws Exception
     {
         _testAmqpMessage.setTo(_mockQueueName);
         _testAmqpMessage.setMessageAnnotation(DestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME,
                                               DestinationHelper.QUEUE_ATTRIBUTES_STRING);
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertNotNull("expected JMSDestination value not present", _testMessage.getJMSDestination());
 
@@ -623,12 +624,12 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testSetJMSReplyToNullOnRecievedMessageWithReplyToAndTypeAnnotationClearsTheAnnotation() throws Exception
+    public void testSetJMSReplyToNullOnReceivedMessageWithReplyToAndTypeAnnotationClearsTheAnnotation() throws Exception
     {
         _testAmqpMessage.setReplyTo(_mockTopicName);
         _testAmqpMessage.setMessageAnnotation(DestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME,
                                               DestinationHelper.TOPIC_ATTRIBUTES_STRING);
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertNotNull("expected JMSReplyTo value not present", _testMessage.getJMSReplyTo());
         assertTrue(_testAmqpMessage.messageAnnotationExists(DestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME));
@@ -648,10 +649,10 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testGetJMSReplyToRecievedMessageWithReplyToButWithoutReplyToTypeAnnotation() throws Exception
+    public void testGetJMSReplyToReceivedMessageWithReplyToButWithoutReplyToTypeAnnotation() throws Exception
     {
         _testAmqpMessage.setReplyTo(_mockQueueName);
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertNotNull("expected JMSReplyTo value not present", _testMessage.getJMSReplyTo());
 
@@ -660,12 +661,12 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testGetJMSReplyToOnRecievedMessageWithReplyToAndTypeAnnotationForTopic() throws Exception
+    public void testGetJMSReplyToOnReceivedMessageWithReplyToAndTypeAnnotationForTopic() throws Exception
     {
         _testAmqpMessage.setReplyTo(_mockTopicName);
         _testAmqpMessage.setMessageAnnotation(DestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME,
                                               DestinationHelper.TOPIC_ATTRIBUTES_STRING);
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertNotNull("expected JMSReplyTo value not present", _testMessage.getJMSReplyTo());
 
@@ -674,12 +675,12 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testGetJMSReplyToRecievedMessageWithReplyToAndTypeAnnotationForQueue() throws Exception
+    public void testGetJMSReplyToReceivedMessageWithReplyToAndTypeAnnotationForQueue() throws Exception
     {
         _testAmqpMessage.setReplyTo(_mockQueueName);
         _testAmqpMessage.setMessageAnnotation(DestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME,
                                               DestinationHelper.QUEUE_ATTRIBUTES_STRING);
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertNotNull("expected JMSReplyTo value not present", _testMessage.getJMSReplyTo());
 
@@ -717,21 +718,21 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testGetJMSTimestampOnRecievedMessageWithCreationTime() throws Exception
+    public void testGetJMSTimestampOnReceivedMessageWithCreationTime() throws Exception
     {
         long timestamp = System.currentTimeMillis();
         _testAmqpMessage.setCreationTime(timestamp);
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertEquals("expected JMSTimestamp value not present", timestamp, _testMessage.getJMSTimestamp());
     }
 
     @Test
-    public void testSetJMSTimestampToZeroOnRecievedMessageWithCreationTimeSetsUnderlyingCreationTimeNull() throws Exception
+    public void testSetJMSTimestampToZeroOnReceivedMessageWithCreationTimeSetsUnderlyingCreationTimeNull() throws Exception
     {
         long timestamp = System.currentTimeMillis();
         _testAmqpMessage.setCreationTime(timestamp);
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         _testMessage.setJMSTimestamp(0);
 
@@ -768,7 +769,7 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testGetJMSExpirationOnRecievedMessageWithAbsoluteExpiryTimeAndTtl() throws Exception
+    public void testGetJMSExpirationOnReceivedMessageWithAbsoluteExpiryTimeAndTtl() throws Exception
     {
         long creationTime = 123456789;
         long ttl = 789L;
@@ -776,29 +777,29 @@ public class MessageImplTest extends QpidJmsTestCase
         _testAmqpMessage.setTtl(ttl);
         _testAmqpMessage.setAbsoluteExpiryTime(expiration);
 
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertEquals("expected JMSExpiration value not present", expiration, _testMessage.getJMSExpiration());
     }
 
     @Test
-    public void testGetJMSExpirationOnRecievedMessageWithAbsoluteExpiryTimeButNoTtl() throws Exception
+    public void testGetJMSExpirationOnReceivedMessageWithAbsoluteExpiryTimeButNoTtl() throws Exception
     {
         long expiration = System.currentTimeMillis();
         _testAmqpMessage.setAbsoluteExpiryTime(expiration);
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertEquals("expected JMSExpiration value not present", expiration, _testMessage.getJMSExpiration());
     }
 
     @Test
-    public void testGetJMSExpirationOnRecievedMessageWithTtlButNoAbsoluteExpiry() throws Exception
+    public void testGetJMSExpirationOnReceivedMessageWithTtlButNoAbsoluteExpiry() throws Exception
     {
         long timestamp = System.currentTimeMillis();
         long ttl = 999999L;
         _testAmqpMessage.setTtl(ttl);
 
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         long jmsExpiration = _testMessage.getJMSExpiration();
 
@@ -812,11 +813,11 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testSetJMSExpirationToZeroOnRecievedMessageWithAbsoluteExpiryTimeSetsUnderlyingExpiryNull() throws Exception
+    public void testSetJMSExpirationToZeroOnReceivedMessageWithAbsoluteExpiryTimeSetsUnderlyingExpiryNull() throws Exception
     {
         long timestamp = System.currentTimeMillis();
         _testAmqpMessage.setAbsoluteExpiryTime(timestamp);
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         _testMessage.setJMSExpiration(0);
 
@@ -830,12 +831,12 @@ public class MessageImplTest extends QpidJmsTestCase
      * returning 0 if an incoming message had only the ttl field set.
      */
     @Test
-    public void testSetJMSExpirationToZeroOnRecievedMessageWithTtlFieldsResultsInGetJMSExpirationReturningZero() throws Exception
+    public void testSetJMSExpirationToZeroOnReceivedMessageWithTtlFieldsResultsInGetJMSExpirationReturningZero() throws Exception
     {
         long ttl = 789L;
         _testAmqpMessage.setTtl(ttl);
 
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         _testMessage.setJMSExpiration(0);
 
@@ -848,14 +849,14 @@ public class MessageImplTest extends QpidJmsTestCase
      * absolute-expiry-time and ttl fields set.
      */
     @Test
-    public void testSetJMSExpirationToZeroOnRecievedMessageWithAbsoluteExpiryAndTtlFieldsResultsInGetJMSExpirationReturningZero() throws Exception
+    public void testSetJMSExpirationToZeroOnReceivedMessageWithAbsoluteExpiryAndTtlFieldsResultsInGetJMSExpirationReturningZero() throws Exception
     {
         long ttl = 789L;
         long timestamp = System.currentTimeMillis();
         _testAmqpMessage.setTtl(ttl);
         _testAmqpMessage.setAbsoluteExpiryTime(timestamp);
 
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         _testMessage.setJMSExpiration(0);
 
@@ -889,13 +890,13 @@ public class MessageImplTest extends QpidJmsTestCase
      * @throws Exception
      */
     @Test
-    public void testGetJMSPriorityOnRecievedMessageWithNonJmsPriorityIsCappedAt9() throws Exception
+    public void testGetJMSPriorityOnReceivedMessageWithNonJmsPriorityIsCappedAt9() throws Exception
     {
         short priority = 200;
         _testAmqpMessage.setPriority(priority);
 
         //create a received message
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertEquals("expected JMSPriority value to be capped at 9", 9, _testMessage.getJMSPriority());
     }
@@ -993,9 +994,9 @@ public class MessageImplTest extends QpidJmsTestCase
      * expected JMSMessageID value being returned, i.e. the base string plus the JMS "ID:" prefix.
      */
     @Test
-    public void testGetJMSMessageIdOnRecievedMessageWithString() throws Exception
+    public void testGetJMSMessageIdOnReceivedMessageWithString() throws Exception
     {
-        getJMSMessageIdOnRecievedMessageWithStringTestImpl(false);
+        getJMSMessageIdOnReceivedMessageWithStringTestImpl(false);
     }
 
     /**
@@ -1003,12 +1004,12 @@ public class MessageImplTest extends QpidJmsTestCase
      * expected JMSMessageID value being returned, i.e. the base string plus the JMS "ID:" prefix.
      */
     @Test
-    public void testGetJMSMessageIdOnRecievedMessageWithStringAlreadyContainingPrefix() throws Exception
+    public void testGetJMSMessageIdOnReceivedMessageWithStringAlreadyContainingPrefix() throws Exception
     {
-        getJMSMessageIdOnRecievedMessageWithStringTestImpl(true);
+        getJMSMessageIdOnReceivedMessageWithStringTestImpl(true);
     }
 
-    private void getJMSMessageIdOnRecievedMessageWithStringTestImpl(boolean prefixAlreadyExists) throws JMSException
+    private void getJMSMessageIdOnReceivedMessageWithStringTestImpl(boolean prefixAlreadyExists) throws JMSException
     {
         String baseId = "something";
         if(prefixAlreadyExists)
@@ -1019,7 +1020,7 @@ public class MessageImplTest extends QpidJmsTestCase
         String expectedJmsMessageId = "ID:" + baseId;
 
         _testAmqpMessage.setMessageId(baseId);
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertEquals("expected JMSMessageID value not present", expectedJmsMessageId, _testMessage.getJMSMessageID());
     }
@@ -1126,10 +1127,10 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testJMS_AMQP_TTL_PropertyBehaviourOnRecievedMessageWithUnderlyingTtlFieldSet() throws Exception
+    public void testJMS_AMQP_TTL_PropertyBehaviourOnReceivedMessageWithUnderlyingTtlFieldSet() throws Exception
     {
         _testAmqpMessage.setTtl(5L);
-        _testMessage = new TestMessageImpl(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         //check the propertyExists method
         assertFalse(_testMessage.propertyExists(JMS_AMQP_TTL));
@@ -1210,7 +1211,7 @@ public class MessageImplTest extends QpidJmsTestCase
 
     // ====== utility methods =======
 
-    private void assertGetPropertyThrowsMessageFormatException(TestMessageImpl testMessage,
+    private void assertGetPropertyThrowsMessageFormatException(MessageImpl<?> testMessage,
                                                                String propertyName,
                                                                Class<?> clazz) throws JMSException
     {
@@ -1226,7 +1227,7 @@ public class MessageImplTest extends QpidJmsTestCase
         }
     }
 
-    private Object getMessagePropertyUsingTypeMethod(TestMessageImpl testMessage, String propertyName, Class<?> clazz) throws JMSException
+    private Object getMessagePropertyUsingTypeMethod(MessageImpl<?> testMessage, String propertyName, Class<?> clazz) throws JMSException
     {
         if(clazz == Boolean.class)
         {
@@ -1266,7 +1267,7 @@ public class MessageImplTest extends QpidJmsTestCase
         }
     }
 
-    private void assertGetPropertyEquals(TestMessageImpl testMessage,
+    private void assertGetPropertyEquals(MessageImpl<?> testMessage,
                                          String propertyName,
                                          Object expectedValue,
                                          Class<?> clazz) throws JMSException

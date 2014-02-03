@@ -74,9 +74,9 @@ public class SenderImplTest extends QpidJmsTestCase
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
-        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, _mockSession, null);
+        MessageImpl<?> testMessage = TestMessageImpl.createNewMessage(_mockSession, null);
 
+        //explicitly flip the DeliveryMode to NON_PERSISTENT, later verifying it gets changed back to PERSISTENT
         testMessage.setJMSDeliveryMode(DeliveryMode.NON_PERSISTENT);
         assertEquals(DeliveryMode.NON_PERSISTENT, testMessage.getJMSDeliveryMode());
 
@@ -96,8 +96,7 @@ public class SenderImplTest extends QpidJmsTestCase
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
-        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, _mockSession, null);
+        MessageImpl<?> testMessage = TestMessageImpl.createNewMessage(_mockSession, null);
 
         assertNull(testMessage.getJMSDestination());
 
@@ -117,8 +116,7 @@ public class SenderImplTest extends QpidJmsTestCase
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
-        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, _mockSession, null);
+        MessageImpl<?> testMessage = TestMessageImpl.createNewMessage(_mockSession, null);
 
         assertEquals(0, testMessage.getJMSTimestamp());
         long timestamp = System.currentTimeMillis();
@@ -140,8 +138,7 @@ public class SenderImplTest extends QpidJmsTestCase
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
-        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, _mockSession, null);
+        MessageImpl<?> testMessage = TestMessageImpl.createNewMessage(_mockSession, null);
 
         assertEquals(Message.DEFAULT_PRIORITY, testMessage.getJMSPriority());
 
@@ -163,8 +160,7 @@ public class SenderImplTest extends QpidJmsTestCase
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
-        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, _mockSession, null);
+        MessageImpl<?> testMessage = TestMessageImpl.createNewMessage(_mockSession, null);
 
         assertEquals(0, testMessage.getJMSTimestamp());
         long timestamp = System.currentTimeMillis();
@@ -200,8 +196,7 @@ public class SenderImplTest extends QpidJmsTestCase
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
-        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, _mockSession, null);
+        MessageImpl<?> testMessage = TestMessageImpl.createNewMessage(_mockSession, null);
 
         assertEquals(0, testMessage.getJMSTimestamp());
         long timestamp = System.currentTimeMillis();
@@ -224,14 +219,14 @@ public class SenderImplTest extends QpidJmsTestCase
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
         Long oldTtl = 456L;
         testAmqpMessage.setTtl(oldTtl);
 
         long expiration = System.currentTimeMillis();
         testAmqpMessage.setAbsoluteExpiryTime(expiration);
-        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, _mockSession, _mockConnection, null);
+        MessageImpl<?> testMessage = TestMessageImpl.createReceivedMessage(testAmqpMessage, _mockSession, _mockConnection, null);
 
         //verify JMSExpiration is non-zero
         assertEquals(expiration, testMessage.getJMSExpiration());
@@ -256,10 +251,8 @@ public class SenderImplTest extends QpidJmsTestCase
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
-
         Long ttlPropValue = 789L;
-        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, _mockSession, _mockConnection);
+        MessageImpl<?> testMessage = TestMessageImpl.createNewMessage(_mockSession, _mockConnection);
         testMessage.setLongProperty(JMS_AMQP_TTL, ttlPropValue);
 
         //send the message without any TTL
@@ -284,11 +277,9 @@ public class SenderImplTest extends QpidJmsTestCase
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
-
         long timestamp = System.currentTimeMillis();
         Long ttlPropValue = 789L;
-        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, _mockSession, _mockConnection);
+        MessageImpl<?> testMessage = TestMessageImpl.createNewMessage(_mockSession, _mockConnection);
         testMessage.setLongProperty(JMS_AMQP_TTL, ttlPropValue);
 
         //send the message with a different TTL
@@ -315,11 +306,9 @@ public class SenderImplTest extends QpidJmsTestCase
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
-
         long timestamp = System.currentTimeMillis();
         Long ttlPropValue = 0L;
-        TestMessageImpl testMessage = new TestMessageImpl(testAmqpMessage, _mockSession, _mockConnection);
+        MessageImpl<?> testMessage = TestMessageImpl.createNewMessage(_mockSession, _mockConnection);
         testMessage.setLongProperty(JMS_AMQP_TTL, ttlPropValue);
 
         //send the message with a different TTL

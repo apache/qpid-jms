@@ -73,7 +73,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     {
         //Check a Proton Message without any application properties section
         Message message1 = Proton.message();
-        TestAmqpMessage testAmqpMessage1 = new TestAmqpMessage(message1, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage1 = TestAmqpMessage.createReceivedMessage(message1, _mockDelivery, _mockAmqpConnection);
 
         Set<String> applicationPropertyNames = testAmqpMessage1.getApplicationPropertyNames();
         assertNotNull(applicationPropertyNames);
@@ -87,7 +87,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         Message message2 = Proton.message();
         message2.setApplicationProperties(new ApplicationProperties(applicationPropertiesMap ));
 
-        TestAmqpMessage testAmqpMessage2 = new TestAmqpMessage(message2, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage2 = TestAmqpMessage.createReceivedMessage(message2, _mockDelivery, _mockAmqpConnection);
 
         Set<String> applicationPropertyNames2 = testAmqpMessage2.getApplicationPropertyNames();
         assertEquals(2, applicationPropertyNames2.size());
@@ -104,7 +104,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setApplicationProperties(new ApplicationProperties(applicationPropertiesMap ));
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         Set<String> applicationPropertyNames = testAmqpMessage.getApplicationPropertyNames();
         assertEquals(1, applicationPropertyNames.size());
@@ -125,7 +125,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setApplicationProperties(new ApplicationProperties(applicationPropertiesMap ));
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertTrue(testAmqpMessage.applicationPropertyExists(TEST_PROP_A));
         assertFalse(testAmqpMessage.applicationPropertyExists(TEST_PROP_B));
@@ -140,7 +140,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setApplicationProperties(new ApplicationProperties(applicationPropertiesMap ));
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertEquals(TEST_VALUE_STRING_A, testAmqpMessage.getApplicationProperty(TEST_PROP_A));
         assertNull(testAmqpMessage.getApplicationProperty(TEST_PROP_B));
@@ -150,7 +150,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     public void testSetApplicationProperty()
     {
         Message message = Proton.message();
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertNull(testAmqpMessage.getApplicationProperty(TEST_PROP_A));
         testAmqpMessage.setApplicationProperty(TEST_PROP_A, TEST_VALUE_STRING_A);
@@ -161,7 +161,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     public void testSetApplicationPropertyUsingNullKeyCausesIAE()
     {
         Message message = Proton.message();
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         try
         {
@@ -176,25 +176,31 @@ public class AmqpMessageTest extends QpidJmsTestCase
 
     // ====== Header =======
 
+    /**
+     * To satisfy the JMS requirement that messages are durable by default, the
+     * {@link AmqpMessage} objects created for sending new messages are populated
+     * with a header section with durable set to true.
+     */
     @Test
-    public void testNewMessageHasNoUnderlyingHeaderSection()
+    public void testNewMessageHasUnderlyingHeaderSectionWithDurableTrue()
     {
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
         Message underlying = testAmqpMessage.getMessage();
-        assertNull(underlying.getHeader());
+        assertNotNull(underlying.getHeader());
+        assertTrue(underlying.getHeader().getDurable());
     }
 
     @Test
     public void testGetTtlIsNullForNewMessage()
     {
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
         assertNull(testAmqpMessage.getTtl());
     }
 
     @Test
-    public void testGetTtlOnRecievedMessageWithTtl()
+    public void testGetTtlOnReceivedMessageWithTtl()
     {
         Long ttl = 123L;
 
@@ -203,7 +209,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         header.setTtl(UnsignedInteger.valueOf(ttl));
         message.setHeader(header);
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertEquals(ttl, testAmqpMessage.getTtl());
     }
@@ -213,7 +219,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     {
         Long ttl = 123L;
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
         testAmqpMessage.setTtl(ttl);
 
@@ -226,7 +232,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     {
         Long ttl = 123L;
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
         testAmqpMessage.setTtl(ttl);
 
         testAmqpMessage.setTtl(null);
@@ -243,7 +249,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     @Test
     public void testGetPriorityIs4ForNewMessage()
     {
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
         assertEquals("expected priority value not found", 4, testAmqpMessage.getPriority());
     }
@@ -253,14 +259,14 @@ public class AmqpMessageTest extends QpidJmsTestCase
      * the AMQP spec says the priority has default value of 4.
      */
     @Test
-    public void testGetPriorityIs4ForRecievedMessageWithHeaderButWithoutPriority()
+    public void testGetPriorityIs4ForReceivedMessageWithHeaderButWithoutPriority()
     {
         Message message = Proton.message();
 
         Header header = new Header();
         message.setHeader(header);
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertEquals("expected priority value not found", 4, testAmqpMessage.getPriority());
     }
@@ -269,7 +275,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
      * When messages have a header section, which have a priority value, ensure it is returned.
      */
     @Test
-    public void testGetPriorityForRecievedMessageWithHeaderWithPriority()
+    public void testGetPriorityForReceivedMessageWithHeaderWithPriority()
     {
         //value over 10
         byte priority = 11;
@@ -279,7 +285,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         message.setHeader(header);
         header.setPriority(UnsignedByte.valueOf(priority));
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertEquals("expected priority value not found", priority, testAmqpMessage.getPriority());
     }
@@ -294,7 +300,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         //value over 10
         byte priority = 11;
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
         testAmqpMessage.setPriority(priority);
 
         Message underlying = testAmqpMessage.getMessage();
@@ -308,7 +314,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
      * underlying field value is cleared when the priority is set to the default priority of 4.
      */
     @Test
-    public void testSetPriorityToDefaultOnRecievedMessageWithPriorityClearsPriorityField()
+    public void testSetPriorityToDefaultOnReceivedMessageWithPriorityClearsPriorityField()
     {
         byte priority = 11;
 
@@ -317,7 +323,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         message.setHeader(header);
         header.setPriority(UnsignedByte.valueOf(priority));
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
         testAmqpMessage.setPriority(AmqpMessage.DEFAULT_PRIORITY);
 
         //check the expected value is still returned
@@ -334,7 +340,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     public void testGetToWithReceivedMessageWithNoProperties()
     {
         Message message = Proton.message();
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         String toAddress = testAmqpMessage.getTo();
         assertNull(toAddress);
@@ -349,7 +355,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         props.setContentType(Symbol.valueOf("content-type"));
         message.setProperties(props);
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         String toAddress = testAmqpMessage.getTo();
         assertNull(toAddress);
@@ -366,7 +372,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         props.setTo(testToAddress);
         message.setProperties(props);
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         String toAddress = testAmqpMessage.getTo();
         assertNotNull(toAddress);
@@ -378,7 +384,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     {
         String testToAddress = "myTestAddress";
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
         Message underlyingMessage = testAmqpMessage.getMessage();
         assertNull(underlyingMessage.getAddress());
@@ -394,7 +400,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     {
         String testToAddress = "myTestAddress";
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
         assertNull(testAmqpMessage.getTo());
 
@@ -408,7 +414,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     public void testGetReplyToWithReceivedMessageWithNoProperties()
     {
         Message message = Proton.message();
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         String replyToAddress = testAmqpMessage.getReplyTo();
         assertNull(replyToAddress);
@@ -423,7 +429,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         props.setContentType(Symbol.valueOf("content-type"));
         message.setProperties(props);
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         String replyToAddress = testAmqpMessage.getReplyTo();
         assertNull(replyToAddress);
@@ -440,7 +446,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         props.setReplyTo(testReplyToAddress);
         message.setProperties(props);
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         String replyToAddress = testAmqpMessage.getReplyTo();
         assertNotNull(replyToAddress);
@@ -452,7 +458,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     {
         String testReplyToAddress = "myTestAddress";
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
         Message underlyingMessage = testAmqpMessage.getMessage();
         assertNull(underlyingMessage.getReplyTo());
@@ -468,7 +474,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     {
         String testReplyToAddress = "myTestAddress";
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
         assertNull(testAmqpMessage.getReplyTo());
 
@@ -481,7 +487,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     @Test
     public void testNewMessageHasNoUnderlyingPropertiesSection()
     {
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
         Message underlying = testAmqpMessage.getMessage();
         assertNull(underlying.getProperties());
@@ -490,7 +496,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     @Test
     public void testGetCreationTimeIsNullForNewMessage()
     {
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
         assertNull(testAmqpMessage.getCreationTime());
     }
@@ -500,7 +506,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     {
         Long timestamp = System.currentTimeMillis();
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
         testAmqpMessage.setCreationTime(timestamp);
 
@@ -513,7 +519,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     {
         Long timestamp = System.currentTimeMillis();
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
         testAmqpMessage.setCreationTime(timestamp);
 
         testAmqpMessage.setCreationTime(null);
@@ -525,7 +531,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     @Test
     public void testGetAbsoluteExpiryTimeIsNullForNewMessage()
     {
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
         assertNull(testAmqpMessage.getAbsoluteExpiryTime());
     }
@@ -535,7 +541,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     {
         Long timestamp = System.currentTimeMillis();
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
         testAmqpMessage.setAbsoluteExpiryTime(timestamp);
 
@@ -548,7 +554,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     {
         Long timestamp = System.currentTimeMillis();
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
         testAmqpMessage.setAbsoluteExpiryTime(timestamp);
 
         testAmqpMessage.setAbsoluteExpiryTime(null);
@@ -561,7 +567,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     @Test
     public void testGetMessageIdIsNullOnNewMessage()
     {
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
         assertNull("Expected messageId to be null on new message", testAmqpMessage.getMessageId());
     }
@@ -574,7 +580,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     {
         String testMessageId = "myStringMessageId";
 
-        AmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
         testAmqpMessage.setMessageId(testMessageId);
 
         assertEquals("Expected messageId not returned", testMessageId, testAmqpMessage.getMessageId());
@@ -598,7 +604,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     {
         UUID testMessageId = UUID.randomUUID();
 
-        AmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
         testAmqpMessage.setMessageId(testMessageId);
 
         assertEquals("Expected messageId not returned", testMessageId, testAmqpMessage.getMessageId());
@@ -622,7 +628,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     {
         BigInteger testMessageId = BigInteger.valueOf(123456789);
 
-        AmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
         testAmqpMessage.setMessageId(testMessageId);
 
         assertEquals("Expected messageId not returned", testMessageId, testAmqpMessage.getMessageId());
@@ -646,7 +652,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     public void testSetMessageIdOnNewMessageWithULongOurOfRangeThrowsIAE()
     {
         //negative value
-        AmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
         try
         {
             testAmqpMessage.setMessageId(BigInteger.valueOf(-1));
@@ -682,7 +688,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     {
         ByteBuffer testMessageId = createByteBufferForBinaryId();
 
-        AmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
         testAmqpMessage.setMessageId(testMessageId);
 
         assertEquals("Expected messageId not returned", testMessageId, testAmqpMessage.getMessageId());
@@ -720,7 +726,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         props.setMessageId(underlyingIdObject);
         message.setProperties(props);
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertNotNull("Expected a messageId on received message", testAmqpMessage.getMessageId());
 
@@ -748,7 +754,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
 
         Message message = Proton.message();
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertFalse(testAmqpMessage.messageAnnotationExists(symbolKeyName));
     }
@@ -765,7 +771,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
         message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertTrue(testAmqpMessage.messageAnnotationExists(symbolKeyName));
         assertFalse(testAmqpMessage.messageAnnotationExists("otherName"));
@@ -778,7 +784,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
 
         Message message = Proton.message();
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertNull(testAmqpMessage.getMessageAnnotation(symbolKeyName));
     }
@@ -795,7 +801,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
         message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertEquals(value, testAmqpMessage.getMessageAnnotation(symbolKeyName));
         assertNull(testAmqpMessage.getMessageAnnotation("otherName"));
@@ -804,7 +810,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     @Test
     public void testNewMessageHasNoUnderlyingMessageAnnotationsSection()
     {
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
         Message underlying = testAmqpMessage.getMessage();
         assertNull(underlying.getMessageAnnotations());
@@ -817,7 +823,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         String symbolKeyName2 = "myTestSymbolName2";
         String value = "myTestValue";
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
         //check setting first annotation creates the annotations section
         testAmqpMessage.setMessageAnnotation(symbolKeyName, value);
@@ -849,7 +855,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
         message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertEquals(value, testAmqpMessage.getMessageAnnotation(symbolKeyName));
         assertNull(testAmqpMessage.getMessageAnnotation("otherName"));
@@ -863,7 +869,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     {
         Message message = Proton.message();
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         testAmqpMessage.clearMessageAnnotation("keyName");
     }
@@ -872,7 +878,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     public void testClearAllMessageAnnotationsUsingNewMessage()
     {
         Message message = Proton.message();
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         testAmqpMessage.clearAllMessageAnnotations();
 
@@ -892,7 +898,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
         message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         testAmqpMessage.clearAllMessageAnnotations();
 
@@ -904,7 +910,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
     public void testGetMessageAnnotationsCountUsingReceivedMessageWithoutMessageAnnotationsSection()
     {
         Message message = Proton.message();
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertEquals(0, testAmqpMessage.getMessageAnnotationsCount());
     }
@@ -923,7 +929,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         annotationsMap.put(Symbol.valueOf(symbolKeyName2), value);
         message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
 
-        TestAmqpMessage testAmqpMessage = new TestAmqpMessage(message, _mockDelivery, _mockAmqpConnection);
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertEquals(2, testAmqpMessage.getMessageAnnotationsCount());
         testAmqpMessage.clearMessageAnnotation(symbolKeyName);

@@ -500,7 +500,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             if(underlyingAmqpMessageId instanceof BigInteger)
             {
                 //Proton uses UnsignedLong
-                underlyingAmqpMessageId = UnsignedLong.valueOf(underlyingAmqpMessageId.toString());
+                underlyingAmqpMessageId = UnsignedLong.valueOf((BigInteger)underlyingAmqpMessageId);
             }
 
             PropertiesDescribedType props = new PropertiesDescribedType();

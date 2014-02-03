@@ -717,7 +717,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
         else if(testMessageId instanceof BigInteger)
         {
             //The proton message uses an UnsignedLong wrapper
-            underlyingIdObject = UnsignedLong.valueOf(((BigInteger) testMessageId).toString());
+            underlyingIdObject = UnsignedLong.valueOf((BigInteger) testMessageId);
         }
 
         Message message = Proton.message();

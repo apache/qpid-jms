@@ -486,8 +486,7 @@ public abstract class AmqpMessage
             throw new IllegalArgumentException("Value \""+messageId+"\" lies outside the range [0 - 2^64).");
         }
 
-        //TODO: add UnsignedLong.valueOf(BigInteger)?
-        setUnderlyingMessageId(UnsignedLong.valueOf(messageId.toString()));
+        setUnderlyingMessageId(UnsignedLong.valueOf(messageId));
     }
 
     /**

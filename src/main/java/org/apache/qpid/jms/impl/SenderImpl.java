@@ -22,6 +22,8 @@ package org.apache.qpid.jms.impl;
 
 import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_TTL;
 
+import java.util.UUID;
+
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -51,6 +53,13 @@ public class SenderImpl extends LinkImpl implements MessageProducer
         {
             long timestamp = System.currentTimeMillis();
 
+            //TODO: Respect the disableJMSMessageId hint
+            //TODO: Bypass adding the ID: prefix for our own messages, since we remove it down the stack.
+            //set the message id
+            UUID uuid = UUID.randomUUID();
+            String messageID = MessageIdHelper.JMS_ID_PREFIX + uuid.toString();
+            message.setJMSMessageID(messageID);
+
             //set the priority
             message.setJMSPriority(priority);
 
@@ -78,6 +87,7 @@ public class SenderImpl extends LinkImpl implements MessageProducer
 
             AmqpMessage amqpMessage = getAmqpMessageFromJmsMessage(message);
 
+            //set the AMQP header ttl field if necessary
             if(message.propertyExists(JMS_AMQP_TTL))
             {
                 //Use the requested value from the property. 0 means clear TTL header.

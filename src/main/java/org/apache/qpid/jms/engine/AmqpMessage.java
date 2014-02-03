@@ -506,6 +506,81 @@ public abstract class AmqpMessage
         _message.setMessageId(messageId);
     }
 
+    /**
+     * Get the correlationId.
+     *
+     * If present, the returned object may be a String, UUID,
+     * ByteBuffer (representing binary), or BigInteger (representing ulong).
+     *
+     * @return the correlationId, or null if there isn't any
+     */
+    public Object getCorrelationId()
+    {
+        Object underlyingCorrelationId = _message.getCorrelationId();
+
+        if(underlyingCorrelationId instanceof Binary)
+        {
+            return ((Binary) underlyingCorrelationId).asByteBuffer();
+        }
+        else if(underlyingCorrelationId instanceof UnsignedLong)
+        {
+            return ((UnsignedLong) underlyingCorrelationId).bigIntegerValue();
+        }
+        else
+        {
+            return underlyingCorrelationId;
+        }
+    }
+
+    /**
+     * Set a string correlation-id value on the message.
+     */
+    public void setCorrelationId(String correlationId)
+    {
+        setUnderlyingCorrelationId(correlationId);
+    }
+
+    /**
+     * Set a uuid correlation-id value on the message.
+     */
+    public void setCorrelationId(UUID correlationId)
+    {
+        setUnderlyingCorrelationId(correlationId);
+    }
+
+    /**
+     * Set an ulong (represented here as a BigInteger) correlation-id value on the message.
+     *
+     * @param correlationId the value to set
+     * @throws IllegalArgumentException if the value is not within the ulong range of [0 - 2^64)
+     */
+    public void setCorrelationId(BigInteger correlationId) throws IllegalArgumentException
+    {
+        if(correlationId.signum() == -1 || correlationId.bitLength() > 64)
+        {
+            throw new IllegalArgumentException("Value \""+correlationId+"\" lies outside the range [0 - 2^64).");
+        }
+
+        setUnderlyingCorrelationId(UnsignedLong.valueOf(correlationId));
+    }
+
+    /**
+     * Set a Binary (represented here as a ByteBuffer) correlation-id value on the message.
+     *
+     * @param correlationId the value to set
+     */
+    public void setCorrelationId(ByteBuffer correlationId)
+    {
+        Binary bin = Binary.create(correlationId);
+
+        setUnderlyingCorrelationId(bin);
+    }
+
+    private void setUnderlyingCorrelationId(Object correlationId)
+    {
+        _message.setCorrelationId(correlationId);
+    }
+
     //===== Application Properties ======
 
     private void createApplicationProperties()

@@ -24,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import javax.jms.DeliveryMode;
 import javax.jms.Message;
@@ -57,6 +58,7 @@ public class SenderImplTest extends QpidJmsTestCase
         _mockAmqpSender = Mockito.mock(AmqpSender.class);
         _mockSession = Mockito.mock(SessionImpl.class);
         Mockito.when(_mockSession.getDestinationHelper()).thenReturn(new DestinationHelper());
+        Mockito.when(_mockSession.getMessageIdHelper()).thenReturn(new MessageIdHelper());
 
         _mockQueueName = "mockQueueName";
         _mockQueue = Mockito.mock(Queue.class);
@@ -125,6 +127,28 @@ public class SenderImplTest extends QpidJmsTestCase
 
         //verify the timestamp was set, allowing for a 3second delta
         assertEquals(timestamp, testMessage.getJMSTimestamp(), 3000);
+    }
+
+    @Test
+    public void testSenderSetsJMSMessageIDOnMessage() throws Exception
+    {
+        //Create mock sent message token, ensure that it is immediately marked as Accepted
+        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
+        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
+        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
+        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+
+        SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
+
+        MessageImpl<?> testMessage = TestMessageImpl.createNewMessage(_mockSession, null);
+
+        assertNull("JMSMessageID should not be set yet", testMessage.getJMSMessageID());
+
+        senderImpl.send(testMessage);
+
+        String msgId = testMessage.getJMSMessageID();
+        assertNotNull("JMSMessageID should be set", msgId);
+        assertTrue("MessageId does not have the expected prefix", msgId.startsWith(MessageIdHelper.JMS_ID_PREFIX));
     }
 
     @Test

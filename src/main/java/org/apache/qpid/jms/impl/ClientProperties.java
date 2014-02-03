@@ -24,4 +24,7 @@ public class ClientProperties
 {
     //Message Property Names
     public static final String JMS_AMQP_TTL = "JMS_AMQP_TTL";
+
+    //Message Annotation Names
+    public static final String X_OPT_APP_CORRELATION_ID = "x-opt-app-correlation-id";
 }

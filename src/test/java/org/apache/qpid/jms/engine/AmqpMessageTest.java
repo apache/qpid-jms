@@ -565,6 +565,176 @@ public class AmqpMessageTest extends QpidJmsTestCase
 
     //TODO: delete this marker comment
     @Test
+    public void testGetCorrelationIdIsNullOnNewMessage()
+    {
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+
+        assertNull("Expected correlationId to be null on new message", testAmqpMessage.getCorrelationId());
+    }
+
+    /**
+     * Test that setting then getting a String as the CorrelationId returns the expected value
+     */
+    @Test
+    public void testSetGetCorrelationIdOnNewMessageWithString()
+    {
+        String testCorrelationId = "myStringCorrelationId";
+
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+        testAmqpMessage.setCorrelationId(testCorrelationId);
+
+        assertEquals("Expected correlationId not returned", testCorrelationId, testAmqpMessage.getCorrelationId());
+    }
+
+    /**
+     * Test that getting the correlationId when using an underlying received message with a
+     * String correlation id returns the expected value.
+     */
+    @Test
+    public void testGetCorrelationIdOnReceivedMessageWithString()
+    {
+        correlationIdOnReceivedMessageTestImpl("myCorrelationIdString");
+    }
+
+    /**
+     * Test that setting then getting a UUID as the correlationId returns the expected value
+     */
+    @Test
+    public void testSetGetCorrelationIdOnNewMessageWithUUID()
+    {
+        UUID testCorrelationId = UUID.randomUUID();
+
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+        testAmqpMessage.setCorrelationId(testCorrelationId);
+
+        assertEquals("Expected correlationId not returned", testCorrelationId, testAmqpMessage.getCorrelationId());
+    }
+
+    /**
+     * Test that getting the correlationId when using an underlying received message with a
+     * UUID correlation id returns the expected value.
+     */
+    @Test
+    public void testGetCorrelationIdOnReceivedMessageWithUUID()
+    {
+        correlationIdOnReceivedMessageTestImpl(UUID.randomUUID());
+    }
+
+    /**
+     * Test that setting then getting a ulong correlationId (using BigInteger) returns the expected value
+     */
+    @Test
+    public void testSetGetCorrelationIdOnNewMessageWithULong()
+    {
+        BigInteger testCorrelationId = BigInteger.valueOf(123456789);
+
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+        testAmqpMessage.setCorrelationId(testCorrelationId);
+
+        assertEquals("Expected correlationId not returned", testCorrelationId, testAmqpMessage.getCorrelationId());
+    }
+
+    /**
+     * Test that getting the correlationId when using an underlying received message with a
+     * ulong correlation id (using BigInteger) returns the expected value.
+     */
+    @Test
+    public void testGetCorrelationIdOnReceivedMessageWithLong()
+    {
+        correlationIdOnReceivedMessageTestImpl(BigInteger.valueOf(123456789L));
+    }
+
+    /**
+     * Test that attempting to set a ulong correlationId (using BigInteger) with a value
+     * outwith the allowed [0 - 2^64) range results in an IAE being thrown
+     */
+    @Test
+    public void testSetCorrelationIdOnNewMessageWithULongOurOfRangeThrowsIAE()
+    {
+        //negative value
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+        try
+        {
+            testAmqpMessage.setCorrelationId(BigInteger.valueOf(-1));
+            fail("expected exception was not thrown");
+        }
+        catch(IllegalArgumentException iae)
+        {
+            //expected
+        }
+
+        //value 1 over max
+        BigInteger aboveLimit = new BigInteger(TWO_TO_64_BYTES);
+        try
+        {
+            testAmqpMessage.setCorrelationId(aboveLimit);
+            fail("expected exception was not thrown");
+        }
+        catch(IllegalArgumentException iae)
+        {
+            //expected
+        }
+
+        //confirm subtracting 1 to get the max value then allows success
+        BigInteger onLimit = aboveLimit.subtract(BigInteger.ONE);
+        testAmqpMessage.setCorrelationId(onLimit);
+    }
+
+    /**
+     * Test that setting then getting binary as the correlationId returns the expected value
+     */
+    @Test
+    public void testSetGetCorrelationIdOnNewMessageWithBinary()
+    {
+        ByteBuffer testCorrelationId = createByteBufferForBinaryId();
+
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+        testAmqpMessage.setCorrelationId(testCorrelationId);
+
+        assertEquals("Expected correlationId not returned", testCorrelationId, testAmqpMessage.getCorrelationId());
+    }
+
+    /**
+     * Test that getting the correlationId when using an underlying received message with a
+     * Binary message id returns the expected ByteBuffer value.
+     */
+    @Test
+    public void testGetCorrelationIdOnReceivedMessageWithBinary()
+    {
+        ByteBuffer testCorrelationId = createByteBufferForBinaryId();
+
+        correlationIdOnReceivedMessageTestImpl(testCorrelationId);
+    }
+
+    private void correlationIdOnReceivedMessageTestImpl(Object testCorrelationId)
+    {
+        Object underlyingIdObject = testCorrelationId;
+        if(testCorrelationId instanceof ByteBuffer)
+        {
+            //The proton message uses a Binary wrapper for binary ids, not a ByteBuffer
+            underlyingIdObject = Binary.create((ByteBuffer) testCorrelationId);
+        }
+        else if(testCorrelationId instanceof BigInteger)
+        {
+            //The proton message uses an UnsignedLong wrapper
+            underlyingIdObject = UnsignedLong.valueOf((BigInteger) testCorrelationId);
+        }
+
+        Message message = Proton.message();
+
+        Properties props = new Properties();
+        props.setCorrelationId(underlyingIdObject);
+        message.setProperties(props);
+
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        assertNotNull("Expected a correlationId on received message", testAmqpMessage.getCorrelationId());
+
+        assertEquals("Incorrect correlationId value received", testCorrelationId, testAmqpMessage.getCorrelationId());
+    }
+
+    //TODO: delete this marker comment
+    @Test
     public void testGetMessageIdIsNullOnNewMessage()
     {
         AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();

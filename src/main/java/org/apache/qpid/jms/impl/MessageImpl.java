@@ -249,15 +249,57 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public void setJMSCorrelationID(String correlationID) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        MessageIdHelper messageIdHelper = _sessionImpl.getMessageIdHelper();
+
+        boolean appSpecific = false;
+        if(correlationID != null && !messageIdHelper.hasMessageIdPrefix(correlationID))
+        {
+            appSpecific = true;
+        }
+
+        String stripped = messageIdHelper.stripMessageIdPrefix(correlationID);
+
+        //TODO: convert the string if necessary, i.e. it indicates an encoded AMQP type
+        _amqpMessage.setCorrelationId(stripped);
+
+        if(appSpecific)
+        {
+            _amqpMessage.setMessageAnnotation(ClientProperties.X_OPT_APP_CORRELATION_ID, true);
+        }
+        else
+        {
+            _amqpMessage.clearMessageAnnotation(ClientProperties.X_OPT_APP_CORRELATION_ID);
+        }
     }
 
     @Override
     public String getJMSCorrelationID() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        MessageIdHelper messageIdHelper = _sessionImpl.getMessageIdHelper();
+
+        String baseIdString = messageIdHelper.toBaseMessageIdString(_amqpMessage.getCorrelationId());
+
+        if(baseIdString == null)
+        {
+            return null;
+        }
+        else
+        {
+            boolean appSpecific = false;
+            if(_amqpMessage.messageAnnotationExists(ClientProperties.X_OPT_APP_CORRELATION_ID))
+            {
+                appSpecific = (Boolean) _amqpMessage.getMessageAnnotation(ClientProperties.X_OPT_APP_CORRELATION_ID);
+            }
+
+            if(appSpecific)
+            {
+                return baseIdString;
+            }
+            else
+            {
+                return JMS_ID_PREFIX + baseIdString;
+            }
+        }
     }
 
     @Override

@@ -1025,6 +1025,137 @@ public class MessageImplTest extends QpidJmsTestCase
         assertEquals("expected JMSMessageID value not present", expectedJmsMessageId, _testMessage.getJMSMessageID());
     }
 
+    //TODO: remove this marker comment
+    // ====== JMSCorrelationID =======
+
+    @Test
+    public void testGetJMSCorrelationIDIsNullOnNewMessage() throws Exception
+    {
+        assertNull("JMSCorrelationID should be null on new message", _testMessage.getJMSCorrelationID());
+    }
+
+    @Test
+    public void testAppSpecificCorrelationIdAnnotationDoesNotExistOnNewMessage() throws Exception
+    {
+        assertFalse("MessageAnnotation should not exist to indicate app-specific correlation-id, since there is no correlation-id",
+                _testAmqpMessage.messageAnnotationExists(ClientProperties.X_OPT_APP_CORRELATION_ID));
+    }
+
+    /**
+     * Test that {@link MessageImpl#setJMSCorrelationID(String)} accepts null and clears an existing value
+     */
+    @Test
+    public void testSetJMSCorrelationIDAcceptsNullAndClearsPreviousValue() throws Exception
+    {
+        //test setting null on fresh message is accepted
+        _testMessage.setJMSCorrelationID(null);
+        assertNull("JMSCorrelationID should still be null", _testMessage.getJMSCorrelationID());
+
+        //test that setting null clears an existing value
+        _testMessage.setJMSCorrelationID("ID:something");
+        assertNotNull("JMSCorrelationID should not be null anymore", _testMessage.getJMSCorrelationID());
+        assertNotNull("Underlying correlation id should not be null anymore", _testAmqpMessage.getCorrelationId());
+
+        _testMessage.setJMSCorrelationID(null);
+        assertNull("JMSCorrelationID should be null again", _testMessage.getJMSCorrelationID());
+        assertNull("Underlying correlation id should be null again", _testAmqpMessage.getCorrelationId());
+    }
+
+    /**
+     * Test that {@link MessageImpl#setJMSCorrelationID(String)} accepts null and clears an existing app-specific
+     * value, additionally clearing the message annotation indicating the value was app-specific
+     */
+    @Test
+    public void testSetJMSCorrelationIDAcceptsNullAndClearsPreviousAppSpecificValue() throws Exception
+    {
+        //test that setting null clears an existing value
+        _testMessage.setJMSCorrelationID("app-specific");
+        assertNotNull("JMSCorrelationID should not be null anymore", _testMessage.getJMSCorrelationID());
+        assertNotNull("Underlying correlation id should not be null anymore", _testAmqpMessage.getCorrelationId());
+
+        _testMessage.setJMSCorrelationID(null);
+        assertNull("JMSCorrelationID should be null again", _testMessage.getJMSCorrelationID());
+        assertNull("Underlying correlation id should be null again", _testAmqpMessage.getCorrelationId());
+
+        assertFalse("MessageAnnotation should not exist to indicate app-specific correlation-id, since there is no correlation-id",
+                _testAmqpMessage.messageAnnotationExists(ClientProperties.X_OPT_APP_CORRELATION_ID));
+    }
+
+    /**
+     * Test that {@link MessageImpl#setJMSCorrelationID(String)} sets the expected value
+     * on the underlying message, i.e the JMS CorrelationID minus the "ID:" prefix,
+     * and does not set the annotation to indicate the value is application-specific.
+     */
+    @Test
+    public void testSetJMSCorrelationIDSetsUnderlyingMessageWithString() throws Exception
+    {
+        String baseId = "something";
+        String jmsId = "ID:" + baseId;
+
+        _testMessage.setJMSCorrelationID(jmsId);
+
+        assertNotNull("Underlying correlation id should not be null", _testAmqpMessage.getCorrelationId());
+        assertEquals("Underlying correlation id value was not as expected", baseId, _testAmqpMessage.getCorrelationId());
+
+        assertFalse("MessageAnnotation should not exist to indicate app-specific correlation-id",
+                        _testAmqpMessage.messageAnnotationExists(ClientProperties.X_OPT_APP_CORRELATION_ID));
+    }
+
+    /**
+     * Test that {@link MessageImpl#setJMSCorrelationID(String)} sets the expected value
+     * on the underlying message when provided an application-specific string, and that
+     * the it also sets the annotation to indicate the value is application-specific.
+     */
+    @Test
+    public void testSetJMSCorrelationIDSetsUnderlyingMessageWithAppSpecificString() throws Exception
+    {
+        String baseId = "app-specific";
+
+        _testMessage.setJMSCorrelationID(baseId);
+
+        assertNotNull("Underlying correlation id should not be null", _testAmqpMessage.getCorrelationId());
+        assertEquals("Underlying correlation id value was not as expected", baseId, _testAmqpMessage.getCorrelationId());
+
+        assertTrue("MessageAnnotation should not exist to indicate app-specific correlation-id",
+                        _testAmqpMessage.messageAnnotationExists(ClientProperties.X_OPT_APP_CORRELATION_ID));
+    }
+
+    /**
+     * Test that receiving a message with a string typed correlation-id value results in the
+     * expected JMSCorrelationID value being returned, i.e. the base string plus the JMS "ID:" prefix.
+     */
+    @Test
+    public void testGetJMSCorrelationIDOnReceivedMessageWithString() throws Exception
+    {
+        getJMSCorrelationIDOnReceivedMessageWithStringTestImpl(false);
+    }
+
+    /**
+     * Test that receiving a message with a string typed correlation-id value results in the
+     * expected JMSCorrelationID value being returned, i.e. the base string plus the JMS "ID:" prefix.
+     */
+    @Test
+    public void testGetJMSCorrelationIDOnReceivedMessageWithStringAlreadyContainingPrefix() throws Exception
+    {
+        getJMSCorrelationIDOnReceivedMessageWithStringTestImpl(true);
+    }
+
+    private void getJMSCorrelationIDOnReceivedMessageWithStringTestImpl(boolean prefixAlreadyExists) throws JMSException
+    {
+        String baseId = "something";
+        if(prefixAlreadyExists)
+        {
+            baseId = "ID:" + baseId;
+        }
+
+        String expectedJmsCorrelationId = "ID:" + baseId;
+
+        _testAmqpMessage.setCorrelationId(baseId);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        assertEquals("expected JMSCorrelationID value not present", expectedJmsCorrelationId, _testMessage.getJMSCorrelationID());
+    }
+
     // ====== JMS_AMQP_TTL property =======
 
     @Test

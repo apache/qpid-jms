@@ -532,6 +532,35 @@ public abstract class AmqpMessage
         }
     }
 
+    //TODO: temp hack, consolidate with the other methods.
+    public void setCorrelationId(Object correlationId)
+    {
+        if(correlationId == null)
+        {
+            setUnderlyingCorrelationId(correlationId);
+        }
+        else if(correlationId instanceof UUID)
+        {
+            setCorrelationId((UUID)correlationId);
+        }
+        else if(correlationId instanceof BigInteger)
+        {
+            setCorrelationId((BigInteger)correlationId);
+        }
+        else if(correlationId instanceof String)
+        {
+            setCorrelationId((String)correlationId);
+        }
+        else if(correlationId instanceof ByteBuffer)
+        {
+            setCorrelationId((ByteBuffer)correlationId);
+        }
+        else
+        {
+            throw new IllegalArgumentException("Provided value is not a legal type");
+        }
+    }
+
     /**
      * Set a string correlation-id value on the message.
      */

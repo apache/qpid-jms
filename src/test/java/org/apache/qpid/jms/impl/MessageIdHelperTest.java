@@ -215,7 +215,7 @@ public class MessageIdHelperTest extends QpidJmsTestCase
     /**
      * Test that {@link MessageIdHelper#toBaseMessageIdString(String)} returns a string
      * indicating an AMQP encoded string, when the given string happens to already begin with
-     * the {@link MessageIdHelper#AMQP_LONG_PREFIXM}.
+     * the {@link MessageIdHelper#AMQP_LONG_PREFIX}.
      */
     @Test
     public void testToBaseMessageIdStringWithStringBeginningWithEncodingPrefixForLong()
@@ -287,5 +287,83 @@ public class MessageIdHelperTest extends QpidJmsTestCase
         String baseMessageIdString = _messageIdHelper.toBaseMessageIdString(bigIntMessageId);
         assertNotNull("null string should not have been returned", baseMessageIdString);
         assertEquals("expected base id string was not returned", expected, baseMessageIdString);
+    }
+
+    //TODO: delete this marker comment
+    /**
+     * Test that {@link MessageIdHelper#toIdObject(String)} returns a ulong
+     * (represented as a BigInteger) when given a string indicating an
+     * encoded AMQP ulong id.
+     */
+    @Test
+    public void testToIdObjectWithEncodedLong()
+    {
+        BigInteger longId = BigInteger.valueOf(123456789L);
+        String provided = MessageIdHelper.AMQP_LONG_PREFIX + "123456789";
+
+        Object idObject = _messageIdHelper.toIdObject(provided);
+        assertNotNull("null object should not have been returned", idObject);
+        assertEquals("expected id object was not returned", longId, idObject);
+    }
+
+    /**
+     * Test that {@link MessageIdHelper#toIdObject(String)} returns a UUID
+     * when given a string indicating an encoded AMQP uuid id.
+     */
+    @Test
+    public void testToIdObjectWithEncodedUuid()
+    {
+        UUID uuid = UUID.randomUUID();
+        String provided = MessageIdHelper.AMQP_UUID_PREFIX + uuid.toString();
+
+        Object idObject = _messageIdHelper.toIdObject(provided);
+        assertNotNull("null object should not have been returned", idObject);
+        assertEquals("expected id object was not returned", uuid, idObject);
+    }
+
+    /**
+     * Test that {@link MessageIdHelper#toIdObject(String)} returns a string
+     * when given a string without any type encoding prefix.
+     */
+    @Test
+    public void testToIdObjectWithStringContainingNoEncodingPrefix()
+    {
+        String stringId = "myStringId";
+
+        Object idObject = _messageIdHelper.toIdObject(stringId);
+        assertNotNull("null object should not have been returned", idObject);
+        assertEquals("expected id object was not returned", stringId, idObject);
+    }
+
+    /**
+     * Test that {@link MessageIdHelper#toIdObject(String)} returns the remainder of the
+     * provided string after removing the {@link MessageIdHelper#AMQP_STRING_PREFIX} prefix.
+     */
+    @Test
+    public void testToIdObjectWithStringContainingStringEncodingPrefix()
+    {
+        String suffix = "myStringSuffix";
+        String stringId = MessageIdHelper.AMQP_STRING_PREFIX + suffix;
+
+        Object idObject = _messageIdHelper.toIdObject(stringId);
+        assertNotNull("null object should not have been returned", idObject);
+        assertEquals("expected id object was not returned", suffix, idObject);
+    }
+
+    /**
+     * Test that when given a string with with the {@link MessageIdHelper#AMQP_STRING_PREFIX} prefix
+     * and then additionally the {@link MessageIdHelper#AMQP_UUID_PREFIX}, the
+     * {@link MessageIdHelper#toIdObject(String)} method returns the remainder of the provided string
+     *  after removing the {@link MessageIdHelper#AMQP_STRING_PREFIX} prefix.
+     */
+    @Test
+    public void testToIdObjectWithStringContainingStringEncodingPrefixAndThenUuidPrefix()
+    {
+        String encodedUuidString = MessageIdHelper.AMQP_UUID_PREFIX + UUID.randomUUID().toString();
+        String stringId = MessageIdHelper.AMQP_STRING_PREFIX + encodedUuidString;
+
+        Object idObject = _messageIdHelper.toIdObject(stringId);
+        assertNotNull("null object should not have been returned", idObject);
+        assertEquals("expected id object was not returned", encodedUuidString, idObject);
     }
 }

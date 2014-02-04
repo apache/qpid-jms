@@ -252,7 +252,8 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         MessageIdHelper messageIdHelper = _sessionImpl.getMessageIdHelper();
 
         boolean appSpecific = false;
-        if(correlationID != null && !messageIdHelper.hasMessageIdPrefix(correlationID))
+        boolean hasMessageIdPrefix = messageIdHelper.hasMessageIdPrefix(correlationID);
+        if(correlationID != null && !hasMessageIdPrefix)
         {
             appSpecific = true;
         }
@@ -260,7 +261,15 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         String stripped = messageIdHelper.stripMessageIdPrefix(correlationID);
 
         //TODO: convert the string if necessary, i.e. it indicates an encoded AMQP type
-        _amqpMessage.setCorrelationId(stripped);
+        if(hasMessageIdPrefix)
+        {
+            Object idObject = messageIdHelper.toIdObject(stripped);
+            _amqpMessage.setCorrelationId(idObject);
+        }
+        else
+        {
+            _amqpMessage.setCorrelationId(stripped);
+        }
 
         if(appSpecific)
         {

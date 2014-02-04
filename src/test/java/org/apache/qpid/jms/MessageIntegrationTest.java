@@ -547,6 +547,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     {
         receivedMessageWithCorrelationIdTestImpl("myTestCorrelationIdString", true);
     }
+
     /**
      * Tests that receiving a message with a UUID typed correlation-id results in returning the
      * expected value for JMSCorrelationID where the JMS "ID:" prefix has been added to the UUID.tostring()
@@ -688,6 +689,83 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             {
                 assertFalse(msgAnnotationsMatcher.keyExistsInReceivedAnnotations(Symbol.valueOf(ClientProperties.X_OPT_APP_CORRELATION_ID)));
             }
+        }
+    }
+
+    /**
+     * Tests that receiving a message with a UUID typed message-id, and then sending a message which
+     * uses the result of calling getJMSMessageID as the value for setJMSCorrelationId results in
+     * transmission of the expected AMQP message content.
+     */
+    @Test
+    public void testReceivedMessageWithUUIDMessageIdAndSendValueAsCorrelationId() throws Exception
+    {
+        recieveMessageIdSendCorrelationIdTestImpl(UUID.randomUUID());
+    }
+
+    public void recieveMessageIdSendCorrelationIdTestImpl(Object underlyingAmqpId) throws Exception
+    {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
+        {
+            Connection connection = _testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            Object underlyingAmqpMessageId = underlyingAmqpId;
+            if(underlyingAmqpMessageId instanceof BigInteger)
+            {
+                //Proton uses UnsignedLong
+                underlyingAmqpMessageId = UnsignedLong.valueOf((BigInteger)underlyingAmqpMessageId);
+            }
+
+            PropertiesDescribedType props = new PropertiesDescribedType();
+            props.setMessageId(underlyingAmqpMessageId);
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, props, null, amqpValueNullContent);
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+            Message receivedMessage = messageConsumer.receive(1000);
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            assertNotNull(receivedMessage);
+            String expectedBaseIdString = new MessageIdHelper().toBaseMessageIdString(underlyingAmqpMessageId);
+
+            String jmsMessageID = receivedMessage.getJMSMessageID();
+            assertEquals("ID:" + expectedBaseIdString, jmsMessageID);
+
+            //Now take the received JMSMessageID, and send a message with it set
+            //as the JMSCorrelationID and verify we get the same AMQP id as we started with.
+
+            testPeer.expectSenderAttach();
+            MessageProducer producer = session.createProducer(queue);
+
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true);
+
+            //Set matcher to validate the correlation-id matches the previous message-id
+            propsMatcher.withCorrelationId(equalTo(underlyingAmqpMessageId));
+
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
+            messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(null));
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createTextMessage();
+            message.setJMSCorrelationID(jmsMessageID);
+
+            producer.send(message);
+
+            testPeer.waitForAllHandlersToComplete(3000);
         }
     }
 }

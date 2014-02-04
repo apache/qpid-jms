@@ -1034,6 +1034,11 @@ public class MessageImplTest extends QpidJmsTestCase
         assertNull("JMSCorrelationID should be null on new message", _testMessage.getJMSCorrelationID());
     }
 
+    /**
+     * Test that the message annotation used to denote an application-specific JMSCorrelationID
+     * value does not exist on new messages (which have no correlation-id, as per
+     * {@link #testGetJMSCorrelationIDIsNullOnNewMessage})
+     */
     @Test
     public void testAppSpecificCorrelationIdAnnotationDoesNotExistOnNewMessage() throws Exception
     {
@@ -1042,10 +1047,11 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     /**
-     * Test that {@link MessageImpl#setJMSCorrelationID(String)} accepts null and clears an existing value
+     * Test that {@link MessageImpl#setJMSCorrelationID(String)} accepts null and clears any
+     * existing value that happened to be a message id.
      */
     @Test
-    public void testSetJMSCorrelationIDAcceptsNullAndClearsPreviousValue() throws Exception
+    public void testSetJMSCorrelationIDAcceptsNullAndClearsPreviousMessageIdValue() throws Exception
     {
         //test setting null on fresh message is accepted
         _testMessage.setJMSCorrelationID(null);
@@ -1063,7 +1069,7 @@ public class MessageImplTest extends QpidJmsTestCase
 
     /**
      * Test that {@link MessageImpl#setJMSCorrelationID(String)} accepts null and clears an existing app-specific
-     * value, additionally clearing the message annotation indicating the value was app-specific
+     * value, additionally clearing the message annotation indicating the value was app-specific.
      */
     @Test
     public void testSetJMSCorrelationIDAcceptsNullAndClearsPreviousAppSpecificValue() throws Exception
@@ -1083,11 +1089,10 @@ public class MessageImplTest extends QpidJmsTestCase
 
     /**
      * Test that {@link MessageImpl#setJMSCorrelationID(String)} sets the expected value
-     * on the underlying message, i.e the JMS CorrelationID minus the "ID:" prefix,
-     * and does not set the annotation to indicate the value is application-specific.
+     * on the underlying message, i.e the JMS CorrelationID minus the "ID:" prefix
      */
     @Test
-    public void testSetJMSCorrelationIDSetsUnderlyingMessageWithString() throws Exception
+    public void testSetJMSCorrelationIDSetsUnderlyingMessageWithMessageIdString() throws Exception
     {
         String baseId = "something";
         String jmsId = "ID:" + baseId;
@@ -1096,6 +1101,20 @@ public class MessageImplTest extends QpidJmsTestCase
 
         assertNotNull("Underlying correlation id should not be null", _testAmqpMessage.getCorrelationId());
         assertEquals("Underlying correlation id value was not as expected", baseId, _testAmqpMessage.getCorrelationId());
+    }
+
+    /**
+     * Test that {@link MessageImpl#setJMSCorrelationID(String)} with a value that happens to be
+     * a message id does not set the annotation on the underlying message
+     * to indicate the correlation-id value is application-specific (sicne it isnt).
+     */
+    @Test
+    public void testSetJMSCorrelationIDDoesntSetsUnderlyingMessageAnnotationWithMessageIdString() throws Exception
+    {
+        String baseId = "something";
+        String jmsId = "ID:" + baseId;
+
+        _testMessage.setJMSCorrelationID(jmsId);
 
         assertFalse("MessageAnnotation should not exist to indicate app-specific correlation-id",
                         _testAmqpMessage.messageAnnotationExists(ClientProperties.X_OPT_APP_CORRELATION_ID));
@@ -1103,8 +1122,7 @@ public class MessageImplTest extends QpidJmsTestCase
 
     /**
      * Test that {@link MessageImpl#setJMSCorrelationID(String)} sets the expected value
-     * on the underlying message when provided an application-specific string, and that
-     * the it also sets the annotation to indicate the value is application-specific.
+     * on the underlying message when provided an application-specific string.
      */
     @Test
     public void testSetJMSCorrelationIDSetsUnderlyingMessageWithAppSpecificString() throws Exception
@@ -1115,9 +1133,23 @@ public class MessageImplTest extends QpidJmsTestCase
 
         assertNotNull("Underlying correlation id should not be null", _testAmqpMessage.getCorrelationId());
         assertEquals("Underlying correlation id value was not as expected", baseId, _testAmqpMessage.getCorrelationId());
+    }
 
-        assertTrue("MessageAnnotation should not exist to indicate app-specific correlation-id",
+    /**
+     * Test that {@link MessageImpl#setJMSCorrelationID(String)} sets the expected
+     * message annotation on the underlying message when provided an application-specific string
+     */
+    @Test
+    public void testSetJMSCorrelationIDSetsUnderlyingMessageAnnotationWithAppSpecificString() throws Exception
+    {
+        String baseId = "app-specific";
+
+        _testMessage.setJMSCorrelationID(baseId);
+
+        assertTrue("MessageAnnotation should exist to indicate app-specific correlation-id",
                         _testAmqpMessage.messageAnnotationExists(ClientProperties.X_OPT_APP_CORRELATION_ID));
+        assertEquals("MessageAnnotation should be true to indicate app-specific correlation-id", Boolean.TRUE,
+                        _testAmqpMessage.getMessageAnnotation(ClientProperties.X_OPT_APP_CORRELATION_ID));
     }
 
     /**

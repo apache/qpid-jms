@@ -24,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 import java.math.BigInteger;
 import java.util.Date;
@@ -39,6 +40,7 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 
+import org.apache.qpid.jms.impl.ClientProperties;
 import org.apache.qpid.jms.impl.DestinationHelper;
 import org.apache.qpid.jms.impl.MessageIdHelper;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -53,6 +55,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSect
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.DescribedType;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
 import org.junit.Test;
 
@@ -130,6 +133,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             message.setDoubleProperty(DOUBLE_PROP, DOUBLE_PROP_VALUE);
 
             producer.send(message);
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 
@@ -519,6 +524,170 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             String expectedBaseIdString = new MessageIdHelper().toBaseMessageIdString(underlyingAmqpMessageId);
 
             assertEquals("ID:" + expectedBaseIdString, receivedMessage.getJMSMessageID());
+        }
+    }
+
+    /**
+     * Tests that receiving a message with a string typed correlation-id results in returning the
+     * expected value for JMSCorrelationID where the JMS "ID:" prefix has been added.
+     */
+    @Test
+    public void testReceivedMessageWithStringCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception
+    {
+        receivedMessageWithCorrelationIdTestImpl("myTestCorrelationIdString", false);
+    }
+
+    /**
+     * Tests that receiving a message with a string typed correlation-id, which is indicated to be an
+     * application-specific value, results in returning the expected value for JMSCorrelationID
+     * where the JMS "ID:" prefix has NOT been added.
+     */
+    @Test
+    public void testReceivedMessageWithAppSpecificStringCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception
+    {
+        receivedMessageWithCorrelationIdTestImpl("myTestCorrelationIdString", true);
+    }
+    /**
+     * Tests that receiving a message with a UUID typed correlation-id results in returning the
+     * expected value for JMSCorrelationID where the JMS "ID:" prefix has been added to the UUID.tostring()
+     */
+    @Test
+    public void testReceivedMessageWithUUIDCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception
+    {
+        receivedMessageWithCorrelationIdTestImpl(UUID.randomUUID(), false);
+    }
+
+    /**
+     * Tests that receiving a message with a UUID typed correlation-id results in returning the
+     * expected value for JMSCorrelationID where the JMS "ID:" prefix has been added to the UUID.tostring()
+     */
+    @Test
+    public void testReceivedMessageWithLongCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception
+    {
+        receivedMessageWithCorrelationIdTestImpl(BigInteger.valueOf(123456789L), false);
+    }
+
+    private void receivedMessageWithCorrelationIdTestImpl(Object correlationId, boolean appSpecific) throws Exception
+    {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
+        {
+            Connection connection = _testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            Object underlyingAmqpCorrelationId = correlationId;
+            if(underlyingAmqpCorrelationId instanceof BigInteger)
+            {
+                //Proton uses UnsignedLong
+                underlyingAmqpCorrelationId = UnsignedLong.valueOf((BigInteger)underlyingAmqpCorrelationId);
+            }
+
+            PropertiesDescribedType props = new PropertiesDescribedType();
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+            MessageAnnotationsDescribedType ann = null;
+
+            props.setCorrelationId(underlyingAmqpCorrelationId);
+            if(appSpecific)
+            {
+                ann = new MessageAnnotationsDescribedType();
+                ann.setSymbolKeyedAnnotation(ClientProperties.X_OPT_APP_CORRELATION_ID, true);
+            }
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, ann, props, null, amqpValueNullContent);
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+            Message receivedMessage = messageConsumer.receive(1000);
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            assertNotNull(receivedMessage);
+            String expectedBaseIdString = new MessageIdHelper().toBaseMessageIdString(underlyingAmqpCorrelationId);
+            String expected = expectedBaseIdString;
+            if(!appSpecific)
+            {
+                expected = "ID:" + expected;
+            }
+
+            assertEquals(expected, receivedMessage.getJMSCorrelationID());
+        }
+    }
+
+    /**
+     * Tests that sending a message with a string typed correlation-id value which is a
+     * message-id results in an AMQP message with the expected encoding of the correlation-id,
+     * where the "ID:" prefix of the JMSCorrelationID value is not present, and there is
+     * no presence of the message annotation to indicate an app-specific correlation-id.
+     */
+    @Test
+    public void testSentMessageWithCorrelationIdString() throws Exception
+    {
+
+        String stringCorrelationId = "ID:myTestMessageIdString";
+        String underlyingCorrelationId = "myTestMessageIdString";
+        sentMessageWithCorrelationIdTestImpl(stringCorrelationId, underlyingCorrelationId, false);
+    }
+
+    /**
+     * Tests that sending a message with a string typed correlation-id value which is a
+     * app-specific results in an AMQP message with the expected encoding of the correlation-id,
+     * and the presence of the message annotation to indicate an app-specific correlation-id.
+     */
+    @Test
+    public void testSentMessageWithCorrelationIdStringAppSpecific() throws Exception
+    {
+        String stringCorrelationId = "myTestAppSpecificString";
+        sentMessageWithCorrelationIdTestImpl(stringCorrelationId, stringCorrelationId, true);
+    }
+
+    private void sentMessageWithCorrelationIdTestImpl(String stringCorrelationId, Object underlyingAmqpCorrelationId, boolean appSpecific) throws Exception
+    {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
+        {
+            Connection connection = _testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String queueName = "myQueue";
+            Queue queue = session.createQueue(queueName);
+            MessageProducer producer = session.createProducer(queue);
+
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true);
+
+            //Set matcher to validate the correlation-id, and the annotation
+            //presence+value if it is application-specific
+            propsMatcher.withCorrelationId(equalTo(underlyingAmqpCorrelationId));
+            if(appSpecific)
+            {
+                msgAnnotationsMatcher.withEntry(Symbol.valueOf(ClientProperties.X_OPT_APP_CORRELATION_ID), equalTo(Boolean.TRUE));
+            }
+
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
+            messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(null));
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createTextMessage();
+            message.setJMSCorrelationID(stringCorrelationId);
+
+            producer.send(message);
+
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            //validate the annotation was not present if the value was a message-id
+            if(!appSpecific)
+            {
+                assertFalse(msgAnnotationsMatcher.keyExistsInReceivedAnnotations(Symbol.valueOf(ClientProperties.X_OPT_APP_CORRELATION_ID)));
+            }
         }
     }
 }

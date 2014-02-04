@@ -21,6 +21,7 @@
 package org.apache.qpid.jms.test.testpeer.matchers.sections;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
@@ -42,7 +43,33 @@ public class MessageAnnotationsSectionMatcher extends MessageMapSectionMatcher
     @Override
     public MessageAnnotationsSectionMatcher withEntry(Object key, Matcher<?> m)
     {
+        validateType(key);
+
         return (MessageAnnotationsSectionMatcher) super.withEntry(key, m);
+    }
+
+    private void validateType(Object key)
+    {
+        if(!(key instanceof Long || key instanceof Symbol))
+        {
+            throw new IllegalArgumentException("Message Annotation keys must be of type Symbol or long (reserved)");
+        }
+    }
+
+    public boolean keyExistsInReceivedAnnotations(Object key)
+    {
+        validateType(key);
+
+        Map<Object, Object> receivedFields = super.getReceivedFields();
+
+        if(receivedFields != null)
+        {
+            return receivedFields.containsKey(key);
+        }
+        else
+        {
+            return false;
+        }
     }
 }
 

@@ -45,6 +45,11 @@ import org.apache.qpid.proton.message.Message;
 public abstract class AmqpMessage
 {
     static final short DEFAULT_PRIORITY = 4;
+    private static enum IdType
+    {
+        MESSAGE_ID,
+        CORRELATION_ID
+    }
 
     private final Delivery _delivery;
     private final Message _message;
@@ -441,69 +446,18 @@ public abstract class AmqpMessage
      */
     public Object getMessageId()
     {
-        Object underlyingMessageId = _message.getMessageId();
-
-        if(underlyingMessageId instanceof Binary)
-        {
-            return ((Binary) underlyingMessageId).asByteBuffer();
-        }
-        else if(underlyingMessageId instanceof UnsignedLong)
-        {
-            return ((UnsignedLong) underlyingMessageId).bigIntegerValue();
-        }
-        else
-        {
-            return underlyingMessageId;
-        }
+        return getUnderlyingId(IdType.MESSAGE_ID);
     }
 
     /**
-     * Set a string message-id value on the message.
-     */
-    public void setMessageId(String messageId)
-    {
-        setUnderlyingMessageId(messageId);
-    }
-
-    /**
-     * Set a uuid message-id value on the message.
-     */
-    public void setMessageId(UUID messageId)
-    {
-        setUnderlyingMessageId(messageId);
-    }
-
-    /**
-     * Set an ulong (represented here as a BigInteger) message-id value on the message.
+     * Set a message-id value on the message.
      *
-     * @param messageId the value to set
-     * @throws IllegalArgumentException if the value is not within the ulong range of [0 - 2^64)
+     * The supplied value s permitted to be null, String, UUID,
+     * Long (representing ulong), or ByteBuffer (representing binary)
      */
-    public void setMessageId(BigInteger messageId) throws IllegalArgumentException
+    public void setMessageId(final Object messageId)
     {
-        if(messageId.signum() == -1 || messageId.bitLength() > 64)
-        {
-            throw new IllegalArgumentException("Value \""+messageId+"\" lies outside the range [0 - 2^64).");
-        }
-
-        setUnderlyingMessageId(UnsignedLong.valueOf(messageId));
-    }
-
-    /**
-     * Set a Binary (represented here as a ByteBuffer) message-id value on the message.
-     *
-     * @param messageId the value to set
-     */
-    public void setMessageId(ByteBuffer messageId)
-    {
-        Binary bin = Binary.create(messageId);
-
-        setUnderlyingMessageId(bin);
-    }
-
-    private void setUnderlyingMessageId(Object messageId)
-    {
-        _message.setMessageId(messageId);
+        setUnderlyingId(messageId, IdType.MESSAGE_ID);
     }
 
     /**
@@ -516,98 +470,89 @@ public abstract class AmqpMessage
      */
     public Object getCorrelationId()
     {
-        Object underlyingCorrelationId = _message.getCorrelationId();
+        return getUnderlyingId(IdType.CORRELATION_ID);
+    }
 
-        if(underlyingCorrelationId instanceof Binary)
+    private Object getUnderlyingId(final IdType idType)
+    {
+        Object underlyingId = null;
+        switch(idType)
         {
-            return ((Binary) underlyingCorrelationId).asByteBuffer();
+            case MESSAGE_ID:
+                underlyingId = _message.getMessageId();
+                break;
+            case CORRELATION_ID:
+                underlyingId = _message.getCorrelationId();
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported id type: " + idType);
         }
-        else if(underlyingCorrelationId instanceof UnsignedLong)
+
+        if(underlyingId instanceof Binary)
         {
-            return ((UnsignedLong) underlyingCorrelationId).bigIntegerValue();
+            return ((Binary) underlyingId).asByteBuffer();
+        }
+        else if(underlyingId instanceof UnsignedLong)
+        {
+            return ((UnsignedLong) underlyingId).bigIntegerValue();
         }
         else
         {
-            return underlyingCorrelationId;
+            return underlyingId;
         }
     }
 
-    //TODO: temp hack, consolidate with the other methods.
-    public void setCorrelationId(Object correlationId)
+    /**
+     * Set a correlation-id value on the message.
+     *
+     * The supplied value s permitted to be null, String, UUID,
+     * Long (representing ulong), or ByteBuffer (representing binary)
+     */
+    public void setCorrelationId(final Object correlationId)
     {
-        if(correlationId == null)
+        setUnderlyingId(correlationId, IdType.CORRELATION_ID);
+    }
+
+    private void setUnderlyingId(final Object id, final IdType idType)
+    {
+        Object underlyingId = null;
+        if(id instanceof String || id instanceof UUID || id == null )
         {
-            setUnderlyingCorrelationId(correlationId);
+            underlyingId = id;
         }
-        else if(correlationId instanceof UUID)
+        else if(id instanceof BigInteger)
         {
-            setCorrelationId((UUID)correlationId);
+            BigInteger bigIntCorrelationId = (BigInteger) id;
+            if(bigIntCorrelationId.signum() == -1 || bigIntCorrelationId.bitLength() > 64)
+            {
+                throw new IllegalArgumentException("Value \""+bigIntCorrelationId+"\" lies outside the range [0 - 2^64).");
+            }
+
+            underlyingId = UnsignedLong.valueOf(bigIntCorrelationId);
         }
-        else if(correlationId instanceof BigInteger)
+        else if(id instanceof ByteBuffer)
         {
-            setCorrelationId((BigInteger)correlationId);
-        }
-        else if(correlationId instanceof String)
-        {
-            setCorrelationId((String)correlationId);
-        }
-        else if(correlationId instanceof ByteBuffer)
-        {
-            setCorrelationId((ByteBuffer)correlationId);
+            Binary bin = Binary.create((ByteBuffer) id);
+
+            underlyingId = bin;
         }
         else
         {
-            throw new IllegalArgumentException("Provided value is not a legal type");
+            throw new IllegalArgumentException("Provided value is not of an allowed type:"
+                                                        + id.getClass().getName());
         }
-    }
 
-    /**
-     * Set a string correlation-id value on the message.
-     */
-    public void setCorrelationId(String correlationId)
-    {
-        setUnderlyingCorrelationId(correlationId);
-    }
-
-    /**
-     * Set a uuid correlation-id value on the message.
-     */
-    public void setCorrelationId(UUID correlationId)
-    {
-        setUnderlyingCorrelationId(correlationId);
-    }
-
-    /**
-     * Set an ulong (represented here as a BigInteger) correlation-id value on the message.
-     *
-     * @param correlationId the value to set
-     * @throws IllegalArgumentException if the value is not within the ulong range of [0 - 2^64)
-     */
-    public void setCorrelationId(BigInteger correlationId) throws IllegalArgumentException
-    {
-        if(correlationId.signum() == -1 || correlationId.bitLength() > 64)
+        switch(idType)
         {
-            throw new IllegalArgumentException("Value \""+correlationId+"\" lies outside the range [0 - 2^64).");
+            case MESSAGE_ID:
+                _message.setMessageId(underlyingId);
+                break;
+            case CORRELATION_ID:
+                _message.setCorrelationId(underlyingId);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported id type: " + idType);
         }
-
-        setUnderlyingCorrelationId(UnsignedLong.valueOf(correlationId));
-    }
-
-    /**
-     * Set a Binary (represented here as a ByteBuffer) correlation-id value on the message.
-     *
-     * @param correlationId the value to set
-     */
-    public void setCorrelationId(ByteBuffer correlationId)
-    {
-        Binary bin = Binary.create(correlationId);
-
-        setUnderlyingCorrelationId(bin);
-    }
-
-    private void setUnderlyingCorrelationId(Object correlationId)
-    {
-        _message.setCorrelationId(correlationId);
     }
 
     //===== Application Properties ======

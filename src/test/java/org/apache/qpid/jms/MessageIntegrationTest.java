@@ -480,7 +480,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     }
 
     /**
-     * Tests that receiving a message with a UUID typed message-id results in returning the
+     * Tests that receiving a message with a ulong typed message-id results in returning the
      * expected value for JMSMessageId where the JMS "ID:" prefix has been added to the UUID.tostring()
      */
     @Test
@@ -489,7 +489,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         receivedMessageWithMessageIdTestImpl(BigInteger.valueOf(123456789L));
     }
 
-    private void receivedMessageWithMessageIdTestImpl(Object messageId) throws Exception
+    private void receivedMessageWithMessageIdTestImpl(Object messageIdForAmqpMessageClass) throws Exception
     {
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
         {
@@ -501,7 +501,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            Object underlyingAmqpMessageId = messageId;
+            Object underlyingAmqpMessageId = messageIdForAmqpMessageClass;
             if(underlyingAmqpMessageId instanceof BigInteger)
             {
                 //Proton uses UnsignedLong
@@ -521,7 +521,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
-            String expectedBaseIdString = new MessageIdHelper().toBaseMessageIdString(underlyingAmqpMessageId);
+            String expectedBaseIdString = new MessageIdHelper().toBaseMessageIdString(messageIdForAmqpMessageClass);
 
             assertEquals("ID:" + expectedBaseIdString, receivedMessage.getJMSMessageID());
         }
@@ -568,7 +568,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         receivedMessageWithCorrelationIdTestImpl(BigInteger.valueOf(123456789L), false);
     }
 
-    private void receivedMessageWithCorrelationIdTestImpl(Object correlationId, boolean appSpecific) throws Exception
+    private void receivedMessageWithCorrelationIdTestImpl(Object correlationIdForAmqpMessageClass, boolean appSpecific) throws Exception
     {
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
         {
@@ -580,7 +580,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            Object underlyingAmqpCorrelationId = correlationId;
+            Object underlyingAmqpCorrelationId = correlationIdForAmqpMessageClass;
             if(underlyingAmqpCorrelationId instanceof BigInteger)
             {
                 //Proton uses UnsignedLong
@@ -607,7 +607,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
-            String expectedBaseIdString = new MessageIdHelper().toBaseMessageIdString(underlyingAmqpCorrelationId);
+            String expectedBaseIdString = new MessageIdHelper().toBaseMessageIdString(correlationIdForAmqpMessageClass);
             String expected = expectedBaseIdString;
             if(!appSpecific)
             {
@@ -703,7 +703,18 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         recieveMessageIdSendCorrelationIdTestImpl(UUID.randomUUID());
     }
 
-    public void recieveMessageIdSendCorrelationIdTestImpl(Object underlyingAmqpId) throws Exception
+    /**
+     * Tests that receiving a message with a ulong typed message-id, and then sending a message which
+     * uses the result of calling getJMSMessageID as the value for setJMSCorrelationId results in
+     * transmission of the expected AMQP message content.
+     */
+    @Test
+    public void testReceivedMessageWithUlongMessageIdAndSendValueAsCorrelationId() throws Exception
+    {
+        recieveMessageIdSendCorrelationIdTestImpl(BigInteger.valueOf(123456789L));
+    }
+
+    private void recieveMessageIdSendCorrelationIdTestImpl(Object idForAmqpMessageClass) throws Exception
     {
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
         {
@@ -715,7 +726,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            Object underlyingAmqpMessageId = underlyingAmqpId;
+            Object underlyingAmqpMessageId = idForAmqpMessageClass;
             if(underlyingAmqpMessageId instanceof BigInteger)
             {
                 //Proton uses UnsignedLong
@@ -735,7 +746,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
-            String expectedBaseIdString = new MessageIdHelper().toBaseMessageIdString(underlyingAmqpMessageId);
+            String expectedBaseIdString = new MessageIdHelper().toBaseMessageIdString(idForAmqpMessageClass);
 
             String jmsMessageID = receivedMessage.getJMSMessageID();
             assertEquals("ID:" + expectedBaseIdString, jmsMessageID);

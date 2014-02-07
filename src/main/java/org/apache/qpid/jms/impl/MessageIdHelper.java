@@ -138,9 +138,8 @@ public class MessageIdHelper
         {
             return AMQP_UUID_PREFIX + messageId.toString();
         }
-        else if(messageId instanceof Number)
+        else if(messageId instanceof BigInteger || messageId instanceof Long)
         {
-            //TODO: use Byte/Short/Integer/Long/BigInteger check instead?
             return AMQP_LONG_PREFIX + messageId.toString();
         }
         else if(messageId instanceof ByteBuffer)

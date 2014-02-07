@@ -47,7 +47,7 @@ import java.util.UUID;
  * <p>When setting a JMSCorrelationID using setJMSCorrelationID(String id), any value which begins with the "ID:" prefix of a
  * JMSMessageID that attempts to identify itself as an encoded binary, uuid, or ulong but cant be converted into the indicated
  * format will cause an exception to be thrown. Any JMSCorrelationID String being set which does not begin with the "ID:"
- * prefix of a JMSMessageID will beencoded as a String in the AMQP message, regardless whether it includes the above encoding
+ * prefix of a JMSMessageID will be encoded as a String in the AMQP message, regardless whether it includes the above encoding
  * prefixes.
  *
  */
@@ -55,13 +55,13 @@ public class MessageIdHelper
 {
     public static final String AMQP_STRING_PREFIX = "AMQP_STRING:";
     public static final String AMQP_UUID_PREFIX = "AMQP_UUID:";
-    public static final String AMQP_LONG_PREFIX = "AMQP_LONG:";
+    public static final String AMQP_ULONG_PREFIX = "AMQP_ULONG:";
     public static final String AMQP_BINARY_PREFIX = "AMQP_BINARY:";
     public static final String JMS_ID_PREFIX = "ID:";
 
     private static final int JMS_ID_PREFIX_LENGTH = JMS_ID_PREFIX.length();
     private static final int AMQP_UUID_PREFIX_LENGTH = AMQP_UUID_PREFIX.length();
-    private static final int AMQP_LONG_PREFIX_LENGTH = AMQP_LONG_PREFIX.length();
+    private static final int AMQP_ULONG_PREFIX_LENGTH = AMQP_ULONG_PREFIX.length();
     private static final int AMQP_STRING_PREFIX_LENGTH = AMQP_STRING_PREFIX.length();
     private static final int AMQP_BINARY_PREFIX_LENGTH = AMQP_BINARY_PREFIX.length();
 
@@ -140,7 +140,7 @@ public class MessageIdHelper
         }
         else if(messageId instanceof BigInteger || messageId instanceof Long)
         {
-            return AMQP_LONG_PREFIX + messageId.toString();
+            return AMQP_ULONG_PREFIX + messageId.toString();
         }
         else if(messageId instanceof ByteBuffer)
         {
@@ -157,7 +157,7 @@ public class MessageIdHelper
     {
         return hasAmqpBinaryPrefix(stringId) ||
                     hasAmqpUuidPrefix(stringId) ||
-                        hasAmqpLongPrefix(stringId) ||
+                        hasAmqpUlongPrefix(stringId) ||
                             hasAmqpStringPrefix(stringId);
     }
 
@@ -166,9 +166,9 @@ public class MessageIdHelper
         return stringId.startsWith(AMQP_STRING_PREFIX);
     }
 
-    private boolean hasAmqpLongPrefix(String stringId)
+    private boolean hasAmqpUlongPrefix(String stringId)
     {
-        return stringId.startsWith(AMQP_LONG_PREFIX);
+        return stringId.startsWith(AMQP_ULONG_PREFIX);
     }
 
     private boolean hasAmqpUuidPrefix(String stringId)
@@ -219,9 +219,9 @@ public class MessageIdHelper
             String uuidString = strip(baseId, AMQP_UUID_PREFIX_LENGTH);
             return UUID.fromString(uuidString);
         }
-        else if(hasAmqpLongPrefix(baseId))
+        else if(hasAmqpUlongPrefix(baseId))
         {
-            String longString = strip(baseId, AMQP_LONG_PREFIX_LENGTH);
+            String longString = strip(baseId, AMQP_ULONG_PREFIX_LENGTH);
             return new BigInteger(longString);
         }
         else if(hasAmqpStringPrefix(baseId))

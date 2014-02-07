@@ -215,12 +215,12 @@ public class MessageIdHelperTest extends QpidJmsTestCase
     /**
      * Test that {@link MessageIdHelper#toBaseMessageIdString(String)} returns a string
      * indicating an AMQP encoded string, when the given string happens to already begin with
-     * the {@link MessageIdHelper#AMQP_LONG_PREFIX}.
+     * the {@link MessageIdHelper#AMQP_ULONG_PREFIX}.
      */
     @Test
     public void testToBaseMessageIdStringWithStringBeginningWithEncodingPrefixForLong()
     {
-        String longStringMessageId = MessageIdHelper.AMQP_LONG_PREFIX + Long.valueOf(123456789L);
+        String longStringMessageId = MessageIdHelper.AMQP_ULONG_PREFIX + Long.valueOf(123456789L);
         String expected = MessageIdHelper.AMQP_STRING_PREFIX + longStringMessageId;
 
         String baseMessageIdString = _messageIdHelper.toBaseMessageIdString(longStringMessageId);
@@ -264,10 +264,10 @@ public class MessageIdHelperTest extends QpidJmsTestCase
      * indicating an AMQP encoded Long when given a Long object.
      */
     @Test
-    public void testToBaseMessageIdStringWithLong()
+    public void testToBaseMessageIdStringWithUlong()
     {
         Long longMessageId = Long.valueOf(123456789L);
-        String expected = MessageIdHelper.AMQP_LONG_PREFIX + longMessageId.toString();
+        String expected = MessageIdHelper.AMQP_ULONG_PREFIX + longMessageId.toString();
 
         String baseMessageIdString = _messageIdHelper.toBaseMessageIdString(longMessageId);
         assertNotNull("null string should not have been returned", baseMessageIdString);
@@ -282,7 +282,7 @@ public class MessageIdHelperTest extends QpidJmsTestCase
     public void testToBaseMessageIdStringWithBigInteger()
     {
         BigInteger bigIntMessageId = BigInteger.valueOf(123456789L);
-        String expected = MessageIdHelper.AMQP_LONG_PREFIX + bigIntMessageId.toString();
+        String expected = MessageIdHelper.AMQP_ULONG_PREFIX + bigIntMessageId.toString();
 
         String baseMessageIdString = _messageIdHelper.toBaseMessageIdString(bigIntMessageId);
         assertNotNull("null string should not have been returned", baseMessageIdString);
@@ -296,10 +296,10 @@ public class MessageIdHelperTest extends QpidJmsTestCase
      * encoded AMQP ulong id.
      */
     @Test
-    public void testToIdObjectWithEncodedLong()
+    public void testToIdObjectWithEncodedUlong()
     {
         BigInteger longId = BigInteger.valueOf(123456789L);
-        String provided = MessageIdHelper.AMQP_LONG_PREFIX + "123456789";
+        String provided = MessageIdHelper.AMQP_ULONG_PREFIX + "123456789";
 
         Object idObject = _messageIdHelper.toIdObject(provided);
         assertNotNull("null object should not have been returned", idObject);

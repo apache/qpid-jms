@@ -39,6 +39,7 @@
 
     <!-- plugin versions -->
     <apache-rat-plugin-version>0.10</apache-rat-plugin-version>
+    <jacoco-plugin-version>0.6.4.201312101107</jacoco-plugin-version>
   </properties>
 
   <dependencies>
@@ -84,6 +85,12 @@
           <artifactId>apache-rat-plugin</artifactId>
           <version>${apache-rat-plugin-version}</version>
         </plugin>
+
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${jacoco-plugin-version}</version>
+        </plugin>
       </plugins>
     </pluginManagement>
 
@@ -115,6 +122,18 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
       </plugin>
+
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
@@ -135,6 +154,12 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <version>${apache-rat-plugin-version}</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco-plugin-version}</version>
       </plugin>
     </plugins>
   </reporting>

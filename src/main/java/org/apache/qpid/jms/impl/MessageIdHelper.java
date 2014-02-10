@@ -64,6 +64,7 @@ public class MessageIdHelper
     private static final int AMQP_ULONG_PREFIX_LENGTH = AMQP_ULONG_PREFIX.length();
     private static final int AMQP_STRING_PREFIX_LENGTH = AMQP_STRING_PREFIX.length();
     private static final int AMQP_BINARY_PREFIX_LENGTH = AMQP_BINARY_PREFIX.length();
+    private static final char[] HEX_CHARS = "0123456789ABCDEF".toCharArray();
 
     /**
      * Checks whether the given string begins with "ID:" prefix used to denote a JMSMessageID
@@ -144,8 +145,14 @@ public class MessageIdHelper
         }
         else if(messageId instanceof ByteBuffer)
         {
-            //TODO: implement
-            throw new UnsupportedOperationException("Support for Binary has yet to be implemented");
+            ByteBuffer dup = ((ByteBuffer)messageId).duplicate();
+
+            byte[] bytes = new byte[dup.remaining()];
+            dup.get(bytes);
+
+            String hex = convertBinaryToHexString(bytes);
+
+            return AMQP_BINARY_PREFIX + hex;
         }
         else
         {
@@ -194,27 +201,7 @@ public class MessageIdHelper
         {
             return null;
         }
-
-        if(!hasTypeEncodingPrefix(baseId))
-        {
-            //simple string, return it
-            return baseId;
-        }
-        else
-        {
-            //string encoded amqp type, decode it
-            return decode(baseId);
-        }
-    }
-
-    private Object decode(String baseId)
-    {
-        if(baseId == null)
-        {
-            return null;
-        }
-
-        if(hasAmqpUuidPrefix(baseId))
+        else if(hasAmqpUuidPrefix(baseId))
         {
             String uuidString = strip(baseId, AMQP_UUID_PREFIX_LENGTH);
             return UUID.fromString(uuidString);
@@ -230,14 +217,102 @@ public class MessageIdHelper
         }
         else if(hasAmqpBinaryPrefix(baseId))
         {
-            String binaryString = strip(baseId, AMQP_BINARY_PREFIX_LENGTH);
-            //TODO
-            throw new IllegalArgumentException("Support for Binary not yet Implented");
+            String hexString = strip(baseId, AMQP_BINARY_PREFIX_LENGTH);
+            byte[] bytes = convertHexStringToBinary(hexString);
+            return ByteBuffer.wrap(bytes);
         }
         else
         {
             //We have a string without any type prefix, transmit it as-is.
             return baseId;
         }
+    }
+
+    /**
+     * Convert the provided hex-string into a binary representation where each byte represents
+     * two characters of the hex string.
+     *
+     * The hex characters may be upper or lower case.
+     *
+     * @param hexString string to convert
+     * @return a byte array containing the binary representation
+     * @throws IllegalArgumentException if the provided String is a non-even length or contains non-hex characters
+     */
+    public byte[] convertHexStringToBinary(String hexString) throws IllegalArgumentException
+    {
+        int length = hexString.length();
+
+        //As each byte needs two characters in the hex encoding, the string must be an even length.
+        if (length % 2 != 0)
+        {
+            throw new IllegalArgumentException("The provided hex String must be an even length, but was of length " + length + ": " + hexString);
+        }
+
+        byte[] binary = new byte[length / 2];
+
+        for (int i = 0; i < length; i += 2)
+        {
+            char highBitsChar = hexString.charAt(i);
+            char lowBitsChar = hexString.charAt(i + 1);
+
+            int highBits = hexCharToInt(highBitsChar, hexString) << 4;
+            int lowBits = hexCharToInt(lowBitsChar, hexString);
+
+            binary[i / 2] = (byte) (highBits + lowBits);
+        }
+
+        return binary;
+    }
+
+    private int hexCharToInt(char ch, String orig)
+    {
+        if (ch >= '0' && ch <= '9')
+        {
+            //subtract '0' to get difference in position as an int
+            return ch - '0';
+        }
+        else if (ch >= 'A' && ch <= 'F')
+        {
+            //subtract 'A' to get difference in position as an int
+            //and then add 10 for the offset of 'A'
+            return ch - 'A' + 10;
+        }
+        else if (ch >= 'a' && ch <= 'f')
+        {
+            //subtract 'a' to get difference in position as an int
+            //and then add 10 for the offset of 'a'
+            return ch - 'a' + 10;
+        }
+
+        throw new IllegalArgumentException("The provided hex string contains non-hex character '" + ch + "': " + orig);
+    }
+
+    /**
+     * Convert the provided binary into a hex-string representation where each character
+     * represents 4 bits of the provided binary, i.e each byte requires two characters.
+     *
+     * The returned hex characters are upper-case.
+     *
+     * @param bytes binary to convert
+     * @return a String containing a hex representation of the bytes
+     */
+    public String convertBinaryToHexString(byte[] bytes)
+    {
+        //Each byte is represented as 2 chars
+        StringBuilder builder = new StringBuilder(bytes.length * 2);
+
+        for (byte b : bytes)
+        {
+            //The byte will be expanded to int before shifting, replicating the
+            //sign bit, so mask everything beyond the first 4 bits afterwards
+            int highBitsInt = (b >> 4) & 0xF;
+            //We only want the first 4 bits
+            int lowBitsInt = b & 0xF;
+
+            builder.append(HEX_CHARS[highBitsInt]);
+            builder.append(HEX_CHARS[lowBitsInt]);
+        }
+
+        return builder.toString();
     }
 }

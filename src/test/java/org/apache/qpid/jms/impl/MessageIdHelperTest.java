@@ -23,6 +23,7 @@ package org.apache.qpid.jms.impl;
 import static org.junit.Assert.*;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.UUID;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
@@ -230,6 +231,22 @@ public class MessageIdHelperTest extends QpidJmsTestCase
 
     /**
      * Test that {@link MessageIdHelper#toBaseMessageIdString(String)} returns a string
+     * indicating an AMQP encoded string, when the given string happens to already begin with
+     * the {@link MessageIdHelper#AMQP_BINARY_PREFIX}.
+     */
+    @Test
+    public void testToBaseMessageIdStringWithStringBeginningWithEncodingPrefixForBinary()
+    {
+        String binaryStringMessageId = MessageIdHelper.AMQP_BINARY_PREFIX + "0123456789ABCDEF";
+        String expected = MessageIdHelper.AMQP_STRING_PREFIX + binaryStringMessageId;
+
+        String baseMessageIdString = _messageIdHelper.toBaseMessageIdString(binaryStringMessageId);
+        assertNotNull("null string should not have been returned", baseMessageIdString);
+        assertEquals("expected base id string was not returned", expected, baseMessageIdString);
+    }
+
+    /**
+     * Test that {@link MessageIdHelper#toBaseMessageIdString(String)} returns a string
      * indicating an AMQP encoded string (effectively twice), when the given string happens to already begin with
      * the {@link MessageIdHelper#AMQP_STRING_PREFIX}.
      */
@@ -261,10 +278,10 @@ public class MessageIdHelperTest extends QpidJmsTestCase
 
     /**
      * Test that {@link MessageIdHelper#toBaseMessageIdString(String)} returns a string
-     * indicating an AMQP encoded Long when given a Long object.
+     * indicating an AMQP encoded ulong when given a Long object.
      */
     @Test
-    public void testToBaseMessageIdStringWithUlong()
+    public void testToBaseMessageIdStringWithLong()
     {
         Long longMessageId = Long.valueOf(123456789L);
         String expected = MessageIdHelper.AMQP_ULONG_PREFIX + longMessageId.toString();
@@ -274,9 +291,10 @@ public class MessageIdHelperTest extends QpidJmsTestCase
         assertEquals("expected base id string was not returned", expected, baseMessageIdString);
     }
 
+
     /**
      * Test that {@link MessageIdHelper#toBaseMessageIdString(String)} returns a string
-     * indicating an AMQP encoded Long when given a BigInteger object.
+     * indicating an AMQP encoded ulong when given a BigInteger object.
      */
     @Test
     public void testToBaseMessageIdStringWithBigInteger()
@@ -285,6 +303,24 @@ public class MessageIdHelperTest extends QpidJmsTestCase
         String expected = MessageIdHelper.AMQP_ULONG_PREFIX + bigIntMessageId.toString();
 
         String baseMessageIdString = _messageIdHelper.toBaseMessageIdString(bigIntMessageId);
+        assertNotNull("null string should not have been returned", baseMessageIdString);
+        assertEquals("expected base id string was not returned", expected, baseMessageIdString);
+    }
+
+
+    /**
+     * Test that {@link MessageIdHelper#toBaseMessageIdString(String)} returns a string
+     * indicating an AMQP encoded binary when given a ByteBuffer object.
+     */
+    @Test
+    public void testToBaseMessageIdStringWithByteBufferBinary()
+    {
+        byte[] bytes = new byte[] { (byte)0x00, (byte)0xAB, (byte) 0x09, (byte) 0xFF};
+        ByteBuffer buf = ByteBuffer.wrap(bytes);
+
+        String expected = MessageIdHelper.AMQP_BINARY_PREFIX + "00AB09FF";
+
+        String baseMessageIdString = _messageIdHelper.toBaseMessageIdString(buf);
         assertNotNull("null string should not have been returned", baseMessageIdString);
         assertEquals("expected base id string was not returned", expected, baseMessageIdString);
     }
@@ -304,6 +340,52 @@ public class MessageIdHelperTest extends QpidJmsTestCase
         Object idObject = _messageIdHelper.toIdObject(provided);
         assertNotNull("null object should not have been returned", idObject);
         assertEquals("expected id object was not returned", longId, idObject);
+    }
+
+    /**
+     * Test that {@link MessageIdHelper#toIdObject(String)} returns binary
+     * (represented as a ByteBuffer) when given a string indicating an
+     * encoded AMQP binary id, using upper case hex characters
+     */
+    @Test
+    public void testToIdObjectWithEncodedBinaryUppercaseHexString()
+    {
+        byte[] bytes = new byte[] { (byte)0x00, (byte)0xAB, (byte) 0x09, (byte) 0xFF};
+        ByteBuffer binaryId = ByteBuffer.wrap(bytes);
+
+        String provided = MessageIdHelper.AMQP_BINARY_PREFIX + "00AB09FF";
+
+        Object idObject = _messageIdHelper.toIdObject(provided);
+        assertNotNull("null object should not have been returned", idObject);
+        assertEquals("expected id object was not returned", binaryId, idObject);
+    }
+
+    /**
+     * Test that {@link MessageIdHelper#toIdObject(String)} returns null
+     * when given null.
+     */
+    @Test
+    public void testToIdObjectWithNull()
+    {
+        assertNull("null object should have been returned", _messageIdHelper.toIdObject(null));
+    }
+
+    /**
+     * Test that {@link MessageIdHelper#toIdObject(String)} returns binary
+     * (represented as a ByteBuffer) when given a string indicating an
+     * encoded AMQP binary id, using lower case hex characters.
+     */
+    @Test
+    public void testToIdObjectWithEncodedBinaryLowercaseHexString()
+    {
+        byte[] bytes = new byte[] { (byte)0x00, (byte)0xAB, (byte) 0x09, (byte) 0xFF};
+        ByteBuffer binaryId = ByteBuffer.wrap(bytes);
+
+        String provided = MessageIdHelper.AMQP_BINARY_PREFIX + "00ab09ff";
+
+        Object idObject = _messageIdHelper.toIdObject(provided);
+        assertNotNull("null object should not have been returned", idObject);
+        assertEquals("expected id object was not returned", binaryId, idObject);
     }
 
     /**
@@ -365,5 +447,102 @@ public class MessageIdHelperTest extends QpidJmsTestCase
         Object idObject = _messageIdHelper.toIdObject(stringId);
         assertNotNull("null object should not have been returned", idObject);
         assertEquals("expected id object was not returned", encodedUuidString, idObject);
+    }
+
+    /**
+     * Test that {@link MessageIdHelper#toIdObject(String)} throws an IAE when
+     * presented with an encoded binary hex string of uneven length (after the prefix)
+     * that thus can't be converted due to each byte using 2 characters
+     */
+    @Test
+    public void testToIdObjectWithStringContainingBinaryHexThrowsIAEWithUnevenLengthString()
+    {
+        String unevenHead = MessageIdHelper.AMQP_BINARY_PREFIX + "123";
+
+        try
+        {
+            _messageIdHelper.toIdObject(unevenHead);
+            fail("expected exception was not thrown");
+        }
+        catch(IllegalArgumentException iae)
+        {
+            //expected
+            String msg = iae.getMessage();
+            assertTrue("Message was not as expected: " + msg, msg.contains("even length"));
+        }
+    }
+
+    /**
+     * Test that {@link MessageIdHelper#toIdObject(String)} throws an IAE when
+     * presented with an encoded binary hex string (after the prefix) that contains
+     * characters other than 0-9 and A-F and a-f, and thus can't be converted
+     */
+    @Test
+    public void testToIdObjectWithStringContainingBinaryHexThrowsIAEWithNonHexCharacters()
+    {
+
+        //char before '0'
+        char nonHexChar = '/';
+        String nonHexString = MessageIdHelper.AMQP_BINARY_PREFIX + nonHexChar + nonHexChar;
+
+        try
+        {
+            _messageIdHelper.toIdObject(nonHexString);
+            fail("expected exception was not thrown");
+        }
+        catch(IllegalArgumentException iae)
+        {
+            //expected
+            String msg = iae.getMessage();
+            assertTrue("Message was not as expected: " + msg, msg.contains("non-hex"));
+        }
+
+        //char after '9', before 'A'
+        nonHexChar = ':';
+        nonHexString = MessageIdHelper.AMQP_BINARY_PREFIX + nonHexChar + nonHexChar;
+
+        try
+        {
+            _messageIdHelper.toIdObject(nonHexString);
+            fail("expected exception was not thrown");
+        }
+        catch(IllegalArgumentException iae)
+        {
+            //expected
+            String msg = iae.getMessage();
+            assertTrue("Message was not as expected: " + msg, msg.contains("non-hex"));
+        }
+
+        //char after 'F', before 'a'
+        nonHexChar = 'G';
+        nonHexString = MessageIdHelper.AMQP_BINARY_PREFIX + nonHexChar + nonHexChar;
+
+        try
+        {
+            _messageIdHelper.toIdObject(nonHexString);
+            fail("expected exception was not thrown");
+        }
+        catch(IllegalArgumentException iae)
+        {
+            //expected
+            String msg = iae.getMessage();
+            assertTrue("Message was not as expected: " + msg, msg.contains("non-hex"));
+        }
+
+        //char after 'f'
+        nonHexChar = 'g';
+        nonHexString = MessageIdHelper.AMQP_BINARY_PREFIX + nonHexChar + nonHexChar;
+
+        try
+        {
+            _messageIdHelper.toIdObject(nonHexString);
+            fail("expected exception was not thrown");
+        }
+        catch(IllegalArgumentException iae)
+        {
+            //expected
+            String msg = iae.getMessage();
+            assertTrue("Message was not as expected: " + msg, msg.contains("non-hex"));
+        }
     }
 }

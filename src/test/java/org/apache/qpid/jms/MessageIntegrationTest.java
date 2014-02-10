@@ -27,6 +27,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.UUID;
 
@@ -54,6 +55,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionM
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
@@ -501,12 +503,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            Object underlyingAmqpMessageId = messageIdForAmqpMessageClass;
-            if(underlyingAmqpMessageId instanceof BigInteger)
-            {
-                //Proton uses UnsignedLong
-                underlyingAmqpMessageId = UnsignedLong.valueOf((BigInteger)underlyingAmqpMessageId);
-            }
+            Object underlyingAmqpMessageId = classifyUnderlyingIdType(messageIdForAmqpMessageClass);
 
             PropertiesDescribedType props = new PropertiesDescribedType();
             props.setMessageId(underlyingAmqpMessageId);
@@ -580,12 +577,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            Object underlyingAmqpCorrelationId = correlationIdForAmqpMessageClass;
-            if(underlyingAmqpCorrelationId instanceof BigInteger)
-            {
-                //Proton uses UnsignedLong
-                underlyingAmqpCorrelationId = UnsignedLong.valueOf((BigInteger)underlyingAmqpCorrelationId);
-            }
+            Object underlyingAmqpCorrelationId = classifyUnderlyingIdType(correlationIdForAmqpMessageClass);
 
             PropertiesDescribedType props = new PropertiesDescribedType();
             DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
@@ -619,13 +611,55 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     }
 
     /**
+     * Tests that sending a message with a uuid typed correlation-id value which is a
+     * message-id results in an AMQP message with the expected encoding of the correlation-id,
+     * where the type is uuid, the "ID:" prefix of the JMSCorrelationID value is (obviously) not present, and there is
+     * no presence of the message annotation to indicate an app-specific correlation-id.
+     */
+    @Test
+    public void testSentMessageWithUUIDCorrelationId() throws Exception
+    {
+        UUID uuid = UUID.randomUUID();
+        String stringCorrelationId = MessageIdHelper.JMS_ID_PREFIX + MessageIdHelper.AMQP_UUID_PREFIX +  uuid.toString();
+        sentMessageWithCorrelationIdTestImpl(stringCorrelationId, uuid, false);
+    }
+
+    /**
+     * Tests that sending a message with a binary typed correlation-id value which is a
+     * message-id results in an AMQP message with the expected encoding of the correlation-id,
+     * where the type is binary, the "ID:" prefix of the JMSCorrelationID value is (obviously) not present, and there is
+     * no presence of the message annotation to indicate an app-specific correlation-id.
+     */
+    @Test
+    public void testSentMessageWithBinaryCorrelationId() throws Exception
+    {
+        ByteBuffer bin = ByteBuffer.wrap(new byte[]{(byte)0x01, (byte)0x23, (byte) 0xAF, (byte) 0x00});
+        String stringCorrelationId = MessageIdHelper.JMS_ID_PREFIX + MessageIdHelper.AMQP_BINARY_PREFIX +  "0123af00";
+        sentMessageWithCorrelationIdTestImpl(stringCorrelationId, bin, false);
+    }
+
+    /**
+     * Tests that sending a message with a ulong typed correlation-id value which is a
+     * message-id results in an AMQP message with the expected encoding of the correlation-id,
+     * where the type is ulong, the "ID:" prefix of the JMSCorrelationID value is (obviously) not present, and there is
+     * no presence of the message annotation to indicate an app-specific correlation-id.
+     */
+    @Test
+    public void testSentMessageWithUlongCorrelationId() throws Exception
+    {
+        BigInteger ulong = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.TEN);
+        String stringCorrelationId = MessageIdHelper.JMS_ID_PREFIX + MessageIdHelper.AMQP_ULONG_PREFIX +  ulong.toString();
+        sentMessageWithCorrelationIdTestImpl(stringCorrelationId, ulong, false);
+    }
+
+    /**
      * Tests that sending a message with a string typed correlation-id value which is a
      * message-id results in an AMQP message with the expected encoding of the correlation-id,
      * where the "ID:" prefix of the JMSCorrelationID value is not present, and there is
      * no presence of the message annotation to indicate an app-specific correlation-id.
      */
     @Test
-    public void testSentMessageWithCorrelationIdString() throws Exception
+    public void testSentMessageWithStringCorrelationId() throws Exception
     {
 
         String stringCorrelationId = "ID:myTestMessageIdString";
@@ -639,13 +673,13 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * and the presence of the message annotation to indicate an app-specific correlation-id.
      */
     @Test
-    public void testSentMessageWithCorrelationIdStringAppSpecific() throws Exception
+    public void testSentMessageWithAppSpecificStringCorrelationId() throws Exception
     {
         String stringCorrelationId = "myTestAppSpecificString";
         sentMessageWithCorrelationIdTestImpl(stringCorrelationId, stringCorrelationId, true);
     }
 
-    private void sentMessageWithCorrelationIdTestImpl(String stringCorrelationId, Object underlyingAmqpCorrelationId, boolean appSpecific) throws Exception
+    private void sentMessageWithCorrelationIdTestImpl(String stringCorrelationId, Object correlationIdForAmqpMessageClass, boolean appSpecific) throws Exception
     {
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
         {
@@ -664,6 +698,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             //Set matcher to validate the correlation-id, and the annotation
             //presence+value if it is application-specific
+            Object underlyingAmqpCorrelationId = classifyUnderlyingIdType(correlationIdForAmqpMessageClass);
             propsMatcher.withCorrelationId(equalTo(underlyingAmqpCorrelationId));
             if(appSpecific)
             {
@@ -693,6 +728,17 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     }
 
     /**
+     * Tests that receiving a message with a string typed message-id, and then sending a message which
+     * uses the result of calling getJMSMessageID as the value for setJMSCorrelationId results in
+     * transmission of the expected AMQP message content.
+     */
+    @Test
+    public void testReceivedMessageWithStringMessageIdAndSendValueAsCorrelationId() throws Exception
+    {
+        recieveMessageIdSendCorrelationIdTestImpl("myStringMessageId");
+    }
+
+    /**
      * Tests that receiving a message with a UUID typed message-id, and then sending a message which
      * uses the result of calling getJMSMessageID as the value for setJMSCorrelationId results in
      * transmission of the expected AMQP message content.
@@ -714,6 +760,17 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         recieveMessageIdSendCorrelationIdTestImpl(BigInteger.valueOf(123456789L));
     }
 
+    /**
+     * Tests that receiving a message with a binary typed message-id, and then sending a message which
+     * uses the result of calling getJMSMessageID as the value for setJMSCorrelationId results in
+     * transmission of the expected AMQP message content.
+     */
+    @Test
+    public void testReceivedMessageWithBinaryMessageIdAndSendValueAsCorrelationId() throws Exception
+    {
+        recieveMessageIdSendCorrelationIdTestImpl(ByteBuffer.wrap(new byte[]{(byte)0x00, (byte)0xCD, (byte) 0xEF, (byte) 0x01}));
+    }
+
     private void recieveMessageIdSendCorrelationIdTestImpl(Object idForAmqpMessageClass) throws Exception
     {
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
@@ -726,12 +783,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            Object underlyingAmqpMessageId = idForAmqpMessageClass;
-            if(underlyingAmqpMessageId instanceof BigInteger)
-            {
-                //Proton uses UnsignedLong
-                underlyingAmqpMessageId = UnsignedLong.valueOf((BigInteger)underlyingAmqpMessageId);
-            }
+            Object underlyingAmqpMessageId = classifyUnderlyingIdType(idForAmqpMessageClass);
 
             PropertiesDescribedType props = new PropertiesDescribedType();
             props.setMessageId(underlyingAmqpMessageId);
@@ -778,5 +830,23 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             testPeer.waitForAllHandlersToComplete(3000);
         }
+    }
+
+    private Object classifyUnderlyingIdType(Object idForAmqpMessageClass)
+    {
+        Object underlyingAmqpMessageId = idForAmqpMessageClass;
+
+        if(underlyingAmqpMessageId instanceof BigInteger)
+        {
+            //Proton uses UnsignedLong
+            underlyingAmqpMessageId = UnsignedLong.valueOf((BigInteger)underlyingAmqpMessageId);
+        }
+        else if(underlyingAmqpMessageId instanceof ByteBuffer)
+        {
+            //Proton uses Binary
+            underlyingAmqpMessageId = Binary.create((ByteBuffer)underlyingAmqpMessageId);
+        }
+
+        return underlyingAmqpMessageId;
     }
 }

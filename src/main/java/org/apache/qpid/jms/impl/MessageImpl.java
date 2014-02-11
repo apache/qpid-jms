@@ -260,7 +260,6 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
 
         String stripped = messageIdHelper.stripMessageIdPrefix(correlationID);
 
-        //TODO: convert the string if necessary, i.e. it indicates an encoded AMQP type
         if(hasMessageIdPrefix)
         {
             Object idObject = messageIdHelper.toIdObject(stripped);

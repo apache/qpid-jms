@@ -901,7 +901,6 @@ public class MessageImplTest extends QpidJmsTestCase
         assertEquals("expected JMSPriority value to be capped at 9", 9, _testMessage.getJMSPriority());
     }
 
-    //TODO: remove this marker comment
     // ====== JMSMessageID =======
 
     @Test
@@ -1025,7 +1024,6 @@ public class MessageImplTest extends QpidJmsTestCase
         assertEquals("expected JMSMessageID value not present", expectedJmsMessageId, _testMessage.getJMSMessageID());
     }
 
-    //TODO: remove this marker comment
     // ====== JMSCorrelationID =======
 
     @Test

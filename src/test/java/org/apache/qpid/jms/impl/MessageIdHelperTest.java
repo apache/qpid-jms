@@ -155,7 +155,6 @@ public class MessageIdHelperTest extends QpidJmsTestCase
         assertEquals("string with lowercase 'id:' prefix should have been returned unchanged", myLowerCaseNonId, _messageIdHelper.stripMessageIdPrefix(myLowerCaseNonId));
     }
 
-    //TODO: delete this marker comment
     /**
      * Test that {@link MessageIdHelper#toBaseMessageIdString(String)} returns null if given null
      */
@@ -325,7 +324,6 @@ public class MessageIdHelperTest extends QpidJmsTestCase
         assertEquals("expected base id string was not returned", expected, baseMessageIdString);
     }
 
-    //TODO: delete this marker comment
     /**
      * Test that {@link MessageIdHelper#toIdObject(String)} returns a ulong
      * (represented as a BigInteger) when given a string indicating an

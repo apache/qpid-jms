@@ -563,7 +563,6 @@ public class AmqpMessageTest extends QpidJmsTestCase
         assertNull(testAmqpMessage.getAbsoluteExpiryTime());
     }
 
-    //TODO: delete this marker comment
     @Test
     public void testGetCorrelationIdIsNullOnNewMessage()
     {
@@ -733,7 +732,6 @@ public class AmqpMessageTest extends QpidJmsTestCase
         assertEquals("Incorrect correlationId value received", testCorrelationId, testAmqpMessage.getCorrelationId());
     }
 
-    //TODO: delete this marker comment
     @Test
     public void testGetMessageIdIsNullOnNewMessage()
     {

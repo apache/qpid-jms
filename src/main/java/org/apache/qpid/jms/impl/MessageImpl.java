@@ -21,7 +21,9 @@ package org.apache.qpid.jms.impl;
 import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_TTL;
 import static org.apache.qpid.jms.impl.MessageIdHelper.JMS_ID_PREFIX;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -235,15 +237,37 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public byte[] getJMSCorrelationIDAsBytes() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        Object correlationId = _amqpMessage.getCorrelationId();
+        if(correlationId == null)
+        {
+            return null;
+        }
+        else if(correlationId instanceof ByteBuffer)
+        {
+            ByteBuffer dup = ((ByteBuffer) correlationId).duplicate();
+            byte[] bytes = new byte[dup.remaining()];
+            dup.get(bytes);
+
+            return bytes;
+        }
+        else
+        {
+            throw new QpidJmsException("The underlying correlation-id is not binary and so can't be returned");
+        }
     }
 
     @Override
     public void setJMSCorrelationIDAsBytes(byte[] correlationID) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        if(correlationID == null)
+        {
+            _amqpMessage.setCorrelationId(correlationID);
+        }
+        else
+        {
+            byte[] bytes = Arrays.copyOf(correlationID, correlationID.length);
+            _amqpMessage.setCorrelationId(ByteBuffer.wrap(bytes));
+        }
     }
 
     @Override

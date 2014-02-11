@@ -23,6 +23,8 @@ package org.apache.qpid.jms.impl;
 import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_TTL;
 import static org.junit.Assert.*;
 
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Enumeration;
 
 import javax.jms.Destination;
@@ -35,6 +37,7 @@ import javax.jms.Topic;
 import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.jms.engine.AmqpMessage;
 import org.apache.qpid.jms.engine.TestAmqpMessage;
+import org.apache.qpid.proton.amqp.Binary;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -1184,6 +1187,119 @@ public class MessageImplTest extends QpidJmsTestCase
         _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
         assertEquals("expected JMSCorrelationID value not present", expectedJmsCorrelationId, _testMessage.getJMSCorrelationID());
+    }
+
+    @Test
+    public void testGetJMSCorrelationIDAsBytesOnNewMessageReturnsNull() throws Exception
+    {
+        assertNull("expected JMSCorrelationID bytes to be null on new message", _testMessage.getJMSCorrelationIDAsBytes());
+    }
+
+    /**
+     * Test that receiving a message with a binary typed correlation-id value results in the expected
+     * JMSCorrelationID value being returned via {@link MessageImpl#getJMSCorrelationIDAsBytes()}
+     * i.e. the bytes contained in the binary value.
+     */
+    @Test
+    public void testGetJMSCorrelationIDAsBytesOnReceivedMessageWithBinaryId() throws Exception
+    {
+        String baseId = "myBaseId";
+        byte[] expectedJmsCorrelationIdAsBytes = baseId.getBytes();
+
+        ByteBuffer binary = ByteBuffer.wrap(expectedJmsCorrelationIdAsBytes);
+        _testAmqpMessage.setCorrelationId(binary);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        assertTrue("expected JMSCorrelationID bytes value not present", Arrays.equals(expectedJmsCorrelationIdAsBytes, _testMessage.getJMSCorrelationIDAsBytes()));
+    }
+
+    /**
+     * Test that the JMSCorrelationID value being returned via {@link MessageImpl#getJMSCorrelationIDAsBytes()}
+     * is a copy of the underlying data, i.e. not the value provided, and different on each call.
+     */
+    @Test
+    public void testGetJMSCorrelationIDAsBytesOnReceivedMessageWithBinaryIdReturnsArrayCopy() throws Exception
+    {
+        String baseId = "myBaseId";
+        byte[] expectedJmsCorrelationIdAsBytes = baseId.getBytes();
+
+        ByteBuffer binary = ByteBuffer.wrap(expectedJmsCorrelationIdAsBytes);
+        _testAmqpMessage.setCorrelationId(binary);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        //check the return value doesn't contain the original bytes
+        byte[] jmsCorrelationIDAsBytes1 = _testMessage.getJMSCorrelationIDAsBytes();
+        assertNotSame("expected byte arrays to be different objects", expectedJmsCorrelationIdAsBytes, jmsCorrelationIDAsBytes1);
+
+        //check a second call returns a further different array object
+        assertNotSame("expected byte arrays to be different objects", jmsCorrelationIDAsBytes1, _testMessage.getJMSCorrelationIDAsBytes());
+    }
+
+    /**
+     * Test that receiving a message with a binary typed correlation-id value results in the expected
+     * JMSCorrelationID value being returned via {@link MessageImpl#getJMSCorrelationIDAsBytes()}
+     * i.e. the bytes contained in the binary value.
+     */
+    @Test
+    public void testGetJMSCorrelationIDAsBytesOnReceivedMessageWithStringIdThrowsJMSE() throws Exception
+    {
+        String baseId = "myBaseId";
+
+        _testAmqpMessage.setCorrelationId(baseId);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        try
+        {
+            _testMessage.getJMSCorrelationIDAsBytes();
+            fail("expected exception now thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //expected
+        }
+    }
+
+    /**
+     * Test that the setting a JMSCorrelationID value via {@link MessageImpl#getJMSCorrelationIDAsBytes()}
+     * results in a copy of the bytes being set on the underlying message, i.e. not the value provided.
+     */
+    @Test
+    public void testSetJMSCorrelationIDAsBytesOnNewMessageWithBinaryIdSetsArrayCopyOnUnderlying() throws Exception
+    {
+        String baseId = "myBaseId";
+        byte[] providedJmsCorrelationIdAsBytes = baseId.getBytes();
+
+        assertNull("unexpected underlying correlationId value found", _testAmqpMessage.getCorrelationId());
+        _testMessage.setJMSCorrelationIDAsBytes(providedJmsCorrelationIdAsBytes);
+
+        Object id = _testAmqpMessage.getCorrelationId();
+        assertNotNull("expected underlying correlationId value to be set", id);
+        assertTrue("unexpected type of underlying correlation-id object", id instanceof ByteBuffer);
+        ByteBuffer buf = (ByteBuffer) id;
+        assertNotSame("expected byte arrays to be different objects", providedJmsCorrelationIdAsBytes, buf.array());
+    }
+
+    /**
+     * Test that the setting a JMSCorrelationID value via {@link MessageImpl#getJMSCorrelationIDAsBytes()}
+     * results in a copy of the bytes being set on the underlying message, i.e. not the value provided.
+     */
+    @Test
+    public void testSetJMSCorrelationIDAsBytesToNullOnRecievedMessageWithBinaryIdClearsValue() throws Exception
+    {
+        String baseId = "myBaseId";
+        byte[] expectedJmsCorrelationIdAsBytes = baseId.getBytes();
+
+        ByteBuffer binary = ByteBuffer.wrap(expectedJmsCorrelationIdAsBytes);
+        _testAmqpMessage.setCorrelationId(binary);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        //check setting null clears the underlying value
+        assertNotNull("expected underlying correlationId value to be set", _testAmqpMessage.getCorrelationId());
+        _testMessage.setJMSCorrelationIDAsBytes(null);
+        assertNull("expected underlying correlationId value to be cleared", _testAmqpMessage.getCorrelationId());
+
+        //check the JMS message returns null
+        assertNull("expected correlationId value to be cleared", _testMessage.getJMSCorrelationIDAsBytes());
     }
 
     // ====== JMS_AMQP_TTL property =======

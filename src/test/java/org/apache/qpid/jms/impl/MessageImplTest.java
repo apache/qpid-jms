@@ -31,13 +31,13 @@ import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageFormatException;
+import javax.jms.MessageNotWriteableException;
 import javax.jms.Queue;
 import javax.jms.Topic;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.jms.engine.AmqpMessage;
 import org.apache.qpid.jms.engine.TestAmqpMessage;
-import org.apache.qpid.proton.amqp.Binary;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -75,6 +75,8 @@ public class MessageImplTest extends QpidJmsTestCase
         _mockTopic = Mockito.mock(Topic.class);
         Mockito.when(_mockTopic.getTopicName()).thenReturn(_mockTopicName);
     }
+
+    // ======= Object Properties =========
 
     @Test
     public void testSetObjectPropertyWithNullOrEmptyNameThrowsIAE() throws Exception
@@ -155,6 +157,8 @@ public class MessageImplTest extends QpidJmsTestCase
         _testMessage.setObjectProperty(propertyName, propertyValue);
         assertEquals(propertyValue, _testMessage.getObjectProperty(propertyName));
     }
+
+    // ======= Properties In General =========
 
     @Test
     public void testPropertyExists() throws Exception
@@ -244,6 +248,38 @@ public class MessageImplTest extends QpidJmsTestCase
         }
 
         assertEquals(0, numProps);
+    }
+
+    @Test
+    public void testPropertiesNotWritableOnReceivedMessage() throws Exception
+    {
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        try
+        {
+            _testMessage.setObjectProperty("name", "string");
+            fail("expected message properties to be read-only");
+        }
+        catch(MessageNotWriteableException mnwe)
+        {
+            //expected;
+        }
+    }
+
+    @Test
+    public void testClearPropertiesMakesPropertiesWritableOnReceivedMessage() throws Exception
+    {
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+        _testMessage.clearProperties();
+
+        try
+        {
+            _testMessage.setObjectProperty("name", "string");
+        }
+        catch(MessageNotWriteableException mnwe)
+        {
+            fail("expected message properties to now be writable");
+        }
     }
 
     // ======= String Properties =========

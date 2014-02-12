@@ -34,6 +34,7 @@ import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageFormatException;
+import javax.jms.MessageNotWriteableException;
 
 import org.apache.qpid.jms.engine.AmqpMessage;
 
@@ -46,6 +47,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     private Long _jmsExpirationFromTTL = null;
     private Destination _destination;
     private Destination _replyTo;
+    private boolean _propertiesWritable;
 
     /**
      * Used to record the value of JMS_AMQP_TTL property
@@ -58,6 +60,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     {
         _amqpMessage = amqpMessage;
         _sessionImpl = sessionImpl;
+        _propertiesWritable = true;
     }
 
     //message just received
@@ -81,6 +84,8 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         {
             _jmsExpirationFromTTL = System.currentTimeMillis() + ttl;
         }
+
+        _propertiesWritable = false;
     }
 
     T getUnderlyingAmqpMessage(boolean prepareForSending)
@@ -112,6 +117,19 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         //checkPropertyNameFormat(propertyName);
     }
 
+    private void setPropertiesWritable(boolean writable)
+    {
+        _propertiesWritable = writable;
+    }
+
+    private void checkPropertiesWritable() throws MessageNotWriteableException
+    {
+        if(!_propertiesWritable)
+        {
+            throw new MessageNotWriteableException("Message properties are currently in read-only mode");
+        }
+    }
+
     private boolean checkObjectPropertyValueIsValid(Object object) throws MessageFormatException
     {
         boolean valid = object instanceof Boolean || object instanceof Byte || object instanceof Short ||
@@ -125,10 +143,9 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         return true;
     }
 
-    private void setApplicationProperty(String name, Object value) throws MessageFormatException
+    private void setApplicationProperty(String name, Object value) throws MessageFormatException, MessageNotWriteableException
     {
-        //TODO: check properties read/write state
-
+        checkPropertiesWritable();
         checkPropertyNameIsValid(name);
 
         if(JMS_AMQP_TTL.equals(name))
@@ -498,7 +515,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public void clearProperties() throws JMSException
     {
-        //TODO: toggle properties read/write state
+        setPropertiesWritable(true);
 
         _amqpMessage.clearAllApplicationProperties();
         _propJMS_AMQP_TTL = null;

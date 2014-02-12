@@ -1202,6 +1202,26 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     /**
+     * Test that {@link MessageImpl#getJMSCorrelationID()} returns the expected value for an
+     * application-specific string when the {@link ClientProperties#X_OPT_APP_CORRELATION_ID}
+     * message annotation is set true.
+     */
+    @Test
+    public void testGetJMSCorrelationIDWithReceivedMessageWithAppSpecificString() throws Exception
+    {
+        String appSpecific = "app-specific";
+        _testAmqpMessage.setMessageAnnotation(ClientProperties.X_OPT_APP_CORRELATION_ID, true);
+        _testAmqpMessage.setCorrelationId(appSpecific);
+
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        String jmsCorrelationID = _testMessage.getJMSCorrelationID();
+        assertNotNull("expected JMSCorrelationID to be app-specific string", jmsCorrelationID);
+        assertFalse("expected JMSCorrelationID to be app-specific string, should not contain ID: prefix", jmsCorrelationID.startsWith(MessageIdHelper.JMS_ID_PREFIX));
+        assertEquals("expected JMSCorrelationID to be app-specific string", appSpecific, jmsCorrelationID);
+    }
+
+    /**
      * Test that receiving a message with a string typed correlation-id value results in the
      * expected JMSCorrelationID value being returned, i.e. the base string plus the JMS "ID:" prefix.
      */
@@ -1348,6 +1368,74 @@ public class MessageImplTest extends QpidJmsTestCase
 
         //check the JMS message returns null
         assertNull("expected correlationId value to be cleared", _testMessage.getJMSCorrelationIDAsBytes());
+    }
+
+    // ====== JMSType =======
+
+    @Test
+    public void testGetJMSTypeIsNullOnNewMessage() throws Exception
+    {
+        assertNull("did not expect a JMSType value to be present", _testMessage.getJMSType());
+    }
+
+    /**
+     * Test that {@link MessageImpl#setJMSType(String)} sets the expected message
+     * annotation on the underlying message to the given value
+     */
+    @Test
+    public void testSetJMSTypeSetsUnderlyingMessageAnnotation() throws Exception
+    {
+        String jmsType = "myJJMSType";
+
+        _testMessage.setJMSType(jmsType);
+
+        assertTrue("MessageAnnotation should exist to hold JMSType value",
+                        _testAmqpMessage.messageAnnotationExists(ClientProperties.X_OPT_JMS_TYPE));
+        assertEquals("MessageAnnotation should be set to the provded JMSType string", jmsType,
+                        _testAmqpMessage.getMessageAnnotation(ClientProperties.X_OPT_JMS_TYPE));
+    }
+
+    /**
+     * Test that {@link MessageImpl#setJMSType(String)} sets the expected message
+     * annotation on the underlying message to the given value
+     */
+    @Test
+    public void testSetGetJMSTypeOnNewMessage() throws Exception
+    {
+        String jmsType = "myJJMSType";
+
+        _testMessage.setJMSType(jmsType);
+
+        assertEquals("JMSType value was not as expected", jmsType, _testMessage.getJMSType());
+    }
+
+    /**
+     * Test that {@link MessageImpl#setJMSType(String)} sets the expected message
+     * annotation on the underlying message to the given value
+     */
+    @Test
+    public void testSetJMSTypeNullClearsExistingValue() throws Exception
+    {
+        String jmsType = "myJJMSType";
+
+        _testMessage.setJMSType(jmsType);
+        _testMessage.setJMSType(null);
+        assertNull("JMSType value was not as expected", _testMessage.getJMSType());
+    }
+
+    /**
+     * Test that {@link MessageImpl#getJMSType()} returns the expected value for a message
+     * received with the {@link ClientProperties#X_OPT_JMS_TYPE} message annotation set.
+     */
+    @Test
+    public void testGetJMSTypeWithReceivedMessage() throws Exception
+    {
+        String myJMSType = "myJMSType";
+        _testAmqpMessage.setMessageAnnotation(ClientProperties.X_OPT_JMS_TYPE, myJMSType);
+
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        assertEquals("JMSType value was not as expected", myJMSType, _testMessage.getJMSType());
     }
 
     // ====== JMS_AMQP_TTL property =======

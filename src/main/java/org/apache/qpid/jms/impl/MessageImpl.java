@@ -428,15 +428,13 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     @Override
     public String getJMSType() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        return (String) _amqpMessage.getMessageAnnotation(ClientProperties.X_OPT_JMS_TYPE);
     }
 
     @Override
     public void setJMSType(String type) throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        _amqpMessage.setMessageAnnotation(ClientProperties.X_OPT_JMS_TYPE, type);
     }
 
     @Override

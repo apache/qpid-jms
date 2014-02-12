@@ -27,4 +27,5 @@ public class ClientProperties
 
     //Message Annotation Names
     public static final String X_OPT_APP_CORRELATION_ID = "x-opt-app-correlation-id";
+    public static final String X_OPT_JMS_TYPE = "x-opt-jms-type";
 }

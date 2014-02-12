@@ -181,6 +181,47 @@ public class MessageImplTest extends QpidJmsTestCase
         assertFalse(names.hasMoreElements());
     }
 
+    /**
+     * When a property is not set, the behaviour of JMS specifies that it is equivalent to a null value,
+     * and the primitive property accessors should behave in the same fashion as <primitive>.valueOf(String).
+     * Test that this is the case.
+     */
+    @Test
+    public void testGetMissingPrimitivePropertyResultsInExpectedBehaviour() throws Exception
+    {
+        String propertyName = "does.not.exist";
+
+        //expect false from Boolean.valueOf(null).
+        assertFalse(_testMessage.getBooleanProperty(propertyName));
+
+        //expect an NFE from the primitive integral <type>.valueOf(null) conversions
+        assertGetMissingPropertyThrowsNumberFormatException(_testMessage, propertyName, Byte.class);
+        assertGetMissingPropertyThrowsNumberFormatException(_testMessage, propertyName, Short.class);
+        assertGetMissingPropertyThrowsNumberFormatException(_testMessage, propertyName, Integer.class);
+        assertGetMissingPropertyThrowsNumberFormatException(_testMessage, propertyName, Long.class);
+
+        //expect an NPE from the primitive floating point .valueOf(null) conversions
+        try
+        {
+            _testMessage.getFloatProperty(propertyName);
+            fail("expected NPE from Float.valueOf(null) was not thrown");
+        }
+        catch(NullPointerException npe)
+        {
+            //expected;
+        }
+
+        try
+        {
+            _testMessage.getDoubleProperty(propertyName);
+            fail("expected NPE from Double.valueOf(null) was not thrown");
+        }
+        catch(NullPointerException npe)
+        {
+            //expected;
+        }
+    }
+
     @Test
     public void testClearPropertiesEmptiesProperties() throws Exception
     {
@@ -1635,6 +1676,22 @@ public class MessageImplTest extends QpidJmsTestCase
             fail("expected exception to be thrown");
         }
         catch(MessageFormatException jmsMFE)
+        {
+            //expected
+        }
+    }
+
+    private void assertGetMissingPropertyThrowsNumberFormatException(MessageImpl<?> testMessage,
+                                                               String propertyName,
+                                                               Class<?> clazz) throws JMSException
+    {
+        try
+        {
+            getMessagePropertyUsingTypeMethod(testMessage, propertyName, clazz);
+
+            fail("expected exception to be thrown");
+        }
+        catch(NumberFormatException nfe)
         {
             //expected
         }

@@ -330,7 +330,7 @@ public class MessageIdHelperTest extends QpidJmsTestCase
      * encoded AMQP ulong id.
      */
     @Test
-    public void testToIdObjectWithEncodedUlong()
+    public void testToIdObjectWithEncodedUlong() throws Exception
     {
         BigInteger longId = BigInteger.valueOf(123456789L);
         String provided = MessageIdHelper.AMQP_ULONG_PREFIX + "123456789";
@@ -346,7 +346,7 @@ public class MessageIdHelperTest extends QpidJmsTestCase
      * encoded AMQP binary id, using upper case hex characters
      */
     @Test
-    public void testToIdObjectWithEncodedBinaryUppercaseHexString()
+    public void testToIdObjectWithEncodedBinaryUppercaseHexString() throws Exception
     {
         byte[] bytes = new byte[] { (byte)0x00, (byte)0xAB, (byte) 0x09, (byte) 0xFF};
         ByteBuffer binaryId = ByteBuffer.wrap(bytes);
@@ -363,7 +363,7 @@ public class MessageIdHelperTest extends QpidJmsTestCase
      * when given null.
      */
     @Test
-    public void testToIdObjectWithNull()
+    public void testToIdObjectWithNull() throws Exception
     {
         assertNull("null object should have been returned", _messageIdHelper.toIdObject(null));
     }
@@ -374,7 +374,7 @@ public class MessageIdHelperTest extends QpidJmsTestCase
      * encoded AMQP binary id, using lower case hex characters.
      */
     @Test
-    public void testToIdObjectWithEncodedBinaryLowercaseHexString()
+    public void testToIdObjectWithEncodedBinaryLowercaseHexString() throws Exception
     {
         byte[] bytes = new byte[] { (byte)0x00, (byte)0xAB, (byte) 0x09, (byte) 0xFF};
         ByteBuffer binaryId = ByteBuffer.wrap(bytes);
@@ -391,7 +391,7 @@ public class MessageIdHelperTest extends QpidJmsTestCase
      * when given a string indicating an encoded AMQP uuid id.
      */
     @Test
-    public void testToIdObjectWithEncodedUuid()
+    public void testToIdObjectWithEncodedUuid() throws Exception
     {
         UUID uuid = UUID.randomUUID();
         String provided = MessageIdHelper.AMQP_UUID_PREFIX + uuid.toString();
@@ -406,7 +406,7 @@ public class MessageIdHelperTest extends QpidJmsTestCase
      * when given a string without any type encoding prefix.
      */
     @Test
-    public void testToIdObjectWithStringContainingNoEncodingPrefix()
+    public void testToIdObjectWithStringContainingNoEncodingPrefix() throws Exception
     {
         String stringId = "myStringId";
 
@@ -420,7 +420,7 @@ public class MessageIdHelperTest extends QpidJmsTestCase
      * provided string after removing the {@link MessageIdHelper#AMQP_STRING_PREFIX} prefix.
      */
     @Test
-    public void testToIdObjectWithStringContainingStringEncodingPrefix()
+    public void testToIdObjectWithStringContainingStringEncodingPrefix() throws Exception
     {
         String suffix = "myStringSuffix";
         String stringId = MessageIdHelper.AMQP_STRING_PREFIX + suffix;
@@ -437,7 +437,7 @@ public class MessageIdHelperTest extends QpidJmsTestCase
      *  after removing the {@link MessageIdHelper#AMQP_STRING_PREFIX} prefix.
      */
     @Test
-    public void testToIdObjectWithStringContainingStringEncodingPrefixAndThenUuidPrefix()
+    public void testToIdObjectWithStringContainingStringEncodingPrefixAndThenUuidPrefix() throws Exception
     {
         String encodedUuidString = MessageIdHelper.AMQP_UUID_PREFIX + UUID.randomUUID().toString();
         String stringId = MessageIdHelper.AMQP_STRING_PREFIX + encodedUuidString;
@@ -448,12 +448,13 @@ public class MessageIdHelperTest extends QpidJmsTestCase
     }
 
     /**
-     * Test that {@link MessageIdHelper#toIdObject(String)} throws an IAE when
-     * presented with an encoded binary hex string of uneven length (after the prefix)
-     * that thus can't be converted due to each byte using 2 characters
+     * Test that {@link MessageIdHelper#toIdObject(String)} throws an
+     * {@link IdConversionException} when presented with an encoded binary hex string
+     * of uneven length (after the prefix) that thus can't be converted due to each
+     * byte using 2 characters
      */
     @Test
-    public void testToIdObjectWithStringContainingBinaryHexThrowsIAEWithUnevenLengthString()
+    public void testToIdObjectWithStringContainingBinaryHexThrowsICEWithUnevenLengthString()
     {
         String unevenHead = MessageIdHelper.AMQP_BINARY_PREFIX + "123";
 
@@ -462,21 +463,22 @@ public class MessageIdHelperTest extends QpidJmsTestCase
             _messageIdHelper.toIdObject(unevenHead);
             fail("expected exception was not thrown");
         }
-        catch(IllegalArgumentException iae)
+        catch(IdConversionException iae)
         {
             //expected
-            String msg = iae.getMessage();
+            String msg = iae.getCause().getMessage();
             assertTrue("Message was not as expected: " + msg, msg.contains("even length"));
         }
     }
 
     /**
-     * Test that {@link MessageIdHelper#toIdObject(String)} throws an IAE when
-     * presented with an encoded binary hex string (after the prefix) that contains
-     * characters other than 0-9 and A-F and a-f, and thus can't be converted
+     * Test that {@link MessageIdHelper#toIdObject(String)} throws an
+     * {@link IdConversionException} when presented with an encoded binary hex
+     * string (after the prefix) that contains characters other than 0-9
+     * and A-F and a-f, and thus can't be converted
      */
     @Test
-    public void testToIdObjectWithStringContainingBinaryHexThrowsIAEWithNonHexCharacters()
+    public void testToIdObjectWithStringContainingBinaryHexThrowsICEWithNonHexCharacters()
     {
 
         //char before '0'
@@ -488,10 +490,10 @@ public class MessageIdHelperTest extends QpidJmsTestCase
             _messageIdHelper.toIdObject(nonHexString);
             fail("expected exception was not thrown");
         }
-        catch(IllegalArgumentException iae)
+        catch(IdConversionException ice)
         {
             //expected
-            String msg = iae.getMessage();
+            String msg = ice.getCause().getMessage();
             assertTrue("Message was not as expected: " + msg, msg.contains("non-hex"));
         }
 
@@ -504,10 +506,10 @@ public class MessageIdHelperTest extends QpidJmsTestCase
             _messageIdHelper.toIdObject(nonHexString);
             fail("expected exception was not thrown");
         }
-        catch(IllegalArgumentException iae)
+        catch(IdConversionException ice)
         {
             //expected
-            String msg = iae.getMessage();
+            String msg = ice.getCause().getMessage();
             assertTrue("Message was not as expected: " + msg, msg.contains("non-hex"));
         }
 
@@ -520,10 +522,10 @@ public class MessageIdHelperTest extends QpidJmsTestCase
             _messageIdHelper.toIdObject(nonHexString);
             fail("expected exception was not thrown");
         }
-        catch(IllegalArgumentException iae)
+        catch(IdConversionException ice)
         {
             //expected
-            String msg = iae.getMessage();
+            String msg = ice.getCause().getMessage();
             assertTrue("Message was not as expected: " + msg, msg.contains("non-hex"));
         }
 
@@ -536,10 +538,10 @@ public class MessageIdHelperTest extends QpidJmsTestCase
             _messageIdHelper.toIdObject(nonHexString);
             fail("expected exception was not thrown");
         }
-        catch(IllegalArgumentException iae)
+        catch(IdConversionException ice)
         {
             //expected
-            String msg = iae.getMessage();
+            String msg = ice.getCause().getMessage();
             assertTrue("Message was not as expected: " + msg, msg.contains("non-hex"));
         }
     }

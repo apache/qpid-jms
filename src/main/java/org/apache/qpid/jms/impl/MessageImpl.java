@@ -202,7 +202,6 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         }
 
         String stripped = messageIdHelper.stripMessageIdPrefix(id);
-        //TODO: convert the string if necessary, i.e. it indicates an encoded AMQP type
 
         _amqpMessage.setMessageId(stripped);
     }

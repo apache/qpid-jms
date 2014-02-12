@@ -25,30 +25,24 @@ import java.nio.ByteBuffer;
 import java.util.UUID;
 
 /**
- * Helper class for identifying and converting message-id and correlation-id strings.
+ * Helper class for identifying and converting message-id and correlation-id values between
+ * the AMQP types and the Strings values used by JMS.
  *
- * <p>AMQP messages allow for 4 types of message-id/correlation-id: string, binary, uuid, ulong.
- * In order to accept or return a string representation of these for interoperability with
- * other AMQP clients, the following encoding can be used after the "ID:" prefix used for a JMSMessageID<br/>
+ * <p>AMQP messages allow for 4 types of message-id/correlation-id: message-id-string, message-id-binary,
+ * message-id-uuid, or message-id-ulong. In order to accept or return a string representation of these
+ * for interoperability with other AMQP clients, the following encoding can be used after removing or
+ * before adding the "ID:" prefix used for a JMSMessageID value<br/>
  *
  * "AMQP_BINARY:&lt;hex representation of binary content&gt;"<br/>
  * "AMQP_UUID:&lt;string representation of uuid&gt;"<br/>
  * "AMQP_ULONG:&lt;string representation of ulong&gt;"<br/>
  * "AMQP_STRING:&lt;string&gt;"<br/>
  *
- * <p>The AMQP_STRING encoding exists only for escaping string values that happen to begin with one
- * of the encoding prefixes (including AMQP_STRING), or for consistency of appearance. It need not be used unless necessary.
+ * <p>The AMQP_STRING encoding exists only for escaping message-id-string values that happen to begin
+ * with one of the encoding prefixes (including AMQP_STRING itself). It MUST NOT be used otherwise.
  *
- * <p>When setting a JMSMessageID, any value that attempts to identify itself as an encoded Binary, UUID, or ulong but cant be
- * converted into the indicated format will default to being treated as a simple String in its entirety (including the
- * encoding prefix). For example, "AMQP_ULONG:hello" can't be encoded as a ulong, and so the full string "AMQP_ULONG:hello"
- * would be used as the message-id value on the AMQP message.
- *
- * <p>When setting a JMSCorrelationID using setJMSCorrelationID(String id), any value which begins with the "ID:" prefix of a
- * JMSMessageID that attempts to identify itself as an encoded binary, uuid, or ulong but cant be converted into the indicated
- * format will cause an exception to be thrown. Any JMSCorrelationID String being set which does not begin with the "ID:"
- * prefix of a JMSMessageID will be encoded as a String in the AMQP message, regardless whether it includes the above encoding
- * prefixes.
+ * <p>When provided a string for conversion which attempts to identify itself as an encoded binary, uuid, or
+ * ulong but can't be converted into the indicated format, an exception will be thrown.
  *
  */
 public class MessageIdHelper
@@ -194,37 +188,46 @@ public class MessageIdHelper
      *
      * @param baseId the object to be converted
      * @return the amqp messageId style object
+     * @throws IdConversionException if the provided baseId String indicates an encoded type but can't be converted to that type. 
      */
-    public Object toIdObject(String baseId)
+    public Object toIdObject(String baseId) throws IdConversionException
     {
         if(baseId == null)
         {
             return null;
         }
-        else if(hasAmqpUuidPrefix(baseId))
+
+        try
         {
-            String uuidString = strip(baseId, AMQP_UUID_PREFIX_LENGTH);
-            return UUID.fromString(uuidString);
+            if(hasAmqpUuidPrefix(baseId))
+            {
+                String uuidString = strip(baseId, AMQP_UUID_PREFIX_LENGTH);
+                return UUID.fromString(uuidString);
+            }
+            else if(hasAmqpUlongPrefix(baseId))
+            {
+                String longString = strip(baseId, AMQP_ULONG_PREFIX_LENGTH);
+                return new BigInteger(longString);
+            }
+            else if(hasAmqpStringPrefix(baseId))
+            {
+                return strip(baseId, AMQP_STRING_PREFIX_LENGTH);
+            }
+            else if(hasAmqpBinaryPrefix(baseId))
+            {
+                String hexString = strip(baseId, AMQP_BINARY_PREFIX_LENGTH);
+                byte[] bytes = convertHexStringToBinary(hexString);
+                return ByteBuffer.wrap(bytes);
+            }
+            else
+            {
+                //We have a string without any type prefix, transmit it as-is.
+                return baseId;
+            }
         }
-        else if(hasAmqpUlongPrefix(baseId))
+        catch(IllegalArgumentException e)
         {
-            String longString = strip(baseId, AMQP_ULONG_PREFIX_LENGTH);
-            return new BigInteger(longString);
-        }
-        else if(hasAmqpStringPrefix(baseId))
-        {
-            return strip(baseId, AMQP_STRING_PREFIX_LENGTH);
-        }
-        else if(hasAmqpBinaryPrefix(baseId))
-        {
-            String hexString = strip(baseId, AMQP_BINARY_PREFIX_LENGTH);
-            byte[] bytes = convertHexStringToBinary(hexString);
-            return ByteBuffer.wrap(bytes);
-        }
-        else
-        {
-            //We have a string without any type prefix, transmit it as-is.
-            return baseId;
+            throw new IdConversionException("Unable to convert ID value", e);
         }
     }
 
@@ -264,7 +267,7 @@ public class MessageIdHelper
         return binary;
     }
 
-    private int hexCharToInt(char ch, String orig)
+    private int hexCharToInt(char ch, String orig) throws IllegalArgumentException
     {
         if (ch >= '0' && ch <= '9')
         {

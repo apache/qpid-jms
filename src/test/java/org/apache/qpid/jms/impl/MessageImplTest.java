@@ -976,6 +976,31 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     /**
+     * Test that {@link MessageImpl#setJMSMessageID(String)} does not throw a JMSException when
+     * the provided value is a message id value indicating an encoded AMQP type, but which couldnt
+     * be converted to that type due to malformed content. This is necessary because we may
+     * have a JMSMessageID value set on us by a foreign provider while sending our message objects.
+     */
+    @Test
+    public void testSetJMSMessageIDDoesNotThrowJMSExceptionWhenProvidedMalformedIDEncoding() throws Exception
+    {
+        //craft a message id format value which contains content thatnot convertible to
+        //the indicated AMQP type encoding: "hello" is not a ulong.
+        String baseId = MessageIdHelper.AMQP_ULONG_PREFIX + "hello";
+        String jmsId = MessageIdHelper.JMS_ID_PREFIX + baseId;
+
+        try
+        {
+            _testMessage.setJMSMessageID(jmsId);
+            assertEquals("underlying message did not have expected value set", baseId, _testAmqpMessage.getMessageId());
+        }
+        catch(JMSException jmse)
+        {
+            fail("No exception should have been thrown, but got: " + jmse);
+        }
+    }
+
+    /**
      * Test that {@link MessageImpl#setJMSMessageID(String)} sets the expected value
      * on the underlying message, i.e the JMS message ID minus the "ID:" prefix.
      */
@@ -1086,6 +1111,29 @@ public class MessageImplTest extends QpidJmsTestCase
 
         assertFalse("MessageAnnotation should not exist to indicate app-specific correlation-id, since there is no correlation-id",
                 _testAmqpMessage.messageAnnotationExists(ClientProperties.X_OPT_APP_CORRELATION_ID));
+    }
+
+    /**
+     * Test that {@link MessageImpl#setJMSCorrelationID(String)} throws a JMSException when
+     * the provided value is a message id value indicating an encoded AMQP type, but which cant
+     * be converted to that type.
+     */
+    @Test
+    public void testSetJMSCorrelationIDThrowsJMSExceptionWhenProvidedIllegalIDEncoding() throws Exception
+    {
+        //craft a message id format value which contains content thatnot convertible to
+        //the indicated AMQP type encoding: "hello" is not a ulong.
+        String jmsId = MessageIdHelper.JMS_ID_PREFIX + MessageIdHelper.AMQP_ULONG_PREFIX + "hello";
+
+        try
+        {
+            _testMessage.setJMSCorrelationID(jmsId);
+            fail("expected exception to be thrown");
+        }
+        catch(IdConversionException ice)
+        {
+            assertTrue("Exception exception to be a JMSException", ice instanceof JMSException);
+        }
     }
 
     /**

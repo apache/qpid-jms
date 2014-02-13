@@ -65,14 +65,17 @@ public class ConnectionImpl implements Connection
     private DestinationHelper _destinationHelper;
     private MessageIdHelper _messageIdHelper;
 
+    private String _username;
+
     /**
      * TODO: accept a client id
      * TODO: defer connection to the broker if client has not been set. Defer it until any other method is called.
      */
     public ConnectionImpl(String clientName, String remoteHost, int port, String username, String password) throws JMSException
     {
+        _username = username;
         _amqpConnection = new AmqpConnection(clientName, remoteHost, port);
-        _amqpConnection.setUsername(username);
+        _amqpConnection.setUsername(_username);
         _amqpConnection.setPassword(password);
 
         try
@@ -234,6 +237,10 @@ public class ConnectionImpl implements Connection
         _connectionLock.stateChanged();
     }
 
+    String getUserName()
+    {
+        return _username;
+    }
 
     //======= JMS Methods =======
 

@@ -322,6 +322,16 @@ public abstract class AmqpMessage
 
     //===== Properties ======
 
+    public void setUserId(byte[] userId)
+    {
+        _message.setUserId(userId);
+    }
+
+    public byte[] getUserId()
+    {
+        return _message.getUserId();
+    }
+
     public String getContentType()
     {
         return _message.getContentType();

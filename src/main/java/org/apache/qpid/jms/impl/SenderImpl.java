@@ -22,6 +22,7 @@ package org.apache.qpid.jms.impl;
 
 import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_TTL;
 
+import java.io.UnsupportedEncodingException;
 import java.util.UUID;
 
 import javax.jms.Destination;
@@ -36,6 +37,8 @@ import org.apache.qpid.jms.engine.AmqpSentMessageToken;
 public class SenderImpl extends LinkImpl implements MessageProducer
 {
     private static final long UINT_MAX = 0xFFFFFFFFL;
+
+    private final boolean _setJMSXUserId = Boolean.valueOf(System.getProperty(ClientProperties.QPID_SET_JMSXUSERID_ON_SEND, "true"));
     private AmqpSender _amqpSender;
     private Destination _destination;
 
@@ -87,6 +90,39 @@ public class SenderImpl extends LinkImpl implements MessageProducer
 
             AmqpMessage amqpMessage = getAmqpMessageFromJmsMessage(message);
 
+            //set the JMSXUserId value
+            String existingUserValue = message.getStringProperty(ClientProperties.JMSXUSERID);
+            String newUserString = null;
+            if(_setJMSXUserId)
+            {
+                newUserString = getConnectionImpl().getUserName();
+            }
+
+            if(userStringValuesDiffer(newUserString, existingUserValue))
+            {
+                if(isQpidMessage(message))
+                {
+                    //set the UserId field on the underlying AMQP message
+                    byte[] bytes = null;
+                    if(newUserString != null)
+                    {
+                        try
+                        {
+                            bytes = newUserString.getBytes("UTF-8");
+                        }
+                        catch (UnsupportedEncodingException e)
+                        {
+                            throw new QpidJmsException("Unable to encode user id", e);
+                        }
+                    }
+                    amqpMessage.setUserId(bytes);
+                }
+                else
+                {
+                    message.setStringProperty(ClientProperties.JMSXUSERID, newUserString);
+                }
+            }
+
             //set the AMQP header ttl field if necessary
             if(message.propertyExists(JMS_AMQP_TTL))
             {
@@ -129,9 +165,14 @@ public class SenderImpl extends LinkImpl implements MessageProducer
         }
     }
 
+    private boolean userStringValuesDiffer(String user, String existing)
+    {
+        return user != null && !user.equals(existing) || (user == null && existing != null);
+    }
+
     private AmqpMessage getAmqpMessageFromJmsMessage(Message message)
     {
-        if(message instanceof MessageImpl)
+        if(isQpidMessage(message))
         {
             return ((MessageImpl<?>)message).getUnderlyingAmqpMessage(true);
         }
@@ -140,6 +181,11 @@ public class SenderImpl extends LinkImpl implements MessageProducer
             //TODO
             throw new UnsupportedOperationException("cross-vendor message support has yet to be implemented");
         }
+    }
+
+    private boolean isQpidMessage(Message message)
+    {
+        return message instanceof MessageImpl;
     }
 
 

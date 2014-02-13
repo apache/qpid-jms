@@ -25,6 +25,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 import javax.jms.DeliveryMode;
 import javax.jms.Message;
@@ -346,5 +347,102 @@ public class SenderImplTest extends QpidJmsTestCase
 
         //Verify that the underlying amqp message ttl field was NOT set, as requested by the property value being 0
         assertNull(testMessage.getUnderlyingAmqpMessage(false).getTtl());
+    }
+
+    //TODO: delete this marker comment and finish test
+    /**
+     * Test that the producer sets the JMSXUserID property with the
+     * user name for the connection the message is being sent on.
+     */
+    @Test
+    public void testSenderSetsJMSUserIDOnMessage() throws Exception
+    {
+        senderSetsJMSXUserIDOnMessageTestImpl(true);
+    }
+
+    /**
+     * Test that the producer does not set the JMSXUserID property on the message
+     * when the {@link ClientProperties#QPID_SET_JMSXUSERID_ON_SEND} system property
+     * is set false.
+     */
+    @Test
+    public void testDisableSenderSettingJMSXUserIDOnMessageUsingSystemProperty() throws Exception
+    {
+        senderSetsJMSXUserIDOnMessageTestImpl(false);
+    }
+
+    private void senderSetsJMSXUserIDOnMessageTestImpl(boolean enabled) throws Exception
+    {
+        if(!enabled)
+        {
+            setTestSystemProperty(ClientProperties.QPID_SET_JMSXUSERID_ON_SEND, "false");
+        }
+
+        //Create mock sent message token, ensure that it is immediately marked as Accepted
+        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
+        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
+        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
+
+        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+
+        SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
+
+        String myUserId = "testUser";
+        Mockito.when(_mockConnection.getUserName()).thenReturn(myUserId);
+
+        MessageImpl<?> testMessage = TestMessageImpl.createNewMessage(_mockSession, null);
+
+        assertNull("expected JMSUserID to be null", testMessage.getStringProperty(ClientProperties.JMSXUSERID));
+
+        senderImpl.send(testMessage);
+
+        if(enabled)
+        {
+            //verify the sender stamped the message with the user
+            assertTrue("JMSXUserID property should exist", testMessage.propertyExists(ClientProperties.JMSXUSERID));
+            assertEquals("sender failed to set JMSXUserID", myUserId, testMessage.getStringProperty(ClientProperties.JMSXUSERID));
+        }
+        else
+        {
+            //verify the sender didnt stamp the message with the user
+            assertNull("expected JMSXUserID to still be null", testMessage.getStringProperty(ClientProperties.JMSXUSERID));
+            assertFalse("JMSXUserID property should not exist", testMessage.propertyExists(ClientProperties.JMSXUSERID));
+        }
+    }
+
+    /**
+     * Test that the producer clears any existing JMSXUserID value on a message
+     * when the {@link ClientProperties#QPID_SET_JMSXUSERID_ON_SEND} system property
+     * is set false.
+     */
+    @Test
+    public void testSenderClearsExistingJMSXUserIDValueOnSendWhenSetOnSendIsDisabled() throws Exception
+    {
+        //disable setting the user-id on send
+        setTestSystemProperty(ClientProperties.QPID_SET_JMSXUSERID_ON_SEND, "false");
+
+        //Create mock sent message token, ensure that it is immediately marked as Accepted
+        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
+        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
+        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
+
+        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+
+        SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
+
+        String myUserId = "testUser";
+        Mockito.when(_mockConnection.getUserName()).thenReturn(myUserId);
+
+        MessageImpl<?> testMessage = TestMessageImpl.createNewMessage(_mockSession, null);
+
+        testMessage.setStringProperty(ClientProperties.JMSXUSERID, "value");
+        assertNotNull("expected JMSUserID to be null", testMessage.getStringProperty(ClientProperties.JMSXUSERID));
+
+        senderImpl.send(testMessage);
+
+        //verify the sender cleared the existing value
+        String value = testMessage.getStringProperty(ClientProperties.JMSXUSERID);
+        assertNull("expected JMSXUserID be null, but was: " + value, value);
+        assertFalse("JMSXUserID property should not exist", testMessage.propertyExists(ClientProperties.JMSXUSERID));
     }
 }

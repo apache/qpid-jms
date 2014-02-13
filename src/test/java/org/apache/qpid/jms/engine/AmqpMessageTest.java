@@ -24,6 +24,7 @@ import static org.junit.Assert.*;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -335,6 +336,64 @@ public class AmqpMessageTest extends QpidJmsTestCase
     }
 
     // ====== Properties =======
+//  TODO: delete this marker comment
+
+    @Test
+    public void testGetUserIDIsNullForNewMessage()
+    {
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+
+        assertNull("expected useriod to be null on new message", testAmqpMessage.getUserId());
+    }
+
+    /**
+     * Check that setting UserId null on a new message does not cause creation of the underlying properties
+     * section. New messages lack the properties section section,
+     * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
+     */
+    @Test
+    public void testSetUserIDNullOnNewMessageDoesNotCreatePropertiesSection() throws Exception
+    {
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+
+        testAmqpMessage.setUserId(null);
+
+        assertNull("properties section was created", testAmqpMessage.getMessage().getProperties());
+    }
+
+    /**
+     * Check that setting UserId on the message causes creation of the underlying properties
+     * section with the expected value. New messages lack the properties section section,
+     * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
+     */
+    @Test
+    public void testSetUserIDOnNewMessage() throws Exception
+    {
+        byte[] bytes = "testValue".getBytes("UTF-8");
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+
+        testAmqpMessage.setUserId(bytes);
+
+        assertNotNull("properties section was not created", testAmqpMessage.getMessage().getProperties());
+        assertTrue("bytes were not set for userid as expected", Arrays.equals(bytes, testAmqpMessage.getMessage().getProperties().getUserId().getArray()));
+        assertTrue("bytes were not set for userid as expected", Arrays.equals(bytes, testAmqpMessage.getUserId()));
+    }
+
+    /**
+     * Check that setting UserId null on the message causes any existing value to be cleared
+     */
+    @Test
+    public void testSetUserIDNullOnMessageWithExistingUserID() throws Exception
+    {
+        byte[] bytes = "testValue".getBytes("UTF-8");
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+
+        testAmqpMessage.setUserId(bytes);
+        testAmqpMessage.setUserId(null);
+
+        assertNull("bytes were not cleared for userid as expected", testAmqpMessage.getMessage().getProperties().getUserId());
+        assertNull("bytes were not cleared for userid as expected", testAmqpMessage.getUserId());
+    }
 
     @Test
     public void testGetToWithReceivedMessageWithNoProperties()

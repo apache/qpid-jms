@@ -22,10 +22,16 @@ package org.apache.qpid.jms.impl;
 
 public class ClientProperties
 {
-    //Message Property Names
+    //JMS-defined Property Names
+    public static final String JMSXUSERID = "JMSXUserID";
+
+    //Custom Message Property Names
     public static final String JMS_AMQP_TTL = "JMS_AMQP_TTL";
 
     //Message Annotation Names
     public static final String X_OPT_APP_CORRELATION_ID = "x-opt-app-correlation-id";
     public static final String X_OPT_JMS_TYPE = "x-opt-jms-type";
+
+    //Client configuration System Property names
+    public static final String QPID_SET_JMSXUSERID_ON_SEND = "qpid.set-jmsxuserid-on-send";
 }

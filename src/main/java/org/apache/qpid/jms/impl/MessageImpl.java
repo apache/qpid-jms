@@ -19,8 +19,10 @@
 package org.apache.qpid.jms.impl;
 
 import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_TTL;
+import static org.apache.qpid.jms.impl.ClientProperties.JMSXUSERID;
 import static org.apache.qpid.jms.impl.MessageIdHelper.JMS_ID_PREFIX;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -199,21 +201,12 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
 
         if(JMS_AMQP_TTL.equals(name))
         {
-            Long ttl = null;
-            if(value instanceof Long)
-            {
-                ttl = (Long) value;
-            }
-
-            if(ttl != null && ttl >= 0 && ttl <= MAX_UINT)
-            {
-                _propJMS_AMQP_TTL = ttl;
-            }
-            else
-            {
-                throw new MessageFormatException(JMS_AMQP_TTL + " must be a long with value in range 0 to 2^31 - 1");
-            }
-
+            setJMS_AMQP_TTL(value);
+            return;
+        }
+        else if(JMSXUSERID.equals(name))
+        {
+            setJMSXUserID(value);
             return;
         }
 
@@ -222,7 +215,54 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         _amqpMessage.setApplicationProperty(name, value);
     }
 
-    private Object getApplicationProperty(String name)
+    private void setJMSXUserID(Object value) throws MessageFormatException
+    {
+        byte[] userIdBytes = null;
+        if(value != null)
+        {
+            if(value instanceof String)
+            {
+                try
+                {
+                    userIdBytes = ((String) value).getBytes("UTF-8");
+                }
+                catch (UnsupportedEncodingException e)
+                {
+                    MessageFormatException mfe = new MessageFormatException("Unable to encode user id");
+                    mfe.setLinkedException(e);
+                    mfe.initCause(e);
+
+                    throw mfe;
+                }
+            }
+            else
+            {
+                throw new MessageFormatException(JMSXUSERID + " must be a String");
+            }
+        }
+
+        _amqpMessage.setUserId(userIdBytes);
+    }
+
+    private void setJMS_AMQP_TTL(Object value) throws MessageFormatException
+    {
+        Long ttl = null;
+        if(value instanceof Long)
+        {
+            ttl = (Long) value;
+        }
+
+        if(ttl != null && ttl >= 0 && ttl <= MAX_UINT)
+        {
+            _propJMS_AMQP_TTL = ttl;
+        }
+        else
+        {
+            throw new MessageFormatException(JMS_AMQP_TTL + " must be a long with value in range 0 to 2^31 - 1");
+        }
+    }
+
+    private Object getApplicationProperty(String name) throws MessageFormatException
     {
         checkPropertyNameIsValid(name);
 
@@ -230,11 +270,48 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         {
             return _propJMS_AMQP_TTL;
         }
+        else if(JMSXUSERID.equals(name))
+        {
+            return getJMSXUserID();
+        }
 
         //TODO: handle non-JMS types?
         return _amqpMessage.getApplicationProperty(name);
     }
 
+    private Object getJMSXUserID() throws MessageFormatException
+    {
+        byte[] userId = _amqpMessage.getUserId();
+        if(userId == null)
+        {
+            return null;
+        }
+        else
+        {
+            try
+            {
+                return new String(userId, "UTF-8");
+            }
+            catch (UnsupportedEncodingException e)
+            {
+                MessageFormatException mfe = new MessageFormatException("Unable to decode user id");
+                mfe.setLinkedException(e);
+                mfe.initCause(e);
+
+                throw mfe;
+            }
+        }
+    }
+
+    private boolean propertyExistsJMSXUserID()
+    {
+        return _amqpMessage.getUserId() != null;
+    }
+
+    private boolean propertyExistsJMS_AMQP_TTL()
+    {
+        return _propJMS_AMQP_TTL != null;
+    }
 
     //======= JMS Methods =======
 
@@ -575,7 +652,12 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     {
         if(JMS_AMQP_TTL.equals(name))
         {
-            return _propJMS_AMQP_TTL != null;
+            return propertyExistsJMS_AMQP_TTL();
+        }
+
+        if(JMSXUSERID.equals(name))
+        {
+            return propertyExistsJMSXUserID();
         }
 
         return _amqpMessage.applicationPropertyExists(name);
@@ -781,9 +863,14 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         //Create a new list we can mutate
         List<String> propNames = new ArrayList<String>(underlyingApplicationPropertyNames);
 
-        if(_propJMS_AMQP_TTL != null)
+        if(propertyExistsJMS_AMQP_TTL())
         {
             propNames.add(JMS_AMQP_TTL);
+        }
+
+        if(propertyExistsJMSXUserID())
+        {
+            propNames.add(JMSXUSERID);
         }
 
         return Collections.enumeration(propNames);

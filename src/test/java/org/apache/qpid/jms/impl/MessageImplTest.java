@@ -21,6 +21,7 @@
 package org.apache.qpid.jms.impl;
 
 import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_TTL;
+import static org.apache.qpid.jms.impl.ClientProperties.JMSXUSERID;
 import static org.junit.Assert.*;
 
 import java.nio.ByteBuffer;
@@ -1760,13 +1761,13 @@ public class MessageImplTest extends QpidJmsTestCase
     @Test
     public void testGetJMSXUserIDIsNullOnNewMessage() throws Exception
     {
-        assertNull("did not expect a JMSXUserID value to be present", _testMessage.getStringProperty(ClientProperties.JMSXUSERID));
+        assertNull("did not expect a JMSXUserID value to be present", _testMessage.getStringProperty(JMSXUSERID));
     }
 
     @Test
     public void testGetJMSXUserIDDoesNotExistOnNewMessage() throws Exception
     {
-        assertFalse("did not expect a JMSXUserID value to be present", _testMessage.propertyExists(ClientProperties.JMSXUSERID));
+        assertFalse("did not expect a JMSXUserID value to be present", _testMessage.propertyExists(JMSXUSERID));
     }
 
     /**
@@ -1778,10 +1779,62 @@ public class MessageImplTest extends QpidJmsTestCase
     {
         String myUserId = "myUserId";
         byte[] myUserIdBytes = myUserId.getBytes("UTF-8");
-        _testMessage.setStringProperty(ClientProperties.JMSXUSERID, myUserId);
+        _testMessage.setStringProperty(JMSXUSERID, myUserId);
 
-        assertTrue("expected a JMSXUserID value to be present", _testMessage.propertyExists(ClientProperties.JMSXUSERID));
         assertTrue("unexpected userId bytes value on underlying message", Arrays.equals(myUserIdBytes, _testAmqpMessage.getUserId()));
+    }
+
+    /**
+     * Test that setting the JMSXUserID property, which is stored in the AMQP message
+     * user-id field, causes the {@link Message#propertyExists(String)} to return
+     * true;
+     */
+    @Test
+    public void testSetJMSXUserIDEnsuresThatPropertyExists() throws Exception
+    {
+        String myUserId = "myUserId";
+        _testMessage.setStringProperty(JMSXUSERID, myUserId);
+
+        assertTrue("expected a JMSXUserID value to be indicated as present", _testMessage.propertyExists(JMSXUSERID));
+    }
+
+    /**
+     * Test that setting the JMSXUserID property, which is stored in the AMQP message
+     * user-id field, causes the {@link Message#getPropertyNames()} to result to contain it.
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testSetJMSXUserIDEnsuresThatPropertyNamesContainsIt() throws Exception
+    {
+        //verify the name doesn't exist originally
+        Enumeration<String> names = (Enumeration<String>) _testMessage.getPropertyNames();
+        boolean containsJMSXUserId = false;
+        while(names.hasMoreElements())
+        {
+            String prop = names.nextElement();
+            if(JMSXUSERID.equals(prop))
+            {
+                containsJMSXUserId = true;
+            }
+        }
+
+        assertFalse("Didn't expect to find JMSXUserId in property names yet", containsJMSXUserId);
+
+        //set property
+        _testMessage.setStringProperty(JMSXUSERID, "value");
+
+        //verify the name now exists
+        names = (Enumeration<String>) _testMessage.getPropertyNames();
+        while(names.hasMoreElements())
+        {
+            String prop = names.nextElement();
+            if(JMSXUSERID.equals(prop))
+            {
+                containsJMSXUserId = true;
+            }
+        }
+
+        assertTrue("Didn't find JMSXUserId in property names", containsJMSXUserId);
     }
 
     /**
@@ -1792,7 +1845,7 @@ public class MessageImplTest extends QpidJmsTestCase
     public void testSetJMSXUserIDDoesNotSetApplicationProperty() throws Exception
     {
         String myUserId = "myUserId";
-        _testMessage.setStringProperty(ClientProperties.JMSXUSERID, myUserId);
+        _testMessage.setStringProperty(JMSXUSERID, myUserId);
 
         assertEquals("expected no application-properties section to be present", 0, _testAmqpMessage.getApplicationPropertyNames().size());
     }
@@ -1805,12 +1858,32 @@ public class MessageImplTest extends QpidJmsTestCase
     public void testSetJMSXUserIDNullClearsUnderlyingMessageUserId() throws Exception
     {
         String myUserId = "myUserId";
-        _testMessage.setStringProperty(ClientProperties.JMSXUSERID, myUserId);
+        _testMessage.setStringProperty(JMSXUSERID, myUserId);
 
-        _testMessage.setStringProperty(ClientProperties.JMSXUSERID, null);
+        _testMessage.setStringProperty(JMSXUSERID, null);
 
-        assertFalse("did not expect a JMSXUserID value to be present", _testMessage.propertyExists(ClientProperties.JMSXUSERID));
+        assertFalse("did not expect a JMSXUserID value to be present", _testMessage.propertyExists(JMSXUSERID));
         assertNull("unexpected userId bytes value on underlying message", _testAmqpMessage.getUserId());
+    }
+
+    /**
+     * Test that setting the JMSXUserID property to a non-String instance
+     * causes an MFE to be thrown.
+     */
+    @Test
+    public void testSetJMSXUserIDToNonStringInstanceThrowsMFE() throws Exception
+    {
+        long myUserId = 1L;
+
+        try
+        {
+            _testMessage.setLongProperty(JMSXUSERID, myUserId);
+            fail("expected exception not thrown");
+        }
+        catch(MessageFormatException mfe)
+        {
+            //expected
+        }
     }
 
     /**
@@ -1826,8 +1899,8 @@ public class MessageImplTest extends QpidJmsTestCase
 
         _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
-        assertTrue("expected a JMSXUserID value to be present", _testMessage.propertyExists(ClientProperties.JMSXUSERID));
-        assertEquals("JMSXUserID value was not as expected", myUserId, _testMessage.getStringProperty(ClientProperties.JMSXUSERID));
+        assertTrue("expected a JMSXUserID value to be present", _testMessage.propertyExists(JMSXUSERID));
+        assertEquals("JMSXUserID value was not as expected", myUserId, _testMessage.getStringProperty(JMSXUSERID));
     }
 
     // ====== JMS_AMQP_TTL property =======

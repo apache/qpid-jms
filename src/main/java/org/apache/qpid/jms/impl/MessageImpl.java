@@ -188,7 +188,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
                         object instanceof Double || object instanceof String|| object == null;
         if(!valid)
         {
-            throw new MessageFormatException("Invalid object property value type: " + object.getClass());
+            throw createMessageFormatException("Invalid object property value type: " + object.getClass());
         }
 
         return true;
@@ -228,16 +228,12 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
                 }
                 catch (UnsupportedEncodingException e)
                 {
-                    MessageFormatException mfe = new MessageFormatException("Unable to encode user id");
-                    mfe.setLinkedException(e);
-                    mfe.initCause(e);
-
-                    throw mfe;
+                    throw createMessageFormatException("Unable to encode user id", e);
                 }
             }
             else
             {
-                throw new MessageFormatException(JMSXUSERID + " must be a String");
+                throw createMessageFormatException(JMSXUSERID + " must be a String");
             }
         }
 
@@ -258,7 +254,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         }
         else
         {
-            throw new MessageFormatException(JMS_AMQP_TTL + " must be a long with value in range 0 to 2^31 - 1");
+            throw createMessageFormatException(JMS_AMQP_TTL + " must be a long with value in range 0 to 2^31 - 1");
         }
     }
 
@@ -294,13 +290,26 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
             }
             catch (UnsupportedEncodingException e)
             {
-                MessageFormatException mfe = new MessageFormatException("Unable to decode user id");
-                mfe.setLinkedException(e);
-                mfe.initCause(e);
-
-                throw mfe;
+                throw createMessageFormatException("Unable to decode user id", e);
             }
         }
+    }
+
+    private MessageFormatException createMessageFormatException(String message)
+    {
+        return createMessageFormatException(message, null);
+    }
+
+    private MessageFormatException createMessageFormatException(String message, Exception cause)
+    {
+        MessageFormatException mfe = new MessageFormatException(message);
+        if(cause != null)
+        {
+            mfe.setLinkedException(cause);
+            mfe.initCause(cause);
+        }
+
+        return mfe;
     }
 
     private boolean propertyExistsJMSXUserID()
@@ -678,8 +687,9 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         }
         else
         {
-            throw new MessageFormatException("Property " + name + " of type " + value.getClass().getName()
-                + " cannot be converted to boolean.");
+            String message = "Property " + name + " of type " + value.getClass().getName() + " cannot be converted to boolean.";
+
+            throw createMessageFormatException(message);
         }
     }
 
@@ -698,8 +708,9 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         }
         else
         {
-            throw new MessageFormatException("Property " + name + " of type " + value.getClass().getName()
-                + " cannot be converted to byte.");
+            String message = "Property " + name + " of type " + value.getClass().getName() + " cannot be converted to byte.";
+
+            throw createMessageFormatException(message);
         }
     }
 
@@ -722,8 +733,9 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         }
         else
         {
-            throw new MessageFormatException("Property " + name + " of type " + value.getClass().getName()
-                + " cannot be converted to short.");
+            String message = "Property " + name + " of type " + value.getClass().getName() + " cannot be converted to short.";
+
+            throw createMessageFormatException(message);
         }
     }
 
@@ -750,8 +762,9 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         }
         else
         {
-            throw new MessageFormatException("Property " + name + " of type " + value.getClass().getName()
-                + " cannot be converted to int.");
+            String message = "Property " + name + " of type " + value.getClass().getName() + " cannot be converted to int.";
+
+            throw createMessageFormatException(message);
         }
     }
 
@@ -782,8 +795,9 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         }
         else
         {
-            throw new MessageFormatException("Property " + name + " of type " + value.getClass().getName()
-                + " cannot be converted to long.");
+            String message = "Property " + name + " of type " + value.getClass().getName() + " cannot be converted to long.";
+
+            throw createMessageFormatException(message);
         }
     }
 
@@ -802,8 +816,9 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         }
         else
         {
-            throw new MessageFormatException("Property " + name + " of type " + value.getClass().getName()
-                + " cannot be converted to float.");
+            String message = "Property " + name + " of type " + value.getClass().getName() + " cannot be converted to float.";
+
+            throw createMessageFormatException(message);
         }
     }
 
@@ -826,8 +841,9 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         }
         else
         {
-            throw new MessageFormatException("Property " + name + " of type " + value.getClass().getName()
-                + " cannot be converted to double.");
+            String message = "Property " + name + " of type " + value.getClass().getName() + " cannot be converted to double.";
+
+            throw createMessageFormatException(message);
         }
     }
 

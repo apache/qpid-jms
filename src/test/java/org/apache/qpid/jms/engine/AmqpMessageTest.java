@@ -336,14 +336,70 @@ public class AmqpMessageTest extends QpidJmsTestCase
     }
 
     // ====== Properties =======
-//  TODO: delete this marker comment
 
     @Test
-    public void testGetUserIDIsNullForNewMessage()
+    public void testGetGroupIdIsNullForNewMessage()
     {
         AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
-        assertNull("expected useriod to be null on new message", testAmqpMessage.getUserId());
+        assertNull("expected GroupId to be null on new message", testAmqpMessage.getGroupId());
+    }
+
+    /**
+     * Check that setting GroupId null on a new message does not cause creation of the underlying properties
+     * section. New messages lack the properties section section,
+     * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
+     */
+    @Test
+    public void testSetGroupIdNullOnNewMessageDoesNotCreatePropertiesSection() throws Exception
+    {
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+
+        testAmqpMessage.setGroupId(null);
+
+        assertNull("properties section was created", testAmqpMessage.getMessage().getProperties());
+    }
+
+    /**
+     * Check that setting GroupId on the message causes creation of the underlying properties
+     * section with the expected value. New messages lack the properties section section,
+     * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
+     */
+    @Test
+    public void testSetGroupIdOnNewMessage() throws Exception
+    {
+        String groupId = "testValue";
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+
+        testAmqpMessage.setGroupId(groupId);
+
+        assertNotNull("properties section was not created", testAmqpMessage.getMessage().getProperties());
+        assertEquals("value was not set for GroupId as expected", groupId, testAmqpMessage.getMessage().getProperties().getGroupId());
+        assertEquals("value was not set for GroupId as expected", groupId, testAmqpMessage.getGroupId());
+    }
+
+    /**
+     * Check that setting UserId null on the message causes any existing value to be cleared
+     */
+    @Test
+    public void testSetGroupIdNullOnMessageWithExistingGroupId() throws Exception
+    {
+        String groupId = "testValue";
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+
+        testAmqpMessage.setGroupId(groupId);
+        testAmqpMessage.setGroupId(null);
+
+        assertNull("value was not cleared for GroupId as expected", testAmqpMessage.getMessage().getProperties().getGroupId());
+        assertNull("value was not cleared for GroupId as expected", testAmqpMessage.getGroupId());
+    }
+
+    @Test
+    public void testGetUserIdIsNullForNewMessage()
+    {
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+
+        assertNull("expected userid to be null on new message", testAmqpMessage.getUserId());
     }
 
     /**
@@ -352,7 +408,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
      * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
      */
     @Test
-    public void testSetUserIDNullOnNewMessageDoesNotCreatePropertiesSection() throws Exception
+    public void testSetUserIdNullOnNewMessageDoesNotCreatePropertiesSection() throws Exception
     {
         AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
@@ -367,7 +423,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
      * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
      */
     @Test
-    public void testSetUserIDOnNewMessage() throws Exception
+    public void testSetUserIdOnNewMessage() throws Exception
     {
         byte[] bytes = "testValue".getBytes("UTF-8");
         AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
@@ -383,7 +439,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
      * Check that setting UserId null on the message causes any existing value to be cleared
      */
     @Test
-    public void testSetUserIDNullOnMessageWithExistingUserID() throws Exception
+    public void testSetUserIdNullOnMessageWithExistingUserId() throws Exception
     {
         byte[] bytes = "testValue".getBytes("UTF-8");
         AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();

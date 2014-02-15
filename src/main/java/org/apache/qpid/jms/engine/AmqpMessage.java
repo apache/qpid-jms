@@ -322,6 +322,16 @@ public abstract class AmqpMessage
 
     //===== Properties ======
 
+    public void setGroupId(String groupId)
+    {
+        _message.setGroupId(groupId);
+    }
+
+    public String getGroupId()
+    {
+        return _message.getGroupId();
+    }
+
     public void setUserId(byte[] userId)
     {
         _message.setUserId(userId);

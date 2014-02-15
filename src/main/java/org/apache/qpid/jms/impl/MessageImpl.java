@@ -20,6 +20,7 @@ package org.apache.qpid.jms.impl;
 
 import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_TTL;
 import static org.apache.qpid.jms.impl.ClientProperties.JMSXUSERID;
+import static org.apache.qpid.jms.impl.ClientProperties.JMSXGROUPID;
 import static org.apache.qpid.jms.impl.MessageIdHelper.JMS_ID_PREFIX;
 
 import java.io.UnsupportedEncodingException;
@@ -209,10 +210,33 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
             setJMSXUserID(value);
             return;
         }
+        else if(JMSXGROUPID.equals(name))
+        {
+            setJMSXGroupID(value);
+            return;
+        }
 
         checkObjectPropertyValueIsValid(value);
 
         _amqpMessage.setApplicationProperty(name, value);
+    }
+
+    private void setJMSXGroupID(Object value) throws MessageFormatException
+    {
+        String groupId = null;
+        if(value != null)
+        {
+            if(value instanceof String)
+            {
+                groupId = (String) value;
+            }
+            else
+            {
+                throw createMessageFormatException(JMSXGROUPID + " must be a String");
+            }
+        }
+
+        _amqpMessage.setGroupId(groupId);
     }
 
     private void setJMSXUserID(Object value) throws MessageFormatException
@@ -270,6 +294,10 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         {
             return getJMSXUserID();
         }
+        else if(JMSXGROUPID.equals(name))
+        {
+            return _amqpMessage.getGroupId();
+        }
 
         //TODO: handle non-JMS types?
         return _amqpMessage.getApplicationProperty(name);
@@ -315,6 +343,11 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     private boolean propertyExistsJMSXUserID()
     {
         return _amqpMessage.getUserId() != null;
+    }
+
+    private boolean propertyExistsJMSXGroupID()
+    {
+        return _amqpMessage.getGroupId() != null;
     }
 
     private boolean propertyExistsJMS_AMQP_TTL()
@@ -654,6 +687,9 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
 
         _amqpMessage.clearAllApplicationProperties();
         _propJMS_AMQP_TTL = null;
+
+        //TODO: Clear any new custom properties.
+        //Currently outstanding: JMSXUserId + JMSXGroupID
     }
 
     @Override
@@ -667,6 +703,11 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         if(JMSXUSERID.equals(name))
         {
             return propertyExistsJMSXUserID();
+        }
+
+        if(JMSXGROUPID.equals(name))
+        {
+            return propertyExistsJMSXGroupID();
         }
 
         return _amqpMessage.applicationPropertyExists(name);
@@ -887,6 +928,11 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         if(propertyExistsJMSXUserID())
         {
             propNames.add(JMSXUSERID);
+        }
+
+        if(propertyExistsJMSXGroupID())
+        {
+            propNames.add(JMSXGROUPID);
         }
 
         return Collections.enumeration(propNames);

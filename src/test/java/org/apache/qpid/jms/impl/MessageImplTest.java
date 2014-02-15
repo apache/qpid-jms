@@ -22,6 +22,7 @@ package org.apache.qpid.jms.impl;
 
 import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_TTL;
 import static org.apache.qpid.jms.impl.ClientProperties.JMSXUSERID;
+import static org.apache.qpid.jms.impl.ClientProperties.JMSXGROUPID;
 import static org.junit.Assert.*;
 
 import java.nio.ByteBuffer;
@@ -1756,7 +1757,6 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     // ====== JMSXUserId =======
-//TODO: delete this marker comment
 
     @Test
     public void testGetJMSXUserIDIsNullOnNewMessage() throws Exception
@@ -1847,7 +1847,7 @@ public class MessageImplTest extends QpidJmsTestCase
         String myUserId = "myUserId";
         _testMessage.setStringProperty(JMSXUSERID, myUserId);
 
-        assertEquals("expected no application-properties section to be present", 0, _testAmqpMessage.getApplicationPropertyNames().size());
+        assertEquals("expected no entry to be present in the application-properties section", 0, _testAmqpMessage.getApplicationPropertyNames().size());
     }
 
     /**
@@ -1899,8 +1899,151 @@ public class MessageImplTest extends QpidJmsTestCase
 
         _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
 
-        assertTrue("expected a JMSXUserID value to be present", _testMessage.propertyExists(JMSXUSERID));
         assertEquals("JMSXUserID value was not as expected", myUserId, _testMessage.getStringProperty(JMSXUSERID));
+    }
+
+    // ====== JMSXGroupID =======
+
+    @Test
+    public void testGetJMSXGroupIDIsNullOnNewMessage() throws Exception
+    {
+        assertNull("did not expect a JMSXGroupID value to be present", _testMessage.getStringProperty(JMSXGROUPID));
+    }
+
+    @Test
+    public void testGetJMSXGroupIDDoesNotExistOnNewMessage() throws Exception
+    {
+        assertFalse("did not expect a JMSXGroupID value to be present", _testMessage.propertyExists(JMSXGROUPID));
+    }
+
+    /**
+     * Test that setting the JMSXGroupID property sets the expected
+     * value in the group-id field on the underlying AMQP message
+     */
+    @Test
+    public void testSetJMSXGroupIDSetsUnderlyingMessageGroupId() throws Exception
+    {
+        String myGroupId = "myGroupId";
+        _testMessage.setStringProperty(JMSXGROUPID, myGroupId);
+
+        assertEquals("unexpected GroupID value on underlying message", myGroupId, _testAmqpMessage.getGroupId());
+    }
+
+    /**
+     * Test that setting the JMSXGroupID property, which is stored in the AMQP message
+     * group-id field, causes the {@link Message#propertyExists(String)} to return
+     * true;
+     */
+    @Test
+    public void testSetJMSXGroupIDEnsuresThatPropertyExists() throws Exception
+    {
+        String myUserId = "myGroupId";
+        _testMessage.setStringProperty(JMSXGROUPID, myUserId);
+
+        assertTrue("expected a JMSXGroupID value to be indicated as present", _testMessage.propertyExists(JMSXGROUPID));
+    }
+
+    /**
+     * Test that setting the JMSXGroupID property, which is stored in the AMQP message
+     * group-id field, causes the {@link Message#getPropertyNames()} to result to contain it.
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testSetJMSXGroupIDEnsuresThatPropertyNamesContainsIt() throws Exception
+    {
+        //verify the name doesn't exist originally
+        Enumeration<String> names = (Enumeration<String>) _testMessage.getPropertyNames();
+        boolean containsJMSXGroupID = false;
+        while(names.hasMoreElements())
+        {
+            String prop = names.nextElement();
+            if(JMSXGROUPID.equals(prop))
+            {
+                containsJMSXGroupID = true;
+            }
+        }
+
+        assertFalse("Didn't expect to find JMSXGroupID in property names yet", containsJMSXGroupID);
+
+        //set property
+        _testMessage.setStringProperty(JMSXGROUPID, "value");
+
+        //verify the name now exists
+        names = (Enumeration<String>) _testMessage.getPropertyNames();
+        while(names.hasMoreElements())
+        {
+            String prop = names.nextElement();
+            if(JMSXGROUPID.equals(prop))
+            {
+                containsJMSXGroupID = true;
+            }
+        }
+
+        assertTrue("Didn't find JMSXGroupID in property names", containsJMSXGroupID);
+    }
+
+    /**
+     * Test that setting the JMSXGroupID property does not set an entry in the
+     * application-properties section of the underlying AMQP message
+     */
+    @Test
+    public void testSetJMSXGroupIDDoesNotSetApplicationProperty() throws Exception
+    {
+        String myGroupId = "myGroupId";
+        _testMessage.setStringProperty(JMSXGROUPID, myGroupId);
+
+        assertEquals("expected no entry to be present in the application-properties section", 0, _testAmqpMessage.getApplicationPropertyNames().size());
+    }
+
+    /**
+     * Test that setting the JMSXGroupID property to null clears an existing
+     * value for the user-id field on the underlying AMQP message
+     */
+    @Test
+    public void testSetJMSXGroupIDNullClearsUnderlyingMessageUserId() throws Exception
+    {
+        String myGroupId = "myGroupId";
+        _testMessage.setStringProperty(JMSXGROUPID, myGroupId);
+
+        _testMessage.setStringProperty(JMSXGROUPID, null);
+
+        assertFalse("did not expect a JMSXGroupID value to be present", _testMessage.propertyExists(JMSXGROUPID));
+        assertNull("unexpected group-id value on underlying message", _testAmqpMessage.getGroupId());
+    }
+
+    /**
+     * Test that setting the JMSXGroupID property to a non-String instance
+     * causes an MFE to be thrown.
+     */
+    @Test
+    public void testSetJMSXGroupIDToNonStringInstanceThrowsMFE() throws Exception
+    {
+        long myGroupId = 1L;
+
+        try
+        {
+            _testMessage.setLongProperty(JMSXGROUPID, myGroupId);
+            fail("expected exception not thrown");
+        }
+        catch(MessageFormatException mfe)
+        {
+            //expected
+        }
+    }
+
+    /**
+     * Test that the JMSXGroupID property returns the expected value for a message
+     * received with the group-id field set.
+     */
+    @Test
+    public void testGetJMSXGroupIDOnRecievedMessageWithGroupId() throws Exception
+    {
+        String myGroupId = "myGroupId";
+        _testAmqpMessage.setGroupId(myGroupId);
+
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        assertEquals("JMSXGroupID value was not as expected", myGroupId, _testMessage.getStringProperty(JMSXGROUPID));
     }
 
     // ====== JMS_AMQP_TTL property =======

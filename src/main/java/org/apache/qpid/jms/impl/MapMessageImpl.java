@@ -225,4 +225,11 @@ public class MapMessageImpl extends MessageImpl<AmqpMapMessage> implements MapMe
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
+
+    @Override
+    public void clearBody() throws JMSException
+    {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
+    }
 }

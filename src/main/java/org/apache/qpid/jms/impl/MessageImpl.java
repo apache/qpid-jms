@@ -954,9 +954,5 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     }
 
     @Override
-    public void clearBody() throws JMSException
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
-    }
+    public abstract void clearBody() throws JMSException;
 }

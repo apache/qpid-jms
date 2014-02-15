@@ -215,4 +215,11 @@ public class StreamMessageImpl extends MessageImpl<AmqpListMessage> implements S
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
+
+    @Override
+    public void clearBody() throws JMSException
+    {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
+    }
 }

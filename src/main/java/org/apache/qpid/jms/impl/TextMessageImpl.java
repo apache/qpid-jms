@@ -62,4 +62,11 @@ public class TextMessageImpl extends MessageImpl<AmqpTextMessage> implements Tex
         //TODO: checkWritable();
         getUnderlyingAmqpMessage(false).setText(text);
     }
+
+    @Override
+    public void clearBody() throws JMSException
+    {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
+    }
 }

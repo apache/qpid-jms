@@ -21,6 +21,7 @@
 package org.apache.qpid.jms.impl;
 
 import javax.jms.Destination;
+import javax.jms.JMSException;
 
 import org.apache.qpid.jms.engine.AmqpMessage;
 import org.apache.qpid.jms.engine.TestAmqpMessage;
@@ -72,5 +73,11 @@ public class TestMessageImpl extends MessageImpl<TestAmqpMessage>
         }
 
         return new TestMessageImpl((TestAmqpMessage) amqpMessage, sessionImpl, connectionImpl, consumerDestination);
+    }
+
+    @Override
+    public void clearBody() throws JMSException
+    {
+        throw new UnsupportedOperationException("Not Supported on " + TestMessageImpl.class.getName());
     }
 }

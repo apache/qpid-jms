@@ -322,6 +322,48 @@ public abstract class AmqpMessage
 
     //===== Properties ======
 
+    public Long getGroupSequence()
+    {
+        if(_message.getProperties() == null)
+        {
+            return null;
+        }
+        else
+        {
+            UnsignedInteger uint = _message.getProperties().getGroupSequence();
+            if(uint == null)
+            {
+                return null;
+            }
+            else
+            {
+                return uint.longValue();
+            }
+        }
+
+        //TODO: is _message.getGroupSequence() doing the right thing before returning?
+    }
+
+    public void setGroupSequence(Long groupSeq)
+    {
+        if(groupSeq == null)
+        {
+            if(_message.getProperties() == null)
+            {
+                return;
+            }
+            else
+            {
+                _message.getProperties().setGroupSequence(null);
+            }
+        }
+        else
+        {
+            //TODO: is this method doing the right thing with our value?
+            _message.setGroupSequence(groupSeq);
+        }
+    }
+
     public void setGroupId(String groupId)
     {
         _message.setGroupId(groupId);

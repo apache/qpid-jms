@@ -21,6 +21,7 @@ package org.apache.qpid.jms.impl;
 import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_TTL;
 import static org.apache.qpid.jms.impl.ClientProperties.JMSXUSERID;
 import static org.apache.qpid.jms.impl.ClientProperties.JMSXGROUPID;
+import static org.apache.qpid.jms.impl.ClientProperties.JMSXGROUPSEQ;
 import static org.apache.qpid.jms.impl.MessageIdHelper.JMS_ID_PREFIX;
 
 import java.io.UnsupportedEncodingException;
@@ -215,6 +216,11 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
             setJMSXGroupID(value);
             return;
         }
+        else if(JMSXGROUPSEQ.equals(name))
+        {
+            setJMSXGroupSeq(value);
+            return;
+        }
 
         checkObjectPropertyValueIsValid(value);
 
@@ -237,6 +243,25 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         }
 
         _amqpMessage.setGroupId(groupId);
+    }
+
+    private void setJMSXGroupSeq(Object value) throws MessageFormatException
+    {
+        //TODO: handle setting String, byte, short? Validate value?
+        Long groupSeq = null;
+        if(value != null)
+        {
+            if(value instanceof Integer)
+            {
+                groupSeq = ((Integer) value).longValue();
+            }
+            else
+            {
+                throw createMessageFormatException(JMSXGROUPID + " must be an Integer");
+            }
+        }
+
+        _amqpMessage.setGroupSequence(groupSeq);
     }
 
     private void setJMSXUserID(Object value) throws MessageFormatException
@@ -348,6 +373,11 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     private boolean propertyExistsJMSXGroupID()
     {
         return _amqpMessage.getGroupId() != null;
+    }
+
+    private boolean propertyExistsJMSXGroupSeq()
+    {
+        return _amqpMessage.getGroupSequence() != null;
     }
 
     private boolean propertyExistsJMS_AMQP_TTL()
@@ -710,6 +740,11 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
             return propertyExistsJMSXGroupID();
         }
 
+        if(JMSXGROUPSEQ.equals(name))
+        {
+            return propertyExistsJMSXGroupSeq();
+        }
+
         return _amqpMessage.applicationPropertyExists(name);
     }
 
@@ -933,6 +968,11 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         if(propertyExistsJMSXGroupID())
         {
             propNames.add(JMSXGROUPID);
+        }
+
+        if(propertyExistsJMSXGroupSeq())
+        {
+            propNames.add(JMSXGROUPSEQ);
         }
 
         return Collections.enumeration(propNames);

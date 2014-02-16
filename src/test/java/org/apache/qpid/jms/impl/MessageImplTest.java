@@ -23,6 +23,7 @@ package org.apache.qpid.jms.impl;
 import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_TTL;
 import static org.apache.qpid.jms.impl.ClientProperties.JMSXUSERID;
 import static org.apache.qpid.jms.impl.ClientProperties.JMSXGROUPID;
+import static org.apache.qpid.jms.impl.ClientProperties.JMSXGROUPSEQ;
 import static org.junit.Assert.*;
 
 import java.nio.ByteBuffer;
@@ -1937,8 +1938,8 @@ public class MessageImplTest extends QpidJmsTestCase
     @Test
     public void testSetJMSXGroupIDEnsuresThatPropertyExists() throws Exception
     {
-        String myUserId = "myGroupId";
-        _testMessage.setStringProperty(JMSXGROUPID, myUserId);
+        String myGroupId = "myGroupId";
+        _testMessage.setStringProperty(JMSXGROUPID, myGroupId);
 
         assertTrue("expected a JMSXGroupID value to be indicated as present", _testMessage.propertyExists(JMSXGROUPID));
     }
@@ -2046,6 +2047,94 @@ public class MessageImplTest extends QpidJmsTestCase
         assertEquals("JMSXGroupID value was not as expected", myGroupId, _testMessage.getStringProperty(JMSXGROUPID));
     }
 
+    //TODO: delete this marker comment
+
+    @Test
+    public void testGetJMSXGroupSeqDoesNotExistOnNewMessage() throws Exception
+    {
+        assertFalse("did not expect a JMSXGroupID value to be present", _testMessage.propertyExists(JMSXGROUPSEQ));
+    }
+
+    /**
+     * Test that setting the JMSXGroupID property sets the expected
+     * value in the group-id field on the underlying AMQP message
+     */
+    @Test
+    public void testSetJMSXGroupSeqSetsUnderlyingMessageGroupSequence() throws Exception
+    {
+        int myGroupSeq = 1;
+        _testMessage.setIntProperty(JMSXGROUPSEQ, myGroupSeq);
+
+        assertEquals("unexpected GroupSequence value on underlying message", Long.valueOf(myGroupSeq), _testAmqpMessage.getGroupSequence());
+    }
+
+    /**
+     * Test that setting the JMSXGroupSeq property, which is stored in the AMQP message
+     * group-sequence field, causes the {@link Message#propertyExists(String)} to return
+     * true;
+     */
+    @Test
+    public void testSetJMSXGroupSeqEnsuresThatPropertyExists() throws Exception
+    {
+        int myGroupSeq = 1;
+        _testMessage.setIntProperty(JMSXGROUPSEQ, myGroupSeq);
+
+        assertTrue("expected a JMSXGroupSeq value to be indicated as present", _testMessage.propertyExists(JMSXGROUPSEQ));
+    }
+
+    /**
+     * Test that setting the JMSXGroupSeq property, which is stored in the AMQP message
+     * group-sequence field, causes the {@link Message#getPropertyNames()} to result to contain it.
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testSetJMSXGroupSeqEnsuresThatPropertyNamesContainsIt() throws Exception
+    {
+        //verify the name doesn't exist originally
+        Enumeration<String> names = (Enumeration<String>) _testMessage.getPropertyNames();
+        boolean containsJMSXGroupSeq = false;
+        while(names.hasMoreElements())
+        {
+            String prop = names.nextElement();
+            if(JMSXGROUPSEQ.equals(prop))
+            {
+                containsJMSXGroupSeq = true;
+            }
+        }
+
+        assertFalse("Didn't expect to find JMSXGroupSeq in property names yet", containsJMSXGroupSeq);
+
+        //set property
+        _testMessage.setIntProperty(JMSXGROUPSEQ, 1);
+
+        //verify the name now exists
+        names = (Enumeration<String>) _testMessage.getPropertyNames();
+        while(names.hasMoreElements())
+        {
+            String prop = names.nextElement();
+            if(JMSXGROUPSEQ.equals(prop))
+            {
+                containsJMSXGroupSeq = true;
+            }
+        }
+
+        assertTrue("Didn't find JMSXGroupSeq in property names", containsJMSXGroupSeq);
+    }
+
+    /**
+     * Test that setting the JMSXGroupSeq property does not set an entry in the
+     * application-properties section of the underlying AMQP message
+     */
+    @Test
+    public void testSetJMSXGroupSeqDoesNotSetApplicationProperty() throws Exception
+    {
+        int myGroupSeq = 1;
+        _testMessage.setIntProperty(JMSXGROUPSEQ, myGroupSeq);
+
+        assertEquals("expected no entry to be present in the application-properties section", 0, _testAmqpMessage.getApplicationPropertyNames().size());
+    }
+
+    //TODO: delete this marker comment
     // ====== JMS_AMQP_TTL property =======
 
     @Test

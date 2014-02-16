@@ -25,6 +25,7 @@ public class ClientProperties
     //JMS-defined Property Names
     public static final String JMSXUSERID = "JMSXUserID";
     public static final String JMSXGROUPID = "JMSXGroupID";
+    public static final String JMSXGROUPSEQ = "JMSXGroupSeq";
 
     //Custom Message Property Names
     public static final String JMS_AMQP_TTL = "JMS_AMQP_TTL";

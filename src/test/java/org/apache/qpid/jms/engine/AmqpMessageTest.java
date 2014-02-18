@@ -402,6 +402,38 @@ public class AmqpMessageTest extends QpidJmsTestCase
         assertNull("expected userid to be null on new message", testAmqpMessage.getUserId());
     }
 
+    //TODO: delete this marker comment
+    /**
+     * Test that attempting to set a uint group-sequence (represented as a long) with a value
+     * outwith the allowed [0 - 2^32) range results in an IAE being thrown
+     */
+    @Test
+    public void testSetGroupSequenceWithUIntOutOfRangeThrowsIAE()
+    {
+        //negative value
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+        try
+        {
+            testAmqpMessage.setGroupSequence(-1L);
+            fail("expected exception was not thrown");
+        }
+        catch(IllegalArgumentException iae)
+        {
+            //expected
+        }
+
+        //value 1 over max
+        try
+        {
+            testAmqpMessage.setGroupSequence(0xFFFFFFFFL + 1);
+            fail("expected exception was not thrown");
+        }
+        catch(IllegalArgumentException iae)
+        {
+            //expected
+        }
+    }
+
     /**
      * Check that setting UserId null on a new message does not cause creation of the underlying properties
      * section. New messages lack the properties section section,

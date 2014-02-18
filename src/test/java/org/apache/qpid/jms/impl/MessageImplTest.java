@@ -2048,6 +2048,11 @@ public class MessageImplTest extends QpidJmsTestCase
     }
 
     //TODO: delete this marker comment
+    @Test
+    public void testGetJMSXGroupSeqOnNewMessageThrowsNFE() throws Exception
+    {
+        assertGetMissingPropertyThrowsNumberFormatException(_testMessage, JMSXGROUPSEQ, Integer.class);
+    }
 
     @Test
     public void testGetJMSXGroupSeqDoesNotExistOnNewMessage() throws Exception
@@ -2132,6 +2137,87 @@ public class MessageImplTest extends QpidJmsTestCase
         _testMessage.setIntProperty(JMSXGROUPSEQ, myGroupSeq);
 
         assertEquals("expected no entry to be present in the application-properties section", 0, _testAmqpMessage.getApplicationPropertyNames().size());
+    }
+
+    /**
+     * Test that setting the JMSXGroupSeq property to null clears an existing
+     * value for the group-sequence field on the underlying AMQP message
+     */
+    @Test
+    public void testSetJMSXGroupSeqNullClearsUnderlyingMessageGroupSequence() throws Exception
+    {
+        int myGroupSeq = 1;
+        _testMessage.setIntProperty(JMSXGROUPSEQ, myGroupSeq);
+
+        _testMessage.setStringProperty(JMSXGROUPSEQ, null);
+
+        assertFalse("did not expect a JMSXGroupSeq value to be present", _testMessage.propertyExists(JMSXGROUPSEQ));
+        assertNull("unexpected group-sequence value on underlying message", _testAmqpMessage.getGroupId());
+    }
+
+    /**
+     * Test that setting the JMSXGroupSeq property to a non-Integer instance
+     * causes an MFE to be thrown.
+     */
+    @Test
+    public void testSetJMSXGroupSeqToNonIntegerInstanceThrowsMFE() throws Exception
+    {
+        long myGroupSeq = 1L;
+
+        try
+        {
+            _testMessage.setLongProperty(JMSXGROUPSEQ, myGroupSeq);
+            fail("expected exception not thrown");
+        }
+        catch(MessageFormatException mfe)
+        {
+            //expected
+        }
+    }
+
+    /**
+     * Test that the JMSXGroupSeq property returns the expected value for a message
+     * received with the group-sequence field set.
+     */
+    @Test
+    public void testGetJMSXGroupSeqOnReceivedMessageWithGroupSequence() throws Exception
+    {
+        int groupSeqInt = 1;
+        Long myGroupSeq = Long.valueOf(groupSeqInt);
+        getJMSXGroupSeqOnReceivedMessageWithGroupSequenceAboveIntRangeTestImpl(myGroupSeq, groupSeqInt);
+    }
+
+    /**
+     * Test that the JMSXGroupSeq property returns the expected value for a message
+     * received with the group-sequence field uint set to a value above the int range.
+     * Expect that it is wrapped into the negative numbers not used normally by JMS.
+     */
+    @Test
+    public void testGetJMSXGroupSeqOnRecievedMessageWithGroupSequenceAboveIntRange() throws Exception
+    {
+        //First value just out of range
+        Long groupSeqUint = Integer.MAX_VALUE + 1L;//2^31;
+        int expected = Integer.MIN_VALUE;
+        getJMSXGroupSeqOnReceivedMessageWithGroupSequenceAboveIntRangeTestImpl(groupSeqUint, expected);
+
+        //Maximum uint value
+        groupSeqUint = 0x100000000L - 1L; //2^32 -1;
+        expected = -1;
+        getJMSXGroupSeqOnReceivedMessageWithGroupSequenceAboveIntRangeTestImpl(groupSeqUint, expected);
+
+        //Somewhere between the two
+        groupSeqUint = Integer.MAX_VALUE + 1L + 4L; //2^31 + 4;
+        expected = Integer.MIN_VALUE + 4;
+        getJMSXGroupSeqOnReceivedMessageWithGroupSequenceAboveIntRangeTestImpl(groupSeqUint, expected);
+    }
+
+    private void getJMSXGroupSeqOnReceivedMessageWithGroupSequenceAboveIntRangeTestImpl(Long groupSeqUint, int expected) throws JMSException
+    {
+        _testAmqpMessage.setGroupSequence(groupSeqUint);
+
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        assertEquals("JMSXGroupSeq value was not as expected", expected, _testMessage.getIntProperty(JMSXGROUPSEQ));
     }
 
     //TODO: delete this marker comment

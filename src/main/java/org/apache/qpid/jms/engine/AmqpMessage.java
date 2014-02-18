@@ -340,11 +340,14 @@ public abstract class AmqpMessage
                 return uint.longValue();
             }
         }
-
-        //TODO: is _message.getGroupSequence() doing the right thing before returning?
     }
 
-    public void setGroupSequence(Long groupSeq)
+    /**
+     * Set the group-sequence uint field on the properties section.
+     * @param groupSeq
+     * @throws IllegalArgumentException if the value is outside the range [0 - 2^32)
+     */
+    public void setGroupSequence(Long groupSeq) throws IllegalArgumentException
     {
         if(groupSeq == null)
         {
@@ -359,7 +362,11 @@ public abstract class AmqpMessage
         }
         else
         {
-            //TODO: is this method doing the right thing with our value?
+            if(groupSeq < 0 || groupSeq > 0xFFFFFFFFL)
+            {
+                throw new IllegalArgumentException("Value '"+groupSeq+"' lies outside the range [0 - 2^32).");
+            }
+
             _message.setGroupSequence(groupSeq);
         }
     }

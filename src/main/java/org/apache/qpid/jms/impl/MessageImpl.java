@@ -247,7 +247,6 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
 
     private void setJMSXGroupSeq(Object value) throws MessageFormatException
     {
-        //TODO: handle setting String, byte, short? Validate value?
         Long groupSeq = null;
         if(value != null)
         {
@@ -323,12 +322,16 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         {
             return _amqpMessage.getGroupId();
         }
+        else if(JMSXGROUPSEQ.equals(name))
+        {
+            return getJMSXGroupSeq();
+        }
 
         //TODO: handle non-JMS types?
         return _amqpMessage.getApplicationProperty(name);
     }
 
-    private Object getJMSXUserID() throws MessageFormatException
+    private String getJMSXUserID() throws MessageFormatException
     {
         byte[] userId = _amqpMessage.getUserId();
         if(userId == null)
@@ -345,6 +348,21 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
             {
                 throw createMessageFormatException("Unable to decode user id", e);
             }
+        }
+    }
+
+    private Integer getJMSXGroupSeq()
+    {
+        Long groupSeqUint = _amqpMessage.getGroupSequence();
+        if(groupSeqUint == null)
+        {
+            return null;
+        }
+        else
+        {
+            //The long represents a uint, so may be 0 to 2^32-1.
+            //This wraps it into a negative int range if over 2^31-1
+            return groupSeqUint.intValue();
         }
     }
 

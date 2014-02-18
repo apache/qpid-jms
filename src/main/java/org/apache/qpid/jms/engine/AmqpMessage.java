@@ -45,11 +45,6 @@ import org.apache.qpid.proton.message.Message;
 public abstract class AmqpMessage
 {
     static final short DEFAULT_PRIORITY = 4;
-    private static enum IdType
-    {
-        MESSAGE_ID,
-        CORRELATION_ID
-    }
 
     private final Delivery _delivery;
     private final Message _message;
@@ -515,7 +510,7 @@ public abstract class AmqpMessage
      */
     public Object getMessageId()
     {
-        return getUnderlyingId(IdType.MESSAGE_ID);
+        return getUnderlyingId(true);
     }
 
     /**
@@ -526,7 +521,7 @@ public abstract class AmqpMessage
      */
     public void setMessageId(final Object messageId)
     {
-        setUnderlyingId(messageId, IdType.MESSAGE_ID);
+        setUnderlyingId(messageId, true);
     }
 
     /**
@@ -539,22 +534,25 @@ public abstract class AmqpMessage
      */
     public Object getCorrelationId()
     {
-        return getUnderlyingId(IdType.CORRELATION_ID);
+        return getUnderlyingId(false);
     }
 
-    private Object getUnderlyingId(final IdType idType)
+    /**
+     * Get the indicated id from the underlying message.
+     *
+     * @param messageId true to get the messageId, false to get the correlationId
+     * @return
+     */
+    private Object getUnderlyingId(boolean messageId)
     {
-        Object underlyingId = null;
-        switch(idType)
+        Object underlyingId;
+        if(messageId)
         {
-            case MESSAGE_ID:
-                underlyingId = _message.getMessageId();
-                break;
-            case CORRELATION_ID:
-                underlyingId = _message.getCorrelationId();
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported id type: " + idType);
+            underlyingId = _message.getMessageId();
+        }
+        else
+        {
+            underlyingId = _message.getCorrelationId();
         }
 
         if(underlyingId instanceof Binary)
@@ -579,10 +577,16 @@ public abstract class AmqpMessage
      */
     public void setCorrelationId(final Object correlationId)
     {
-        setUnderlyingId(correlationId, IdType.CORRELATION_ID);
+        setUnderlyingId(correlationId, false);
     }
 
-    private void setUnderlyingId(final Object id, final IdType idType)
+    /**
+     * Set the provided id on the underlying message.
+     *
+     * @param id
+     * @param messageId true to set the messageId, false to set the correlationId
+     */
+    private void setUnderlyingId(final Object id, boolean messageId)
     {
         Object underlyingId = null;
         if(id instanceof String || id instanceof UUID || id == null )
@@ -611,16 +615,13 @@ public abstract class AmqpMessage
                                                         + id.getClass().getName());
         }
 
-        switch(idType)
+        if(messageId)
         {
-            case MESSAGE_ID:
-                _message.setMessageId(underlyingId);
-                break;
-            case CORRELATION_ID:
-                _message.setCorrelationId(underlyingId);
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported id type: " + idType);
+            _message.setMessageId(underlyingId);
+        }
+        else
+        {
+            _message.setCorrelationId(underlyingId);
         }
     }
 

@@ -32,6 +32,7 @@ import org.apache.qpid.jms.engine.AmqpMessage;
 import org.apache.qpid.jms.engine.AmqpTextMessage;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.engine.Delivery;
@@ -119,6 +120,21 @@ public class AmqpMessageFactoryTest extends QpidJmsTestCase
        assertEquals(AmqpTextMessage.class, amqpMessage.getClass());
    }
 
+   /**
+    * Test that a message with no body section, and with the content type set to
+    * an unknown value results in a 'generic message'
+    */
+   @Test
+   public void testCreateAmqpGenericMessageFromNoBodySectionAndUnknownContentType() throws Exception
+   {
+       //TODO: this test only required if we decide that not sending a content body is legal
+       Message message = Proton.message();
+       message.setContentType("unknown-content-type");
+
+       AmqpMessage amqpMessage = _amqpMessageFactory.createAmqpMessage(_mockDelivery, message, _mockAmqpConnection);
+       assertEquals(AmqpGenericMessage.class, amqpMessage.getClass());
+   }
+
    // =============== data ================
    // =====================================
 
@@ -186,6 +202,22 @@ public class AmqpMessageFactoryTest extends QpidJmsTestCase
        assertEquals(AmqpTextMessage.class, amqpMessage.getClass());
    }
 
+   /**
+    * Test that a data body containing nothing, but with the content type set to
+    * an unknown value results in a 'generic message'
+    */
+   @Test
+   public void testCreateAmqpGenericMessageFromDataWithEmptyBinaryAndUnknownContentType() throws Exception
+   {
+       Message message = Proton.message();
+       Binary binary = new Binary(new byte[0]);
+       message.setBody(new Data(binary));
+       message.setContentType("unknown-content-type");
+
+       AmqpMessage amqpMessage = _amqpMessageFactory.createAmqpMessage(_mockDelivery, message, _mockAmqpConnection);
+       assertEquals(AmqpGenericMessage.class, amqpMessage.getClass());
+   }
+
    // ============= amqp-value ============
    // =====================================
 
@@ -248,9 +280,38 @@ public class AmqpMessageFactoryTest extends QpidJmsTestCase
    {
        Message message = Proton.message();
        Binary binary = new Binary(new byte[0]);
-       message.setBody(new Data(binary));
+       message.setBody(new AmqpValue(binary));
        AmqpMessage amqpMessage = _amqpMessageFactory.createAmqpMessage(_mockDelivery, message, _mockAmqpConnection);
        assertEquals(AmqpBytesMessage.class, amqpMessage.getClass());
+   }
+
+   /**
+    * Test that an amqp-value body containing a value which can't
+    * be categorised results in a 'generic message'.
+    */
+   @Test
+   public void testCreateAmqpGenericMessageFromAmqpValueWithUncategorisedContent() throws Exception
+   {
+       Message message = Proton.message();
+       message.setBody(new AmqpValue(new Object()));//This obviously shouldn't happen in practice
+       AmqpMessage amqpMessage = _amqpMessageFactory.createAmqpMessage(_mockDelivery, message, _mockAmqpConnection);
+       assertEquals(AmqpGenericMessage.class, amqpMessage.getClass());
+   }
+
+   // ============= amqp-sequence ============
+   // ========================================
+
+   /**
+    * Test that an amqp-sequence body results in a 'generic message' until support is implemented.
+    */
+   @Test
+   public void testCreateAmqpGenericMessageFromAmqpSequence() throws Exception
+   {
+       Message message = Proton.message();
+       List<String> list = new ArrayList<String>();
+       message.setBody(new AmqpSequence(list));
+       AmqpMessage amqpMessage = _amqpMessageFactory.createAmqpMessage(_mockDelivery, message, _mockAmqpConnection);
+       assertEquals(AmqpGenericMessage.class, amqpMessage.getClass());
    }
 }
 

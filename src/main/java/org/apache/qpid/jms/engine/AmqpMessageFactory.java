@@ -85,6 +85,10 @@ public class AmqpMessageFactory
                 return new AmqpBytesMessage(delivery, message, amqpConnection);
             }
         }
+        else
+        {
+            //TODO: AmqpSequence support
+        }
 
         //Unable to determine a specific message type, return the generic message
         return new AmqpGenericMessage(delivery, message, amqpConnection);

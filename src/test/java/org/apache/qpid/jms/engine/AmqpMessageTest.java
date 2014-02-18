@@ -229,6 +229,18 @@ public class AmqpMessageTest extends QpidJmsTestCase
     }
 
     @Test
+    public void testSetTtlNullOnMessageWithNoHeader()
+    {
+        Message underlying = Proton.message();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(underlying, _mockDelivery, _mockAmqpConnection);
+
+        testAmqpMessage.setTtl(null);
+
+        assertNull("expected no header section to exist", underlying.getHeader());
+        assertNull("expected no ttl to exist", testAmqpMessage.getTtl());
+    }
+
+    @Test
     public void testSetTtlNullOnMessageWithExistingTtl()
     {
         Long ttl = 123L;
@@ -252,6 +264,19 @@ public class AmqpMessageTest extends QpidJmsTestCase
     {
         AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
+        assertEquals("expected priority value not found", 4, testAmqpMessage.getPriority());
+    }
+
+    /**
+     * When messages have no header section, the AMQP spec says the priority has default value of 4.
+     */
+    @Test
+    public void testGetPriorityIs4ForReceivedMessageWithNoHeader()
+    {
+        Message underlying = Proton.message();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(underlying, _mockDelivery, _mockAmqpConnection);
+
+        assertNull("expected no header section to exist", underlying.getHeader());
         assertEquals("expected priority value not found", 4, testAmqpMessage.getPriority());
     }
 
@@ -308,6 +333,27 @@ public class AmqpMessageTest extends QpidJmsTestCase
         assertEquals("expected priority value not found", priority, underlying.getPriority());
 
         assertEquals("expected priority value not found", priority, testAmqpMessage.getPriority());
+    }
+
+    /**
+     * Test that setting the Priority to the default value on a message with no
+     * header section does not result in creating the header section.
+     */
+    @Test
+    public void testSetDefaultPriorityForMessageWithoutHeaderSection()
+    {
+        short priority = AmqpMessage.DEFAULT_PRIORITY;
+
+        // Using a received message as new messages to send are set durable by default which creates the header
+        Message underlying = Proton.message();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(underlying, _mockDelivery, _mockAmqpConnection);
+
+        assertNull("expected no header section to exist", underlying.getHeader());
+
+        testAmqpMessage.setPriority(priority);
+
+        assertNull("expected no header section to exist", underlying.getHeader());
+        assertEquals("expected priority to be default", priority, testAmqpMessage.getPriority());
     }
 
     /**
@@ -432,6 +478,16 @@ public class AmqpMessageTest extends QpidJmsTestCase
         {
             //expected
         }
+    }
+
+    @Test
+    public void testSetGroupSequenceNullOnMessageWithoutExistingGroupSequence()
+    {
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+        testAmqpMessage.setGroupSequence(null);
+
+        assertNull("underlying message should have no properties setion", testAmqpMessage.getMessage().getProperties());
+        assertNull("GroupSequence should be null", testAmqpMessage.getGroupSequence());
     }
 
     /**
@@ -662,6 +718,16 @@ public class AmqpMessageTest extends QpidJmsTestCase
     }
 
     @Test
+    public void testSetCreationTimeNullOnMessageWithoutExistingCreationTime()
+    {
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+        testAmqpMessage.setCreationTime(null);
+
+        assertNull("underlying message should have no properties setion", testAmqpMessage.getMessage().getProperties());
+        assertNull("creation time should be null", testAmqpMessage.getCreationTime());
+    }
+
+    @Test
     public void testSetCreationTimeNullOnMessageWithExistingCreationTime()
     {
         Long timestamp = System.currentTimeMillis();
@@ -716,6 +782,27 @@ public class AmqpMessageTest extends QpidJmsTestCase
         AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
 
         assertNull("Expected correlationId to be null on new message", testAmqpMessage.getCorrelationId());
+    }
+
+    /**
+     * Test that setting then the correlationId with an unexpected object type causes an IAE
+     */
+    @Test
+    public void testSetCorrelationIdWithUnexpectedTypeThrowsIAE()
+    {
+        Object testCorrelationId = new Object();
+
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+
+        try
+        {
+            testAmqpMessage.setCorrelationId(testCorrelationId);
+            fail("expected exception not thrown");
+        }
+        catch(IllegalArgumentException iae)
+        {
+            //expected
+        }
     }
 
     /**

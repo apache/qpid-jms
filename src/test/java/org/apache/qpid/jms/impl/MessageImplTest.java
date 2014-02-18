@@ -243,14 +243,7 @@ public class MessageImplTest extends QpidJmsTestCase
         assertNull(_testMessage.getObjectProperty(propertyName));
 
         //check there are no properties
-        Enumeration<?> names = _testMessage.getPropertyNames();
-        int numProps = 0;
-        while(names.hasMoreElements())
-        {
-            numProps++;
-        }
-
-        assertEquals(0, numProps);
+        assertNoProperties(_testMessage);
     }
 
     @Test
@@ -1801,40 +1794,42 @@ public class MessageImplTest extends QpidJmsTestCase
 
     /**
      * Test that setting the JMSXUserID property, which is stored in the AMQP message
+     * user-id field, and then calling the {@link Message#clearProperties()}
+     * method ensures JMSXUserID is entirely cleared
+     */
+    @Test
+    public void testClearPropertiesEnsuresJMSXUserIDIsCleared() throws Exception
+    {
+        String propertyName = JMSXUSERID;
+        String myUserID = "myUser";
+        _testMessage.setStringProperty(propertyName, myUserID);
+
+        _testMessage.clearProperties();
+
+        //check the prop no longer exists, returns null
+        assertFalse("JMSXUserID should no longer exist",_testMessage.propertyExists(propertyName));
+        assertNull("JMSXUserID should no longer return a value", _testMessage.getStringProperty(JMSXUSERID));
+
+        //check there are no properties
+        assertNoProperties(_testMessage);
+    }
+
+    /**
+     * Test that setting the JMSXUserID property, which is stored in the AMQP message
      * user-id field, causes the {@link Message#getPropertyNames()} to result to contain it.
      */
-    @SuppressWarnings("unchecked")
     @Test
     public void testSetJMSXUserIDEnsuresThatPropertyNamesContainsIt() throws Exception
     {
         //verify the name doesn't exist originally
-        Enumeration<String> names = (Enumeration<String>) _testMessage.getPropertyNames();
-        boolean containsJMSXUserId = false;
-        while(names.hasMoreElements())
-        {
-            String prop = names.nextElement();
-            if(JMSXUSERID.equals(prop))
-            {
-                containsJMSXUserId = true;
-            }
-        }
-
+        boolean containsJMSXUserId = doesPropertyNameExist(_testMessage, JMSXUSERID);
         assertFalse("Didn't expect to find JMSXUserId in property names yet", containsJMSXUserId);
 
         //set property
         _testMessage.setStringProperty(JMSXUSERID, "value");
 
         //verify the name now exists
-        names = (Enumeration<String>) _testMessage.getPropertyNames();
-        while(names.hasMoreElements())
-        {
-            String prop = names.nextElement();
-            if(JMSXUSERID.equals(prop))
-            {
-                containsJMSXUserId = true;
-            }
-        }
-
+        containsJMSXUserId = doesPropertyNameExist(_testMessage, JMSXUSERID);
         assertTrue("Didn't find JMSXUserId in property names", containsJMSXUserId);
     }
 
@@ -1946,39 +1941,42 @@ public class MessageImplTest extends QpidJmsTestCase
 
     /**
      * Test that setting the JMSXGroupID property, which is stored in the AMQP message
+     * group-id field, and then calling the {@link Message#clearProperties()}
+     * method ensures JMSXGroupID is entirely cleared
+     */
+    @Test
+    public void testClearPropertiesEnsuresJMSXGroupIDIsCleared() throws Exception
+    {
+        String propertyName = JMSXGROUPID;
+        String myGroupID = "myGroup";
+        _testMessage.setStringProperty(propertyName, myGroupID);
+
+        _testMessage.clearProperties();
+
+        //check the prop no longer exists, returns null
+        assertFalse("JMSXGroupID should no longer exist",_testMessage.propertyExists(propertyName));
+        assertNull("JMSXGroupID should no longer return a value", _testMessage.getStringProperty(JMSXGROUPID));
+
+        //check there are no properties
+        assertNoProperties(_testMessage);
+    }
+
+    /**
+     * Test that setting the JMSXGroupID property, which is stored in the AMQP message
      * group-id field, causes the {@link Message#getPropertyNames()} to result to contain it.
      */
-    @SuppressWarnings("unchecked")
     @Test
     public void testSetJMSXGroupIDEnsuresThatPropertyNamesContainsIt() throws Exception
     {
         //verify the name doesn't exist originally
-        Enumeration<String> names = (Enumeration<String>) _testMessage.getPropertyNames();
-        boolean containsJMSXGroupID = false;
-        while(names.hasMoreElements())
-        {
-            String prop = names.nextElement();
-            if(JMSXGROUPID.equals(prop))
-            {
-                containsJMSXGroupID = true;
-            }
-        }
-
+        boolean containsJMSXGroupID = doesPropertyNameExist(_testMessage, JMSXGROUPID);
         assertFalse("Didn't expect to find JMSXGroupID in property names yet", containsJMSXGroupID);
 
         //set property
         _testMessage.setStringProperty(JMSXGROUPID, "value");
 
         //verify the name now exists
-        names = (Enumeration<String>) _testMessage.getPropertyNames();
-        while(names.hasMoreElements())
-        {
-            String prop = names.nextElement();
-            if(JMSXGROUPID.equals(prop))
-            {
-                containsJMSXGroupID = true;
-            }
-        }
+        containsJMSXGroupID = doesPropertyNameExist(_testMessage, JMSXGROUPID);
 
         assertTrue("Didn't find JMSXGroupID in property names", containsJMSXGroupID);
     }
@@ -2089,23 +2087,35 @@ public class MessageImplTest extends QpidJmsTestCase
 
     /**
      * Test that setting the JMSXGroupSeq property, which is stored in the AMQP message
+     * group-sequence field, and then calling the {@link Message#clearProperties()}
+     * method ensures JMSXGroupSeq is entirely cleared
+     */
+    @Test
+    public void testClearPropertiesEnsuresJMSXGroupSeqIsCleared() throws Exception
+    {
+        String propertyName = JMSXGROUPSEQ;
+        int myGroupSeq = 1;
+        _testMessage.setIntProperty(propertyName, myGroupSeq);
+
+        _testMessage.clearProperties();
+
+        //check the prop no longer exists, returns null
+        assertFalse("JMSXGroupSeq should no longer exist",_testMessage.propertyExists(propertyName));
+        assertGetMissingPropertyThrowsNumberFormatException(_testMessage, JMSXGROUPSEQ, Integer.class);
+
+        //check there are no properties
+        assertNoProperties(_testMessage);
+    }
+
+    /**
+     * Test that setting the JMSXGroupSeq property, which is stored in the AMQP message
      * group-sequence field, causes the {@link Message#getPropertyNames()} to result to contain it.
      */
-    @SuppressWarnings("unchecked")
     @Test
     public void testSetJMSXGroupSeqEnsuresThatPropertyNamesContainsIt() throws Exception
     {
         //verify the name doesn't exist originally
-        Enumeration<String> names = (Enumeration<String>) _testMessage.getPropertyNames();
-        boolean containsJMSXGroupSeq = false;
-        while(names.hasMoreElements())
-        {
-            String prop = names.nextElement();
-            if(JMSXGROUPSEQ.equals(prop))
-            {
-                containsJMSXGroupSeq = true;
-            }
-        }
+        boolean containsJMSXGroupSeq = doesPropertyNameExist(_testMessage, JMSXGROUPSEQ);
 
         assertFalse("Didn't expect to find JMSXGroupSeq in property names yet", containsJMSXGroupSeq);
 
@@ -2113,16 +2123,7 @@ public class MessageImplTest extends QpidJmsTestCase
         _testMessage.setIntProperty(JMSXGROUPSEQ, 1);
 
         //verify the name now exists
-        names = (Enumeration<String>) _testMessage.getPropertyNames();
-        while(names.hasMoreElements())
-        {
-            String prop = names.nextElement();
-            if(JMSXGROUPSEQ.equals(prop))
-            {
-                containsJMSXGroupSeq = true;
-            }
-        }
-
+        containsJMSXGroupSeq = doesPropertyNameExist(_testMessage, JMSXGROUPSEQ);
         assertTrue("Didn't find JMSXGroupSeq in property names", containsJMSXGroupSeq);
     }
 
@@ -2272,38 +2273,18 @@ public class MessageImplTest extends QpidJmsTestCase
         assertTrue(_testMessage.propertyExists(JMS_AMQP_TTL));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testJMS_AMQP_TTL_GetPropertyNamesOnNewMessage() throws Exception
     {
         //verify the name doesn't exist originally
-        Enumeration<String> names = (Enumeration<String>) _testMessage.getPropertyNames();
-        boolean containsJMS_AMQP_TTL = false;
-        while(names.hasMoreElements())
-        {
-            String prop = names.nextElement();
-            if(JMS_AMQP_TTL.equals(prop))
-            {
-                containsJMS_AMQP_TTL = true;
-            }
-        }
-
+        boolean containsJMS_AMQP_TTL = doesPropertyNameExist(_testMessage, JMS_AMQP_TTL);
         assertFalse(containsJMS_AMQP_TTL);
 
         //set property
         _testMessage.setLongProperty(JMS_AMQP_TTL, 1L);
 
         //verify the namenow exists
-        names = (Enumeration<String>) _testMessage.getPropertyNames();
-        while(names.hasMoreElements())
-        {
-            String prop = names.nextElement();
-            if(JMS_AMQP_TTL.equals(prop))
-            {
-                containsJMS_AMQP_TTL = true;
-            }
-        }
-
+        containsJMS_AMQP_TTL = doesPropertyNameExist(_testMessage, JMS_AMQP_TTL);
         assertTrue(containsJMS_AMQP_TTL);
     }
 
@@ -2332,17 +2313,7 @@ public class MessageImplTest extends QpidJmsTestCase
         assertFalse(_testMessage.propertyExists(JMS_AMQP_TTL));
 
         //verify the name doesn't exist
-        @SuppressWarnings("unchecked")
-        Enumeration<String> names = (Enumeration<String>) _testMessage.getPropertyNames();
-        boolean containsJMS_AMQP_TTL = false;
-        while(names.hasMoreElements())
-        {
-            String prop = names.nextElement();
-            if(JMS_AMQP_TTL.equals(prop))
-            {
-                containsJMS_AMQP_TTL = true;
-            }
-        }
+        boolean containsJMS_AMQP_TTL = doesPropertyNameExist(_testMessage, JMS_AMQP_TTL);
         assertFalse(containsJMS_AMQP_TTL);
 
         //verify getting the value returns a NFE
@@ -2395,14 +2366,7 @@ public class MessageImplTest extends QpidJmsTestCase
         }
 
         //check there are no properties
-        Enumeration<?> names = _testMessage.getPropertyNames();
-        int numProps = 0;
-        while(names.hasMoreElements())
-        {
-            numProps++;
-        }
-
-        assertEquals(0, numProps);
+        assertNoProperties(_testMessage);
     }
 
     // ====== utility methods =======
@@ -2486,5 +2450,33 @@ public class MessageImplTest extends QpidJmsTestCase
     {
         Object actualValue = getMessagePropertyUsingTypeMethod(testMessage, propertyName, clazz);
         assertEquals(expectedValue, actualValue);
+    }
+
+    private void assertNoProperties(MessageImpl<?> message) throws JMSException
+    {
+        Enumeration<?> names = message.getPropertyNames();
+        int numProps = 0;
+        while(names.hasMoreElements())
+        {
+            numProps++;
+        }
+
+        assertEquals(0, numProps);
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean doesPropertyNameExist(MessageImpl<?> message, String propertyName) throws JMSException
+    {
+        Enumeration<String> names = (Enumeration<String>) message.getPropertyNames();
+        while(names.hasMoreElements())
+        {
+            String prop = names.nextElement();
+            if(propertyName.equals(prop))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

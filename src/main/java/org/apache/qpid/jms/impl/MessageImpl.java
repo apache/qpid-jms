@@ -735,9 +735,11 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
 
         _amqpMessage.clearAllApplicationProperties();
         _propJMS_AMQP_TTL = null;
+        _amqpMessage.setUserId(null);
+        _amqpMessage.setGroupId(null);
+        _amqpMessage.setGroupSequence(null);
 
         //TODO: Clear any new custom properties.
-        //Currently outstanding: JMSXUserId + JMSXGroupID
     }
 
     @Override

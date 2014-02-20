@@ -317,6 +317,17 @@ public abstract class AmqpMessage
 
     //===== Properties ======
 
+
+    public void setReplyToGroupId(String replyToGroupId)
+    {
+        _message.setReplyToGroupId(replyToGroupId);
+    }
+
+    public String getReplyToGroupId()
+    {
+        return _message.getReplyToGroupId();
+    }
+
     public Long getGroupSequence()
     {
         if(_message.getProperties() == null)

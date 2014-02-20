@@ -448,7 +448,125 @@ public class AmqpMessageTest extends QpidJmsTestCase
         assertNull("expected userid to be null on new message", testAmqpMessage.getUserId());
     }
 
-    //TODO: delete this marker comment
+    /**
+     * Check that etting the ReplyToGroupId works on new messages without a properties
+     * properties section. New messages lack the properties section,
+     * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
+     */
+    @Test
+    public void testGetReplyToGroupIdIsNullForNewMessage()
+    {
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+
+        assertNull("expected ReplyToGroupId to be null on new message", testAmqpMessage.getReplyToGroupId());
+    }
+
+    /**
+     * Check that getting the ReplyToGroupId works on received messages without a properties section
+     */
+    @Test
+    public void testGetReplyToGroupIdWithReceivedMessageWithNoProperties()
+    {
+        Message message = Proton.message();
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        String replyToGroupId = testAmqpMessage.getReplyToGroupId();
+        assertNull("expected ReplyToGroupId to be null on message without properties section", replyToGroupId);
+    }
+
+    /**
+     * Check that setting ReplyToGroupId null on a new message does not cause creation of the
+     * underlying properties section. New messages lack the properties section,
+     * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
+     */
+    @Test
+    public void testSetReplyToGroupIdNullOnNewMessageDoesNotCreatePropertiesSection() throws Exception
+    {
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+
+        testAmqpMessage.setReplyToGroupId(null);
+
+        assertNull("properties section was created", testAmqpMessage.getMessage().getProperties());
+    }
+
+    /**
+     * Check that getting the ReplyToGroupId works on received messages with a
+     * properties section, but no reply-to-group-id
+     */
+    @Test
+    public void testGetReplyToGroupIdWithReceivedMessageWithPropertiesButNoReplyToGroupId()
+    {
+        Message message = Proton.message();
+
+        Properties props = new Properties();
+        props.setContentType(Symbol.valueOf("content-type"));
+        message.setProperties(props);
+
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        String replyToGroupId = testAmqpMessage.getReplyToGroupId();
+        assertNull("expected ReplyToGroupId to be null on message with properties section but no reply-to-group-id", replyToGroupId);
+    }
+
+    /**
+     * Check that getting the ReplyToGroupId returns the expected value from a
+     * received messages with a reply-to-group-id.
+     */
+    @Test
+    public void testGetReplyToGroupIdWithReceivedMessage()
+    {
+        String replyToGroupId = "myReplyGroup";
+
+        Message message = Proton.message();
+
+        Properties props = new Properties();
+        props.setReplyToGroupId(replyToGroupId);
+        message.setProperties(props);
+
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createReceivedMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        String actual = testAmqpMessage.getReplyToGroupId();
+        assertNotNull("expected ReplyToGroupId on message was not found", actual);
+        assertEquals("expected ReplyToGroupId on message was not found", replyToGroupId, actual);
+    }
+
+    /**
+     * Test that setting the ReplyToGroupId sets the expected value into the
+     * reply-to-group-id of the underlying proton message.
+     */
+    @Test
+    public void testSetReplyToGroupId()
+    {
+        String replyToGroupId = "myReplyGroup";
+
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+
+        Message underlyingMessage = testAmqpMessage.getMessage();
+
+        testAmqpMessage.setReplyToGroupId(replyToGroupId);
+
+        assertNotNull("expected ReplyToGroupId on message was not found", underlyingMessage.getReplyToGroupId());
+        assertEquals("expected ReplyToGroupId on message was not found", replyToGroupId, underlyingMessage.getReplyToGroupId());
+    }
+
+    /**
+     * Test that setting and getting the ReplyToGroupId yields the expected result
+     */
+    @Test
+    public void testSetGetReplyToGroupId()
+    {
+        String replyToGroupId = "myReplyGroup";
+
+        AmqpMessage testAmqpMessage = TestAmqpMessage.createNewMessage();
+
+        assertNull(testAmqpMessage.getReplyToGroupId());
+
+        testAmqpMessage.setReplyToGroupId(replyToGroupId);
+
+        assertNotNull("expected ReplyToGroupId on message was not found", testAmqpMessage.getReplyToGroupId());
+        assertEquals("expected ReplyToGroupId on message was not found", replyToGroupId, testAmqpMessage.getReplyToGroupId());
+    }
+
     /**
      * Test that attempting to set a uint group-sequence (represented as a long) with a value
      * outwith the allowed [0 - 2^32) range results in an IAE being thrown

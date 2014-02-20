@@ -19,6 +19,7 @@
 package org.apache.qpid.jms.impl;
 
 import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_TTL;
+import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_REPLY_TO_GROUP_ID;
 import static org.apache.qpid.jms.impl.ClientProperties.JMSXUSERID;
 import static org.apache.qpid.jms.impl.ClientProperties.JMSXGROUPID;
 import static org.apache.qpid.jms.impl.ClientProperties.JMSXGROUPSEQ;
@@ -206,6 +207,11 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
             setJMS_AMQP_TTL(value);
             return;
         }
+        else if(JMS_AMQP_REPLY_TO_GROUP_ID.equals(name))
+        {
+            setJMS_AMQP_REPLY_TO_GROUP_ID(value);
+            return;
+        }
         else if(JMSXUSERID.equals(name))
         {
             setJMSXUserID(value);
@@ -306,6 +312,24 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         }
     }
 
+    private void setJMS_AMQP_REPLY_TO_GROUP_ID(Object value) throws MessageFormatException
+    {
+        String replyToGroupId = null;
+        if(value != null)
+        {
+            if(value instanceof String)
+            {
+                replyToGroupId = (String) value;
+            }
+            else
+            {
+                throw createMessageFormatException(JMS_AMQP_REPLY_TO_GROUP_ID + " must be a String");
+            }
+        }
+
+        _amqpMessage.setReplyToGroupId(replyToGroupId);
+    }
+
     private Object getApplicationProperty(String name) throws MessageFormatException
     {
         checkPropertyNameIsValid(name);
@@ -325,6 +349,10 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         else if(JMSXGROUPSEQ.equals(name))
         {
             return getJMSXGroupSeq();
+        }
+        else if(JMS_AMQP_REPLY_TO_GROUP_ID.equals(name))
+        {
+            return _amqpMessage.getReplyToGroupId();
         }
 
         //TODO: handle non-JMS types?
@@ -401,6 +429,11 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     private boolean propertyExistsJMS_AMQP_TTL()
     {
         return _propJMS_AMQP_TTL != null;
+    }
+
+    private boolean propertyExistsJMS_AMQP_REPLY_TO_GROUP_ID()
+    {
+        return _amqpMessage.getReplyToGroupId() != null;
     }
 
     //======= JMS Methods =======
@@ -735,6 +768,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
 
         _amqpMessage.clearAllApplicationProperties();
         _propJMS_AMQP_TTL = null;
+        _amqpMessage.setReplyToGroupId(null);
         _amqpMessage.setUserId(null);
         _amqpMessage.setGroupId(null);
         _amqpMessage.setGroupSequence(null);
@@ -748,6 +782,11 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         if(JMS_AMQP_TTL.equals(name))
         {
             return propertyExistsJMS_AMQP_TTL();
+        }
+
+        if(JMS_AMQP_REPLY_TO_GROUP_ID.equals(name))
+        {
+            return propertyExistsJMS_AMQP_REPLY_TO_GROUP_ID();
         }
 
         if(JMSXUSERID.equals(name))
@@ -978,6 +1017,11 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         if(propertyExistsJMS_AMQP_TTL())
         {
             propNames.add(JMS_AMQP_TTL);
+        }
+
+        if(propertyExistsJMS_AMQP_REPLY_TO_GROUP_ID())
+        {
+            propNames.add(JMS_AMQP_REPLY_TO_GROUP_ID);
         }
 
         if(propertyExistsJMSXUserID())

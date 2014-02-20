@@ -21,9 +21,11 @@
 package org.apache.qpid.jms.impl;
 
 import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_TTL;
+import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_REPLY_TO_GROUP_ID;
 import static org.apache.qpid.jms.impl.ClientProperties.JMSXUSERID;
 import static org.apache.qpid.jms.impl.ClientProperties.JMSXGROUPID;
 import static org.apache.qpid.jms.impl.ClientProperties.JMSXGROUPSEQ;
+
 import static org.junit.Assert.*;
 
 import java.nio.ByteBuffer;
@@ -2045,7 +2047,6 @@ public class MessageImplTest extends QpidJmsTestCase
         assertEquals("JMSXGroupID value was not as expected", myGroupId, _testMessage.getStringProperty(JMSXGROUPID));
     }
 
-    //TODO: delete this marker comment
     @Test
     public void testGetJMSXGroupSeqOnNewMessageThrowsNFE() throws Exception
     {
@@ -2221,7 +2222,141 @@ public class MessageImplTest extends QpidJmsTestCase
         assertEquals("JMSXGroupSeq value was not as expected", expected, _testMessage.getIntProperty(JMSXGROUPSEQ));
     }
 
-    //TODO: delete this marker comment
+    // ====== JMS_AMQP_REPLY_TO_GROUP_ID property =======
+
+    @Test
+    public void testSetJMS_AMQP_REPLY_TO_GROUP_ID_PropertyRejectsNonStringValues() throws Exception
+    {
+        try
+        {
+            _testMessage.setLongProperty(JMS_AMQP_REPLY_TO_GROUP_ID, -1L);
+            fail("expected exception not thrown");
+        }
+        catch(MessageFormatException mfe)
+        {
+            //expected
+        }
+    }
+
+    /**
+     * Test that setting the JMS_AMQP_REPLY_TO_GROUP_ID property, which is stored in the AMQP message
+     * reply-to-group-id field, causes the {@link Message#propertyExists(String)} to return true;
+     */
+    @Test
+    public void testJMS_AMQP_REPLY_TO_GROUP_ID_PropertyExists() throws Exception
+    {
+        assertFalse(_testMessage.propertyExists(JMS_AMQP_REPLY_TO_GROUP_ID));
+        _testMessage.setStringProperty(JMS_AMQP_REPLY_TO_GROUP_ID, "myReplyToGroupId");
+        assertTrue(_testMessage.propertyExists(JMS_AMQP_REPLY_TO_GROUP_ID));
+    }
+
+    /**
+     * Test that setting the JMS_AMQP_REPLY_TO_GROUP_ID property, which is stored in the AMQP message
+     * reply-to-group-id field, causes the {@link Message#getPropertyNames()} to return an enumeration
+     * containing JMS_AMQP_REPLY_TO_GROUP_ID;
+     */
+    @Test
+    public void testJMS_AMQP_REPLY_TO_GROUP_ID_GetPropertyNamesOnNewMessage() throws Exception
+    {
+        //verify the name doesn't exist originally
+        boolean containsJMS_AMQP_REPLY_TO_GROUP_ID = doesPropertyNameExist(_testMessage, JMS_AMQP_REPLY_TO_GROUP_ID);
+        assertFalse(containsJMS_AMQP_REPLY_TO_GROUP_ID);
+
+        //set property
+        _testMessage.setStringProperty(JMS_AMQP_REPLY_TO_GROUP_ID, "myReplyToGroupId");
+
+        //verify the name now exists
+        containsJMS_AMQP_REPLY_TO_GROUP_ID = doesPropertyNameExist(_testMessage, JMS_AMQP_REPLY_TO_GROUP_ID);
+        assertTrue(containsJMS_AMQP_REPLY_TO_GROUP_ID);
+    }
+
+    /**
+     * Test that getting the JMS_AMQP_REPLY_TO_GROUP_ID property on a new message returns null, since the property is a String
+     */
+    @Test
+    public void testGetJMS_AMQP_REPLY_TO_GROUP_ID_PropertyOnNewMessage() throws Exception
+    {
+        assertNull("expected non-existent string property to return null", _testMessage.getStringProperty(JMS_AMQP_REPLY_TO_GROUP_ID));
+    }
+
+    /**
+     * Test that receiving an AMQP message with the reply-to-group-id field set results in the
+     * JMS_AMQP_REPLY_TO_GROUP_ID property existing, being included in the property names, and returning
+     * the appropriate value when attempt is made to retrieve it.
+     */
+    @Test
+    public void testJMS_AMQP_REPLY_TO_GROUP_ID_PropertyBehaviourOnReceivedMessageWithUnderlyingReplyToGroupIdFieldSet() throws Exception
+    {
+        String expected = "myReplyToGroupId";
+        _testAmqpMessage.setReplyToGroupId(expected);
+        _testMessage = TestMessageImpl.createReceivedMessage(_testAmqpMessage, _mockSessionImpl, _mockConnectionImpl, null);
+
+        //check the propertyExists method
+        assertTrue(_testMessage.propertyExists(JMS_AMQP_REPLY_TO_GROUP_ID));
+
+        //verify the name exists
+        boolean containsJMS_AMQP_REPLY_TO_GROUP_ID = doesPropertyNameExist(_testMessage, JMS_AMQP_REPLY_TO_GROUP_ID);
+        assertTrue(containsJMS_AMQP_REPLY_TO_GROUP_ID);
+
+        //verify getting the value returns expected result
+        assertEquals("unexpected value for JMS_AMQP_REPLY_TO_GROUP_ID", expected, _testMessage.getStringProperty(JMS_AMQP_REPLY_TO_GROUP_ID));
+    }
+
+    /**
+     * Test that setting the JMS_AMQP_REPLY_TO_GROUP_ID property does not set an entry in the
+     * application-properties section of the underlying AMQP message, because we store the value
+     * in the reply-to-group-id field of the AMQP properties section.
+     */
+    @Test
+    public void testSetJMS_AMQP_REPLY_TO_GROUP_ID_PropertyDoesntSetEntryInUnderlyingApplicationProperties() throws Exception
+    {
+        assertFalse(_testAmqpMessage.applicationPropertyExists(JMS_AMQP_REPLY_TO_GROUP_ID));
+
+        _testMessage.setStringProperty(JMS_AMQP_REPLY_TO_GROUP_ID, "myReplyToGroupId");
+
+        //verify that the underlying message doesn't have a JMS_AMQP_REPLY_TO_GROUP_ID entry in its
+        //application-properties section, as we don't transmit the value that way
+        assertFalse(_testAmqpMessage.applicationPropertyExists(JMS_AMQP_REPLY_TO_GROUP_ID));
+    }
+
+    /**
+     * Test that clearing the message properties results in the synthetic JMS_AMQP_REPLY_TO_GROUP_ID
+     * property, which is actually stored in the reply-to-group-id field, ceasing to exist and returning null.
+     */
+    @Test
+    public void testJMS_AMQP_REPLY_TO_GROUP_ID_AfterClearProperties() throws Exception
+    {
+        _testMessage.setStringProperty(JMS_AMQP_REPLY_TO_GROUP_ID, "myReplyToGroupId");
+
+        assertTrue(_testMessage.propertyExists(JMS_AMQP_REPLY_TO_GROUP_ID));
+
+        _testMessage.clearProperties();
+
+        //check the prop no longer exists
+        assertFalse(_testMessage.propertyExists(JMS_AMQP_REPLY_TO_GROUP_ID));
+
+        //verify getting the value returns null
+        assertNull("expected non-existent string property to return null", _testMessage.getStringProperty(JMS_AMQP_REPLY_TO_GROUP_ID));
+
+        //check there are no properties
+        assertNoProperties(_testMessage);
+    }
+
+    /**
+     * Test that setting the JMS_AMQP_REPLY_TO_GROUP_ID property to null clears an existing
+     * value for the reply-to-group-id field on the underlying AMQP message
+     */
+    @Test
+    public void testSetJMS_AMQP_REPLY_TO_GROUP_IDNullClearsUnderlyingMessageGroupSequence() throws Exception
+    {
+        _testMessage.setStringProperty(JMS_AMQP_REPLY_TO_GROUP_ID, "myReplyToGroupId");
+
+        _testMessage.setStringProperty(JMS_AMQP_REPLY_TO_GROUP_ID, null);
+
+        assertFalse("did not expect a JMS_AMQP_REPLY_TO_GROUP_ID value to be present", _testMessage.propertyExists(JMS_AMQP_REPLY_TO_GROUP_ID));
+        assertNull("unexpected reply-to-group-id value on underlying message", _testAmqpMessage.getReplyToGroupId());
+    }
+
     // ====== JMS_AMQP_TTL property =======
 
     @Test

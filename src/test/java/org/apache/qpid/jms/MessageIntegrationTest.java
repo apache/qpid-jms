@@ -58,6 +58,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.UnsignedLong;
 import org.junit.Test;
 
@@ -848,5 +849,50 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         }
 
         return underlyingAmqpMessageId;
+    }
+
+    /**
+     * Tests that when receiving a message with the group-id, reply-to-group-id, and group-sequence
+     * fields of the AMQP properties section set, that the expected values are returned when getting
+     * the appropriate JMSX or JMS_AMQP properties from the JMS message.
+     */
+    @Test
+    public void testReceivedMessageWithGroupRelatedPropertiesSet() throws Exception
+    {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
+        {
+            Connection connection = _testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            PropertiesDescribedType props = new PropertiesDescribedType();
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+            MessageAnnotationsDescribedType ann = null;
+
+            String expectedGroupId = "myGroupId123";
+            int expectedGroupSeq = 1;
+            String expectedReplyToGroupId = "myReplyToGroupId456";
+
+            props.setGroupId(expectedGroupId);
+            props.setGroupSequence(UnsignedInteger.valueOf(expectedGroupSeq));
+            props.setReplyToGroupId(expectedReplyToGroupId);
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, ann, props, null, amqpValueNullContent);
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+            Message receivedMessage = messageConsumer.receive(1000);
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            assertNotNull("did not receive the message", receivedMessage);
+            assertEquals("did not get the expected JMSXGroupID", expectedGroupId, receivedMessage.getStringProperty(ClientProperties.JMSXGROUPID));
+            assertEquals("did not get the expected JMSXGroupSeq", expectedGroupSeq, receivedMessage.getIntProperty(ClientProperties.JMSXGROUPSEQ));
+            assertEquals("did not get the expected JMS_AMQP_REPLY_TO_GROUP_ID", expectedReplyToGroupId, receivedMessage.getStringProperty(ClientProperties.JMS_AMQP_REPLY_TO_GROUP_ID));
+        }
     }
 }

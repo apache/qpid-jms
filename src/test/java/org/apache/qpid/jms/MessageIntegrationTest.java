@@ -895,4 +895,53 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             assertEquals("did not get the expected JMS_AMQP_REPLY_TO_GROUP_ID", expectedReplyToGroupId, receivedMessage.getStringProperty(ClientProperties.JMS_AMQP_REPLY_TO_GROUP_ID));
         }
     }
+
+    /**
+     * Tests that when sending a message with the JMSXGroupID, JMSXGroupSeq, and JMS_AMQP_REPLY_TO_GROUP_ID
+     * properties of the JMS message set, that the expected values are included in the fields of
+     * the AMQP message emitted.
+     */
+    @Test
+    public void testSendMessageWithGroupRelatedPropertiesSet() throws Exception
+    {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
+        {
+            Connection connection = _testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String queueName = "myQueue";
+            Queue queue = session.createQueue(queueName);
+            MessageProducer producer = session.createProducer(queue);
+
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+
+            String expectedGroupId = "myGroupId123";
+            int expectedGroupSeq = 1;
+            String expectedReplyToGroupId = "myReplyToGroupId456";
+
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true);
+            propsMatcher.withGroupId(equalTo(expectedGroupId));
+            propsMatcher.withReplyToGroupId(equalTo(expectedReplyToGroupId));
+            propsMatcher.withGroupSequence(equalTo(UnsignedInteger.valueOf(expectedGroupSeq)));
+
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
+            messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(null));
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createTextMessage();
+            message.setStringProperty(ClientProperties.JMSXGROUPID, expectedGroupId);
+            message.setIntProperty(ClientProperties.JMSXGROUPSEQ, expectedGroupSeq);
+            message.setStringProperty(ClientProperties.JMS_AMQP_REPLY_TO_GROUP_ID, expectedReplyToGroupId);
+
+            producer.send(message);
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
 }

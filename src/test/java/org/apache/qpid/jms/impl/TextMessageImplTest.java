@@ -22,12 +22,20 @@ package org.apache.qpid.jms.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+
+import java.nio.charset.Charset;
+
+import javax.jms.JMSException;
+import javax.jms.MessageNotWriteableException;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.jms.engine.AmqpConnection;
 import org.apache.qpid.jms.engine.AmqpTextMessage;
 import org.apache.qpid.proton.Proton;
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
+import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.message.Message;
 import org.junit.Before;
@@ -93,5 +101,97 @@ public class TextMessageImplTest extends QpidJmsTestCase
         TextMessageImpl textMessageImpl = new TextMessageImpl(testAmqpMessage1, _mockSessionImpl,_mockConnectionImpl, null);
 
         assertEquals(value, textMessageImpl.getText());
+    }
+
+    /**
+     * Test that when attempting to set the body of a received message, if clearBody() has
+     * not been called first then a MessageNotWritableException is thrown.
+     */
+    @Test
+    public void testAttemptingToSetTextOnReceivedMessageWithoutClearBodyResultsInMNWE() throws Exception
+    {
+        messageClearBodyAndWritableTestImpl(false, true);
+    }
+
+    /**
+     * Test that when attempting to set the body of a received message, the new content
+     * is successfully set if clearBody() has been called first.
+     */
+    @Test
+    public void testAttemptingToSetTextOnReceivedMessageAfterClearBodySucceeds() throws Exception
+    {
+        messageClearBodyAndWritableTestImpl(true, true);
+    }
+
+    /**
+     * Test that once clearBody() has been called, null is returned instead of previous content.
+     */
+    @Test
+    public void testClearBodyResultsInNullContent() throws Exception
+    {
+        messageClearBodyAndWritableTestImpl(true, false);
+    }
+
+    private void messageClearBodyAndWritableTestImpl(boolean clearBody, boolean setNewText) throws JMSException
+    {
+        Message message = Proton.message();
+        message.setBody(new AmqpValue("originalContent"));
+
+        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
+        TextMessageImpl textMessageImpl = new TextMessageImpl(amqpTextMessage, _mockSessionImpl,_mockConnectionImpl, null);
+
+        if(clearBody)
+        {
+            textMessageImpl.clearBody();
+
+            if(setNewText)
+            {
+                textMessageImpl.setText("myNewText");
+                assertEquals("new message content not as expected", "myNewText", textMessageImpl.getText());
+            }
+            else
+            {
+                assertNull("message content was not cleared", textMessageImpl.getText());
+            }
+        }
+        else
+        {
+            try
+            {
+                textMessageImpl.setText("myNewText");
+                fail("expected exception was not thrown");
+            }
+            catch(MessageNotWriteableException mnwe)
+            {
+                //expected
+            }
+        }
+
+    }
+
+    /**
+     * Test that when clearing the body of a TextMessage, which sets the body value to null and
+     * defaults to using an AmqpValue body, that any content-type value on the original message
+     * is also cleared (since content-type SHOULD NOT be set except when sending Data sections)
+     */
+    @Test
+    public void testClearBodyWithReceivedMessageUsingDataSectionAndContentTypeResultsInClearingContentType() throws Exception
+    {
+        String messageCotnent = "myContentString";
+        byte[] encodedBytes = messageCotnent.getBytes(Charset.forName("UTF-8"));
+
+        Message message = Proton.message();
+        message.setBody(new Data(new Binary(encodedBytes)));
+        message.setContentType(AmqpTextMessage.CONTENT_TYPE);
+
+        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
+        TextMessageImpl textMessageImpl = new TextMessageImpl(amqpTextMessage, _mockSessionImpl,_mockConnectionImpl, null);
+
+        assertEquals("Expected content not returned", messageCotnent, textMessageImpl.getText());
+        assertEquals("Expected content type to be set", AmqpTextMessage.CONTENT_TYPE, amqpTextMessage.getContentType());
+
+        textMessageImpl.clearBody();
+
+        assertNull("Expected content type to be cleared", amqpTextMessage.getContentType());
     }
 }

@@ -53,6 +53,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     private Destination _destination;
     private Destination _replyTo;
     private boolean _propertiesWritable;
+    private boolean _bodyWritable;
 
     /**
      * Used to record the value of JMS_AMQP_TTL property
@@ -66,6 +67,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         _amqpMessage = amqpMessage;
         _sessionImpl = sessionImpl;
         _propertiesWritable = true;
+        _bodyWritable = true;
     }
 
     //message just received
@@ -91,6 +93,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         }
 
         _propertiesWritable = false;
+        _bodyWritable = false;
     }
 
     T getUnderlyingAmqpMessage(boolean prepareForSending)
@@ -171,12 +174,25 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         }
     }
 
-    private void setPropertiesWritable(boolean writable)
+    void setBodyWritable(boolean writable)
+    {
+        _bodyWritable = writable;
+    }
+
+    void checkBodyWritable() throws MessageNotWriteableException
+    {
+        if(!_bodyWritable)
+        {
+            throw new MessageNotWriteableException("Message body is currently in read-only mode");
+        }
+    }
+
+    void setPropertiesWritable(boolean writable)
     {
         _propertiesWritable = writable;
     }
 
-    private void checkPropertiesWritable() throws MessageNotWriteableException
+    void checkPropertiesWritable() throws MessageNotWriteableException
     {
         if(!_propertiesWritable)
         {

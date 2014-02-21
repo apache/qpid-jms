@@ -44,12 +44,6 @@ public class AmqpTextMessage extends AmqpMessage
      */
     public static final String CONTENT_TYPE = "text/plain";
 
-    /**
-     * Message type annotation value, only to be used when message uses
-     * an amqp-value body section containing a null value, not otherwise.
-     */
-    public static final String MSG_TYPE_ANNOTATION_VALUE = "TextMessage";
-
     private CharsetDecoder _decoder =  Charset.forName(UTF_8).newDecoder();
 
     public AmqpTextMessage()
@@ -67,9 +61,6 @@ public class AmqpTextMessage extends AmqpMessage
     {
         AmqpValue body = new AmqpValue(text);
         getMessage().setBody(body);
-
-        //TODO: clear the content-type in the case where we had received
-        //a message containing Data+ContentType
     }
 
     /**

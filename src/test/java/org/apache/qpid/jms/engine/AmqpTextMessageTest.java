@@ -127,6 +127,9 @@ public class AmqpTextMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setBody(new Data(null));
 
+        //This shouldn't happen with actual received messages, since Data sections can't really
+        //have a null value in them, they would have an empty byte array, but just in case...
+
         AmqpTextMessage amqpTextMessage = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
 
         assertEquals("expected zero-length string", "", amqpTextMessage.getText());

@@ -42,9 +42,7 @@ public class TextMessageImpl extends MessageImpl<AmqpTextMessage> implements Tex
     protected AmqpTextMessage prepareUnderlyingAmqpMessageForSending(AmqpTextMessage amqpMessage)
     {
         //Nothing to do here currently, the message operations are all
-        //already operating on the AmqpMessage directly
-
-        //TODO: do we need to do anything later with properties/headers etc?
+        //already operating on the AmqpTextMessage directly
         return amqpMessage;
     }
 
@@ -59,14 +57,19 @@ public class TextMessageImpl extends MessageImpl<AmqpTextMessage> implements Tex
     @Override
     public void setText(String text) throws JMSException
     {
-        //TODO: checkWritable();
+        checkBodyWritable();
+
         getUnderlyingAmqpMessage(false).setText(text);
     }
 
     @Override
     public void clearBody() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        AmqpTextMessage underlyingAmqpMessage = getUnderlyingAmqpMessage(false);
+        underlyingAmqpMessage.setText(null);
+
+        underlyingAmqpMessage.setContentType(null);
+
+        setBodyWritable(true);
     }
 }

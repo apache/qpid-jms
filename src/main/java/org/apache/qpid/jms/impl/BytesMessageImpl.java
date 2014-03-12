@@ -168,8 +168,14 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     {
         checkBodyReadable();
 
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        try
+        {
+            return _dataInputStream.readUnsignedByte();
+        }
+        catch (IOException e)
+        {
+            throw createInputException(e);
+        }
     }
 
     @Override
@@ -192,8 +198,14 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     {
         checkBodyReadable();
 
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        try
+        {
+            return _dataInputStream.readUnsignedShort();
+        }
+        catch (IOException e)
+        {
+            throw createInputException(e);
+        }
     }
 
     @Override

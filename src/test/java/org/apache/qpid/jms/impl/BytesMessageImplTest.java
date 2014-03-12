@@ -407,6 +407,48 @@ public class BytesMessageImplTest extends QpidJmsTestCase
     }
 
     /**
+     * Test that writing a byte using {@link BytesMessage#writeByte(Object)}, resetting the
+     * message to make it readable, and then reading back the value using
+     * {@link BytesMessage#readUnsignedByte()} instead produces the expected the comes
+     * from interpreting the sign bit as part of the value.
+     */
+    @Test
+    public void testReadUnsignedByte() throws Exception
+    {
+        byte myByte = -5;
+        int expectedUnsigned = 251;
+
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        bytesMessageImpl.writeByte(myByte);
+
+        bytesMessageImpl.reset();
+
+        assertEquals("Did not get the expected unsigned value", expectedUnsigned, bytesMessageImpl.readUnsignedByte());
+    }
+
+    /**
+     * Test that writing a short using {@link BytesMessage#writeShort(Object)}, resetting the
+     * message to make it readable, and then reading back the value using
+     * {@link BytesMessage#readUnsignedShort()} instead produces the expected the comes
+     * from interpreting the sign bit as part of the value.
+     */
+    @Test
+    public void testReadUnsignedShort() throws Exception
+    {
+        short myShort = -130;
+        int expectedUnsigned = 65406;
+
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        bytesMessageImpl.writeShort(myShort);
+
+        bytesMessageImpl.reset();
+
+        assertEquals("Did not get the expected unsigned value", expectedUnsigned, bytesMessageImpl.readUnsignedShort());
+    }
+
+    /**
      * Test that writing a null using {@link BytesMessage#writeObject(Object)}
      * results in a NPE being thrown.
      */

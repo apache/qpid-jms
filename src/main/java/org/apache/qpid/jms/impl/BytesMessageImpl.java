@@ -308,7 +308,12 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     public int readBytes(byte[] value, int length) throws JMSException
     {
         checkBodyReadable();
-        //TODO: checking length, and bounds on the array
+
+        if(length < 0 || value.length < length)
+        {
+            throw new IndexOutOfBoundsException("length must not be negative or larger than the size of the provided array");
+        }
+
         try
         {
             int offset = 0;

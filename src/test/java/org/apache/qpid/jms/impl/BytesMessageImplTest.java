@@ -428,6 +428,62 @@ public class BytesMessageImplTest extends QpidJmsTestCase
     }
 
     /**
+     * Verify that nothing is read when {@link BytesMessage#readBytes(byte[])} is
+     * called with a zero length destination array.
+     */
+    @Test
+    public void testReadBytesWithZeroLengthDestination() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+        bytesMessageImpl.reset();
+
+        assertEquals("Did not expect any bytes to be read", 0, bytesMessageImpl.readBytes(new byte[0]));
+    }
+
+    /**
+     * Verify that when {@link BytesMessage#readBytes(byte[], int))} is called
+     * with a negative length that an {@link IndexOutOfBoundsException} is thrown.
+     */
+    @Test
+    public void testReadBytesWithNegativeLengthThrowsIOOBE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+        bytesMessageImpl.reset();
+
+        try
+        {
+            bytesMessageImpl.readBytes(new byte[0], -1);
+            fail("expected exception to be thrown");
+        }
+        catch(IndexOutOfBoundsException ioobe)
+        {
+            //expected
+        }
+    }
+
+    /**
+     * Verify that when {@link BytesMessage#readBytes(byte[], int))} is called
+     * with a length that is greater than the size of the provided array,
+     * an {@link IndexOutOfBoundsException} is thrown.
+     */
+    @Test
+    public void testReadBytesWithLengthGreatThanArraySizeThrowsIOOBE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+        bytesMessageImpl.reset();
+
+        try
+        {
+            bytesMessageImpl.readBytes(new byte[1], 2);
+            fail("expected exception to be thrown");
+        }
+        catch(IndexOutOfBoundsException ioobe)
+        {
+            //expected
+        }
+    }
+
+    /**
      * Test that writing a short using {@link BytesMessage#writeShort(Object)}, resetting the
      * message to make it readable, and then reading back the value using
      * {@link BytesMessage#readUnsignedShort()} instead produces the expected the comes

@@ -94,7 +94,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
         return amqpMessage;
     }
 
-    private JMSException handleInputException(final IOException e)
+    private JMSException createInputException(final IOException e)
     {
         JMSException ex;
         if(e instanceof EOFException)
@@ -110,7 +110,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
         return ex;
     }
 
-    private JMSException handleOutputException(final IOException e)
+    private JMSException createOutputException(final IOException e)
     {
         return new QpidJmsException(e.getMessage(), e);
     }
@@ -138,8 +138,14 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     {
         checkBodyReadable();
 
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        try
+        {
+            return _dataInputStream.readBoolean();
+        }
+        catch (IOException e)
+        {
+            throw createInputException(e);
+        }
     }
 
     @Override
@@ -147,8 +153,14 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     {
         checkBodyReadable();
 
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        try
+        {
+            return _dataInputStream.readByte();
+        }
+        catch (IOException e)
+        {
+            throw createInputException(e);
+        }
     }
 
     @Override
@@ -165,8 +177,14 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     {
         checkBodyReadable();
 
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        try
+        {
+            return _dataInputStream.readShort();
+        }
+        catch (IOException e)
+        {
+            throw createInputException(e);
+        }
     }
 
     @Override
@@ -183,8 +201,14 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     {
         checkBodyReadable();
 
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        try
+        {
+            return _dataInputStream.readChar();
+        }
+        catch (IOException e)
+        {
+            throw createInputException(e);
+        }
     }
 
     @Override
@@ -192,8 +216,14 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     {
         checkBodyReadable();
 
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        try
+        {
+            return _dataInputStream.readInt();
+        }
+        catch (IOException e)
+        {
+            throw createInputException(e);
+        }
     }
 
     @Override
@@ -201,8 +231,14 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     {
         checkBodyReadable();
 
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        try
+        {
+            return _dataInputStream.readLong();
+        }
+        catch (IOException e)
+        {
+            throw createInputException(e);
+        }
     }
 
     @Override
@@ -210,8 +246,14 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     {
         checkBodyReadable();
 
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        try
+        {
+            return _dataInputStream.readFloat();
+        }
+        catch (IOException e)
+        {
+            throw createInputException(e);
+        }
     }
 
     @Override
@@ -219,8 +261,14 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     {
         checkBodyReadable();
 
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        try
+        {
+            return _dataInputStream.readDouble();
+        }
+        catch (IOException e)
+        {
+            throw createInputException(e);
+        }
     }
 
     @Override
@@ -228,8 +276,14 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     {
         checkBodyReadable();
 
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        try
+        {
+            return _dataInputStream.readUTF();
+        }
+        catch (IOException e)
+        {
+            throw createInputException(e);
+        }
     }
 
     @Override
@@ -242,7 +296,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     public int readBytes(byte[] value, int length) throws JMSException
     {
         checkBodyReadable();
-
+        //TODO: checking length, and bounds on the array
         try
         {
             int offset = 0;
@@ -267,7 +321,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
         }
         catch (IOException e)
         {
-            throw handleInputException(e);
+            throw createInputException(e);
         }
     }
 
@@ -275,72 +329,135 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     public void writeBoolean(boolean value) throws JMSException
     {
         checkBodyWritable();
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+
+        try
+        {
+            _dataOutputStream.writeBoolean(value);
+        }
+        catch (IOException e)
+        {
+            throw createOutputException(e);
+        }
     }
 
     @Override
     public void writeByte(byte value) throws JMSException
     {
         checkBodyWritable();
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+
+        try
+        {
+            _dataOutputStream.writeByte(value);
+        }
+        catch (IOException e)
+        {
+            throw createOutputException(e);
+        }
     }
 
     @Override
     public void writeShort(short value) throws JMSException
     {
         checkBodyWritable();
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+
+        try
+        {
+            _dataOutputStream.writeShort(value);
+        }
+        catch (IOException e)
+        {
+            throw createOutputException(e);
+        }
     }
 
     @Override
     public void writeChar(char value) throws JMSException
     {
         checkBodyWritable();
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+
+        try
+        {
+            _dataOutputStream.writeChar(value);
+        }
+        catch (IOException e)
+        {
+            throw createOutputException(e);
+        }
     }
 
     @Override
     public void writeInt(int value) throws JMSException
     {
         checkBodyWritable();
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+
+        try
+        {
+            _dataOutputStream.writeInt(value);
+        }
+        catch (IOException e)
+        {
+            throw createOutputException(e);
+        }
     }
 
     @Override
     public void writeLong(long value) throws JMSException
     {
         checkBodyWritable();
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+
+        try
+        {
+            _dataOutputStream.writeLong(value);
+        }
+        catch (IOException e)
+        {
+            throw createOutputException(e);
+        }
     }
 
     @Override
     public void writeFloat(float value) throws JMSException
     {
         checkBodyWritable();
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+
+        try
+        {
+            _dataOutputStream.writeFloat(value);
+        }
+        catch (IOException e)
+        {
+            throw createOutputException(e);
+        }
     }
 
     @Override
     public void writeDouble(double value) throws JMSException
     {
         checkBodyWritable();
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+
+        try
+        {
+            _dataOutputStream.writeDouble(value);
+        }
+        catch (IOException e)
+        {
+            throw createOutputException(e);
+        }
     }
 
     @Override
     public void writeUTF(String value) throws JMSException
     {
         checkBodyWritable();
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+
+        try
+        {
+            _dataOutputStream.writeUTF(value);
+        }
+        catch (IOException e)
+        {
+            throw createOutputException(e);
+        }
     }
 
     @Override
@@ -359,7 +476,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
         }
         catch (IOException e)
         {
-            throw handleOutputException(e);
+            throw createOutputException(e);
         }
     }
 
@@ -367,8 +484,54 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     public void writeObject(Object value) throws JMSException
     {
         checkBodyWritable();
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        if(value == null)
+        {
+            throw new NullPointerException("Value passed to BytesMessage.writeObject() must not be null");
+        }
+        else if (value instanceof Boolean)
+        {
+            writeBoolean((Boolean)value);
+        }
+        else if (value instanceof Byte)
+        {
+            writeByte((Byte)value);
+        }
+        else if (value instanceof Short)
+        {
+            writeShort((Short)value);
+        }
+        else if (value instanceof Character)
+        {
+            writeChar((Character)value);
+        }
+        else if (value instanceof Integer)
+        {
+            writeInt((Integer)value);
+        }
+        else if(value instanceof Long)
+        {
+            writeLong((Long)value);
+        }
+        else if(value instanceof Float)
+        {
+            writeFloat((Float) value);
+        }
+        else if(value instanceof Double)
+        {
+            writeDouble((Double) value);
+        }
+        else if(value instanceof String)
+        {
+            writeUTF((String) value);
+        }
+        else if(value instanceof byte[])
+        {
+            writeBytes((byte[])value);
+        }
+        else
+        {
+            throw new MessageFormatException("Value passed to BytesMessage.writeObject() must be of primitive type.  Type passed was " + value.getClass().getName());
+        }
     }
 
     @Override

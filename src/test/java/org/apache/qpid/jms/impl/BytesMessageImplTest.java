@@ -31,6 +31,7 @@ import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 
 import javax.jms.BytesMessage;
+import javax.jms.MessageFormatException;
 import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 
@@ -347,5 +348,284 @@ public class BytesMessageImplTest extends QpidJmsTestCase
         byte[] resetBytes = new byte[bytes.length];
         bytesMessageImpl.readBytes(resetBytes);
         assertTrue(Arrays.equals(bytes, resetBytes));
+    }
+
+    /**
+     * Test that writing a variety of type values into a new message, resetting the
+     * message to make it readable, and then reading back the values works as expected.
+     */
+    @Test
+    public void testWriteValuesThenResetAndReadValues() throws Exception
+    {
+        boolean myBool = true;
+        byte myByte = 4;
+        byte[] myBytes = "myBytes".getBytes();
+        char myChar = 'd';
+        double myDouble = 1234567890123456789.1234;
+        float myFloat = 1.1F;
+        int myInt = Integer.MAX_VALUE;
+        long myLong = Long.MAX_VALUE;
+        short myShort = 25;
+        String myUTF = "myString";
+
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        bytesMessageImpl.writeBoolean(myBool);
+        bytesMessageImpl.writeByte(myByte);
+        bytesMessageImpl.writeBytes(myBytes);
+        int offset = 1;
+        int adjustedLength = myBytes.length - offset;
+        bytesMessageImpl.writeBytes(myBytes, offset, adjustedLength);
+        bytesMessageImpl.writeChar(myChar);
+        bytesMessageImpl.writeDouble(myDouble);
+        bytesMessageImpl.writeFloat(myFloat);
+        bytesMessageImpl.writeInt(myInt);
+        bytesMessageImpl.writeLong(myLong);
+        bytesMessageImpl.writeShort(myShort);
+        bytesMessageImpl.writeUTF(myUTF);
+
+        bytesMessageImpl.reset();
+
+        assertEquals("Unexpected boolean value", myBool, bytesMessageImpl.readBoolean());
+        assertEquals("Unexpected byte value", myByte, bytesMessageImpl.readByte());
+        //retrieve the bytes, check they match
+        byte[] readBytes = new byte[myBytes.length];
+        assertEquals("Did not read the expected number of bytes", myBytes.length, bytesMessageImpl.readBytes(readBytes));
+        assertTrue("Read bytes were not as expected: " + Arrays.toString(readBytes), Arrays.equals(myBytes, readBytes));
+        //retrieve the partial bytes, check they match
+        readBytes = new byte[adjustedLength];
+        assertEquals("Did not read the expected number of bytes", adjustedLength, bytesMessageImpl.readBytes(readBytes));
+        byte[] adjustedBytes = Arrays.copyOfRange(myBytes, offset, myBytes.length);
+        assertTrue("Read bytes were not as expected: " + Arrays.toString(readBytes), Arrays.equals(adjustedBytes, readBytes));
+        assertEquals("Unexpected char value", myChar, bytesMessageImpl.readChar());
+        assertEquals("Unexpected double value", myDouble, bytesMessageImpl.readDouble(), 0.0);
+        assertEquals("Unexpected float value", myFloat, bytesMessageImpl.readFloat(), 0.0);
+        assertEquals("Unexpected int value", myInt, bytesMessageImpl.readInt());
+        assertEquals("Unexpected long value", myLong, bytesMessageImpl.readLong());
+        assertEquals("Unexpected short value", myShort, bytesMessageImpl.readShort());
+        assertEquals("Unexpected UTF value", myUTF, bytesMessageImpl.readUTF());
+    }
+
+    /**
+     * Test that writing a null using {@link BytesMessage#writeObject(Object)}
+     * results in a NPE being thrown.
+     */
+    @Test
+    public void testWriteObjectWithNullThrowsNPE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        try
+        {
+            bytesMessageImpl.writeObject(null);
+            fail("Expected an exception to be thrown");
+        }
+        catch(NullPointerException npe)
+        {
+            //expected
+        }
+    }
+
+    /**
+     * Test that writing a null using {@link BytesMessage#writeObject(Object)}
+     * results in an {@link MessageFormatException} being thrown.
+     */
+    @Test
+    public void testWriteObjectWithIllegalTypeThrowsMFE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        try
+        {
+            bytesMessageImpl.writeObject(new Object());
+            fail("Expected an exception to be thrown");
+        }
+        catch(MessageFormatException mfe)
+        {
+            //expected
+        }
+    }
+
+    /**
+     * Test that writing a boolean using {@link BytesMessage#writeObject(Object)}, resetting the
+     * message to make it readable, and then reading back the value works as expected.
+     */
+    @Test
+    public void testWriteObjectWithBoolean() throws Exception
+    {
+        boolean myBool = true;
+
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        bytesMessageImpl.writeObject(myBool);
+
+        bytesMessageImpl.reset();
+
+        assertEquals("Unexpected boolean value", myBool, bytesMessageImpl.readBoolean());
+    }
+
+    /**
+     * Test that writing a byte using {@link BytesMessage#writeObject(Object)}, resetting the
+     * message to make it readable, and then reading back the value works as expected.
+     */
+    @Test
+    public void testWriteObjectWithByte() throws Exception
+    {
+        byte myByte = 5;
+
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        bytesMessageImpl.writeObject(myByte);
+
+        bytesMessageImpl.reset();
+
+        assertEquals("Unexpected byte value", myByte, bytesMessageImpl.readByte());
+    }
+
+    /**
+     * Test that writing a byte[] using {@link BytesMessage#writeObject(Object)}, resetting the
+     * message to make it readable, and then reading back the value works as expected.
+     */
+    @Test
+    public void testWriteObjectWithByteArray() throws Exception
+    {
+        byte[] myBytes = "myObjectBytes".getBytes();
+
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        bytesMessageImpl.writeObject(myBytes);
+
+        bytesMessageImpl.reset();
+
+        //retrieve the bytes, check they match
+        byte[] readBytes = new byte[myBytes.length];
+        assertEquals("Did not read the expected number of bytes", myBytes.length, bytesMessageImpl.readBytes(readBytes));
+        assertTrue("Read bytes were not as expected: " + Arrays.toString(readBytes), Arrays.equals(myBytes, readBytes));
+    }
+
+    /**
+     * Test that writing a char using {@link BytesMessage#writeObject(Object)}, resetting the
+     * message to make it readable, and then reading back the value works as expected.
+     */
+    @Test
+    public void testWriteObjectWithChar() throws Exception
+    {
+        char myChar = 'e';
+
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        bytesMessageImpl.writeObject(myChar);
+
+        bytesMessageImpl.reset();
+
+        assertEquals("Unexpected char value", myChar, bytesMessageImpl.readChar());
+    }
+
+    /**
+     * Test that writing a double using {@link BytesMessage#writeObject(Object)}, resetting the
+     * message to make it readable, and then reading back the value works as expected.
+     */
+    @Test
+    public void testWriteObjectWithDouble() throws Exception
+    {
+        double myDouble = 1234567890123456789.1234;
+
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        bytesMessageImpl.writeObject(myDouble);
+
+        bytesMessageImpl.reset();
+
+        assertEquals("Unexpected double value", myDouble, bytesMessageImpl.readDouble(), 0.0);
+    }
+
+    /**
+     * Test that writing a float using {@link BytesMessage#writeObject(Object)}, resetting the
+     * message to make it readable, and then reading back the value works as expected.
+     */
+    @Test
+    public void testWriteObjectWithFloat() throws Exception
+    {
+        float myFloat = 1.1F;
+
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        bytesMessageImpl.writeObject(myFloat);
+
+        bytesMessageImpl.reset();
+
+        assertEquals("Unexpected float value", myFloat, bytesMessageImpl.readFloat(), 0.0);
+    }
+
+    /**
+     * Test that writing an int using {@link BytesMessage#writeObject(Object)}, resetting the
+     * message to make it readable, and then reading back the value works as expected.
+     */
+    @Test
+    public void testWriteObjectWithInt() throws Exception
+    {
+        int myInt = Integer.MAX_VALUE;
+
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        bytesMessageImpl.writeObject(myInt);
+
+        bytesMessageImpl.reset();
+
+        assertEquals("Unexpected int value", myInt, bytesMessageImpl.readInt());
+    }
+
+    /**
+     * Test that writing a long using {@link BytesMessage#writeObject(Object)}, resetting the
+     * message to make it readable, and then reading back the value works as expected.
+     */
+    @Test
+    public void testWriteObjectWithLong() throws Exception
+    {
+        long myLong = Long.MAX_VALUE;
+
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        bytesMessageImpl.writeObject(myLong);
+
+        bytesMessageImpl.reset();
+
+        assertEquals("Unexpected long value", myLong, bytesMessageImpl.readLong());
+    }
+
+    /**
+     * Test that writing a short using {@link BytesMessage#writeObject(Object)}, resetting the
+     * message to make it readable, and then reading back the value works as expected.
+     */
+    @Test
+    public void testWriteObjectWithShort() throws Exception
+    {
+        short myShort = Short.MAX_VALUE;
+
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        bytesMessageImpl.writeObject(myShort);
+
+        bytesMessageImpl.reset();
+
+        assertEquals("Unexpected short value", myShort, bytesMessageImpl.readShort());
+    }
+
+    /**
+     * Test that writing a UTF string using {@link BytesMessage#writeObject(Object)}, resetting the
+     * message to make it readable, and then reading back the value works as expected.
+     */
+    @Test
+    public void testWriteObjectWithUTF() throws Exception
+    {
+        String myUTF = "myUTFString";
+
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        bytesMessageImpl.writeObject(myUTF);
+
+        bytesMessageImpl.reset();
+
+        assertEquals("Unexpected UTF value", myUTF, bytesMessageImpl.readUTF());
     }
 }

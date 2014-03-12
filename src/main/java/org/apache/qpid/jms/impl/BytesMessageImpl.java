@@ -378,8 +378,9 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
         //a new message or we cleared the body of a received message
         if(_dataOutputStream != null)
         {
-            //create new input stream based on the current output
+            //update the underlying message and create new input stream based on the current output
             byte[] data = _byteOutputStream.toByteArray();
+            getUnderlyingAmqpMessage(false).setBytes(data);
             _dataInputStream = createNewDataInputStream(new ByteArrayInputStream(data));
 
             //clear the current output streams

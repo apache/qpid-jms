@@ -78,6 +78,22 @@ public class BytesMessageImplTest extends QpidJmsTestCase
     }
 
     /**
+     * Test that calling {@link BytesMessage#getBodyLength()} on a new message which has been
+     * populated and {@link BytesMessage#reset()} causes the length to be reported correctly.
+     */
+    @Test
+    public void testResetOnNewlyPopulatedBytesMessageUpdatesBodyLength() throws Exception
+    {
+        byte[] bytes = "newResetTestBytes".getBytes();
+
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        bytesMessageImpl.writeBytes(bytes);
+        bytesMessageImpl.reset();
+        assertEquals("Message reports unexpected length", bytes.length, bytesMessageImpl.getBodyLength());
+    }
+
+    /**
      * Test that attempting to call {@link BytesMessage#getBodyLength()} on a new message causes a
      * {@link MessageNotReadableException} to be thrown due to being write-only.
      */
@@ -201,7 +217,7 @@ public class BytesMessageImplTest extends QpidJmsTestCase
     }
 
     /**
-     * Test that calling calling {@link BytesMessage#clearBody()} causes a received
+     * Test that calling {@link BytesMessage#clearBody()} causes a received
      * message to become writable
      */
     @Test
@@ -223,7 +239,7 @@ public class BytesMessageImplTest extends QpidJmsTestCase
     }
 
     /**
-     * Test that calling calling {@link BytesMessage#clearBody()} of a received message
+     * Test that calling {@link BytesMessage#clearBody()} of a received message
      * causes the body of the underlying {@link AmqpBytesMessage} to be emptied.
      */
     @Test
@@ -283,7 +299,7 @@ public class BytesMessageImplTest extends QpidJmsTestCase
     }
 
     /**
-     * Test that calling calling {@link BytesMessage#reset()} causes a write-only
+     * Test that calling {@link BytesMessage#reset()} causes a write-only
      * message to become read-only
      */
     @Test
@@ -312,7 +328,7 @@ public class BytesMessageImplTest extends QpidJmsTestCase
     }
 
     /**
-     * Test that calling calling {@link BytesMessage#reset()} on a new message which has been
+     * Test that calling {@link BytesMessage#reset()} on a new message which has been
      * populated causes the marker to be reset and makes the message read-only
      */
     @Test

@@ -179,6 +179,11 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         _bodyWritable = writable;
     }
 
+    boolean isBodyWritable()
+    {
+        return _bodyWritable;
+    }
+
     void checkBodyWritable() throws MessageNotWriteableException
     {
         if(!_bodyWritable)

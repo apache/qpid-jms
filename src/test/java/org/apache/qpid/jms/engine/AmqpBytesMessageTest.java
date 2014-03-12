@@ -44,6 +44,8 @@ import org.mockito.Mockito;
 
 public class AmqpBytesMessageTest extends QpidJmsTestCase
 {
+    private static final int END_OF_STREAM = -1;
+
     private AmqpConnection _mockAmqpConnection;
     private Delivery _mockDelivery;
 
@@ -65,7 +67,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
         assertNotNull(byteArrayInputStream);
 
         //try to read a byte, it should return -1 bytes read, i.e EOS.
-        assertEquals(-1, byteArrayInputStream.read(new byte[1]));
+        assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, byteArrayInputStream.read(new byte[1]));
     }
 
     @Test
@@ -78,7 +80,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
         assertNotNull(byteArrayInputStream);
 
         //try to read a byte, it should return -1 bytes read, i.e EOS.
-        assertEquals(-1, byteArrayInputStream.read(new byte[1]));
+        assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, byteArrayInputStream.read(new byte[1]));
     }
 
     @Test
@@ -86,7 +88,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
     {
         AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage();
 
-        assertEquals(0, amqpBytesMessage.getBytesLength());
+        assertEquals("Message reports unexpected length", 0, amqpBytesMessage.getBytesLength());
     }
 
     @Test
@@ -113,7 +115,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
         byte[] bytes = "myBytes".getBytes();
         amqpBytesMessage.setBytes(bytes);
 
-        assertEquals(bytes.length, amqpBytesMessage.getBytesLength());
+        assertEquals("Message reports unexpected length", bytes.length, amqpBytesMessage.getBytesLength());
     }
 
     @Test
@@ -124,7 +126,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
         message.setBody(new Data(new Binary(new byte[length])));
         AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
 
-        assertEquals(length, amqpBytesMessage.getBytesLength());
+        assertEquals("Message reports unexpected length", length, amqpBytesMessage.getBytesLength());
     }
 
     @Test
@@ -135,7 +137,17 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
         message.setBody(new AmqpValue(new Binary(new byte[length])));
         AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
 
-        assertEquals(length, amqpBytesMessage.getBytesLength());
+        assertEquals("Message reports unexpected length", length, amqpBytesMessage.getBytesLength());
+    }
+
+    @Test
+    public void testGetBytesLengthUsingReceivedMessageWithAmqpValueSectionContainingNull() throws Exception
+    {
+        Message message = Proton.message();
+        message.setBody(new AmqpValue(null));
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+
+        assertEquals("Message reports unexpected length", 0, amqpBytesMessage.getBytesLength());
     }
 
     @Test
@@ -155,7 +167,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
         assertTrue(Arrays.equals(bytes, receivedBytes));
 
         //verify no more bytes remain, i.e EOS
-        assertEquals(-1, bytesStream.read(new byte[1]));
+        assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, bytesStream.read(new byte[1]));
     }
 
     @Test
@@ -176,7 +188,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
         assertTrue(Arrays.equals(bytes, receivedBytes));
 
         //verify no more bytes remain, i.e EOS
-        assertEquals(-1, bytesStream.read(new byte[1]));
+        assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, bytesStream.read(new byte[1]));
     }
 
     @Test
@@ -189,8 +201,8 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
         ByteArrayInputStream bytesStream = amqpBytesMessage.getByteArrayInputStream();
         assertNotNull(bytesStream);
 
-        assertEquals(0, amqpBytesMessage.getBytesLength());
-        assertEquals(-1, bytesStream.read(new byte[1]));
+        assertEquals("Message reports unexpected length", 0, amqpBytesMessage.getBytesLength());
+        assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, bytesStream.read(new byte[1]));
     }
 
     @Test
@@ -247,5 +259,85 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
         {
             //expected
         }
+    }
+
+    /**
+     * Test that setting bytes on a new messages creates the data section of the underlying message,
+     * which as tested by {@link testNewMessageToSendHasContentTypeButNoBodySection} does not exist initially.
+     */
+    @Test
+    public void testSetBytesOnNewMessageCreatesDataSection() throws Exception
+    {
+        byte[] testBytes = "myTestBytes".getBytes();
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage();
+        Message protonMessage = amqpBytesMessage.getMessage();
+
+        assertNotNull("underlying proton message was null", protonMessage);
+        assertNull("Expected no body section to be present", protonMessage.getBody());
+
+        amqpBytesMessage.setBytes(testBytes);
+
+        assertNotNull("Expected body section to be present", protonMessage.getBody());
+        assertEquals("Unexpected body section type", Data.class, protonMessage.getBody().getClass());
+    }
+
+    /**
+     * Test that setting bytes on a new message results in the expected content in the body section of the
+     * underlying message and returned by a new InputStream requested from the message.
+     */
+    @Test
+    public void testSetBytesOnNewMessage() throws Exception
+    {
+        byte[] bytes = "myTestBytes".getBytes();
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage();
+        Message protonMessage = amqpBytesMessage.getMessage();
+
+        amqpBytesMessage.setBytes(bytes);
+
+        //retrieve the bytes from the underlying message, check they match
+        Data body = (Data) protonMessage.getBody();
+        assertTrue("Underlying message data section did not contain the expected bytes", Arrays.equals(bytes, body.getValue().getArray()));
+
+        //retrieve the bytes via an InputStream, check they match expected
+        byte[] receivedBytes = new byte[bytes.length];
+        ByteArrayInputStream bytesStream = amqpBytesMessage.getByteArrayInputStream();
+        bytesStream.read(receivedBytes);
+        assertTrue("Retrieved bytes from input steam did not match expected bytes", Arrays.equals(bytes, receivedBytes));
+
+        //verify no more bytes remain, i.e EOS
+        assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, bytesStream.read(new byte[1]));
+    }
+
+    /**
+     * Test that setting bytes on a received message results in the expected content in the body section of the
+     * underlying message and returned by a new InputStream requested from the message.
+     */
+    @Test
+    public void testSetBytesOnReceivedMessage() throws Exception
+    {
+        byte[] orig = "myOrigBytes".getBytes();
+        byte[] replacement = "myReplacementBytes".getBytes();
+
+        Message message = Proton.message();
+        message.setBody(new Data(new Binary(orig)));
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        Message protonMessage = amqpBytesMessage.getMessage();
+
+        amqpBytesMessage.setBytes(replacement);
+
+        //retrieve the new bytes from the underlying message, check they match
+        Data body = (Data) protonMessage.getBody();
+        assertTrue("Underlying message data section did not contain the expected bytes", Arrays.equals(replacement, body.getValue().getArray()));
+
+        assertEquals("expected length to match replacement bytes", replacement.length, amqpBytesMessage.getBytesLength());
+
+        //retrieve the new bytes via an InputStream, check they match expected
+        byte[] receivedBytes = new byte[replacement.length];
+        ByteArrayInputStream bytesStream = amqpBytesMessage.getByteArrayInputStream();
+        bytesStream.read(receivedBytes);
+        assertTrue("Retrieved bytes from input steam did not match expected bytes", Arrays.equals(replacement, receivedBytes));
+
+        //verify no more bytes remain, i.e EOS
+        assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, bytesStream.read(new byte[1]));
     }
 }

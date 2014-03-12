@@ -32,21 +32,35 @@ public class AmqpBytesMessage extends AmqpMessage
     public static final String CONTENT_TYPE = "application/octet-stream";
     private long _length;
 
+    //message to be sent
     public AmqpBytesMessage()
     {
         super();
         setContentType(CONTENT_TYPE);
     }
 
+    //message just received
     public AmqpBytesMessage(Delivery delivery, Message message, AmqpConnection amqpConnection)
     {
         super(message, delivery, amqpConnection);
     }
 
+    /**
+     * Sets the bytes included in the Data body section of the underlying AMQP message.
+     *
+     * A null value clears the body section entirely.
+     * @param bytes the contents of the data section, or null to clear the body entirely
+     */
     public void setBytes(byte[] bytes)
     {
-        getMessage().setBody(new Data(new Binary(bytes)));
-        //TODO: set the content type in the case we received an amqp-value section containing binary
+        Data body = null;
+        if(bytes != null)
+        {
+            body = new Data(new Binary(bytes));
+        }
+
+        getMessage().setBody(body);
+        //TODO: set the content type, in the case we received an amqp-value section containing binary and possibly no content type
     }
 
     /**

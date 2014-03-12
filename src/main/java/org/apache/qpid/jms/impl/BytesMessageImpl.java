@@ -18,6 +18,7 @@
  */
 package org.apache.qpid.jms.impl;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -29,35 +30,65 @@ import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageEOFException;
 import javax.jms.MessageFormatException;
+import javax.jms.MessageNotReadableException;
 
 import org.apache.qpid.jms.engine.AmqpBytesMessage;
 
 public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements BytesMessage
 {
-    private ByteArrayOutputStream _bytesOut;
-    private DataOutputStream _dataAsOutput;
-    private DataInputStream _dataIn;
+    private ByteArrayOutputStream _byteOutputStream;
+    private DataOutputStream _dataOutputStream;
+    private DataInputStream _dataInputStream;
 
     //message to be sent
     public BytesMessageImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
         super(new AmqpBytesMessage(), sessionImpl, connectionImpl);
-        _bytesOut = new ByteArrayOutputStream();
-        _dataAsOutput = new DataOutputStream(_bytesOut);
+        createOutputStreams();
     }
 
     //message just received
     public BytesMessageImpl(AmqpBytesMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl, Destination consumerDestination) throws JMSException
     {
         super(amqpMessage, sessionImpl, connectionImpl, consumerDestination);
-        _dataIn = new DataInputStream(amqpMessage.getByteArrayInputStream());
+        _dataInputStream = createDataInputStreamFromUnderlyingMessage();
+    }
+
+    private DataInputStream createDataInputStreamFromUnderlyingMessage()
+    {
+        AmqpBytesMessage amqpBytesMessage = getUnderlyingAmqpMessage(false);
+        ByteArrayInputStream byteArrayInputStream = amqpBytesMessage.getByteArrayInputStream();
+
+        return createNewDataInputStream(byteArrayInputStream);
+    }
+
+    private DataInputStream createNewDataInputStream(ByteArrayInputStream bais)
+    {
+        return new DataInputStream(bais);
+    }
+
+    private void clearInputStream()
+    {
+        _dataInputStream = null;
+    }
+
+    private void createOutputStreams()
+    {
+        _byteOutputStream = new ByteArrayOutputStream();
+        _dataOutputStream = new DataOutputStream(_byteOutputStream);
+    }
+
+    private void clearOutputStreams()
+    {
+        _byteOutputStream = null;
+        _dataOutputStream = null;
     }
 
     @Override
     protected AmqpBytesMessage prepareUnderlyingAmqpMessageForSending(AmqpBytesMessage amqpMessage)
     {
         //TODO: we might be re-sending 'dataIn'
-        amqpMessage.setBytes(_bytesOut.toByteArray());
+        amqpMessage.setBytes(_byteOutputStream.toByteArray());
 
         //TODO: do we need to do anything later with properties/headers etc?
         return amqpMessage;
@@ -84,17 +115,29 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
         return new QpidJmsException(e.getMessage(), e);
     }
 
+    void checkBodyReadable() throws MessageNotReadableException
+    {
+        if(isBodyWritable())
+        {
+            throw new MessageNotReadableException("Message body is currently in write-only mode");
+        }
+    }
+
     //======= JMS Methods =======
 
     @Override
     public long getBodyLength() throws JMSException
     {
+        checkBodyReadable();
+
         return getUnderlyingAmqpMessage(false).getBytesLength();
     }
 
     @Override
     public boolean readBoolean() throws JMSException
     {
+        checkBodyReadable();
+
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -102,6 +145,8 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public byte readByte() throws JMSException
     {
+        checkBodyReadable();
+
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -109,6 +154,8 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public int readUnsignedByte() throws JMSException
     {
+        checkBodyReadable();
+
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -116,6 +163,8 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public short readShort() throws JMSException
     {
+        checkBodyReadable();
+
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -123,6 +172,8 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public int readUnsignedShort() throws JMSException
     {
+        checkBodyReadable();
+
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -130,6 +181,8 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public char readChar() throws JMSException
     {
+        checkBodyReadable();
+
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -137,6 +190,8 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public int readInt() throws JMSException
     {
+        checkBodyReadable();
+
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -144,6 +199,8 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public long readLong() throws JMSException
     {
+        checkBodyReadable();
+
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -151,6 +208,8 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public float readFloat() throws JMSException
     {
+        checkBodyReadable();
+
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -158,6 +217,8 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public double readDouble() throws JMSException
     {
+        checkBodyReadable();
+
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -165,6 +226,8 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public String readUTF() throws JMSException
     {
+        checkBodyReadable();
+
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -178,14 +241,14 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public int readBytes(byte[] value, int length) throws JMSException
     {
-        //TODO: checkReadable();
+        checkBodyReadable();
 
         try
         {
             int offset = 0;
             while(offset < length)
             {
-                int read = _dataIn.read(value, offset, length - offset);
+                int read = _dataInputStream.read(value, offset, length - offset);
                 if(read < 0)
                 {
                     break;
@@ -211,6 +274,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public void writeBoolean(boolean value) throws JMSException
     {
+        checkBodyWritable();
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -218,6 +282,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public void writeByte(byte value) throws JMSException
     {
+        checkBodyWritable();
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -225,6 +290,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public void writeShort(short value) throws JMSException
     {
+        checkBodyWritable();
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -232,6 +298,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public void writeChar(char value) throws JMSException
     {
+        checkBodyWritable();
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -239,6 +306,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public void writeInt(int value) throws JMSException
     {
+        checkBodyWritable();
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -246,6 +314,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public void writeLong(long value) throws JMSException
     {
+        checkBodyWritable();
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -253,6 +322,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public void writeFloat(float value) throws JMSException
     {
+        checkBodyWritable();
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -260,6 +330,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public void writeDouble(double value) throws JMSException
     {
+        checkBodyWritable();
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -267,6 +338,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public void writeUTF(String value) throws JMSException
     {
+        checkBodyWritable();
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -274,10 +346,16 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public void writeBytes(byte[] bytes) throws JMSException
     {
-        //TODO: checkWritable();
+        writeBytes(bytes, 0, bytes.length);
+    }
+
+    @Override
+    public void writeBytes(byte[] value, int offset, int length) throws JMSException
+    {
+        checkBodyWritable();
         try
         {
-            _dataAsOutput.write(bytes);
+            _dataOutputStream.write(value, offset, length);
         }
         catch (IOException e)
         {
@@ -286,15 +364,9 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     }
 
     @Override
-    public void writeBytes(byte[] value, int offset, int length) throws JMSException
-    {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
-    }
-
-    @Override
     public void writeObject(Object value) throws JMSException
     {
+        checkBodyWritable();
         //TODO
         throw new UnsupportedOperationException("Not Implemented");
     }
@@ -302,14 +374,37 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     @Override
     public void reset() throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        //If we have created an output stream previously, this is either
+        //a new message or we cleared the body of a received message
+        if(_dataOutputStream != null)
+        {
+            //create new input stream based on the current output
+            byte[] data = _byteOutputStream.toByteArray();
+            _dataInputStream = createNewDataInputStream(new ByteArrayInputStream(data));
+
+            //clear the current output streams
+            clearOutputStreams();
+        }
+        else
+        {
+            //This is a received message that has not
+            //yet been cleared, recreate the input stream
+            _dataInputStream = createDataInputStreamFromUnderlyingMessage();
+        }
+
+        setBodyWritable(false);
     }
 
     @Override
     public void clearBody() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        //clear any prior input stream, and the underlying message body
+        getUnderlyingAmqpMessage(false).setBytes(null);
+        clearInputStream();
+
+        //reset the output streams
+        createOutputStreams();
+
+        setBodyWritable(true);
     }
 }

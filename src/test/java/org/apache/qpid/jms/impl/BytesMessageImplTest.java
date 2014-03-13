@@ -28,9 +28,14 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 
 import javax.jms.BytesMessage;
+import javax.jms.JMSException;
+import javax.jms.MessageEOFException;
 import javax.jms.MessageFormatException;
 import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
@@ -51,17 +56,21 @@ import org.mockito.Mockito;
 public class BytesMessageImplTest extends QpidJmsTestCase
 {
     private static final int END_OF_STREAM = -1;
+    private static final String INPUT_STREAM_HELPER = "_inputStreamHelper";
+    private static final String OUTPUT_STREAM_HELPER = "_outputStreamHelper";
 
     private Delivery _mockDelivery;
     private ConnectionImpl _mockConnectionImpl;
     private SessionImpl _mockSessionImpl;
     private AmqpConnection _mockAmqpConnection;
+    private AmqpBytesMessage _mockAmqpMessage;
 
     @Before
     @Override
     public void setUp() throws Exception
     {
         super.setUp();
+        _mockAmqpMessage = Mockito.mock(AmqpBytesMessage.class);
         _mockAmqpConnection = Mockito.mock(AmqpConnection.class);
         _mockConnectionImpl = Mockito.mock(ConnectionImpl.class);
         _mockSessionImpl = Mockito.mock(SessionImpl.class);
@@ -726,4 +735,972 @@ public class BytesMessageImplTest extends QpidJmsTestCase
 
         assertEquals("Unexpected UTF value", myUTF, bytesMessageImpl.readUTF());
     }
+
+    /**
+     * Test that {@link BytesMessage#writeBoolean(boolean)} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testWriteBooleanEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        OutputStreamHelper mockOSH = substituteMockOutputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockOSH).writeBoolean(Mockito.anyBoolean());
+
+        try
+        {
+            bytesMessageImpl.writeBoolean(Boolean.TRUE);
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#writeByte(byte)} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testWriteByteEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        OutputStreamHelper mockOSH = substituteMockOutputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockOSH).writeByte(Mockito.anyByte());
+
+        try
+        {
+            bytesMessageImpl.writeByte(Byte.MAX_VALUE);
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#writeShort(short)} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testWriteShortEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        OutputStreamHelper mockOSH = substituteMockOutputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockOSH).writeShort(Mockito.anyShort());
+
+        try
+        {
+            bytesMessageImpl.writeShort(Short.MAX_VALUE);
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#writeChar(char)} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testWriteCharEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        OutputStreamHelper mockOSH = substituteMockOutputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockOSH).writeChar(Mockito.anyChar());
+
+        try
+        {
+            bytesMessageImpl.writeChar('f');
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#writeInt(int)} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testWriteIntEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        OutputStreamHelper mockOSH = substituteMockOutputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockOSH).writeInt(Mockito.anyInt());
+
+        try
+        {
+            bytesMessageImpl.writeInt(Integer.MAX_VALUE);
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#writeLong(long)} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testWriteLongEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        OutputStreamHelper mockOSH = substituteMockOutputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockOSH).writeLong(Mockito.anyInt());
+
+        try
+        {
+            bytesMessageImpl.writeLong(Long.MAX_VALUE);
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#writeFloat(float)} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testWriteFloatEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        OutputStreamHelper mockOSH = substituteMockOutputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockOSH).writeFloat(Mockito.anyFloat());
+
+        try
+        {
+            bytesMessageImpl.writeFloat(1.1F);
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#writeDouble(double)} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testWriteDoubleEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        OutputStreamHelper mockOSH = substituteMockOutputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockOSH).writeDouble(Mockito.anyDouble());
+
+        try
+        {
+            bytesMessageImpl.writeDouble(1.1);
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#writeUTF(String)} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testWriteUTFEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        OutputStreamHelper mockOSH = substituteMockOutputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockOSH).writeUTF(Mockito.anyString());
+
+        try
+        {
+            bytesMessageImpl.writeUTF("myUTF");
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#writeBytes(byte[])} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testWriteBytesEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        OutputStreamHelper mockOSH = substituteMockOutputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockOSH).write(Mockito.any(byte[].class), Mockito.anyInt(), Mockito.anyInt());
+
+        try
+        {
+            bytesMessageImpl.writeBytes(new byte[1]);
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#writeBytes(byte[], int, int)} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testWriteBytesOffsetEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        OutputStreamHelper mockOSH = substituteMockOutputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockOSH).write(Mockito.any(byte[].class), Mockito.anyInt(), Mockito.anyInt());
+
+        try
+        {
+            bytesMessageImpl.writeBytes(new byte[1], 0, 1);
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readBoolean()} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testReadBooleanEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readBoolean();
+
+        try
+        {
+            bytesMessageImpl.readBoolean();
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readByte()} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testReadByteEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readByte();
+
+        try
+        {
+            bytesMessageImpl.readByte();
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readUnsignedByte()} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testReadUnsignedByteEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readUnsignedByte();
+
+        try
+        {
+            bytesMessageImpl.readUnsignedByte();
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readShort()} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testReadShortEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readShort();
+
+        try
+        {
+            bytesMessageImpl.readShort();
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readUnsignedShort()} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testReadUnsignedShortEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readUnsignedShort();
+
+        try
+        {
+            bytesMessageImpl.readUnsignedShort();
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readChar()} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testReadCharEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readChar();
+
+        try
+        {
+            bytesMessageImpl.readChar();
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readInt()} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testReadIntEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readInt();
+
+        try
+        {
+            bytesMessageImpl.readInt();
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readLong()} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testReadLongEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readLong();
+
+        try
+        {
+            bytesMessageImpl.readLong();
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readFloat()} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testReadFloatEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readFloat();
+
+        try
+        {
+            bytesMessageImpl.readFloat();
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readDouble()} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testReadDoubleEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readDouble();
+
+        try
+        {
+            bytesMessageImpl.readDouble();
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readUTF()} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testReadUTFEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readUTF();
+
+        try
+        {
+            bytesMessageImpl.readUTF();
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readBytes(byte[])} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testReadBytesEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).read(Mockito.any(byte[].class), Mockito.anyInt(), Mockito.anyInt());
+
+        try
+        {
+            bytesMessageImpl.readBytes(new byte[1]);
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readBytes(byte[], int)} throws a {@link JMSException}
+     * when the implementation encounters an {@link IOException}
+     */
+    @Test
+    public void testReadBytesLengthEncounteringIOECausesJMSE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<IOException> typeToBeThrown = IOException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).read(Mockito.any(byte[].class), Mockito.anyInt(), Mockito.anyInt());
+
+        try
+        {
+            bytesMessageImpl.readBytes(new byte[1], 1);
+            fail("Expected an exception to be thrown");
+        }
+        catch(JMSException jmse)
+        {
+            //Expected
+            assertCauseAndLinkedException(jmse, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readBoolean()} throws a {@link MessageEOFException}
+     * when the implementation encounters an {@link EOFException}
+     */
+    @Test
+    public void testReadBooleanEncounteringEOFECausesJMSMEOFE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<EOFException> typeToBeThrown = EOFException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readBoolean();
+
+        try
+        {
+            bytesMessageImpl.readBoolean();
+            fail("Expected an exception to be thrown");
+        }
+        catch(MessageEOFException meofe)
+        {
+            //Expected
+            assertCauseAndLinkedException(meofe, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readByte()} throws a {@link MessageEOFException}
+     * when the implementation encounters an {@link EOFException}
+     */
+    @Test
+    public void testReadByteEncounteringEOFECausesJMSMEOFE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<EOFException> typeToBeThrown = EOFException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readByte();
+
+        try
+        {
+            bytesMessageImpl.readByte();
+            fail("Expected an exception to be thrown");
+        }
+        catch(MessageEOFException meofe)
+        {
+            //Expected
+            assertCauseAndLinkedException(meofe, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readUnsignedByte()} throws a {@link MessageEOFException}
+     * when the implementation encounters an {@link EOFException}
+     */
+    @Test
+    public void testReadUnsignedByteEncounteringEOFECausesJMSMEOFE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<EOFException> typeToBeThrown = EOFException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readUnsignedByte();
+
+        try
+        {
+            bytesMessageImpl.readUnsignedByte();
+            fail("Expected an exception to be thrown");
+        }
+        catch(MessageEOFException meofe)
+        {
+            //Expected
+            assertCauseAndLinkedException(meofe, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readShort()} throws a {@link MessageEOFException}
+     * when the implementation encounters an {@link EOFException}
+     */
+    @Test
+    public void testReadShortEncounteringEOFECausesJMSMEOFE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<EOFException> typeToBeThrown = EOFException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readShort();
+
+        try
+        {
+            bytesMessageImpl.readShort();
+            fail("Expected an exception to be thrown");
+        }
+        catch(MessageEOFException meofe)
+        {
+            //Expected
+            assertCauseAndLinkedException(meofe, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readUnsignedShort()} throws a {@link MessageEOFException}
+     * when the implementation encounters an {@link EOFException}
+     */
+    @Test
+    public void testReadUnsignedShortEncounteringEOFECausesJMSMEOFE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<EOFException> typeToBeThrown = EOFException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readUnsignedShort();
+
+        try
+        {
+            bytesMessageImpl.readUnsignedShort();
+            fail("Expected an exception to be thrown");
+        }
+        catch(MessageEOFException meofe)
+        {
+            //Expected
+            assertCauseAndLinkedException(meofe, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readChar()} throws a {@link MessageEOFException}
+     * when the implementation encounters an {@link EOFException}
+     */
+    @Test
+    public void testReadCharEncounteringEOFECausesJMSMEOFE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<EOFException> typeToBeThrown = EOFException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readChar();
+
+        try
+        {
+            bytesMessageImpl.readChar();
+            fail("Expected an exception to be thrown");
+        }
+        catch(MessageEOFException meofe)
+        {
+            //Expected
+            assertCauseAndLinkedException(meofe, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readInt()} throws a {@link MessageEOFException}
+     * when the implementation encounters an {@link EOFException}
+     */
+    @Test
+    public void testReadIntEncounteringEOFECausesJMSMEOFE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<EOFException> typeToBeThrown = EOFException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readInt();
+
+        try
+        {
+            bytesMessageImpl.readInt();
+            fail("Expected an exception to be thrown");
+        }
+        catch(MessageEOFException meofe)
+        {
+            //Expected
+            assertCauseAndLinkedException(meofe, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readLong()} throws a {@link MessageEOFException}
+     * when the implementation encounters an {@link EOFException}
+     */
+    @Test
+    public void testReadLongEncounteringEOFECausesJMSMEOFE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<EOFException> typeToBeThrown = EOFException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readLong();
+
+        try
+        {
+            bytesMessageImpl.readLong();
+            fail("Expected an exception to be thrown");
+        }
+        catch(MessageEOFException meofe)
+        {
+            //Expected
+            assertCauseAndLinkedException(meofe, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readFloat()} throws a {@link MessageEOFException}
+     * when the implementation encounters an {@link EOFException}
+     */
+    @Test
+    public void testReadFloatEncounteringEOFECausesJMSMEOFE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<EOFException> typeToBeThrown = EOFException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readFloat();
+
+        try
+        {
+            bytesMessageImpl.readFloat();
+            fail("Expected an exception to be thrown");
+        }
+        catch(MessageEOFException meofe)
+        {
+            //Expected
+            assertCauseAndLinkedException(meofe, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readDouble()} throws a {@link MessageEOFException}
+     * when the implementation encounters an {@link EOFException}
+     */
+    @Test
+    public void testReadDoubleEncounteringEOFECausesJMSMEOFE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<EOFException> typeToBeThrown = EOFException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readDouble();
+
+        try
+        {
+            bytesMessageImpl.readDouble();
+            fail("Expected an exception to be thrown");
+        }
+        catch(MessageEOFException meofe)
+        {
+            //Expected
+            assertCauseAndLinkedException(meofe, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readUTF()} throws a {@link MessageEOFException}
+     * when the implementation encounters an {@link EOFException}
+     */
+    @Test
+    public void testReadUTFEncounteringEOFECausesJMSMEOFE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<EOFException> typeToBeThrown = EOFException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).readUTF();
+
+        try
+        {
+            bytesMessageImpl.readUTF();
+            fail("Expected an exception to be thrown");
+        }
+        catch(MessageEOFException meofe)
+        {
+            //Expected
+            assertCauseAndLinkedException(meofe, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readBytes(byte[])} throws a {@link MessageEOFException}
+     * when the implementation encounters an {@link EOFException}
+     */
+    @Test
+    public void testReadBytesEncounteringEOFECausesJMSMEOFE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<EOFException> typeToBeThrown = EOFException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).read(Mockito.any(byte[].class), Mockito.anyInt(), Mockito.anyInt());
+
+        try
+        {
+            bytesMessageImpl.readBytes(new byte[1]);
+            fail("Expected an exception to be thrown");
+        }
+        catch(MessageEOFException meofe)
+        {
+            //Expected
+            assertCauseAndLinkedException(meofe, typeToBeThrown);
+        }
+    }
+
+    /**
+     * Test that {@link BytesMessage#readBytes(byte[], int)} throws a {@link MessageEOFException}
+     * when the implementation encounters an {@link EOFException}
+     */
+    @Test
+    public void testReadBytesLengthEncounteringEOFECausesJMSMEOFE() throws Exception
+    {
+        BytesMessageImpl bytesMessageImpl = new BytesMessageImpl(_mockAmqpMessage, _mockSessionImpl,_mockConnectionImpl, null);
+        Class<EOFException> typeToBeThrown = EOFException.class;
+
+        InputStreamHelper mockISH = substituteMockInputStreamHelper(bytesMessageImpl);
+        Mockito.doThrow(typeToBeThrown).when(mockISH).read(Mockito.any(byte[].class), Mockito.anyInt(), Mockito.anyInt());
+
+        try
+        {
+            bytesMessageImpl.readBytes(new byte[1], 1);
+            fail("Expected an exception to be thrown");
+        }
+        catch(MessageEOFException meofe)
+        {
+            //Expected
+            assertCauseAndLinkedException(meofe, typeToBeThrown);
+        }
+    }
+
+    private void assertCauseAndLinkedException(JMSException jmse, Class<?> typeToBeThrown)
+    {
+        Exception linked = jmse.getLinkedException();
+        Throwable cause = jmse.getCause();
+
+        if(typeToBeThrown == null)
+        {
+            assertNull("Linked exception was not expected", linked);
+            assertNull("Cause was not expected", cause);
+        }
+        else
+        {
+            assertNotNull("Linked exception was not set", linked);
+            assertNotNull("Cause was not set", cause);
+
+            assertEquals("Unexpected linked exception type", typeToBeThrown, linked.getClass());
+            assertEquals("Unexpected cause type", typeToBeThrown, cause.getClass());
+        }
+    }
+
+    private InputStreamHelper substituteMockInputStreamHelper(BytesMessageImpl bytesMessage) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException
+    {
+        InputStreamHelper mock = Mockito.mock(InputStreamHelper.class);
+
+        Field ishField = bytesMessage.getClass().getDeclaredField(INPUT_STREAM_HELPER);
+        ishField.setAccessible(true);
+        ishField.set(bytesMessage, mock);
+
+        return mock;
+    }
+
+    private OutputStreamHelper substituteMockOutputStreamHelper(BytesMessageImpl bytesMessage) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException
+    {
+        OutputStreamHelper mock = Mockito.mock(OutputStreamHelper.class);
+
+        Field oshField = bytesMessage.getClass().getDeclaredField(OUTPUT_STREAM_HELPER);
+        oshField.setAccessible(true);
+        oshField.set(bytesMessage, mock);
+
+        return mock;
+    }
+
 }

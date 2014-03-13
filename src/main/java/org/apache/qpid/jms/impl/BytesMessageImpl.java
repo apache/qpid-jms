@@ -19,9 +19,6 @@
 package org.apache.qpid.jms.impl;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 
@@ -36,59 +33,37 @@ import org.apache.qpid.jms.engine.AmqpBytesMessage;
 
 public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements BytesMessage
 {
-    private ByteArrayOutputStream _byteOutputStream;
-    private DataOutputStream _dataOutputStream;
-    private DataInputStream _dataInputStream;
+    private OutputStreamHelper _outputStreamHelper = new OutputStreamHelper();
+    private InputStreamHelper _inputStreamHelper = new InputStreamHelper();
 
     //message to be sent
     public BytesMessageImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
         super(new AmqpBytesMessage(), sessionImpl, connectionImpl);
-        createOutputStreams();
+        _outputStreamHelper.createOutputStreams();
     }
 
     //message just received
     public BytesMessageImpl(AmqpBytesMessage amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl, Destination consumerDestination) throws JMSException
     {
         super(amqpMessage, sessionImpl, connectionImpl, consumerDestination);
-        _dataInputStream = createDataInputStreamFromUnderlyingMessage();
+        createDataInputStreamFromUnderlyingMessage();
     }
 
-    private DataInputStream createDataInputStreamFromUnderlyingMessage()
+    private void createDataInputStreamFromUnderlyingMessage()
     {
         AmqpBytesMessage amqpBytesMessage = getUnderlyingAmqpMessage(false);
         ByteArrayInputStream byteArrayInputStream = amqpBytesMessage.getByteArrayInputStream();
 
-        return createNewDataInputStream(byteArrayInputStream);
+        _inputStreamHelper.createNewInputStream(byteArrayInputStream);
     }
 
-    private DataInputStream createNewDataInputStream(ByteArrayInputStream bais)
-    {
-        return new DataInputStream(bais);
-    }
-
-    private void clearInputStream()
-    {
-        _dataInputStream = null;
-    }
-
-    private void createOutputStreams()
-    {
-        _byteOutputStream = new ByteArrayOutputStream();
-        _dataOutputStream = new DataOutputStream(_byteOutputStream);
-    }
-
-    private void clearOutputStreams()
-    {
-        _byteOutputStream = null;
-        _dataOutputStream = null;
-    }
 
     @Override
     protected AmqpBytesMessage prepareUnderlyingAmqpMessageForSending(AmqpBytesMessage amqpMessage)
     {
         //TODO: we might be re-sending 'dataIn'
-        amqpMessage.setBytes(_byteOutputStream.toByteArray());
+        amqpMessage.setBytes(_outputStreamHelper.getByteOutput());
 
         //TODO: do we need to do anything later with properties/headers etc?
         return amqpMessage;
@@ -140,7 +115,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            return _dataInputStream.readBoolean();
+            return _inputStreamHelper.readBoolean();
         }
         catch (IOException e)
         {
@@ -155,7 +130,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            return _dataInputStream.readByte();
+            return _inputStreamHelper.readByte();
         }
         catch (IOException e)
         {
@@ -170,7 +145,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            return _dataInputStream.readUnsignedByte();
+            return _inputStreamHelper.readUnsignedByte();
         }
         catch (IOException e)
         {
@@ -185,7 +160,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            return _dataInputStream.readShort();
+            return _inputStreamHelper.readShort();
         }
         catch (IOException e)
         {
@@ -200,7 +175,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            return _dataInputStream.readUnsignedShort();
+            return _inputStreamHelper.readUnsignedShort();
         }
         catch (IOException e)
         {
@@ -215,7 +190,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            return _dataInputStream.readChar();
+            return _inputStreamHelper.readChar();
         }
         catch (IOException e)
         {
@@ -230,7 +205,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            return _dataInputStream.readInt();
+            return _inputStreamHelper.readInt();
         }
         catch (IOException e)
         {
@@ -245,7 +220,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            return _dataInputStream.readLong();
+            return _inputStreamHelper.readLong();
         }
         catch (IOException e)
         {
@@ -260,7 +235,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            return _dataInputStream.readFloat();
+            return _inputStreamHelper.readFloat();
         }
         catch (IOException e)
         {
@@ -275,7 +250,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            return _dataInputStream.readDouble();
+            return _inputStreamHelper.readDouble();
         }
         catch (IOException e)
         {
@@ -290,7 +265,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            return _dataInputStream.readUTF();
+            return _inputStreamHelper.readUTF();
         }
         catch (IOException e)
         {
@@ -319,7 +294,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
             int offset = 0;
             while(offset < length)
             {
-                int read = _dataInputStream.read(value, offset, length - offset);
+                int read = _inputStreamHelper.read(value, offset, length - offset);
                 if(read < 0)
                 {
                     break;
@@ -349,7 +324,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            _dataOutputStream.writeBoolean(value);
+            _outputStreamHelper.writeBoolean(value);
         }
         catch (IOException e)
         {
@@ -364,7 +339,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            _dataOutputStream.writeByte(value);
+            _outputStreamHelper.writeByte(value);
         }
         catch (IOException e)
         {
@@ -379,7 +354,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            _dataOutputStream.writeShort(value);
+            _outputStreamHelper.writeShort(value);
         }
         catch (IOException e)
         {
@@ -394,7 +369,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            _dataOutputStream.writeChar(value);
+            _outputStreamHelper.writeChar(value);
         }
         catch (IOException e)
         {
@@ -409,7 +384,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            _dataOutputStream.writeInt(value);
+            _outputStreamHelper.writeInt(value);
         }
         catch (IOException e)
         {
@@ -424,7 +399,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            _dataOutputStream.writeLong(value);
+            _outputStreamHelper.writeLong(value);
         }
         catch (IOException e)
         {
@@ -439,7 +414,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            _dataOutputStream.writeFloat(value);
+            _outputStreamHelper.writeFloat(value);
         }
         catch (IOException e)
         {
@@ -454,7 +429,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            _dataOutputStream.writeDouble(value);
+            _outputStreamHelper.writeDouble(value);
         }
         catch (IOException e)
         {
@@ -469,7 +444,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
         try
         {
-            _dataOutputStream.writeUTF(value);
+            _outputStreamHelper.writeUTF(value);
         }
         catch (IOException e)
         {
@@ -489,7 +464,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
         checkBodyWritable();
         try
         {
-            _dataOutputStream.write(value, offset, length);
+            _outputStreamHelper.write(value, offset, length);
         }
         catch (IOException e)
         {
@@ -556,21 +531,22 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     {
         //If we have created an output stream previously, this is either
         //a new message or we cleared the body of a received message
-        if(_dataOutputStream != null)
+        if(_outputStreamHelper.hasOutputStreams())
         {
             //update the underlying message and create new input stream based on the current output
-            byte[] data = _byteOutputStream.toByteArray();
+            byte[] data = _outputStreamHelper.getByteOutput();
             getUnderlyingAmqpMessage(false).setBytes(data);
-            _dataInputStream = createNewDataInputStream(new ByteArrayInputStream(data));
+            ByteArrayInputStream bais = new ByteArrayInputStream(data);
+            _inputStreamHelper.createNewInputStream(bais);
 
             //clear the current output streams
-            clearOutputStreams();
+            _outputStreamHelper.clearOutputStreams();
         }
         else
         {
             //This is a received message that has not
             //yet been cleared, recreate the input stream
-            _dataInputStream = createDataInputStreamFromUnderlyingMessage();
+            createDataInputStreamFromUnderlyingMessage();
         }
 
         setBodyWritable(false);
@@ -581,10 +557,10 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
     {
         //clear any prior input stream, and the underlying message body
         getUnderlyingAmqpMessage(false).setBytes(null);
-        clearInputStream();
+        _inputStreamHelper.clearInputStream();
 
         //reset the output streams
-        createOutputStreams();
+        _outputStreamHelper.createOutputStreams();
 
         setBodyWritable(true);
     }

@@ -62,13 +62,39 @@ public class SessionIntegrationTest extends QpidJmsTestCase
         {
             Connection connection = _testFixture.establishConnecton(testPeer);
             testPeer.expectBegin();
-            testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            testPeer.expectSenderAttach();
+
             Queue queue = session.createQueue("myQueue");
             session.createProducer(queue);
         }
     }
+
+    @Test
+    public void testCreateConsumer() throws Exception
+    {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
+        {
+            Connection connection = _testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlow();
+
+            Queue queue = session.createQueue("myQueue");
+            session.createConsumer(queue);
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    //TODO: Move the below tests to message-specific test classes
 
     @Test
     public void testSendTextMessageWithContent() throws Exception
@@ -187,78 +213,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase
             assertNotNull(receivedMessage);
             assertTrue(receivedMessage instanceof TextMessage);
             assertNull(((TextMessage)receivedMessage).getText());
-        }
-    }
-
-    @Test
-    public void testSendBytesMessageWithContent() throws Exception
-    {
-        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
-        {
-            Connection connection = _testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin();
-            testPeer.expectSenderAttach();
-
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Queue queue = session.createQueue("myQueue");
-            MessageProducer producer = session.createProducer(queue);
-
-            byte[] content = "myBytes".getBytes();
-
-            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
-            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
-            MessagePropertiesSectionMatcher propertiesMatcher = new MessagePropertiesSectionMatcher(true);
-            propertiesMatcher.withContentType(equalTo(Symbol.valueOf(AmqpBytesMessage.CONTENT_TYPE)));
-            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
-            messageMatcher.setHeadersMatcher(headersMatcher);
-            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
-            messageMatcher.setPropertiesMatcher(propertiesMatcher);
-            messageMatcher.setMessageContentMatcher(new EncodedDataMatcher(new Binary(content)));
-
-            testPeer.expectTransfer(messageMatcher);
-
-            BytesMessage message = session.createBytesMessage();
-            message.writeBytes(content);
-
-            producer.send(message);
-        }
-    }
-
-    @Test
-    public void testReceiveBytesMessageWithContentUsingDataSection() throws Exception
-    {
-        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
-        {
-            Connection connection = _testFixture.establishConnecton(testPeer);
-            connection.start();
-
-            testPeer.expectBegin();
-
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Queue queue = session.createQueue("myQueue");
-
-            PropertiesDescribedType properties = new PropertiesDescribedType();
-            properties.setContentType(Symbol.valueOf(AmqpBytesMessage.CONTENT_TYPE));
-
-            final byte[] expectedContent = "expectedContent".getBytes();
-            DescribedType dataContent = new DataDescribedType(new Binary(expectedContent));
-
-            testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlowRespondWithTransfer(null, null, properties, null, dataContent);
-            testPeer.expectDispositionThatIsAcceptedAndSettled();
-
-            MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
-            testPeer.waitForAllHandlersToComplete(3000);
-
-            assertNotNull(receivedMessage);
-            assertTrue(receivedMessage instanceof BytesMessage);
-            BytesMessage bytesMessage = (BytesMessage)receivedMessage;
-            assertEquals(expectedContent.length, bytesMessage.getBodyLength());
-            byte[] recievedContent = new byte[expectedContent.length];
-            int readBytes = bytesMessage.readBytes(recievedContent);
-            assertEquals(recievedContent.length, readBytes);
-            assertTrue(Arrays.equals(expectedContent, recievedContent));
         }
     }
 }

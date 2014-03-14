@@ -55,51 +55,91 @@ public class OutputStreamHelper
         return _byteOutputStream.toByteArray();
     }
 
+    /**
+     * @see DataOutputStream#writeBoolean(boolean)
+     * @throws IOException
+     */
     public void writeBoolean(boolean bool) throws IOException
     {
         _dataOutputStream.writeBoolean(bool);
     }
 
+    /**
+     * @see DataOutputStream#writeByte(int)
+     * @throws IOException
+     */
     public void writeByte(int b) throws IOException
     {
         _dataOutputStream.writeByte(b);
     }
 
+    /**
+     * @see DataOutputStream#writeShort(int)
+     * @throws IOException
+     */
     public void writeShort(int s) throws IOException
     {
         _dataOutputStream.writeShort(s);
     }
 
+    /**
+     * @see DataOutputStream#writeChar(int)
+     * @throws IOException
+     */
     public void writeChar(int c) throws IOException
     {
         _dataOutputStream.writeChar(c);
     }
 
+    /**
+     * @see DataOutputStream#writeInt(int)
+     * @throws IOException
+     */
     public void writeInt(int i) throws IOException
     {
         _dataOutputStream.writeInt(i);
     }
 
+    /**
+     * @see DataOutputStream#writeLong(long)
+     * @throws IOException
+     */
     public void writeLong(long l) throws IOException
     {
         _dataOutputStream.writeLong(l);
     }
 
+    /**
+     * @see DataOutputStream#writeFloat(float)
+     * @throws IOException
+     */
     public void writeFloat(float f) throws IOException
     {
         _dataOutputStream.writeFloat(f);
     }
 
+    /**
+     * @see DataOutputStream#writeDouble(double)
+     * @throws IOException
+     */
     public void writeDouble(double d) throws IOException
     {
         _dataOutputStream.writeDouble(d);
     }
 
+    /**
+     * @see DataOutputStream#writeUTF(String)
+     * @throws IOException
+     */
     public void writeUTF(String utf) throws IOException
     {
         _dataOutputStream.writeUTF(utf);
     }
 
+    /**
+     * @see DataOutputStream#write(byte[], int, int)
+     * @throws IOException
+     */
     public void write(byte[] bytes, int offset, int length) throws IOException
     {
         _dataOutputStream.write(bytes, offset, length);

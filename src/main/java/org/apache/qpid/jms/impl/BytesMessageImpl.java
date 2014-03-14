@@ -58,14 +58,20 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
         _inputStreamHelper.createNewInputStream(byteArrayInputStream);
     }
 
-
     @Override
     protected AmqpBytesMessage prepareUnderlyingAmqpMessageForSending(AmqpBytesMessage amqpMessage)
     {
-        //TODO: we might be re-sending 'dataIn'
-        amqpMessage.setBytes(_outputStreamHelper.getByteOutput());
+        if(_outputStreamHelper.hasOutputStreams())
+        {
+            byte[] data = _outputStreamHelper.getByteOutput();
+            amqpMessage.setBytes(data);
+        }
+        else
+        {
+            //We leave the body of the message the way it is, it is either
+            //empty or we are sending what we received or set on it earlier
+        }
 
-        //TODO: do we need to do anything later with properties/headers etc?
         return amqpMessage;
     }
 

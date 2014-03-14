@@ -408,6 +408,14 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(attachMatcher);
     }
 
+    public void expectLinkFlow()
+    {
+        final FlowMatcher flowMatcher = new FlowMatcher()
+                        .withLinkCredit(Matchers.greaterThan(UnsignedInteger.ZERO));
+
+        addHandler(flowMatcher);
+    }
+
     public void expectLinkFlowRespondWithTransfer(final HeaderDescribedType headerDescribedType,
                                                   final MessageAnnotationsDescribedType messageAnnotationsDescribedType,
                                                   final PropertiesDescribedType propertiesDescribedType,

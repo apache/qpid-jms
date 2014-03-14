@@ -19,6 +19,7 @@
 package org.apache.qpid.jms.engine;
 
 import java.io.ByteArrayInputStream;
+import java.util.Arrays;
 
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
@@ -48,11 +49,15 @@ public class AmqpBytesMessage extends AmqpMessage
     /**
      * Sets the bytes included in the Data body section of the underlying AMQP message.
      *
+     * If the original body was not a data section, the content type is set to {@link AmqpBytesMessage#CONTENT_TYPE}
+     *
      * A null value clears the body section entirely.
      * @param bytes the contents of the data section, or null to clear the body entirely
      */
     public void setBytes(byte[] bytes)
     {
+        boolean origBodyTypeData = getMessage().getBody() instanceof Data;
+
         Data body = null;
         if(bytes != null)
         {
@@ -60,7 +65,11 @@ public class AmqpBytesMessage extends AmqpMessage
         }
 
         getMessage().setBody(body);
-        //TODO: set the content type, in the case we received an amqp-value section containing binary and possibly no content type
+
+        if(!origBodyTypeData)
+        {
+            setContentType(CONTENT_TYPE);
+        }
     }
 
     /**
@@ -127,5 +136,48 @@ public class AmqpBytesMessage extends AmqpMessage
     {
         getByteArrayInputStream();
         return _length;
+    }
+
+    public void convertBodyToDataSectionIfNecessary()
+    {
+        Section body = getMessage().getBody();
+        byte[] bytes;
+
+        if(body == null)
+        {
+            bytes = new byte[0];
+        }
+        else if(body instanceof Data)
+        {
+            //Nothing to do
+            return;
+        }
+        else if(body instanceof AmqpValue)
+        {
+            Object value = ((AmqpValue) body).getValue();
+
+            if(value == null)
+            {
+                bytes = new byte[0];
+            }
+            else if(value instanceof Binary)
+            {
+                Binary b = (Binary)value;
+                int length = b.getLength();
+                int offset = b.getArrayOffset();
+
+                bytes = Arrays.copyOfRange(b.getArray(), offset, offset + length);
+            }
+            else
+            {
+                throw new IllegalStateException("Unexpected amqp-value body content type: " + value.getClass().getSimpleName());
+            }
+        }
+        else
+        {
+            throw new IllegalStateException("Unexpected body content type: " + body.getClass().getSimpleName());
+        }
+
+        setBytes(bytes);
     }
 }

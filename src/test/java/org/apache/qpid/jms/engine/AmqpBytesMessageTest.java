@@ -23,6 +23,7 @@ package org.apache.qpid.jms.engine;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -36,6 +37,7 @@ import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
+import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.message.Message;
 import org.junit.Before;
@@ -339,5 +341,159 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
 
         //verify no more bytes remain, i.e EOS
         assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, bytesStream.read(new byte[1]));
+    }
+
+    /**
+     * Test that setting bytes on a received message results which had no content type
+     * results in the content type being set.
+     */
+    @Test
+    public void testSetBytesOnReceivedMessageSetsContentTypeIfBodyTypeChanged() throws Exception
+    {
+        byte[] orig = "myOrigBytes".getBytes();
+        byte[] replacement = "myReplacementBytes".getBytes();
+
+        Message message = Proton.message();
+        message.setBody(new AmqpValue(new Binary(orig)));
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        Message protonMessage = amqpBytesMessage.getMessage();
+
+        amqpBytesMessage.setBytes(replacement);
+
+        String contentType = protonMessage.getContentType();
+        assertNotNull("content type should be set", contentType);
+        assertEquals(AmqpBytesMessage.CONTENT_TYPE, contentType);
+    }
+
+    /**
+     * Test that a non-data body section of a received message can be converted to a data section as expected.
+     */
+    @Test
+    public void testConvertBodyToDataSectionIfNecessaryWithNullBody() throws Exception
+    {
+        Message message = Proton.message();
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        Message protonMessage = amqpBytesMessage.getMessage();
+
+        assertNull("expected no body", protonMessage.getBody());
+
+        amqpBytesMessage.convertBodyToDataSectionIfNecessary();
+
+        Section body = protonMessage.getBody();
+        assertNotNull("expected body section not present", body);
+        assertEquals("unexpected type of body section", Data.class, body.getClass());
+        assertEquals("unexpected length of body", 0, ((Data) body).getValue().getLength());
+    }
+
+    /**
+     * Test that a non-data body section of a received message can be converted to a data section as expected.
+     */
+    @Test
+    public void testConvertBodyToDataSectionIfNecessaryWithAmqpValueContainingNull() throws Exception
+    {
+        Message message = Proton.message();
+        message.setBody(new AmqpValue(null));
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        Message protonMessage = amqpBytesMessage.getMessage();
+
+        assertNotNull("expected body", protonMessage.getBody());
+        assertEquals("unexpected type of body section", AmqpValue.class, protonMessage.getBody().getClass());
+
+        amqpBytesMessage.convertBodyToDataSectionIfNecessary();
+
+        Section body = protonMessage.getBody();
+        assertNotNull("expected body section not present", body);
+        assertEquals("unexpected type of body section", Data.class, body.getClass());
+        assertEquals("unexpected length of body", 0, ((Data) body).getValue().getLength());
+    }
+
+    /**
+     * Test that a non-data body section of a received message can be converted to a data section as expected.
+     */
+    @Test
+    public void testConvertBodyToDataSectionIfNecessaryWithAmqpValueContainingBinary() throws Exception
+    {
+        Message message = Proton.message();
+        byte[] bytes = "asdjsdadad".getBytes();
+        message.setBody(new AmqpValue(new Binary(bytes)));
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        Message protonMessage = amqpBytesMessage.getMessage();
+
+        assertNotNull("expected body", protonMessage.getBody());
+        assertEquals("unexpected type of body section", AmqpValue.class, protonMessage.getBody().getClass());
+
+        amqpBytesMessage.convertBodyToDataSectionIfNecessary();
+
+        Section body = protonMessage.getBody();
+        assertNotNull("expected body section not present", body);
+        assertEquals("unexpected type of body section", Data.class, body.getClass());
+        assertEquals("unexpected length of body", bytes.length, ((Data) body).getValue().getLength());
+        assertTrue("unexpected bytes", Arrays.equals(bytes, ((Data) body).getValue().getArray()));
+    }
+
+    /**
+     * Test that a data body section of a received message with content type set remains
+     *  unchanged when attempting to convert to a data section.
+     */
+    @Test
+    public void testConvertBodyToDataSectionIfNecessaryWithDataSection() throws Exception
+    {
+        Message message = Proton.message();
+        byte[] bytes = "asdjsdadad".getBytes();
+        Data origBody = new Data(new Binary(bytes));
+        message.setBody(origBody);
+        message.setContentType(AmqpBytesMessage.CONTENT_TYPE);
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        Message protonMessage = amqpBytesMessage.getMessage();
+
+        amqpBytesMessage.convertBodyToDataSectionIfNecessary();
+
+        Section body = protonMessage.getBody();
+        assertNotNull("expected body section not present", body);
+        assertSame("Expected original body to be present", origBody, body);
+    }
+
+    /**
+     * Test that a non-data body section of a received message which can't be converted to a data
+     * section causes an ISE to be thrown.
+     */
+    @Test
+    public void testConvertBodyToDataSectionIfNecessaryWithAmqpValueContainingUnexpectedValueThrowsISE() throws Exception
+    {
+        Message message = Proton.message();
+        message.setBody(new AmqpValue(new ArrayList<Object>()));
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+
+        try
+        {
+            amqpBytesMessage.convertBodyToDataSectionIfNecessary();
+            fail("expected exception to be thrown");
+        }
+        catch(IllegalStateException ise)
+        {
+            //expected
+        }
+    }
+
+    /**
+     * Test that a non-data body section of a received message which can't be converted to a data
+     * section causes an ISE to be thrown.
+     */
+    @Test
+    public void testConvertBodyToDataSectionIfNecessaryWithUnexpectedBodyValueThrowsISE() throws Exception
+    {
+        Message message = Proton.message();
+        message.setBody(new AmqpSequence(new ArrayList<Object>()));
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+
+        try
+        {
+            amqpBytesMessage.convertBodyToDataSectionIfNecessary();
+            fail("expected exception to be thrown");
+        }
+        catch(IllegalStateException ise)
+        {
+            //expected
+        }
     }
 }

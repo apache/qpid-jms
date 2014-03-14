@@ -68,9 +68,13 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
         }
         else
         {
-            //We leave the body of the message the way it is, it is either
-            //empty or we are sending what we received or set on it earlier
+            //We are sending what we received or set on it earlier.
+            //Ensure the body is a Data section.
+            amqpMessage.convertBodyToDataSectionIfNecessary();
         }
+
+        //ensure content type is set
+        amqpMessage.setContentType(AmqpBytesMessage.CONTENT_TYPE);
 
         return amqpMessage;
     }

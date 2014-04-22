@@ -18,9 +18,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
-    <groupId>org.apache</groupId>
-    <artifactId>apache</artifactId>
-    <version>12</version>
+    <groupId>org.apache.qpid</groupId>
+    <artifactId>qpid-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -31,15 +31,6 @@
 
   <properties>
     <proton-version>1.0-SNAPSHOT</proton-version>
-    <geronimo-jms-version>1.1.1</geronimo-jms-version>
-
-    <hamcrest-version>1.3</hamcrest-version>
-    <junit-version>4.10</junit-version>
-    <mockito-version>1.9.5</mockito-version>
-
-    <!-- plugin versions -->
-    <apache-rat-plugin-version>0.10</apache-rat-plugin-version>
-    <jacoco-plugin-version>0.6.4.201312101107</jacoco-plugin-version>
   </properties>
 
   <dependencies>
@@ -47,7 +38,7 @@
       <!-- TODO use JMS 2 API instead once it's available -->
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-jms_1.1_spec</artifactId>
-      <version>${geronimo-jms-version}</version>
+      <version>${geronimo-jms-1-1-version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.qpid</groupId>
@@ -77,39 +68,11 @@
   </dependencies>
 
   <build>
-    <pluginManagement>
-      <plugins>
-        <!-- override the parent pom, set versions etc -->
-        <plugin>
-          <groupId>org.apache.rat</groupId>
-          <artifactId>apache-rat-plugin</artifactId>
-          <version>${apache-rat-plugin-version}</version>
-        </plugin>
-
-        <plugin>
-          <groupId>org.jacoco</groupId>
-          <artifactId>jacoco-maven-plugin</artifactId>
-          <version>${jacoco-plugin-version}</version>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
-          <optimize>true</optimize>
-          <showDeprecation>true</showDeprecation>
-          <showWarnings>true</showWarnings>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
+        <!--version specified in qpid-parent pluginManagement -->
         <configuration>
           <systemPropertyVariables>
             <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties
@@ -121,11 +84,13 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
+        <!--version specified in qpid-parent pluginManagement -->
       </plugin>
 
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
+        <!--version specified in qpid-parent pluginManagement -->
         <executions>
           <execution>
             <goals>
@@ -142,7 +107,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>findbugs-maven-plugin</artifactId>
-        <version>2.5.2</version>
+        <version>${findbugs-maven-plugin-version}</version>
         <configuration>
           <includeFilterFile>${project.basedir}/src/site/findbugs.xml</includeFilterFile>
           <threshold>Low</threshold>

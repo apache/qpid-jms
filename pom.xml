@@ -24,7 +24,6 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.apache.qpid</groupId>
   <artifactId>qpid-jms-client</artifactId>
   <name>qpid-jms-client</name>
   <version>1.0-SNAPSHOT</version>

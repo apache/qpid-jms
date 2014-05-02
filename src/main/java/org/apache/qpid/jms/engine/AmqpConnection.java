@@ -28,17 +28,14 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.qpid.proton.ProtonFactoryLoader;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EndpointState;
-import org.apache.qpid.proton.engine.EngineFactory;
 import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Receiver;
 import org.apache.qpid.proton.engine.Sasl;
 import org.apache.qpid.proton.engine.Sender;
 import org.apache.qpid.proton.engine.Session;
-import org.apache.qpid.proton.message.MessageFactory;
 
 /**
  * An AMQP connection.
@@ -50,7 +47,6 @@ import org.apache.qpid.proton.message.MessageFactory;
  * manner.
  *
  */
-@SuppressWarnings("rawtypes")
 public class AmqpConnection
 {
     private static Logger _logger = Logger.getLogger("qpid.jms-client.connection");
@@ -61,17 +57,12 @@ public class AmqpConnection
      */
     public static final long TIMEOUT = Long.getLong("org.apache.qpid.jms.connection.timeout", 10_000L);
 
-    private static final ProtonFactoryLoader protonFactoryLoader = new ProtonFactoryLoader();
-
-    private final EngineFactory _engineFactory;
     private final Connection _connection;
     private boolean _connected;
     private boolean _authenticationError;
 
     private SaslEngineFactory _saslEngineFactory = new SaslEngineFactoryImpl();
     private SaslEngine _saslEngine;
-
-    private MessageFactory _messageFactory = defaultMessageFactory();
 
     private String _username;
     private String _password;
@@ -92,8 +83,7 @@ public class AmqpConnection
     {
         _remoteHost = remoteHost;
         _port = port;
-        _engineFactory = defaultEngineFactory();
-        _connection = _engineFactory.createConnection();
+        _connection = Connection.Factory.create();
 
         _connection.setContainer(clientName);
         _connection.setHostname(remoteHost);
@@ -368,24 +358,6 @@ public class AmqpConnection
             default:
         }
         return updated;
-    }
-
-
-    MessageFactory getMessageFactory()
-    {
-        return _messageFactory;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static EngineFactory defaultEngineFactory()
-    {
-        return (EngineFactory) protonFactoryLoader.loadFactory(EngineFactory.class);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static MessageFactory defaultMessageFactory()
-    {
-        return (MessageFactory) protonFactoryLoader.loadFactory(MessageFactory.class);
     }
 
     public synchronized void setSasl(Sasl sasl)

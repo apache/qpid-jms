@@ -23,11 +23,9 @@ import static org.apache.qpid.proton.engine.TransportResultFactory.error;
 import java.nio.ByteBuffer;
 import java.util.logging.Logger;
 
-import org.apache.qpid.proton.ProtonFactoryLoader;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.codec.Data;
-import org.apache.qpid.proton.codec.DataFactory;
 import org.apache.qpid.proton.codec.DecodeException;
 import org.apache.qpid.proton.engine.TransportResult;
 import org.apache.qpid.proton.engine.TransportResultFactory;
@@ -64,8 +62,6 @@ class TestFrameParser
 
     /** holds the current frame that is being parsed */
     private ByteBuffer _frameBuffer;
-
-    private final DataFactory _dataFactory = new ProtonFactoryLoader<DataFactory>(DataFactory.class).loadFactory();
 
     private TestAmqpPeer _peer;
 
@@ -309,7 +305,7 @@ class TestFrameParser
                         if (frameBodySize > 0)
                         {
 
-                            Data data = _dataFactory.createData(frameBodySize);
+                            Data data = Data.Factory.create();
                             data.decode(currentInput);
                             Data.DataType dataType = data.type();
                             if(dataType != Data.DataType.DESCRIBED)

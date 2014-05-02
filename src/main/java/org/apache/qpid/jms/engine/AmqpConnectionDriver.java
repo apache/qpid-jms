@@ -27,10 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.qpid.proton.ProtonFactoryLoader;
 import org.apache.qpid.proton.driver.Connector;
 import org.apache.qpid.proton.driver.Driver;
-import org.apache.qpid.proton.driver.DriverFactory;
 import org.apache.qpid.proton.engine.Sasl;
 
 /**
@@ -72,8 +70,7 @@ public class AmqpConnectionDriver
 
     public AmqpConnectionDriver() throws IOException
     {
-        DriverFactory driverFactory = new ProtonFactoryLoader<DriverFactory>(DriverFactory.class).loadFactory();
-        _driver = driverFactory.createDriver();
+        _driver = Driver.Factory.create();
     }
 
     public void registerConnection(AmqpConnection amqpConnection)

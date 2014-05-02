@@ -75,7 +75,7 @@ public class AmqpReceiver extends AmqpLink
                             }
                         }
 
-                        Message message = getAmqpConnection().getMessageFactory().createMessage();
+                        Message message = Message.Factory.create();
                         message.decode(_buffer, 0, total);
 
                         //TODO: dont create a new factory for every message

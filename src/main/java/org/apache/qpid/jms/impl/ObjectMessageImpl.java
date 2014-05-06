@@ -25,13 +25,15 @@ import javax.jms.JMSException;
 import javax.jms.ObjectMessage;
 
 import org.apache.qpid.jms.engine.AmqpObjectMessage;
+import org.apache.qpid.jms.engine.AmqpSerializedObjectMessage;
 
+//TODO: support requesting to send an AMQP map/list/value instead of serialized binary data
 public class ObjectMessageImpl extends MessageImpl<AmqpObjectMessage> implements ObjectMessage
 {
     //message to be sent
     public ObjectMessageImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
-        super(new AmqpObjectMessage(), sessionImpl, connectionImpl);
+        super(new AmqpSerializedObjectMessage(), sessionImpl, connectionImpl);
     }
 
     //message just received
@@ -43,30 +45,53 @@ public class ObjectMessageImpl extends MessageImpl<AmqpObjectMessage> implements
     @Override
     protected AmqpObjectMessage prepareUnderlyingAmqpMessageForSending(AmqpObjectMessage amqpMessage)
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        //Currently nothing to do, we [de]serialize the bytes direct to/from the underlying message.
+        return amqpMessage;
+
+        //TODO: verify we haven't been requested to send an AMQP map/list instead of serialized binary data,
+        //we might need to convert if we have been asked to (or not to).
     }
 
     //======= JMS Methods =======
 
     @Override
-    public void setObject(Serializable object) throws JMSException
+    public void setObject(Serializable serializable) throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        checkBodyWritable();
+        try
+        {
+            getUnderlyingAmqpMessage(false).setObject(serializable);
+        }
+        catch (Exception e)
+        {
+            throw new QpidJmsMessageFormatException("Exception while setting Object", e);
+        }
     }
 
     @Override
     public Serializable getObject() throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        try
+        {
+            return getUnderlyingAmqpMessage(false).getObject();
+        }
+        catch (Exception e)
+        {
+            throw new QpidJmsMessageFormatException("Exception while getting Object", e);
+        }
     }
 
     @Override
     public void clearBody() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        try
+        {
+            getUnderlyingAmqpMessage(false).setObject(null);
+            setBodyWritable(true);
+        }
+        catch (Exception e)
+        {
+            throw new QpidJmsMessageFormatException("Exception while clearing Object body", e);
+        }
     }
 }

@@ -99,10 +99,10 @@ public class AmqpMessageFactoryTest extends QpidJmsTestCase
    {
        //TODO: this test only required if we decide that not sending a content body is legal
        Message message = Proton.message();
-       message.setContentType(AmqpObjectMessage.CONTENT_TYPE);
+       message.setContentType(AmqpSerializedObjectMessage.CONTENT_TYPE);
 
        AmqpMessage amqpMessage = _amqpMessageFactory.createAmqpMessage(_mockDelivery, message, _mockAmqpConnection);
-       assertEquals(AmqpObjectMessage.class, amqpMessage.getClass());
+       assertEquals(AmqpSerializedObjectMessage.class, amqpMessage.getClass());
    }
 
    /**
@@ -180,10 +180,10 @@ public class AmqpMessageFactoryTest extends QpidJmsTestCase
        Message message = Proton.message();
        Binary binary = new Binary(new byte[0]);
        message.setBody(new Data(binary));
-       message.setContentType(AmqpObjectMessage.CONTENT_TYPE);
+       message.setContentType(AmqpSerializedObjectMessage.CONTENT_TYPE);
 
        AmqpMessage amqpMessage = _amqpMessageFactory.createAmqpMessage(_mockDelivery, message, _mockAmqpConnection);
-       assertEquals(AmqpObjectMessage.class, amqpMessage.getClass());
+       assertEquals(AmqpSerializedObjectMessage.class, amqpMessage.getClass());
    }
 
    /**

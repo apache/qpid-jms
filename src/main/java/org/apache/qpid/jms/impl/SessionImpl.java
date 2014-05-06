@@ -242,8 +242,7 @@ public class SessionImpl implements Session
     @Override
     public ObjectMessage createObjectMessage() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        return new ObjectMessageImpl(this, getConnectionImpl());
     }
 
     @Override

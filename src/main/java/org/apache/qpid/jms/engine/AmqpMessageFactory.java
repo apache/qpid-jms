@@ -40,9 +40,9 @@ public class AmqpMessageFactory
             {
                 return new AmqpTextMessage(delivery, message, amqpConnection);
             }
-            else if(isContentType(AmqpObjectMessage.CONTENT_TYPE, message))
+            else if(isContentType(AmqpSerializedObjectMessage.CONTENT_TYPE, message))
             {
-                return new AmqpObjectMessage(delivery, message, amqpConnection);
+                return new AmqpSerializedObjectMessage(delivery, message, amqpConnection);
             }
             else if(isContentType(AmqpBytesMessage.CONTENT_TYPE, message) || isContentType(null, message))
             {
@@ -59,9 +59,9 @@ public class AmqpMessageFactory
             {
                 return new AmqpBytesMessage(delivery, message, amqpConnection);
             }
-            else if(isContentType(AmqpObjectMessage.CONTENT_TYPE, message))
+            else if(isContentType(AmqpSerializedObjectMessage.CONTENT_TYPE, message))
             {
-                return new AmqpObjectMessage(delivery, message, amqpConnection);
+                return new AmqpSerializedObjectMessage(delivery, message, amqpConnection);
             }
         }
         else if(body instanceof AmqpValue)

@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,28 +16,28 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
-package org.apache.qpid.jms.engine;
+package org.apache.qpid.jms.impl;
 
-import java.io.IOException;
-import java.io.Serializable;
+import javax.jms.MessageFormatException;
 
-import org.apache.qpid.proton.engine.Delivery;
-import org.apache.qpid.proton.message.Message;
-
-public abstract class AmqpObjectMessage extends AmqpMessage
+public class QpidJmsMessageFormatException extends MessageFormatException
 {
-    public AmqpObjectMessage()
+    private static final long serialVersionUID = -6968274239066827833L;
+
+    public QpidJmsMessageFormatException(String reason)
     {
-        super();
+        this(reason, null);
     }
 
-    public AmqpObjectMessage(Delivery delivery, Message message, AmqpConnection amqpConnection)
+    public QpidJmsMessageFormatException(String reason, Exception cause)
     {
-        super(message, delivery, amqpConnection);
+        super(reason);
+        if (cause != null)
+        {
+            setLinkedException(cause);
+            initCause(cause);
+        }
     }
-
-    public abstract void setObject(Serializable serializable) throws IOException;
-
-    public abstract Serializable getObject() throws IOException, ClassNotFoundException;
 }

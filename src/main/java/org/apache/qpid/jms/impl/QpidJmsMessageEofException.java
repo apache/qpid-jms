@@ -20,18 +20,13 @@
  */
 package org.apache.qpid.jms.impl;
 
-import javax.jms.JMSException;
+import javax.jms.MessageEOFException;
 
-public class QpidJmsException extends JMSException
+public class QpidJmsMessageEofException extends MessageEOFException
 {
-    private static final long serialVersionUID = 751932967255393054L;
+    private static final long serialVersionUID = -4738672252802239185L;
 
-    public QpidJmsException(String reason)
-    {
-        this(reason, null);
-    }
-
-    public QpidJmsException(String reason, Exception cause)
+    public QpidJmsMessageEofException(String reason, Exception cause)
     {
         super(reason);
         if (cause != null)

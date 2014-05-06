@@ -212,7 +212,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
                         object instanceof Double || object instanceof String|| object == null;
         if(!valid)
         {
-            throw createMessageFormatException("Invalid object property value type: " + object.getClass());
+            throw new QpidJmsMessageFormatException("Invalid object property value type: " + object.getClass());
         }
 
         return true;
@@ -265,7 +265,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
             }
             else
             {
-                throw createMessageFormatException(JMSXGROUPID + " must be a String");
+                throw new QpidJmsMessageFormatException(JMSXGROUPID + " must be a String");
             }
         }
 
@@ -283,7 +283,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
             }
             else
             {
-                throw createMessageFormatException(JMSXGROUPID + " must be an Integer");
+                throw new QpidJmsMessageFormatException(JMSXGROUPID + " must be an Integer");
             }
         }
 
@@ -303,12 +303,12 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
                 }
                 catch (UnsupportedEncodingException e)
                 {
-                    throw createMessageFormatException("Unable to encode user id", e);
+                    throw new QpidJmsMessageFormatException("Unable to encode user id", e);
                 }
             }
             else
             {
-                throw createMessageFormatException(JMSXUSERID + " must be a String");
+                throw new QpidJmsMessageFormatException(JMSXUSERID + " must be a String");
             }
         }
 
@@ -329,7 +329,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         }
         else
         {
-            throw createMessageFormatException(JMS_AMQP_TTL + " must be a long with value in range 0 to 2^31 - 1");
+            throw new QpidJmsMessageFormatException(JMS_AMQP_TTL + " must be a long with value in range 0 to 2^31 - 1");
         }
     }
 
@@ -344,7 +344,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
             }
             else
             {
-                throw createMessageFormatException(JMS_AMQP_REPLY_TO_GROUP_ID + " must be a String");
+                throw new QpidJmsMessageFormatException(JMS_AMQP_REPLY_TO_GROUP_ID + " must be a String");
             }
         }
 
@@ -395,7 +395,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
             }
             catch (UnsupportedEncodingException e)
             {
-                throw createMessageFormatException("Unable to decode user id", e);
+                throw new QpidJmsMessageFormatException("Unable to decode user id", e);
             }
         }
     }
@@ -413,23 +413,6 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
             //This wraps it into a negative int range if over 2^31-1
             return groupSeqUint.intValue();
         }
-    }
-
-    private MessageFormatException createMessageFormatException(String message)
-    {
-        return createMessageFormatException(message, null);
-    }
-
-    private MessageFormatException createMessageFormatException(String message, Exception cause)
-    {
-        MessageFormatException mfe = new MessageFormatException(message);
-        if(cause != null)
-        {
-            mfe.setLinkedException(cause);
-            mfe.initCause(cause);
-        }
-
-        return mfe;
     }
 
     private boolean propertyExistsJMSXUserID()
@@ -845,7 +828,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         {
             String message = "Property " + name + " of type " + value.getClass().getName() + " cannot be converted to boolean.";
 
-            throw createMessageFormatException(message);
+            throw new QpidJmsMessageFormatException(message);
         }
     }
 
@@ -866,7 +849,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         {
             String message = "Property " + name + " of type " + value.getClass().getName() + " cannot be converted to byte.";
 
-            throw createMessageFormatException(message);
+            throw new QpidJmsMessageFormatException(message);
         }
     }
 
@@ -891,7 +874,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         {
             String message = "Property " + name + " of type " + value.getClass().getName() + " cannot be converted to short.";
 
-            throw createMessageFormatException(message);
+            throw new QpidJmsMessageFormatException(message);
         }
     }
 
@@ -920,7 +903,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         {
             String message = "Property " + name + " of type " + value.getClass().getName() + " cannot be converted to int.";
 
-            throw createMessageFormatException(message);
+            throw new QpidJmsMessageFormatException(message);
         }
     }
 
@@ -953,7 +936,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         {
             String message = "Property " + name + " of type " + value.getClass().getName() + " cannot be converted to long.";
 
-            throw createMessageFormatException(message);
+            throw new QpidJmsMessageFormatException(message);
         }
     }
 
@@ -974,7 +957,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         {
             String message = "Property " + name + " of type " + value.getClass().getName() + " cannot be converted to float.";
 
-            throw createMessageFormatException(message);
+            throw new QpidJmsMessageFormatException(message);
         }
     }
 
@@ -999,7 +982,7 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         {
             String message = "Property " + name + " of type " + value.getClass().getName() + " cannot be converted to double.";
 
-            throw createMessageFormatException(message);
+            throw new QpidJmsMessageFormatException(message);
         }
     }
 

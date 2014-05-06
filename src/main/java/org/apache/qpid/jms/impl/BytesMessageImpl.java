@@ -25,8 +25,6 @@ import java.io.IOException;
 import javax.jms.BytesMessage;
 import javax.jms.Destination;
 import javax.jms.JMSException;
-import javax.jms.MessageEOFException;
-import javax.jms.MessageFormatException;
 import javax.jms.MessageNotReadableException;
 
 import org.apache.qpid.jms.engine.AmqpBytesMessage;
@@ -81,18 +79,14 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
 
     private JMSException createInputException(final IOException e)
     {
-        JMSException ex;
         if(e instanceof EOFException)
         {
-            ex = new MessageEOFException(e.getMessage());
+            return new QpidJmsMessageEofException(e.getMessage(), e);
         }
         else
         {
-            ex = new MessageFormatException(e.getMessage());
+            return new QpidJmsMessageFormatException(e.getMessage(), e);
         }
-        ex.initCause(e);
-        ex.setLinkedException(e);
-        return ex;
     }
 
     private JMSException createOutputException(final IOException e)
@@ -532,7 +526,7 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
         }
         else
         {
-            throw new MessageFormatException("Value passed to BytesMessage.writeObject() must be of primitive type.  Type passed was " + value.getClass().getName());
+            throw new QpidJmsMessageFormatException("Value passed to BytesMessage.writeObject() must be of primitive type.  Type passed was " + value.getClass().getName());
         }
     }
 

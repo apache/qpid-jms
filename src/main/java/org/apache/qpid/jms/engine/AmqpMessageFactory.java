@@ -38,7 +38,7 @@ public class AmqpMessageFactory
         {
             if(isContentType(AmqpTextMessage.CONTENT_TYPE, message))
             {
-                return new AmqpTextMessage(delivery, message, amqpConnection);
+                return new AmqpTextMessage(message, delivery, amqpConnection);
             }
             else if(isContentType(AmqpSerializedObjectMessage.CONTENT_TYPE, message))
             {
@@ -46,18 +46,18 @@ public class AmqpMessageFactory
             }
             else if(isContentType(AmqpBytesMessage.CONTENT_TYPE, message) || isContentType(null, message))
             {
-                return new AmqpBytesMessage(delivery, message, amqpConnection);
+                return new AmqpBytesMessage(message, delivery, amqpConnection);
             }
         }
         else if(body instanceof Data)
         {
             if(isContentType(AmqpTextMessage.CONTENT_TYPE, message))
             {
-                return new AmqpTextMessage(delivery, message, amqpConnection);
+                return new AmqpTextMessage(message, delivery, amqpConnection);
             }
             else if(isContentType(AmqpBytesMessage.CONTENT_TYPE, message)  || isContentType(null, message))
             {
-                return new AmqpBytesMessage(delivery, message, amqpConnection);
+                return new AmqpBytesMessage(message, delivery, amqpConnection);
             }
             else if(isContentType(AmqpSerializedObjectMessage.CONTENT_TYPE, message))
             {
@@ -70,11 +70,11 @@ public class AmqpMessageFactory
 
             if(value == null || value instanceof String)
             {
-                return new AmqpTextMessage(delivery, message, amqpConnection);
+                return new AmqpTextMessage(message, delivery, amqpConnection);
             }
             else if(value instanceof Map)
             {
-                return new AmqpMapMessage(delivery, message, amqpConnection);
+                return new AmqpMapMessage(message, delivery, amqpConnection);
             }
             else if(value instanceof List)
             {
@@ -82,7 +82,7 @@ public class AmqpMessageFactory
             }
             else if(value instanceof Binary)
             {
-                return new AmqpBytesMessage(delivery, message, amqpConnection);
+                return new AmqpBytesMessage(message, delivery, amqpConnection);
             }
         }
         else

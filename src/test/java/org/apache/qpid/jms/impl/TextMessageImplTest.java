@@ -85,7 +85,7 @@ public class TextMessageImplTest extends QpidJmsTestCase
     public void testGetTextWithReceivedMessageNoBodySectionReturnsNull() throws Exception
     {
         Message message = Proton.message();
-        AmqpTextMessage testAmqpMessage1 = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpTextMessage testAmqpMessage1 = new AmqpTextMessage(message, _mockDelivery, _mockAmqpConnection);
         TextMessageImpl textMessageImpl = new TextMessageImpl(testAmqpMessage1, _mockSessionImpl,_mockConnectionImpl, null);
 
         assertNull("expected null string", textMessageImpl.getText());
@@ -97,7 +97,7 @@ public class TextMessageImplTest extends QpidJmsTestCase
         Message message = Proton.message();
         String value = "myAmqpValueString";
         message.setBody(new AmqpValue(value));
-        AmqpTextMessage testAmqpMessage1 = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpTextMessage testAmqpMessage1 = new AmqpTextMessage(message, _mockDelivery, _mockAmqpConnection);
         TextMessageImpl textMessageImpl = new TextMessageImpl(testAmqpMessage1, _mockSessionImpl,_mockConnectionImpl, null);
 
         assertEquals(value, textMessageImpl.getText());
@@ -137,7 +137,7 @@ public class TextMessageImplTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setBody(new AmqpValue("originalContent"));
 
-        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(message, _mockDelivery, _mockAmqpConnection);
         TextMessageImpl textMessageImpl = new TextMessageImpl(amqpTextMessage, _mockSessionImpl,_mockConnectionImpl, null);
 
         if(clearBody)
@@ -184,7 +184,7 @@ public class TextMessageImplTest extends QpidJmsTestCase
         message.setBody(new Data(new Binary(encodedBytes)));
         message.setContentType(AmqpTextMessage.CONTENT_TYPE);
 
-        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(message, _mockDelivery, _mockAmqpConnection);
         TextMessageImpl textMessageImpl = new TextMessageImpl(amqpTextMessage, _mockSessionImpl,_mockConnectionImpl, null);
 
         assertEquals("Expected content not returned", messageCotnent, textMessageImpl.getText());

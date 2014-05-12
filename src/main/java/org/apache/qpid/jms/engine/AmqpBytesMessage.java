@@ -41,7 +41,7 @@ public class AmqpBytesMessage extends AmqpMessage
     }
 
     //message just received
-    public AmqpBytesMessage(Delivery delivery, Message message, AmqpConnection amqpConnection)
+    public AmqpBytesMessage(Message message, Delivery delivery, AmqpConnection amqpConnection)
     {
         super(message, delivery, amqpConnection);
     }

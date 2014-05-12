@@ -76,7 +76,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
     public void testGetInputStreamUsingReceivedMessageWithNoBodySectionReturnsEmptyInputStream() throws Exception
     {
         Message message = Proton.message();
-        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(message, _mockDelivery, _mockAmqpConnection);
 
         ByteArrayInputStream byteArrayInputStream = amqpBytesMessage.getByteArrayInputStream();
         assertNotNull(byteArrayInputStream);
@@ -126,7 +126,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         int length = 5;
         message.setBody(new Data(new Binary(new byte[length])));
-        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertEquals("Message reports unexpected length", length, amqpBytesMessage.getBytesLength());
     }
@@ -137,7 +137,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         int length = 10;
         message.setBody(new AmqpValue(new Binary(new byte[length])));
-        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertEquals("Message reports unexpected length", length, amqpBytesMessage.getBytesLength());
     }
@@ -147,7 +147,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
     {
         Message message = Proton.message();
         message.setBody(new AmqpValue(null));
-        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertEquals("Message reports unexpected length", 0, amqpBytesMessage.getBytesLength());
     }
@@ -160,7 +160,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setBody(new AmqpValue(new Binary(bytes)));
 
-        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(message, _mockDelivery, _mockAmqpConnection);
         ByteArrayInputStream bytesStream = amqpBytesMessage.getByteArrayInputStream();
 
         //retrieve the expected bytes, check they match
@@ -180,7 +180,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setBody(new Data(new Binary(bytes)));
 
-        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(message, _mockDelivery, _mockAmqpConnection);
         ByteArrayInputStream bytesStream = amqpBytesMessage.getByteArrayInputStream();
         assertNotNull(bytesStream);
 
@@ -199,7 +199,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setBody(new Data(null));
 
-        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(message, _mockDelivery, _mockAmqpConnection);
         ByteArrayInputStream bytesStream = amqpBytesMessage.getByteArrayInputStream();
         assertNotNull(bytesStream);
 
@@ -212,7 +212,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
     {
         Message message = Proton.message();
         message.setBody(new AmqpSequence(new ArrayList<Object>()));
-        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(message, _mockDelivery, _mockAmqpConnection);
 
         try
         {
@@ -240,7 +240,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
     {
         Message message = Proton.message();
         message.setBody(new AmqpValue(true));
-        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(message, _mockDelivery, _mockAmqpConnection);
 
         try
         {
@@ -322,7 +322,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
 
         Message message = Proton.message();
         message.setBody(new Data(new Binary(orig)));
-        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(message, _mockDelivery, _mockAmqpConnection);
         Message protonMessage = amqpBytesMessage.getMessage();
 
         amqpBytesMessage.setBytes(replacement);
@@ -355,7 +355,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
 
         Message message = Proton.message();
         message.setBody(new AmqpValue(new Binary(orig)));
-        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(message, _mockDelivery, _mockAmqpConnection);
         Message protonMessage = amqpBytesMessage.getMessage();
 
         amqpBytesMessage.setBytes(replacement);
@@ -372,7 +372,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
     public void testConvertBodyToDataSectionIfNecessaryWithNullBody() throws Exception
     {
         Message message = Proton.message();
-        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(message, _mockDelivery, _mockAmqpConnection);
         Message protonMessage = amqpBytesMessage.getMessage();
 
         assertNull("expected no body", protonMessage.getBody());
@@ -393,7 +393,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
     {
         Message message = Proton.message();
         message.setBody(new AmqpValue(null));
-        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(message, _mockDelivery, _mockAmqpConnection);
         Message protonMessage = amqpBytesMessage.getMessage();
 
         assertNotNull("expected body", protonMessage.getBody());
@@ -416,7 +416,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         byte[] bytes = "asdjsdadad".getBytes();
         message.setBody(new AmqpValue(new Binary(bytes)));
-        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(message, _mockDelivery, _mockAmqpConnection);
         Message protonMessage = amqpBytesMessage.getMessage();
 
         assertNotNull("expected body", protonMessage.getBody());
@@ -443,7 +443,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
         Data origBody = new Data(new Binary(bytes));
         message.setBody(origBody);
         message.setContentType(AmqpBytesMessage.CONTENT_TYPE);
-        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(message, _mockDelivery, _mockAmqpConnection);
         Message protonMessage = amqpBytesMessage.getMessage();
 
         amqpBytesMessage.convertBodyToDataSectionIfNecessary();
@@ -462,7 +462,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
     {
         Message message = Proton.message();
         message.setBody(new AmqpValue(new ArrayList<Object>()));
-        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(message, _mockDelivery, _mockAmqpConnection);
 
         try
         {
@@ -484,7 +484,7 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
     {
         Message message = Proton.message();
         message.setBody(new AmqpSequence(new ArrayList<Object>()));
-        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage(message, _mockDelivery, _mockAmqpConnection);
 
         try
         {

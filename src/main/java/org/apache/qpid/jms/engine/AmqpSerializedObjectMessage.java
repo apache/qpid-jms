@@ -45,7 +45,7 @@ public class AmqpSerializedObjectMessage extends AmqpObjectMessage
 
     public AmqpSerializedObjectMessage(Delivery delivery, Message message, AmqpConnection amqpConnection)
     {
-        super(delivery, message, amqpConnection);
+        super(message, delivery, amqpConnection);
     }
 
     /**

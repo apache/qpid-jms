@@ -92,7 +92,7 @@ public class AmqpTextMessageTest extends QpidJmsTestCase
     public void testGetTextUsingReceivedMessageWithNoBodySectionReturnsNull() throws Exception
     {
         Message message = Proton.message();
-        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertNull("expected null string", amqpTextMessage.getText());
     }
@@ -105,7 +105,7 @@ public class AmqpTextMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setBody(new AmqpValue(text));
 
-        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertEquals(text, amqpTextMessage.getText());
     }
@@ -116,7 +116,7 @@ public class AmqpTextMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setBody(new AmqpValue(null));
 
-        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertNull("expected null string", amqpTextMessage.getText());
     }
@@ -130,7 +130,7 @@ public class AmqpTextMessageTest extends QpidJmsTestCase
         //This shouldn't happen with actual received messages, since Data sections can't really
         //have a null value in them, they would have an empty byte array, but just in case...
 
-        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertEquals("expected zero-length string", "", amqpTextMessage.getText());
     }
@@ -147,7 +147,7 @@ public class AmqpTextMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         int decoded = message.decode(b.getArray(), b.getArrayOffset(), b.getLength());
         assertEquals(decoded, b.getLength());
-        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertEquals("expected zero-length string", "", amqpTextMessage.getText());
     }
@@ -167,7 +167,7 @@ public class AmqpTextMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         int decoded = message.decode(b.getArray(), b.getArrayOffset(), b.getLength());
         assertEquals(decoded, b.getLength());
-        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(message, _mockDelivery, _mockAmqpConnection);
 
         assertEquals(encodedString, amqpTextMessage.getText());
     }
@@ -177,7 +177,7 @@ public class AmqpTextMessageTest extends QpidJmsTestCase
     {
         Message message = Proton.message();
         message.setBody(new AmqpSequence(new ArrayList<Object>()));
-        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(message, _mockDelivery, _mockAmqpConnection);
 
         try
         {
@@ -195,7 +195,7 @@ public class AmqpTextMessageTest extends QpidJmsTestCase
     {
         Message message = Proton.message();
         message.setBody(new AmqpValue(true));
-        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpTextMessage amqpTextMessage = new AmqpTextMessage(message, _mockDelivery, _mockAmqpConnection);
 
         try
         {

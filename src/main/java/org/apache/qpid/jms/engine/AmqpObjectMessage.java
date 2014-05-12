@@ -31,7 +31,7 @@ public abstract class AmqpObjectMessage extends AmqpMessage
         super();
     }
 
-    public AmqpObjectMessage(Delivery delivery, Message message, AmqpConnection amqpConnection)
+    public AmqpObjectMessage(Message message, Delivery delivery, AmqpConnection amqpConnection)
     {
         super(message, delivery, amqpConnection);
     }

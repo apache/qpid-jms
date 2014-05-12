@@ -52,7 +52,7 @@ public class AmqpTextMessage extends AmqpMessage
         setText(null);
     }
 
-    public AmqpTextMessage(Delivery delivery, Message message, AmqpConnection amqpConnection)
+    public AmqpTextMessage(Message message, Delivery delivery, AmqpConnection amqpConnection)
     {
         super(message, delivery, amqpConnection);
     }

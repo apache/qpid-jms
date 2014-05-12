@@ -28,7 +28,7 @@ public class AmqpMapMessage extends AmqpMessage
         super();
     }
 
-    public AmqpMapMessage(Delivery delivery, Message message, AmqpConnection amqpConnection)
+    public AmqpMapMessage(Message message, Delivery delivery, AmqpConnection amqpConnection)
     {
         super(message, delivery, amqpConnection);
     }

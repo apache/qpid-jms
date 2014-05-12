@@ -42,7 +42,7 @@ import javax.jms.ObjectMessage;
 import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.jms.engine.AmqpConnection;
 import org.apache.qpid.jms.engine.AmqpObjectMessage;
-import org.apache.qpid.jms.engine.AmqpSerializedObjectMessage;
+import org.apache.qpid.jms.engine.AmqpObjectMessage;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Data;
@@ -88,7 +88,7 @@ public class ObjectMessageImplTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setBody(new Data(new Binary(bytes)));
 
-        AmqpSerializedObjectMessage amqpSerializedObjectMessage = new AmqpSerializedObjectMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(_mockDelivery, message, _mockAmqpConnection, false);
         ObjectMessageImpl objectMessageImpl = new ObjectMessageImpl(amqpSerializedObjectMessage, _mockSessionImpl,_mockConnectionImpl, null);
 
         try
@@ -120,7 +120,7 @@ public class ObjectMessageImplTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setBody(new Data(new Binary(bytes)));
 
-        AmqpSerializedObjectMessage amqpSerializedObjectMessage = new AmqpSerializedObjectMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(_mockDelivery, message, _mockAmqpConnection, false);
         ObjectMessageImpl objectMessageImpl = new ObjectMessageImpl(amqpSerializedObjectMessage, _mockSessionImpl,_mockConnectionImpl, null);
 
         assertFalse("Message should not be writable", objectMessageImpl.isBodyWritable());
@@ -148,7 +148,7 @@ public class ObjectMessageImplTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setBody(new Data(new Binary(bytes)));
 
-        AmqpSerializedObjectMessage amqpSerializedObjectMessage = new AmqpSerializedObjectMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(_mockDelivery, message, _mockAmqpConnection, false);
         ObjectMessageImpl objectMessageImpl = new ObjectMessageImpl(amqpSerializedObjectMessage, _mockSessionImpl,_mockConnectionImpl, null);
 
         assertNotNull("Expected body section but none was present", message.getBody());
@@ -242,7 +242,7 @@ public class ObjectMessageImplTest extends QpidJmsTestCase
         origMap.put("key1", "value1");
         origMap.put("notSerializable", new NotSerializable());
 
-        AmqpObjectMessage amqpSerializedObjectMessage = Mockito.mock(AmqpSerializedObjectMessage.class);
+        AmqpObjectMessage amqpSerializedObjectMessage = Mockito.mock(AmqpObjectMessage.class);
         Mockito.when(amqpSerializedObjectMessage.getObject()).thenThrow(new ClassNotFoundException());
 
         ObjectMessageImpl objectMessageImpl = new ObjectMessageImpl(amqpSerializedObjectMessage, _mockSessionImpl,_mockConnectionImpl, null);

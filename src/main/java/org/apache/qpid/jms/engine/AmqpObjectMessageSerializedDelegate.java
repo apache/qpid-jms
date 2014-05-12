@@ -30,24 +30,16 @@ import java.io.Serializable;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.Section;
-import org.apache.qpid.proton.engine.Delivery;
-import org.apache.qpid.proton.message.Message;
 
-public class AmqpSerializedObjectMessage extends AmqpObjectMessage
+public class AmqpObjectMessageSerializedDelegate implements AmqpObjectMessageDelegate
 {
+    private AmqpObjectMessage _amqpObjectMessage;
     public static final String CONTENT_TYPE = "application/x-java-serialized-object";
 
-    public AmqpSerializedObjectMessage()
+    public AmqpObjectMessageSerializedDelegate(AmqpObjectMessage amqpObjectMessage)
     {
-        super();
-        setContentType(CONTENT_TYPE);
+        _amqpObjectMessage = amqpObjectMessage;
     }
-
-    public AmqpSerializedObjectMessage(Delivery delivery, Message message, AmqpConnection amqpConnection)
-    {
-        super(message, delivery, amqpConnection);
-    }
-
     /**
      * Sets the serialized object as a data section in the underlying message, or
      * clears the body section if null.
@@ -59,7 +51,7 @@ public class AmqpSerializedObjectMessage extends AmqpObjectMessage
         {
             //TODO: verify whether not sending a body is ok,
             //send a serialized null instead if it isn't
-            getMessage().setBody(null);
+            _amqpObjectMessage.getMessage().setBody(null);
         }
         else
         {
@@ -72,7 +64,7 @@ public class AmqpSerializedObjectMessage extends AmqpObjectMessage
 
             byte[] bytes = baos.toByteArray();
 
-            getMessage().setBody(new Data(new Binary(bytes)));
+            _amqpObjectMessage.getMessage().setBody(new Data(new Binary(bytes)));
         }
 
         //TODO: ensure content type is [still] set?
@@ -86,7 +78,7 @@ public class AmqpSerializedObjectMessage extends AmqpObjectMessage
     {
         Binary bin = null;
 
-        Section body = getMessage().getBody();
+        Section body = _amqpObjectMessage.getMessage().getBody();
         if(body == null)
         {
             return null;
@@ -112,4 +104,5 @@ public class AmqpSerializedObjectMessage extends AmqpObjectMessage
             return (Serializable) ois.readObject();
         }
     }
+
 }

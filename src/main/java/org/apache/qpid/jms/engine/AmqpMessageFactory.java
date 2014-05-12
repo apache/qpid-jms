@@ -21,7 +21,10 @@ package org.apache.qpid.jms.engine;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.qpid.jms.impl.ClientProperties;
+import org.apache.qpid.jms.impl.ObjectMessageImpl;
 import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.Section;
@@ -34,15 +37,28 @@ public class AmqpMessageFactory
     {
         Section body = message.getBody();
 
+        //TODO: This is a temporary hack, need to implement proper support for the new
+        //message type annotation by generally rewriting the entire factory method
+        AmqpGenericMessage msg = new AmqpGenericMessage(delivery, message, amqpConnection);
+        if(msg.messageAnnotationExists(ClientProperties.X_OPT_JMS_MSG_TYPE))
+        {
+            UnsignedByte ub = (UnsignedByte) msg.getMessageAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE);
+            if(ub.shortValue() == ObjectMessageImpl.X_OPT_JMS_MSG_TYPE_VALUE)
+            {
+                boolean isJavaSerialized = isContentType(AmqpObjectMessageSerializedDelegate.CONTENT_TYPE, message);
+                return new AmqpObjectMessage(delivery, message, amqpConnection, !isJavaSerialized);
+            }
+        }
+
         if(body == null)
         {
             if(isContentType(AmqpTextMessage.CONTENT_TYPE, message))
             {
                 return new AmqpTextMessage(message, delivery, amqpConnection);
             }
-            else if(isContentType(AmqpSerializedObjectMessage.CONTENT_TYPE, message))
+            else if(isContentType(AmqpObjectMessageSerializedDelegate.CONTENT_TYPE, message))
             {
-                return new AmqpSerializedObjectMessage(delivery, message, amqpConnection);
+                return new AmqpObjectMessage(delivery, message, amqpConnection, false);
             }
             else if(isContentType(AmqpBytesMessage.CONTENT_TYPE, message) || isContentType(null, message))
             {
@@ -59,9 +75,9 @@ public class AmqpMessageFactory
             {
                 return new AmqpBytesMessage(message, delivery, amqpConnection);
             }
-            else if(isContentType(AmqpSerializedObjectMessage.CONTENT_TYPE, message))
+            else if(isContentType(AmqpObjectMessageSerializedDelegate.CONTENT_TYPE, message))
             {
-                return new AmqpSerializedObjectMessage(delivery, message, amqpConnection);
+                return new AmqpObjectMessage(delivery, message, amqpConnection, false);
             }
         }
         else if(body instanceof AmqpValue)
@@ -105,5 +121,4 @@ public class AmqpMessageFactory
             return contentType.equals(message.getContentType());
         }
     }
-
 }

@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,6 +16,7 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
 package org.apache.qpid.jms.engine;
 
@@ -24,19 +26,76 @@ import java.io.Serializable;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.message.Message;
 
-public abstract class AmqpObjectMessage extends AmqpMessage
+public class AmqpObjectMessage extends AmqpMessage
 {
+    private AmqpObjectMessageDelegate _delegate;
+    private boolean _useAmqpTypeEncoding = false;
+
     public AmqpObjectMessage()
     {
         super();
+        setContentType(AmqpObjectMessageSerializedDelegate.CONTENT_TYPE);
+        initDelegate(false);
     }
 
-    public AmqpObjectMessage(Message message, Delivery delivery, AmqpConnection amqpConnection)
+    public AmqpObjectMessage(Delivery delivery, Message message, AmqpConnection amqpConnection, boolean useAmqpTypes)
     {
         super(message, delivery, amqpConnection);
+
+        initDelegate(useAmqpTypes);
     }
 
-    public abstract void setObject(Serializable serializable) throws IOException;
+    private void initDelegate(boolean useAmqpTypes)
+    {
+        if(!useAmqpTypes)
+        {
+            _delegate = new AmqpObjectMessageSerializedDelegate(this);
+        }
+        else
+        {
+            _delegate = new AmqpObjectMessageAmqpTypedDelegate(this);
+        }
+    }
 
-    public abstract Serializable getObject() throws IOException, ClassNotFoundException;
+    /**
+     * Sets the serialized object as a data section in the underlying message, or
+     * clears the body section if null.
+     */
+    public void setObject(Serializable serializable) throws IOException
+    {
+        _delegate.setObject(serializable);
+    }
+
+    /**
+     * Returns the deserialized object, or null if no object data is present.
+     */
+    public Serializable getObject() throws IllegalStateException, IOException, ClassNotFoundException
+    {
+        return _delegate.getObject();
+    }
+
+    public void setUseAmqpTypeEncoding(boolean useAmqpTypeEncoding) throws ClassNotFoundException, IOException
+    {
+        if(_useAmqpTypeEncoding != useAmqpTypeEncoding)
+        {
+            Serializable existingObject = _delegate.getObject();
+
+            AmqpObjectMessageDelegate newDelegate = null;
+            if(useAmqpTypeEncoding)
+            {
+                newDelegate = new AmqpObjectMessageAmqpTypedDelegate(this);
+            }
+            else if(!useAmqpTypeEncoding)
+            {
+                newDelegate = new AmqpObjectMessageSerializedDelegate(this);
+            }
+
+            newDelegate.setObject(existingObject);
+
+            _delegate = newDelegate;
+            _useAmqpTypeEncoding = useAmqpTypeEncoding;
+
+            //TODO: ensure we only set content-type if we are using a Data section
+        }
+    }
 }

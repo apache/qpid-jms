@@ -18,6 +18,8 @@
  */
 package org.apache.qpid.jms.impl;
 
+import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_TYPED_ENCODING;
+
 import java.io.Serializable;
 
 import javax.jms.Destination;
@@ -25,15 +27,21 @@ import javax.jms.JMSException;
 import javax.jms.ObjectMessage;
 
 import org.apache.qpid.jms.engine.AmqpObjectMessage;
-import org.apache.qpid.jms.engine.AmqpSerializedObjectMessage;
 
-//TODO: support requesting to send an AMQP map/list/value instead of serialized binary data
 public class ObjectMessageImpl extends MessageImpl<AmqpObjectMessage> implements ObjectMessage
 {
+    /**
+     * Value used for the X_OPT_JMS_MSG_TYPE message annotation to indicate an ObjectMessage
+     */
+    public static final byte X_OPT_JMS_MSG_TYPE_VALUE = 1;
+
+    //TODO: add a way of controlling this: per connection and client wide?
+    private Boolean _defaultUseAmqpTypeEncoding = false;
+
     //message to be sent
     public ObjectMessageImpl(SessionImpl sessionImpl, ConnectionImpl connectionImpl) throws JMSException
     {
-        super(new AmqpSerializedObjectMessage(), sessionImpl, connectionImpl);
+        super(new AmqpObjectMessage(), sessionImpl, connectionImpl);
     }
 
     //message just received
@@ -45,11 +53,49 @@ public class ObjectMessageImpl extends MessageImpl<AmqpObjectMessage> implements
     @Override
     protected AmqpObjectMessage prepareUnderlyingAmqpMessageForSending(AmqpObjectMessage amqpMessage)
     {
-        //Currently nothing to do, we [de]serialize the bytes direct to/from the underlying message.
+        //Currently nothing to do, we [de]serialize the bytes/bodies direct to/from the underlying message.
         return amqpMessage;
+    }
 
-        //TODO: verify we haven't been requested to send an AMQP map/list instead of serialized binary data,
-        //we might need to convert if we have been asked to (or not to).
+    @Override
+    void notifyChangeJMS_AMQP_TYPED_ENCODING(Boolean value) throws QpidJmsMessageFormatException
+    {
+        /* TODO
+         *
+         * JMS_AMQP_TYPED_ENCODING as a means of controlling/signalling whether an ObjectMessage is
+         * sent/received as serialized Java, or using the AMQP type system.
+         *
+         * NOTES/Questions:
+         *
+         * # We need to support converting from one type to the other with existing content, because we can't control when another JMS provider will set the property relative to the content.
+         *
+         * # If we don't put it in the result of getPropertyNames() then it wont survive a 're-populate the properties' by clearing and setting them again
+         *   - happens when being sent by another provider
+         *   - being used by an app that wants to remove properties or add properties to a received message even with the same provider
+         *
+         * # If we do put it in the property names, clearing the property names either has to:
+         *   - leave that special property present to keep signalling what will happen when sending the message
+         *   - clear the property and if necessary (depends on the default) alter the encoding type of the body (which might not be cleared)
+         *   - clear the property but regardless NOT alter the type of the body (which might not be cleared)
+         *
+         * # Do we add it to the property names if the connection/client has an [overriding] default configuration?
+         *
+         * # Do we add it to the property names for ObjectMessages which are received with the AMQP type encoding?
+         */
+        boolean useAmqpTypeEnc =_defaultUseAmqpTypeEncoding;
+        if(value != null)
+        {
+            useAmqpTypeEnc = value;
+        }
+
+        try
+        {
+            getUnderlyingAmqpMessage(false).setUseAmqpTypeEncoding(useAmqpTypeEnc);
+        }
+        catch (Exception e)
+        {
+            throw new QpidJmsMessageFormatException("Exception setting " + JMS_AMQP_TYPED_ENCODING, e);
+        }
     }
 
     //======= JMS Methods =======

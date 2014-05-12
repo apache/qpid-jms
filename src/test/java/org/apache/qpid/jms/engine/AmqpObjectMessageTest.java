@@ -46,7 +46,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-public class AmqpSerializedObjectMessageTest extends QpidJmsTestCase
+public class AmqpObjectMessageTest extends QpidJmsTestCase
 {
     private AmqpConnection _mockAmqpConnection;
     private Delivery _mockDelivery;
@@ -63,7 +63,7 @@ public class AmqpSerializedObjectMessageTest extends QpidJmsTestCase
     @Test
     public void testGetObjectWithNewMessageToSendReturnsNull() throws Exception
     {
-        AmqpSerializedObjectMessage amqpSerializedObjectMessage = new AmqpSerializedObjectMessage();
+        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage();
 
         assertNull("Expected null object initially", amqpSerializedObjectMessage.getObject());
     }
@@ -72,7 +72,7 @@ public class AmqpSerializedObjectMessageTest extends QpidJmsTestCase
     public void testGetObjectUsingReceivedMessageWithNoBodySectionReturnsNull() throws Exception
     {
         Message message = Proton.message();
-        AmqpSerializedObjectMessage amqpSerializedObjectMessage = new AmqpSerializedObjectMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(_mockDelivery, message, _mockAmqpConnection, false);
 
         assertNull("Expected null object", amqpSerializedObjectMessage.getObject());
     }
@@ -83,7 +83,7 @@ public class AmqpSerializedObjectMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setBody(new Data(null));
 
-        AmqpSerializedObjectMessage amqpSerializedObjectMessage = new AmqpSerializedObjectMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(_mockDelivery, message, _mockAmqpConnection, false);
 
         assertNull("Expected null object", amqpSerializedObjectMessage.getObject());
     }
@@ -94,7 +94,7 @@ public class AmqpSerializedObjectMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setBody(new AmqpValue("doesntMatter"));
 
-        AmqpSerializedObjectMessage amqpSerializedObjectMessage = new AmqpSerializedObjectMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(_mockDelivery, message, _mockAmqpConnection, false);
 
         try
         {
@@ -122,7 +122,7 @@ public class AmqpSerializedObjectMessageTest extends QpidJmsTestCase
         oos.close();
         byte[] bytes = baos.toByteArray();
 
-        AmqpSerializedObjectMessage amqpSerializedObjectMessage = new AmqpSerializedObjectMessage();
+        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage();
         amqpSerializedObjectMessage.setObject(content);
 
         Message protonMessage = amqpSerializedObjectMessage.getMessage();
@@ -142,7 +142,7 @@ public class AmqpSerializedObjectMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setBody(new Data(new Binary(new byte[0])));
 
-        AmqpSerializedObjectMessage amqpSerializedObjectMessage = new AmqpSerializedObjectMessage(_mockDelivery, message, _mockAmqpConnection);
+        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(_mockDelivery, message, _mockAmqpConnection, false);
 
         assertNotNull("Expected existing body section to be found", message.getBody());
         amqpSerializedObjectMessage.setObject(null);
@@ -160,7 +160,7 @@ public class AmqpSerializedObjectMessageTest extends QpidJmsTestCase
         Map<String,String> origMap = new HashMap<String,String>();
         origMap.put("key1", "value1");
 
-        AmqpSerializedObjectMessage amqpSerializedObjectMessage = new AmqpSerializedObjectMessage();
+        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage();
         amqpSerializedObjectMessage.setObject((Serializable) origMap);
 
         //verify we get a different-but-equal object back

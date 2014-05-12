@@ -92,17 +92,17 @@ public class AmqpMessageFactoryTest extends QpidJmsTestCase
 
    /**
     * Test that a message with no body section, but with the content type set to
-    * {@value AmqpObjectMessage#CONTENT_TYPE} results in a object message
+    * {@value AmqpObjectMessageSerializedDelegate#CONTENT_TYPE} results in a object message
     */
    @Test
    public void testCreateAmqpObjectMessageFromNoBodySectionAndContentType() throws Exception
    {
        //TODO: this test only required if we decide that not sending a content body is legal
        Message message = Proton.message();
-       message.setContentType(AmqpSerializedObjectMessage.CONTENT_TYPE);
+       message.setContentType(AmqpObjectMessageSerializedDelegate.CONTENT_TYPE);
 
        AmqpMessage amqpMessage = _amqpMessageFactory.createAmqpMessage(_mockDelivery, message, _mockAmqpConnection);
-       assertEquals(AmqpSerializedObjectMessage.class, amqpMessage.getClass());
+       assertEquals(AmqpObjectMessage.class, amqpMessage.getClass());
    }
 
    /**
@@ -172,7 +172,7 @@ public class AmqpMessageFactoryTest extends QpidJmsTestCase
 
    /**
     * Test that a data body containing nothing, but with the content type set to
-    * {@value AmqpObjectMessage#CONTENT_TYPE} results in a object message
+    * {@value AmqpObjectMessageSerializedDelegate#CONTENT_TYPE} results in a object message
     */
    @Test
    public void testCreateAmqpObjectMessageFromDataWithEmptyBinaryAndContentType() throws Exception
@@ -180,10 +180,10 @@ public class AmqpMessageFactoryTest extends QpidJmsTestCase
        Message message = Proton.message();
        Binary binary = new Binary(new byte[0]);
        message.setBody(new Data(binary));
-       message.setContentType(AmqpSerializedObjectMessage.CONTENT_TYPE);
+       message.setContentType(AmqpObjectMessageSerializedDelegate.CONTENT_TYPE);
 
        AmqpMessage amqpMessage = _amqpMessageFactory.createAmqpMessage(_mockDelivery, message, _mockAmqpConnection);
-       assertEquals(AmqpSerializedObjectMessage.class, amqpMessage.getClass());
+       assertEquals(AmqpObjectMessage.class, amqpMessage.getClass());
    }
 
    /**

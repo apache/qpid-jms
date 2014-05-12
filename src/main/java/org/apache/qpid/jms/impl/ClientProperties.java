@@ -30,8 +30,10 @@ public class ClientProperties
     //Custom Message Property Names
     public static final String JMS_AMQP_TTL = "JMS_AMQP_TTL";
     public static final String JMS_AMQP_REPLY_TO_GROUP_ID = "JMS_AMQP_REPLY_TO_GROUP_ID";
+    public static final String JMS_AMQP_TYPED_ENCODING = "JMS_AMQP_TYPED_ENCODING";
 
     //Message Annotation Names
+    public static final String X_OPT_JMS_MSG_TYPE = "x-opt-jms-msg-type";
     public static final String X_OPT_APP_CORRELATION_ID = "x-opt-app-correlation-id";
     public static final String X_OPT_JMS_TYPE = "x-opt-jms-type";
 

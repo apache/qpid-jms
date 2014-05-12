@@ -23,6 +23,7 @@ import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_REPLY_TO_GROUP_
 import static org.apache.qpid.jms.impl.ClientProperties.JMSXUSERID;
 import static org.apache.qpid.jms.impl.ClientProperties.JMSXGROUPID;
 import static org.apache.qpid.jms.impl.ClientProperties.JMSXGROUPSEQ;
+import static org.apache.qpid.jms.impl.ClientProperties.JMS_AMQP_TYPED_ENCODING;
 import static org.apache.qpid.jms.impl.MessageIdHelper.JMS_ID_PREFIX;
 
 import java.io.UnsupportedEncodingException;
@@ -60,6 +61,12 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
      * if it is explicitly set by the application
      */
     private Long _propJMS_AMQP_TTL = null;
+
+    /**
+     * Used to record the value of JMS_AMQP_TYPED_ENCODING property
+     * if it is explicitly set by the application
+     */
+    private Boolean _propJMS_AMQP_TYPED_ENCODING = null;
 
     //message to be sent
     public MessageImpl(T amqpMessage, SessionImpl sessionImpl, ConnectionImpl connectionImpl)
@@ -248,6 +255,11 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
             setJMSXGroupSeq(value);
             return;
         }
+        else if(JMS_AMQP_TYPED_ENCODING.equals(name))
+        {
+            setJMS_AMQP_TYPED_ENCODING(value);
+            return;
+        }
 
         checkObjectPropertyValueIsValid(value);
 
@@ -351,6 +363,30 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         _amqpMessage.setReplyToGroupId(replyToGroupId);
     }
 
+    private void setJMS_AMQP_TYPED_ENCODING(Object value) throws MessageFormatException
+    {
+        Boolean amqpTypedEncoding = null;
+        if(value != null)
+        {
+            if(value instanceof Boolean)
+            {
+                amqpTypedEncoding = (Boolean) value;
+            }
+            else
+            {
+                throw new QpidJmsMessageFormatException(JMS_AMQP_TYPED_ENCODING + " must be a Boolean");
+            }
+        }
+
+        notifyChangeJMS_AMQP_TYPED_ENCODING(amqpTypedEncoding);
+        _propJMS_AMQP_TYPED_ENCODING = amqpTypedEncoding;
+    }
+
+    void notifyChangeJMS_AMQP_TYPED_ENCODING(Boolean value) throws QpidJmsMessageFormatException
+    {
+        throw new QpidJmsMessageFormatException(JMS_AMQP_TYPED_ENCODING + " is only applicable to ObjectMessage");
+    }
+
     private Object getApplicationProperty(String name) throws MessageFormatException
     {
         checkPropertyNameIsValid(name);
@@ -358,6 +394,10 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         if(JMS_AMQP_TTL.equals(name))
         {
             return _propJMS_AMQP_TTL;
+        }
+        if(JMS_AMQP_TYPED_ENCODING.equals(name))
+        {
+            return _propJMS_AMQP_TYPED_ENCODING;
         }
         else if(JMSXUSERID.equals(name))
         {
@@ -433,6 +473,11 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
     private boolean propertyExistsJMS_AMQP_TTL()
     {
         return _propJMS_AMQP_TTL != null;
+    }
+
+    private boolean propertyExistsJMS_AMQP_TYPED_ENCODING()
+    {
+        return _propJMS_AMQP_TYPED_ENCODING != null;
     }
 
     private boolean propertyExistsJMS_AMQP_REPLY_TO_GROUP_ID()
@@ -778,6 +823,11 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         _amqpMessage.setGroupSequence(null);
 
         //TODO: Clear any new custom properties.
+
+        //TODO: should this be the case?
+        //We explicitly don't clear _propJMS_AMQP_TYPED_ENCODING
+        //because it isn't really a property, just a flag to
+        //control/indicate the way the message will be output.
     }
 
     @Override
@@ -786,6 +836,11 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         if(JMS_AMQP_TTL.equals(name))
         {
             return propertyExistsJMS_AMQP_TTL();
+        }
+
+        if(JMS_AMQP_TYPED_ENCODING.equals(name))
+        {
+            return propertyExistsJMS_AMQP_TYPED_ENCODING();
         }
 
         if(JMS_AMQP_REPLY_TO_GROUP_ID.equals(name))
@@ -1021,6 +1076,11 @@ public abstract class MessageImpl<T extends AmqpMessage> implements Message
         if(propertyExistsJMS_AMQP_TTL())
         {
             propNames.add(JMS_AMQP_TTL);
+        }
+
+        if(propertyExistsJMS_AMQP_TYPED_ENCODING())
+        {
+            propNames.add(JMS_AMQP_TYPED_ENCODING);
         }
 
         if(propertyExistsJMS_AMQP_REPLY_TO_GROUP_ID())

@@ -42,7 +42,6 @@ import javax.jms.ObjectMessage;
 import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.jms.engine.AmqpConnection;
 import org.apache.qpid.jms.engine.AmqpObjectMessage;
-import org.apache.qpid.jms.engine.AmqpObjectMessage;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Data;

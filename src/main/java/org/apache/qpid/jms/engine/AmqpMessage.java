@@ -241,7 +241,7 @@ public abstract class AmqpMessage
             return false;
         }
 
-        return _messageAnnotationsMap.containsKey(Symbol.valueOf(keyName));
+        return _messageAnnotationsMap.containsKey(getAnnotationMapKeySymbol(keyName));
     }
 
     /**
@@ -255,7 +255,7 @@ public abstract class AmqpMessage
             return null;
         }
 
-        return _messageAnnotationsMap.get(Symbol.valueOf(keyName));
+        return _messageAnnotationsMap.get(getAnnotationMapKeySymbol(keyName));
     }
 
     public void clearMessageAnnotation(String keyName)
@@ -265,7 +265,7 @@ public abstract class AmqpMessage
             return;
         }
 
-        _messageAnnotationsMap.remove(Symbol.valueOf(keyName));
+        _messageAnnotationsMap.remove(getAnnotationMapKeySymbol(keyName));
     }
 
     /**
@@ -279,7 +279,13 @@ public abstract class AmqpMessage
             initializeUnderlyingMessageAnnotations();
         }
 
-        _messageAnnotationsMap.put(Symbol.valueOf(keyName), value);
+        _messageAnnotationsMap.put(getAnnotationMapKeySymbol(keyName), value);
+    }
+
+    private Symbol getAnnotationMapKeySymbol(String keyName)
+    {
+        //Message Annotations maps must use Symbol or ulong keys, with the latter currently reserved.
+        return Symbol.valueOf(keyName);
     }
 
     /**

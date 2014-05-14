@@ -228,8 +228,7 @@ public class SessionImpl implements Session
     @Override
     public MapMessage createMapMessage() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        return new MapMessageImpl(this, getConnectionImpl());
     }
 
     @Override

@@ -18,10 +18,12 @@
  */
 package org.apache.qpid.jms.engine;
 
-import java.util.HashMap;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.engine.Delivery;
@@ -67,7 +69,9 @@ public class AmqpMapMessage extends AmqpMessage
 
     private void initialiseMessageBodyMap()
     {
-        _messageBodyMap= new HashMap<String,Object>();
+        //Using LinkedHashMap because AMQP map equality considers order,
+        //so we should behave in as predictable a manner as possible
+        _messageBodyMap= new LinkedHashMap<String,Object>();
         getMessage().setBody(new AmqpValue(_messageBodyMap));
     }
 
@@ -84,25 +88,47 @@ public class AmqpMapMessage extends AmqpMessage
     /**
      * Associates the specified value with the specified key in this map message.
      *
-     * If a previous mapping for the key exists, the old value is replaced by the specified value and the old value is returned.
+     * If a previous mapping for the key exists, the old value is replaced by the specified value.
+     *
+     * To be clear, if the value provided is a byte[] then it is NOT copied and MUST NOT be subsequently altered.
+     *
      * @param key the key for the mapping
      * @param value the value for the mapping
-     * @return the old value if one exists for this key, or null if there was none.
      */
-    public Object setMapEntry(String key, Object value)
+    public void setMapEntry(String key, Object value)
     {
-        return _messageBodyMap.put(key, value);
+        Object entry = value;
+        if(value instanceof byte[])
+        {
+            entry = new Binary((byte[]) value);
+        }
+
+        _messageBodyMap.put(key, entry);
     }
 
     /**
      * Returns the value to which the specified key is mapped, or null if this map contains no mapping for the key.
+     *
+     * If the value being returned is a byte[], the array returned IS a copy.
      *
      * @param key the key for the mapping
      * @return the value if one exists for this key, or null if there was none.
      */
     public Object getMapEntry(String key)
     {
-        return _messageBodyMap.get(key);
+        Object object = _messageBodyMap.get(key);
+
+        if(object instanceof Binary)
+        {
+            //We will return a byte[]. It is possibly only part of the underlying array, copy that bit.
+            Binary bin = ((Binary) object);
+
+            return Arrays.copyOfRange(bin.getArray(), bin.getArrayOffset(), bin.getLength());
+        }
+        else
+        {
+            return object;
+        }
     }
 
     /**

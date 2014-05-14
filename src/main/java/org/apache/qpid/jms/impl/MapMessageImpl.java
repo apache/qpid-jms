@@ -30,13 +30,6 @@ import javax.jms.MessageNotWriteableException;
 
 import org.apache.qpid.jms.engine.AmqpMapMessage;
 
-/**
- * TODO
- *
- * NOTES:
- * Implement handling for byte[] in the map (e.g convert to/from Binary);
- *
- */
 public class MapMessageImpl extends MessageImpl<AmqpMapMessage> implements MapMessage
 {
     //message to be sent
@@ -54,8 +47,8 @@ public class MapMessageImpl extends MessageImpl<AmqpMapMessage> implements MapMe
     @Override
     protected AmqpMapMessage prepareUnderlyingAmqpMessageForSending(AmqpMapMessage amqpMessage)
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        //Currently nothing to do, we always operate directly on the underlying AmqpMapMessage.
+        return amqpMessage;
     }
 
     private void setMapEntry(String name, Object value) throws IllegalArgumentException, MessageNotWriteableException
@@ -167,7 +160,7 @@ public class MapMessageImpl extends MessageImpl<AmqpMapMessage> implements MapMe
     {
         Object value = getMapEntry(name);
 
-        if ((value instanceof Character)) //TODO: verify we dont get a Binary, push down impl to ensure we dont
+        if ((value instanceof Character))
         {
             return (char) value;
         }
@@ -290,7 +283,7 @@ public class MapMessageImpl extends MessageImpl<AmqpMapMessage> implements MapMe
         {
             return (String) value;
         }
-        else if (value instanceof byte[])//TODO: verify we dont get a Binary, push down impl to ensure we dont
+        else if (value instanceof byte[])
         {
             throw new MessageFormatException("Map entry " + name + " of type byte[] " + "cannot be converted to String.");
         }
@@ -305,7 +298,7 @@ public class MapMessageImpl extends MessageImpl<AmqpMapMessage> implements MapMe
     {
         Object value = getMapEntry(name);
 
-        if ((value instanceof byte[]) || (value == null)) //TODO: verify we dont get a Binary, push down impl to ensure we dont
+        if ((value instanceof byte[]) || (value == null))
         {
             return (byte[]) value;
         }
@@ -318,8 +311,6 @@ public class MapMessageImpl extends MessageImpl<AmqpMapMessage> implements MapMe
     @Override
     public Object getObject(String name) throws JMSException
     {
-        //TODO: verify what happens with byte[] for received messages
-        //(i.e does it return a Binary? if so, push impl down to ensure we get a byte[] instead)
         return getMapEntry(name);
     }
 
@@ -388,16 +379,32 @@ public class MapMessageImpl extends MessageImpl<AmqpMapMessage> implements MapMe
     @Override
     public void setBytes(String name, byte[] value) throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        int length = 0;
+        if(value != null)
+        {
+            length = value.length;
+        }
+
+        setBytes(name, value, 0, length);
     }
 
     @Override
     public void setBytes(String name, byte[] value, int offset, int length)
             throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        byte[] dest;
+
+        if(value == null)
+        {
+            dest = null;
+        }
+        else
+        {
+            dest = new byte[length];
+            System.arraycopy(value, offset, dest, 0, length);
+        }
+
+        setMapEntry(name, dest);
     }
 
     @Override

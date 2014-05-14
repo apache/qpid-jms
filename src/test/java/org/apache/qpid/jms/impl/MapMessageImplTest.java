@@ -22,10 +22,12 @@ package org.apache.qpid.jms.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -38,8 +40,11 @@ import javax.jms.MessageNotWriteableException;
 import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.jms.engine.AmqpConnection;
 import org.apache.qpid.jms.engine.AmqpMapMessage;
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.proton.Proton;
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
+import org.apache.qpid.proton.codec.impl.DataImpl;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.message.Message;
 import org.junit.Before;
@@ -63,6 +68,8 @@ public class MapMessageImplTest extends QpidJmsTestCase
         _mockSessionImpl = Mockito.mock(SessionImpl.class);
         Mockito.when(_mockSessionImpl.getDestinationHelper()).thenReturn(new DestinationHelper());
     }
+
+    // ======= general =========
 
     @Test
     public void testGetMapNamesWithNewMessageToSendReturnsEmptyEnumeration() throws Exception
@@ -204,6 +211,40 @@ public class MapMessageImplTest extends QpidJmsTestCase
     }
 
     /**
+     * When a map entry is not set, the behaviour of JMS specifies that it is equivalent to a null value,
+     * and the accessors should either return null, throw NPE, or behave in the same fashion as <primitive>.valueOf(String).
+     *
+     * Test that this is the case.
+     */
+    @Test
+    public void testGetMissingMapEntryResultsInExpectedBehaviour() throws Exception
+    {
+        MapMessageImpl mapMessageImpl = new MapMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        String name = "does_not_exist";
+
+        //expect null
+        assertNull(mapMessageImpl.getBytes(name));
+        assertNull(mapMessageImpl.getString(name));
+
+        //expect false from Boolean.valueOf(null).
+        assertFalse(mapMessageImpl.getBoolean(name));
+
+        //expect an NFE from the primitive integral <type>.valueOf(null) conversions
+        assertGetMapEntryThrowsNumberFormatException(mapMessageImpl, name, Byte.class);
+        assertGetMapEntryThrowsNumberFormatException(mapMessageImpl, name, Short.class);
+        assertGetMapEntryThrowsNumberFormatException(mapMessageImpl, name, Integer.class);
+        assertGetMapEntryThrowsNumberFormatException(mapMessageImpl, name, Long.class);
+
+        //expect an NPE from the primitive float, double, and char <type>.valuleOf(null) conversions
+        assertGetMapEntryThrowsNullPointerException(mapMessageImpl, name, Float.class);
+        assertGetMapEntryThrowsNullPointerException(mapMessageImpl, name, Double.class);
+        assertGetMapEntryThrowsNullPointerException(mapMessageImpl, name, Character.class);
+    }
+
+    // ======= object =========
+
+    /**
      * Test that the {@link MapMessageImpl#setObject(String, Object)} method rejects Objects of unexpected types
      */
     @Test
@@ -267,9 +308,11 @@ public class MapMessageImplTest extends QpidJmsTestCase
         mapMessageImpl.setObject(keyName, entryValue);
         assertEquals(entryValue, mapMessageImpl.getObject(keyName));
 
-        entryValue = new byte[] { (byte)1, (byte) 0, (byte)1};
-        mapMessageImpl.setObject(keyName, entryValue);
-        assertEquals(entryValue, mapMessageImpl.getObject(keyName));
+        byte[] bytes = new byte[] { (byte)1, (byte) 0, (byte)1};
+        mapMessageImpl.setObject(keyName, bytes);
+        Object retrieved = mapMessageImpl.getObject(keyName);
+        assertTrue(retrieved instanceof byte[]);
+        assertTrue(Arrays.equals(bytes, (byte[])retrieved));
     }
 
     // ======= Strings =========
@@ -618,6 +661,9 @@ public class MapMessageImplTest extends QpidJmsTestCase
 
     // ======= double  =========
 
+    /**
+     * Set a double, then retrieve it as all of the legal type combinations to verify it is parsed correctly
+     */
     @Test
     public void testSetDoubleGetLegal() throws Exception
     {
@@ -632,6 +678,9 @@ public class MapMessageImplTest extends QpidJmsTestCase
         assertGetMapEntryEquals(mapMessageImpl, name, String.valueOf(value), String.class);
     }
 
+    /**
+     * Set a double, then retrieve it as all of the illegal type combinations to verify it fails as expected
+     */
     @Test
     public void testSetDoubleGetIllegal() throws Exception
     {
@@ -654,6 +703,9 @@ public class MapMessageImplTest extends QpidJmsTestCase
 
     // ======= character =========
 
+    /**
+     * Set a char, then retrieve it as all of the legal type combinations to verify it is parsed correctly
+     */
     @Test
     public void testSetCharGetLegal() throws Exception
     {
@@ -668,6 +720,9 @@ public class MapMessageImplTest extends QpidJmsTestCase
         assertGetMapEntryEquals(mapMessageImpl, name, String.valueOf(value), String.class);
     }
 
+    /**
+     * Set a char, then retrieve it as all of the illegal type combinations to verify it fails as expected
+     */
     @Test
     public void testSetCharGetIllegal() throws Exception
     {
@@ -685,26 +740,174 @@ public class MapMessageImplTest extends QpidJmsTestCase
         assertGetMapEntryThrowsMessageFormatException(mapMessageImpl, name, Integer.class);
         assertGetMapEntryThrowsMessageFormatException(mapMessageImpl, name, Long.class);
         assertGetMapEntryThrowsMessageFormatException(mapMessageImpl, name, Float.class);
+        assertGetMapEntryThrowsMessageFormatException(mapMessageImpl, name, Double.class);
     }
 
+    //========= bytes ========
+
     /**
-     * Verify behaviour when retrieving a character with null value (i.e missing).
-     * Unlike all the other types, this should throw an explicit NPE.
+     * Set bytes, then retrieve it as all of the legal type combinations to verify it is parsed correctly
      */
     @Test
-    public void testGetCharWithMissingValueThrowsNPE() throws Exception
+    public void testSetBytesGetLegal() throws Exception
     {
         MapMessageImpl mapMessageImpl = new MapMessageImpl(_mockSessionImpl,_mockConnectionImpl);
 
-        try
-        {
-            mapMessageImpl.getChar("does.not.exist");
-            fail("expected exception to be thrown");
-        }
-        catch(NullPointerException npe)
-        {
-            //expected
-        }
+        String name = "myName";
+        byte[] value = "myBytes".getBytes();
+
+        mapMessageImpl.setBytes(name, value);
+        assertTrue(Arrays.equals(value, mapMessageImpl.getBytes(name)));
+    }
+
+    /**
+     * Set bytes, then retrieve it as all of the illegal type combinations to verify it fails as expected
+     */
+    @Test
+    public void testSetBytesGetIllegal() throws Exception
+    {
+        MapMessageImpl mapMessageImpl = new MapMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        String name = "myName";
+        byte[] value = "myBytes".getBytes();
+
+        mapMessageImpl.setBytes(name, value);
+
+        assertGetMapEntryThrowsMessageFormatException(mapMessageImpl, name, Character.class);
+        assertGetMapEntryThrowsMessageFormatException(mapMessageImpl, name, String.class);
+        assertGetMapEntryThrowsMessageFormatException(mapMessageImpl, name, Boolean.class);
+        assertGetMapEntryThrowsMessageFormatException(mapMessageImpl, name, Byte.class);
+        assertGetMapEntryThrowsMessageFormatException(mapMessageImpl, name, Short.class);
+        assertGetMapEntryThrowsMessageFormatException(mapMessageImpl, name, Integer.class);
+        assertGetMapEntryThrowsMessageFormatException(mapMessageImpl, name, Long.class);
+        assertGetMapEntryThrowsMessageFormatException(mapMessageImpl, name, Float.class);
+        assertGetMapEntryThrowsMessageFormatException(mapMessageImpl, name, Double.class);
+    }
+
+    /**
+     * Verify that for a message received with an AmqpValue containing a Map with a
+     * Binary entry value, we are able to read it back as a byte[].
+     */
+    @Test
+    public void testReceivedMapWithBinaryEntryReturnsByteArray() throws Exception
+    {
+        String myKey1 = "key1";
+        String bytesSource = "myBytesAmqpValue";
+
+        Map<String,Object> origMap = new HashMap<String,Object>();
+        byte[] bytes = bytesSource.getBytes();
+        origMap.put(myKey1, new Binary(bytes));
+
+        org.apache.qpid.proton.codec.Data payloadData = new DataImpl();
+        payloadData.putDescribedType(new AmqpValueDescribedType(origMap));
+        Binary b = payloadData.encode();
+
+        System.out.println("Using encoded AMQP message payload: " + b);
+
+        Message message = Proton.message();
+        int decoded = message.decode(b.getArray(), b.getArrayOffset(), b.getLength());
+        assertEquals(decoded, b.getLength());
+
+        AmqpMapMessage amqpMapMessage = new AmqpMapMessage(message, _mockDelivery, _mockAmqpConnection);
+
+        MapMessageImpl mapMessageImpl = new MapMessageImpl(amqpMapMessage, _mockSessionImpl,_mockConnectionImpl, null);
+
+        //retrieve the bytes using getBytes, check they match expectation
+        byte[] receivedBytes = mapMessageImpl.getBytes(myKey1);
+        assertTrue(Arrays.equals(bytes, receivedBytes));
+
+        //retrieve the bytes using getObject, check they match expectation
+        Object o = mapMessageImpl.getObject(myKey1);
+        assertTrue(o instanceof byte[]);
+        assertTrue(Arrays.equals(bytes, (byte[]) o));
+    }
+
+    /**
+     * Verify that setting bytes takes a copy of the array.
+     * Set bytes, then modify them, then retrieve the map entry and verify the two differ.
+     */
+    @Test
+    public void testSetBytesTakesSnapshot() throws Exception
+    {
+        MapMessageImpl mapMessageImpl = new MapMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        String name = "myName";
+        byte[] orig = "myBytes".getBytes();
+        byte[] copy = Arrays.copyOf(orig, orig.length);
+
+        //set the original bytes
+        mapMessageImpl.setBytes(name, orig);
+
+        //corrupt the original bytes
+        orig[0] = (byte)0;
+
+        //verify retrieving the bytes still matches the copy but not the original array
+        byte[] retrieved = mapMessageImpl.getBytes(name);
+        assertFalse(Arrays.equals(orig, retrieved));
+        assertTrue(Arrays.equals(copy, retrieved));
+    }
+
+    /**
+     * Verify that getting bytes returns a copy of the array.
+     * Set bytes, then get them, modify the retrieved value, then get them again and verify the two differ.
+     */
+    @Test
+    public void testGetBytesReturnsSnapshot() throws Exception
+    {
+        MapMessageImpl mapMessageImpl = new MapMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        String name = "myName";
+        byte[] orig = "myBytes".getBytes();
+
+        //set the original bytes
+        mapMessageImpl.setBytes(name, orig);
+
+        //retrieve them
+        byte[] retrieved1 = mapMessageImpl.getBytes(name);;
+
+        //corrupt the retrieved bytes
+        retrieved1[0] = (byte)0;
+
+        //verify retrieving the bytes again still matches the original array, but not the previously retrieved (and now corrupted) bytes.
+        byte[] retrieved2 = mapMessageImpl.getBytes(name);
+        assertTrue(Arrays.equals(orig, retrieved2));
+        assertFalse(Arrays.equals(retrieved1, retrieved2));
+    }
+
+    /**
+     * Verify that setting bytes takes a copy of the array.
+     * Set bytes, then modify them, then retrieve the map entry and verify the two differ.
+     */
+    @Test
+    public void testSetBytesWithOffsetAndLength() throws Exception
+    {
+        MapMessageImpl mapMessageImpl = new MapMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        String name = "myName";
+        byte[] orig = "myBytesAll".getBytes();
+
+        //extract the segment containing 'Bytes'
+        int offset = 2;
+        int length = 5;
+        byte[] segment = Arrays.copyOfRange(orig, offset, offset + length);
+
+        //set the same section from the original bytes
+        mapMessageImpl.setBytes(name, orig, offset, length);
+
+        //verify the retrieved bytes from the map match the segment but not the full original array
+        byte[] retrieved = mapMessageImpl.getBytes(name);
+        assertFalse(Arrays.equals(orig, retrieved));
+        assertTrue(Arrays.equals(segment, retrieved));
+    }
+
+    @Test
+    public void testSetBytesWithNull() throws Exception
+    {
+        MapMessageImpl mapMessageImpl = new MapMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        String name = "myName";
+        mapMessageImpl.setBytes(name, null);
+        assertNull(mapMessageImpl.getBytes(name));
     }
 
     //========= utility methods ========
@@ -728,6 +931,38 @@ public class MapMessageImplTest extends QpidJmsTestCase
             fail("expected exception to be thrown");
         }
         catch(MessageFormatException jmsMFE)
+        {
+            //expected
+        }
+    }
+
+    private void assertGetMapEntryThrowsNumberFormatException(MapMessageImpl testMessage,
+                                                              String name,
+                                                              Class<?> clazz) throws JMSException
+    {
+        try
+        {
+            getMapEntryUsingTypeMethod(testMessage, name, clazz);
+
+            fail("expected exception to be thrown");
+        }
+        catch(NumberFormatException nfe)
+        {
+            //expected
+        }
+    }
+
+    private void assertGetMapEntryThrowsNullPointerException(MapMessageImpl testMessage,
+                                                            String name,
+                                                            Class<?> clazz) throws JMSException
+    {
+        try
+        {
+            getMapEntryUsingTypeMethod(testMessage, name, clazz);
+
+            fail("expected exception to be thrown");
+        }
+        catch(NullPointerException npe)
         {
             //expected
         }

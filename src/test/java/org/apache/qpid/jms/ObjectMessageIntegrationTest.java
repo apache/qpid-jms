@@ -37,7 +37,6 @@ import javax.jms.Session;
 
 import org.apache.qpid.jms.engine.AmqpObjectMessageSerializedDelegate;
 import org.apache.qpid.jms.impl.ClientProperties;
-import org.apache.qpid.jms.impl.ObjectMessageImpl;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.DataDescribedType;
@@ -52,7 +51,6 @@ import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedDataMatcher;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
-import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.junit.Test;
 
 public class ObjectMessageIntegrationTest extends QpidJmsTestCase
@@ -85,6 +83,7 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
 
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            msgAnnotationsMatcher.withEntry(Symbol.valueOf(ClientProperties.X_OPT_JMS_MSG_TYPE), equalTo(ClientProperties.OBJECT_MESSSAGE_TYPE));
             MessagePropertiesSectionMatcher propertiesMatcher = new MessagePropertiesSectionMatcher(true);
             propertiesMatcher.withContentType(equalTo(Symbol.valueOf(AmqpObjectMessageSerializedDelegate.CONTENT_TYPE)));
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
@@ -129,10 +128,13 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
             oos.close();
             byte[] bytes = baos.toByteArray();
 
+            MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
+            msgAnnotations.setSymbolKeyedAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE, ClientProperties.OBJECT_MESSSAGE_TYPE);
+
             DescribedType dataContent = new DataDescribedType(new Binary(bytes));
 
             testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlowRespondWithTransfer(null, null, properties, null, dataContent);
+            testPeer.expectLinkFlowRespondWithTransfer(null, msgAnnotations, properties, null, dataContent);
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
@@ -150,7 +152,7 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
     }
 
     @Test
-    public void testRecieveAndThenResendBasicObjectMessageWithSerializedContent() throws Exception
+    public void testReceiveAndThenResendBasicObjectMessageWithSerializedContent() throws Exception
     {
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
         {
@@ -162,6 +164,8 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
+            MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
+            msgAnnotations.setSymbolKeyedAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE, ClientProperties.OBJECT_MESSSAGE_TYPE);
             PropertiesDescribedType properties = new PropertiesDescribedType();
             properties.setContentType(Symbol.valueOf(AmqpObjectMessageSerializedDelegate.CONTENT_TYPE));
 
@@ -177,7 +181,7 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
             DescribedType dataContent = new DataDescribedType(new Binary(bytes));
 
             testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlowRespondWithTransfer(null, null, properties, null, dataContent);
+            testPeer.expectLinkFlowRespondWithTransfer(null, msgAnnotations, properties, null, dataContent);
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
@@ -192,6 +196,7 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
 
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            msgAnnotationsMatcher.withEntry(Symbol.valueOf(ClientProperties.X_OPT_JMS_MSG_TYPE), equalTo(ClientProperties.OBJECT_MESSSAGE_TYPE));
             MessagePropertiesSectionMatcher propertiesMatcher = new MessagePropertiesSectionMatcher(true);
             propertiesMatcher.withContentType(equalTo(Symbol.valueOf(AmqpObjectMessageSerializedDelegate.CONTENT_TYPE)));
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
@@ -228,6 +233,7 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
 
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            msgAnnotationsMatcher.withEntry(Symbol.valueOf(ClientProperties.X_OPT_JMS_MSG_TYPE), equalTo(ClientProperties.OBJECT_MESSSAGE_TYPE));
             MessagePropertiesSectionMatcher propertiesMatcher = new MessagePropertiesSectionMatcher(true);
             //TODO: fix this, shouldn't be true for AMQP typed messages (unless they use a Data section)
             propertiesMatcher.withContentType(equalTo(Symbol.valueOf(AmqpObjectMessageSerializedDelegate.CONTENT_TYPE)));
@@ -263,7 +269,7 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
             Queue queue = session.createQueue("myQueue");
 
             MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
-            msgAnnotations.setSymbolKeyedAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE, UnsignedByte.valueOf(ObjectMessageImpl.X_OPT_JMS_MSG_TYPE_VALUE));
+            msgAnnotations.setSymbolKeyedAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE, ClientProperties.OBJECT_MESSSAGE_TYPE);
 
             HashMap<String,String> map = new HashMap<String,String>();
             map.put("key", "myObjectString");

@@ -30,11 +30,6 @@ import org.apache.qpid.jms.engine.AmqpObjectMessage;
 
 public class ObjectMessageImpl extends MessageImpl<AmqpObjectMessage> implements ObjectMessage
 {
-    /**
-     * Value used for the X_OPT_JMS_MSG_TYPE message annotation to indicate an ObjectMessage
-     */
-    public static final byte X_OPT_JMS_MSG_TYPE_VALUE = 1;
-
     //TODO: add a way of controlling this: per connection and client wide?
     private Boolean _defaultUseAmqpTypeEncoding = false;
 

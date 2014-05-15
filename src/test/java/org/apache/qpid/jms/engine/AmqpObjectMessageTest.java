@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
+import org.apache.qpid.jms.impl.ClientProperties;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
@@ -61,6 +62,14 @@ public class AmqpObjectMessageTest extends QpidJmsTestCase
     }
 
     @Test
+    public void testNewMessageToSendContainsMessageTypeAnnotation() throws Exception
+    {
+        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage();
+        assertTrue("expected message type annotation to be present", amqpSerializedObjectMessage.messageAnnotationExists(ClientProperties.X_OPT_JMS_MSG_TYPE));
+        assertEquals("unexpected value for message type annotation value", ClientProperties.OBJECT_MESSSAGE_TYPE, amqpSerializedObjectMessage.getMessageAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE));
+    }
+
+    @Test
     public void testGetObjectWithNewMessageToSendReturnsNull() throws Exception
     {
         AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage();
@@ -72,7 +81,7 @@ public class AmqpObjectMessageTest extends QpidJmsTestCase
     public void testGetObjectUsingReceivedMessageWithNoBodySectionReturnsNull() throws Exception
     {
         Message message = Proton.message();
-        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(_mockDelivery, message, _mockAmqpConnection, false);
+        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(message, _mockDelivery, _mockAmqpConnection, false);
 
         assertNull("Expected null object", amqpSerializedObjectMessage.getObject());
     }
@@ -83,7 +92,7 @@ public class AmqpObjectMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setBody(new Data(null));
 
-        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(_mockDelivery, message, _mockAmqpConnection, false);
+        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(message, _mockDelivery, _mockAmqpConnection, false);
 
         assertNull("Expected null object", amqpSerializedObjectMessage.getObject());
     }
@@ -94,7 +103,7 @@ public class AmqpObjectMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setBody(new AmqpValue("doesntMatter"));
 
-        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(_mockDelivery, message, _mockAmqpConnection, false);
+        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(message, _mockDelivery, _mockAmqpConnection, false);
 
         try
         {
@@ -142,7 +151,7 @@ public class AmqpObjectMessageTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setBody(new Data(new Binary(new byte[0])));
 
-        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(_mockDelivery, message, _mockAmqpConnection, false);
+        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(message, _mockDelivery, _mockAmqpConnection, false);
 
         assertNotNull("Expected existing body section to be found", message.getBody());
         amqpSerializedObjectMessage.setObject(null);

@@ -18,15 +18,14 @@
  */
 package org.apache.qpid.jms.engine;
 
-import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.jms.impl.ClientProperties;
-import org.apache.qpid.jms.impl.ObjectMessageImpl;
 import org.apache.qpid.proton.amqp.Binary;
-import org.apache.qpid.proton.amqp.UnsignedByte;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
+import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.message.Message;
@@ -37,28 +36,36 @@ public class AmqpMessageFactory
     {
         Section body = message.getBody();
 
-        //TODO: This is a temporary hack, need to implement proper support for the new
-        //message type annotation by generally rewriting the entire factory method
-        AmqpGenericMessage msg = new AmqpGenericMessage(delivery, message, amqpConnection);
-        if(msg.messageAnnotationExists(ClientProperties.X_OPT_JMS_MSG_TYPE))
+        Byte msgType = getMessageTypeAnnotation(message);
+        if(msgType != null)
         {
-            UnsignedByte ub = (UnsignedByte) msg.getMessageAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE);
-            if(ub.shortValue() == ObjectMessageImpl.X_OPT_JMS_MSG_TYPE_VALUE)
+            switch(msgType)
             {
-                boolean isJavaSerialized = isContentType(AmqpObjectMessageSerializedDelegate.CONTENT_TYPE, message);
-                return new AmqpObjectMessage(delivery, message, amqpConnection, !isJavaSerialized);
+                case ClientProperties.GENERIC_MESSAGE_TYPE:
+                    return new AmqpGenericMessage(delivery, message, amqpConnection);
+                case ClientProperties.OBJECT_MESSSAGE_TYPE:
+                    boolean isJavaSerialized = isContentType(AmqpObjectMessageSerializedDelegate.CONTENT_TYPE, message);
+                    return new AmqpObjectMessage(message, delivery, amqpConnection, !isJavaSerialized);
+                case ClientProperties.MAP_MESSAGE_TYPE:
+                    return new AmqpMapMessage(message, delivery, amqpConnection);
+                case ClientProperties.TEXT_MESSAGE_TYPE:
+                    return new AmqpTextMessage(message, delivery, amqpConnection);
+                case ClientProperties.BYTES_MESSAGE_TYPE:
+                    return new AmqpBytesMessage(message, delivery, amqpConnection);
+                case ClientProperties.STREAM_MESSAGE_TYPE:
+                    return new AmqpListMessage(message, delivery, amqpConnection);
             }
         }
-
-        if(body == null)
+        else if(body == null)
         {
+            //TODO: accept textual content types other than strictly "text/plain"
             if(isContentType(AmqpTextMessage.CONTENT_TYPE, message))
             {
                 return new AmqpTextMessage(message, delivery, amqpConnection);
             }
             else if(isContentType(AmqpObjectMessageSerializedDelegate.CONTENT_TYPE, message))
             {
-                return new AmqpObjectMessage(delivery, message, amqpConnection, false);
+                return new AmqpObjectMessage(message, delivery, amqpConnection, false);
             }
             else if(isContentType(AmqpBytesMessage.CONTENT_TYPE, message) || isContentType(null, message))
             {
@@ -67,6 +74,7 @@ public class AmqpMessageFactory
         }
         else if(body instanceof Data)
         {
+            //TODO: accept textual content types other than strictly "text/plain"
             if(isContentType(AmqpTextMessage.CONTENT_TYPE, message))
             {
                 return new AmqpTextMessage(message, delivery, amqpConnection);
@@ -77,8 +85,11 @@ public class AmqpMessageFactory
             }
             else if(isContentType(AmqpObjectMessageSerializedDelegate.CONTENT_TYPE, message))
             {
-                return new AmqpObjectMessage(delivery, message, amqpConnection, false);
+                return new AmqpObjectMessage(message, delivery, amqpConnection, false);
             }
+
+            //TODO: should this situation throw an exception, or just become a bytes message?
+            //Content type is set, but not to something we understand. Falling through to create a generic message.
         }
         else if(body instanceof AmqpValue)
         {
@@ -88,17 +99,13 @@ public class AmqpMessageFactory
             {
                 return new AmqpTextMessage(message, delivery, amqpConnection);
             }
-            else if(value instanceof Map)
-            {
-                return new AmqpMapMessage(message, delivery, amqpConnection);
-            }
-            else if(value instanceof List)
-            {
-                return new AmqpListMessage(delivery, message, amqpConnection);
-            }
             else if(value instanceof Binary)
             {
                 return new AmqpBytesMessage(message, delivery, amqpConnection);
+            }
+            else
+            {
+                return new AmqpObjectMessage(message, delivery, amqpConnection, true);
             }
         }
         else
@@ -106,11 +113,11 @@ public class AmqpMessageFactory
             //TODO: AmqpSequence support
         }
 
-        //Unable to determine a specific message type, return the generic message
+        //TODO: Unable to determine a specific message type, return the generic message
         return new AmqpGenericMessage(delivery, message, amqpConnection);
     }
 
-    private boolean isContentType(String contentType, Message message)
+    private static boolean isContentType(String contentType, Message message)
     {
         if(contentType == null)
         {
@@ -120,5 +127,22 @@ public class AmqpMessageFactory
         {
             return contentType.equals(message.getContentType());
         }
+    }
+
+    private static Byte getMessageTypeAnnotation(Message msg)
+    {
+        MessageAnnotations messageAnnotations = msg.getMessageAnnotations();
+        if(messageAnnotations != null)
+        {
+            Map<?,?> messageAnnotationsMap = messageAnnotations.getValue();
+            if(messageAnnotationsMap != null)
+            {
+                Symbol annotationKey = Symbol.valueOf(ClientProperties.X_OPT_JMS_MSG_TYPE);
+
+                return (Byte) messageAnnotationsMap.get(annotationKey);
+            }
+        }
+
+        return null;
     }
 }

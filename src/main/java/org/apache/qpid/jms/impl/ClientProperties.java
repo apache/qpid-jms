@@ -37,6 +37,15 @@ public class ClientProperties
     public static final String X_OPT_APP_CORRELATION_ID = "x-opt-app-correlation-id";
     public static final String X_OPT_JMS_TYPE = "x-opt-jms-type";
 
+    //Message Annotation Values
+    //X_OPT_JMS_MSG_TYPE
+    public static final byte GENERIC_MESSAGE_TYPE = 0;
+    public static final byte OBJECT_MESSSAGE_TYPE = 1;
+    public static final byte MAP_MESSAGE_TYPE = 2;
+    public static final byte BYTES_MESSAGE_TYPE = 3;
+    public static final byte STREAM_MESSAGE_TYPE = 4;
+    public static final byte TEXT_MESSAGE_TYPE = 5;
+
     //Client configuration System Property names
     public static final String QPID_SET_JMSXUSERID_ON_SEND = "qpid.set-jmsxuserid-on-send";
 }

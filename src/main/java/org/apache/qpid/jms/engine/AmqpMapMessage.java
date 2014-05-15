@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.qpid.jms.impl.ClientProperties;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Section;
@@ -37,6 +38,7 @@ public class AmqpMapMessage extends AmqpMessage
     {
         super();
         initialiseMessageBodyMap();
+        setMessageAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE, ClientProperties.MAP_MESSAGE_TYPE);
     }
 
     @SuppressWarnings("unchecked")

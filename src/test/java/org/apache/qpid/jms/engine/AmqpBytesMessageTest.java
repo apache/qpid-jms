@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
+import org.apache.qpid.jms.impl.ClientProperties;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
@@ -58,6 +59,14 @@ public class AmqpBytesMessageTest extends QpidJmsTestCase
         super.setUp();
         _mockAmqpConnection = Mockito.mock(AmqpConnection.class);
         _mockDelivery = Mockito.mock(Delivery.class);
+    }
+
+    @Test
+    public void testNewMessageToSendContainsMessageTypeAnnotation() throws Exception
+    {
+        AmqpBytesMessage amqpBytesMessage = new AmqpBytesMessage();
+        assertTrue("expected message type annotation to be present", amqpBytesMessage.messageAnnotationExists(ClientProperties.X_OPT_JMS_MSG_TYPE));
+        assertEquals("unexpected value for message type annotation value", ClientProperties.BYTES_MESSAGE_TYPE, amqpBytesMessage.getMessageAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE));
     }
 
     @Test

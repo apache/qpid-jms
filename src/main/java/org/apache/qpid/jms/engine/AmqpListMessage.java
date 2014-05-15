@@ -28,7 +28,7 @@ public class AmqpListMessage extends AmqpMessage
         super();
     }
 
-    public AmqpListMessage(Delivery delivery, Message message, AmqpConnection amqpConnection)
+    public AmqpListMessage(Message message, Delivery delivery, AmqpConnection amqpConnection)
     {
         super(message, delivery, amqpConnection);
     }

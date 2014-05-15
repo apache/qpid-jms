@@ -87,7 +87,7 @@ public class ObjectMessageImplTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setBody(new Data(new Binary(bytes)));
 
-        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(_mockDelivery, message, _mockAmqpConnection, false);
+        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(message, _mockDelivery, _mockAmqpConnection, false);
         ObjectMessageImpl objectMessageImpl = new ObjectMessageImpl(amqpSerializedObjectMessage, _mockSessionImpl,_mockConnectionImpl, null);
 
         try
@@ -119,7 +119,7 @@ public class ObjectMessageImplTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setBody(new Data(new Binary(bytes)));
 
-        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(_mockDelivery, message, _mockAmqpConnection, false);
+        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(message, _mockDelivery, _mockAmqpConnection, false);
         ObjectMessageImpl objectMessageImpl = new ObjectMessageImpl(amqpSerializedObjectMessage, _mockSessionImpl,_mockConnectionImpl, null);
 
         assertFalse("Message should not be writable", objectMessageImpl.isBodyWritable());
@@ -147,7 +147,7 @@ public class ObjectMessageImplTest extends QpidJmsTestCase
         Message message = Proton.message();
         message.setBody(new Data(new Binary(bytes)));
 
-        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(_mockDelivery, message, _mockAmqpConnection, false);
+        AmqpObjectMessage amqpSerializedObjectMessage = new AmqpObjectMessage(message, _mockDelivery, _mockAmqpConnection, false);
         ObjectMessageImpl objectMessageImpl = new ObjectMessageImpl(amqpSerializedObjectMessage, _mockSessionImpl,_mockConnectionImpl, null);
 
         assertNotNull("Expected body section but none was present", message.getBody());

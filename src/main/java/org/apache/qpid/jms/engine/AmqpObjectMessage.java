@@ -23,6 +23,7 @@ package org.apache.qpid.jms.engine;
 import java.io.IOException;
 import java.io.Serializable;
 
+import org.apache.qpid.jms.impl.ClientProperties;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.message.Message;
 
@@ -35,10 +36,11 @@ public class AmqpObjectMessage extends AmqpMessage
     {
         super();
         setContentType(AmqpObjectMessageSerializedDelegate.CONTENT_TYPE);
+        setMessageAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE, ClientProperties.OBJECT_MESSSAGE_TYPE);
         initDelegate(false);
     }
 
-    public AmqpObjectMessage(Delivery delivery, Message message, AmqpConnection amqpConnection, boolean useAmqpTypes)
+    public AmqpObjectMessage(Message message, Delivery delivery, AmqpConnection amqpConnection, boolean useAmqpTypes)
     {
         super(message, delivery, amqpConnection);
 

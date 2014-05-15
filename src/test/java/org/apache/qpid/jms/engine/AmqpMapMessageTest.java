@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
+import org.apache.qpid.jms.impl.ClientProperties;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
@@ -59,6 +60,14 @@ public class AmqpMapMessageTest extends QpidJmsTestCase
         AmqpMapMessage amqpMapMessage = new AmqpMapMessage();
         assertTrue(amqpMapMessage.getMessage().getBody() instanceof AmqpValue);
         assertTrue(((AmqpValue)amqpMapMessage.getMessage().getBody()).getValue() instanceof Map<?,?>);
+    }
+
+    @Test
+    public void testNewMessageToSendContainsMessageTypeAnnotation() throws Exception
+    {
+        AmqpMapMessage amqpMapMessage = new AmqpMapMessage();
+        assertTrue("expected message type annotation to be present", amqpMapMessage.messageAnnotationExists(ClientProperties.X_OPT_JMS_MSG_TYPE));
+        assertEquals("unexpected value for message type annotation value", ClientProperties.MAP_MESSAGE_TYPE, amqpMapMessage.getMessageAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE));
     }
 
     @Test

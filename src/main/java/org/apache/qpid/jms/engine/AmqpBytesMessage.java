@@ -21,6 +21,7 @@ package org.apache.qpid.jms.engine;
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 
+import org.apache.qpid.jms.impl.ClientProperties;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
@@ -38,6 +39,7 @@ public class AmqpBytesMessage extends AmqpMessage
     {
         super();
         setContentType(CONTENT_TYPE);
+        setMessageAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE, ClientProperties.BYTES_MESSAGE_TYPE);
     }
 
     //message just received
@@ -172,6 +174,10 @@ public class AmqpBytesMessage extends AmqpMessage
             {
                 throw new IllegalStateException("Unexpected amqp-value body content type: " + value.getClass().getSimpleName());
             }
+
+            //ensure content type is set, and message type annotation is set
+            setContentType(AmqpBytesMessage.CONTENT_TYPE);
+            setMessageAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE, ClientProperties.BYTES_MESSAGE_TYPE);
         }
         else
         {

@@ -36,9 +36,11 @@ import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.engine.AmqpBytesMessage;
+import org.apache.qpid.jms.impl.ClientProperties;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.DataDescribedType;
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.MessageAnnotationsDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
@@ -71,6 +73,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase
 
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            msgAnnotationsMatcher.withEntry(Symbol.valueOf(ClientProperties.X_OPT_JMS_MSG_TYPE), equalTo(ClientProperties.BYTES_MESSAGE_TYPE));
             MessagePropertiesSectionMatcher propertiesMatcher = new MessagePropertiesSectionMatcher(true);
             propertiesMatcher.withContentType(equalTo(Symbol.valueOf(AmqpBytesMessage.CONTENT_TYPE)));
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
@@ -104,11 +107,14 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase
             PropertiesDescribedType properties = new PropertiesDescribedType();
             properties.setContentType(Symbol.valueOf(AmqpBytesMessage.CONTENT_TYPE));
 
+            MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
+            msgAnnotations.setSymbolKeyedAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE, ClientProperties.BYTES_MESSAGE_TYPE);
+
             final byte[] expectedContent = "expectedContent".getBytes();
             DescribedType dataContent = new DataDescribedType(new Binary(expectedContent));
 
             testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlowRespondWithTransfer(null, null, properties, null, dataContent);
+            testPeer.expectLinkFlowRespondWithTransfer(null, msgAnnotations, properties, null, dataContent);
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
@@ -152,6 +158,9 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase
             Symbol contentType = Symbol.valueOf(AmqpBytesMessage.CONTENT_TYPE);
             properties.setContentType(contentType);
 
+            MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
+            msgAnnotations.setSymbolKeyedAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE, ClientProperties.BYTES_MESSAGE_TYPE);
+
             boolean myBool = true;
             byte myByte = 4;
             byte[] myBytes = "myBytes".getBytes();
@@ -183,7 +192,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase
 
             //receive the message from the test peer
             testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlowRespondWithTransfer(null, null, properties, null, dataSectionContent);
+            testPeer.expectLinkFlowRespondWithTransfer(null, msgAnnotations, properties, null, dataSectionContent);
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
@@ -254,7 +263,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase
 
             //Prepare an AMQP message for the test peer to send, containing an amqp-value
             //body section populated with expected bytes for use as a JMS BytesMessage,
-            //and do not set content type
+            //and do not set content type, or the message type annotation
 
             boolean myBool = true;
             byte myByte = 4;
@@ -323,6 +332,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase
 
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            msgAnnotationsMatcher.withEntry(Symbol.valueOf(ClientProperties.X_OPT_JMS_MSG_TYPE), equalTo(ClientProperties.BYTES_MESSAGE_TYPE));
             MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true);
             propsMatcher.withContentType(equalTo(Symbol.valueOf(AmqpBytesMessage.CONTENT_TYPE)));
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();

@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,25 +16,32 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
 package org.apache.qpid.jms.engine;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.jms.impl.ClientProperties;
-import org.apache.qpid.proton.engine.Delivery;
-import org.apache.qpid.proton.message.Message;
+import org.junit.Before;
+import org.junit.Test;
 
-public class AmqpGenericMessage extends AmqpMessage
+public class AmqpGenericMessageTest extends QpidJmsTestCase
 {
-    public AmqpGenericMessage()
+    @Before
+    @Override
+    public void setUp() throws Exception
     {
-        super();
-        setMessageAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE, ClientProperties.GENERIC_MESSAGE_TYPE);
+        super.setUp();
     }
 
-    public AmqpGenericMessage(Delivery delivery, Message message, AmqpConnection amqpConnection)
+    @Test
+    public void testNewMessageToSendContainsMessageTypeAnnotation() throws Exception
     {
-        super(message, delivery, amqpConnection);
+        AmqpGenericMessage amqpMessage = new AmqpGenericMessage();
+        assertTrue("expected message type annotation to be present", amqpMessage.messageAnnotationExists(ClientProperties.X_OPT_JMS_MSG_TYPE));
+        assertEquals("unexpected value for message type annotation value", ClientProperties.GENERIC_MESSAGE_TYPE, amqpMessage.getMessageAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE));
     }
-
-    //TODO: add some methods to access the body in some fashion?
 }

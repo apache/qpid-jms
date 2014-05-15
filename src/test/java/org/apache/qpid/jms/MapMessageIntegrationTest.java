@@ -35,8 +35,10 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
+import org.apache.qpid.jms.impl.ClientProperties;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.MessageAnnotationsDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSectionMatcher;
@@ -44,6 +46,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompos
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.junit.Test;
 
 public class MapMessageIntegrationTest extends QpidJmsTestCase
@@ -69,8 +72,8 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase
             Queue queue = session.createQueue("myQueue");
 
             //Prepare an AMQP message for the test peer to send, containing an
-            //AmqpValue section holding a map with entries for each supported type.
-            //with each supported type of entry
+            //AmqpValue section holding a map with entries for each supported type,
+            //and annotated as a JMS map message.
             String myBoolKey = "myBool";
             boolean myBool = true;
             String myByteKey = "myByte";
@@ -104,11 +107,14 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase
             map.put(myShortKey, myShort);
             map.put(myStringKey, myString);
 
+            MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
+            msgAnnotations.setSymbolKeyedAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE, ClientProperties.MAP_MESSAGE_TYPE);
+
             DescribedType amqpValueSectionContent = new AmqpValueDescribedType(map);
 
             //receive the message from the test peer
             testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueSectionContent);
+            testPeer.expectLinkFlowRespondWithTransfer(null, msgAnnotations, null, null, amqpValueSectionContent);
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
@@ -117,7 +123,7 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase
 
             //verify the content is as expected
             assertNotNull("Message was not received", receivedMessage);
-            assertTrue("Message was not a BytesMessage", receivedMessage instanceof MapMessage);
+            assertTrue("Message was not a MapMessage", receivedMessage instanceof MapMessage);
             MapMessage receivedMapMessage  = (MapMessage) receivedMessage;
 
             assertEquals("Unexpected boolean value", myBool, receivedMapMessage.getBoolean(myBoolKey));
@@ -242,6 +248,7 @@ index 808d43e..6cdf84c 100644
 
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            msgAnnotationsMatcher.withEntry(Symbol.valueOf(ClientProperties.X_OPT_JMS_MSG_TYPE), equalTo(ClientProperties.MAP_MESSAGE_TYPE));
             MessagePropertiesSectionMatcher propertiesMatcher = new MessagePropertiesSectionMatcher(true);
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);

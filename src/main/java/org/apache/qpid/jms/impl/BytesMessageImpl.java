@@ -71,9 +71,6 @@ public class BytesMessageImpl extends MessageImpl<AmqpBytesMessage> implements B
             amqpMessage.convertBodyToDataSectionIfNecessary();
         }
 
-        //ensure content type is set
-        amqpMessage.setContentType(AmqpBytesMessage.CONTENT_TYPE);
-
         return amqpMessage;
     }
 

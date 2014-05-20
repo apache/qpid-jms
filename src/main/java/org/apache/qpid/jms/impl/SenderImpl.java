@@ -69,6 +69,8 @@ public class SenderImpl extends LinkImpl implements MessageProducer
             //set the timestamp
             message.setJMSTimestamp(timestamp);
 
+            //TODO: set the JMSDeliveryTime value (once implementing JMS 2.0 methods)
+
             //set the Destination
             message.setJMSDestination(_destination);
 

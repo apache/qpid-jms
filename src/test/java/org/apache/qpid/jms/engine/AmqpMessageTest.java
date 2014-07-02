@@ -1287,7 +1287,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
 
         Message message = Proton.message();
 
-        Map<Object,Object> annotationsMap = new HashMap<Object,Object>();
+        Map<Symbol,Object> annotationsMap = new HashMap<Symbol,Object>();
         annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
         message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
 
@@ -1317,7 +1317,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
 
         Message message = Proton.message();
 
-        Map<Object,Object> annotationsMap = new HashMap<Object,Object>();
+        Map<Symbol,Object> annotationsMap = new HashMap<Symbol,Object>();
         annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
         message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
 
@@ -1371,7 +1371,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
 
         Message message = Proton.message();
 
-        Map<Object,Object> annotationsMap = new HashMap<Object,Object>();
+        Map<Symbol,Object> annotationsMap = new HashMap<Symbol,Object>();
         annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
         message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
 
@@ -1414,7 +1414,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
 
         Message message = Proton.message();
 
-        Map<Object,Object> annotationsMap = new HashMap<Object,Object>();
+        Map<Symbol,Object> annotationsMap = new HashMap<Symbol,Object>();
         annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
         message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
 
@@ -1444,7 +1444,7 @@ public class AmqpMessageTest extends QpidJmsTestCase
 
         Message message = Proton.message();
 
-        Map<Object,Object> annotationsMap = new HashMap<Object,Object>();
+        Map<Symbol,Object> annotationsMap = new HashMap<Symbol,Object>();
         annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
         annotationsMap.put(Symbol.valueOf(symbolKeyName2), value);
         message.setMessageAnnotations(new MessageAnnotations(annotationsMap));

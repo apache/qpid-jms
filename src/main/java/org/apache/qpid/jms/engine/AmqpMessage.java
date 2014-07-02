@@ -51,7 +51,7 @@ public abstract class AmqpMessage
     private final AmqpConnection _amqpConnection;
 
     private volatile MessageAnnotations _messageAnnotations;
-    private volatile Map<Object,Object> _messageAnnotationsMap;
+    private volatile Map<Symbol,Object> _messageAnnotationsMap;
 
     private volatile Map<String,Object> _applicationPropertiesMap;
 
@@ -316,7 +316,7 @@ public abstract class AmqpMessage
 
     private void initializeUnderlyingMessageAnnotations()
     {
-        _messageAnnotationsMap = new HashMap<Object,Object>();
+        _messageAnnotationsMap = new HashMap<Symbol,Object>();
         _messageAnnotations = new MessageAnnotations(_messageAnnotationsMap);
         _message.setMessageAnnotations(_messageAnnotations);
     }

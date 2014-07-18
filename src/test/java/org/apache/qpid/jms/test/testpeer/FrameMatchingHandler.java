@@ -70,7 +70,7 @@ abstract class FrameMatchingHandler implements FrameHandler
     public void frame(int type, int ch, DescribedType dt, Binary payload, TestAmqpPeer peer)
     {
         if(type == _frameType.ordinal()
-           && (_expectedChannel == -1 || _expectedChannel == ch)
+           && (_expectedChannel == ANY_CHANNEL || _expectedChannel == ch)
            && (_numericDescriptor.equals(dt.getDescriptor()) || _symbolicDescriptor.equals(dt.getDescriptor()))
            && (dt.getDescribed() instanceof List))
         {
@@ -84,9 +84,14 @@ abstract class FrameMatchingHandler implements FrameHandler
                     "Frame was not as expected. Expected: " +
                     "type=%s, channel=%s, descriptor=%s/%s but got: " +
                     "type=%s, channel=%s, descriptor=%s",
-                    _frameType.ordinal(), _expectedChannel, _symbolicDescriptor, _numericDescriptor,
+                    _frameType.ordinal(), expectedChannelString(), _symbolicDescriptor, _numericDescriptor,
                     type, ch, dt.getDescriptor()));
         }
+    }
+
+    private String expectedChannelString()
+    {
+        return _expectedChannel == ANY_CHANNEL ? "<any>" : String.valueOf(_expectedChannel);
     }
 
     private void succeeded()
@@ -135,7 +140,7 @@ abstract class FrameMatchingHandler implements FrameHandler
     public String toString()
     {
         return "FrameMatchingHandler [_symbolicDescriptor=" + _symbolicDescriptor
-                + ", _expectedChannel=" + (_expectedChannel == ANY_CHANNEL ? "<any>":String.valueOf(_expectedChannel))
+                + ", _expectedChannel=" + expectedChannelString()
                 + "]";
     }
 }

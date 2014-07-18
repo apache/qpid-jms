@@ -58,7 +58,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
         {
             Connection connection = _testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin();
+            testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -87,7 +87,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
         {
             Connection connection = _testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin();
+            testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -120,7 +120,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
         {
             Connection connection = _testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin();
+            testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -151,7 +151,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
         {
             Connection connection = _testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin();
+            testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -183,7 +183,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
         {
             Connection connection = _testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin();
+            testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -224,7 +224,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
         {
             Connection connection = _testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin();
+            testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -259,7 +259,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
         {
             Connection connection = _testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin();
+            testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -297,7 +297,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
         {
             Connection connection = _testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin();
+            testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

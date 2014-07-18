@@ -52,7 +52,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
         {
             Connection connection = _testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin();
+            testPeer.expectBegin(true);
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -71,7 +71,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase
             Connection connection = _testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin();
+            testPeer.expectBegin(true);
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -93,7 +93,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
         {
             Connection connection = _testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin();
+            testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -126,7 +126,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase
             Connection connection = _testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin();
+            testPeer.expectBegin(true);
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -154,7 +154,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
         {
             Connection connection = _testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin();
+            testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -186,7 +186,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase
             Connection connection = _testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin();
+            testPeer.expectBegin(true);
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");

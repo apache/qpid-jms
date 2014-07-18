@@ -50,7 +50,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
         {
             Connection connection = _testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin();
+            testPeer.expectBegin(true);
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             assertNotNull("Session should not be null", session);
         }

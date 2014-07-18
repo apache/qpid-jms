@@ -287,7 +287,7 @@ public class TestAmqpPeer implements AutoCloseable
                     null)));
     }
 
-    public void expectBegin()
+    public void expectBegin(boolean expectSessionFlow)
     {
         final BeginMatcher beginMatcher = new BeginMatcher()
                 .withRemoteChannel(nullValue())
@@ -314,6 +314,11 @@ public class TestAmqpPeer implements AutoCloseable
                         }));
 
         addHandler(beginMatcher);
+
+        if(expectSessionFlow)
+        {
+            expectSessionFlow();
+        }
     }
 
     public void expectSenderAttach()
@@ -406,6 +411,15 @@ public class TestAmqpPeer implements AutoCloseable
         attachMatcher.onSuccess(attachResponseSender);
 
         addHandler(attachMatcher);
+    }
+
+    public void expectSessionFlow()
+    {
+        final FlowMatcher flowMatcher = new FlowMatcher()
+                        .withLinkCredit(Matchers.nullValue())
+                        .withHandle(Matchers.nullValue());
+
+        addHandler(flowMatcher);
     }
 
     public void expectLinkFlow()

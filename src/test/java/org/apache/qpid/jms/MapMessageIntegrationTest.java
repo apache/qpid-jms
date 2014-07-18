@@ -66,7 +66,7 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase
             Connection connection = _testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin();
+            testPeer.expectBegin(true);
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -190,7 +190,7 @@ index 808d43e..6cdf84c 100644
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
         {
             Connection connection = _testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin();
+            testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

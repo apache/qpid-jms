@@ -28,6 +28,13 @@
   <name>qpid-jms-client</name>
   <version>1.0-SNAPSHOT</version>
 
+  <scm>
+    <url>http://svn.apache.org/viewvc/qpid/jms/trunk</url>
+  </scm>
+  <issueManagement>
+    <url>https://issues.apache.org/jira/browse/QPIDJMS</url>
+  </issueManagement>
+
   <properties>
     <proton-version>1.0-SNAPSHOT</proton-version>
   </properties>
@@ -104,17 +111,6 @@
   <reporting>
     <plugins>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>findbugs-maven-plugin</artifactId>
-        <version>${findbugs-maven-plugin-version}</version>
-        <configuration>
-          <includeFilterFile>${project.basedir}/src/site/findbugs.xml</includeFilterFile>
-          <threshold>Low</threshold>
-          <effort>Max</effort>
-        </configuration>
-      </plugin>
-
-      <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <version>${apache-rat-plugin-version}</version>
@@ -128,10 +124,23 @@
     </plugins>
   </reporting>
 
-  <scm>
-    <url>http://svn.apache.org/viewvc/qpid/jms/</url>
-  </scm>
-  <issueManagement>
-    <url>https://issues.apache.org/jira/browse/QPIDJMS</url>
-  </issueManagement>
+  <profiles>
+    <profile>
+      <id>findbugs</id>
+      <reporting>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>findbugs-maven-plugin</artifactId>
+            <version>${findbugs-maven-plugin-version}</version>
+            <configuration>
+              <includeFilterFile>${project.basedir}/src/site/findbugs.xml</includeFilterFile>
+              <threshold>Low</threshold>
+              <effort>Max</effort>
+            </configuration>
+          </plugin>
+        </plugins>
+      </reporting>
+    </profile>
+  </profiles>
 </project>

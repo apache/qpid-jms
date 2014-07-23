@@ -32,6 +32,7 @@ public class AmqpObjectMessage extends AmqpMessage
     private AmqpObjectMessageDelegate _delegate;
     private boolean _useAmqpTypeEncoding = false;
 
+    //message to be sent
     public AmqpObjectMessage()
     {
         super();
@@ -40,6 +41,7 @@ public class AmqpObjectMessage extends AmqpMessage
         initDelegate(false);
     }
 
+    //message just received
     public AmqpObjectMessage(Message message, Delivery delivery, AmqpConnection amqpConnection, boolean useAmqpTypes)
     {
         super(message, delivery, amqpConnection);

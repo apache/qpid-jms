@@ -24,12 +24,14 @@ import org.apache.qpid.proton.message.Message;
 
 public class AmqpGenericMessage extends AmqpMessage
 {
+    //message to be sent
     public AmqpGenericMessage()
     {
         super();
         setMessageAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE, ClientProperties.GENERIC_MESSAGE_TYPE);
     }
 
+    //message just received
     public AmqpGenericMessage(Delivery delivery, Message message, AmqpConnection amqpConnection)
     {
         super(message, delivery, amqpConnection);

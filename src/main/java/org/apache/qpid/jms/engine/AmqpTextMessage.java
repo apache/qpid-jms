@@ -46,12 +46,14 @@ public class AmqpTextMessage extends AmqpMessage
 
     private CharsetDecoder _decoder =  Charset.forName(UTF_8).newDecoder();
 
+    //message to be sent
     public AmqpTextMessage()
     {
         super();
         setText(null);
     }
 
+    //message just received
     public AmqpTextMessage(Message message, Delivery delivery, AmqpConnection amqpConnection)
     {
         super(message, delivery, amqpConnection);

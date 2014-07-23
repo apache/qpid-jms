@@ -34,6 +34,7 @@ public class AmqpMapMessage extends AmqpMessage
 {
     private volatile Map<String,Object> _messageBodyMap;
 
+    //message to be sent
     public AmqpMapMessage()
     {
         super();
@@ -41,6 +42,7 @@ public class AmqpMapMessage extends AmqpMessage
         setMessageAnnotation(ClientProperties.X_OPT_JMS_MSG_TYPE, ClientProperties.MAP_MESSAGE_TYPE);
     }
 
+    //message just received
     @SuppressWarnings("unchecked")
     public AmqpMapMessage(Message message, Delivery delivery, AmqpConnection amqpConnection)
     {
@@ -92,7 +94,8 @@ public class AmqpMapMessage extends AmqpMessage
      *
      * If a previous mapping for the key exists, the old value is replaced by the specified value.
      *
-     * To be clear, if the value provided is a byte[] then it is NOT copied and MUST NOT be subsequently altered.
+     * If the value provided is a byte[] its entry in the map is as an AMQP Binary, and the
+     * underlying array is NOT copied and MUST NOT be subsequently altered.
      *
      * @param key the key for the mapping
      * @param value the value for the mapping
@@ -111,7 +114,7 @@ public class AmqpMapMessage extends AmqpMessage
     /**
      * Returns the value to which the specified key is mapped, or null if this map contains no mapping for the key.
      *
-     * If the value being returned is a byte[], the array returned IS a copy.
+     * If the value being returned is a byte[] representing AMQP binary, the array returned IS a copy.
      *
      * @param key the key for the mapping
      * @return the value if one exists for this key, or null if there was none.

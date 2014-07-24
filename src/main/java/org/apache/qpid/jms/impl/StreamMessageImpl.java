@@ -53,8 +53,8 @@ public class StreamMessageImpl extends MessageImpl<AmqpListMessage> implements S
     @Override
     protected AmqpListMessage prepareUnderlyingAmqpMessageForSending(AmqpListMessage amqpMessage)
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        //Currently nothing to do, we always operate directly on the underlying AmqpListMessage.
+        return amqpMessage;
     }
 
     private void checkObjectType(Object value) throws QpidJmsMessageFormatException
@@ -73,13 +73,15 @@ public class StreamMessageImpl extends MessageImpl<AmqpListMessage> implements S
         }
     }
 
-    private Object readObjectInternal(boolean checkExistingReadBytesUsage) throws MessageEOFException, QpidJmsMessageFormatException
+    private Object readObjectInternal(boolean checkExistingReadBytesUsage) throws MessageEOFException, QpidJmsMessageFormatException, MessageNotReadableException
     {
+        checkBodyReadable();
+
         if(checkExistingReadBytesUsage)
         {
             if(_remainingBytes != NO_BYTES_IN_FLIGHT)
             {
-                throw new QpidJmsMessageFormatException("Partially read bytes entry still being retrieved using readBytes(byte[] dest)");
+                throw new QpidJmsMessageFormatException("Partially read byte[] entry still being retrieved using readBytes(byte[] dest)");
             }
         }
 
@@ -91,6 +93,11 @@ public class StreamMessageImpl extends MessageImpl<AmqpListMessage> implements S
         {
             throw new MessageEOFException("No more data in message stream");
         }
+    }
+
+    private void decrementStreamPosition()
+    {
+        getUnderlyingAmqpMessage(false).decrementPosition();
     }
 
     //======= JMS Methods =======
@@ -109,6 +116,7 @@ public class StreamMessageImpl extends MessageImpl<AmqpListMessage> implements S
         }
         else
         {
+            decrementStreamPosition();
             throw new QpidJmsMessageFormatException("Stream entry of type " + o.getClass().getName() + " cannot be converted to boolean.");
         }
     }
@@ -116,57 +124,230 @@ public class StreamMessageImpl extends MessageImpl<AmqpListMessage> implements S
     @Override
     public byte readByte() throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        Object o = readObject();
+        if(o instanceof Byte)
+        {
+            return (Byte) o;
+        }
+        else if(o instanceof String || o == null)
+        {
+            try
+            {
+                return Byte.valueOf((String)o);
+            }
+            catch(RuntimeException e)
+            {
+                decrementStreamPosition();
+                throw e;
+            }
+        }
+        else
+        {
+            decrementStreamPosition();
+            throw new QpidJmsMessageFormatException("Stream entry of type " + o.getClass().getName() + " cannot be converted to byte.");
+        }
     }
 
     @Override
     public short readShort() throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        Object o = readObject();
+        if(o instanceof Short)
+        {
+            return (Short) o;
+        }
+        else if(o instanceof Byte)
+        {
+            return (Byte) o;
+        }
+        else if(o instanceof String || o == null)
+        {
+            try
+            {
+                return Short.valueOf((String)o);
+            }
+            catch(RuntimeException e)
+            {
+                decrementStreamPosition();
+                throw e;
+            }
+        }
+        else
+        {
+            decrementStreamPosition();
+            throw new QpidJmsMessageFormatException("Stream entry of type " + o.getClass().getName() + " cannot be converted to short.");
+        }
     }
 
     @Override
     public char readChar() throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        Object o = readObject();
+        if(o instanceof Character)
+        {
+            return (Character) o;
+        }
+        else if(o == null)
+        {
+            decrementStreamPosition();
+            throw new NullPointerException("Stream entry with null value cannot be converted to char.");
+        }
+        else
+        {
+            decrementStreamPosition();
+            throw new QpidJmsMessageFormatException("Stream entry of type " + o.getClass().getName() + " cannot be converted to char.");
+        }
     }
 
     @Override
     public int readInt() throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        Object o = readObject();
+        if(o instanceof Integer)
+        {
+            return (Integer) o;
+        }
+        else if(o instanceof Short)
+        {
+            return (Short) o;
+        }
+        else if(o instanceof Byte)
+        {
+            return (Byte) o;
+        }
+        else if(o instanceof String || o == null)
+        {
+            try
+            {
+                return Integer.valueOf((String)o);
+            }
+            catch(RuntimeException e)
+            {
+                decrementStreamPosition();
+                throw e;
+            }
+        }
+        else
+        {
+            decrementStreamPosition();
+            throw new QpidJmsMessageFormatException("Stream entry of type " + o.getClass().getName() + " cannot be converted to int.");
+        }
     }
 
     @Override
     public long readLong() throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        Object o = readObject();
+        if(o instanceof Long)
+        {
+            return (Long) o;
+        }
+        else if(o instanceof Integer)
+        {
+            return (Integer) o;
+        }
+        else if(o instanceof Short)
+        {
+            return (Short) o;
+        }
+        else if(o instanceof Byte)
+        {
+            return (Byte) o;
+        }
+        else if(o instanceof String || o == null)
+        {
+            try
+            {
+                return Long.valueOf((String)o);
+            }
+            catch(RuntimeException e)
+            {
+                decrementStreamPosition();
+                throw e;
+            }
+        }
+        else
+        {
+            decrementStreamPosition();
+            throw new QpidJmsMessageFormatException("Stream entry of type " + o.getClass().getName() + " cannot be converted to long.");
+        }
     }
 
     @Override
     public float readFloat() throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        Object o = readObject();
+        if(o instanceof Float)
+        {
+            return (Float) o;
+        }
+        else if(o instanceof String || o == null)
+        {
+            try
+            {
+                return Float.valueOf((String)o);
+            }
+            catch(RuntimeException e)
+            {
+                decrementStreamPosition();
+                throw e;
+            }
+        }
+        else
+        {
+            decrementStreamPosition();
+            throw new QpidJmsMessageFormatException("Stream entry of type " + o.getClass().getName() + " cannot be converted to float.");
+        }
     }
 
     @Override
     public double readDouble() throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        Object o = readObject();
+        if(o instanceof Float)
+        {
+            return (Float) o;
+        }
+        else if(o instanceof Double)
+        {
+            return (Double) o;
+        }
+        else if(o instanceof String || o == null)
+        {
+            try
+            {
+                return Double.valueOf((String)o);
+            }
+            catch(RuntimeException e)
+            {
+                decrementStreamPosition();
+                throw e;
+            }
+        }
+        else
+        {
+            decrementStreamPosition();
+            throw new QpidJmsMessageFormatException("Stream entry of type " + o.getClass().getName() + " cannot be converted to double.");
+        }
     }
 
     @Override
     public String readString() throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        Object o = readObject();
+        if(o instanceof String || o == null)
+        {
+            return (String) o;
+        }
+        else if(o instanceof byte[])
+        {
+            decrementStreamPosition();
+            throw new QpidJmsMessageFormatException("Stream entry of type " + o.getClass().getName() + " cannot be converted to String.");
+        }
+        else
+        {
+            return String.valueOf(o);
+        }
     }
 
     @Override
@@ -222,15 +403,14 @@ public class StreamMessageImpl extends MessageImpl<AmqpListMessage> implements S
             }
             else
             {
-                //More work to do to complete reading this field, move the position back.
-                getUnderlyingAmqpMessage(false).decrementPosition();
+                decrementStreamPosition();
             }
 
             return lengthToCopy;
         }
         else
         {
-            getUnderlyingAmqpMessage(false).decrementPosition();
+            decrementStreamPosition();
             throw new QpidJmsMessageFormatException("Stream entry of type " + o.getClass().getName() + " cannot be converted to bytes.");
         }
     }
@@ -250,57 +430,49 @@ public class StreamMessageImpl extends MessageImpl<AmqpListMessage> implements S
     @Override
     public void writeByte(byte value) throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        writeObject(value);
     }
 
     @Override
     public void writeShort(short value) throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        writeObject(value);
     }
 
     @Override
     public void writeChar(char value) throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        writeObject(value);
     }
 
     @Override
     public void writeInt(int value) throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        writeObject(value);
     }
 
     @Override
     public void writeLong(long value) throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        writeObject(value);
     }
 
     @Override
     public void writeFloat(float value) throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        writeObject(value);
     }
 
     @Override
     public void writeDouble(double value) throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        writeObject(value);
     }
 
     @Override
     public void writeString(String value) throws JMSException
     {
-        //TODO
-        throw new UnsupportedOperationException("Not Implemented");
+        writeObject(value);
     }
 
     @Override

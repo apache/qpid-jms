@@ -254,8 +254,7 @@ public class SessionImpl implements Session
     @Override
     public StreamMessage createStreamMessage() throws JMSException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        return new StreamMessageImpl(this, getConnectionImpl());
     }
 
     @Override

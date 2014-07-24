@@ -24,13 +24,16 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 
 import javax.jms.JMSException;
 import javax.jms.MessageEOFException;
 import javax.jms.MessageFormatException;
+import javax.jms.MessageNotReadableException;
 import javax.jms.StreamMessage;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
@@ -98,6 +101,121 @@ public class StreamMessageImplTest extends QpidJmsTestCase
         }
     }
 
+    @Test
+    public void testNewMessageIsWriteOnlyThrowsMNRE() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        try
+        {
+            streamMessageImpl.readBoolean();
+            fail("Expected exception to be thrown as message is not readable");
+        }
+        catch(MessageNotReadableException mnre)
+        {
+            //expected
+        }
+    }
+
+    /**
+     * Verify the stream position is not incremented during illegal type conversion failure.
+     * This covers every read method except readObject (which doesn't do type conversion)
+     * and readBytes(), which is tested by {@link #testIllegalTypeConvesionFailureDoesNotIncrementPosition2}
+     *
+     * Write bytes, then deliberately try to retrieve them as illegal types, then
+     * check they can be successfully read.
+     */
+    @Test
+    public void testIllegalTypeConvesionFailureDoesNotIncrementPosition1() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        byte[] bytes =  new byte[]{(byte)0, (byte)255, (byte)78};
+
+        streamMessageImpl.writeBytes(bytes);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Boolean.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Byte.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Short.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Character.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Integer.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Long.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Float.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Double.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, String.class);
+
+        byte[] retrievedByteArray = new byte[bytes.length];
+        int readBytesLength = streamMessageImpl.readBytes(retrievedByteArray);
+
+        assertEquals("Number of bytes read did not match original array length", bytes.length, readBytesLength);
+        assertArrayEquals("Expected array to equal retrieved bytes", bytes, retrievedByteArray);
+        assertEquals("Expected completion return value", -1, streamMessageImpl.readBytes(retrievedByteArray));
+    }
+
+    /**
+     * Verify the stream position is not incremented during illegal type conversion failure.
+     * This test covers only readBytes, other methods are tested by
+     * {@link #testIllegalTypeConvesionFailureDoesNotIncrementPosition1}
+     *
+     * Write String, then deliberately try illegal retrieval as bytes, then
+     * check it can be successfully read.
+     */
+    @Test
+    public void testIllegalTypeConvesionFailureDoesNotIncrementPosition2() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        String stringVal = "myString";
+        streamMessageImpl.writeString(stringVal);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, byte[].class);
+
+        assertEquals("Expected written string", stringVal, streamMessageImpl.readString());
+    }
+
+    /**
+     * When a null stream entry is encountered, the accessor methods is type dependent and should
+     * either return null, throw NPE, or behave in the same fashion as <primitive>.valueOf(String).
+     *
+     * Test that this is the case, and in doing show demonstrate that primitive type conversion failure
+     * does not increment the stream position, as shown by not hitting the end of the stream unexpectedly.
+     */
+    @Test
+    public void testNullStreamEntryResultsInExpectedBehaviour() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        streamMessageImpl.writeObject(null);
+        streamMessageImpl.reset();
+
+        //expect an NFE from the primitive integral <type>.valueOf(null) conversions
+        assertGetStreamEntryThrowsNumberFormatException(streamMessageImpl, Byte.class);
+        assertGetStreamEntryThrowsNumberFormatException(streamMessageImpl, Short.class);
+        assertGetStreamEntryThrowsNumberFormatException(streamMessageImpl, Integer.class);
+        assertGetStreamEntryThrowsNumberFormatException(streamMessageImpl, Long.class);
+
+        //expect an NPE from the primitive float, double, and char <type>.valuleOf(null) conversions
+        assertGetStreamEntryThrowsNullPointerException(streamMessageImpl, Float.class);
+        assertGetStreamEntryThrowsNullPointerException(streamMessageImpl, Double.class);
+        assertGetStreamEntryThrowsNullPointerException(streamMessageImpl, Character.class);
+
+        //expect null
+        assertNull(streamMessageImpl.readObject());
+        streamMessageImpl.reset(); //need to reset as read was a success
+        assertNull(streamMessageImpl.readString());
+        streamMessageImpl.reset(); //need to reset as read was a success
+
+        //expect completion value.
+        assertEquals(-1, streamMessageImpl.readBytes(new byte[1]));
+        streamMessageImpl.reset(); //need to reset as read was a success
+
+        //expect false from Boolean.valueOf(null).
+        assertFalse(streamMessageImpl.readBoolean());
+        streamMessageImpl.reset(); //need to reset as read was a success
+    }
+
     // ======= object =========
 
     @Test
@@ -106,13 +224,57 @@ public class StreamMessageImplTest extends QpidJmsTestCase
         StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
         try
         {
-            streamMessageImpl.writeObject(new Exception());
+            streamMessageImpl.writeObject(BigInteger.ONE);
             fail("Expected exception to be thrown");
         }
         catch(MessageFormatException mfe)
         {
             //expected
         }
+    }
+
+    @Test
+    public void testWriteReadObject() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        Object nullEntryValue = null;
+        Boolean boolEntryValue = Boolean.valueOf(false);
+        Byte byteEntryValue = Byte.valueOf((byte)1);
+        Short shortEntryValue = Short.valueOf((short)2);
+        Integer intEntryValue = Integer.valueOf(3);
+        Long longEntryValue = Long.valueOf(4);
+        Float floatEntryValue = Float.valueOf(5.01F);
+        Double doubleEntryValue = Double.valueOf(6.01);
+        String stringEntryValue = "string";
+        Character charEntryValue = Character.valueOf('c');
+        byte[] bytes = new byte[] { (byte)1, (byte) 170, (byte)65};
+
+        streamMessageImpl.writeObject(nullEntryValue);
+        streamMessageImpl.writeObject(boolEntryValue);
+        streamMessageImpl.writeObject(byteEntryValue);
+        streamMessageImpl.writeObject(shortEntryValue);
+        streamMessageImpl.writeObject(intEntryValue);
+        streamMessageImpl.writeObject(longEntryValue);
+        streamMessageImpl.writeObject(floatEntryValue);
+        streamMessageImpl.writeObject(doubleEntryValue);
+        streamMessageImpl.writeObject(stringEntryValue);
+        streamMessageImpl.writeObject(charEntryValue);
+        streamMessageImpl.writeObject(bytes);
+
+        streamMessageImpl.reset();
+
+        assertEquals("Got unexpected value from stream", nullEntryValue, streamMessageImpl.readObject());
+        assertEquals("Got unexpected value from stream", boolEntryValue, streamMessageImpl.readObject());
+        assertEquals("Got unexpected value from stream", byteEntryValue, streamMessageImpl.readObject());
+        assertEquals("Got unexpected value from stream", shortEntryValue, streamMessageImpl.readObject());
+        assertEquals("Got unexpected value from stream", intEntryValue, streamMessageImpl.readObject());
+        assertEquals("Got unexpected value from stream", longEntryValue, streamMessageImpl.readObject());
+        assertEquals("Got unexpected value from stream", floatEntryValue, streamMessageImpl.readObject());
+        assertEquals("Got unexpected value from stream", doubleEntryValue, streamMessageImpl.readObject());
+        assertEquals("Got unexpected value from stream", stringEntryValue, streamMessageImpl.readObject());
+        assertEquals("Got unexpected value from stream", charEntryValue, streamMessageImpl.readObject());
+        assertArrayEquals("Got unexpected value from stream", bytes, (byte[])streamMessageImpl.readObject());
     }
 
     // ======= bytes =========
@@ -151,7 +313,6 @@ public class StreamMessageImplTest extends QpidJmsTestCase
         streamMessageImpl.reset();
 
         assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Boolean.class);
-        /* TODO: enable when implementing
         assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Byte.class);
         assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Short.class);
         assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Character.class);
@@ -160,7 +321,50 @@ public class StreamMessageImplTest extends QpidJmsTestCase
         assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Float.class);
         assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Double.class);
         assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, String.class);
-        */
+    }
+
+    @Test
+    public void testReadBytesWithNullSignalsCompletion() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+        streamMessageImpl.writeObject(null);
+
+        streamMessageImpl.reset();
+
+        assertEquals("Expected immediate completion signal", -1, streamMessageImpl.readBytes(new byte[1]));
+    }
+
+    @Test
+    public void testReadBytesWithZeroLengthSource() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        streamMessageImpl.writeBytes(new byte[0]);
+
+        streamMessageImpl.reset();
+
+        byte[] fullRetrievedBytes = new byte[1];
+
+        assertEquals("Expected no bytes to be read, as none were written", 0, streamMessageImpl.readBytes(fullRetrievedBytes));
+    }
+
+    @Test
+    public void testReadBytesWithZeroLengthDestination() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        byte[] bytes = new byte[]{(byte)11, (byte)44, (byte)99};
+        streamMessageImpl.writeBytes(bytes);
+
+        streamMessageImpl.reset();
+
+        byte[] zeroDestination = new byte[0];
+        byte[] fullRetrievedBytes = new byte[bytes.length];
+
+        assertEquals("Expected no bytes to be read", 0, streamMessageImpl.readBytes(zeroDestination));
+        assertEquals("Expected all bytes to be read", bytes.length, streamMessageImpl.readBytes(fullRetrievedBytes));
+        assertArrayEquals("Expected arrays to be equal", bytes, fullRetrievedBytes);
+        assertEquals("Expected completion signal", -1, streamMessageImpl.readBytes(zeroDestination));
     }
 
     @Test
@@ -291,7 +495,48 @@ public class StreamMessageImplTest extends QpidJmsTestCase
                 Arrays.copyOfRange(bytes, partialLength, bytes.length), Arrays.copyOfRange(retrievedByteArray, 0, readBytesLength));
     }
 
+    /**
+     * Verify that setting bytes takes a copy of the array.
+     * Set bytes subset, then retrieve the entry and verify the are different arrays and the subsets are equal.
+     */
+    @Test
+    public void testWriteBytesWithOffsetAndLength() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        byte[] orig = "myBytesAll".getBytes();
+
+        //extract the segment containing 'Bytes'
+        int offset = 2;
+        int length = 5;
+        byte[] segment = Arrays.copyOfRange(orig, offset, offset + length);
+
+        //set the same section from the original bytes
+        streamMessageImpl.writeBytes(orig, offset, length);
+        streamMessageImpl.reset();
+
+        byte[] retrieved = (byte[]) streamMessageImpl.readObject();
+
+        //verify the retrieved bytes from the stream equal the segment but are not the same
+        assertNotSame(orig, retrieved);
+        assertNotSame(segment, retrieved);
+        assertArrayEquals(segment, retrieved);
+    }
+
     //========= boolean ========
+
+    @Test
+    public void testWriteReadBoolean() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        boolean value = true;
+
+        streamMessageImpl.writeBoolean(value);
+        streamMessageImpl.reset();
+
+        assertEquals("Value not as expected", value, streamMessageImpl.readBoolean());
+    }
 
     /**
      * Set a boolean, then retrieve it as all of the legal type combinations to verify it is parsed correctly
@@ -306,11 +551,8 @@ public class StreamMessageImplTest extends QpidJmsTestCase
         streamMessageImpl.writeBoolean(value);
         streamMessageImpl.reset();
 
-        assertGetStreamEntryEquals(streamMessageImpl, value, Boolean.class);
-
-        /* TODO: enable when implementing
-        assertGetStreamEntryEquals(streamMessageImpl, String.valueOf(value), String.class);
-        */
+        assertGetStreamEntryEquals(streamMessageImpl, true, value, Boolean.class);
+        assertGetStreamEntryEquals(streamMessageImpl, true, String.valueOf(value), String.class);
     }
 
     /**
@@ -326,7 +568,6 @@ public class StreamMessageImplTest extends QpidJmsTestCase
         streamMessageImpl.writeBoolean(value);
         streamMessageImpl.reset();
 
-        /* TODO: enable when implementing
         assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Byte.class);
         assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Short.class);
         assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Character.class);
@@ -335,12 +576,475 @@ public class StreamMessageImplTest extends QpidJmsTestCase
         assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Float.class);
         assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Double.class);
         assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, byte[].class);
-        */
+    }
+
+    //========= string ========
+
+    @Test
+    public void testWriteReadString() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        String value = "myString";
+
+        streamMessageImpl.writeString(value);
+        streamMessageImpl.reset();
+
+        assertEquals("Value not as expected", value, streamMessageImpl.readString());
+    }
+
+    /**
+     * Set a string, then retrieve it as all of the legal type combinations to verify it is parsed correctly
+     */
+    @Test
+    public void testWriteStringReadLegal() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        String integralValue = String.valueOf(Byte.MAX_VALUE);
+        streamMessageImpl.writeString(integralValue);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryEquals(streamMessageImpl, true, String.valueOf(integralValue), String.class);
+        assertGetStreamEntryEquals(streamMessageImpl, true, Boolean.valueOf(integralValue), Boolean.class);
+        assertGetStreamEntryEquals(streamMessageImpl, true, Byte.valueOf(integralValue), Byte.class);
+
+        streamMessageImpl.clearBody();
+        integralValue = String.valueOf(Short.MAX_VALUE);
+        streamMessageImpl.writeString(integralValue);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryEquals(streamMessageImpl, true, Short.valueOf(integralValue), Short.class);
+
+        streamMessageImpl.clearBody();
+        integralValue = String.valueOf(Integer.MAX_VALUE);
+        streamMessageImpl.writeString(integralValue);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryEquals(streamMessageImpl, true, Integer.valueOf(integralValue), Integer.class);
+
+        streamMessageImpl.clearBody();
+        integralValue = String.valueOf(Long.MAX_VALUE);
+        streamMessageImpl.writeString(integralValue);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryEquals(streamMessageImpl, true, Long.valueOf(integralValue), Long.class);
+
+        streamMessageImpl.clearBody();
+        String fpValue = String.valueOf(Float.MAX_VALUE);
+        streamMessageImpl.writeString(fpValue);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryEquals(streamMessageImpl, true, Float.valueOf(fpValue), Float.class);
+        assertGetStreamEntryEquals(streamMessageImpl, true, Double.valueOf(fpValue), Double.class);
+    }
+
+    /**
+     * Set a string, then retrieve it as all of the illegal type combinations to verify it fails as expected
+     */
+    @Test
+    public void testWriteStringReadIllegal() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        String stringValue = "myString";
+
+        streamMessageImpl.writeString(stringValue);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Character.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, byte[].class);
+    }
+
+    //========= byte ========
+
+    @Test
+    public void testWriteReadByte() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        byte value = (byte)6;
+
+        streamMessageImpl.writeByte(value);
+        streamMessageImpl.reset();
+
+        assertEquals("Value not as expected", value, streamMessageImpl.readByte());
+    }
+
+    /**
+     * Set a byte, then retrieve it as all of the legal type combinations to verify it is parsed correctly
+     */
+    @Test
+    public void testWriteByteReadLegal() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        byte value = (byte)6;
+
+        streamMessageImpl.writeByte(value);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryEquals(streamMessageImpl, true, Byte.valueOf(value), Byte.class);
+        assertGetStreamEntryEquals(streamMessageImpl, true, Short.valueOf(value), Short.class);
+        assertGetStreamEntryEquals(streamMessageImpl, true, Integer.valueOf(value), Integer.class);
+        assertGetStreamEntryEquals(streamMessageImpl, true, Long.valueOf(value), Long.class);
+        assertGetStreamEntryEquals(streamMessageImpl, true, String.valueOf(value), String.class);
+    }
+
+    /**
+     * Set a byte, then retrieve it as all of the illegal type combinations to verify it fails as expected
+     */
+    @Test
+    public void testWriteByteReadIllegal() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        byte value = (byte)6;
+
+        streamMessageImpl.writeByte(value);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Boolean.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Character.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Float.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Double.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, byte[].class);
+    }
+
+    //========= short ========
+
+    @Test
+    public void testWriteReadShort() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        short value = (short)302;
+
+        streamMessageImpl.writeShort(value);
+        streamMessageImpl.reset();
+
+        assertEquals("Value not as expected", value, streamMessageImpl.readShort());
+    }
+
+    /**
+     * Set a short, then retrieve it as all of the legal type combinations to verify it is parsed correctly
+     */
+    @Test
+    public void testWriteShortReadLegal() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        short value = (short)302;
+
+        streamMessageImpl.writeShort(value);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryEquals(streamMessageImpl, true, Short.valueOf(value), Short.class);
+        assertGetStreamEntryEquals(streamMessageImpl, true, Integer.valueOf(value), Integer.class);
+        assertGetStreamEntryEquals(streamMessageImpl, true, Long.valueOf(value), Long.class);
+        assertGetStreamEntryEquals(streamMessageImpl, true, String.valueOf(value), String.class);
+    }
+
+    /**
+     * Set a short, then retrieve it as all of the illegal type combinations to verify it fails as expected
+     */
+    @Test
+    public void testWriteShortReadIllegal() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        short value = (short)302;
+
+        streamMessageImpl.writeShort(value);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Boolean.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Byte.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Character.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Float.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Double.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, byte[].class);
+    }
+
+    //========= char ========
+
+    @Test
+    public void testWriteReadChar() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        char value = 'c';
+
+        streamMessageImpl.writeChar(value);
+        streamMessageImpl.reset();
+
+        assertEquals("Value not as expected", value, streamMessageImpl.readChar());
+    }
+
+    /**
+     * Set a char, then retrieve it as all of the legal type combinations to verify it is parsed correctly
+     */
+    @Test
+    public void testWriteCharReadLegal() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        char value = 'c';
+
+        streamMessageImpl.writeChar(value);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryEquals(streamMessageImpl, true, value, Character.class);
+        assertGetStreamEntryEquals(streamMessageImpl, true, String.valueOf(value), String.class);
+    }
+
+    /**
+     * Set a char, then retrieve it as all of the illegal type combinations to verify it fails as expected
+     */
+    @Test
+    public void testWriteCharReadIllegal() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        char value = 'c';
+
+        streamMessageImpl.writeChar(value);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Boolean.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Byte.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Short.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Integer.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Long.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Float.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Double.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, byte[].class);
+    }
+
+    //========= int ========
+
+    @Test
+    public void testWriteReadInt() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        int value = Integer.MAX_VALUE;
+
+        streamMessageImpl.writeInt(value);
+        streamMessageImpl.reset();
+
+        assertEquals("Value not as expected", value, streamMessageImpl.readInt());
+    }
+
+    /**
+     * Set an int, then retrieve it as all of the legal type combinations to verify it is parsed correctly
+     */
+    @Test
+    public void testWriteIntReadLegal() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        int value = Integer.MAX_VALUE;
+
+        streamMessageImpl.writeInt(value);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryEquals(streamMessageImpl, true, Integer.valueOf(value), Integer.class);
+        assertGetStreamEntryEquals(streamMessageImpl, true, Long.valueOf(value), Long.class);
+        assertGetStreamEntryEquals(streamMessageImpl, true, String.valueOf(value), String.class);
+    }
+
+    /**
+     * Set an int, then retrieve it as all of the illegal type combinations to verify it fails as expected
+     */
+    @Test
+    public void testWriteIntReadIllegal() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        int value = Integer.MAX_VALUE;
+
+        streamMessageImpl.writeInt(value);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Boolean.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Byte.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Short.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Character.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Float.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Double.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, byte[].class);
+    }
+
+    //========= long ========
+
+    @Test
+    public void testWriteReadLong() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        long value = Long.MAX_VALUE;
+
+        streamMessageImpl.writeLong(value);
+        streamMessageImpl.reset();
+
+        assertEquals("Value not as expected", value, streamMessageImpl.readLong());
+    }
+
+    /**
+     * Set a long, then retrieve it as all of the legal type combinations to verify it is parsed correctly
+     */
+    @Test
+    public void testWriteLongReadLegal() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        long value = Long.MAX_VALUE;
+
+        streamMessageImpl.writeLong(value);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryEquals(streamMessageImpl, true, Long.valueOf(value), Long.class);
+        assertGetStreamEntryEquals(streamMessageImpl, true, String.valueOf(value), String.class);
+    }
+
+    /**
+     * Set a long, then retrieve it as all of the illegal type combinations to verify it fails as expected
+     */
+    @Test
+    public void testWriteLongReadIllegal() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        long value = Long.MAX_VALUE;
+
+        streamMessageImpl.writeLong(value);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Boolean.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Byte.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Short.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Character.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Integer.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Float.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Double.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, byte[].class);
+    }
+
+    //========= float ========
+
+    @Test
+    public void testWriteReadFloat() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        float value = Float.MAX_VALUE;
+
+        streamMessageImpl.writeFloat(value);
+        streamMessageImpl.reset();
+
+        assertEquals("Value not as expected", value, streamMessageImpl.readFloat(), 0.0);
+    }
+
+    /**
+     * Set a float, then retrieve it as all of the legal type combinations to verify it is parsed correctly
+     */
+    @Test
+    public void testWriteFloatReadLegal() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        float value = Float.MAX_VALUE;
+
+        streamMessageImpl.writeFloat(value);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryEquals(streamMessageImpl, true, Float.valueOf(value), Float.class);
+        assertGetStreamEntryEquals(streamMessageImpl, true, Double.valueOf(value), Double.class);
+        assertGetStreamEntryEquals(streamMessageImpl, true, String.valueOf(value), String.class);
+    }
+
+    /**
+     * Set a float, then retrieve it as all of the illegal type combinations to verify it fails as expected
+     */
+    @Test
+    public void testWriteFloatReadIllegal() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        float value = Float.MAX_VALUE;
+
+        streamMessageImpl.writeFloat(value);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Boolean.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Byte.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Short.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Character.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Integer.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Long.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, byte[].class);
+    }
+
+    //========= double ========
+
+    @Test
+    public void testWriteReadDouble() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        double value = Double.MAX_VALUE;
+
+        streamMessageImpl.writeDouble(value);
+        streamMessageImpl.reset();
+
+        assertEquals("Value not as expected", value, streamMessageImpl.readDouble(), 0.0);
+    }
+
+    /**
+     * Set a double, then retrieve it as all of the legal type combinations to verify it is parsed correctly
+     */
+    @Test
+    public void testWriteDoubleReadLegal() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        double value = Double.MAX_VALUE;
+
+        streamMessageImpl.writeDouble(value);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryEquals(streamMessageImpl, true, Double.valueOf(value), Double.class);
+        assertGetStreamEntryEquals(streamMessageImpl, true, String.valueOf(value), String.class);
+    }
+
+    /**
+     * Set a double, then retrieve it as all of the illegal type combinations to verify it fails as expected
+     */
+    @Test
+    public void testWriteDoubleReadIllegal() throws Exception
+    {
+        StreamMessageImpl streamMessageImpl = new StreamMessageImpl(_mockSessionImpl,_mockConnectionImpl);
+
+        double value = Double.MAX_VALUE;
+
+        streamMessageImpl.writeDouble(value);
+        streamMessageImpl.reset();
+
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Boolean.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Byte.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Short.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Character.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Integer.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Long.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, Float.class);
+        assertGetStreamEntryThrowsMessageFormatException(streamMessageImpl, byte[].class);
     }
 
     //========= utility methods ========
 
     private void assertGetStreamEntryEquals(StreamMessageImpl testMessage,
+                                            boolean resetStreamAfter,
                                             Object expectedValue,
                                             Class<?> clazz) throws JMSException
     {
@@ -351,6 +1055,11 @@ public class StreamMessageImplTest extends QpidJmsTestCase
 
         Object actualValue = getStreamEntryUsingTypeMethod(testMessage, clazz, null);
         assertEquals(expectedValue, actualValue);
+
+        if(resetStreamAfter)
+        {
+            testMessage.reset();
+        }
     }
 
     private void assertGetStreamEntryThrowsMessageFormatException(StreamMessageImpl testMessage,
@@ -363,6 +1072,20 @@ public class StreamMessageImplTest extends QpidJmsTestCase
             fail("expected exception to be thrown");
         }
         catch(MessageFormatException jmsMFE)
+        {
+            //expected
+        }
+    }
+
+    private void assertGetStreamEntryThrowsNullPointerException(StreamMessageImpl testMessage, Class<?> clazz) throws JMSException
+    {
+        try
+        {
+            getStreamEntryUsingTypeMethod(testMessage, clazz, new byte[0]);
+
+            fail("expected exception to be thrown");
+        }
+        catch(NullPointerException npe)
         {
             //expected
         }

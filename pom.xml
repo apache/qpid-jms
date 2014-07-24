@@ -37,6 +37,7 @@
 
   <properties>
     <proton-version>1.0-SNAPSHOT</proton-version>
+    <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
   </properties>
 
   <dependencies>
@@ -84,6 +85,9 @@
             <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties
             </java.util.logging.config.file>
           </systemPropertyVariables>
+
+          <!--override with system property maven.test.redirectTestOutputToFile -->
+          <redirectTestOutputToFile>${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
         </configuration>
       </plugin>
 

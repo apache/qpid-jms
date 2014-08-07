@@ -38,6 +38,9 @@
   <properties>
     <proton-version>1.0-SNAPSHOT</proton-version>
     <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
+
+    <!-- TODO: promote to updated qpid-parent -->
+    <findbugs-maven-plugin-version>3.0.0</findbugs-maven-plugin-version>
   </properties>
 
   <dependencies>
@@ -85,8 +88,6 @@
             <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties
             </java.util.logging.config.file>
           </systemPropertyVariables>
-
-          <!--override with system property maven.test.redirectTestOutputToFile -->
           <redirectTestOutputToFile>${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
         </configuration>
       </plugin>

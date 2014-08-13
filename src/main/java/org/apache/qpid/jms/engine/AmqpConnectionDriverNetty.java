@@ -185,16 +185,10 @@ public class AmqpConnectionDriverNetty extends AbstractEventHandler//TODO: HACK
                 Connection connection = _amqpConnection.getConnection();
 
                 Sasl sasl = _transport.sasl();
-//TODO: non-anonymous
-//                if (sasl != null)
-//                {
-//                    sasl.client();
-//                }
-//
-//                _amqpConnection.setSasl(sasl);
-
                 sasl.client();
-                sasl.setMechanisms("ANONYMOUS");
+
+                _amqpConnection.setSasl(sasl);
+
                 _transport.bind(connection);
 
                 _collector = Collector.Factory.create();
@@ -232,6 +226,7 @@ public class AmqpConnectionDriverNetty extends AbstractEventHandler//TODO: HACK
                             tail.limit(tail.position() + min);
                             buf.readBytes(tail);
                             _transport.process();
+                            processAmqpConnection();
                             dispatch();
                         }
                     } finally {
@@ -276,19 +271,22 @@ public class AmqpConnectionDriverNetty extends AbstractEventHandler//TODO: HACK
 
 
         private void dispatch() {
+            System.out.println("Dispatch called");
             synchronized (_amqpConnection) {
                 try
                 {
                     if (dispatching) {
+                        System.out.println("Dispatch skipped");
                         return;
                     }
-
+                    System.out.println("Dispatching");
                     dispatching = true;
                     Event ev;
                     while ((ev = _collector.peek()) != null) {
                         for (EventHandler h : handlers) {
                             Events.dispatch(ev, h);
-                            processAmqpConnection();
+                            //TODO: delete
+                            //processAmqpConnection();
                         }
                         _collector.pop();
                     }
@@ -350,7 +348,8 @@ public class AmqpConnectionDriverNetty extends AbstractEventHandler//TODO: HACK
                                                 _transport.pop(size);
                                                 offset -= size;
 
-                                                processAmqpConnection();
+                                                //TODO: delete
+                                                //processAmqpConnection();
                                             }
                                             finally
                                             {
@@ -402,10 +401,8 @@ public class AmqpConnectionDriverNetty extends AbstractEventHandler//TODO: HACK
 
         private void processAmqpConnection()
         {
+            System.out.println("Processing AmqpConnection");
             _amqpConnection.process();
-           // _amqpConnection.notifyAll();
-//            _amqpConnection.process();
-//            _amqpConnection.process();
         }
     }
 

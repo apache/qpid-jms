@@ -102,6 +102,11 @@
             </java.util.logging.config.file>
           </systemPropertyVariables>
           <redirectTestOutputToFile>${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
+          <!--
+          <environmentVariables>
+            <PN_TRACE_FRM>true</PN_TRACE_FRM>
+          </environmentVariables>
+          -->
         </configuration>
       </plugin>
 

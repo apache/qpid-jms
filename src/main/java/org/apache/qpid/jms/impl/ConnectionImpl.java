@@ -35,7 +35,6 @@ import javax.jms.Session;
 import javax.jms.Topic;
 
 import org.apache.qpid.jms.engine.AmqpConnection;
-import org.apache.qpid.jms.engine.AmqpConnectionDriver;
 import org.apache.qpid.jms.engine.AmqpConnectionDriverNetty;
 import org.apache.qpid.jms.engine.AmqpSession;
 

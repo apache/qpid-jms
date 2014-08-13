@@ -37,16 +37,14 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.qpid.jms.engine.temp.AbstractEventHandler;
+import org.apache.qpid.jms.engine.temp.EventHandler;
+import org.apache.qpid.jms.engine.temp.Events;
 import org.apache.qpid.proton.amqp.Binary;
-import org.apache.qpid.proton.demo.AbstractEventHandler;
-import org.apache.qpid.proton.demo.EventHandler;
-import org.apache.qpid.proton.demo.Events;
 import org.apache.qpid.proton.engine.Collector;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.Event;
@@ -54,32 +52,24 @@ import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Sasl;
 import org.apache.qpid.proton.engine.Transport;
 
-public class AmqpConnectionDriverNetty extends AbstractEventHandler//TODO: HACK
+public class AmqpConnectionDriverNetty
 {
-    //TODO: use or delete:
-    //private static Logger _logger = Logger.getLogger(AmqpConnectionDriverNetty.class.getName());
+    private static Logger LOGGER = Logger.getLogger(AmqpConnectionDriverNetty.class.getName());
 
-    private final Bootstrap _bootstrap;
-    private AmqpConnection _amqpConnection;
-    private ExecutorService _executorService;
+    private Bootstrap _bootstrap;
     private NettyHandler _nettyHandler;
 
-    public enum AmqpDriverState
+    public AmqpConnectionDriverNetty()
     {
-        UNINIT,
-        OPEN,
-        STOPPED,
-        ERROR;
     }
 
-    public AmqpConnectionDriverNetty() throws IOException
+    public void registerConnection(AmqpConnection amqpConnection)
     {
         //TODO: make config options configurable
         int connectTimeoutMillis = 30000;
         boolean autoRead = false;
         boolean tcpNoDelay = true;
         boolean tcpKeepAlive = true;
-        boolean tcpReuseAddr = true;
 
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.channel(NioSocketChannel.class);
@@ -90,11 +80,10 @@ public class AmqpConnectionDriverNetty extends AbstractEventHandler//TODO: HACK
         bootstrap.option(ChannelOption.AUTO_READ, autoRead);
         bootstrap.option(ChannelOption.TCP_NODELAY, tcpNoDelay);
         bootstrap.option(ChannelOption.SO_KEEPALIVE, tcpKeepAlive);
-        bootstrap.option(ChannelOption.SO_REUSEADDR, tcpReuseAddr);
 
         bootstrap.option(ChannelOption.ALLOCATOR, new UnpooledByteBufAllocator(false));
 
-        _nettyHandler = new NettyHandler();
+        _nettyHandler = new NettyHandler(amqpConnection);
         bootstrap.handler(new ChannelInitializer<SocketChannel>()
         {
             @Override
@@ -106,15 +95,8 @@ public class AmqpConnectionDriverNetty extends AbstractEventHandler//TODO: HACK
 
         _bootstrap = bootstrap;
 
-        _executorService = Executors.newSingleThreadExecutor();
-    }
-
-    public void registerConnection(AmqpConnection amqpConnection)
-    {
         String remoteHost = amqpConnection.getRemoteHost();
         int port = amqpConnection.getPort();
-
-        _amqpConnection = amqpConnection;
 
         ChannelFuture future = _bootstrap.connect(remoteHost, port);
         future.awaitUninterruptibly();
@@ -137,6 +119,12 @@ public class AmqpConnectionDriverNetty extends AbstractEventHandler//TODO: HACK
         private Transport _transport;
         private Collector _collector;
         private EventHandler[] handlers = {new NettyWriter()};//TODO: something?
+        private AmqpConnection _amqpConnection;
+
+        private NettyHandler(AmqpConnection amqpConnection)
+        {
+            _amqpConnection = amqpConnection;
+        }
 
         private class NettyWriter extends AbstractEventHandler
         {
@@ -321,7 +309,6 @@ public class AmqpConnectionDriverNetty extends AbstractEventHandler//TODO: HACK
                             head.position(offset);
                             buffer.writeBytes(head);
 
-                            //TODO: delete
                             echoBytes("Sending Bytes: ", buffer);
 
                             ChannelFuture chf = ctx.writeAndFlush(buffer);
@@ -336,18 +323,8 @@ public class AmqpConnectionDriverNetty extends AbstractEventHandler//TODO: HACK
                                     {
                                         synchronized (_amqpConnection)
                                         {
-                                            try
-                                            {
-                                                _transport.pop(size);
-                                                offset -= size;
-
-                                                //TODO: delete
-                                                //processAmqpConnection();
-                                            }
-                                            finally
-                                            {
-                                                _amqpConnection.notifyAll();
-                                            }
+                                            _transport.pop(size);
+                                            offset -= size;
                                         }
                                         write(ctx);//TODO: fix. Calling this can cause us to fire channelInactive before reading any responses, see below
                                         dispatch();
@@ -382,6 +359,11 @@ public class AmqpConnectionDriverNetty extends AbstractEventHandler//TODO: HACK
             }
         }
 
+        public void writePendingOutput()
+        {
+            write((ChannelHandlerContext)_transport.getContext());
+        }
+
         private void scheduleReadIfCapacity(Transport transport, ChannelHandlerContext ctx)
         {
             logMessage("Checking if read can be scheduled");
@@ -403,46 +385,35 @@ public class AmqpConnectionDriverNetty extends AbstractEventHandler//TODO: HACK
 
     public void setLocallyUpdated(AmqpConnection amqpConnection)
     {
-        _executorService.execute(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                //TODO: this is a hack to somewhat replicate how the previous
-                //driver worked, until the higher layer code is rewritten not to need it
-                logMessage("Lazy Writing From Executor");
-//                try
-//                {
-//                    Thread.sleep(100);
-//                }
-//                catch (InterruptedException e)
-//                {
-//                    //ignore
-//                }
-                _nettyHandler.write((ChannelHandlerContext) _nettyHandler._transport.getContext());
-               //TODO:delete: _nettyHandler.dispatch();
-            }
-        });
+        //TODO: use the param or drop it
+        _nettyHandler.writePendingOutput();
     }
 
     public void stop() throws InterruptedException
     {
-        // TODO Auto-generated method stub
+        // TODO perhaps close the context?
     }
 
     private void logMessage(String message)
     {
-        String name = Thread.currentThread().getName();
-        System.out.println("[" + name + "] " + message);
+        //TODO: delete this method
+        if(LOGGER.isLoggable(Level.FINEST))
+        {
+            String name = Thread.currentThread().getName();
+            LOGGER.finest("[" + name + "] " + message);
+        }
     }
 
     private void echoBytes(String msgPrefix, ByteBuf buf)
     {
         //TODO: delete this method
-        ByteBuffer nio = buf.nioBuffer();
-        byte[] bytes = new byte[nio.limit()];
-        nio.get(bytes);
+        if(LOGGER.isLoggable(Level.FINEST))
+        {
+            ByteBuffer nio = buf.nioBuffer();
+            byte[] bytes = new byte[nio.limit()];
+            nio.get(bytes);
 
-        logMessage(msgPrefix + new Binary(bytes));
+            logMessage(msgPrefix + new Binary(bytes));
+        }
     }
 }

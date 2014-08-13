@@ -82,12 +82,6 @@
       <artifactId>netty-all</artifactId>
       <version>4.0.19.Final</version>
     </dependency>
-    <!-- WIP: temp demo dependency -->
-    <dependency>
-      <groupId>org.apache.qpid</groupId>
-      <artifactId>proton-j-demo</artifactId>
-      <version>1.0-SNAPSHOT</version>
-    </dependency>
   </dependencies>
 
   <build>

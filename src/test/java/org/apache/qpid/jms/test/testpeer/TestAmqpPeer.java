@@ -273,12 +273,6 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectPlainConnect(String username, String password, boolean authorize)
     {
-//        //TODO: remove this hack. This is just here to avoid changing all the tests.
-//        expectAnonymousConnect(authorize);
-//    }
-//
-//    public void expectPlainConnectOrig(String username, String password, boolean authorize)
-//    {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(Symbol.valueOf("PLAIN"));
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
                                             new FrameSender(

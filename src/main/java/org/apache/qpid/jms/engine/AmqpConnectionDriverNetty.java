@@ -136,6 +136,9 @@ public class AmqpConnectionDriverNetty
                 scheduleReadIfCapacity(transport, ctx);
             }
 
+/*          This was disabled after adding the 'write after read' workaround for SASL negotiation in the channelRead(..) handler.
+            If that is removed e.g after making the SASL layer event-friendly, this will become an issue again if the client isn't smarter.
+
             @Override
             public void onFlow(Link link)
             {
@@ -148,7 +151,7 @@ public class AmqpConnectionDriverNetty
                 ChannelHandlerContext ctx = (ChannelHandlerContext) _transport.getContext();
                 write(ctx);
                 scheduleReadIfCapacity(_transport, ctx);
-            }
+            }*/
         }
 
         @Override
@@ -206,6 +209,11 @@ public class AmqpConnectionDriverNetty
                             _transport.process();
                             processAmqpConnection();
                             dispatch();
+
+                            //TODO: make SASL layer event-friendly to remove need for this?
+                            //We may have output pending but with no transport events to dispatch"
+                            logMessage("Doing a write after processing AmqpConnection");
+                            write(ctx);
                         }
                     }
                     finally

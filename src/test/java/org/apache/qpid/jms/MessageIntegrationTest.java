@@ -716,6 +716,10 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Message message = session.createTextMessage();
             message.setJMSCorrelationID(stringCorrelationId);
 
+            //TODO:delete
+            //System.out.println("##### NOT SLEEPING #####");
+            //Thread.sleep(500);
+
             producer.send(message);
 
             testPeer.waitForAllHandlersToComplete(3000);

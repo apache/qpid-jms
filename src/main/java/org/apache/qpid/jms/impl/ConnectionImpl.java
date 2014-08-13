@@ -36,6 +36,7 @@ import javax.jms.Topic;
 
 import org.apache.qpid.jms.engine.AmqpConnection;
 import org.apache.qpid.jms.engine.AmqpConnectionDriver;
+import org.apache.qpid.jms.engine.AmqpConnectionDriverNetty;
 import org.apache.qpid.jms.engine.AmqpSession;
 
 /**
@@ -56,7 +57,7 @@ public class ConnectionImpl implements Connection
     private AmqpConnection _amqpConnection;
 
     /** The driver dedicated to this connection */
-    private AmqpConnectionDriver _amqpConnectionDriver;
+    private AmqpConnectionDriverNetty _amqpConnectionDriver;
 
     private ConnectionLock _connectionLock;
 
@@ -80,7 +81,7 @@ public class ConnectionImpl implements Connection
 
         try
         {
-            _amqpConnectionDriver = new AmqpConnectionDriver();
+            _amqpConnectionDriver = new AmqpConnectionDriverNetty();
             _amqpConnectionDriver.registerConnection(_amqpConnection);
 
             _connectionLock = new ConnectionLock(this);

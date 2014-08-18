@@ -34,7 +34,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase
     private final IntegrationTestFixture _testFixture = new IntegrationTestFixture();
 
     @Test
-    public void testCreateConnection() throws Exception
+    public void testCreateAndCloseConnection() throws Exception
     {
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
         {

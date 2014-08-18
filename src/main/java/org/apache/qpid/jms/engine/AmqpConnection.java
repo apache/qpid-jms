@@ -198,20 +198,6 @@ public class AmqpConnection
             }
         }
 
-        if (!_connected && (connectionRemoteState == EndpointState.ACTIVE))
-        {
-            _logger.log(Level.FINEST, "Set connected to true");
-            updated = true;
-            _connected = true;
-        }
-
-        if(_connected && (_connection.getLocalState() == EndpointState.CLOSED && connectionRemoteState == EndpointState.CLOSED))
-        {
-            _closed = true;
-            _connected = false;
-            updated = true;
-        }
-
         notifyAll();
         return updated;
     }
@@ -328,6 +314,28 @@ public class AmqpConnection
 
     private class AmqpConnectionEventHandler extends AbstractEventHandler
     {
+        // == Connection ==
+
+        @Override
+        public void onRemoteOpen(Connection connection)
+        {
+            if (connection.getRemoteState() == EndpointState.ACTIVE)
+            {
+                _logger.log(Level.FINEST, "Set connected to true");
+                _connected = true;
+            }
+        }
+
+        @Override
+        public void onRemoteClose(Connection connection)
+        {
+            if(_connected && (_connection.getLocalState() == EndpointState.CLOSED && connection.getRemoteState() == EndpointState.CLOSED))
+            {
+                _closed = true;
+                _connected = false;
+            }
+        }
+
         // == Session ==
 
         @Override

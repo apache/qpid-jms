@@ -34,7 +34,6 @@ import javax.jms.JMSException;
 import javax.jms.MessageEOFException;
 import javax.jms.MessageFormatException;
 import javax.jms.MessageNotReadableException;
-import javax.jms.StreamMessage;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
 import org.junit.Before;

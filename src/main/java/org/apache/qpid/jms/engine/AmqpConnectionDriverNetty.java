@@ -38,6 +38,8 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -48,7 +50,6 @@ import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.engine.Collector;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.Event;
-import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Sasl;
 import org.apache.qpid.proton.engine.Transport;
 
@@ -118,12 +119,14 @@ public class AmqpConnectionDriverNetty
         private boolean dispatching = false;
         private Transport _transport;
         private Collector _collector;
-        private EventHandler[] handlers = {new NettyWriter()};//TODO: something?
+        private List<EventHandler> handlers = new CopyOnWriteArrayList<EventHandler>();
         private AmqpConnection _amqpConnection;
 
         private NettyHandler(AmqpConnection amqpConnection)
         {
             _amqpConnection = amqpConnection;
+            addEventHandler(_amqpConnection.getEventHandler());
+            addEventHandler(new NettyWriter());
         }
 
         private class NettyWriter extends AbstractEventHandler
@@ -152,6 +155,11 @@ public class AmqpConnectionDriverNetty
                 write(ctx);
                 scheduleReadIfCapacity(_transport, ctx);
             }*/
+        }
+
+        public void addEventHandler(EventHandler handler)
+        {
+            handlers.add(handler);
         }
 
         @Override

@@ -53,6 +53,24 @@ public class SenderIntegrationTest extends QpidJmsTestCase
     private final IntegrationTestFixture _testFixture = new IntegrationTestFixture();
 
     @Test
+    public void testCloseSender() throws Exception
+    {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
+        {
+            Connection connection = _testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin(true);
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            MessageProducer producer = session.createProducer(queue);
+
+            testPeer.expectDetach(true);
+            producer.close();
+        }
+    }
+
+    @Test
     public void testDefaultDeliveryModeProducesDurableMessages() throws Exception
     {
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)

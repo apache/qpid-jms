@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
-import javax.jms.BytesMessage;
 import javax.jms.JMSException;
 import javax.jms.MessageEOFException;
 import javax.jms.MessageFormatException;

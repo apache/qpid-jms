@@ -20,7 +20,6 @@ package org.apache.qpid.jms.test.testpeer.matchers.types;
 
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
-import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.hamcrest.Description;
 
 public class EncodedAmqpValueMatcher extends EncodedAmqpTypeMatcher

@@ -47,6 +47,20 @@ public class SessionIntegrationTest extends QpidJmsTestCase
     private final IntegrationTestFixture _testFixture = new IntegrationTestFixture();
 
     @Test
+    public void testCloseSession() throws Exception
+    {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
+        {
+            Connection connection = _testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin(true);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            assertNotNull("Session should not be null", session);
+            testPeer.expectEnd();
+            session.close();
+        }
+    }
+
+    @Test
     public void testCreateProducer() throws Exception
     {
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)

@@ -23,11 +23,12 @@ package org.apache.qpid.jms.engine;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.qpid.jms.engine.temp.AbstractEventHandler;
+import org.apache.qpid.jms.engine.temp.EventHandler;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EndpointState;
@@ -78,6 +79,8 @@ public class AmqpConnection
     private Sasl _sasl;
 
     private boolean _closed;
+
+    private EventHandler _eventHandler = new AmqpConnectionEventHandler();
 
     public AmqpConnection(String clientName, String remoteHost, int port)
     {
@@ -209,79 +212,6 @@ public class AmqpConnection
             updated = true;
         }
 
-        //Sessions
-
-        Iterator<Session> pendingSessions = _pendingSessions.iterator();
-        Session s;
-        while(pendingSessions.hasNext())
-        {
-            s = pendingSessions.next();
-            if(s.getRemoteState() != EndpointState.UNINITIALIZED)
-            {
-                AmqpSession amqpSession = (AmqpSession) s.getContext();
-                amqpSession.setEstablished();
-                pendingSessions.remove();
-                updated = true;
-            }
-        }
-
-        Iterator<Session> pendingCloseSessions = _pendingCloseSessions.iterator();
-        while(pendingCloseSessions.hasNext())
-        {
-            s = pendingCloseSessions.next();
-            if(s.getRemoteState() == EndpointState.CLOSED)
-            {
-                AmqpSession amqpSession = (AmqpSession) s.getContext();
-                amqpSession.setClosed();
-                pendingCloseSessions.remove();
-                updated = true;
-            }
-        }
-
-        //Links
-        Iterator<Link> pendingLinks = _pendingLinks.iterator();
-        Link l;
-        while(pendingLinks.hasNext())
-        {
-            l = pendingLinks.next();
-
-            EndpointState linkRemoteState = l.getRemoteState();
-            if(linkRemoteState == EndpointState.ACTIVE || linkRemoteState == EndpointState.CLOSED)
-            {
-                AmqpLink amqpLink = (AmqpLink) l.getContext();
-                if(linkRemoteState == EndpointState.ACTIVE && getRemoteNode(l) != null)
-                {
-                    amqpLink.setEstablished();
-                }
-                else
-                {
-                    amqpLink.setLinkError();
-                    amqpLink.setClosed();
-                }
-
-                pendingLinks.remove();
-                updated = true;
-            }
-            else
-            {
-                // no nothing
-            }
-
-        }
-
-        Iterator<Link> pendingCloseLinks = _pendingCloseLinks.iterator();
-        while(pendingCloseLinks.hasNext())
-        {
-            l = pendingCloseLinks.next();
-            if(l.getRemoteState() == EndpointState.CLOSED)
-            {
-                AmqpLink amqpLink = (AmqpLink) l.getContext();
-                amqpLink.setClosed();
-                pendingCloseLinks.remove();
-                updated = true;
-            }
-        }
-
         notifyAll();
         return updated;
     }
@@ -389,5 +319,68 @@ public class AmqpConnection
     public synchronized boolean isAuthenticationError()
     {
         return _authenticationError;
+    }
+
+    public EventHandler getEventHandler()
+    {
+        return _eventHandler;
+    }
+
+    private class AmqpConnectionEventHandler extends AbstractEventHandler
+    {
+        // == Session ==
+
+        @Override
+        public void onRemoteOpen(Session session)
+        {
+            if(session.getRemoteState() != EndpointState.UNINITIALIZED)
+            {
+                AmqpSession amqpSession = (AmqpSession) session.getContext();
+                amqpSession.setEstablished();
+                _pendingSessions.remove(session);//TODO: delete pending sessions?
+            }
+        };
+
+        @Override
+        public void onRemoteClose(Session session)
+        {
+            if(session.getRemoteState() == EndpointState.CLOSED)
+            {
+                AmqpSession amqpSession = (AmqpSession) session.getContext();
+                amqpSession.setClosed();
+                _pendingCloseSessions.remove(session);//TODO: delete pending close sessions?
+            }
+        }
+
+        // == Link ==
+
+        @Override
+        public void onRemoteOpen(Link link)
+        {
+            if(link.getRemoteState() == EndpointState.ACTIVE)
+            {
+                AmqpLink amqpLink = (AmqpLink) link.getContext();
+                if(getRemoteNode(link) != null)
+                {
+                    amqpLink.setEstablished();
+                }
+                else
+                {
+                    amqpLink.setLinkError();
+                }
+                _pendingLinks.remove(link);//TODO: delete pending links?
+            }
+        }
+
+        @Override
+        public void onRemoteClose(Link link)
+        {
+            if(link.getRemoteState() == EndpointState.CLOSED)
+            {
+                AmqpLink amqpLink = (AmqpLink) link.getContext();
+                amqpLink.setClosed();
+                _pendingCloseLinks.remove(link);//TODO: delete pending close links?
+            }
+        }
     }
 }

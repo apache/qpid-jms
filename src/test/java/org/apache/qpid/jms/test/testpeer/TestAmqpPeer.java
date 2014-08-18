@@ -34,7 +34,9 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
 import org.apache.qpid.jms.test.testpeer.describedtypes.AttachFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.BeginFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.CloseFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.DetachFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.DispositionFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.EndFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.FlowFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.OpenFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.SaslMechanismsFrame;
@@ -47,7 +49,9 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescr
 import org.apache.qpid.jms.test.testpeer.matchers.AttachMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.BeginMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.CloseMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.DetachMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.DispositionMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.EndMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.FlowMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.OpenMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.SaslInitMatcher;
@@ -233,6 +237,11 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void sendFrame(FrameType type, int channel, DescribedType describedType, Binary payload)
     {
+        if(channel < 0)
+        {
+            throw new IllegalArgumentException("Frame must be sent on a channel >= 0");
+        }
+
         _logger.fine("About to send "+ describedType);
         byte[] output = AmqpDataFramer.encodeFrame(type, channel, describedType, payload);
         _driverRunnable.sendBytes(output);
@@ -354,6 +363,27 @@ public class TestAmqpPeer implements AutoCloseable
         }
     }
 
+    public void expectEnd()
+    {
+        final EndMatcher endMatcher = new EndMatcher();
+
+        final EndFrame endResponse = new EndFrame();
+
+        // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+        final FrameSender frameSender = new FrameSender(this, FrameType.AMQP, -1, endResponse, null);
+        frameSender.setValueProvider(new ValueProvider()
+        {
+            @Override
+            public void setValues()
+            {
+                frameSender.setChannel(endMatcher.getActualChannel());
+            }
+        });
+        endMatcher.onSuccess(frameSender);
+
+        addHandler(endMatcher);
+    }
+
     public void expectSenderAttach()
     {
         final AttachMatcher attachMatcher = new AttachMatcher()
@@ -444,6 +474,29 @@ public class TestAmqpPeer implements AutoCloseable
         attachMatcher.onSuccess(attachResponseSender);
 
         addHandler(attachMatcher);
+    }
+
+    public void expectDetach(boolean close)
+    {
+        final DetachMatcher detachMatcher = new DetachMatcher().withClosed(equalTo(close));
+
+        final DetachFrame detachResponse = new DetachFrame()
+                                .setHandle(UnsignedInteger.valueOf(_nextLinkHandle - 1)); // TODO: this needs to be the value used in the attach response
+
+        // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+        final FrameSender detachResponseSender = new FrameSender(this, FrameType.AMQP, -1, detachResponse, null);
+        detachResponseSender.setValueProvider(new ValueProvider()
+        {
+            @Override
+            public void setValues()
+            {
+                detachResponseSender.setChannel(detachMatcher.getActualChannel());
+            }
+        });
+
+        detachMatcher.onSuccess(detachResponseSender);
+
+        addHandler(detachMatcher);
     }
 
     public void expectSessionFlow()

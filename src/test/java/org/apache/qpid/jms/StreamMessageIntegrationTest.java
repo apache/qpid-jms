@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.jms.Connection;
-import javax.jms.MapMessage;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;

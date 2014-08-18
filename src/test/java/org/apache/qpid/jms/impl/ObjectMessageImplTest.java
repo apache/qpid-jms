@@ -37,7 +37,6 @@ import java.util.Map;
 
 import javax.jms.MessageFormatException;
 import javax.jms.MessageNotWriteableException;
-import javax.jms.ObjectMessage;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
 import org.apache.qpid.jms.engine.AmqpConnection;

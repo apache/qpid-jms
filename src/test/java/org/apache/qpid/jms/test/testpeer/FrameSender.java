@@ -24,10 +24,10 @@ class FrameSender implements AmqpPeerRunnable
 {
     private final TestAmqpPeer _testAmqpPeer;
     private final FrameType _type;
-    private final int _channel;
     private final ListDescribedType _listDescribedType;
     private final Binary _payload;
     private ValueProvider _valueProvider;
+    private int _channel;
 
     FrameSender(TestAmqpPeer testAmqpPeer, FrameType type, int channel, ListDescribedType listDescribedType, Binary payload)
     {
@@ -52,6 +52,12 @@ class FrameSender implements AmqpPeerRunnable
     public FrameSender setValueProvider(ValueProvider valueProvider)
     {
         _valueProvider = valueProvider;
+        return this;
+    }
+
+    public FrameSender setChannel(int channel)
+    {
+        _channel = channel;
         return this;
     }
 }

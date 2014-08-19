@@ -31,11 +31,10 @@ import org.apache.qpid.proton.engine.Receiver;
 import org.apache.qpid.proton.engine.Sender;
 import org.apache.qpid.proton.engine.Session;
 
-public class AmqpSession
+public class AmqpSession extends AmqpResource
 {
     private final AmqpConnection _amqpConnection;
     private final Session _protonSession;
-    private boolean _established;
 
     private boolean _closed;
 
@@ -43,27 +42,6 @@ public class AmqpSession
     {
         _amqpConnection = amqpConnection;
         _protonSession = protonSession;
-    }
-
-    public boolean isEstablished()
-    {
-        return _established;
-    }
-
-    void setEstablished()
-    {
-        _established = true;
-    }
-
-    public void close()
-    {
-        _protonSession.close();
-        _amqpConnection.addPendingCloseSession(_protonSession);
-    }
-
-    void setClosed()
-    {
-        _closed = true;
     }
 
     AmqpConnection getAmqpConnection()
@@ -129,5 +107,16 @@ public class AmqpSession
     public ErrorCondition getSessionError()
     {
         return _protonSession.getCondition();
+    }
+
+    protected void doOpen()
+    {
+        _protonSession.open();
+    }
+
+    protected void doClose()
+    {
+        _protonSession.close();
+        _amqpConnection.addPendingCloseSession(_protonSession);
     }
 }

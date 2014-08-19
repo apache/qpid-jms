@@ -117,7 +117,6 @@ public class AmqpConnection
 
         AmqpSession amqpSession = new AmqpSession(this, session);
         session.setContext(amqpSession);
-        session.open();
 
         addPendingSession(session);
 
@@ -344,7 +343,7 @@ public class AmqpConnection
             if(session.getRemoteState() != EndpointState.UNINITIALIZED)
             {
                 AmqpSession amqpSession = (AmqpSession) session.getContext();
-                amqpSession.setEstablished();
+                amqpSession.opened();
                 _pendingSessions.remove(session);//TODO: delete pending sessions?
             }
         };
@@ -355,7 +354,7 @@ public class AmqpConnection
             if(session.getRemoteState() == EndpointState.CLOSED)
             {
                 AmqpSession amqpSession = (AmqpSession) session.getContext();
-                amqpSession.setClosed();
+                amqpSession.closed();
                 _pendingCloseSessions.remove(session);//TODO: delete pending close sessions?
             }
         }
@@ -370,11 +369,16 @@ public class AmqpConnection
                 AmqpLink amqpLink = (AmqpLink) link.getContext();
                 if(getRemoteNode(link) != null)
                 {
-                    amqpLink.setEstablished();
+                    amqpLink.opened();
                 }
                 else
                 {
+                    // As per AMQP 1.0 specification, section 2.6.3 Establishing Or Resuming A Link,
+                    // the returned attach may contain a null source/target if the peer link endpoint
+                    // had no associated local terminus and chooses not to create one.
                     amqpLink.setLinkError();
+                    //TODO: the above is just a marker, we need to trigger any waiters, e.g:
+                    //amqpLink.failed(cause);
                 }
                 _pendingLinks.remove(link);//TODO: delete pending links?
             }

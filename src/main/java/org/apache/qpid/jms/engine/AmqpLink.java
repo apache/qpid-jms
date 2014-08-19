@@ -25,14 +25,13 @@ import java.util.logging.Logger;
 
 import org.apache.qpid.proton.engine.Link;
 
-public abstract class AmqpLink
+public abstract class AmqpLink extends AmqpResource
 {
     private static Logger _logger = Logger.getLogger("qpid.jms-client.link");
 
     private final AmqpConnection _amqpConnection;
     private final AmqpSession _amqpSession;
     private final Link _protonLink;
-    private boolean _established;
     private boolean _linkError;
     private boolean _closed;
 
@@ -42,16 +41,6 @@ public abstract class AmqpLink
         _amqpSession = amqpSession;
         _protonLink = protonLink;
         _amqpConnection = amqpConnection;
-    }
-
-    public boolean isEstablished()
-    {
-        return _established;
-    }
-
-    void setEstablished()
-    {
-        _established = true;
     }
 
     public boolean getLinkError()
@@ -96,4 +85,15 @@ public abstract class AmqpLink
         return _closed;
     }
 
+    @Override
+    protected void doOpen()
+    {
+        _protonLink.open();
+    }
+
+    @Override
+    protected void doClose()
+    {
+        _protonLink.close();
+    }
 }

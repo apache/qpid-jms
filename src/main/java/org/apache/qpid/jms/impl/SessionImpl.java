@@ -42,8 +42,8 @@ import javax.jms.TextMessage;
 import javax.jms.Topic;
 import javax.jms.TopicSubscriber;
 
-import org.apache.qpid.jms.engine.AmqpConnection;
 import org.apache.qpid.jms.engine.AmqpReceiver;
+import org.apache.qpid.jms.engine.AmqpResourceRequest;
 import org.apache.qpid.jms.engine.AmqpSender;
 import org.apache.qpid.jms.engine.AmqpSession;
 
@@ -66,18 +66,6 @@ public class SessionImpl implements Session
         _messageIdHelper = messageIdHelper;
     }
 
-     void establish() throws JmsTimeoutException, JmsInterruptedException
-    {
-        _connectionImpl.waitUntil(new SimplePredicate("Session established", _amqpSession)
-        {
-            @Override
-            public boolean test()
-            {
-                return _amqpSession.isEstablished();
-            }
-        }, AmqpConnection.TIMEOUT);
-    }
-
     ConnectionImpl getConnectionImpl()
     {
         return _connectionImpl;
@@ -88,10 +76,19 @@ public class SessionImpl implements Session
         _connectionImpl.lock();
         try
         {
-            AmqpSender amqpSender = _amqpSession.createAmqpSender(address);
-            SenderImpl sender = new SenderImpl(this, _connectionImpl, amqpSender, destination);
-            _connectionImpl.stateChanged();
-            sender.establish();
+            AmqpResourceRequest<Void> request = new AmqpResourceRequest<Void>();
+
+            SenderImpl sender = null;
+            synchronized (_connectionImpl.getAmqpConnection())
+            {
+                AmqpSender amqpSender = _amqpSession.createAmqpSender(address);
+                sender = new SenderImpl(this, _connectionImpl, amqpSender, destination);
+                sender.open(request);
+                _connectionImpl.stateChanged();
+            }
+
+            _connectionImpl.waitForResult(request, "Exception while creating sender to: " + address);
+
             return sender;
         }
         finally
@@ -105,10 +102,19 @@ public class SessionImpl implements Session
         _connectionImpl.lock();
         try
         {
-            AmqpReceiver amqpReceiver = _amqpSession.createAmqpReceiver(address);
-            ReceiverImpl receiver = new ReceiverImpl(_connectionImpl, this, amqpReceiver, recieverDestination);
-            _connectionImpl.stateChanged();
-            receiver.establish();
+            AmqpResourceRequest<Void> request = new AmqpResourceRequest<Void>();
+
+            ReceiverImpl receiver = null;
+            AmqpReceiver amqpReceiver = null;
+            synchronized (_connectionImpl.getAmqpConnection())
+            {
+                amqpReceiver = _amqpSession.createAmqpReceiver(address);
+                receiver = new ReceiverImpl(_connectionImpl, this, amqpReceiver, recieverDestination);
+                receiver.open(request);
+                _connectionImpl.stateChanged();
+            }
+
+            _connectionImpl.waitForResult(request, "Exception while creating sender to: " + address);
 
             if(_connectionImpl.isStarted())
             {
@@ -136,6 +142,10 @@ public class SessionImpl implements Session
         return _destinationHelper;
     }
 
+    public void open(AmqpResourceRequest<Void> request) throws JmsTimeoutException, JmsInterruptedException
+    {
+        _amqpSession.open(request);
+    }
 
     //======= JMS Methods =======
 
@@ -146,19 +156,15 @@ public class SessionImpl implements Session
         _connectionImpl.lock();
         try
         {
-            _amqpSession.close();
-            _connectionImpl.stateChanged();
-            while(!_amqpSession.isClosed())
+            AmqpResourceRequest<Void> request = new AmqpResourceRequest<Void>();
+
+            synchronized (_connectionImpl.getAmqpConnection())
             {
-                _connectionImpl.waitUntil(new SimplePredicate("Session is closed", _amqpSession)
-                {
-                    @Override
-                    public boolean test()
-                    {
-                        return _amqpSession.isClosed();
-                    }
-                }, AmqpConnection.TIMEOUT);
+                _amqpSession.close(request);
+                _connectionImpl.stateChanged();
             }
+
+            _connectionImpl.waitForResult(request, "Exception while closing session");
 
             if(_amqpSession.getSessionError().getCondition() != null)
             {

@@ -36,6 +36,7 @@ import javax.jms.Topic;
 
 import org.apache.qpid.jms.engine.AmqpConnection;
 import org.apache.qpid.jms.engine.AmqpConnectionDriverNetty;
+import org.apache.qpid.jms.engine.AmqpResourceRequest;
 import org.apache.qpid.jms.engine.AmqpSession;
 
 /**
@@ -102,6 +103,11 @@ public class ConnectionImpl implements Connection
 
         _destinationHelper = new DestinationHelper();
         _messageIdHelper = new MessageIdHelper();
+    }
+
+    AmqpConnection getAmqpConnection()
+    {
+        return _amqpConnection;
     }
 
     void waitUntil(Predicate condition, long timeoutMillis) throws JmsTimeoutException, JmsInterruptedException
@@ -242,6 +248,18 @@ public class ConnectionImpl implements Connection
         return _username;
     }
 
+    void waitForResult(AmqpResourceRequest<Void> request, String message) throws JMSException
+    {
+        try
+        {
+            request.getResult();
+        }
+        catch (IOException e)
+        {
+            throw new QpidJmsException(message, e);
+        }
+    }
+
     //======= JMS Methods =======
 
 
@@ -294,11 +312,18 @@ public class ConnectionImpl implements Connection
         lock();
         try
         {
-            AmqpSession amqpSession = _amqpConnection.createSession();
+            AmqpResourceRequest<Void> request = new AmqpResourceRequest<Void>();
 
-            SessionImpl session = new SessionImpl(acknowledgeMode, amqpSession, this, _destinationHelper, _messageIdHelper);
-            stateChanged();
-            session.establish();
+            SessionImpl session = null;
+            synchronized (_amqpConnection)
+            {
+                AmqpSession amqpSession = _amqpConnection.createSession();
+                session = new SessionImpl(acknowledgeMode, amqpSession, this, _destinationHelper, _messageIdHelper);
+                session.open(request);
+                stateChanged();
+            }
+
+            waitForResult(request, "Exception while creating session");
 
             return session;
         }

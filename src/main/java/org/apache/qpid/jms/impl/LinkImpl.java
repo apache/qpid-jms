@@ -24,6 +24,7 @@ import javax.jms.JMSException;
 
 import org.apache.qpid.jms.engine.AmqpConnection;
 import org.apache.qpid.jms.engine.AmqpLink;
+import org.apache.qpid.jms.engine.AmqpResourceRequest;
 
 public class LinkImpl
 {
@@ -34,22 +35,6 @@ public class LinkImpl
     {
         _connectionImpl = connectionImpl;
         _amqpLink = amqpLink;
-    }
-
-    public void establish() throws LinkException, JmsTimeoutException, JmsInterruptedException
-    {
-        _connectionImpl.waitUntil(new SimplePredicate("Link is established or failed", _amqpLink)
-        {
-            @Override
-            public boolean test()
-            {
-                return _amqpLink.isEstablished() || _amqpLink.getLinkError();
-            }
-        }, AmqpConnection.TIMEOUT);
-        if(!_amqpLink.isEstablished())
-        {
-            throw new LinkException("Failed to establish link " + _amqpLink);
-        }
     }
 
     public void close() throws JMSException
@@ -79,4 +64,8 @@ public class LinkImpl
         return _connectionImpl;
     }
 
+    public void open(AmqpResourceRequest<Void> request) throws JmsTimeoutException, JmsInterruptedException
+    {
+        _amqpLink.open(request);
+    }
 }

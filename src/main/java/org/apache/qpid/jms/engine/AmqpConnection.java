@@ -48,7 +48,7 @@ import org.apache.qpid.proton.engine.Session;
  * manner.
  *
  */
-public class AmqpConnection
+public class AmqpConnection extends AmqpResource
 {
     private static Logger _logger = Logger.getLogger("qpid.jms-client.connection");
 
@@ -77,8 +77,6 @@ public class AmqpConnection
     private int _port;
 
     private Sasl _sasl;
-
-    private boolean _closed;
 
     private EventHandler _eventHandler = new AmqpConnectionEventHandler();
 
@@ -290,17 +288,6 @@ public class AmqpConnection
         return _connection.getCondition();
     }
 
-    public synchronized void close()
-    {
-        _connection.close();
-        notifyAll();
-    }
-
-    public synchronized boolean isClosed()
-    {
-        return _closed;
-    }
-
     public synchronized boolean isAuthenticationError()
     {
         return _authenticationError;
@@ -309,6 +296,19 @@ public class AmqpConnection
     public EventHandler getEventHandler()
     {
         return _eventHandler;
+    }
+
+    @Override
+    protected void doOpen()
+    {
+        //TODO: refactor opening to allow use of this
+        throw new UnsupportedOperationException("Not Yet Implemented");
+    }
+
+    @Override
+    protected void doClose()
+    {
+        _connection.close();
     }
 
     private class AmqpConnectionEventHandler extends AbstractEventHandler
@@ -330,7 +330,7 @@ public class AmqpConnection
         {
             if(_connected && (_connection.getLocalState() == EndpointState.CLOSED && connection.getRemoteState() == EndpointState.CLOSED))
             {
-                _closed = true;
+                closed();
                 _connected = false;
             }
         }

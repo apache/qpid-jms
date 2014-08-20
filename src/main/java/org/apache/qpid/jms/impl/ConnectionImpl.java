@@ -266,19 +266,19 @@ public class ConnectionImpl implements Connection
     @Override
     public void close() throws JMSException
     {
+        //TODO: allow for concurrent/duplicate invocations
         lock();
         try
         {
-            _amqpConnection.close();
-            stateChanged();
-            waitUntil(new SimplePredicate("Connection is closed", _amqpConnection)
+            AmqpResourceRequest<Void> request = new AmqpResourceRequest<Void>();
+
+            synchronized (_amqpConnection)
             {
-                @Override
-                public boolean test()
-                {
-                    return _amqpConnection.isClosed();
-                }
-            }, AmqpConnection.TIMEOUT);
+                _amqpConnection.close(request);
+                stateChanged();
+            }
+
+            waitForResult(request, "Exception while closing connection");
 
             _amqpConnectionDriver.stop();
 

@@ -20,21 +20,14 @@
  */
 package org.apache.qpid.jms.engine;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import org.apache.qpid.proton.engine.Link;
 
 public abstract class AmqpLink extends AmqpResource
 {
-    private static Logger _logger = Logger.getLogger("qpid.jms-client.link");
-
     private final AmqpConnection _amqpConnection;
     private final AmqpSession _amqpSession;
     private final Link _protonLink;
     private boolean _linkError;
-    private boolean _closed;
-
 
     public AmqpLink(AmqpSession amqpSession, Link protonLink, AmqpConnection amqpConnection)
     {
@@ -68,23 +61,6 @@ public abstract class AmqpLink extends AmqpResource
         return _protonLink;
     }
 
-    public void close()
-    {
-        _protonLink.close();
-        _amqpConnection.addPendingCloseLink(_protonLink);
-    }
-
-    void setClosed()
-    {
-        _logger.log(Level.FINEST, "Closed set on Link");
-        _closed = true;
-    }
-
-    public boolean isClosed()
-    {
-        return _closed;
-    }
-
     @Override
     protected void doOpen()
     {
@@ -94,6 +70,7 @@ public abstract class AmqpLink extends AmqpResource
     @Override
     protected void doClose()
     {
+        _amqpConnection.addPendingCloseLink(_protonLink);
         _protonLink.close();
     }
 }

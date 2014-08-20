@@ -22,7 +22,6 @@ package org.apache.qpid.jms.impl;
 
 import javax.jms.JMSException;
 
-import org.apache.qpid.jms.engine.AmqpConnection;
 import org.apache.qpid.jms.engine.AmqpLink;
 import org.apache.qpid.jms.engine.AmqpResourceRequest;
 
@@ -42,16 +41,15 @@ public class LinkImpl
         _connectionImpl.lock();
         try
         {
-            _amqpLink.close();
-            _connectionImpl.stateChanged();
-            _connectionImpl.waitUntil(new SimplePredicate("Link is closed", _amqpLink)
-            {
-                @Override
-                public boolean test()
-                {
-                    return _amqpLink.isClosed();
-                }
-            }, AmqpConnection.TIMEOUT);
+            AmqpResourceRequest<Void> request = new AmqpResourceRequest<Void>();
+
+          synchronized (_connectionImpl.getAmqpConnection())
+          {
+              _amqpLink.close(request);
+              _connectionImpl.stateChanged();
+          }
+
+          _connectionImpl.waitForResult(request, "Exception while closing link");
         }
         finally
         {

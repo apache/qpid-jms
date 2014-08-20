@@ -390,7 +390,7 @@ public class AmqpConnection
             if(link.getRemoteState() == EndpointState.CLOSED)
             {
                 AmqpLink amqpLink = (AmqpLink) link.getContext();
-                amqpLink.setClosed();
+                amqpLink.closed();
                 _pendingCloseLinks.remove(link);//TODO: delete pending close links?
             }
         }

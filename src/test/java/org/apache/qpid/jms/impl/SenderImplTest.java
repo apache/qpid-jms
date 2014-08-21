@@ -27,16 +27,19 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
+import java.io.IOException;
+
 import javax.jms.DeliveryMode;
 import javax.jms.Message;
 import javax.jms.Queue;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
+import org.apache.qpid.jms.engine.AmqpConnection;
 import org.apache.qpid.jms.engine.AmqpMessage;
+import org.apache.qpid.jms.engine.AmqpResourceRequest;
 import org.apache.qpid.jms.engine.AmqpSender;
 import org.apache.qpid.jms.engine.AmqpSentMessageToken;
 import org.apache.qpid.jms.engine.TestAmqpMessage;
-import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -45,6 +48,7 @@ public class SenderImplTest extends QpidJmsTestCase
 {
     private static final String JMS_AMQP_TTL = "JMS_AMQP_TTL";
     private ConnectionImpl _mockConnection;
+    private AmqpConnection _mockAmqpConnection;
     private AmqpSender _mockAmqpSender;
     private SessionImpl _mockSession;
     private Queue _mockQueue;
@@ -56,6 +60,8 @@ public class SenderImplTest extends QpidJmsTestCase
     {
         super.setUp();
         _mockConnection = Mockito.mock(ConnectionImpl.class);
+        _mockAmqpConnection = Mockito.mock(AmqpConnection.class);
+        Mockito.when(_mockConnection.getAmqpConnection()).thenReturn(_mockAmqpConnection);
         _mockAmqpSender = Mockito.mock(AmqpSender.class);
         _mockSession = Mockito.mock(SessionImpl.class);
         Mockito.when(_mockSession.getDestinationHelper()).thenReturn(new DestinationHelper());
@@ -69,11 +75,7 @@ public class SenderImplTest extends QpidJmsTestCase
     @Test
     public void testSenderOverriddesMessageDeliveryMode() throws Exception
     {
-        //Create mock sent message token, ensure that it is immediately marked as Accepted
-        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
-        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
-        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
-        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+        basePreparationForMockSending();
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
@@ -91,11 +93,7 @@ public class SenderImplTest extends QpidJmsTestCase
     @Test
     public void testSenderSetsJMSDestinationOnMessage() throws Exception
     {
-        //Create mock sent message token, ensure that it is immediately marked as Accepted
-        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
-        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
-        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
-        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+        basePreparationForMockSending();
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
@@ -111,11 +109,7 @@ public class SenderImplTest extends QpidJmsTestCase
     @Test
     public void testSenderSetsJMSTimestampOnMessage() throws Exception
     {
-        //Create mock sent message token, ensure that it is immediately marked as Accepted
-        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
-        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
-        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
-        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+        basePreparationForMockSending();
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
@@ -133,11 +127,7 @@ public class SenderImplTest extends QpidJmsTestCase
     @Test
     public void testSenderSetsJMSMessageIDOnMessage() throws Exception
     {
-        //Create mock sent message token, ensure that it is immediately marked as Accepted
-        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
-        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
-        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
-        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+        basePreparationForMockSending();
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
@@ -155,11 +145,7 @@ public class SenderImplTest extends QpidJmsTestCase
     @Test
     public void testSenderSetsJMSPriorityOnMessage() throws Exception
     {
-        //Create mock sent message token, ensure that it is immediately marked as Accepted
-        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
-        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
-        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
-        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+        basePreparationForMockSending();
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
@@ -177,11 +163,7 @@ public class SenderImplTest extends QpidJmsTestCase
     @Test
     public void testSenderSetsAbsoluteExpiryAndTtlFieldsOnUnderlyingMessage() throws Exception
     {
-        //Create mock sent message token, ensure that it is immediately marked as Accepted
-        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
-        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
-        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
-        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+        basePreparationForMockSending();
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
@@ -213,11 +195,7 @@ public class SenderImplTest extends QpidJmsTestCase
     @Test
     public void testSenderSetsTtlOnUnderlyingAmqpMessage() throws Exception
     {
-        //Create mock sent message token, ensure that it is immediately marked as Accepted
-        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
-        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
-        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
-        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+        basePreparationForMockSending();
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
@@ -236,11 +214,7 @@ public class SenderImplTest extends QpidJmsTestCase
     @Test
     public void testSenderClearsExistingJMSExpirationAndTtlFieldOnUnderlyingAmqpMessageWhenNotUsingTtl() throws Exception
     {
-        //Create mock sent message token, ensure that it is immediately marked as Accepted
-        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
-        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
-        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
-        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+        basePreparationForMockSending();
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
@@ -268,11 +242,7 @@ public class SenderImplTest extends QpidJmsTestCase
     @Test
     public void testSenderUsesJMS_AMQP_TTLPropertyToSetUnderlyingTtlFieldWhenNoProducerTTLInEffect() throws Exception
     {
-        //Create mock sent message token, ensure that it is immediately marked as Accepted
-        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
-        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
-        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
-        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+        basePreparationForMockSending();
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
@@ -294,11 +264,7 @@ public class SenderImplTest extends QpidJmsTestCase
     @Test
     public void testSenderUsesJMS_AMQP_TTLPropertyToSetUnderlyingTtlFieldWhenProducerTTLInEffect() throws Exception
     {
-        //Create mock sent message token, ensure that it is immediately marked as Accepted
-        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
-        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
-        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
-        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+        basePreparationForMockSending();
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
@@ -323,11 +289,7 @@ public class SenderImplTest extends QpidJmsTestCase
     @Test
     public void testSenderUsesJMS_AMQP_TTLPropertyValueZeroToClearUnderlyingTtlField() throws Exception
     {
-        //Create mock sent message token, ensure that it is immediately marked as Accepted
-        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
-        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
-        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
-        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+        basePreparationForMockSending();
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
@@ -349,7 +311,6 @@ public class SenderImplTest extends QpidJmsTestCase
         assertNull(testMessage.getUnderlyingAmqpMessage(false).getTtl());
     }
 
-    //TODO: delete this marker comment and finish test
     /**
      * Test that the producer sets the JMSXUserID property with the
      * user name for the connection the message is being sent on.
@@ -378,12 +339,7 @@ public class SenderImplTest extends QpidJmsTestCase
             setTestSystemProperty(ClientProperties.QPID_SET_JMSXUSERID_ON_SEND, "false");
         }
 
-        //Create mock sent message token, ensure that it is immediately marked as Accepted
-        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
-        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
-        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
-
-        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+        basePreparationForMockSending();
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
@@ -421,12 +377,7 @@ public class SenderImplTest extends QpidJmsTestCase
         //disable setting the user-id on send
         setTestSystemProperty(ClientProperties.QPID_SET_JMSXUSERID_ON_SEND, "false");
 
-        //Create mock sent message token, ensure that it is immediately marked as Accepted
-        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
-        Mockito.when(_mockToken.getRemoteDeliveryState()).thenReturn(Accepted.getInstance());
-        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class))).thenReturn(_mockToken);
-
-        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+        basePreparationForMockSending();
 
         SenderImpl senderImpl = new SenderImpl(_mockSession, _mockConnection, _mockAmqpSender, _mockQueue);
 
@@ -445,4 +396,15 @@ public class SenderImplTest extends QpidJmsTestCase
         assertNull("expected JMSXUserID be null, but was: " + value, value);
         assertFalse("JMSXUserID property should not exist", testMessage.propertyExists(ClientProperties.JMSXUSERID));
     }
+
+    private void basePreparationForMockSending() throws JmsTimeoutException, JmsInterruptedException, IOException
+    {
+        //Create mock request, ensuring that it immediately returns as completed
+        AmqpResourceRequest<?> mockRequest = Mockito.mock(AmqpResourceRequest.class);
+        AmqpSentMessageToken _mockToken = Mockito.mock(AmqpSentMessageToken.class);
+        Mockito.when(_mockAmqpSender.sendMessage(Mockito.any(AmqpMessage.class), Mockito.any(AmqpResourceRequest.class))).thenReturn(_mockToken);
+        Mockito.when(mockRequest.getResult()).thenReturn(null);
+        ImmediateWaitUntil.mockWaitUntil(_mockConnection);
+    }
+
 }

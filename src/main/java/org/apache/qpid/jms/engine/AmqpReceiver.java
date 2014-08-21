@@ -91,6 +91,12 @@ public class AmqpReceiver extends AmqpLink
     }
 
     @Override
+    void processDeliveryUpdate(Delivery delivery)
+    {
+        //TODO: implement receiver delivery update event processing
+    }
+
+    @Override
     public String toString()
     {
         StringBuilder builder = new StringBuilder();

@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.jms.engine;
 
+import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.engine.Delivery;
 
@@ -28,20 +29,14 @@ public class AmqpSentMessageToken
     private Delivery _delivery;
     private AmqpSender _amqpSender;
     private AmqpConnection _amqpConnection;
+    private AmqpResourceRequest<?> _request;
 
-    public AmqpSentMessageToken(Delivery delivery, AmqpSender sender)
+    public AmqpSentMessageToken(Delivery delivery, AmqpSender sender, AmqpResourceRequest<?> request)
     {
         _delivery = delivery;
         _amqpSender = sender;
         _amqpConnection = _amqpSender.getAmqpConnection();
-    }
-
-    public DeliveryState getRemoteDeliveryState()
-    {
-        synchronized (_amqpConnection)
-        {
-            return _delivery.getRemoteState();
-        }
+        _request = request;
     }
 
     public void settle()
@@ -60,4 +55,21 @@ public class AmqpSentMessageToken
             .append("]");
         return builder.toString();
     }
+
+    void processDeliveryUpdate()
+    {
+        DeliveryState remoteDeliveryState = _delivery.getRemoteState();
+        if(Accepted.getInstance().equals(remoteDeliveryState))
+        {
+            if(_request != null)
+            {
+                _request.onSuccess(null);
+                _request = null;
+            }
+        }
+        //TODO: check for transactional state acceptance
+
+        //TODO: exception if it isn't accepted.
+    }
+
 }

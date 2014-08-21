@@ -38,7 +38,7 @@ public class AmqpSender extends AmqpLink
         _protonSender = protonSender;
     }
 
-    public AmqpSentMessageToken sendMessage(AmqpMessage amqpMessage)
+    public AmqpSentMessageToken sendMessage(AmqpMessage amqpMessage, AmqpResourceRequest<?> request)
     {
         synchronized (getAmqpConnection())
         {
@@ -67,11 +67,19 @@ public class AmqpSender extends AmqpLink
             _protonSender.send(_buffer, 0, encoded);
             _protonSender.advance();
 
-            AmqpSentMessageToken amqpSentMessageToken = new AmqpSentMessageToken(del, this);
+            AmqpSentMessageToken amqpSentMessageToken = new AmqpSentMessageToken(del, this, request);
             del.setContext(amqpSentMessageToken);
 
             return amqpSentMessageToken;
         }
+    }
+
+    @Override
+    void processDeliveryUpdate(Delivery delivery)
+    {
+        AmqpSentMessageToken token = (AmqpSentMessageToken) delivery.getContext();
+
+        token.processDeliveryUpdate();
     }
 
     @Override

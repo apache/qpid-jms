@@ -31,6 +31,7 @@ import org.apache.qpid.jms.engine.temp.AbstractEventHandler;
 import org.apache.qpid.jms.engine.temp.EventHandler;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.Connection;
+import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Link;
 import org.apache.qpid.proton.engine.Receiver;
@@ -393,6 +394,15 @@ public class AmqpConnection extends AmqpResource
                 amqpLink.closed();
                 _pendingCloseLinks.remove(link);//TODO: delete pending close links?
             }
+        }
+
+        // == Delivery ==
+
+        @Override
+        public void onDelivery(Delivery delivery)
+        {
+            AmqpLink link = (AmqpLink) delivery.getLink().getContext();
+            link.processDeliveryUpdate(delivery);
         }
     }
 }

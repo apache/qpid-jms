@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.jms.engine;
 
+import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Link;
 
 public abstract class AmqpLink extends AmqpResource
@@ -73,4 +74,6 @@ public abstract class AmqpLink extends AmqpResource
         _amqpConnection.addPendingCloseLink(_protonLink);
         _protonLink.close();
     }
+
+    abstract void processDeliveryUpdate(Delivery delivery);
 }

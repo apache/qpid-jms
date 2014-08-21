@@ -31,6 +31,7 @@ import javax.jms.Message;
 import javax.jms.MessageProducer;
 
 import org.apache.qpid.jms.engine.AmqpMessage;
+import org.apache.qpid.jms.engine.AmqpResourceRequest;
 import org.apache.qpid.jms.engine.AmqpSender;
 import org.apache.qpid.jms.engine.AmqpSentMessageToken;
 
@@ -153,13 +154,22 @@ public class SenderImpl extends LinkImpl implements MessageProducer
                 }
             }
 
-            AmqpSentMessageToken sentMessage = _amqpSender.sendMessage(amqpMessage);
+            //TODO: we should probably only sync-send for persistent messages, when not otherwise request to send everything sync or async.
+            AmqpResourceRequest<Void> request = new AmqpResourceRequest<Void>();
 
-            getConnectionImpl().stateChanged();
+            AmqpSentMessageToken sentMessage = null;
+            synchronized (getConnectionImpl().getAmqpConnection())
+            {
+                sentMessage = _amqpSender.sendMessage(amqpMessage, request);
 
-            SentMessageTokenImpl sentMessageImpl = new SentMessageTokenImpl(sentMessage, this);
-            sentMessageImpl.waitUntilAccepted();
+                getConnectionImpl().stateChanged();
+            }
+
+            getConnectionImpl().waitForResult(request, "Exception while sending message");
+
+            //TODO: we might not want to settle immediately, or at all, in certain cases. Should perhaps do this during result event processing.
             sentMessage.settle();
+            //TODO: should we flush the transport again now for the settle? Might not need to if done during result event processing.
         }
         finally
         {

@@ -49,8 +49,6 @@ import org.apache.qpid.jms.engine.AmqpSession;
 
 public class SessionImpl implements Session
 {
-    private static final int INITIAL_RECEIVER_CREDIT = 1;
-
     private final int _acknowledgeMode;
     private final AmqpSession _amqpSession;
     private final ConnectionImpl _connectionImpl;
@@ -116,11 +114,13 @@ public class SessionImpl implements Session
 
             _connectionImpl.waitForResult(request, "Exception while creating sender to: " + address);
 
+            //TODO: per-consumer prefetch override?
+
             if(_connectionImpl.isStarted())
             {
-                //Issue initial flow for the consumer.
+                //Issue initial flow for the consumer, if required.
                 //TODO: decide on prefetch behaviour, i.e. whether we defer flow or do it now, and what value to use.
-                amqpReceiver.credit(INITIAL_RECEIVER_CREDIT);
+                receiver.flowIfNecessary();
                 _connectionImpl.stateChanged();
             }
 

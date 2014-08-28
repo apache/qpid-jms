@@ -41,6 +41,14 @@ public class AmqpReceiver extends AmqpLink
         _protonReceiver = protonReceiver;
     }
 
+    public int getCredit()
+    {
+        synchronized (getAmqpConnection())
+        {
+            return _protonReceiver.getCredit();
+        }
+    }
+
     public void credit(int credit)
     {
         synchronized (getAmqpConnection())
@@ -58,8 +66,7 @@ public class AmqpReceiver extends AmqpLink
     void processDeliveryUpdate(Delivery delivery)
     {
         //TODO: this is currently processing all messages for the link, should really just do the one given.
-        // We can't call recv if the passed delivery is not the 'current', but cant throw the event away either (could be a before-complete disposition change?)
-        // Doesnt handle settlement yet.
+        // We can't call recv if the passed delivery is not the 'current'
 
         Delivery currentDelivery = _protonReceiver.current();
         if(currentDelivery != null)

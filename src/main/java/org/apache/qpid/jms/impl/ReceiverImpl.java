@@ -34,67 +34,28 @@ public class ReceiverImpl extends LinkImpl implements MessageConsumer
 {
     private final AmqpReceiver _amqpReceiver;
     private final SessionImpl _sessionImpl;
-    private final Destination _recieverDestination;
+    private final Destination _receiverDestination;
+    private int _prefetchSize = Integer.getInteger(ClientProperties.QPID_DEFAULT_CONSUMER_PREFETCH, 10);
 
     public ReceiverImpl(ConnectionImpl connectionImpl, SessionImpl sessionImpl, AmqpReceiver amqpReceiver, Destination recieverDestination)
     {
         super(connectionImpl, amqpReceiver);
         _sessionImpl = sessionImpl;
         _amqpReceiver = amqpReceiver;
-        _recieverDestination = recieverDestination;
+        _receiverDestination = recieverDestination;
     }
 
-    @Override
-    public Message receive() throws JMSException
+    public int getPrefetchSize()
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Not Implemented");
+        return _prefetchSize;
     }
 
-    @Override
-    public Message receive(long timeout) throws JMSException
+    public void setPrefetchSize(int prefetchSize)
     {
-        getConnectionImpl().lock();
-        try
-        {
-            if(!getConnectionImpl().isStarted())
-            {
-                return null;
-            }
-
-            MessageReceivedPredicate messageReceievedCondition = new MessageReceivedPredicate();
-            getConnectionImpl().waitUntil(messageReceievedCondition, timeout);
-            AmqpMessage receivedAmqpMessage = messageReceievedCondition.getReceivedMessage();
-
-            //TODO: don't create a new factory for every message
-            Message receivedMessage = new MessageFactoryImpl().createJmsMessage(receivedAmqpMessage, _sessionImpl, getConnectionImpl(), _recieverDestination);
-
-            //TODO: accepting/settling will be acknowledge-mode dependent
-            if(_sessionImpl.getAcknowledgeMode() == Session.AUTO_ACKNOWLEDGE)
-            {
-                receivedAmqpMessage.accept(true);
-            }
-            else
-            {
-                throw new UnsupportedOperationException("Only Auto-Ack currently supported");
-            }
-
-            getConnectionImpl().stateChanged();
-
-            return receivedMessage;
-        }
-        catch (JmsTimeoutException e)
-        {
-            //No message in allotted time, return null to signal this
-            return null;
-        }
-        finally
-        {
-            getConnectionImpl().releaseLock();
-        }
+        _prefetchSize = prefetchSize;
     }
 
-    public void credit(int credit)
+    void credit(int credit)
     {
         getConnectionImpl().lock();
         try
@@ -105,6 +66,29 @@ public class ReceiverImpl extends LinkImpl implements MessageConsumer
         finally
         {
             getConnectionImpl().releaseLock();
+        }
+    }
+
+    boolean flowIfNecessary()
+    {
+        //TODO: do the different session types have any bearing here?
+        if(_prefetchSize == 0)
+        {
+            return false;
+        }
+
+        synchronized (getConnectionImpl().getAmqpConnection())
+        {
+            int credit = _amqpReceiver.getCredit();
+            if (credit <= _prefetchSize / 2)
+            {
+                int topUp = _prefetchSize - credit;
+                _amqpReceiver.credit(topUp);
+
+                return true;
+            }
+
+            return false;
         }
     }
 
@@ -130,6 +114,60 @@ public class ReceiverImpl extends LinkImpl implements MessageConsumer
         public AmqpMessage getReceivedMessage()
         {
             return _message;
+        }
+    }
+
+    //======= JMS Methods =======
+
+    @Override
+    public Message receive() throws JMSException
+    {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Not Implemented");
+    }
+
+    @Override
+    public Message receive(long timeout) throws JMSException
+    {
+        getConnectionImpl().lock();
+        try
+        {
+            if(!getConnectionImpl().isStarted())
+            {
+                return null;
+            }
+
+            MessageReceivedPredicate messageReceievedCondition = new MessageReceivedPredicate();
+            getConnectionImpl().waitUntil(messageReceievedCondition, timeout);
+            AmqpMessage receivedAmqpMessage = messageReceievedCondition.getReceivedMessage();
+
+            //TODO: don't create a new factory for every message
+            Message receivedMessage = new MessageFactoryImpl().createJmsMessage(receivedAmqpMessage, _sessionImpl, getConnectionImpl(), _receiverDestination);
+
+            //TODO: accepting/settling will be acknowledge-mode dependent
+            if(_sessionImpl.getAcknowledgeMode() == Session.AUTO_ACKNOWLEDGE)
+            {
+                receivedAmqpMessage.accept(true);
+            }
+            else
+            {
+                throw new UnsupportedOperationException("Only Auto-Ack currently supported");
+            }
+
+            flowIfNecessary();
+
+            getConnectionImpl().stateChanged();
+
+            return receivedMessage;
+        }
+        catch (JmsTimeoutException e)
+        {
+            //No message in allotted time, return null to signal this
+            return null;
+        }
+        finally
+        {
+            getConnectionImpl().releaseLock();
         }
     }
 

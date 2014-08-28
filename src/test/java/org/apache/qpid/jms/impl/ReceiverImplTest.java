@@ -29,6 +29,7 @@ import javax.jms.Message;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.QpidJmsTestCase;
+import org.apache.qpid.jms.engine.AmqpConnection;
 import org.apache.qpid.jms.engine.AmqpGenericMessage;
 import org.apache.qpid.jms.engine.AmqpMessage;
 import org.apache.qpid.jms.engine.AmqpReceiver;
@@ -39,6 +40,7 @@ import org.mockito.Mockito;
 public class ReceiverImplTest extends QpidJmsTestCase
 {
     private ConnectionImpl _mockConnection;
+    private AmqpConnection _mockAmqpConnection;
     private AmqpReceiver _mockAmqpReceiver;
     private SessionImpl _mockSession;
     private AmqpMessage _mockAmqpMessage;
@@ -49,6 +51,7 @@ public class ReceiverImplTest extends QpidJmsTestCase
     {
         super.setUp();
         _mockConnection = Mockito.mock(ConnectionImpl.class);
+        _mockAmqpConnection = Mockito.mock(AmqpConnection.class);
         _mockAmqpReceiver = Mockito.mock(AmqpReceiver.class);
         _mockSession = Mockito.mock(SessionImpl.class);
         Mockito.when(_mockSession.getDestinationHelper()).thenReturn(new DestinationHelper());
@@ -74,6 +77,7 @@ public class ReceiverImplTest extends QpidJmsTestCase
         Mockito.when(_mockConnection.isStarted()).thenReturn(true);
         Mockito.when(_mockAmqpReceiver.receiveNoWait()).thenReturn(_mockAmqpMessage);
         Mockito.when(_mockSession.getConnectionImpl()).thenReturn(_mockConnection);
+        Mockito.when(_mockConnection.getAmqpConnection()).thenReturn(_mockAmqpConnection);
         Mockito.when(_mockSession.getAcknowledgeMode()).thenReturn(Session.AUTO_ACKNOWLEDGE);
 
         ImmediateWaitUntil.mockWaitUntil(_mockConnection);

@@ -48,4 +48,5 @@ public class ClientProperties
 
     //Client configuration System Property names
     public static final String QPID_SET_JMSXUSERID_ON_SEND = "qpid.set-jmsxuserid-on-send";
+    public static final String QPID_DEFAULT_CONSUMER_PREFETCH = "qpid.default-consumer-prefetch";
 }

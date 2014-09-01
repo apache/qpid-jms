@@ -56,6 +56,7 @@ import org.apache.qpid.proton.engine.Transport;
 public class AmqpConnectionDriverNetty
 {
     private static Logger LOGGER = Logger.getLogger(AmqpConnectionDriverNetty.class.getName());
+    private static Logger LOGGER_BYTES = Logger.getLogger(AmqpConnectionDriverNetty.class.getName() + ".BYTES");
 
     private Bootstrap _bootstrap;
     private NettyHandler _nettyHandler;
@@ -423,13 +424,14 @@ public class AmqpConnectionDriverNetty
     private void echoBytes(String msgPrefix, ByteBuf buf)
     {
         //TODO: delete this method
-        if(LOGGER.isLoggable(Level.FINEST))
+        if(LOGGER_BYTES.isLoggable(Level.FINEST))
         {
             ByteBuffer nio = buf.nioBuffer();
             byte[] bytes = new byte[nio.limit()];
             nio.get(bytes);
 
-            logMessage(msgPrefix + new Binary(bytes));
+            String name = Thread.currentThread().getName();
+            LOGGER_BYTES.finest("[" + name + "] " + msgPrefix + new Binary(bytes));
         }
     }
 }

@@ -286,8 +286,6 @@ public class AmqpConnectionDriverNetty
                         for (EventHandler h : handlers)
                         {
                             Events.dispatch(ev, h);
-                            //TODO: delete
-                            //processAmqpConnection();
                         }
                         _collector.pop();
                     }
@@ -318,7 +316,7 @@ public class AmqpConnectionDriverNetty
                     if (pending > 0)
                     {
                         final int size = pending - offset;
-                        logMessage("Size:" + pending);
+                        logMessage("Size:" + size);
                         if (size > 0)
                         {
                             ByteBuf buffer = Unpooled.buffer(size);
@@ -348,7 +346,7 @@ public class AmqpConnectionDriverNetty
                                     }
                                     else
                                     {
-                                        // ???
+                                        logMessage("Write operation FAILED");
                                     }
                                 }
                             });

@@ -60,6 +60,9 @@ public class AmqpConnectionDriverNetty
     private static Logger LOGGER = Logger.getLogger(AmqpConnectionDriverNetty.class.getName());
     private static Logger LOGGER_BYTES = Logger.getLogger(AmqpConnectionDriverNetty.class.getName() + ".BYTES");
 
+    //TODO: make configurable
+    private static final int FRAME_SIZE = 64 * 1024;
+
     private Bootstrap _bootstrap;
     private NettyHandler _nettyHandler;
     private ExecutorService _executor;
@@ -185,6 +188,7 @@ public class AmqpConnectionDriverNetty
             {
                 logMessage("ACTIVE");
                 _transport = Transport.Factory.create();
+                _transport.setMaxFrameSize(FRAME_SIZE);
                 _transport.setContext(ctx);
 
                 Connection connection = _amqpConnection.getConnection();

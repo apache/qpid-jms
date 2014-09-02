@@ -113,6 +113,7 @@ public class AmqpConnection extends AmqpResource
     public synchronized AmqpSession createSession()
     {
         Session session = _connection.session();
+        session.setIncomingCapacity(Integer.MAX_VALUE);
 
         AmqpSession amqpSession = new AmqpSession(this, session);
         session.setContext(amqpSession);

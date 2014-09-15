@@ -184,6 +184,7 @@ index 808d43e..6cdf84c 100644
      * an AmqpValue section containing a map which holds entries of the various supported entry
      * types with the expected values.
      */
+    @SuppressWarnings("unused")  // TODO - Remove once Char tests re-added
     @Test
     public void testSendBasicMapMessage() throws Exception
     {

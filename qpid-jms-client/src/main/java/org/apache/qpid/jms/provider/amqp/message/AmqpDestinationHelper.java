@@ -72,7 +72,7 @@ public class AmqpDestinationHelper {
      * returned.
      */
 
-    public JmsDestination buildJmsDestination(AmqpJmsMessageFacade message, JmsDestination consumerDestination) {
+    public JmsDestination getJmsDestination(AmqpJmsMessageFacade message, JmsDestination consumerDestination) {
         String to = message.getAmqpMessage().getAddress();
         String toTypeString = (String) message.getAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         Set<String> typeSet = null;
@@ -84,7 +84,7 @@ public class AmqpDestinationHelper {
         return createDestination(to, typeSet, consumerDestination, false);
     }
 
-    public JmsDestination buildJmsReplyTo(AmqpJmsMessageFacade message, JmsDestination consumerDestination) {
+    public JmsDestination getJmsReplyTo(AmqpJmsMessageFacade message, JmsDestination consumerDestination) {
         String replyTo = message.getAmqpMessage().getReplyTo();
         String replyToTypeString = (String) message.getAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         Set<String> typeSet = null;

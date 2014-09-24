@@ -116,8 +116,8 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             syntheticTTL = System.currentTimeMillis() + ttl;
         }
 
-        this.destination = AmqpDestinationHelper.INSTANCE.buildJmsDestination(this, consumer.getDestination());
-        this.replyTo = AmqpDestinationHelper.INSTANCE.buildJmsReplyTo(this, consumer.getDestination());
+        this.destination = AmqpDestinationHelper.INSTANCE.getJmsDestination(this, consumer.getDestination());
+        this.replyTo = AmqpDestinationHelper.INSTANCE.getJmsReplyTo(this, consumer.getDestination());
     }
 
     /**

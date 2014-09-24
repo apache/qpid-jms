@@ -22,13 +22,13 @@ package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.junit.Assert.*;
 
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.util.UUID;
 
 import org.apache.qpid.jms.exceptions.IdConversionException;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageIdHelper;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
+import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.amqp.UnsignedLong;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -255,56 +255,41 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
 
     /**
      * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(String)} returns a string
-     * indicating an AMQP encoded ulong when given a Long object.
+     * indicating an AMQP encoded ulong when given a UnsignedLong object.
      */
     @Test
-    public void testToBaseMessageIdStringWithLong() {
-        Long longMessageId = Long.valueOf(123456789L);
-        String expected = AmqpMessageIdHelper.AMQP_ULONG_PREFIX + longMessageId.toString();
+    public void testToBaseMessageIdStringWithUnsignedLong() {
+        UnsignedLong uLongMessageId = UnsignedLong.valueOf(123456789L);
+        String expected = AmqpMessageIdHelper.AMQP_ULONG_PREFIX + uLongMessageId.toString();
 
-        String baseMessageIdString = _messageIdHelper.toBaseMessageIdString(longMessageId);
+        String baseMessageIdString = _messageIdHelper.toBaseMessageIdString(uLongMessageId);
         assertNotNull("null string should not have been returned", baseMessageIdString);
         assertEquals("expected base id string was not returned", expected, baseMessageIdString);
     }
 
     /**
      * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(String)} returns a string
-     * indicating an AMQP encoded ulong when given a BigInteger object.
+     * indicating an AMQP encoded binary when given a Binary object.
      */
     @Test
-    public void testToBaseMessageIdStringWithBigInteger() {
-        BigInteger bigIntMessageId = BigInteger.valueOf(123456789L);
-        String expected = AmqpMessageIdHelper.AMQP_ULONG_PREFIX + bigIntMessageId.toString();
-
-        String baseMessageIdString = _messageIdHelper.toBaseMessageIdString(bigIntMessageId);
-        assertNotNull("null string should not have been returned", baseMessageIdString);
-        assertEquals("expected base id string was not returned", expected, baseMessageIdString);
-    }
-
-    /**
-     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(String)} returns a string
-     * indicating an AMQP encoded binary when given a ByteBuffer object.
-     */
-    @Test
-    public void testToBaseMessageIdStringWithByteBufferBinary() {
+    public void testToBaseMessageIdStringWithBinary() {
         byte[] bytes = new byte[] { (byte) 0x00, (byte) 0xAB, (byte) 0x09, (byte) 0xFF };
-        ByteBuffer buf = ByteBuffer.wrap(bytes);
+        Binary binary = new Binary(bytes);
 
         String expected = AmqpMessageIdHelper.AMQP_BINARY_PREFIX + "00AB09FF";
 
-        String baseMessageIdString = _messageIdHelper.toBaseMessageIdString(buf);
+        String baseMessageIdString = _messageIdHelper.toBaseMessageIdString(binary);
         assertNotNull("null string should not have been returned", baseMessageIdString);
         assertEquals("expected base id string was not returned", expected, baseMessageIdString);
     }
 
     /**
-     * Test that {@link AmqpMessageIdHelper#toIdObject(String)} returns a ulong
-     * (represented as a BigInteger) when given a string indicating an
-     * encoded AMQP ulong id.
+     * Test that {@link AmqpMessageIdHelper#toIdObject(String)} returns an
+     * UnsignedLong when given a string indicating an encoded AMQP ulong id.
      */
     @Test
     public void testToIdObjectWithEncodedUlong() throws Exception {
-        BigInteger longId = BigInteger.valueOf(123456789L);
+        UnsignedLong longId = UnsignedLong.valueOf(123456789L);
         String provided = AmqpMessageIdHelper.AMQP_ULONG_PREFIX + "123456789";
 
         Object idObject = _messageIdHelper.toIdObject(provided);
@@ -313,14 +298,13 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     }
 
     /**
-     * Test that {@link AmqpMessageIdHelper#toIdObject(String)} returns binary
-     * (represented as a ByteBuffer) when given a string indicating an
-     * encoded AMQP binary id, using upper case hex characters
+     * Test that {@link AmqpMessageIdHelper#toIdObject(String)} returns a Binary
+     * when given a string indicating an encoded AMQP binary id, using upper case hex characters
      */
     @Test
     public void testToIdObjectWithEncodedBinaryUppercaseHexString() throws Exception {
         byte[] bytes = new byte[] { (byte) 0x00, (byte) 0xAB, (byte) 0x09, (byte) 0xFF };
-        ByteBuffer binaryId = ByteBuffer.wrap(bytes);
+        Binary binaryId = new Binary(bytes);
 
         String provided = AmqpMessageIdHelper.AMQP_BINARY_PREFIX + "00AB09FF";
 
@@ -339,14 +323,13 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     }
 
     /**
-     * Test that {@link AmqpMessageIdHelper#toIdObject(String)} returns binary
-     * (represented as a ByteBuffer) when given a string indicating an
-     * encoded AMQP binary id, using lower case hex characters.
+     * Test that {@link AmqpMessageIdHelper#toIdObject(String)} returns a Binary
+     * when given a string indicating an encoded AMQP binary id, using lower case hex characters.
      */
     @Test
     public void testToIdObjectWithEncodedBinaryLowercaseHexString() throws Exception {
         byte[] bytes = new byte[] { (byte) 0x00, (byte) 0xAB, (byte) 0x09, (byte) 0xFF };
-        ByteBuffer binaryId = ByteBuffer.wrap(bytes);
+        Binary binaryId = new Binary(bytes);
 
         String provided = AmqpMessageIdHelper.AMQP_BINARY_PREFIX + "00ab09ff";
 

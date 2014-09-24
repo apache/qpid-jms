@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
 import org.apache.qpid.jms.exceptions.IdConversionException;
+import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.amqp.UnsignedLong;
 
 /**
  * Helper class for identifying and converting message-id and correlation-id values between
@@ -48,6 +49,8 @@ import org.apache.qpid.jms.exceptions.IdConversionException;
  *
  */
 public class AmqpMessageIdHelper {
+    public static final AmqpMessageIdHelper INSTANCE = new AmqpMessageIdHelper();
+
     public static final String AMQP_STRING_PREFIX = "AMQP_STRING:";
     public static final String AMQP_UUID_PREFIX = "AMQP_UUID:";
     public static final String AMQP_ULONG_PREFIX = "AMQP_ULONG:";
@@ -117,10 +120,10 @@ public class AmqpMessageIdHelper {
             }
         } else if (messageId instanceof UUID) {
             return AMQP_UUID_PREFIX + messageId.toString();
-        } else if (messageId instanceof BigInteger || messageId instanceof Long) {
+        } else if (messageId instanceof UnsignedLong) {
             return AMQP_ULONG_PREFIX + messageId.toString();
-        } else if (messageId instanceof ByteBuffer) {
-            ByteBuffer dup = ((ByteBuffer) messageId).duplicate();
+        } else if (messageId instanceof Binary) {
+            ByteBuffer dup = ((Binary) messageId).asByteBuffer();
 
             byte[] bytes = new byte[dup.remaining()];
             dup.get(bytes);
@@ -175,13 +178,13 @@ public class AmqpMessageIdHelper {
                 return UUID.fromString(uuidString);
             } else if (hasAmqpUlongPrefix(baseId)) {
                 String longString = strip(baseId, AMQP_ULONG_PREFIX_LENGTH);
-                return new BigInteger(longString);
+                return UnsignedLong.valueOf(longString);
             } else if (hasAmqpStringPrefix(baseId)) {
                 return strip(baseId, AMQP_STRING_PREFIX_LENGTH);
             } else if (hasAmqpBinaryPrefix(baseId)) {
                 String hexString = strip(baseId, AMQP_BINARY_PREFIX_LENGTH);
                 byte[] bytes = convertHexStringToBinary(hexString);
-                return ByteBuffer.wrap(bytes);
+                return new Binary(bytes);
             } else {
                 // We have a string without any type prefix, transmit it as-is.
                 return baseId;

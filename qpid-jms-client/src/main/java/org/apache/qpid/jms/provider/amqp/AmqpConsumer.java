@@ -30,8 +30,8 @@ import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.meta.JmsMessageId;
 import org.apache.qpid.jms.provider.AsyncResult;
-import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
@@ -361,6 +361,10 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
     public JmsConsumerId getConsumerId() {
         return this.info.getConsumerId();
+    }
+
+    public JmsDestination getDestination() {
+        return this.info.getDestination();
     }
 
     public Receiver getProtonReceiver() {

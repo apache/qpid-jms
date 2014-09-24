@@ -727,6 +727,22 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         message.setApplicationProperties(null);
     }
 
+    String getToAddress() {
+        return message.getAddress();
+    }
+
+    void setToAddress(String address) {
+        message.setAddress(address);
+    }
+
+    String getReplyToAddress() {
+        return message.getReplyTo();
+    }
+
+    void setReplyToAddress(String address) {
+        this.message.setReplyTo(address);
+    }
+
     private Long getAbsoluteExpiryTime() {
         Long result = null;
         if (message.getProperties() != null) {

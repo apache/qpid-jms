@@ -73,7 +73,7 @@ public class AmqpDestinationHelper {
      */
 
     public JmsDestination getJmsDestination(AmqpJmsMessageFacade message, JmsDestination consumerDestination) {
-        String to = message.getAmqpMessage().getAddress();
+        String to = message.getToAddress();
         String toTypeString = (String) message.getAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         Set<String> typeSet = null;
 
@@ -85,7 +85,7 @@ public class AmqpDestinationHelper {
     }
 
     public JmsDestination getJmsReplyTo(AmqpJmsMessageFacade message, JmsDestination consumerDestination) {
-        String replyTo = message.getAmqpMessage().getReplyTo();
+        String replyTo = message.getReplyToAddress();
         String replyToTypeString = (String) message.getAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         Set<String> typeSet = null;
 
@@ -142,7 +142,7 @@ public class AmqpDestinationHelper {
         String address = destination.getName();
         String typeString = toTypeAnnotation(destination);
 
-        message.getAmqpMessage().setAddress(address);
+        message.setToAddress(address);
 
         if (address == null || typeString == null) {
             message.removeAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
@@ -155,7 +155,7 @@ public class AmqpDestinationHelper {
         String replyToAddress = destination.getName();
         String typeString = toTypeAnnotation(destination);
 
-        message.getAmqpMessage().setReplyTo(replyToAddress);
+        message.setReplyToAddress(replyToAddress);
 
         if (replyToAddress == null || typeString == null) {
             message.removeAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);

@@ -48,6 +48,16 @@ public class AmqpDestinationHelper {
     // TODO - The Type Annotation seems like it could just be a byte value
     // TODO - How do we deal with the case where no type is present?
 
+    /*
+     *  One possible way to encode destination types that isn't a string.
+     *
+     *  public static final byte QUEUE_TYPE = 0x01;
+     *  public static final byte TOPIC_TYPE = 0x02;
+     *  public static final byte TEMP_MASK = 0x04;
+     *  public static final byte TEMP_TOPIC_TYPE = TOPIC_TYPE | TEMP_MASK;
+     *  public static final byte TEMP_QUEUE_TYPE = QUEUE_TYPE | TEMP_MASK;
+     */
+
     /**
      * Decode the provided To address, type description, and consumer destination
      * information such that an appropriate Destination object can be returned.

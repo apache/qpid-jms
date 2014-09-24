@@ -227,13 +227,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public void clearProperties() {
-        //_propJMS_AMQP_TTL = null;
-        message.setReplyToGroupId(null);
-        message.setUserId(null);
-        message.setGroupId(null);
-        setGroupSequence(0);
-
-        // TODO - Clear others as needed.
+        clearAllApplicationProperties();
     }
 
     @Override
@@ -244,7 +238,53 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     protected void copyInto(AmqpJmsMessageFacade target) {
-        // TODO - Copy message.
+        target.setDestination(destination);
+        target.setReplyTo(replyTo);
+
+        Message targetMsg = target.getAmqpMessage();
+
+        targetMsg.setDurable(message.isDurable());
+        targetMsg.setDeliveryCount(message.getDeliveryCount());
+        targetMsg.setTtl(message.getTtl());
+        targetMsg.setFirstAcquirer(message.isFirstAcquirer());
+        targetMsg.setPriority(message.getPriority());
+        targetMsg.setMessageId(message.getMessageId());
+        targetMsg.setMessageFormat(message.getMessageFormat());
+        targetMsg.setBody(message.getBody());
+        targetMsg.setUserId(message.getUserId());
+        targetMsg.setGroupId(message.getGroupId());
+        targetMsg.setGroupSequence(message.getGroupSequence());
+        targetMsg.setCreationTime(message.getCreationTime());
+        targetMsg.setSubject(message.getSubject());
+        targetMsg.setExpiryTime(message.getExpiryTime());
+        targetMsg.setReplyToGroupId(message.getReplyToGroupId());
+        targetMsg.setContentEncoding(message.getContentEncoding());
+        targetMsg.setContentType(message.getContentType());
+        targetMsg.setCorrelationId(message.getCorrelationId());
+        targetMsg.setMessageId(message.getMessageId());
+
+        // We don't currently deep copy these as they can't be modified by the client right now.
+        targetMsg.setHeader(message.getHeader());
+        targetMsg.setFooter(message.getFooter());
+
+        // TODO - Need to see how this is implemented in Proton, not clear on the Properties
+        //        vs message set / get of those same properties implementation.
+        // void setProperties(Properties properties);
+
+        if (propertiesMap != null) {
+            target.lazyCreateProperties();
+            target.propertiesMap.putAll(propertiesMap);
+        }
+
+        if (annotationsMap != null) {
+            target.lazyCreateAnnotations();
+            target.annotationsMap.putAll(annotationsMap);
+        }
+
+        if (message.getDeliveryAnnotations() != null) {
+            // TODO - Find the most efficient way to copy these, or don't copy if we would
+            //        not be modifying them.
+        }
     }
 
     @Override

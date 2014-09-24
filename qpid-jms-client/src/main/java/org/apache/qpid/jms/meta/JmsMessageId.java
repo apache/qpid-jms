@@ -22,7 +22,7 @@ package org.apache.qpid.jms.meta;
  */
 public class JmsMessageId extends JmsAbstractResourceId implements Comparable<JmsMessageId> {
 
-    protected Object messageId;
+    protected String messageId;
 
     public JmsMessageId(JmsProducerInfo producerInfo, long producerSequenceId) {
         this(producerInfo.getProducerId(), producerSequenceId);
@@ -36,8 +36,8 @@ public class JmsMessageId extends JmsAbstractResourceId implements Comparable<Jm
         this(producerId + "-" + producerSequenceId);
     }
 
-    public JmsMessageId(Object messageId) {
-        setValue(messageId);
+    public JmsMessageId(String messageId) {
+        this.messageId = messageId;
     }
 
     public JmsMessageId copy() {
@@ -46,19 +46,9 @@ public class JmsMessageId extends JmsAbstractResourceId implements Comparable<Jm
     }
 
     /**
-     * Sets the value as a opaque object
-     *
-     * @param messageId
-     *        The new message Id value for this instance.
-     */
-    public void setValue(Object messageId) {
-        this.messageId = messageId;
-    }
-
-    /**
      * @return the set message ID value.
      */
-    public Object getValue() {
+    public String getValue() {
         return messageId;
     }
 
@@ -97,11 +87,12 @@ public class JmsMessageId extends JmsAbstractResourceId implements Comparable<Jm
 
     @Override
     public String toString() {
-        String result = messageId.toString();
-        if (result != null) {
-            if (!result.startsWith("ID:")) {
-                result = "ID:" + messageId;
-            }
+        String result = "JmsMessageId{messageId = ";
+        Object id = messageId;
+        if (id == null) {
+            result = result + "<null>}";
+        } else {
+            result = result + String.valueOf(id) + "}";
         }
 
         return result;

@@ -33,6 +33,7 @@ import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
 
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.exceptions.IdConversionException;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 import org.apache.qpid.jms.meta.JmsMessageId;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
@@ -245,26 +246,30 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public JmsMessageId getMessageId() {
-        Object result = message.getMessageId();
-        if (result != null) {
-            if (result instanceof String) {
-                return new JmsMessageId((String) result);
-            } else {
-                // TODO
-                throw new RuntimeException("No support for non-String IDs yet.");
-            }
-        }
+        Object underlying = message.getMessageId();
+        AmqpMessageIdHelper helper = AmqpMessageIdHelper.INSTANCE;
+        String baseStringId = helper.toBaseMessageIdString(underlying);
 
-        //TODO: returning a null JmsMessageId object leads to NPE during delivery processing
-        return null;
+        //Ensure the ID: prefix is present.
+        //TODO: should we always do this? AMQP JMS Mapping says never to send the "ID:" prefix.
+        //TODO: should we make this part of the JmsMessageId, or JmsMessage object responsibilities?
+        //      I Ended up putting it in JmsMessage after the above comment, as a workaround for the current JmsDefaultMessageFacade usage.
+        if(baseStringId != null && !helper.hasMessageIdPrefix(baseStringId))
+        {
+            baseStringId = AmqpMessageIdHelper.JMS_ID_PREFIX + baseStringId;
+        }
+        return new JmsMessageId(baseStringId);
     }
 
     @Override
     public void setMessageId(JmsMessageId messageId) {
-        if (messageId != null) {
-            message.setMessageId(messageId.toString());
-        } else {
+        if (messageId == null) {
             message.setMessageId(null);
+        } else {
+            String value = messageId.getValue();
+            // Remove the first 'ID:' prefix if present
+            value = AmqpMessageIdHelper.INSTANCE.stripMessageIdPrefix(value);
+            message.setMessageId(value);
         }
     }
 
@@ -293,14 +298,55 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public String getCorrelationId() {
-        // TODO Auto-generated method stub
-        return null;
+        AmqpMessageIdHelper messageIdHelper = AmqpMessageIdHelper.INSTANCE;
+        String baseIdString = messageIdHelper.toBaseMessageIdString(message.getCorrelationId());
+
+        if (baseIdString == null) {
+            return null;
+        } else {
+            Object annotation = getAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID);
+            boolean appSpecific = Boolean.TRUE.equals(annotation);
+
+            if (appSpecific) {
+                return baseIdString;
+            } else {
+                return AmqpMessageIdHelper.JMS_ID_PREFIX + baseIdString;
+            }
+        }
     }
 
     @Override
     public void setCorrelationId(String correlationId) {
-        // TODO Auto-generated method stub
+        AmqpMessageIdHelper messageIdHelper = AmqpMessageIdHelper.INSTANCE;
+        if (correlationId == null) {
+            message.setMessageId(null);
+        } else {
+            boolean appSpecific = false;
+            boolean hasMessageIdPrefix = messageIdHelper.hasMessageIdPrefix(correlationId);
+            if (correlationId != null && !hasMessageIdPrefix) {
+                appSpecific = true;
+            }
 
+            String stripped = messageIdHelper.stripMessageIdPrefix(correlationId);
+
+            if (hasMessageIdPrefix) {
+                try {
+                    Object idObject = messageIdHelper.toIdObject(stripped);
+                    message.setCorrelationId(idObject);
+                } catch (IdConversionException e) {
+                    // TODO decided what to do with this exception
+                    throw new RuntimeException(e);
+                }
+            } else {
+                message.setCorrelationId(stripped);
+            }
+
+            if (appSpecific) {
+                setAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID, true);
+            } else {
+                removeAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID);
+            }
+        }
     }
 
     @Override

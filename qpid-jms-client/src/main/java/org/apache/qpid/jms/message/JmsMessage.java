@@ -39,6 +39,7 @@ import org.apache.qpid.jms.util.TypeConversionSupport;
 
 public class JmsMessage implements javax.jms.Message {
 
+    private static final String ID_PREFIX = "ID:";
     protected transient Callable<Void> acknowledgeCallback;
     protected transient JmsConnection connection;
 
@@ -128,10 +129,17 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public String getJMSMessageID() throws JMSException {
-        if (facade.getMessageId() == null) {
+        JmsMessageId facadeId = facade.getMessageId();
+        if (facadeId == null) {
             return null;
         }
-        return facade.getMessageId().toString();
+
+        String value = facadeId.getValue();
+        if (value != null && !value.startsWith(ID_PREFIX)) {
+            value = ID_PREFIX + value;
+        }
+
+        return value;
     }
 
     @Override

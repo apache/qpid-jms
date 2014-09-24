@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
+import java.util.Map;
+
 import javax.jms.Destination;
 import javax.jms.Queue;
 import javax.jms.TemporaryQueue;
@@ -23,6 +25,7 @@ import javax.jms.TemporaryTopic;
 import javax.jms.Topic;
 
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.message.Message;
 
 /**
  * Support class containing constant values and static methods that are
@@ -162,6 +165,27 @@ public final class AmqpMessageSupport {
             } else {
                 return TOPIC_ATTRIBUTES;
             }
+        }
+
+        return null;
+    }
+
+    /**
+     * Safe way to access message annotations which will check internal structure and
+     * either return the annotation if it exists or null if the annotation or any annotations
+     * are present.
+     *
+     * @param key
+     *        the String key to use to lookup an annotation.
+     * @param message
+     *        the AMQP message object that is being examined.
+     *
+     * @return the given annotation value or null if not present in the message.
+     */
+    public static Object getMessageAnnotation(String key, Message message) {
+        if (message != null && message.getMessageAnnotations() != null) {
+            Map<Symbol, Object> annotations = message.getMessageAnnotations().getValue();
+            return annotations.get(AmqpMessageSupport.getSymbol(key));
         }
 
         return null;

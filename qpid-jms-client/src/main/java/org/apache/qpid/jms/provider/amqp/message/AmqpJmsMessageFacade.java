@@ -37,6 +37,7 @@ import org.apache.qpid.jms.exceptions.IdConversionException;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 import org.apache.qpid.jms.meta.JmsMessageId;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
+import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
@@ -74,6 +75,9 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     /**
      * Create a new AMQP Message Facade with an empty message instance.
+     *
+     * @param connection
+     *        the AmqpConnection that under which this facade was created.
      */
     public AmqpJmsMessageFacade(AmqpConnection connection) {
         this.message = Proton.message();
@@ -87,15 +91,15 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
      * Creates a new Facade around an incoming AMQP Message for dispatch to the
      * JMS Consumer instance.
      *
-     * @param connection
-     *        the connection that created this Facade.
+     * @param consumer
+     *        the consumer that received this message.
      * @param message
      *        the incoming Message instance that is being wrapped.
      */
     @SuppressWarnings("unchecked")
-    public AmqpJmsMessageFacade(AmqpConnection connection, Message message) {
+    public AmqpJmsMessageFacade(AmqpConsumer consumer, Message message) {
         this.message = message;
-        this.connection = connection;
+        this.connection = consumer.getConnection();
 
         annotations = message.getMessageAnnotations();
         if (annotations != null) {
@@ -112,8 +116,8 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             syntheticTTL = System.currentTimeMillis() + ttl;
         }
 
-        // TODO - Set destination
-        // TODO - Set replyTo
+        this.destination = AmqpDestinationHelper.INSTANCE.buildJmsDestination(this, consumer.getDestination());
+        this.replyTo = AmqpDestinationHelper.INSTANCE.buildJmsReplyTo(this, consumer.getDestination());
     }
 
     /**
@@ -223,7 +227,6 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public void clearProperties() {
-        clearProperties();
         //_propJMS_AMQP_TTL = null;
         message.setReplyToGroupId(null);
         message.setUserId(null);
@@ -235,7 +238,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public JmsMessageFacade copy() throws JMSException {
-        AmqpJmsMessageFacade copy = new AmqpJmsMessageFacade(connection, message);
+        AmqpJmsMessageFacade copy = new AmqpJmsMessageFacade(connection);
         copyInto(copy);
         return copy;
     }
@@ -250,12 +253,12 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         AmqpMessageIdHelper helper = AmqpMessageIdHelper.INSTANCE;
         String baseStringId = helper.toBaseMessageIdString(underlying);
 
-        //Ensure the ID: prefix is present.
-        //TODO: should we always do this? AMQP JMS Mapping says never to send the "ID:" prefix.
-        //TODO: should we make this part of the JmsMessageId, or JmsMessage object responsibilities?
-        //      I Ended up putting it in JmsMessage after the above comment, as a workaround for the current JmsDefaultMessageFacade usage.
-        if(baseStringId != null && !helper.hasMessageIdPrefix(baseStringId))
-        {
+        // Ensure the ID: prefix is present.
+        // TODO: should we always do this? AMQP JMS Mapping says never to send the "ID:" prefix.
+        // TODO: should we make this part of the JmsMessageId, or JmsMessage object responsibilities?
+        //       I Ended up putting it in JmsMessage after the above comment, as a workaround for the
+        //       current JmsDefaultMessageFacade usage.
+        if (baseStringId != null && !helper.hasMessageIdPrefix(baseStringId)) {
             baseStringId = AmqpMessageIdHelper.JMS_ID_PREFIX + baseStringId;
         }
         return new JmsMessageId(baseStringId);
@@ -514,8 +517,8 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     @Override
     public void setDestination(JmsDestination destination) {
         this.destination = destination;
-
-        // TODO
+        lazyCreateAnnotations();
+        AmqpDestinationHelper.INSTANCE.setToAddressFromDestination(this, destination);
     }
 
     @Override
@@ -526,7 +529,8 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     @Override
     public void setReplyTo(JmsDestination replyTo) {
         this.replyTo = replyTo;
-        // TODO Auto-generated method stub
+        lazyCreateAnnotations();
+        AmqpDestinationHelper.INSTANCE.setReplyToAddressFromDestination(this, replyTo);
     }
 
     public void setReplyToGroupId(String replyToGroupId) {

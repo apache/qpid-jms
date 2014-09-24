@@ -20,7 +20,10 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -29,6 +32,7 @@ import java.util.UUID;
 
 import org.apache.qpid.jms.meta.JmsMessageId;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
+import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
@@ -36,7 +40,6 @@ import org.apache.qpid.proton.amqp.UnsignedLong;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Properties;
 import org.apache.qpid.proton.message.Message;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -46,8 +49,15 @@ public class AmqpJmsMessageFacadeTest {
         return new AmqpJmsMessageFacade(createMockAmqpConnection());
     }
 
-    private AmqpJmsMessageFacade createReceivedMessageFacade(AmqpConnection amqpConnection, Message message) {
-        return new AmqpJmsMessageFacade(amqpConnection, message);
+    private AmqpJmsMessageFacade createReceivedMessageFacade(AmqpConsumer amqpConsumer, Message message) {
+        return new AmqpJmsMessageFacade(amqpConsumer, message);
+    }
+
+
+    private AmqpConsumer createMockAmqpConsumer() {
+        AmqpConsumer consumer = Mockito.mock(AmqpConsumer.class);
+        Mockito.when(consumer.getConnection()).thenReturn(createMockAmqpConnection());
+        return consumer;
     }
 
     private AmqpConnection createMockAmqpConnection() {
@@ -225,7 +235,7 @@ public class AmqpJmsMessageFacadeTest {
             expected = AmqpMessageIdHelper.JMS_ID_PREFIX + expected;
         }
 
-        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConnection(), message);
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
         assertNotNull("Expected a correlationId on received message", amqpMessageFacade.getCorrelationId());
 
@@ -305,7 +315,7 @@ public class AmqpJmsMessageFacadeTest {
         props.setMessageId(underlyingIdObject);
         message.setProperties(props);
 
-        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConnection(), message);
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
         assertNotNull("Expected a messageId on received message", amqpMessageFacade.getMessageId());
 

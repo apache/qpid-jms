@@ -30,6 +30,7 @@ import javax.jms.JMSException;
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.facade.JmsTextMessageFacade;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
+import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
@@ -56,7 +57,7 @@ public class AmqpJmsTextMessageFacade extends AmqpJmsMessageFacade implements Jm
      * Create a new AMQP Message facade ready for sending.
      *
      * @param connection
-     *        The AMQP Connection that created this message.
+     *        the AmqpConnection that under which this facade was created.
      */
     public AmqpJmsTextMessageFacade(AmqpConnection connection) {
         super(connection);
@@ -68,13 +69,13 @@ public class AmqpJmsTextMessageFacade extends AmqpJmsMessageFacade implements Jm
      * Creates a new Facade around an incoming AMQP Message for dispatch to the
      * JMS Consumer instance.
      *
-     * @param connection
-     *        the connection that created this Facade.
+     * @param consumer
+     *        the consumer that received this message.
      * @param message
      *        the incoming Message instance that is being wrapped.
      */
-    public AmqpJmsTextMessageFacade(AmqpConnection connection, Message message) {
-        super(connection, message);
+    public AmqpJmsTextMessageFacade(AmqpConsumer consumer, Message message) {
+        super(consumer, message);
     }
 
     /**

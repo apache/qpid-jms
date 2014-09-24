@@ -25,7 +25,6 @@ import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_S
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_TEXT_MESSAGE;
 
 import java.io.IOException;
-import java.util.Map;
 
 import org.apache.qpid.jms.message.JmsBytesMessage;
 import org.apache.qpid.jms.message.JmsMapMessage;
@@ -33,8 +32,7 @@ import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.message.JmsObjectMessage;
 import org.apache.qpid.jms.message.JmsStreamMessage;
 import org.apache.qpid.jms.message.JmsTextMessage;
-import org.apache.qpid.jms.provider.amqp.AmqpConnection;
-import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.proton.message.Message;
 
 /**
@@ -50,8 +48,8 @@ public class AmqpJmsMessageBuilder {
      * Create a new JmsMessage and underlying JmsMessageFacade that represents the proper
      * message type for the incoming AMQP message.
      *
-     * @param connection
-     *        The provider AMQP Connection instance where this message arrived at.
+     * @param consumer
+     *        The provider AMQP Consumer instance where this message arrived at.
      * @param message
      *        The Proton Message object that will be wrapped.
      *
@@ -59,10 +57,10 @@ public class AmqpJmsMessageBuilder {
      *
      * @throws IOException if an error occurs while creating the message objects.
      */
-    public static JmsMessage createJmsMessage(AmqpConnection connection, Message message) throws IOException {
+    public static JmsMessage createJmsMessage(AmqpConsumer consumer, Message message) throws IOException {
 
         // First we try the easy way, if the annotation is there we don't have to work hard.
-        JmsMessage result = createFromMsgAnnotation(connection, message);
+        JmsMessage result = createFromMsgAnnotation(consumer, message);
         if (result != null) {
             return result;
         }
@@ -71,35 +69,26 @@ public class AmqpJmsMessageBuilder {
         throw new IOException("Could not create a JMS message from incoming message");
     }
 
-    private static JmsMessage createFromMsgAnnotation(AmqpConnection connection, Message message) throws IOException {
-        Object annotation = getMessageAnnotation(JMS_MSG_TYPE, message);
+    private static JmsMessage createFromMsgAnnotation(AmqpConsumer consumer, Message message) throws IOException {
+        Object annotation = AmqpMessageSupport.getMessageAnnotation(JMS_MSG_TYPE, message);
         if (annotation != null) {
 
             switch ((byte) annotation) {
                 case JMS_MESSAGE:
-                    return new JmsMessage(new AmqpJmsMessageFacade(connection, message));
+                    return new JmsMessage(new AmqpJmsMessageFacade(consumer, message));
                 case JMS_BYTES_MESSAGE:
-                    return new JmsBytesMessage(new AmqpJmsBytesMessageFacade(connection, message));
+                    return new JmsBytesMessage(new AmqpJmsBytesMessageFacade(consumer, message));
                 case JMS_TEXT_MESSAGE:
-                    return new JmsTextMessage(new AmqpJmsTextMessageFacade(connection, message));
+                    return new JmsTextMessage(new AmqpJmsTextMessageFacade(consumer, message));
                 case JMS_MAP_MESSAGE:
-                    return new JmsMapMessage(new AmqpJmsMapMessageFacade(connection, message));
+                    return new JmsMapMessage(new AmqpJmsMapMessageFacade(consumer, message));
                 case JMS_STREAM_MESSAGE:
-                    return new JmsStreamMessage(new AmqpJmsStreamMessageFacade(connection, message));
+                    return new JmsStreamMessage(new AmqpJmsStreamMessageFacade(consumer, message));
                 case JMS_OBJECT_MESSAGE:
-                    return new JmsObjectMessage(new AmqpJmsObjectMessageFacade(connection, message));
+                    return new JmsObjectMessage(new AmqpJmsObjectMessageFacade(consumer, message));
                 default:
                     throw new IOException("Invalid JMS Message Type annotation found in message");
             }
-        }
-
-        return null;
-    }
-
-    private static Object getMessageAnnotation(String key, Message message) {
-        if (message.getMessageAnnotations() != null) {
-            Map<Symbol, Object> annotations = message.getMessageAnnotations().getValue();
-            return annotations.get(AmqpMessageSupport.getSymbol(key));
         }
 
         return null;

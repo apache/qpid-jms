@@ -355,6 +355,11 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     protected void doClose() {
     }
 
+
+    public AmqpConnection getConnection() {
+        return this.session.getConnection();
+    }
+
     public AmqpSession getSession() {
         return this.session;
     }

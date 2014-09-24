@@ -27,6 +27,7 @@ import java.util.Map;
 
 import org.apache.qpid.jms.message.facade.JmsMapMessageFacade;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
+import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Section;
@@ -44,7 +45,7 @@ public class AmqpJmsMapMessageFacade extends AmqpJmsMessageFacade implements Jms
      * Create a new facade ready for sending.
      *
      * @param connection
-     *        the connection instance that created this facade.
+     *        the AmqpConnection that under which this facade was created.
      */
     public AmqpJmsMapMessageFacade(AmqpConnection connection) {
         super(connection);
@@ -56,14 +57,14 @@ public class AmqpJmsMapMessageFacade extends AmqpJmsMessageFacade implements Jms
      * Creates a new Facade around an incoming AMQP Message for dispatch to the
      * JMS Consumer instance.
      *
-     * @param connection
-     *        the connection that created this Facade.
+     * @param consumer
+     *        the consumer that received this message.
      * @param message
      *        the incoming Message instance that is being wrapped.
      */
     @SuppressWarnings("unchecked")
-    public AmqpJmsMapMessageFacade(AmqpConnection connection, Message message) {
-        super(connection, message);
+    public AmqpJmsMapMessageFacade(AmqpConsumer consumer, Message message) {
+        super(consumer, message);
 
         Section body = getAmqpMessage().getBody();
         if (body == null) {

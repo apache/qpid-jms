@@ -27,6 +27,7 @@ import javax.jms.JMSException;
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.facade.JmsObjectMessageFacade;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
+import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.proton.message.Message;
 
 /**
@@ -38,7 +39,10 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
     private AmqpObjectTypeDelegate delegate;
 
     /**
+     * Creates a new facade instance
+     *
      * @param connection
+     *        the AmqpConnection that under which this facade was created.
      */
     public AmqpJmsObjectMessageFacade(AmqpConnection connection) {
         super(connection);
@@ -49,11 +53,16 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
     }
 
     /**
-     * @param connection
+     * Creates a new Facade around an incoming AMQP Message for dispatch to the
+     * JMS Consumer instance.
+     *
+     * @param consumer
+     *        the consumer that received this message.
      * @param message
+     *        the incoming Message instance that is being wrapped.
      */
-    public AmqpJmsObjectMessageFacade(AmqpConnection connection, Message message) {
-        super(connection, message);
+    public AmqpJmsObjectMessageFacade(AmqpConsumer consumer, Message message) {
+        super(consumer, message);
 
         // TODO detect the content type and init the proper delegate.
         initDelegate(false);

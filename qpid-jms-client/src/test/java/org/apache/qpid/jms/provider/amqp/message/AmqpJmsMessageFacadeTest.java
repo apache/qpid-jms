@@ -30,6 +30,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.meta.JmsMessageId;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
@@ -45,6 +47,8 @@ import org.mockito.Mockito;
 
 public class AmqpJmsMessageFacadeTest {
 
+    private final JmsDestination consumerDestination = new JmsTopic("TestTopic");
+
     private AmqpJmsMessageFacade createNewMessageFacade() {
         return new AmqpJmsMessageFacade(createMockAmqpConnection());
     }
@@ -57,6 +61,7 @@ public class AmqpJmsMessageFacadeTest {
     private AmqpConsumer createMockAmqpConsumer() {
         AmqpConsumer consumer = Mockito.mock(AmqpConsumer.class);
         Mockito.when(consumer.getConnection()).thenReturn(createMockAmqpConnection());
+        Mockito.when(consumer.getDestination()).thenReturn(consumerDestination);
         return consumer;
     }
 

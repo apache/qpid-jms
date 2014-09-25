@@ -35,8 +35,8 @@ import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.provider.Provider;
-import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.util.FifoMessageQueue;
 import org.apache.qpid.jms.util.MessageQueue;
 import org.apache.qpid.jms.util.PriorityMessageQueue;
@@ -270,8 +270,12 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     }
 
     private void doAckDelivered(final JmsInboundMessageDispatch envelope) throws JMSException {
-        // TODO: this can also throw, so should we handle it the same as doAckConsumed above?
-        session.acknowledge(envelope, ACK_TYPE.DELIVERED);
+        try {
+            session.acknowledge(envelope, ACK_TYPE.DELIVERED);
+        } catch (JMSException ex) {
+            session.onException(ex);
+            throw ex;
+        }
     }
 
     /**

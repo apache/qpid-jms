@@ -38,6 +38,7 @@ import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.proton.Proton;
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
@@ -395,8 +396,8 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         Object correlationId = message.getCorrelationId();
         if (correlationId == null) {
             return null;
-        } else if (correlationId instanceof ByteBuffer) {
-            ByteBuffer dup = ((ByteBuffer) correlationId).duplicate();
+        } else if (correlationId instanceof Binary) {
+            ByteBuffer dup = ((Binary) correlationId).asByteBuffer();
             byte[] bytes = new byte[dup.remaining()];
             dup.get(bytes);
             return bytes;
@@ -415,7 +416,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             message.setCorrelationId(correlationId);
         } else {
             byte[] bytes = Arrays.copyOf(correlationId, correlationId.length);
-            message.setCorrelationId(ByteBuffer.wrap(bytes));
+            message.setCorrelationId(new Binary(bytes));
         }
     }
 

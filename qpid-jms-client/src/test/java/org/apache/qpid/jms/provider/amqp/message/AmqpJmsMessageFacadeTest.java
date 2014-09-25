@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -34,12 +35,14 @@ import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescribedType;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Properties;
+import org.apache.qpid.proton.codec.impl.DataImpl;
 import org.apache.qpid.proton.message.Message;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -203,6 +206,46 @@ public class AmqpJmsMessageFacadeTest {
 
         assertEquals("Unexpected correlationId value on underlying AMQP message", testCorrelationId, amqpMessageFacade.getAmqpMessage().getCorrelationId());
         assertEquals("Expected correlationId not returned", converted, amqpMessageFacade.getCorrelationId());
+    }
+
+    /**
+     * Test that setting then getting bytes as the correlationId returns the expected value
+     * and sets the correlation id field as expected on the underlying AMQP message
+     * @throws Exception if unexpected error
+     */
+    @Test
+    public void testSetGetCorrelationIdBytesOnNewMessage() throws Exception {
+        Binary testCorrelationId = createBinaryId();
+        byte[] bytes = testCorrelationId.getArray();
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        amqpMessageFacade.setCorrelationIdBytes(bytes);
+
+        assertEquals("Unexpected correlationId value on underlying AMQP message", testCorrelationId, amqpMessageFacade.getAmqpMessage().getCorrelationId());
+        assertArrayEquals("Expected correlationId bytes not returned", bytes, amqpMessageFacade.getCorrelationIdBytes());
+    }
+
+    @Test
+    public void testGetCorrelationIdBytesOnReceievedMessageWithBinaryId() throws Exception {
+        Binary testCorrelationId = createBinaryId();
+        byte[] bytes = testCorrelationId.getArray();
+
+        org.apache.qpid.proton.codec.Data payloadData = new DataImpl();
+        PropertiesDescribedType props = new PropertiesDescribedType();
+        props.setCorrelationId(new Binary(bytes));
+        payloadData.putDescribedType(props);
+        Binary b = payloadData.encode();
+
+        System.out.println("Using encoded AMQP message payload: " + b);
+
+        Message message = Proton.message();
+        int decoded = message.decode(b.getArray(), b.getArrayOffset(), b.getLength());
+        assertEquals(decoded, b.getLength());
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertEquals("Unexpected correlationId value on underlying AMQP message", testCorrelationId, amqpMessageFacade.getAmqpMessage().getCorrelationId());
+        assertArrayEquals("Expected correlationId bytes not returned", bytes, amqpMessageFacade.getCorrelationIdBytes());
     }
 
     /**

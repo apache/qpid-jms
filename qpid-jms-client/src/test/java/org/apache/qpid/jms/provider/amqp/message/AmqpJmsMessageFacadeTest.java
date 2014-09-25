@@ -24,6 +24,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
@@ -31,7 +32,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.jms.JMSException;
+
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.JmsQueue;
+import org.apache.qpid.jms.JmsTemporaryQueue;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
@@ -401,4 +406,54 @@ public class AmqpJmsMessageFacadeTest {
         return new Binary(idBytes);
     }
 
+    @Test
+    public void testBasicMessageCopy() throws JMSException {
+        AmqpJmsMessageFacade source = createNewMessageFacade();
+
+        JmsQueue aQueue = new JmsQueue("Test-Queue");
+        JmsTemporaryQueue tempQueue = new JmsTemporaryQueue("Test-Temp-Queue");
+
+        source.setDestination(aQueue);
+        source.setReplyTo(tempQueue);
+
+        source.setContentType("Test-ContentType");
+        source.setCorrelationId("MY-APP-ID");
+        source.setExpiration(42L);
+        source.setGroupId("TEST-GROUP");
+        source.setGroupSequence(23);
+        source.setMessageId("ID:TEST-MESSAGEID");
+        source.setPriority((byte) 1);
+        source.setPersistent(false);
+        source.setRedeliveryCounter(12);
+        source.setTimestamp(150L);
+        source.setUserId("Cookie-Monster");
+
+        source.setProperty("APP-Prop-1", "APP-Prop-1-Value");
+        source.setProperty("APP-Prop-2", "APP-Prop-2-Value");
+
+        AmqpJmsMessageFacade copy = source.copy();
+
+        assertSame(source.getConnection(), copy.getConnection());
+
+        assertEquals(source.getDestination(), copy.getDestination());
+        assertEquals(source.getReplyTo(), copy.getReplyTo());
+
+        assertEquals(source.getContentType(), copy.getContentType());
+        assertEquals(source.getCorrelationId(), copy.getCorrelationId());
+        assertEquals(source.getExpiration(), copy.getExpiration());
+        assertEquals(source.getGroupId(), copy.getGroupId());
+        assertEquals(source.getGroupSequence(), copy.getGroupSequence());
+        assertEquals(source.getMessageId(), copy.getMessageId());
+        assertEquals(source.getPriority(), copy.getPriority());
+        assertEquals(source.isPersistent(), copy.isPersistent());
+        assertEquals(source.getRedeliveryCounter(), copy.getRedeliveryCounter());
+        assertEquals(source.getTimestamp(), copy.getTimestamp());
+        assertEquals(source.getUserId(), copy.getUserId());
+
+        assertNotNull(copy.getProperty("APP-Prop-1"));
+        assertNotNull(copy.getProperty("APP-Prop-2"));
+
+        assertEquals("APP-Prop-1-Value", copy.getProperty("APP-Prop-1"));
+        assertEquals("APP-Prop-2-Value", copy.getProperty("APP-Prop-2"));
+    }
 }

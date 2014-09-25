@@ -92,7 +92,7 @@ public class AmqpJmsMapMessageFacade extends AmqpJmsMessageFacade implements Jms
     }
 
     @Override
-    public JmsMapMessageFacade copy() {
+    public AmqpJmsMapMessageFacade copy() {
         AmqpJmsMapMessageFacade copy = new AmqpJmsMapMessageFacade(connection);
         copyInto(copy);
         copy.messageBodyMap.putAll(messageBodyMap);

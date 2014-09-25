@@ -86,7 +86,7 @@ public class AmqpJmsStreamMessageFacade extends AmqpJmsMessageFacade implements 
     }
 
     @Override
-    public JmsStreamMessageFacade copy() {
+    public AmqpJmsStreamMessageFacade copy() {
         AmqpJmsStreamMessageFacade copy = new AmqpJmsStreamMessageFacade(connection);
         copyInto(copy);
         copy.list.addAll(list);

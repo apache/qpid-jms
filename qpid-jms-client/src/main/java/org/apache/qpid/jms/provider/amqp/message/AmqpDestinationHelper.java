@@ -135,6 +135,10 @@ public class AmqpDestinationHelper {
     }
 
     public void setToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
+        if (destination == null) {
+            return;
+        }
+
         String address = destination.getName();
         String typeString = toTypeAnnotation(destination);
 
@@ -148,6 +152,10 @@ public class AmqpDestinationHelper {
     }
 
     public void setReplyToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
+        if (destination == null) {
+            return;
+        }
+
         String replyToAddress = destination.getName();
         String typeString = toTypeAnnotation(destination);
 

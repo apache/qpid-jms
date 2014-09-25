@@ -234,7 +234,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public JmsMessageFacade copy() throws JMSException {
+    public AmqpJmsMessageFacade copy() throws JMSException {
         AmqpJmsMessageFacade copy = new AmqpJmsMessageFacade(connection);
         copyInto(copy);
         return copy;
@@ -242,8 +242,12 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @SuppressWarnings("unchecked")
     protected void copyInto(AmqpJmsMessageFacade target) {
-        target.setDestination(destination);
-        target.setReplyTo(replyTo);
+        if (destination != null) {
+            target.setDestination(destination);
+        }
+        if (replyTo != null) {
+            target.setReplyTo(replyTo);
+        }
 
         Message targetMsg = target.getAmqpMessage();
 

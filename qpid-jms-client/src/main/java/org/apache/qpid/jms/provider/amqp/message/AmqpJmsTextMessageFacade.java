@@ -87,7 +87,7 @@ public class AmqpJmsTextMessageFacade extends AmqpJmsMessageFacade implements Jm
     }
 
     @Override
-    public JmsTextMessageFacade copy() throws JMSException {
+    public AmqpJmsTextMessageFacade copy() throws JMSException {
         AmqpJmsTextMessageFacade copy = new AmqpJmsTextMessageFacade(connection);
         copyInto(copy);
         copy.setText(getText());

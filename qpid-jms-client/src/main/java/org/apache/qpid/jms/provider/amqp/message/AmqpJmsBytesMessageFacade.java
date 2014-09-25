@@ -64,7 +64,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
     }
 
     @Override
-    public JmsBytesMessageFacade copy() {
+    public AmqpJmsBytesMessageFacade copy() {
         AmqpJmsBytesMessageFacade copy = new AmqpJmsBytesMessageFacade(connection);
         copyInto(copy);
 

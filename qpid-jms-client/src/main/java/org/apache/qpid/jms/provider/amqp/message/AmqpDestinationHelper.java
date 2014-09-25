@@ -46,7 +46,6 @@ public class AmqpDestinationHelper {
     public static final String TEMP_TOPIC_ATTRIBUTES_STRING = TOPIC_ATTRIBUTE + "," + TEMPORARY_ATTRIBUTE;
 
     // TODO - The Type Annotation seems like it could just be a byte value
-    // TODO - How do we deal with the case where no type is present?
 
     /*
      *  One possible way to encode destination types that isn't a string.
@@ -131,11 +130,8 @@ public class AmqpDestinationHelper {
             }
         }
 
-        // fall back to a straight Destination
-        // TODO - We don't have a non-abstract destination to create right now
-        //        and JMS doesn't really define a true non Topic / Queue destination
-        //        so how this would be handled elsewhere seems a mystery.
-        return null;
+        // fall back to a Queue Destination since we need a real JMS destination
+        return new JmsQueue(address);
     }
 
     public void setToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {

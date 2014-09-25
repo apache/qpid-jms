@@ -102,7 +102,7 @@ public class AmqpJmsMessagePropertyIntercepter {
 
             @Override
             public boolean propertyExists(AmqpJmsMessageFacade message) {
-                return message.getAmqpTimeToLive() != 0;
+                return message.hasUserSpecifiedTimeToLive();
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_AMQP_REPLY_TO_GROUP_ID, new PropertyIntercepter() {
@@ -122,7 +122,8 @@ public class AmqpJmsMessagePropertyIntercepter {
 
             @Override
             public boolean propertyExists(AmqpJmsMessageFacade message) {
-                return message.getReplyToGroupId() != null;
+                String replyToGroupId = message.getReplyToGroupId();
+                return replyToGroupId != null && !replyToGroupId.equals("");
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_AMQP_TYPED_ENCODING, new PropertyIntercepter() {
@@ -142,7 +143,6 @@ public class AmqpJmsMessagePropertyIntercepter {
                     throw new JMSException("Property " + JMS_AMQP_TYPED_ENCODING + " cannot be set from a " + value.getClass().getName() + ".");
                 }
 
-                // TODO - Finished Typed encoding work.
                 if (message instanceof AmqpJmsObjectMessageFacade) {
                     // ((AmqpJmsSerializedObjectMessageFacade) message)
                 } else {

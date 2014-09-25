@@ -322,9 +322,105 @@ public class AmqpDestinationHelperTest {
         assertEquals(testAddress, destination.getName());
     }
 
-    //--------------- Test setToAddress method -------------------------------//
+    //--------------- Test setToAddressFromDestination method ----------------//
 
-    //--------------- Test setReplyToAddress method --------------------------//
+    @Test
+    public void testSetToAddressFromDestinationWithQueue() {
+        String testAddress = "testAddress";
+        JmsDestination destination = new JmsQueue("testAddress");
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+
+        helper.setToAddressFromDestination(message, destination);
+
+        Mockito.verify(message).setToAddress(testAddress);
+        Mockito.verify(message).setAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, QUEUE_ATTRIBUTES_STRING);
+    }
+
+    @Test
+    public void testSetToAddressFromDestinationWithTopic() {
+        String testAddress = "testAddress";
+        JmsDestination destination = new JmsTopic("testAddress");
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+
+        helper.setToAddressFromDestination(message, destination);
+
+        Mockito.verify(message).setToAddress(testAddress);
+        Mockito.verify(message).setAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, TOPIC_ATTRIBUTES_STRING);
+    }
+
+    @Test
+    public void testSetToAddressFromDestinationWithTempQueue() {
+        String testAddress = "testAddress";
+        JmsDestination destination = new JmsTemporaryQueue("testAddress");
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+
+        helper.setToAddressFromDestination(message, destination);
+
+        Mockito.verify(message).setToAddress(testAddress);
+        Mockito.verify(message).setAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, TEMP_QUEUE_ATTRIBUTES_STRING);
+    }
+
+    @Test
+    public void testSetToAddressFromDestinationWithTempTopic() {
+        String testAddress = "testAddress";
+        JmsDestination destination = new JmsTemporaryTopic("testAddress");
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+
+        helper.setToAddressFromDestination(message, destination);
+
+        Mockito.verify(message).setToAddress(testAddress);
+        Mockito.verify(message).setAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, TEMP_TOPIC_ATTRIBUTES_STRING);
+    }
+
+    //--------------- Test setReplyToAddressFromDestination method -----------//
+
+    @Test
+    public void testSetReplyToAddressFromDestinationWithQueue() {
+        String testAddress = "testAddress";
+        JmsDestination destination = new JmsQueue("testAddress");
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+
+        helper.setReplyToAddressFromDestination(message, destination);
+
+        Mockito.verify(message).setReplyToAddress(testAddress);
+        Mockito.verify(message).setAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, QUEUE_ATTRIBUTES_STRING);
+    }
+
+    @Test
+    public void testSetReplyToAddressFromDestinationWithTopic() {
+        String testAddress = "testAddress";
+        JmsDestination destination = new JmsTopic("testAddress");
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+
+        helper.setReplyToAddressFromDestination(message, destination);
+
+        Mockito.verify(message).setReplyToAddress(testAddress);
+        Mockito.verify(message).setAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, TOPIC_ATTRIBUTES_STRING);
+    }
+
+    @Test
+    public void testSetReplyToAddressFromDestinationWithTempQueue() {
+        String testAddress = "testAddress";
+        JmsDestination destination = new JmsTemporaryQueue("testAddress");
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+
+        helper.setReplyToAddressFromDestination(message, destination);
+
+        Mockito.verify(message).setReplyToAddress(testAddress);
+        Mockito.verify(message).setAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, TEMP_QUEUE_ATTRIBUTES_STRING);
+    }
+
+    @Test
+    public void testSetReplyToAddressFromDestinationWithTempTopic() {
+        String testAddress = "testAddress";
+        JmsDestination destination = new JmsTemporaryTopic("testAddress");
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+
+        helper.setReplyToAddressFromDestination(message, destination);
+
+        Mockito.verify(message).setReplyToAddress(testAddress);
+        Mockito.verify(message).setAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, TEMP_TOPIC_ATTRIBUTES_STRING);
+    }
 
     //--------------- Test Support Methods -----------------------------------//
 

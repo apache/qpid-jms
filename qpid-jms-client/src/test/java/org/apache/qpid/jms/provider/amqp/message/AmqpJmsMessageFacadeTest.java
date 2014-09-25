@@ -406,6 +406,15 @@ public class AmqpJmsMessageFacadeTest {
         return new Binary(idBytes);
     }
 
+    // ====== AMQP Message Facade copy() tests =======
+
+    @Test
+    public void testCopyOfEmptyMessageSucceeds() throws JMSException {
+        AmqpJmsMessageFacade empty = createNewMessageFacade();
+        AmqpJmsMessageFacade copy = empty.copy();
+        assertNotNull(copy);
+    }
+
     @Test
     public void testBasicMessageCopy() throws JMSException {
         AmqpJmsMessageFacade source = createNewMessageFacade();
@@ -449,6 +458,9 @@ public class AmqpJmsMessageFacadeTest {
         assertEquals(source.getRedeliveryCounter(), copy.getRedeliveryCounter());
         assertEquals(source.getTimestamp(), copy.getTimestamp());
         assertEquals(source.getUserId(), copy.getUserId());
+
+        // There should be two since none of the extended options were set
+        assertEquals(2, copy.getPropertyNames().size());
 
         assertNotNull(copy.getProperty("APP-Prop-1"));
         assertNotNull(copy.getProperty("APP-Prop-2"));

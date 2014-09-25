@@ -282,7 +282,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             properties.setCreationTime(message.getProperties().getCreationTime());
             properties.setGroupId(message.getProperties().getGroupId());
             properties.setGroupSequence(message.getProperties().getGroupSequence());
-            properties.setReplyToGroupId(message.getProperties().getReplyTo());
+            properties.setReplyToGroupId(message.getProperties().getReplyToGroupId());
 
             targetMsg.setProperties(properties);
         }
@@ -561,8 +561,12 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         }
     }
 
+    public boolean hasUserSpecifiedTimeToLive() {
+        return userSpecifiedTTL != null;
+    }
+
     public long getAmqpTimeToLive() {
-        return userSpecifiedTTL;
+        return userSpecifiedTTL != null ? userSpecifiedTTL : 0;
     }
 
     @Override

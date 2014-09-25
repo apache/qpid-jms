@@ -88,7 +88,10 @@ public class AmqpJmsMessagePropertyIntercepter {
         PROPERTY_INTERCEPTERS.put(JMS_AMQP_TTL, new PropertyIntercepter() {
             @Override
             public Object getProperty(AmqpJmsMessageFacade message) throws JMSException {
-                return message.getAmqpTimeToLive();
+                if (message.hasUserSpecifiedTimeToLive()) {
+                    return message.getAmqpTimeToLive();
+                }
+                return null;
             }
 
             @Override
@@ -133,12 +136,12 @@ public class AmqpJmsMessagePropertyIntercepter {
                     return ((AmqpJmsObjectMessageFacade) message).isAmqpTypedEncoding();
                 }
 
-                return false;
+                return null;
             }
 
             @Override
             public void setProperty(AmqpJmsMessageFacade message, Object value) throws JMSException {
-                Integer rc = (Integer) TypeConversionSupport.convert(value, Boolean.class);
+                Boolean rc = (Boolean) TypeConversionSupport.convert(value, Boolean.class);
                 if (rc == null) {
                     throw new JMSException("Property " + JMS_AMQP_TYPED_ENCODING + " cannot be set from a " + value.getClass().getName() + ".");
                 }

@@ -64,7 +64,6 @@ public class AmqpJmsMessageFacadeTest {
         return new AmqpJmsMessageFacade(amqpConsumer, message);
     }
 
-
     private AmqpConsumer createMockAmqpConsumer() {
         AmqpConsumer consumer = Mockito.mock(AmqpConsumer.class);
         Mockito.when(consumer.getConnection()).thenReturn(createMockAmqpConnection());

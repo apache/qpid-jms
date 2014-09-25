@@ -24,18 +24,6 @@ public class JmsMessageId extends JmsAbstractResourceId implements Comparable<Jm
 
     protected String messageId;
 
-    public JmsMessageId(JmsProducerInfo producerInfo, long producerSequenceId) {
-        this(producerInfo.getProducerId(), producerSequenceId);
-    }
-
-    public JmsMessageId(JmsProducerId producerId, long producerSequenceId) {
-        this(producerId.toString(), producerSequenceId);
-    }
-
-    public JmsMessageId(String producerId, long producerSequenceId) {
-        this(producerId + "-" + producerSequenceId);
-    }
-
     public JmsMessageId(String messageId) {
         this.messageId = messageId;
     }

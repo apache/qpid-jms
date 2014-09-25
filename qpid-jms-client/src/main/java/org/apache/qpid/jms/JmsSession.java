@@ -859,7 +859,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     private JmsMessageId getNextMessageId(JmsMessageProducer producer) {
-        return new JmsMessageId(producer.getProducerId(), producer.getNextMessageSequence());
+        return new JmsMessageId(producer.getProducerId().toString() + "-" + producer.getNextMessageSequence());
     }
 
     private <T extends JmsMessage> T init(T message) {

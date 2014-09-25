@@ -325,6 +325,26 @@ public class AmqpDestinationHelperTest {
     //--------------- Test setToAddressFromDestination method ----------------//
 
     @Test
+    public void testSetToAddressFromDestinationWithNullDestination() {
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        helper.setToAddressFromDestination(message, null);
+        Mockito.verifyZeroInteractions(message);
+    }
+
+    @Test
+    public void testSetToAddressFromDestinationWithNullDestinationAndNullMessage() {
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        helper.setToAddressFromDestination(null, null);
+        Mockito.verifyZeroInteractions(message);
+    }
+
+    @Test(expected=NullPointerException.class)
+    public void testSetToAddressFromDestinationWithNullMessage() {
+        JmsDestination destination = new JmsQueue("testAddress");
+        helper.setToAddressFromDestination(null, destination);
+    }
+
+    @Test
     public void testSetToAddressFromDestinationWithQueue() {
         String testAddress = "testAddress";
         JmsDestination destination = new JmsQueue("testAddress");
@@ -373,6 +393,26 @@ public class AmqpDestinationHelperTest {
     }
 
     //--------------- Test setReplyToAddressFromDestination method -----------//
+
+    @Test
+    public void testSetReplyToAddressFromDestinationWithNullDestination() {
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        helper.setReplyToAddressFromDestination(message, null);
+        Mockito.verifyZeroInteractions(message);
+    }
+
+    @Test
+    public void testSetReplyToAddressFromDestinationWithNullDestinationAndNullMessage() {
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        helper.setReplyToAddressFromDestination(null, null);
+        Mockito.verifyZeroInteractions(message);
+    }
+
+    @Test(expected=NullPointerException.class)
+    public void testSetReplyToAddressFromDestinationWithNullMessage() {
+        JmsDestination destination = new JmsQueue("testAddress");
+        helper.setReplyToAddressFromDestination(null, destination);
+    }
 
     @Test
     public void testSetReplyToAddressFromDestinationWithQueue() {

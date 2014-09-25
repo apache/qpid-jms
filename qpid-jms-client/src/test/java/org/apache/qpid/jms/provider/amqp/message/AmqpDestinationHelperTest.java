@@ -18,6 +18,9 @@ package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TEMP_QUEUE_ATTRIBUTES_STRING;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TEMP_TOPIC_ATTRIBUTES_STRING;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TOPIC_ATTRIBUTES_STRING;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -76,6 +79,107 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertFalse(destination.isTemporary());
+        assertEquals(testAddress, destination.getName());
+    }
+
+    @Test
+    public void testGetJmsDestinationWithoutTypeAnnotationWithTopicConsumerDest() throws Exception {
+        String testAddress = "testAddress";
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        Mockito.when(message.getToAddress()).thenReturn(testAddress);
+        Mockito.when(message.getAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
+        JmsDestination consumerDestination = new JmsTopic("ConsumerDestination");
+
+        JmsDestination destination = helper.getJmsDestination(message, consumerDestination);
+        assertNotNull(destination);
+        assertTrue(destination.isTopic());
+        assertFalse(destination.isTemporary());
+        assertEquals(testAddress, destination.getName());
+    }
+
+    @Test
+    public void testGetJmsDestinationWithoutTypeAnnotationWithTempQueueConsumerDest() throws Exception {
+        String testAddress = "testAddress";
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        Mockito.when(message.getToAddress()).thenReturn(testAddress);
+        Mockito.when(message.getAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
+        JmsDestination consumerDestination = new JmsTemporaryQueue("ConsumerDestination");
+
+        JmsDestination destination = helper.getJmsDestination(message, consumerDestination);
+        assertNotNull(destination);
+        assertTrue(destination.isQueue());
+        assertTrue(destination.isTemporary());
+        assertEquals(testAddress, destination.getName());
+    }
+
+    @Test
+    public void testGetJmsDestinationWithoutTypeAnnotationWithTempTopicConsumerDest() throws Exception {
+        String testAddress = "testAddress";
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        Mockito.when(message.getToAddress()).thenReturn(testAddress);
+        Mockito.when(message.getAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
+        JmsDestination consumerDestination = new JmsTemporaryTopic("ConsumerDestination");
+
+        JmsDestination destination = helper.getJmsDestination(message, consumerDestination);
+        assertNotNull(destination);
+        assertTrue(destination.isTopic());
+        assertTrue(destination.isTemporary());
+        assertEquals(testAddress, destination.getName());
+    }
+
+    @Test
+    public void testGetJmsDestinationWithQueueTypeAnnotationNoConsumerDestination() throws Exception {
+        String testAddress = "testAddress";
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        Mockito.when(message.getToAddress()).thenReturn(testAddress);
+        Mockito.when(message.getAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTES_STRING);
+
+        JmsDestination destination = helper.getJmsDestination(message, null);
+        assertNotNull(destination);
+        assertTrue(destination.isQueue());
+        assertFalse(destination.isTemporary());
+        assertEquals(testAddress, destination.getName());
+    }
+
+    @Test
+    public void testGetJmsDestinationWithTopicTypeAnnotationNoConsumerDestination() throws Exception {
+        String testAddress = "testAddress";
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        Mockito.when(message.getToAddress()).thenReturn(testAddress);
+        Mockito.when(message.getAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TOPIC_ATTRIBUTES_STRING);
+
+        JmsDestination destination = helper.getJmsDestination(message, null);
+        assertNotNull(destination);
+        assertTrue(destination.isTopic());
+        assertFalse(destination.isTemporary());
+        assertEquals(testAddress, destination.getName());
+    }
+
+    @Test
+    public void testGetJmsDestinationWithTempQueueTypeAnnotationNoConsumerDestination() throws Exception {
+        String testAddress = "testAddress";
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        Mockito.when(message.getToAddress()).thenReturn(testAddress);
+        Mockito.when(message.getAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TEMP_QUEUE_ATTRIBUTES_STRING);
+
+        JmsDestination destination = helper.getJmsDestination(message, null);
+        assertNotNull(destination);
+        assertTrue(destination.isQueue());
+        assertTrue(destination.isTemporary());
+        assertEquals(testAddress, destination.getName());
+    }
+
+    @Test
+    public void testGetJmsDestinationWithTempTopicTypeAnnotationNoConsumerDestination() throws Exception {
+        String testAddress = "testAddress";
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        Mockito.when(message.getToAddress()).thenReturn(testAddress);
+        Mockito.when(message.getAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TEMP_TOPIC_ATTRIBUTES_STRING);
+
+        JmsDestination destination = helper.getJmsDestination(message, null);
+        assertNotNull(destination);
+        assertTrue(destination.isTopic());
+        assertTrue(destination.isTemporary());
         assertEquals(testAddress, destination.getName());
     }
 
@@ -156,6 +260,62 @@ public class AmqpDestinationHelperTest {
         JmsTemporaryTopic consumerDestination = new JmsTemporaryTopic("ConsumerDestination");
 
         JmsDestination destination = helper.getJmsReplyTo(message, consumerDestination);
+        assertNotNull(destination);
+        assertTrue(destination.isTopic());
+        assertTrue(destination.isTemporary());
+        assertEquals(testAddress, destination.getName());
+    }
+
+    @Test
+    public void testGetJmsReplToWithQueueTypeAnnotationNoConsumerDestination() throws Exception {
+        String testAddress = "testAddress";
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
+        Mockito.when(message.getAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTES_STRING);
+
+        JmsDestination destination = helper.getJmsReplyTo(message, null);
+        assertNotNull(destination);
+        assertTrue(destination.isQueue());
+        assertFalse(destination.isTemporary());
+        assertEquals(testAddress, destination.getName());
+    }
+
+    @Test
+    public void testGetJmsReplToWithTopicTypeAnnotationNoConsumerDestination() throws Exception {
+        String testAddress = "testAddress";
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
+        Mockito.when(message.getAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TOPIC_ATTRIBUTES_STRING);
+
+        JmsDestination destination = helper.getJmsReplyTo(message, null);
+        assertNotNull(destination);
+        assertTrue(destination.isTopic());
+        assertFalse(destination.isTemporary());
+        assertEquals(testAddress, destination.getName());
+    }
+
+    @Test
+    public void testGetJmsReplToWithTempQueueTypeAnnotationNoConsumerDestination() throws Exception {
+        String testAddress = "testAddress";
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
+        Mockito.when(message.getAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TEMP_QUEUE_ATTRIBUTES_STRING);
+
+        JmsDestination destination = helper.getJmsReplyTo(message, null);
+        assertNotNull(destination);
+        assertTrue(destination.isQueue());
+        assertTrue(destination.isTemporary());
+        assertEquals(testAddress, destination.getName());
+    }
+
+    @Test
+    public void testGetJmsReplToWithTempTopicTypeAnnotationNoConsumerDestination() throws Exception {
+        String testAddress = "testAddress";
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
+        Mockito.when(message.getAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TEMP_TOPIC_ATTRIBUTES_STRING);
+
+        JmsDestination destination = helper.getJmsReplyTo(message, null);
         assertNotNull(destination);
         assertTrue(destination.isTopic());
         assertTrue(destination.isTemporary());

@@ -249,9 +249,9 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
             if (message.getAcknowledgeCallback() != null || session.isTransacted()) {
                 // Message has been received by the app.. expand the credit
                 // window so that we receive more messages.
-                session.acknowledge(envelope, ACK_TYPE.DELIVERED);
+                doAckDelivered(envelope);
             } else {
-                doAck(envelope);
+                doAckConsumed(envelope);
             }
             // Tags that we have delivered and can't close if in a TX Session.
             delivered.set(true);
@@ -259,7 +259,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         return envelope;
     }
 
-    private void doAck(final JmsInboundMessageDispatch envelope) throws JMSException {
+    private void doAckConsumed(final JmsInboundMessageDispatch envelope) throws JMSException {
         checkClosed();
         try {
             session.acknowledge(envelope, ACK_TYPE.CONSUMED);
@@ -267,6 +267,11 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
             session.onException(ex);
             throw ex;
         }
+    }
+
+    private void doAckDelivered(final JmsInboundMessageDispatch envelope) throws JMSException {
+        // TODO: this can also throw, so should we handle it the same as doAckConsumed above?
+        session.acknowledge(envelope, ACK_TYPE.DELIVERED);
     }
 
     /**

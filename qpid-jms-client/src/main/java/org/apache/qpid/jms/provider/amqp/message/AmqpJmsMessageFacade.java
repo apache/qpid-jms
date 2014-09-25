@@ -43,7 +43,10 @@ import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
+import org.apache.qpid.proton.amqp.messaging.Footer;
+import org.apache.qpid.proton.amqp.messaging.Header;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
+import org.apache.qpid.proton.amqp.messaging.Properties;
 import org.apache.qpid.proton.message.Message;
 
 /**
@@ -60,7 +63,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     private MessageAnnotations annotations;
     private Map<Symbol,Object> annotationsMap;
-    private Map<String,Object> propertiesMap;
+    private Map<String,Object> applicationPropertiesMap;
 
     private JmsDestination replyTo;
     private JmsDestination destination;
@@ -107,7 +110,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         }
 
         if (message.getApplicationProperties() != null) {
-            propertiesMap = message.getApplicationProperties().getValue();
+            applicationPropertiesMap = message.getApplicationProperties().getValue();
         }
 
         Long ttl = message.getTtl();
@@ -150,7 +153,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     @Override
     public Map<String, Object> getProperties() throws JMSException {
         lazyCreateProperties();
-        return Collections.unmodifiableMap(new HashMap<String, Object>(propertiesMap));
+        return Collections.unmodifiableMap(new HashMap<String, Object>(applicationPropertiesMap));
     }
 
     @Override
@@ -159,8 +162,8 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     public boolean applicationPropertyExists(String key) throws JMSException {
-        if (propertiesMap != null) {
-            return propertiesMap.containsKey(key);
+        if (applicationPropertiesMap != null) {
+            return applicationPropertiesMap.containsKey(key);
         }
 
         return false;
@@ -173,8 +176,8 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
      */
     public Set<String> getPropertyNames() {
         Set<String> properties = AmqpJmsMessagePropertyIntercepter.getPropertyNames(this);
-        if (propertiesMap != null) {
-            properties.addAll(propertiesMap.keySet());
+        if (applicationPropertiesMap != null) {
+            properties.addAll(applicationPropertiesMap.keySet());
         }
         return properties;
     }
@@ -185,8 +188,8 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     public Object getApplicationProperty(String key) throws JMSException {
-        if (propertiesMap != null) {
-            return propertiesMap.get(key);
+        if (applicationPropertiesMap != null) {
+            return applicationPropertiesMap.get(key);
         }
 
         return null;
@@ -202,11 +205,11 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     public void setApplicationProperty(String key, Object value) throws JMSException {
-        if (propertiesMap == null) {
+        if (applicationPropertiesMap == null) {
             lazyCreateProperties();
         }
 
-        propertiesMap.put(key, value);
+        applicationPropertiesMap.put(key, value);
     }
 
     @Override
@@ -237,53 +240,63 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         return copy;
     }
 
+    @SuppressWarnings("unchecked")
     protected void copyInto(AmqpJmsMessageFacade target) {
         target.setDestination(destination);
         target.setReplyTo(replyTo);
 
         Message targetMsg = target.getAmqpMessage();
 
-        targetMsg.setDurable(message.isDurable());
-        targetMsg.setDeliveryCount(message.getDeliveryCount());
-        targetMsg.setTtl(message.getTtl());
-        targetMsg.setFirstAcquirer(message.isFirstAcquirer());
-        targetMsg.setPriority(message.getPriority());
-        targetMsg.setMessageId(message.getMessageId());
-        targetMsg.setMessageFormat(message.getMessageFormat());
-        targetMsg.setBody(message.getBody());
-        targetMsg.setUserId(message.getUserId());
-        targetMsg.setGroupId(message.getGroupId());
-        targetMsg.setGroupSequence(message.getGroupSequence());
-        targetMsg.setCreationTime(message.getCreationTime());
-        targetMsg.setSubject(message.getSubject());
-        targetMsg.setExpiryTime(message.getExpiryTime());
-        targetMsg.setReplyToGroupId(message.getReplyToGroupId());
-        targetMsg.setContentEncoding(message.getContentEncoding());
-        targetMsg.setContentType(message.getContentType());
-        targetMsg.setCorrelationId(message.getCorrelationId());
-        targetMsg.setMessageId(message.getMessageId());
+        if (message.getHeader() != null) {
+            Header headers = new Header();
+            headers.setDurable(message.getHeader().getDurable());
+            headers.setPriority(message.getHeader().getPriority());
+            headers.setTtl(message.getHeader().getTtl());
+            headers.setFirstAcquirer(message.getHeader().getFirstAcquirer());
+            headers.setDeliveryCount(message.getHeader().getDeliveryCount());
+            targetMsg.setHeader(headers);
+        }
 
-        // We don't currently deep copy these as they can't be modified by the client right now.
-        targetMsg.setHeader(message.getHeader());
-        targetMsg.setFooter(message.getFooter());
+        if (message.getFooter() != null && message.getFooter().getValue() != null) {
+            Map<Object, Object> newFooterMap = new HashMap<Object, Object>();
+            newFooterMap.putAll(message.getFooter().getValue());
+            targetMsg.setFooter(new Footer(newFooterMap));
+        }
 
-        // TODO - Need to see how this is implemented in Proton, not clear on the Properties
-        //        vs message set / get of those same properties implementation.
-        // void setProperties(Properties properties);
+        if (message.getProperties() != null) {
+            Properties properties = new Properties();
 
-        if (propertiesMap != null) {
+            properties.setMessageId(message.getProperties().getMessageId());
+            properties.setUserId(message.getProperties().getUserId());
+            properties.setTo(message.getProperties().getTo());
+            properties.setSubject(message.getProperties().getSubject());
+            properties.setReplyTo(message.getProperties().getReplyTo());
+            properties.setCorrelationId(message.getProperties().getCorrelationId());
+            properties.setContentType(message.getProperties().getContentType());
+            properties.setContentEncoding(message.getProperties().getContentEncoding());
+            properties.setAbsoluteExpiryTime(message.getProperties().getAbsoluteExpiryTime());
+            properties.setCreationTime(message.getProperties().getCreationTime());
+            properties.setGroupId(message.getProperties().getGroupId());
+            properties.setGroupSequence(message.getProperties().getGroupSequence());
+            properties.setReplyToGroupId(message.getProperties().getReplyTo());
+
+            targetMsg.setProperties(properties);
+        }
+
+        if (message.getDeliveryAnnotations() != null && message.getDeliveryAnnotations().getValue() != null) {
+            Map<Symbol, Object> newDeliveryAnnotations = new HashMap<Symbol, Object>();
+            newDeliveryAnnotations.putAll(message.getDeliveryAnnotations().getValue());
+            targetMsg.setFooter(new Footer(newDeliveryAnnotations));
+        }
+
+        if (applicationPropertiesMap != null) {
             target.lazyCreateProperties();
-            target.propertiesMap.putAll(propertiesMap);
+            target.applicationPropertiesMap.putAll(applicationPropertiesMap);
         }
 
         if (annotationsMap != null) {
             target.lazyCreateAnnotations();
             target.annotationsMap.putAll(annotationsMap);
-        }
-
-        if (message.getDeliveryAnnotations() != null) {
-            // TODO - Find the most efficient way to copy these, or don't copy if we would
-            //        not be modifying them.
         }
     }
 
@@ -722,7 +735,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
      * Removes all application level properties from the Message.
      */
     void clearAllApplicationProperties() {
-        propertiesMap = null;
+        applicationPropertiesMap = null;
         message.setApplicationProperties(null);
     }
 
@@ -773,7 +786,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     private void lazyCreateProperties() {
-        propertiesMap = new HashMap<String,Object>();
-        message.setApplicationProperties(new ApplicationProperties(propertiesMap));
+        applicationPropertiesMap = new HashMap<String,Object>();
+        message.setApplicationProperties(new ApplicationProperties(applicationPropertiesMap));
     }
 }

@@ -16,16 +16,16 @@
  */
 package org.apache.qpid.jms.message;
 
+import org.apache.qpid.jms.meta.JmsAbstractResourceId;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 
 /**
  * Envelope used to deliver incoming messages to their targeted consumer.
  */
-public class JmsInboundMessageDispatch {
+public class JmsInboundMessageDispatch extends JmsAbstractResourceId{
 
     private JmsConsumerId consumerId;
     private JmsMessage message;
-    private Object providerHint;
 
     public JmsMessage getMessage() {
         return message;
@@ -41,14 +41,6 @@ public class JmsInboundMessageDispatch {
 
     public void setConsumerId(JmsConsumerId consumerId) {
         this.consumerId = consumerId;
-    }
-
-    public Object getProviderHint() {
-        return this.providerHint;
-    }
-
-    public void setProviderHint(Object hint) {
-        this.providerHint = hint;
     }
 
     public void onMessageRedelivered() {

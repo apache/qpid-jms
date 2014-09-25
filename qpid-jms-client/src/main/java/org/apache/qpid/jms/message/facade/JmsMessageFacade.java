@@ -21,7 +21,6 @@ import java.util.Map;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsDestination;
-import org.apache.qpid.jms.meta.JmsMessageId;
 
 /**
  * The Message Facade interface defines the required mapping between a Provider's
@@ -114,21 +113,6 @@ public interface JmsMessageFacade {
     JmsMessageFacade copy() throws JMSException;
 
     /**
-     * Return the internal message Id as a JmsMessageId wrapped value.
-     *
-     * @return a JmsMessageId that wraps the internal message Id.
-     */
-    JmsMessageId getMessageId();
-
-    /**
-     * Updates the message Id using the value of the given JmsMessageId.
-     *
-     * @param messageId
-     *        the new JmsMessageId value to assign as the message Id.
-     */
-    void setMessageId(JmsMessageId messageId);
-
-    /**
      * Gets the timestamp assigned to the message when it was sent.
      *
      * @return the message timestamp value.
@@ -178,6 +162,21 @@ public interface JmsMessageFacade {
      *        the byte array to use to set the message correlation ID.
      */
     void setCorrelationIdBytes(byte[] correlationId);
+
+    /**
+     * Returns the message ID set on this message if one exists, null otherwise.
+     *
+     * @return the set message ID or null if not set.
+     */
+    String getMessageId();
+
+    /**
+     * Sets the message ID for this message.
+     *
+     * @param messageId
+     *        The message ID to set on this message, or null to clear.
+     */
+    void setMessageId(String messageId);
 
     /**
      * @return true if this message is tagged as being persistent.
@@ -353,5 +352,4 @@ public interface JmsMessageFacade {
      *        the group sequence value to assign this message.
      */
     void setGroupSequence(int groupSequence);
-
 }

@@ -28,6 +28,7 @@ public class JmsOutboundMessageDispatch {
     private JmsMessage message;
     private JmsDestination destination;
     private boolean sendAsync;
+    private String dispatchId;
 
     public JmsDestination getDestination() {
         return destination;
@@ -59,5 +60,22 @@ public class JmsOutboundMessageDispatch {
 
     public boolean isSendAsync() {
         return sendAsync;
+    }
+
+    public void setDispatchId(String dispatchId) {
+        this.dispatchId = dispatchId;
+    }
+
+    @Override
+    public String toString() {
+        String result = "JmsOutboundMessageDispatch {dispatchId = ";
+        String id = dispatchId;
+        if (id == null) {
+            result = result + "<null>}";
+        } else {
+            result = result + id + "}";
+        }
+
+        return result;
     }
 }

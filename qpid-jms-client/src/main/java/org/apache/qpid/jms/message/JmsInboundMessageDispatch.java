@@ -26,6 +26,7 @@ public class JmsInboundMessageDispatch extends JmsAbstractResourceId{
 
     private JmsConsumerId consumerId;
     private JmsMessage message;
+    private String dispatchId;
 
     public JmsMessage getMessage() {
         return message;
@@ -46,4 +47,24 @@ public class JmsInboundMessageDispatch extends JmsAbstractResourceId{
     public void onMessageRedelivered() {
         this.message.incrementRedeliveryCount();
     }
+
+    public void setDispatchId(String dispatchId)
+    {
+        this.dispatchId = dispatchId;
+    }
+
+    @Override
+    public String toString() {
+        String result = "JmsInboundMessageDispatch {dispatchId = ";
+        String id = dispatchId;
+        if (id == null) {
+            result = result + "<null>}";
+        } else {
+            result = result + id + "}";
+        }
+
+        return result;
+    }
+
+    //TODO: equals and hashcode?
 }

@@ -34,7 +34,6 @@ import javax.jms.MessageNotWriteableException;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
-import org.apache.qpid.jms.meta.JmsMessageId;
 import org.apache.qpid.jms.util.TypeConversionSupport;
 
 public class JmsMessage implements javax.jms.Message {
@@ -89,12 +88,10 @@ public class JmsMessage implements javax.jms.Message {
         }
 
         JmsMessage msg = (JmsMessage) o;
-        JmsMessageId oMsg = null;
-        JmsMessageId thisMsg = null;
+        String oMsg = msg.facade.getMessageId();
+        String thisMsg = facade.getMessageId();
 
-        thisMsg = facade.getMessageId();
-        oMsg = msg.facade.getMessageId();
-
+        //TODO: use super.equals if both id are null?
         return thisMsg != null && oMsg != null && oMsg.equals(thisMsg);
     }
 
@@ -129,12 +126,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public String getJMSMessageID() throws JMSException {
-        JmsMessageId facadeId = facade.getMessageId();
-        if (facadeId == null) {
-            return null;
-        }
-
-        String value = facadeId.getValue();
+        String value = facade.getMessageId();
         if (value != null && !value.startsWith(ID_PREFIX)) {
             value = ID_PREFIX + value;
         }
@@ -144,16 +136,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void setJMSMessageID(String value) throws JMSException {
-        if (value != null) {
-            JmsMessageId id = new JmsMessageId(value);
-            facade.setMessageId(id);
-        } else {
-            facade.setMessageId(null);
-        }
-    }
-
-    public void setJMSMessageID(JmsMessageId messageId) throws JMSException {
-        facade.setMessageId(messageId);
+        facade.setMessageId(value);
     }
 
     @Override

@@ -32,7 +32,6 @@ import java.util.UUID;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsTopic;
-import org.apache.qpid.jms.meta.JmsMessageId;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.proton.Proton;
@@ -251,7 +250,7 @@ public class AmqpJmsMessageFacadeTest {
     public void testGetMessageIdIsNullOnNewMessage() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        assertNull("Expected messageId value to be null on new message", amqpMessageFacade.getMessageId().getValue());
+        assertNull("Expected messageId value to be null on new message", amqpMessageFacade.getMessageId());
     }
 
     /**
@@ -263,11 +262,10 @@ public class AmqpJmsMessageFacadeTest {
 
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        JmsMessageId jmsMessageId = new JmsMessageId(testMessageId);
-        amqpMessageFacade.setMessageId(jmsMessageId);
+        amqpMessageFacade.setMessageId(testMessageId);
 
-        assertEquals("Expected messageId object not returned", jmsMessageId, amqpMessageFacade.getMessageId());
-        assertEquals("ID strings were not equal", testMessageId, amqpMessageFacade.getMessageId().getValue());
+        assertEquals("Expected messageId not returned", testMessageId, amqpMessageFacade.getMessageId());
+        assertEquals("ID strings were not equal", testMessageId, amqpMessageFacade.getMessageId());
     }
 
     /**
@@ -326,7 +324,7 @@ public class AmqpJmsMessageFacadeTest {
 
         String expectedString = appendIdAndTypePrefix(testMessageId);
 
-        assertEquals("Incorrect messageId value received", new JmsMessageId(expectedString), amqpMessageFacade.getMessageId());
+        assertEquals("Incorrect messageId value received", expectedString, amqpMessageFacade.getMessageId());
     }
 
     private String appendIdAndTypePrefix(Object testMessageId) {

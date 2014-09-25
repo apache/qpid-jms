@@ -109,7 +109,7 @@ public class AmqpFixedProducer extends AmqpProducer {
     private void doSend(JmsOutboundMessageDispatch envelope, AsyncResult request) throws IOException, JMSException {
         JmsMessageFacade facade = envelope.getMessage().getFacade();
 
-        LOG.trace("Producer sending message: {}", envelope.getMessage().getFacade().getMessageId());
+        LOG.trace("Producer sending message: {}", envelope);
 
         byte[] tag = tagGenerator.getNextTag();
         Delivery delivery = null;

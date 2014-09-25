@@ -26,7 +26,6 @@ import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
-import org.apache.qpid.jms.meta.JmsMessageId;
 import org.fusesource.hawtbuf.AsciiBuffer;
 
 /**
@@ -60,7 +59,7 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
     protected byte priority = javax.jms.Message.DEFAULT_PRIORITY;
     protected String groupId;
     protected int groupSequence;
-    protected JmsMessageId messageId;
+    protected String messageId;
     protected long expiration;
     protected long timestamp;
     protected String correlationId;
@@ -95,10 +94,7 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
         target.destination = this.destination;
         target.replyTo = this.replyTo;
         target.userId = this.userId;
-
-        if (this.messageId != null) {
-            target.messageId = this.messageId.copy();
-        }
+        target.messageId = this.messageId;
 
         if (this.properties != null) {
             target.properties = new HashMap<String, Object>(this.properties);
@@ -147,12 +143,12 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public JmsMessageId getMessageId() {
-        return this.messageId;
+    public String getMessageId() {
+        return messageId;
     }
 
     @Override
-    public void setMessageId(JmsMessageId messageId) {
+    public void setMessageId(String messageId) {
         this.messageId = messageId;
     }
 

@@ -67,7 +67,6 @@ import org.apache.qpid.jms.message.JmsMessageFactory;
 import org.apache.qpid.jms.message.JmsMessageTransformation;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsConsumerId;
-import org.apache.qpid.jms.meta.JmsMessageId;
 import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
@@ -649,28 +648,22 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
                 original.setJMSExpiration(timeStamp + timeToLive);
             }
 
-            JmsMessageId msgId = null;
+            String msgId = null;
             if (!disableMsgId) {
                 msgId = getNextMessageId(producer);
             }
+            original.setJMSMessageID(msgId);
 
             boolean isJmsMessageType = original instanceof JmsMessage;
             if (isJmsMessageType) {
                 ((JmsMessage) original).setConnection(connection);
-                if (!disableMsgId) {
-                    ((JmsMessage) original).setJMSMessageID(msgId);
-                }
                 original.setJMSDestination(destination);
             }
 
             JmsMessage copy = JmsMessageTransformation.transformMessage(connection, original);
 
-            // Ensure original message gets the destination and message ID as per spec.
+            // Ensure original message gets the destination as per spec.
             if (!isJmsMessageType) {
-                if (!disableMsgId) {
-                    original.setJMSMessageID(msgId.toString());
-                    copy.setJMSMessageID(msgId);
-                }
                 original.setJMSDestination(destination);
                 copy.setJMSDestination(destination);
             }
@@ -684,6 +677,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             envelope.setProducerId(producer.getProducerId());
             envelope.setDestination(destination);
             envelope.setSendAsync(!sync);
+            envelope.setDispatchId(msgId);
 
             this.connection.send(envelope);
         } finally {
@@ -858,8 +852,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         return new JmsProducerId(sessionInfo.getSessionId(), producerIdGenerator.incrementAndGet());
     }
 
-    private JmsMessageId getNextMessageId(JmsMessageProducer producer) {
-        return new JmsMessageId(producer.getProducerId().toString() + "-" + producer.getNextMessageSequence());
+    private String getNextMessageId(JmsMessageProducer producer) {
+        return producer.getProducerId().toString() + "-" + producer.getNextMessageSequence();
     }
 
     private <T extends JmsMessage> T init(T message) {

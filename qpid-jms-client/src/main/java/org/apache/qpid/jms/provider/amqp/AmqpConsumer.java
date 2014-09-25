@@ -28,7 +28,6 @@ import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
-import org.apache.qpid.jms.meta.JmsMessageId;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderListener;
@@ -69,7 +68,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     protected final AmqpSession session;
     protected final InboundTransformer inboundTransformer =
         new JMSMappingInboundTransformer(AmqpJMSVendor.INSTANCE);;
-    protected final Map<JmsMessageId, Delivery> delivered = new LinkedHashMap<JmsMessageId, Delivery>();
+    protected final Map<JmsInboundMessageDispatch, Delivery> delivered = new LinkedHashMap<JmsInboundMessageDispatch, Delivery>();
     protected boolean presettle;
 
     private final ByteArrayOutputStream streamBuffer = new ByteArrayOutputStream();
@@ -188,21 +187,20 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
      * @throws JMSException if an error occurs accessing the Message properties.
      */
     public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws JMSException {
-        JmsMessageId messageId = envelope.getMessage().getFacade().getMessageId();
         Delivery delivery = null;
 
-        if (messageId.getProviderHint() instanceof Delivery) {
-            delivery = (Delivery) messageId.getProviderHint();
+        if (envelope.getProviderHint() instanceof Delivery) {
+            delivery = (Delivery) envelope.getProviderHint();
         } else {
-            delivery = delivered.get(messageId);
+            delivery = delivered.get(envelope);
             if (delivery == null) {
-                LOG.warn("Received Ack for unknown message: {}", messageId);
+                LOG.warn("Received Ack for unknown message: {}", envelope);
                 return;
             }
         }
 
         if (ackType.equals(ACK_TYPE.DELIVERED)) {
-            LOG.debug("Delivered Ack of message: {}", messageId);
+            LOG.debug("Delivered Ack of message: {}", envelope);
             if (session.isTransacted()) {
                 Binary txnId = session.getTransactionContext().getAmqpTransactionId();
                 if (txnId != null) {
@@ -214,16 +212,16 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
                 }
             }
             if (!isPresettle()) {
-                delivered.put(messageId, delivery);
+                delivered.put(envelope, delivery);
             }
             sendFlowIfNeeded();
         } else if (ackType.equals(ACK_TYPE.CONSUMED)) {
             // A Consumer may not always send a delivered ACK so we need to check to
             // ensure we don't add to much credit to the link.
-            if (isPresettle() || delivered.remove(messageId) == null) {
+            if (isPresettle() || delivered.remove(envelope) == null) {
                 sendFlowIfNeeded();
             }
-            LOG.debug("Consumed Ack of message: {}", messageId);
+            LOG.debug("Consumed Ack of message: {}", envelope);
             if (!delivery.isSettled()) {
                 delivery.disposition(Accepted.getInstance());
                 delivery.settle();
@@ -237,7 +235,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         } else if (ackType.equals(ACK_TYPE.POISONED)) {
             deliveryFailed(delivery, false);
         } else {
-            LOG.warn("Unsupporeted Ack Type for message: {}", messageId);
+            LOG.warn("Unsupported Ack Type for message: {}", envelope);
         }
     }
 
@@ -332,9 +330,6 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             return;
         }
 
-        // Store link to delivery in the hint for use in acknowledge requests.
-        message.getFacade().getMessageId().setProviderHint(incoming);
-
         // We need to signal to the create message that it's being dispatched and for now
         // the transformer creates the message in write mode, onSend will reset it to read
         // mode and the consumer will see it as a normal received message.
@@ -343,7 +338,10 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch();
         envelope.setMessage(message);
         envelope.setConsumerId(info.getConsumerId());
+        // Store link to delivery in the hint for use in acknowledge requests.
         envelope.setProviderHint(incoming);
+        //TODO: the below messageId retrieval may result in type conversion costs
+        envelope.setDispatchId(message.getJMSMessageID());
 
         // Store reference to envelope in delivery context for recovery
         incoming.setContext(envelope);
@@ -408,13 +406,13 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         ProviderListener listener = session.getProvider().getProviderListener();
         if (listener != null) {
             if (envelope.getMessage() != null) {
-                LOG.debug("Dispatching received message: {}", envelope.getMessage().getFacade().getMessageId());
+                LOG.debug("Dispatching received message: {}", envelope);
             } else {
                 LOG.debug("Dispatching end of browse to: {}", envelope.getConsumerId());
             }
             listener.onMessage(envelope);
         } else {
-            LOG.error("Provider listener is not set, message will be dropped.");
+            LOG.error("Provider listener is not set, message will be dropped: {}", envelope);
         }
     }
 

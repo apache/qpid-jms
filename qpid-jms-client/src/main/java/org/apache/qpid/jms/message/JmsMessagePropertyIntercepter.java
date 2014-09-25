@@ -29,7 +29,6 @@ import javax.jms.JMSException;
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
-import org.apache.qpid.jms.meta.JmsMessageId;
 import org.apache.qpid.jms.util.TypeConversionSupport;
 
 /**
@@ -239,7 +238,7 @@ public class JmsMessagePropertyIntercepter {
                 if (message.getMessageId() == null) {
                     return null;
                 }
-                return message.getMessageId().toString();
+                return message.getMessageId();
             }
 
             @Override
@@ -248,7 +247,7 @@ public class JmsMessagePropertyIntercepter {
                 if (rc == null) {
                     throw new JMSException("Property JMSMessageID cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setMessageId(new JmsMessageId(rc));
+                message.setMessageId(rc);
             }
 
             @Override

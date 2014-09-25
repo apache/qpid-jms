@@ -35,7 +35,6 @@ import javax.jms.MessageFormatException;
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.exceptions.IdConversionException;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
-import org.apache.qpid.jms.meta.JmsMessageId;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.proton.Proton;
@@ -288,31 +287,30 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public JmsMessageId getMessageId() {
+    public String getMessageId() {
         Object underlying = message.getMessageId();
         AmqpMessageIdHelper helper = AmqpMessageIdHelper.INSTANCE;
         String baseStringId = helper.toBaseMessageIdString(underlying);
 
         // Ensure the ID: prefix is present.
-        // TODO: should we always do this? AMQP JMS Mapping says never to send the "ID:" prefix.
+        // TODO: should we always do this when non-null? AMQP JMS Mapping says never to send the "ID:" prefix.
         // TODO: should we make this part of the JmsMessageId, or JmsMessage object responsibilities?
         //       I Ended up putting it in JmsMessage after the above comment, as a workaround for the
         //       current JmsDefaultMessageFacade usage.
         if (baseStringId != null && !helper.hasMessageIdPrefix(baseStringId)) {
             baseStringId = AmqpMessageIdHelper.JMS_ID_PREFIX + baseStringId;
         }
-        return new JmsMessageId(baseStringId);
+        return baseStringId;
     }
 
     @Override
-    public void setMessageId(JmsMessageId messageId) {
+    public void setMessageId(String messageId) {
         if (messageId == null) {
             message.setMessageId(null);
         } else {
-            String value = messageId.getValue();
             // Remove the first 'ID:' prefix if present
-            value = AmqpMessageIdHelper.INSTANCE.stripMessageIdPrefix(value);
-            message.setMessageId(value);
+            String stripped = AmqpMessageIdHelper.INSTANCE.stripMessageIdPrefix(messageId);
+            message.setMessageId(stripped);
         }
     }
 

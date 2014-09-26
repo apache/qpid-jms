@@ -135,12 +135,7 @@ public class AmqpDestinationHelper {
     }
 
     public void setToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
-        //TODO: don't we need to clear any existing value and type annotation?
-        if (destination == null) {
-            return;
-        }
-
-        String address = destination.getName();
+        String address = destination != null ? destination.getName() : null;
         String typeString = toTypeAnnotation(destination);
 
         message.setToAddress(address);
@@ -153,12 +148,7 @@ public class AmqpDestinationHelper {
     }
 
     public void setReplyToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
-        //TODO: don't we need to clear any existing value and type annotation?
-        if (destination == null) {
-            return;
-        }
-
-        String replyToAddress = destination.getName();
+        String replyToAddress = destination != null ? destination.getName() : null;
         String typeString = toTypeAnnotation(destination);
 
         message.setReplyToAddress(replyToAddress);

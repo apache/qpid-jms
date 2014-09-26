@@ -328,14 +328,13 @@ public class AmqpDestinationHelperTest {
     public void testSetToAddressFromDestinationWithNullDestination() {
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
         helper.setToAddressFromDestination(message, null);
-        Mockito.verifyZeroInteractions(message);
+        Mockito.verify(message).setToAddress(null);
+        Mockito.verify(message).removeAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
     }
 
-    @Test
+    @Test(expected=NullPointerException.class)
     public void testSetToAddressFromDestinationWithNullDestinationAndNullMessage() {
-        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
         helper.setToAddressFromDestination(null, null);
-        Mockito.verifyZeroInteractions(message);
     }
 
     @Test(expected=NullPointerException.class)
@@ -398,14 +397,13 @@ public class AmqpDestinationHelperTest {
     public void testSetReplyToAddressFromDestinationWithNullDestination() {
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
         helper.setReplyToAddressFromDestination(message, null);
-        Mockito.verifyZeroInteractions(message);
+        Mockito.verify(message).setReplyToAddress(null);
+        Mockito.verify(message).removeAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
     }
 
-    @Test
+    @Test(expected=NullPointerException.class)
     public void testSetReplyToAddressFromDestinationWithNullDestinationAndNullMessage() {
-        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
         helper.setReplyToAddressFromDestination(null, null);
-        Mockito.verifyZeroInteractions(message);
     }
 
     @Test(expected=NullPointerException.class)

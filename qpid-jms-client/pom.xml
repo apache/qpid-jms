@@ -91,51 +91,6 @@
       <artifactId>hamcrest-all</artifactId>
       <scope>test</scope>
     </dependency>
-
-    <!--  Joram JMS conformance tests -->
-    <dependency>
-      <groupId>org.fusesource.joram-jms-tests</groupId>
-      <artifactId>joram-jms-tests</artifactId>
-      <version>${fuse-joram-tests-version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <!-- using it for Jetty's JNDI context to work /w Joram tests. -->
-      <groupId>org.eclipse.jetty.aggregate</groupId>
-      <artifactId>jetty-all-server</artifactId>
-      <version>${jetty-version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.activemq</groupId>
-      <artifactId>activemq-broker</artifactId>
-      <version>${activemq-version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.activemq</groupId>
-      <artifactId>activemq-kahadb-store</artifactId>
-      <version>${activemq-version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.activemq</groupId>
-      <artifactId>activemq-amqp</artifactId>
-      <version>${activemq-version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.activemq</groupId>
-      <artifactId>activemq-jaas</artifactId>
-      <version>${activemq-version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.activemq</groupId>
-      <artifactId>activemq-spring</artifactId>
-      <version>${activemq-version}</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <build>

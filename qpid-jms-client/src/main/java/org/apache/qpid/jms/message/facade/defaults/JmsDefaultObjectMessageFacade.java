@@ -16,28 +16,28 @@
  */
 package org.apache.qpid.jms.message.facade.defaults;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.Arrays;
 
 import org.apache.qpid.jms.message.facade.JmsObjectMessageFacade;
 import org.apache.qpid.jms.util.ClassLoadingAwareObjectInputStream;
-import org.fusesource.hawtbuf.Buffer;
-import org.fusesource.hawtbuf.DataByteArrayInputStream;
-import org.fusesource.hawtbuf.DataByteArrayOutputStream;
 
 /**
  * Default implementation for a JMS Object Message Facade.
  */
 public class JmsDefaultObjectMessageFacade extends JmsDefaultMessageFacade implements JmsObjectMessageFacade {
 
-    private Buffer object;
+    private byte[] object;
 
-    public Buffer getSerializedObject() {
+    public byte[] getSerializedObject() {
         return object;
     }
 
-    public void setSerializedObject(Buffer object) {
+    public void setSerializedObject(byte[] object) {
         this.object = object;
     }
 
@@ -48,7 +48,7 @@ public class JmsDefaultObjectMessageFacade extends JmsDefaultMessageFacade imple
 
     @Override
     public boolean isEmpty() {
-        return object == null || object.isEmpty();
+        return object == null || object.length == 0;
     }
 
     @Override
@@ -56,7 +56,7 @@ public class JmsDefaultObjectMessageFacade extends JmsDefaultMessageFacade imple
         JmsDefaultObjectMessageFacade copy = new JmsDefaultObjectMessageFacade();
         copyInto(copy);
         if (!isEmpty()) {
-            copy.object = object.deepCopy();
+            copy.object = Arrays.copyOf(object, object.length);
         }
 
         return copy;
@@ -76,7 +76,7 @@ public class JmsDefaultObjectMessageFacade extends JmsDefaultMessageFacade imple
 
         Serializable serialized = null;
 
-        try (DataByteArrayInputStream dataIn = new DataByteArrayInputStream(object);
+        try (ByteArrayInputStream dataIn = new ByteArrayInputStream(object);
              ClassLoadingAwareObjectInputStream objIn = new ClassLoadingAwareObjectInputStream(dataIn)) {
 
             serialized = (Serializable) objIn.readObject();
@@ -87,16 +87,16 @@ public class JmsDefaultObjectMessageFacade extends JmsDefaultMessageFacade imple
 
     @Override
     public void setObject(Serializable value) throws IOException {
-        Buffer serialized = null;
+        byte[] serialized = null;
         if (value != null) {
-            try (DataByteArrayOutputStream baos = new DataByteArrayOutputStream();
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
                  ObjectOutputStream oos = new ObjectOutputStream(baos)) {
 
                 oos.writeObject(value);
                 oos.flush();
                 oos.close();
 
-                serialized = baos.toBuffer();
+                serialized = baos.toByteArray();
             }
         }
 

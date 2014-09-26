@@ -209,7 +209,7 @@ public final class AmqpMessageSupport {
     /**
      * Check whether the content-type field of the properties section (if present) in
      * the given message matches the provided string (where null matches if there is
-     * no content type rpeesnt.
+     * no content type present.
      *
      * @param contentType
      *        content type string to compare against, or null if none

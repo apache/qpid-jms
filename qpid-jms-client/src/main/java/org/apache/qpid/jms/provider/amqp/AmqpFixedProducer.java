@@ -49,7 +49,6 @@ import org.apache.qpid.proton.jms.AutoOutboundTransformer;
 import org.apache.qpid.proton.jms.EncodedMessage;
 import org.apache.qpid.proton.jms.OutboundTransformer;
 import org.apache.qpid.proton.message.Message;
-import org.fusesource.hawtbuf.Buffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -172,13 +171,13 @@ public class AmqpFixedProducer extends AmqpProducer {
             }
         }
 
-        Buffer sendBuffer = new Buffer(encodeBuffer, 0, encodedSize);
+        int sentSoFar = 0;
 
         while (true) {
-            int sent = endpoint.send(sendBuffer.data, sendBuffer.offset, sendBuffer.length);
+            int sent = endpoint.send(encodeBuffer, sentSoFar, encodedSize - sentSoFar);
             if (sent > 0) {
-                sendBuffer.moveHead(sent);
-                if (sendBuffer.length == 0) {
+                sentSoFar += sent;
+                if ((encodedSize - sentSoFar) == 0) {
                     break;
                 }
             } else {
@@ -189,7 +188,10 @@ public class AmqpFixedProducer extends AmqpProducer {
 
     private void encodeAndSend(JmsMessage message, Delivery delivery) throws IOException {
 
-        Buffer sendBuffer = null;
+        byte[] sendBuffer = null;
+        int sendBufferSize = 0;
+        int sendBufferOffset = 0;
+
         EncodedMessage amqp = null;
 
         try {
@@ -199,18 +201,21 @@ public class AmqpFixedProducer extends AmqpProducer {
         }
 
         if (amqp != null && amqp.getLength() > 0) {
-            sendBuffer = new Buffer(amqp.getArray(), amqp.getArrayOffset(), amqp.getLength());
-        }
+            sendBuffer = amqp.getArray();
+            sendBufferOffset = amqp.getArrayOffset();
+            sendBufferSize = amqp.getLength();
+            int sentSoFar = 0;
 
-        while (true) {
-            int sent = endpoint.send(sendBuffer.data, sendBuffer.offset, sendBuffer.length);
-            if (sent > 0) {
-                sendBuffer.moveHead(sent);
-                if (sendBuffer.length == 0) {
-                    break;
+            while (true) {
+                int sent = endpoint.send(sendBuffer, sendBufferOffset + sentSoFar, sendBufferSize - sentSoFar);
+                if (sent > 0) {
+                    sentSoFar += sent;
+                    if ((sendBufferSize - sentSoFar) == 0) {
+                        break;
+                    }
+                } else {
+                    LOG.warn("{} failed to send any data from current Message.", this);
                 }
-            } else {
-                LOG.warn("{} failed to send any data from current Message.", this);
             }
         }
     }

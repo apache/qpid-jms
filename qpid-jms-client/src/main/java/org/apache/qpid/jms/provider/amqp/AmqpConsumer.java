@@ -16,6 +16,7 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -50,8 +51,6 @@ import org.apache.qpid.proton.engine.Receiver;
 import org.apache.qpid.proton.jms.EncodedMessage;
 import org.apache.qpid.proton.jms.InboundTransformer;
 import org.apache.qpid.proton.jms.JMSMappingInboundTransformer;
-import org.fusesource.hawtbuf.Buffer;
-import org.fusesource.hawtbuf.ByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -422,17 +421,17 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     }
 
     protected EncodedMessage readIncomingMessage(Delivery incoming) {
-        Buffer buffer;
+        byte[] buffer;
         int count;
 
         while ((count = endpoint.recv(incomingBuffer, 0, incomingBuffer.length)) > 0) {
             streamBuffer.write(incomingBuffer, 0, count);
         }
 
-        buffer = streamBuffer.toBuffer();
+        buffer = streamBuffer.toByteArray();
 
         try {
-            return new EncodedMessage(incoming.getMessageFormat(), buffer.data, buffer.offset, buffer.length);
+            return new EncodedMessage(incoming.getMessageFormat(), buffer, 0, buffer.length);
         } finally {
             streamBuffer.reset();
         }

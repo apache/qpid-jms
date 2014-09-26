@@ -158,7 +158,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public boolean propertyExists(String key) throws JMSException {
-        return AmqpJmsMessagePropertyIntercepter.getProperty(this, key) != null;
+        return AmqpJmsMessagePropertyIntercepter.propertyExists(this, key);
     }
 
     public boolean applicationPropertyExists(String key) throws JMSException {

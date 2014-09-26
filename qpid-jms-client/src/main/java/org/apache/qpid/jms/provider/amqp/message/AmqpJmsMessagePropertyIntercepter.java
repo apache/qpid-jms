@@ -222,14 +222,16 @@ public class AmqpJmsMessagePropertyIntercepter {
      * @param name
      *        the property name that is being checked.
      *
+     * @return true if the message contains the given property.
+     *
      * @throws JMSException if an error occurs while inspecting the defined property.
      */
-    public static void propertyExists(AmqpJmsMessageFacade message, String name) throws JMSException {
+    public static boolean propertyExists(AmqpJmsMessageFacade message, String name) throws JMSException {
         PropertyIntercepter propertyExpression = PROPERTY_INTERCEPTERS.get(name);
         if (propertyExpression != null) {
-            propertyExpression.propertyExists(message);
+            return propertyExpression.propertyExists(message);
         } else {
-            message.applicationPropertyExists(name);
+            return message.applicationPropertyExists(name);
         }
     }
 

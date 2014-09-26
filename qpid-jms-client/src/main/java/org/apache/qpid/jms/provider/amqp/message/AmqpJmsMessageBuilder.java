@@ -23,6 +23,10 @@ import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_M
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_OBJECT_MESSAGE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_STREAM_MESSAGE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_TEXT_MESSAGE;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.TEXT_PLAIN_CONTENT_TYPE;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.isContentType;
 
 import java.io.IOException;
 
@@ -33,6 +37,10 @@ import org.apache.qpid.jms.message.JmsObjectMessage;
 import org.apache.qpid.jms.message.JmsStreamMessage;
 import org.apache.qpid.jms.message.JmsTextMessage;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
+import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.amqp.messaging.AmqpValue;
+import org.apache.qpid.proton.amqp.messaging.Data;
+import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.message.Message;
 
 /**
@@ -65,6 +73,12 @@ public class AmqpJmsMessageBuilder {
             return result;
         }
 
+        // Next, match specific section structures and content types
+        result = createWithoutAnnotation(consumer, message);
+        if (result != null) {
+            return result;
+        }
+
         // TODO
         throw new IOException("Could not create a JMS message from incoming message");
     }
@@ -75,22 +89,88 @@ public class AmqpJmsMessageBuilder {
 
             switch ((byte) annotation) {
                 case JMS_MESSAGE:
-                    return new JmsMessage(new AmqpJmsMessageFacade(consumer, message));
+                    return createMessage(consumer, message);
                 case JMS_BYTES_MESSAGE:
-                    return new JmsBytesMessage(new AmqpJmsBytesMessageFacade(consumer, message));
+                    return createBytesMessage(consumer, message);
                 case JMS_TEXT_MESSAGE:
-                    return new JmsTextMessage(new AmqpJmsTextMessageFacade(consumer, message));
+                    return createTextMessage(consumer, message);
                 case JMS_MAP_MESSAGE:
-                    return new JmsMapMessage(new AmqpJmsMapMessageFacade(consumer, message));
+                    return createMapMessage(consumer, message);
                 case JMS_STREAM_MESSAGE:
-                    return new JmsStreamMessage(new AmqpJmsStreamMessageFacade(consumer, message));
+                    return createStreamMessage(consumer, message);
                 case JMS_OBJECT_MESSAGE:
-                    return new JmsObjectMessage(new AmqpJmsObjectMessageFacade(consumer, message));
+                    return createObjectMessage(consumer, message);
                 default:
                     throw new IOException("Invalid JMS Message Type annotation found in message");
             }
         }
 
         return null;
+    }
+
+    private static JmsMessage createWithoutAnnotation(AmqpConsumer consumer, Message message) {
+        Section body = message.getBody();
+
+        if (body == null) {
+            // TODO: accept textual content types other than strictly "text/plain"
+            if (isContentType(TEXT_PLAIN_CONTENT_TYPE, message)) {
+                return createTextMessage(consumer, message);
+            } else if (isContentType(SERIALIZED_JAVA_OBJECT_CONTENT_TYPE, message)) {
+                return createObjectMessage(consumer, message);
+            } else if (isContentType(OCTET_STREAM_CONTENT_TYPE, message) || isContentType(null, message)) {
+                return createBytesMessage(consumer, message);
+            }
+        } else if (body instanceof Data) {
+            // TODO: accept textual content types other than strictly "text/plain"
+            if (isContentType(TEXT_PLAIN_CONTENT_TYPE, message)) {
+                return createTextMessage(consumer, message);
+            } else if (isContentType(OCTET_STREAM_CONTENT_TYPE, message) || isContentType(null, message)) {
+                return createBytesMessage(consumer, message);
+            } else if (isContentType(SERIALIZED_JAVA_OBJECT_CONTENT_TYPE, message)) {
+                return createObjectMessage(consumer, message);
+            }
+
+            // TODO: should this situation throw an exception, or just become a bytes message?
+            // Content type is set, but not to something we understand above.
+            // Falling through to return null.
+        } else if (body instanceof AmqpValue) {
+            Object value = ((AmqpValue) body).getValue();
+
+            if (value == null || value instanceof String) {
+                return createTextMessage(consumer, message);
+            } else if (value instanceof Binary) {
+                return createBytesMessage(consumer, message);
+            } else {
+                return createObjectMessage(consumer, message);
+            }
+        } else {
+            // TODO: AmqpSequence support
+        }
+
+        return null;
+    }
+
+    private static JmsObjectMessage createObjectMessage(AmqpConsumer consumer, Message message) {
+        return new JmsObjectMessage(new AmqpJmsObjectMessageFacade(consumer, message));
+    }
+
+    private static JmsStreamMessage createStreamMessage(AmqpConsumer consumer, Message message) {
+        return new JmsStreamMessage(new AmqpJmsStreamMessageFacade(consumer, message));
+    }
+
+    private static JmsMapMessage createMapMessage(AmqpConsumer consumer, Message message) {
+        return new JmsMapMessage(new AmqpJmsMapMessageFacade(consumer, message));
+    }
+
+    private static JmsTextMessage createTextMessage(AmqpConsumer consumer, Message message) {
+        return new JmsTextMessage(new AmqpJmsTextMessageFacade(consumer, message));
+    }
+
+    private static JmsBytesMessage createBytesMessage(AmqpConsumer consumer, Message message) {
+        return new JmsBytesMessage(new AmqpJmsBytesMessageFacade(consumer, message));
+    }
+
+    private static JmsMessage createMessage(AmqpConsumer consumer, Message message) {
+        return new JmsMessage(new AmqpJmsMessageFacade(consumer, message));
     }
 }

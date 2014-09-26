@@ -131,6 +131,21 @@ public final class AmqpMessageSupport {
     public static final String JMS_AMQP_TYPED_ENCODING = "JMS_AMQP_TYPED_ENCODING";
 
     /**
+     * Content type used to mark Data sections as containing text.
+     */
+    public static final String TEXT_PLAIN_CONTENT_TYPE = "text/plain";
+
+    /**
+     * Content type used to mark Data sections as containing a serialized java object.
+     */
+    public static final String SERIALIZED_JAVA_OBJECT_CONTENT_TYPE = "application/x-java-serialized-object";
+
+    /**
+     * Content type used to mark Data sections as containing arbitrary bytes.
+     */
+    public static final String OCTET_STREAM_CONTENT_TYPE = "application/octet-stream";
+
+    /**
      * Lookup and return the correct Proton Symbol instance based on the given key.
      *
      * @param key
@@ -189,5 +204,25 @@ public final class AmqpMessageSupport {
         }
 
         return null;
+    }
+
+    /**
+     * Check whether the content-type field of the properties section (if present) in
+     * the given message matches the provided string (where null matches if there is
+     * no content type rpeesnt.
+     *
+     * @param contentType
+     *        content type string to compare against, or null if none
+     * @param message
+     *        the AMQP message object that is being examined.
+     *
+     * @return true if content type matches
+     */
+    public static boolean isContentType(String contentType, Message message) {
+        if (contentType == null) {
+            return message.getContentType() == null;
+        } else {
+            return contentType.equals(message.getContentType());
+        }
     }
 }

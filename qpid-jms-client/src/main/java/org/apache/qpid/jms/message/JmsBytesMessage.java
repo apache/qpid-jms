@@ -16,6 +16,11 @@
  */
 package org.apache.qpid.jms.message;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.Unpooled;
+
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -29,9 +34,6 @@ import javax.jms.MessageNotWriteableException;
 
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.facade.JmsBytesMessageFacade;
-import org.fusesource.hawtbuf.Buffer;
-import org.fusesource.hawtbuf.ByteArrayInputStream;
-import org.fusesource.hawtbuf.DataByteArrayOutputStream;
 
 /**
  * A <CODE>BytesMessage</CODE> object is used to send a message containing a
@@ -85,7 +87,7 @@ import org.fusesource.hawtbuf.DataByteArrayOutputStream;
  */
 public class JmsBytesMessage extends JmsMessage implements BytesMessage {
 
-    protected transient DataByteArrayOutputStream bytesOut;
+    protected transient ByteBufOutputStream bytesOut;
     protected transient DataInputStream dataIn;
     protected transient int length;
 
@@ -781,38 +783,40 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
     /**
      * Direct view of the underlying message contents.
      *
-     * @return a Buffer holding the bytes contained in this message.
+     * @return a ByteBuf holding the bytes contained in this message.
      */
-    public Buffer getContent() {
+    public ByteBuf getContent() {
         return this.facade.getContent();
     }
 
     /**
-     * A direct write method to the underlying message content buffer.
+     * A direct write method to the underlying message content ByteBuf.
      *
      * @param content
      *        the new content to assign to this message.
      */
-    public void setContent(Buffer content) {
+    public void setContent(ByteBuf content) {
         this.facade.setContent(content);
     }
 
     private void initializeWriting() throws JMSException {
         checkReadOnlyBody();
         if (this.bytesOut == null) {
-            this.bytesOut = new DataByteArrayOutputStream();
+            this.bytesOut = new ByteBufOutputStream(Unpooled.buffer());
         }
     }
 
     private void initializeReading() throws JMSException {
         checkWriteOnlyBody();
         if (dataIn == null) {
-            Buffer buffer = facade.getContent();
+            ByteBuf buffer = facade.getContent();
             if (buffer == null) {
-                buffer = new Buffer(0);
+                buffer = Unpooled.EMPTY_BUFFER;
+            } else {
+                buffer.resetReaderIndex();
             }
-            dataIn = new DataInputStream(new ByteArrayInputStream(buffer));
-            this.length = buffer.getLength();
+            dataIn = new DataInputStream(new ByteBufInputStream(buffer));
+            this.length = buffer.readableBytes();
         }
     }
 
@@ -820,8 +824,7 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
         try {
             if (bytesOut != null) {
                 bytesOut.close();
-                Buffer bs = bytesOut.toBuffer();
-                facade.setContent(bs);
+                facade.setContent(bytesOut.buffer());
                 bytesOut = null;
             }
         } catch (IOException ioe) {

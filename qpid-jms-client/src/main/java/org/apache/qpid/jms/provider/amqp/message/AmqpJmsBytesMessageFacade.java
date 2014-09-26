@@ -18,6 +18,8 @@ package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_BYTES_MESSAGE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MSG_TYPE;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 import org.apache.qpid.jms.message.facade.JmsBytesMessageFacade;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
@@ -27,7 +29,6 @@ import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.message.Message;
-import org.fusesource.hawtbuf.Buffer;
 
 /**
  * A JmsBytesMessageFacade that wraps around Proton AMQP Message instances to provide
@@ -36,7 +37,6 @@ import org.fusesource.hawtbuf.Buffer;
 public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements JmsBytesMessageFacade {
 
     private static final String CONTENT_TYPE = "application/octet-stream";
-    private static final Buffer EMPTY_BUFFER = new Buffer(new byte[0]);
     private static final Data EMPTY_DATA = new Data(new Binary(new byte[0]));
 
     /**
@@ -68,7 +68,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
         AmqpJmsBytesMessageFacade copy = new AmqpJmsBytesMessageFacade(connection);
         copyInto(copy);
 
-        copy.setContent(getContent().deepCopy());
+        copy.setContent(getContent().copy());
 
         return copy;
     }
@@ -90,21 +90,21 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
     }
 
     @Override
-    public Buffer getContent() {
-        Buffer result = EMPTY_BUFFER;
+    public ByteBuf getContent() {
+        ByteBuf result = Unpooled.EMPTY_BUFFER;
         Binary payload = getBinaryFromBody();
         if (payload != null && payload.getLength() > 0) {
-            result = new Buffer(payload.getArray(), payload.getArrayOffset(), payload.getLength());
+            result = Unpooled.wrappedBuffer(payload.getArray(), payload.getArrayOffset(), payload.getLength());
         }
 
         return result;
     }
 
     @Override
-    public void setContent(Buffer content) {
+    public void setContent(ByteBuf content) {
         Data body = EMPTY_DATA;
         if (content != null) {
-            body = new Data(new Binary(content.data, content.offset, content.length));
+            body = new Data(new Binary(content.array(), content.arrayOffset(), content.readableBytes()));
         }
 
         getAmqpMessage().setBody(body);

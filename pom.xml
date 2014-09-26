@@ -45,7 +45,6 @@
     <!-- Dependency Versions for this Project -->
     <junit-version>4.11</junit-version>
     <slf4j-version>1.7.7</slf4j-version>
-    <hawtbuf-version>1.11</hawtbuf-version>
     <activemq-version>5.11-SNAPSHOT</activemq-version>
     <proton-version>1.0-SNAPSHOT</proton-version>
     <fuse-joram-tests-version>1.0</fuse-joram-tests-version>
@@ -156,11 +155,6 @@
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-log4j12</artifactId>
         <version>${slf4j-version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.fusesource.hawtbuf</groupId>
-        <artifactId>hawtbuf</artifactId>
-        <version>${hawtbuf-version}</version>
       </dependency>
       <dependency>
         <groupId>xalan</groupId>

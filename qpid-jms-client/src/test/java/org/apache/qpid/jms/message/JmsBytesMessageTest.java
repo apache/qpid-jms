@@ -22,6 +22,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 import java.util.Arrays;
 
@@ -31,11 +33,7 @@ import javax.jms.MessageFormatException;
 import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 
-import org.apache.qpid.jms.message.JmsBytesMessage;
-import org.apache.qpid.jms.message.JmsDefaultMessageFactory;
-import org.apache.qpid.jms.message.JmsMessageFactory;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultBytesMessageFacade;
-import org.fusesource.hawtbuf.Buffer;
 import org.junit.Test;
 
 /**
@@ -80,7 +78,7 @@ public class JmsBytesMessageTest {
 
     @Test
     public void testReadBytesUsingReceivedMessageWithBodyReturnsBytes() throws Exception {
-        Buffer content = new Buffer("myBytesData".getBytes());
+        ByteBuf content = Unpooled.wrappedBuffer("myBytesData".getBytes());
         JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
         facade.setContent(content);
 
@@ -88,15 +86,15 @@ public class JmsBytesMessageTest {
         bytesMessage.onSend();
 
         // retrieve the expected bytes, check they match
-        byte[] receivedBytes = new byte[content.length];
+        byte[] receivedBytes = new byte[content.array().length];
         bytesMessage.readBytes(receivedBytes);
-        assertTrue(Arrays.equals(content.data, receivedBytes));
+        assertTrue(Arrays.equals(content.array(), receivedBytes));
 
         // verify no more bytes remain, i.e EOS
         assertEquals("Expected input stream to be at end but data was returned",
                      END_OF_STREAM, bytesMessage.readBytes(new byte[1]));
 
-        assertEquals("Message reports unexpected length", content.length, bytesMessage.getBodyLength());
+        assertEquals("Message reports unexpected length", content.array().length, bytesMessage.getBodyLength());
     }
 
     /**
@@ -105,13 +103,13 @@ public class JmsBytesMessageTest {
      */
     @Test(expected = MessageNotWriteableException.class)
     public void testReceivedBytesMessageThrowsMessageNotWriteableExceptionOnWriteBytes() throws Exception {
-        Buffer content = new Buffer("myBytesData".getBytes());
+        ByteBuf content = Unpooled.wrappedBuffer("myBytesData".getBytes());
         JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
         facade.setContent(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
         bytesMessage.onSend();
-        bytesMessage.writeBytes(content.data);
+        bytesMessage.writeBytes(content.array());
     }
 
     /**
@@ -131,7 +129,7 @@ public class JmsBytesMessageTest {
      */
     @Test
     public void testClearBodyOnReceivedBytesMessageMakesMessageWritable() throws Exception {
-        Buffer content = new Buffer("myBytesData".getBytes());
+        ByteBuf content = Unpooled.wrappedBuffer("myBytesData".getBytes());
         JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
         facade.setContent(content);
 
@@ -148,7 +146,7 @@ public class JmsBytesMessageTest {
      */
     @Test
     public void testClearBodyOnReceivedBytesMessageClearsUnderlyingMessageBody() throws Exception {
-        Buffer content = new Buffer("myBytesData".getBytes());
+        ByteBuf content = Unpooled.wrappedBuffer("myBytesData".getBytes());
         JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
         facade.setContent(content);
 
@@ -166,13 +164,13 @@ public class JmsBytesMessageTest {
      */
     @Test
     public void testGetBodyLengthOnClearedReceivedMessageThrowsMessageNotReadableException() throws Exception {
-        Buffer content = new Buffer("myBytesData".getBytes());
+        ByteBuf content = Unpooled.wrappedBuffer("myBytesData".getBytes());
         JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
         facade.setContent(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
         bytesMessage.onSend();
-        assertEquals("Unexpected message length", content.length, bytesMessage.getBodyLength());
+        assertEquals("Unexpected message length", content.array().length, bytesMessage.getBodyLength());
         bytesMessage.clearBody();
 
         try {
@@ -189,7 +187,7 @@ public class JmsBytesMessageTest {
      */
     @Test
     public void testResetOnReceivedBytesMessageResetsMarker() throws Exception {
-        Buffer content = new Buffer("resetTestBytes".getBytes());
+        ByteBuf content = Unpooled.wrappedBuffer("resetTestBytes".getBytes());
         JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
         facade.setContent(content);
 
@@ -199,15 +197,15 @@ public class JmsBytesMessageTest {
         // retrieve a few bytes, check they match the first few expected bytes
         byte[] partialBytes = new byte[3];
         bytesMessage.readBytes(partialBytes);
-        byte[] partialOriginalBytes = Arrays.copyOf(content.data, 3);
+        byte[] partialOriginalBytes = Arrays.copyOf(content.array(), 3);
         assertTrue(Arrays.equals(partialOriginalBytes, partialBytes));
 
         bytesMessage.reset();
 
         // retrieve all the expected bytes, check they match
-        byte[] resetBytes = new byte[content.length];
+        byte[] resetBytes = new byte[content.array().length];
         bytesMessage.readBytes(resetBytes);
-        assertTrue(Arrays.equals(content.data, resetBytes));
+        assertTrue(Arrays.equals(content.array(), resetBytes));
     }
 
     /**
@@ -216,21 +214,21 @@ public class JmsBytesMessageTest {
      */
     @Test
     public void testResetOnNewlyPopulatedBytesMessageResetsMarkerAndMakesReadable() throws Exception {
-        Buffer content = new Buffer("newResetTestBytes".getBytes());
+        ByteBuf content = Unpooled.wrappedBuffer("newResetTestBytes".getBytes());
         JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
         facade.setContent(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
 
         assertFalse("Message should be writable", bytesMessage.isReadOnlyBody());
-        bytesMessage.writeBytes(content.data);
+        bytesMessage.writeBytes(content.array());
         bytesMessage.reset();
         assertTrue("Message should not be writable", bytesMessage.isReadOnlyBody());
 
         // retrieve the bytes, check they match
-        byte[] resetBytes = new byte[content.length];
+        byte[] resetBytes = new byte[content.array().length];
         bytesMessage.readBytes(resetBytes);
-        assertTrue(Arrays.equals(content.data, resetBytes));
+        assertTrue(Arrays.equals(content.array(), resetBytes));
     }
 
     /**

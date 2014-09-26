@@ -16,15 +16,16 @@
  */
 package org.apache.qpid.jms.message.facade.defaults;
 
+import io.netty.buffer.ByteBuf;
+
 import org.apache.qpid.jms.message.facade.JmsBytesMessageFacade;
-import org.fusesource.hawtbuf.Buffer;
 
 /**
  * A default implementation of the JmsBytesMessageFacade that simply holds a raw Buffer
  */
 public final class JmsDefaultBytesMessageFacade extends JmsDefaultMessageFacade implements JmsBytesMessageFacade {
 
-    private Buffer content;
+    private ByteBuf content;
 
     @Override
     public JmsMsgType getMsgType() {
@@ -36,7 +37,7 @@ public final class JmsDefaultBytesMessageFacade extends JmsDefaultMessageFacade 
         JmsDefaultBytesMessageFacade copy = new JmsDefaultBytesMessageFacade();
         copyInto(copy);
         if (this.content != null) {
-            copy.setContent(this.content.deepCopy());
+            copy.setContent(this.content.copy());
         }
 
         return copy;
@@ -44,7 +45,7 @@ public final class JmsDefaultBytesMessageFacade extends JmsDefaultMessageFacade 
 
     @Override
     public boolean isEmpty() {
-        if (content == null || content.length() == 0) {
+        if (content == null || content.readableBytes() == 0) {
             return true;
         }
 
@@ -57,12 +58,12 @@ public final class JmsDefaultBytesMessageFacade extends JmsDefaultMessageFacade 
     }
 
     @Override
-    public Buffer getContent() {
+    public ByteBuf getContent() {
         return content;
     }
 
     @Override
-    public void setContent(Buffer content) {
+    public void setContent(ByteBuf content) {
         this.content = content;
     }
 }

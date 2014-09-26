@@ -41,10 +41,6 @@
       <artifactId>geronimo-jms_1.1_spec</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.fusesource.hawtbuf</groupId>
-      <artifactId>hawtbuf</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-jms-selector</artifactId>
       <optional>true</optional>

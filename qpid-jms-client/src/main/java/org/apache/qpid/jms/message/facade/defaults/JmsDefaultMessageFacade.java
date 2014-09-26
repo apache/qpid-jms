@@ -16,8 +16,6 @@
  */
 package org.apache.qpid.jms.message.facade.defaults;
 
-import static org.fusesource.hawtbuf.Buffer.ascii;
-
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +24,6 @@ import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
-import org.fusesource.hawtbuf.AsciiBuffer;
 
 /**
  * A default implementation of the JmsMessageFaceade that provides a generic
@@ -46,11 +43,11 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
         TEXT("jms/text-message"),
         TEXT_NULL("jms/text-message-null");
 
-        public final AsciiBuffer buffer = new AsciiBuffer(this.name());
-        public final AsciiBuffer mime;
+        public final String buffer = new String(this.name());
+        public final String mime;
 
         JmsMsgType(String mime) {
-            this.mime = (ascii(mime));
+            this.mime = mime;
         }
     }
 

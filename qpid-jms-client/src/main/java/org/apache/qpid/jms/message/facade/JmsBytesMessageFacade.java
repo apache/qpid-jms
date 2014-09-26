@@ -16,9 +16,9 @@
  */
 package org.apache.qpid.jms.message.facade;
 
-import javax.jms.JMSException;
+import io.netty.buffer.ByteBuf;
 
-import org.fusesource.hawtbuf.Buffer;
+import javax.jms.JMSException;
 
 /**
  * Interface for a Message Facade that wraps a BytesMessage based message
@@ -38,17 +38,17 @@ public interface JmsBytesMessageFacade extends JmsMessageFacade {
      * into a Buffer instance.  If the message contents are empty a null
      * Buffer instance may be returned.
      *
-     * @returns a new Buffer that contains the contents of this message.
+     * @returns a new ByteBuf that contains the contents of this message.
      */
-    Buffer getContent();
+    ByteBuf getContent();
 
     /**
      * Sets the contents of the message to the new value based on the bytes
-     * stored in the passed in Buffer.
+     * stored in the passed in ByteBuf.
      *
      * @param contents
      *        the new bytes to store in this message.
      */
-    void setContent(Buffer content);
+    void setContent(ByteBuf content);
 
 }

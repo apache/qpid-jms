@@ -75,7 +75,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     private final ByteArrayOutputStream streamBuffer = new ByteArrayOutputStream();
     private final byte incomingBuffer[] = new byte[1024 * 64];
 
-    private AtomicLong _incomingSequence = new AtomicLong(0);
+    private final AtomicLong _incomingSequence = new AtomicLong(0);
 
     public AmqpConsumer(AmqpSession session, JmsConsumerInfo info) {
         super(info);
@@ -333,10 +333,10 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             return;
         }
 
-        // We need to signal to the create message that it's being dispatched and for now
-        // the transformer creates the message in write mode, onSend will reset it to read
-        // mode and the consumer will see it as a normal received message.
-        message.onSend();
+        // Let the message do any final processing before sending it onto a consumer.
+        // We could defer this to a later stage such as the JmsConnection or even in
+        // the JmsMessageConsumer dispatch method if we needed to.
+        message.onDispatch();
 
         JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch(getNextIncomingSequenceNumber());
         envelope.setMessage(message);

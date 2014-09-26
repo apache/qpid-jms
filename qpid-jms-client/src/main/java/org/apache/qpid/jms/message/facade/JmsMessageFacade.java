@@ -77,12 +77,21 @@ public interface JmsMessageFacade {
     void setProperty(String key, Object value) throws JMSException;
 
     /**
-     * Called when a message is sent to allow a Message instance to move the
-     * contents from a logical data structure to a binary form for transmission.
+     * Called before a message is sent to allow a Message instance to move the
+     * contents from a logical data structure to a binary form for transmission, or
+     * other processing such as setting proper message headers etc.
      *
      * @throws JMSException if an error occurs while preparing the message for send.
      */
     void onSend() throws JMSException;
+
+    /**
+     * Called before a message is dispatched to its intended consumer to allow for
+     * any necessary processing of message data such as setting read-only state etc.
+     *
+     * @throws JMSException if an error occurs while preparing the message for send.
+     */
+    void onDispatch() throws JMSException;
 
     /**
      * This method should provide a quick check on the message to determine if

@@ -514,14 +514,29 @@ public class JmsMessage implements javax.jms.Message {
     }
 
     /**
-     * Send operation event listener. Used to get the message ready to be sent.
+     * Used to trigger processing required to place the message in a state where it is
+     * ready to be written to the wire.  This processing can include such tasks as ensuring
+     * that the proper message headers are set or compressing message bodies etc.
      *
-     * @throws JMSException
+     * @throws JMSException if an error occurs while preparing the message for send.
      */
     public void onSend() throws JMSException {
         setReadOnlyBody(true);
         setReadOnlyProperties(true);
         facade.onSend();
+    }
+
+    /**
+     * Used to trigger processing required before dispatch of a message to its intended
+     * consumer.  This method should perform any needed unmarshal or message property
+     * processing prior to the message arriving at a consumer.
+     *
+     * @throws JMSException if an error occurs while preparing the message for dispatch.
+     */
+    public void onDispatch() throws JMSException {
+        setReadOnlyBody(true);
+        setReadOnlyProperties(true);
+        facade.onDispatch();
     }
 
     public JmsConnection getConnection() {

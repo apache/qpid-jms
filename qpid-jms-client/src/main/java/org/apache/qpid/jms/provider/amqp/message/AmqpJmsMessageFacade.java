@@ -214,13 +214,20 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public void onSend() throws JMSException {
+        // TODO - Why is this here ?? Seems to be circular reading and reseting
         String contentType = getContentType();
-        byte jmsMsgType = getJmsMsgType();
-
         if (contentType != null) {
             message.setContentType(contentType);
         }
+
+        byte jmsMsgType = getJmsMsgType();
         setAnnotation(JMS_MSG_TYPE, jmsMsgType);
+    }
+
+    @Override
+    public void onDispatch() throws JMSException {
+        // TODO - Sort out send vs dispatch processing.
+        onSend();
     }
 
     @Override

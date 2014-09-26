@@ -129,6 +129,10 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
     }
 
     @Override
+    public void onDispatch() throws JMSException {
+    }
+
+    @Override
     public boolean isEmpty() {
         return true;
     }

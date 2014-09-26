@@ -135,6 +135,7 @@ public class AmqpDestinationHelper {
     }
 
     public void setToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
+        //TODO: don't we need to clear any existing value and type annotation?
         if (destination == null) {
             return;
         }
@@ -152,6 +153,7 @@ public class AmqpDestinationHelper {
     }
 
     public void setReplyToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
+        //TODO: don't we need to clear any existing value and type annotation?
         if (destination == null) {
             return;
         }

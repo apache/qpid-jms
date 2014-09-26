@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.transports;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -187,9 +189,9 @@ public class RawTcpTransport implements Transport, Runnable {
     }
 
     @Override
-    public void send(org.fusesource.hawtbuf.Buffer output) throws IOException {
+    public void send(ByteBuf output) throws IOException {
         checkConnected();
-        send(output.toByteBuffer());
+        send(output.nioBuffer());
     }
 
     @Override

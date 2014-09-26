@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.transports;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
-
-import org.fusesource.hawtbuf.Buffer;
 
 /**
  * Base class for all QpidJMS Transport instances.
@@ -64,7 +64,7 @@ public interface Transport {
      *
      * @throws IOException if an error occurs during the send operation.
      */
-    void send(Buffer output) throws IOException;
+    void send(ByteBuf output) throws IOException;
 
     /**
      * Gets the currently set TransportListener instance

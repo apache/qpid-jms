@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.transports;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -171,15 +173,14 @@ public class TcpTransport implements Transport {
     }
 
     @Override
-    public void send(org.fusesource.hawtbuf.Buffer output) throws IOException {
+    public void send(ByteBuf output) throws IOException {
         checkConnected();
-        int length = output.length();
+        int length = output.readableBytes();
         if (length == 0) {
             return;
         }
 
-        org.fusesource.hawtbuf.Buffer clone = output.deepCopy();
-        Buffer sendBuffer = new Buffer(clone.data);
+        Buffer sendBuffer = new Buffer(output.copy());
         vertx.eventBus().send(socket.writeHandlerID(), sendBuffer);
     }
 

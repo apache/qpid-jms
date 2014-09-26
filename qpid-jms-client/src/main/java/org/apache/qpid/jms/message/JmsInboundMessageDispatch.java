@@ -26,11 +26,10 @@ public class JmsInboundMessageDispatch extends JmsAbstractResourceId {
 
     private JmsConsumerId consumerId;
     private Object messageId;
-    private long sequence;
+    private final long sequence;
     private JmsMessage message;
 
-    public JmsInboundMessageDispatch(long sequence)
-    {
+    public JmsInboundMessageDispatch(long sequence) {
         this.sequence = sequence;
     }
 

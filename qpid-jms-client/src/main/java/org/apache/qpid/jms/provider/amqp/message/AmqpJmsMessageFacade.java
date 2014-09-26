@@ -348,10 +348,10 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public void setTimestamp(long timestamp) {
-        if (message.getProperties() != null) {
-            if (timestamp != 0) {
-                message.setCreationTime(timestamp);
-            } else {
+        if (timestamp != 0) {
+            message.setCreationTime(timestamp);
+        } else {
+            if (message.getProperties() != null) {
                 message.getProperties().setCreationTime(null);
             }
         }

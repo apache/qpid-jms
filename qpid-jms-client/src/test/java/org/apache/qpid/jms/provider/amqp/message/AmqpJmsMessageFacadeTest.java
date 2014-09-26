@@ -28,6 +28,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -75,7 +76,10 @@ public class AmqpJmsMessageFacadeTest {
         return Mockito.mock(AmqpConnection.class);
     }
 
+
     // ====== AMQP Properties Section =======
+
+    // --- message-id and correlation-id ---
 
     @Test
     public void testGetCorrelationIdIsNullOnNewMessage() {
@@ -404,6 +408,22 @@ public class AmqpJmsMessageFacadeTest {
 
         return new Binary(idBytes);
     }
+
+    // --- creation-time field  ---
+
+    @Test
+    public void testSetCreationTimeOnNewNewMessage() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertNull("Expected null Properties section", amqpMessageFacade.getAmqpMessage().getProperties());
+
+        long expected = 1;
+        amqpMessageFacade.setTimestamp(expected);
+
+        assertEquals("Unexpected timestamp value", expected, amqpMessageFacade.getTimestamp());
+        assertEquals("Expected creation-time field to be set on new Properties section", new Date(expected), amqpMessageFacade.getAmqpMessage().getProperties().getCreationTime());
+    }
+
 
     // ====== AMQP Message Facade copy() tests =======
 

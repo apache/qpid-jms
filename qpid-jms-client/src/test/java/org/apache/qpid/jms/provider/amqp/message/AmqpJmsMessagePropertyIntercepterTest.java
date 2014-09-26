@@ -133,7 +133,7 @@ public class AmqpJmsMessagePropertyIntercepterTest {
     public void testSetJmsAmqpTypedEncoding() throws JMSException {
         AmqpJmsObjectMessageFacade message = Mockito.mock(AmqpJmsObjectMessageFacade.class);
         AmqpJmsMessagePropertyIntercepter.setProperty(message, JMS_AMQP_TYPED_ENCODING, true);
-        // TODO
+        Mockito.verify(message).setUseAmqpTypedEncoding(true);
     }
 
     @Test
@@ -149,4 +149,24 @@ public class AmqpJmsMessagePropertyIntercepterTest {
         assertEquals(false, AmqpJmsMessagePropertyIntercepter.getProperty(message, JMS_AMQP_TYPED_ENCODING));
     }
 
+    @Test
+    public void testGetJmsAmqpTypedEncodingWhenUsingAmqpTypes() throws JMSException {
+        AmqpJmsObjectMessageFacade message = Mockito.mock(AmqpJmsObjectMessageFacade.class);
+        Mockito.when(message.isAmqpTypedEncoding()).thenReturn(true);
+        assertEquals(true, AmqpJmsMessagePropertyIntercepter.getProperty(message, JMS_AMQP_TYPED_ENCODING));
+    }
+
+    @Test
+    public void testJmsAmqpTypedEncodingNotInPropertyNamesWhenNotSet() throws JMSException {
+        AmqpJmsObjectMessageFacade message = Mockito.mock(AmqpJmsObjectMessageFacade.class);
+        Mockito.when(message.isAmqpTypedEncoding()).thenReturn(false);
+        assertFalse(AmqpJmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_AMQP_TYPED_ENCODING));
+    }
+
+    @Test
+    public void testJmsAmqpTypedEncodingInPropertyNamesWhenSet() throws JMSException {
+        AmqpJmsObjectMessageFacade message = Mockito.mock(AmqpJmsObjectMessageFacade.class);
+        Mockito.when(message.isAmqpTypedEncoding()).thenReturn(true);
+        assertTrue(AmqpJmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_AMQP_TYPED_ENCODING));
+    }
 }

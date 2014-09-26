@@ -147,7 +147,7 @@ public class AmqpJmsMessagePropertyIntercepter {
                 }
 
                 if (message instanceof AmqpJmsObjectMessageFacade) {
-                    // ((AmqpJmsSerializedObjectMessageFacade) message)
+                    ((AmqpJmsObjectMessageFacade) message).setUseAmqpTypedEncoding(rc);
                 } else {
                     throw new MessageFormatException(JMS_AMQP_TYPED_ENCODING + " is only applicable to ObjectMessage");
                 }
@@ -156,9 +156,6 @@ public class AmqpJmsMessagePropertyIntercepter {
             @Override
             public boolean propertyExists(AmqpJmsMessageFacade message) {
                 if (message instanceof AmqpJmsObjectMessageFacade) {
-                    // TODO - See notes in AmqpObjectMessageFacade about whether this should
-                    //        always be exposed for ObjectMessage or only if it's currently
-                    //        the case that the message uses the AMQP typed encoding.
                     return ((AmqpJmsObjectMessageFacade) message).isAmqpTypedEncoding();
                 }
 

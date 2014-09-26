@@ -98,4 +98,8 @@ public class AmqpSerializedObjectDelegate implements AmqpObjectTypeDelegate {
 
         // TODO: ensure content type is [still] set?
     }
+
+    @Override
+    public void onSend() {
+    }
 }

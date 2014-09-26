@@ -94,6 +94,10 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
         // TODO: ensure content type is not set (assuming we aren't using data sections)?
     }
 
+    @Override
+    public void onSend() {
+    }
+
     private boolean isSupportedAmqpValueObjectType(Serializable serializable) {
         // TODO: augment supported types to encode as an AmqpValue?
         return serializable instanceof Map<?,?> ||

@@ -47,4 +47,10 @@ public interface AmqpObjectTypeDelegate {
      */
     Serializable getObject() throws IOException, ClassNotFoundException;
 
+    /**
+     * Signals that the message is about to be sent or dispatched to a consumer, ensure
+     * proper state of the marshaled object and message annotations prior to that.
+     */
+    void onSend();
+
 }

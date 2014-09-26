@@ -120,7 +120,27 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
 
     @Override
     public void onSend() {
-        // TODO instruct delegate to encode the proper content type into the message.
+        delegate.onSend();
+    }
+
+    void setUseAmqpTypedEncoding(boolean useAmqpTypedEncoding) throws JMSException {
+        if (useAmqpTypedEncoding && delegate instanceof AmqpSerializedObjectDelegate) {
+            AmqpTypedObjectDelegate newDelegate = new AmqpTypedObjectDelegate(message);
+            try {
+                newDelegate.setObject(delegate.getObject());
+            } catch (ClassNotFoundException | IOException e) {
+                throw JmsExceptionSupport.create(e);
+            }
+            delegate = newDelegate;
+        } else if (delegate instanceof AmqpTypedObjectDelegate) {
+            AmqpSerializedObjectDelegate newDelegate = new AmqpSerializedObjectDelegate(message);
+            try {
+                newDelegate.setObject(delegate.getObject());
+            } catch (ClassNotFoundException | IOException e) {
+                throw JmsExceptionSupport.create(e);
+            }
+            delegate = newDelegate;
+        }
     }
 
     private void initDelegate(boolean useAmqpTypes) {

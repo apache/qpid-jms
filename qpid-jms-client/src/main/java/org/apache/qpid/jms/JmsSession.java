@@ -59,8 +59,6 @@ import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
 import javax.jms.TopicSubscriber;
 
-import org.apache.activemq.apollo.filter.FilterException;
-import org.apache.activemq.apollo.selector.SelectorParser;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.message.JmsMessageFactory;
@@ -71,8 +69,10 @@ import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.Provider;
-import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.ProviderFuture;
+import org.apache.qpid.jms.selector.SelectorParser;
+import org.apache.qpid.jms.selector.filter.FilterException;
 
 /**
  * JMS Session implementation

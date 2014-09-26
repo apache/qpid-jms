@@ -30,7 +30,7 @@
 
   <dependencies>
     <!-- =================================== -->
-    <!-- Required Dependencies               -->
+    <!-- Client Dependencies               -->
     <!-- =================================== -->
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -45,8 +45,8 @@
       <artifactId>hawtbuf</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.activemq</groupId>
-      <artifactId>apollo-selector</artifactId>
+      <groupId>org.apache.qpid</groupId>
+      <artifactId>qpid-jms-selector</artifactId>
       <optional>true</optional>
     </dependency>
     <dependency>

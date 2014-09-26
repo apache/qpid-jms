@@ -851,6 +851,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     private Object classifyUnderlyingIdType(Object idForAmqpMessageClass) {
         Object underlyingAmqpMessageId = idForAmqpMessageClass;
 
+        // TODO: get rid of this method, use the proton types directly in the tests
+
         if (underlyingAmqpMessageId instanceof BigInteger) {
             // Proton uses UnsignedLong
             underlyingAmqpMessageId = UnsignedLong.valueOf((BigInteger) underlyingAmqpMessageId);

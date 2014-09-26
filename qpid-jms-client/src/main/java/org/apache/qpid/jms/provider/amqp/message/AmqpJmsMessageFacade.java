@@ -557,7 +557,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         if (ttl != null && ttl >= 0 && ttl <= MAX_UINT) {
             userSpecifiedTTL = ttl;
         } else {
-            throw new MessageFormatException(JMS_AMQP_TTL + " must be a long with value in range 0 to 2^31 - 1");
+            throw new MessageFormatException(JMS_AMQP_TTL + " must be a long with value in range 0 to 2^32 - 1");
         }
     }
 

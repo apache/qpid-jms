@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.jms.JMSException;
 
@@ -73,6 +74,8 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
     private final ByteArrayOutputStream streamBuffer = new ByteArrayOutputStream();
     private final byte incomingBuffer[] = new byte[1024 * 64];
+
+    private AtomicLong _incomingSequence = new AtomicLong(0);
 
     public AmqpConsumer(AmqpSession session, JmsConsumerInfo info) {
         super(info);
@@ -335,18 +338,21 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         // mode and the consumer will see it as a normal received message.
         message.onSend();
 
-        JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch();
+        JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch(getNextIncomingSequenceNumber());
         envelope.setMessage(message);
         envelope.setConsumerId(info.getConsumerId());
         // Store link to delivery in the hint for use in acknowledge requests.
         envelope.setProviderHint(incoming);
-        //TODO: the below messageId retrieval may result in type conversion costs
-        envelope.setDispatchId(message.getJMSMessageID());
+        envelope.setMessageId(message.getFacade().getProviderMessageIdObject());
 
         // Store reference to envelope in delivery context for recovery
         incoming.setContext(envelope);
 
         deliver(envelope);
+    }
+
+    protected long getNextIncomingSequenceNumber() {
+        return _incomingSequence.incrementAndGet();
     }
 
     @Override

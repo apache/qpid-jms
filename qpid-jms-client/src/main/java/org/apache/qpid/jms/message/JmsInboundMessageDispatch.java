@@ -22,11 +22,17 @@ import org.apache.qpid.jms.meta.JmsConsumerId;
 /**
  * Envelope used to deliver incoming messages to their targeted consumer.
  */
-public class JmsInboundMessageDispatch extends JmsAbstractResourceId{
+public class JmsInboundMessageDispatch extends JmsAbstractResourceId {
 
     private JmsConsumerId consumerId;
+    private Object messageId;
+    private long sequence;
     private JmsMessage message;
-    private String dispatchId;
+
+    public JmsInboundMessageDispatch(long sequence)
+    {
+        this.sequence = sequence;
+    }
 
     public JmsMessage getMessage() {
         return message;
@@ -48,23 +54,59 @@ public class JmsInboundMessageDispatch extends JmsAbstractResourceId{
         this.message.incrementRedeliveryCount();
     }
 
-    public void setDispatchId(String dispatchId)
-    {
-        this.dispatchId = dispatchId;
+    public void setMessageId(Object object) {
+        this.messageId = object;
     }
 
     @Override
     public String toString() {
-        String result = "JmsInboundMessageDispatch {dispatchId = ";
-        String id = dispatchId;
-        if (id == null) {
-            result = result + "<null>}";
-        } else {
-            result = result + id + "}";
-        }
+        return "JmsInboundMessageDispatch {sequence = " + sequence
+                                      + ", messageId = " + messageId
+                                      + ", consumerId = " + consumerId
+                                      + "}";
+    }
 
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((consumerId == null) ? 0 : consumerId.hashCode());
+        result = prime * result + ((messageId == null) ? 0 : messageId.hashCode());
+        result = prime * result + (int) (sequence ^ (sequence >>> 32));
         return result;
     }
 
-    //TODO: equals and hashcode?
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+
+        JmsInboundMessageDispatch other = (JmsInboundMessageDispatch) obj;
+        if (sequence != other.sequence) {
+            return false;
+        }
+
+        if (messageId == null) {
+            if (other.messageId != null) {
+                return false;
+            }
+        } else if (!messageId.equals(other.messageId)) {
+            return false;
+        }
+
+        if (consumerId == null) {
+            if (other.consumerId != null) {
+                return false;
+            }
+        } else if (!consumerId.equals(other.consumerId)) {
+            return false;
+        }
+
+        return true;
+    }
 }

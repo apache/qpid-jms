@@ -148,6 +148,11 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
     }
 
     @Override
+    public Object getProviderMessageIdObject() {
+        return messageId;
+    }
+
+    @Override
     public void setMessageId(String messageId) {
         this.messageId = messageId;
     }

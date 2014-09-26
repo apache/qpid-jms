@@ -75,7 +75,7 @@ public class AmqpQueueBrowser extends AmqpConsumer {
     @Override
     public void processFlowUpdates() throws IOException {
         if (endpoint.getDrain() && endpoint.getCredit() == endpoint.getRemoteCredit()) {
-            JmsInboundMessageDispatch browseDone = new JmsInboundMessageDispatch();
+            JmsInboundMessageDispatch browseDone = new JmsInboundMessageDispatch(getNextIncomingSequenceNumber());
             browseDone.setConsumerId(getConsumerId());
             try {
                 deliver(browseDone);
@@ -99,7 +99,7 @@ public class AmqpQueueBrowser extends AmqpConsumer {
         super.processDeliveryUpdates();
 
         if (endpoint.getDrain() && endpoint.getCredit() == endpoint.getRemoteCredit()) {
-            JmsInboundMessageDispatch browseDone = new JmsInboundMessageDispatch();
+            JmsInboundMessageDispatch browseDone = new JmsInboundMessageDispatch(getNextIncomingSequenceNumber());
             browseDone.setConsumerId(getConsumerId());
             try {
                 deliver(browseDone);

@@ -129,6 +129,8 @@ public interface JmsMessageFacade {
 
     /**
      * Returns the correlation ID set on this message if one exists, null otherwise.
+     * The returned value will include the JMS mandated 'ID:' prefix if the value
+     * represents a JMSMessageID rather than an application-specific string.
      *
      * @return the set correlation ID or null if not set.
      */
@@ -165,10 +167,20 @@ public interface JmsMessageFacade {
 
     /**
      * Returns the message ID set on this message if one exists, null otherwise.
+     * The returned value will include the JMS mandated 'ID:' prefix.
      *
      * @return the set message ID or null if not set.
      */
     String getMessageId();
+
+    /**
+     * Returns the underlying providers message ID object for this message if one
+     * exists, null otherwise. In the case the returned value is a String, it is not
+     * defined whether the JMS mandated 'ID:' prefix will be present.
+     *
+     * @return the set provider message ID or null if not set.
+     */
+    Object getProviderMessageIdObject();
 
     /**
      * Sets the message ID for this message.

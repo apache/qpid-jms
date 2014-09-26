@@ -312,13 +312,15 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
         // Ensure the ID: prefix is present.
         // TODO: should we always do this when non-null? AMQP JMS Mapping says never to send the "ID:" prefix.
-        // TODO: should we make this part of the JmsMessageId, or JmsMessage object responsibilities?
-        //       I Ended up putting it in JmsMessage after the above comment, as a workaround for the
-        //       current JmsDefaultMessageFacade usage.
         if (baseStringId != null && !helper.hasMessageIdPrefix(baseStringId)) {
             baseStringId = AmqpMessageIdHelper.JMS_ID_PREFIX + baseStringId;
         }
         return baseStringId;
+    }
+
+    @Override
+    public Object getProviderMessageIdObject() {
+        return message.getMessageId();
     }
 
     @Override

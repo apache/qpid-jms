@@ -50,7 +50,7 @@ public class AmqpJmsStreamMessageFacade extends AmqpJmsMessageFacade implements 
      */
     public AmqpJmsStreamMessageFacade(AmqpConnection connection) {
         super(connection);
-        initializeEmptyList();
+        list = initializeEmptyList();
         setAnnotation(JMS_MSG_TYPE, JMS_STREAM_MESSAGE);
     }
 
@@ -69,12 +69,12 @@ public class AmqpJmsStreamMessageFacade extends AmqpJmsMessageFacade implements 
 
         Section body = getAmqpMessage().getBody();
         if (body == null) {
-            initializeEmptyList();
+            list = initializeEmptyList();
         } else if (body instanceof AmqpValue) {
             Object value = ((AmqpValue) body).getValue();
 
             if (value == null) {
-                initializeEmptyList();
+                list = initializeEmptyList();
             } else if (value instanceof List) {
                 list = (List<Object>) value;
             } else {
@@ -157,8 +157,10 @@ public class AmqpJmsStreamMessageFacade extends AmqpJmsMessageFacade implements 
         return list.isEmpty();
     }
 
-    private void initializeEmptyList() {
-        List<Object> list = new ArrayList<Object>();
-        message.setBody(new AmqpValue(list));
+    private List<Object> initializeEmptyList() {
+        List<Object> emptyList = new ArrayList<Object>();
+        message.setBody(new AmqpValue(emptyList));
+
+        return emptyList;
     }
 }

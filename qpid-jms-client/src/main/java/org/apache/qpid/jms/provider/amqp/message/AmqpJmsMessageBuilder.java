@@ -38,6 +38,7 @@ import org.apache.qpid.jms.message.JmsStreamMessage;
 import org.apache.qpid.jms.message.JmsTextMessage;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.Section;
@@ -143,8 +144,8 @@ public class AmqpJmsMessageBuilder {
             } else {
                 return createObjectMessage(consumer, message);
             }
-        } else {
-            // TODO: AmqpSequence support
+        } else if (body instanceof AmqpSequence) {
+            return createStreamMessage(consumer, message);
         }
 
         return null;

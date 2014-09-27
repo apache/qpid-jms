@@ -29,6 +29,7 @@ import org.apache.qpid.jms.message.facade.JmsStreamMessageFacade;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.message.Message;
@@ -50,7 +51,7 @@ public class AmqpJmsStreamMessageFacade extends AmqpJmsMessageFacade implements 
      */
     public AmqpJmsStreamMessageFacade(AmqpConnection connection) {
         super(connection);
-        list = initializeEmptyList();
+        list = initializeEmptyBodyList(false);
         setAnnotation(JMS_MSG_TYPE, JMS_STREAM_MESSAGE);
     }
 
@@ -69,16 +70,24 @@ public class AmqpJmsStreamMessageFacade extends AmqpJmsMessageFacade implements 
 
         Section body = getAmqpMessage().getBody();
         if (body == null) {
-            list = initializeEmptyList();
+            list = initializeEmptyBodyList(false);
         } else if (body instanceof AmqpValue) {
             Object value = ((AmqpValue) body).getValue();
 
             if (value == null) {
-                list = initializeEmptyList();
+                list = initializeEmptyBodyList(false);
             } else if (value instanceof List) {
                 list = (List<Object>) value;
             } else {
                 throw new IllegalStateException("Unexpected amqp-value body content type: " + value.getClass().getSimpleName());
+            }
+        } else if (body instanceof AmqpSequence) {
+            List<?> value = ((AmqpSequence) body).getValue();
+
+            if (value == null) {
+                list = initializeEmptyBodyList(true);
+            } else {
+                list = (List<Object>) value;
             }
         } else {
             throw new IllegalStateException("Unexpected message body type: " + body.getClass().getSimpleName());
@@ -157,9 +166,14 @@ public class AmqpJmsStreamMessageFacade extends AmqpJmsMessageFacade implements 
         return list.isEmpty();
     }
 
-    private List<Object> initializeEmptyList() {
+    private List<Object> initializeEmptyBodyList(boolean useSequenceBody) {
         List<Object> emptyList = new ArrayList<Object>();
-        message.setBody(new AmqpValue(emptyList));
+
+        if (useSequenceBody) {
+            message.setBody(new AmqpSequence(emptyList));
+        } else {
+            message.setBody(new AmqpValue(emptyList));
+        }
 
         return emptyList;
     }

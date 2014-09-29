@@ -37,6 +37,8 @@ import static org.junit.Assert.assertTrue;
 
 import javax.jms.JMSException;
 
+import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -57,6 +59,14 @@ public class JmsMessagePropertyIntercepterTest {
         Mockito.verify(message).getDestination();
     }
 
+    @Test
+    public void testSetJMSDestination() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        JmsDestination queue = new JmsQueue("TestDestination");
+        JmsMessagePropertyIntercepter.setProperty(message, JMS_DESTINATION, "TestDestination");
+        Mockito.verify(message).setDestination(queue);
+    }
+
     //---------- JMSReplyTo --------------------------------------------------//
 
     @Test
@@ -69,6 +79,14 @@ public class JmsMessagePropertyIntercepterTest {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         assertNull(JmsMessagePropertyIntercepter.getProperty(message, JMS_REPLYTO));
         Mockito.verify(message).getReplyTo();
+    }
+
+    @Test
+    public void testSetJMSReplyTo() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        JmsDestination queue = new JmsQueue("TestDestination");
+        JmsMessagePropertyIntercepter.setProperty(message, JMS_REPLYTO, "TestDestination");
+        Mockito.verify(message).setReplyTo(queue);
     }
 
     //---------- JMSType -----------------------------------------------------//
@@ -85,6 +103,13 @@ public class JmsMessagePropertyIntercepterTest {
         Mockito.verify(message).getType();
     }
 
+    @Test
+    public void testSetJMSType() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        JmsMessagePropertyIntercepter.setProperty(message, JMS_TYPE, "SomeType");
+        Mockito.verify(message).setType("SomeType");
+    }
+
     //---------- JMSDeliveryMode ---------------------------------------------//
 
     @Test
@@ -97,6 +122,29 @@ public class JmsMessagePropertyIntercepterTest {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         assertEquals("NON_PERSISTENT", JmsMessagePropertyIntercepter.getProperty(message, JMS_DELIVERY_MODE));
         Mockito.verify(message).isPersistent();
+    }
+
+    @Test
+    public void testSetJMSDeliveryMode() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        JmsMessagePropertyIntercepter.setProperty(message, JMS_DELIVERY_MODE, "PERSISTENT");
+        Mockito.verify(message).setPersistent(true);
+        Mockito.reset(message);
+        JmsMessagePropertyIntercepter.setProperty(message, JMS_DELIVERY_MODE, "NON_PERSISTENT");
+        Mockito.verify(message).setPersistent(false);
+        Mockito.reset(message);
+        JmsMessagePropertyIntercepter.setProperty(message, JMS_DELIVERY_MODE, 2);
+        Mockito.verify(message).setPersistent(true);
+        Mockito.reset(message);
+        JmsMessagePropertyIntercepter.setProperty(message, JMS_DELIVERY_MODE, 1);
+        Mockito.verify(message).setPersistent(false);
+        Mockito.reset(message);
+        JmsMessagePropertyIntercepter.setProperty(message, JMS_DELIVERY_MODE, true);
+        Mockito.verify(message).setPersistent(true);
+        Mockito.reset(message);
+        JmsMessagePropertyIntercepter.setProperty(message, JMS_DELIVERY_MODE, false);
+        Mockito.verify(message).setPersistent(false);
+        Mockito.reset(message);
     }
 
     //---------- JMSPriority ---------------------------------------------//
@@ -114,6 +162,13 @@ public class JmsMessagePropertyIntercepterTest {
         Mockito.verify(message).getPriority();
     }
 
+    @Test
+    public void testSetJMSPriority() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        JmsMessagePropertyIntercepter.setProperty(message, JMS_PRIORITY, 9);
+        Mockito.verify(message).setPriority((byte) 9);
+    }
+
     //---------- JMSMessageID ---------------------------------------------//
 
     @Test
@@ -126,6 +181,13 @@ public class JmsMessagePropertyIntercepterTest {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         assertNull(JmsMessagePropertyIntercepter.getProperty(message, JMS_MESSAGEID));
         Mockito.verify(message).getMessageId();
+    }
+
+    @Test
+    public void testSetJMSMessageId() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        JmsMessagePropertyIntercepter.setProperty(message, JMS_MESSAGEID, "ID:123456-789");
+        Mockito.verify(message).setMessageId("ID:123456-789");
     }
 
     //---------- JMSTimestamp ---------------------------------------------//
@@ -143,6 +205,13 @@ public class JmsMessagePropertyIntercepterTest {
         Mockito.verify(message).getTimestamp();
     }
 
+    @Test
+    public void testSetJMSTimeStamp() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        JmsMessagePropertyIntercepter.setProperty(message, JMS_TIMESTAMP, 65536L);
+        Mockito.verify(message).setTimestamp(65536L);
+    }
+
     //---------- JMSCorrelationID ---------------------------------------------//
 
     @Test
@@ -155,6 +224,13 @@ public class JmsMessagePropertyIntercepterTest {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         assertNull(JmsMessagePropertyIntercepter.getProperty(message, JMS_CORRELATIONID));
         Mockito.verify(message).getCorrelationId();
+    }
+
+    @Test
+    public void testSetJMSCorrelationId() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        JmsMessagePropertyIntercepter.setProperty(message, JMS_CORRELATIONID, "ID:123456-789");
+        Mockito.verify(message).setCorrelationId("ID:123456-789");
     }
 
     //---------- JMSExpiration ---------------------------------------------//
@@ -172,6 +248,13 @@ public class JmsMessagePropertyIntercepterTest {
         Mockito.verify(message).getExpiration();
     }
 
+    @Test
+    public void testSetJMSExpiration() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        JmsMessagePropertyIntercepter.setProperty(message, JMS_EXPIRATION, 65536L);
+        Mockito.verify(message).setExpiration(65536L);
+    }
+
     //---------- JMSRedelivered ---------------------------------------------//
 
     @Test
@@ -184,6 +267,15 @@ public class JmsMessagePropertyIntercepterTest {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         assertFalse((Boolean) JmsMessagePropertyIntercepter.getProperty(message, JMS_REDELIVERED));
         Mockito.verify(message).isRedelivered();
+    }
+
+    @Test
+    public void testSetJMSRedelivered() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        JmsMessagePropertyIntercepter.setProperty(message, JMS_REDELIVERED, true);
+        Mockito.verify(message).setRedelivered(true);
+        JmsMessagePropertyIntercepter.setProperty(message, JMS_REDELIVERED, false);
+        Mockito.verify(message).setRedelivered(false);
     }
 
     //---------- JMSXGroupID ---------------------------------------------//
@@ -200,6 +292,13 @@ public class JmsMessagePropertyIntercepterTest {
         Mockito.verify(message).getGroupId();
     }
 
+    @Test
+    public void testSetJMSXGroupId() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        JmsMessagePropertyIntercepter.setProperty(message, JMSX_GROUPID, "MyGroupID");
+        Mockito.verify(message).setGroupId("MyGroupID");
+    }
+
     //---------- JMSXGroupSeq ---------------------------------------------//
 
     @Test
@@ -212,6 +311,13 @@ public class JmsMessagePropertyIntercepterTest {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         assertEquals(Integer.valueOf(0), JmsMessagePropertyIntercepter.getProperty(message, JMSX_GROUPSEQ));
         Mockito.verify(message).getGroupSequence();
+    }
+
+    @Test
+    public void testSetJMSXGroupSeq() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        JmsMessagePropertyIntercepter.setProperty(message, JMSX_GROUPSEQ, 65536);
+        Mockito.verify(message).setGroupSequence(65536);
     }
 
     //---------- JMSXDeliveryCount ---------------------------------------------//
@@ -228,6 +334,13 @@ public class JmsMessagePropertyIntercepterTest {
         Mockito.verify(message).getRedeliveryCounter();
     }
 
+    @Test
+    public void testSetJMSXDeliveryCount() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        JmsMessagePropertyIntercepter.setProperty(message, JMSX_DELIVERY_COUNT, 32768);
+        Mockito.verify(message).setRedeliveryCounter(32767);
+    }
+
     //---------- JMSXUserID ---------------------------------------------//
 
     @Test
@@ -242,4 +355,10 @@ public class JmsMessagePropertyIntercepterTest {
         Mockito.verify(message).getUserId();
     }
 
+    @Test
+    public void testSetJMSXUserId() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        JmsMessagePropertyIntercepter.setProperty(message, JMSX_USERID, "Administrator");
+        Mockito.verify(message).setUserId("Administrator");
+    }
 }

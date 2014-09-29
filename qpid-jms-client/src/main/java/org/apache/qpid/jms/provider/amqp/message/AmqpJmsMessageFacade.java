@@ -67,6 +67,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     private JmsDestination replyTo;
     private JmsDestination destination;
+    private JmsDestination consumerDestination;
 
     private Long syntheticTTL;
 
@@ -103,6 +104,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     public AmqpJmsMessageFacade(AmqpConsumer consumer, Message message) {
         this.message = message;
         this.connection = consumer.getConnection();
+        this.consumerDestination = consumer.getDestination();
 
         annotations = message.getMessageAnnotations();
         if (annotations != null) {
@@ -118,9 +120,6 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         if (absoluteExpiryTime == null && ttl != null) {
             syntheticTTL = System.currentTimeMillis() + ttl;
         }
-
-        this.destination = AmqpDestinationHelper.INSTANCE.getJmsDestination(this, consumer.getDestination());
-        this.replyTo = AmqpDestinationHelper.INSTANCE.getJmsReplyTo(this, consumer.getDestination());
     }
 
     /**
@@ -580,6 +579,10 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public JmsDestination getDestination() {
+        if (destination == null) {
+            this.destination = AmqpDestinationHelper.INSTANCE.getJmsDestination(this, consumerDestination);
+        }
+
         return destination;
     }
 
@@ -592,6 +595,10 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public JmsDestination getReplyTo() {
+        if (replyTo == null) {
+            replyTo = AmqpDestinationHelper.INSTANCE.getJmsReplyTo(this, consumerDestination);
+        }
+
         return replyTo;
     }
 

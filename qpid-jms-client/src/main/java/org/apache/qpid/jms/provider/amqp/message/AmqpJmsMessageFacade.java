@@ -246,6 +246,9 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @SuppressWarnings("unchecked")
     protected void copyInto(AmqpJmsMessageFacade target) {
+        if (consumerDestination != null) {
+            target.consumerDestination = consumerDestination;
+        }
         if (destination != null) {
             target.setDestination(destination);
         }

@@ -34,7 +34,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsSslContext;
-import org.apache.qpid.jms.message.JmsDefaultMessageFactory;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessageFactory;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
@@ -45,10 +44,10 @@ import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.DefaultProviderListener;
 import org.apache.qpid.jms.provider.Provider;
+import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFactory;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
-import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,7 +76,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     private final Map<Long, FailoverRequest> requests = new LinkedHashMap<Long, FailoverRequest>();
     private final DefaultProviderListener closedListener = new DefaultProviderListener();
     private final JmsSslContext sslContext;
-    private final JmsMessageFactory defaultMessageFactory = new JmsDefaultMessageFactory();
+    private final AtomicReference<JmsMessageFactory> messageFactory = new AtomicReference<JmsMessageFactory>();
 
     // Current state of connection / reconnection
     private boolean firstConnection = true;
@@ -205,20 +204,30 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     @Override
     public void create(final JmsResource resource, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
         checkClosed();
-        final FailoverRequest pending = new FailoverRequest(request) {
-            @Override
-            public void doTask() throws Exception {
-                if (resource instanceof JmsConnectionInfo) {
-                    JmsConnectionInfo connectionInfo = (JmsConnectionInfo) resource;
-                    connectTimeout = connectionInfo.getConnectTimeout();
-                    closeTimeout = connectionInfo.getCloseTimeout();
-                    sendTimeout = connectionInfo.getSendTimeout();
-                    requestTimeout = connectionInfo.getRequestTimeout();
-                }
+        FailoverRequest pending = null;
+        if (resource instanceof JmsConnectionInfo) {
+            pending = new CreateConnectionRequest(request) {
+                @Override
+                public void doTask() throws Exception {
+                    if (resource instanceof JmsConnectionInfo) {
+                        JmsConnectionInfo connectionInfo = (JmsConnectionInfo) resource;
+                        connectTimeout = connectionInfo.getConnectTimeout();
+                        closeTimeout = connectionInfo.getCloseTimeout();
+                        sendTimeout = connectionInfo.getSendTimeout();
+                        requestTimeout = connectionInfo.getRequestTimeout();
+                    }
 
-                provider.create(resource, this);
-            }
-        };
+                    provider.create(resource, this);
+                }
+            };
+        } else {
+            pending = new FailoverRequest(request) {
+                @Override
+                public void doTask() throws Exception {
+                    provider.create(resource, this);
+                }
+            };
+        }
 
         serializer.execute(pending);
     }
@@ -389,20 +398,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
     @Override
     public JmsMessageFactory getMessageFactory() {
-        final AtomicReference<JmsMessageFactory> result =
-            new AtomicReference<JmsMessageFactory>(defaultMessageFactory);
-
-        serializer.execute(new Runnable() {
-
-            @Override
-            public void run() {
-                if (provider != null) {
-                    result.set(provider.getMessageFactory());
-                }
-            }
-        });
-
-        return result.get();
+        return messageFactory.get();
     }
 
     //--------------- Connection Error and Recovery methods ------------------//
@@ -415,6 +411,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
      * is allowed and if so a new reconnect cycle is triggered on the connection thread.
      *
      * @param cause
+     *        the error that triggered the failure of the provider.
      */
     private void handleProviderFailure(final IOException cause) {
         LOG.debug("handling Provider failure: {}", cause.getMessage());
@@ -445,7 +442,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
     /**
      * Called from the reconnection thread.  This method enqueues a new task that
-     * will attempt to recover connection state, once successful normal operations
+     * will attempt to recover connection state, once successful, normal operations
      * will resume.  If an error occurs while attempting to recover the JMS framework
      * state then a reconnect cycle is again triggered on the connection thread.
      *
@@ -458,10 +455,10 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             public void run() {
                 try {
                     if (firstConnection) {
-                        firstConnection = false;
                         FailoverProvider.this.provider = provider;
                         provider.setProviderListener(FailoverProvider.this);
 
+                        // The only pending request here should be a Connection create request.
                         List<FailoverRequest> pending = new ArrayList<FailoverRequest>(requests.values());
                         for (FailoverRequest request : pending) {
                             request.run();
@@ -474,13 +471,16 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                         // Stage 1: Recovery all JMS Framework resources
                         listener.onConnectionRecovery(provider);
 
-                        // Stage 2: Restart consumers, send pull commands, etc.
+                        // Stage 2: Connection state recovered, get newly configured message factory.
+                        FailoverProvider.this.messageFactory.set(provider.getMessageFactory());
+
+                        // Stage 3: Restart consumers, send pull commands, etc.
                         listener.onConnectionRecovered(provider);
 
-                        // Stage 3: Let the client know that connection has restored.
+                        // Stage 4: Let the client know that connection has restored.
                         listener.onConnectionRestored(provider.getRemoteURI());
 
-                        // Stage 4: Send pending actions.
+                        // Stage 5: Send pending actions.
                         List<FailoverRequest> pending = new ArrayList<FailoverRequest>(requests.values());
                         for (FailoverRequest request : pending) {
                             request.run();
@@ -771,8 +771,6 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
      * For all requests that are dispatched from the FailoverProvider to a connected
      * Provider instance an instance of FailoverRequest is used to handle errors that
      * occur during processing of that request and trigger a reconnect.
-     *
-     * @param <T>
      */
     protected abstract class FailoverRequest extends ProviderFuture implements Runnable {
 
@@ -852,6 +850,45 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
          */
         public boolean failureWhenOffline() {
             return false;
+        }
+    }
+
+    /**
+     * Captures the initial request to create a JmsConnectionInfo based resources and ensures
+     * that if the connection is successfully established that the connection established event
+     * is triggered once before moving on to sending only connection interrupted and restored
+     * events.  
+     */
+    protected abstract class CreateConnectionRequest extends FailoverRequest {
+
+        /**
+         * @param watcher
+         */
+        public CreateConnectionRequest(AsyncResult watcher) {
+            super(watcher);
+        }
+
+        @Override
+        public void onSuccess() {
+            serializer.execute(new Runnable() {
+                @Override
+                public void run() {
+                    if (firstConnection) {
+                        LOG.trace("First connection requst has completed:");
+                        FailoverProvider.this.messageFactory.set(provider.getMessageFactory());
+                        listener.onConnectionEstablished(provider.getRemoteURI());
+                        firstConnection = false;
+                    } else {
+                        LOG.warn("A second call to a CreateConnectionRequest not expected.");
+                    }
+
+                    CreateConnectionRequest.this.signalConnected();
+                }
+            });
+        }
+
+        public void signalConnected() {
+            super.onSuccess();
         }
     }
 }

@@ -61,7 +61,6 @@ import javax.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
-import org.apache.qpid.jms.message.JmsMessageFactory;
 import org.apache.qpid.jms.message.JmsMessageTransformation;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsConsumerId;
@@ -97,7 +96,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private final AtomicLong consumerIdGenerator = new AtomicLong();
     private final AtomicLong producerIdGenerator = new AtomicLong();
     private JmsLocalTransactionContext transactionContext;
-    private JmsMessageFactory messageFactory;
 
     protected JmsSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) throws JMSException {
         this.connection = connection;
@@ -111,7 +109,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         this.sessionInfo.setSendAcksAsync(connection.isSendAcksAsync());
 
         this.sessionInfo = connection.createResource(sessionInfo);
-        this.messageFactory = connection.getMessageFactory();
     }
 
     int acknowledgementMode() {
@@ -493,49 +490,49 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public BytesMessage createBytesMessage() throws JMSException {
         checkClosed();
-        return init(messageFactory.createBytesMessage());
+        return init(connection.getMessageFactory().createBytesMessage());
     }
 
     @Override
     public MapMessage createMapMessage() throws JMSException {
         checkClosed();
-        return init(messageFactory.createMapMessage());
+        return init(connection.getMessageFactory().createMapMessage());
     }
 
     @Override
     public Message createMessage() throws JMSException {
         checkClosed();
-        return init(messageFactory.createMessage());
+        return init(connection.getMessageFactory().createMessage());
     }
 
     @Override
     public ObjectMessage createObjectMessage() throws JMSException {
         checkClosed();
-        return init(messageFactory.createObjectMessage(null));
+        return init(connection.getMessageFactory().createObjectMessage(null));
     }
 
     @Override
     public ObjectMessage createObjectMessage(Serializable object) throws JMSException {
         checkClosed();
-        return init(messageFactory.createObjectMessage(object));
+        return init(connection.getMessageFactory().createObjectMessage(object));
     }
 
     @Override
     public StreamMessage createStreamMessage() throws JMSException {
         checkClosed();
-        return init(messageFactory.createStreamMessage());
+        return init(connection.getMessageFactory().createStreamMessage());
     }
 
     @Override
     public TextMessage createTextMessage() throws JMSException {
         checkClosed();
-        return init(messageFactory.createTextMessage(null));
+        return init(connection.getMessageFactory().createTextMessage(null));
     }
 
     @Override
     public TextMessage createTextMessage(String text) throws JMSException {
         checkClosed();
-        return init(messageFactory.createTextMessage(text));
+        return init(connection.getMessageFactory().createTextMessage(text));
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -937,9 +934,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     protected void onConnectionRecovered(Provider provider) throws Exception {
-
-        this.messageFactory = provider.getMessageFactory();
-
         for (JmsMessageProducer producer : producers) {
             producer.onConnectionRecovered(provider);
         }

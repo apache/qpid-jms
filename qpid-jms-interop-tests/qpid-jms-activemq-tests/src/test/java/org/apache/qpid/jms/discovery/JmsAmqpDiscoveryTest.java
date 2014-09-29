@@ -42,6 +42,7 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsAmqpDiscoveryTest.class);
 
+    private CountDownLatch connected;
     private CountDownLatch interrupted;
     private CountDownLatch restored;
     private JmsConnection jmsConnection;
@@ -51,6 +52,7 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
     public void setUp() throws Exception {
         super.setUp();
 
+        connected = new CountDownLatch(1);
         interrupted = new CountDownLatch(1);
         restored = new CountDownLatch(1);
     }
@@ -145,6 +147,12 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
     @Override
     public void onConnectionFailure(Throwable error) {
         LOG.info("Connection reported failover: {}", error.getMessage());
+    }
+
+    @Override
+    public void onConnectionEstablished(URI remoteURI) {
+        LOG.info("Connection reports established.  Connected to -> {}", remoteURI);
+        connected.countDown();
     }
 
     @Override

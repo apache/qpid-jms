@@ -64,9 +64,9 @@ import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderClosedException;
+import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
-import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.util.IdGenerator;
 import org.apache.qpid.jms.util.ThreadPoolUtils;
 import org.slf4j.Logger;
@@ -525,7 +525,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
             this.connectionInfo = createResource(connectionInfo);
             this.connected.set(true);
-            this.messageFactory = provider.getMessageFactory();
 
             // TODO - Advisory Support.
             //
@@ -977,6 +976,9 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     public JmsMessageFactory getMessageFactory() {
+        if (messageFactory == null) {
+            throw new RuntimeException("Message factory should never be null");
+        }
         return messageFactory;
     }
 
@@ -1056,6 +1058,19 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         for (JmsConnectionListener listener : connectionListeners) {
             listener.onConnectionRestored(remoteURI);
+        }
+    }
+
+    @Override
+    public void onConnectionEstablished(URI remoteURI) {
+        LOG.info("Connection {} connected to remote Broker: {}", connectionInfo.getConnectionId(), remoteURI);
+        this.messageFactory = provider.getMessageFactory();
+
+        // TODO - For events triggered from the Provider thread, we might want to consider always
+        //        firing the client level events on the Connection executor to prevent the client
+        //        from stalling the provider thread.
+        for (JmsConnectionListener listener : connectionListeners) {
+            listener.onConnectionEstablished(remoteURI);
         }
     }
 

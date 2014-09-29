@@ -91,6 +91,16 @@ public interface ProviderListener {
     void onConnectionRestored(URI remoteURI);
 
     /**
+     * Called to indicate that the underlying connection to the Broker has been established
+     * for the first time.  For a fault tolerant provider this event should only ever be
+     * triggered once with the interruption and recovery events following on for future
+     *
+     * @param ex
+     *        The exception that indicates the cause of this Provider failure.
+     */
+    void onConnectionEstablished(URI remoteURI);
+
+    /**
      * Called to indicate that the underlying connection to the Broker has been lost and
      * the Provider will not perform any reconnect.  Following this call the provider is
      * in a failed state and further calls to it will throw an Exception.

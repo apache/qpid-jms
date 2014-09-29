@@ -27,6 +27,17 @@ import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 public interface JmsConnectionListener {
 
     /**
+     * Called when a connection has been successfully established.
+     *
+     * This method is never called more than once when using a fault tolerant
+     * connection, instead the connection will signal interrupted and restored.
+     *
+     * @param remoteURI
+     *        The URI of the Broker this client is now connected to.
+     */
+    void onConnectionEstablished(URI remoteURI);
+
+    /**
      * Called when an unrecoverable error occurs and the Connection must be closed.
      *
      * @param error

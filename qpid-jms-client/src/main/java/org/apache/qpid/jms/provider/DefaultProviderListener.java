@@ -35,6 +35,10 @@ public class DefaultProviderListener implements ProviderListener {
     }
 
     @Override
+    public void onConnectionEstablished(URI remoteURI) {
+    }
+
+    @Override
     public void onConnectionFailure(IOException ex) {
     }
 

@@ -42,8 +42,8 @@ import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.meta.JmsTransactionInfo;
 import org.apache.qpid.jms.provider.AbstractProvider;
 import org.apache.qpid.jms.provider.AsyncResult;
-import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.transports.TcpTransport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.util.IOExceptionSupport;
@@ -243,7 +243,24 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
                                 sasl.client();
                             }
                             connection = new AmqpConnection(AmqpProvider.this, protonConnection, sasl, connectionInfo);
-                            connection.open(request);
+                            connection.open(new AsyncResult() {
+
+                                @Override
+                                public void onSuccess() {
+                                    fireConnectionEstablished();
+                                    request.onSuccess();
+                                }
+
+                                @Override
+                                public void onFailure(Throwable result) {
+                                    request.onFailure(result);
+                                }
+
+                                @Override
+                                public boolean isComplete() {
+                                    return request.isComplete();
+                                }
+                            });
                         }
 
                         @Override

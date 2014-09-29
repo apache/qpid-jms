@@ -166,6 +166,11 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
     }
 
     @Override
+    public void onConnectionEstablished(URI remoteURI) {
+        this.listener.onConnectionEstablished(this.next.getRemoteURI());
+    }
+
+    @Override
     public void onConnectionFailure(IOException ex) {
         this.listener.onConnectionInterrupted(this.next.getRemoteURI());
     }

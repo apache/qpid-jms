@@ -78,6 +78,13 @@ public abstract class AbstractProvider implements Provider {
         return remoteURI;
     }
 
+    public void fireConnectionEstablished() {
+        ProviderListener listener = this.listener;
+        if (listener != null) {
+            listener.onConnectionEstablished(remoteURI);
+        }
+    }
+
     public void fireProviderException(Throwable ex) {
         ProviderListener listener = this.listener;
         if (listener != null) {

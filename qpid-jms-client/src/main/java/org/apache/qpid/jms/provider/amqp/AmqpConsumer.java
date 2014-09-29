@@ -32,6 +32,7 @@ import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageBuilder;
 import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.Binary;
@@ -49,8 +50,7 @@ import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Receiver;
 import org.apache.qpid.proton.jms.EncodedMessage;
-import org.apache.qpid.proton.jms.InboundTransformer;
-import org.apache.qpid.proton.jms.JMSMappingInboundTransformer;
+import org.apache.qpid.proton.message.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,8 +66,6 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     protected static final Symbol JMS_SELECTOR_SYMBOL = Symbol.valueOf("jms-selector");
 
     protected final AmqpSession session;
-    protected final InboundTransformer inboundTransformer =
-        new JMSMappingInboundTransformer(AmqpJMSVendor.INSTANCE);;
     protected final Map<JmsInboundMessageDispatch, Delivery> delivered = new LinkedHashMap<JmsInboundMessageDispatch, Delivery>();
     protected boolean presettle;
 
@@ -310,7 +308,10 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         EncodedMessage encoded = readIncomingMessage(incoming);
         JmsMessage message = null;
         try {
-            message = (JmsMessage) inboundTransformer.transform(encoded);
+            Message protonMessage = Message.Factory.create();
+            protonMessage.decode(encoded.getArray(), encoded.getArrayOffset(), encoded.getLength());
+
+            message = (JmsMessage) AmqpJmsMessageBuilder.createJmsMessage(this, protonMessage);
         } catch (Exception e) {
             LOG.warn("Error on transform: {}", e.getMessage());
             // TODO - We could signal provider error but not sure we want to fail
@@ -431,6 +432,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         buffer = streamBuffer.toByteArray();
 
         try {
+            //TODO: get rid of EncodedMessage usage
             return new EncodedMessage(incoming.getMessageFormat(), buffer, 0, buffer.length);
         } finally {
             streamBuffer.reset();

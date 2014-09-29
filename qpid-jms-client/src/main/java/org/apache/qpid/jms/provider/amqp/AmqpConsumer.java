@@ -32,8 +32,8 @@ import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
-import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageBuilder;
 import org.apache.qpid.jms.provider.ProviderListener;
+import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageBuilder;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
@@ -49,7 +49,6 @@ import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Receiver;
-import org.apache.qpid.proton.jms.EncodedMessage;
 import org.apache.qpid.proton.message.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -305,13 +304,9 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     }
 
     private void processDelivery(Delivery incoming) throws Exception {
-        EncodedMessage encoded = readIncomingMessage(incoming);
         JmsMessage message = null;
         try {
-            Message protonMessage = Message.Factory.create();
-            protonMessage.decode(encoded.getArray(), encoded.getArrayOffset(), encoded.getLength());
-
-            message = (JmsMessage) AmqpJmsMessageBuilder.createJmsMessage(this, protonMessage);
+            message = AmqpJmsMessageBuilder.createJmsMessage(this, decodeIncomingMessage(incoming));
         } catch (Exception e) {
             LOG.warn("Error on transform: {}", e.getMessage());
             // TODO - We could signal provider error but not sure we want to fail
@@ -421,7 +416,8 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         }
     }
 
-    protected EncodedMessage readIncomingMessage(Delivery incoming) {
+    // TODO - Find more efficient ways to produce the Message instance.
+    protected Message decodeIncomingMessage(Delivery incoming) {
         byte[] buffer;
         int count;
 
@@ -429,11 +425,13 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             streamBuffer.write(incomingBuffer, 0, count);
         }
 
+        // TODO - This will copy, replace with something better later.  Pooled Netty Buffer ?
         buffer = streamBuffer.toByteArray();
 
         try {
-            //TODO: get rid of EncodedMessage usage
-            return new EncodedMessage(incoming.getMessageFormat(), buffer, 0, buffer.length);
+            Message protonMessage = Message.Factory.create();
+            protonMessage.decode(buffer, 0, buffer.length);
+            return protonMessage;
         } finally {
             streamBuffer.reset();
         }

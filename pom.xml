@@ -115,7 +115,7 @@
       </dependency>
       <dependency>
         <groupId>org.apache.qpid</groupId>
-        <artifactId>proton-jms</artifactId>
+        <artifactId>proton-j</artifactId>
         <version>${proton-version}</version>
       </dependency>
       <dependency>

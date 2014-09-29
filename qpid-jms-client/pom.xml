@@ -47,7 +47,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.qpid</groupId>
-      <artifactId>proton-jms</artifactId>
+      <artifactId>proton-j</artifactId>
     </dependency>
     <dependency>
       <groupId>io.vertx</groupId>

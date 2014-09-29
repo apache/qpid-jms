@@ -45,9 +45,6 @@ import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Sender;
-import org.apache.qpid.proton.jms.AutoOutboundTransformer;
-import org.apache.qpid.proton.jms.EncodedMessage;
-import org.apache.qpid.proton.jms.OutboundTransformer;
 import org.apache.qpid.proton.message.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,9 +63,6 @@ public class AmqpFixedProducer extends AmqpProducer {
     private final Set<Delivery> pending = new LinkedHashSet<Delivery>();
     private final LinkedList<PendingSend> pendingSends = new LinkedList<PendingSend>();
     private byte[] encodeBuffer = new byte[1024 * 8];
-
-    private final OutboundTransformer outboundTransformer = new AutoOutboundTransformer(AmqpJMSVendor.INSTANCE);
-    private final String MESSAGE_FORMAT_KEY = outboundTransformer.getPrefixVendor() + "MESSAGE_FORMAT";
     private boolean presettle = false;
 
     public AmqpFixedProducer(AmqpSession session, JmsProducerInfo info) {
@@ -131,12 +125,8 @@ public class AmqpFixedProducer extends AmqpProducer {
         JmsMessage message = envelope.getMessage();
         message.setReadOnlyBody(true);
 
-        if (facade instanceof AmqpJmsMessageFacade) {
-            AmqpJmsMessageFacade amqpMessage = (AmqpJmsMessageFacade) facade;
-            encodeAndSend(amqpMessage.getAmqpMessage(), delivery);
-        } else {
-            encodeAndSendTransformed(envelope.getMessage(), delivery);
-        }
+        AmqpJmsMessageFacade amqpMessage = (AmqpJmsMessageFacade) facade;
+        encodeAndSend(amqpMessage.getAmqpMessage(), delivery);
 
         if (presettle) {
             delivery.settle();
@@ -173,45 +163,6 @@ public class AmqpFixedProducer extends AmqpProducer {
                 }
             } else {
                 LOG.warn("{} failed to send any data from current Message.", this);
-            }
-        }
-    }
-
-    private void encodeAndSendTransformed(JmsMessage message, Delivery delivery) throws IOException, JMSException {
-
-        byte[] sendBuffer = null;
-        int sendBufferSize = 0;
-        int sendBufferOffset = 0;
-
-        EncodedMessage amqp = null;
-
-        // Needed by the transformer process.
-        if (!message.getProperties().containsKey(MESSAGE_FORMAT_KEY)) {
-            message.setProperty(MESSAGE_FORMAT_KEY, 0);
-        }
-
-        try {
-            amqp = outboundTransformer.transform(message);
-        } catch (Exception e) {
-            throw IOExceptionSupport.create(e);
-        }
-
-        if (amqp != null && amqp.getLength() > 0) {
-            sendBuffer = amqp.getArray();
-            sendBufferOffset = amqp.getArrayOffset();
-            sendBufferSize = amqp.getLength();
-            int sentSoFar = 0;
-
-            while (true) {
-                int sent = endpoint.send(sendBuffer, sendBufferOffset + sentSoFar, sendBufferSize - sentSoFar);
-                if (sent > 0) {
-                    sentSoFar += sent;
-                    if ((sendBufferSize - sentSoFar) == 0) {
-                        break;
-                    }
-                } else {
-                    LOG.warn("{} failed to send any data from current Message.", this);
-                }
             }
         }
     }

@@ -151,7 +151,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public Map<String, Object> getProperties() throws JMSException {
-        lazyCreateProperties();
+        lazyCreateApplicationProperties();
         return Collections.unmodifiableMap(new HashMap<String, Object>(applicationPropertiesMap));
     }
 
@@ -204,10 +204,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     public void setApplicationProperty(String key, Object value) throws JMSException {
-        if (applicationPropertiesMap == null) {
-            lazyCreateProperties();
-        }
-
+        lazyCreateApplicationProperties();
         applicationPropertiesMap.put(key, value);
     }
 
@@ -300,7 +297,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         }
 
         if (applicationPropertiesMap != null) {
-            target.lazyCreateProperties();
+            target.lazyCreateApplicationProperties();
             target.applicationPropertiesMap.putAll(applicationPropertiesMap);
         }
 
@@ -809,8 +806,10 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         }
     }
 
-    private void lazyCreateProperties() {
-        applicationPropertiesMap = new HashMap<String,Object>();
-        message.setApplicationProperties(new ApplicationProperties(applicationPropertiesMap));
+    private void lazyCreateApplicationProperties() {
+        if (applicationPropertiesMap == null) {
+            applicationPropertiesMap = new HashMap<String, Object>();
+            message.setApplicationProperties(new ApplicationProperties(applicationPropertiesMap));
+        }
     }
 }

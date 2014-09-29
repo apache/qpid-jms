@@ -131,20 +131,11 @@ public class AmqpFixedProducer extends AmqpProducer {
         JmsMessage message = envelope.getMessage();
         message.setReadOnlyBody(true);
 
-        // TODO: why do we need this?
-        // Possibly because AMQP spec "2.7.5 Transfer" says message format MUST be set on at least
-        // the first Transfer frame of a message.  That is on the encoded Transfer frames though and
-        // this property isn't, but rather within the application-properties map.  We should probably
-        // ensure this elsewhere (appears Proton does so itself in TransportImpl#processTransportWorkSender)
-        if (!message.getProperties().containsKey(MESSAGE_FORMAT_KEY)) {
-            message.setProperty(MESSAGE_FORMAT_KEY, 0);
-        }
-
         if (facade instanceof AmqpJmsMessageFacade) {
             AmqpJmsMessageFacade amqpMessage = (AmqpJmsMessageFacade) facade;
             encodeAndSend(amqpMessage.getAmqpMessage(), delivery);
         } else {
-            encodeAndSend(envelope.getMessage(), delivery);
+            encodeAndSendTransformed(envelope.getMessage(), delivery);
         }
 
         if (presettle) {
@@ -186,13 +177,18 @@ public class AmqpFixedProducer extends AmqpProducer {
         }
     }
 
-    private void encodeAndSend(JmsMessage message, Delivery delivery) throws IOException {
+    private void encodeAndSendTransformed(JmsMessage message, Delivery delivery) throws IOException, JMSException {
 
         byte[] sendBuffer = null;
         int sendBufferSize = 0;
         int sendBufferOffset = 0;
 
         EncodedMessage amqp = null;
+
+        // Needed by the transformer process.
+        if (!message.getProperties().containsKey(MESSAGE_FORMAT_KEY)) {
+            message.setProperty(MESSAGE_FORMAT_KEY, 0);
+        }
 
         try {
             amqp = outboundTransformer.transform(message);

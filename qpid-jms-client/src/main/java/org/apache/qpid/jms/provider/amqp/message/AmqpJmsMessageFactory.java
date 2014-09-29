@@ -31,12 +31,6 @@ import org.apache.qpid.jms.message.JmsStreamMessage;
 import org.apache.qpid.jms.message.JmsTextMessage;
 import org.apache.qpid.jms.message.facade.JmsObjectMessageFacade;
 import org.apache.qpid.jms.message.facade.JmsTextMessageFacade;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultBytesMessageFacade;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMapMessageFacade;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFacade;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultObjectMessageFacade;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultStreamMessageFacade;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultTextMessageFacade;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 
 /**
@@ -66,8 +60,7 @@ public class AmqpJmsMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsMessage createMessage() throws JMSException {
-        //return new JmsMessage(new AmqpJmsMessageFacade(connection));
-        return new JmsMessage(new JmsDefaultMessageFacade());
+        return new JmsMessage(new AmqpJmsMessageFacade(connection));
     }
 
     @Override
@@ -78,8 +71,7 @@ public class AmqpJmsMessageFactory implements JmsMessageFactory {
     @Override
     public JmsTextMessage createTextMessage(String payload) throws JMSException {
 
-        // JmsTextMessageFacade facade = new AmqpJmsTextMessageFacade(connection);
-        JmsTextMessageFacade facade = new JmsDefaultTextMessageFacade();
+        JmsTextMessageFacade facade = new AmqpJmsTextMessageFacade(connection);
 
         if (payload != null) {
             facade.setText(payload);
@@ -90,20 +82,17 @@ public class AmqpJmsMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsBytesMessage createBytesMessage() throws JMSException {
-        // return new JmsBytesMessage(new AmqpJmsBytesMessageFacade(connection));
-        return new JmsBytesMessage(new JmsDefaultBytesMessageFacade());
+        return new JmsBytesMessage(new AmqpJmsBytesMessageFacade(connection));
     }
 
     @Override
     public JmsMapMessage createMapMessage() throws JMSException {
-        // return new JmsMapMessage(new AmqpJmsMapMessageFacade(connection));
-        return new JmsMapMessage(new JmsDefaultMapMessageFacade());
+        return new JmsMapMessage(new AmqpJmsMapMessageFacade(connection));
     }
 
     @Override
     public JmsStreamMessage createStreamMessage() throws JMSException {
-        // return new JmsStreamMessage(new AmqpJmsStreamMessageFacade(connection));
-        return new JmsStreamMessage(new JmsDefaultStreamMessageFacade());
+        return new JmsStreamMessage(new AmqpJmsStreamMessageFacade(connection));
     }
 
     @Override
@@ -113,9 +102,7 @@ public class AmqpJmsMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsObjectMessage createObjectMessage(Serializable payload) throws JMSException {
-
-        // JmsObjectMessageFacade facade = new AmqpJmsSerializedObjectMessageFacade(connection);
-        JmsObjectMessageFacade facade = new JmsDefaultObjectMessageFacade();
+        JmsObjectMessageFacade facade = new AmqpJmsObjectMessageFacade(connection);
 
         if (payload != null) {
             try {

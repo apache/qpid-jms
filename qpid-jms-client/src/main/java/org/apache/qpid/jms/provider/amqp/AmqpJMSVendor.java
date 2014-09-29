@@ -34,9 +34,9 @@ import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsTemporaryQueue;
 import org.apache.qpid.jms.JmsTemporaryTopic;
 import org.apache.qpid.jms.JmsTopic;
-import org.apache.qpid.jms.message.JmsDefaultMessageFactory;
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.message.JmsMessageFactory;
+import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageFactory;
 import org.apache.qpid.proton.jms.JMSVendor;
 
 /**
@@ -48,7 +48,7 @@ public class AmqpJMSVendor extends JMSVendor {
 
     public static final AmqpJMSVendor INSTANCE = new AmqpJMSVendor();
 
-    private final JmsMessageFactory factory = new JmsDefaultMessageFactory();
+    private final JmsMessageFactory factory = new AmqpJmsMessageFactory();
 
     private AmqpJMSVendor() {
     }

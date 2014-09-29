@@ -39,4 +39,9 @@ public class AmqpJmsSelectorType implements DescribedType {
     public Object getDescribed() {
         return this.selector;
     }
+
+    @Override
+    public String toString() {
+        return "AmqpJmsSelectorType{" + selector + "}";
+    }
 }

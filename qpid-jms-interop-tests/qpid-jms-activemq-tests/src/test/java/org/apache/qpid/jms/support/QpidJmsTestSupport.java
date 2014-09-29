@@ -80,6 +80,7 @@ public class QpidJmsTestSupport {
 
     @Before
     public void setUp() throws Exception {
+        LOG.info("========== setUp " + getTestName() + " ==========");
         exceptions.clear();
         startPrimaryBroker();
         this.numberOfMessages = 2000;
@@ -87,6 +88,7 @@ public class QpidJmsTestSupport {
 
     @After
     public void tearDown() throws Exception {
+        LOG.info("========== tearDown " + getTestName() + " ==========");
         if (connection != null) {
             connection.close();
         }
@@ -443,5 +445,9 @@ public class QpidJmsTestSupport {
 
     protected boolean isSendAcksAsync() {
         return false;
+    }
+
+    protected String getTestName() {
+        return getClass().getSimpleName() + "." + name.getMethodName();
     }
 }

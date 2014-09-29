@@ -16,6 +16,21 @@
  */
 package org.apache.qpid.jms.message;
 
+import static org.apache.qpid.jms.message.JmsMessageSupport.JMSX_DELIVERY_COUNT;
+import static org.apache.qpid.jms.message.JmsMessageSupport.JMSX_GROUPID;
+import static org.apache.qpid.jms.message.JmsMessageSupport.JMSX_GROUPSEQ;
+import static org.apache.qpid.jms.message.JmsMessageSupport.JMSX_USERID;
+import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_CORRELATIONID;
+import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_DELIVERY_MODE;
+import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_DESTINATION;
+import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_EXPIRATION;
+import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_MESSAGEID;
+import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_PRIORITY;
+import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_REDELIVERED;
+import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_REPLYTO;
+import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_TIMESTAMP;
+import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_TYPE;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -86,7 +101,7 @@ public class JmsMessagePropertyIntercepter {
     }
 
     static {
-        PROPERTY_INTERCEPTERS.put("JMSXDeliveryCount", new PropertyIntercepter() {
+        PROPERTY_INTERCEPTERS.put(JMSX_DELIVERY_COUNT, new PropertyIntercepter() {
             @Override
             public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
                 Integer rc = (Integer) TypeConversionSupport.convert(value, Integer.class);
@@ -106,7 +121,7 @@ public class JmsMessagePropertyIntercepter {
                 return true;
             }
         });
-        PROPERTY_INTERCEPTERS.put("JMSDestination", new PropertyIntercepter() {
+        PROPERTY_INTERCEPTERS.put(JMS_DESTINATION, new PropertyIntercepter() {
             @Override
             public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
                 JmsDestination rc = (JmsDestination) TypeConversionSupport.convert(value, JmsDestination.class);
@@ -130,7 +145,7 @@ public class JmsMessagePropertyIntercepter {
                 return message.getDestination() != null;
             }
         });
-        PROPERTY_INTERCEPTERS.put("JMSReplyTo", new PropertyIntercepter() {
+        PROPERTY_INTERCEPTERS.put(JMS_REPLYTO, new PropertyIntercepter() {
             @Override
             public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
                 JmsDestination rc = (JmsDestination) TypeConversionSupport.convert(value, JmsDestination.class);
@@ -153,7 +168,7 @@ public class JmsMessagePropertyIntercepter {
                 return message.getReplyTo() != null;
             }
         });
-        PROPERTY_INTERCEPTERS.put("JMSType", new PropertyIntercepter() {
+        PROPERTY_INTERCEPTERS.put(JMS_TYPE, new PropertyIntercepter() {
             @Override
             public Object getProperty(JmsMessageFacade message) throws JMSException {
                 return message.getType();
@@ -173,7 +188,7 @@ public class JmsMessagePropertyIntercepter {
                 return message.getType() != null;
             }
         });
-        PROPERTY_INTERCEPTERS.put("JMSDeliveryMode", new PropertyIntercepter() {
+        PROPERTY_INTERCEPTERS.put(JMS_DELIVERY_MODE, new PropertyIntercepter() {
             @Override
             public Object getProperty(JmsMessageFacade message) throws JMSException {
                 return message.isPersistent() ? "PERSISTENT" : "NON_PERSISTENT";
@@ -212,7 +227,7 @@ public class JmsMessagePropertyIntercepter {
                 return true;
             }
         });
-        PROPERTY_INTERCEPTERS.put("JMSPriority", new PropertyIntercepter() {
+        PROPERTY_INTERCEPTERS.put(JMS_PRIORITY, new PropertyIntercepter() {
             @Override
             public Object getProperty(JmsMessageFacade message) throws JMSException {
                 return Integer.valueOf(message.getPriority());
@@ -232,7 +247,7 @@ public class JmsMessagePropertyIntercepter {
                 return true;
             }
         });
-        PROPERTY_INTERCEPTERS.put("JMSMessageID", new PropertyIntercepter() {
+        PROPERTY_INTERCEPTERS.put(JMS_MESSAGEID, new PropertyIntercepter() {
             @Override
             public Object getProperty(JmsMessageFacade message) throws JMSException {
                 if (message.getMessageId() == null) {
@@ -255,7 +270,7 @@ public class JmsMessagePropertyIntercepter {
                 return message.getMessageId() != null;
             }
         });
-        PROPERTY_INTERCEPTERS.put("JMSTimestamp", new PropertyIntercepter() {
+        PROPERTY_INTERCEPTERS.put(JMS_TIMESTAMP, new PropertyIntercepter() {
             @Override
             public Object getProperty(JmsMessageFacade message) throws JMSException {
                 return Long.valueOf(message.getTimestamp());
@@ -275,7 +290,7 @@ public class JmsMessagePropertyIntercepter {
                 return true;
             }
         });
-        PROPERTY_INTERCEPTERS.put("JMSCorrelationID", new PropertyIntercepter() {
+        PROPERTY_INTERCEPTERS.put(JMS_CORRELATIONID, new PropertyIntercepter() {
             @Override
             public Object getProperty(JmsMessageFacade message) throws JMSException {
                 return message.getCorrelationId();
@@ -295,7 +310,7 @@ public class JmsMessagePropertyIntercepter {
                 return message.getCorrelationId() != null;
             }
         });
-        PROPERTY_INTERCEPTERS.put("JMSExpiration", new PropertyIntercepter() {
+        PROPERTY_INTERCEPTERS.put(JMS_EXPIRATION, new PropertyIntercepter() {
             @Override
             public Object getProperty(JmsMessageFacade message) throws JMSException {
                 return Long.valueOf(message.getExpiration());
@@ -315,7 +330,7 @@ public class JmsMessagePropertyIntercepter {
                 return true;
             }
         });
-        PROPERTY_INTERCEPTERS.put("JMSRedelivered", new PropertyIntercepter() {
+        PROPERTY_INTERCEPTERS.put(JMS_REDELIVERED, new PropertyIntercepter() {
             @Override
             public Object getProperty(JmsMessageFacade message) throws JMSException {
                 return Boolean.valueOf(message.isRedelivered());
@@ -335,7 +350,7 @@ public class JmsMessagePropertyIntercepter {
                 return true;
             }
         });
-        PROPERTY_INTERCEPTERS.put("JMSXGroupID", new PropertyIntercepter() {
+        PROPERTY_INTERCEPTERS.put(JMSX_GROUPID, new PropertyIntercepter() {
             @Override
             public Object getProperty(JmsMessageFacade message) throws JMSException {
                 return message.getGroupId();
@@ -355,7 +370,7 @@ public class JmsMessagePropertyIntercepter {
                 return message.getGroupId() != null;
             }
         });
-        PROPERTY_INTERCEPTERS.put("JMSXGroupSeq", new PropertyIntercepter() {
+        PROPERTY_INTERCEPTERS.put(JMSX_GROUPSEQ, new PropertyIntercepter() {
             @Override
             public Object getProperty(JmsMessageFacade message) throws JMSException {
                 return message.getGroupSequence();
@@ -375,7 +390,7 @@ public class JmsMessagePropertyIntercepter {
                 return true;
             }
         });
-        PROPERTY_INTERCEPTERS.put("JMSXUserID", new PropertyIntercepter() {
+        PROPERTY_INTERCEPTERS.put(JMSX_USERID, new PropertyIntercepter() {
             @Override
             public Object getProperty(JmsMessageFacade message) throws JMSException {
                 Object userId = message.getUserId();

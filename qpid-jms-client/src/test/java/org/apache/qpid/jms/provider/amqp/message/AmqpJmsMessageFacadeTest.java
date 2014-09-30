@@ -452,7 +452,7 @@ public class AmqpJmsMessageFacadeTest {
         source.setMessageId("ID:TEST-MESSAGEID");
         source.setPriority((byte) 1);
         source.setPersistent(false);
-        source.setRedeliveryCounter(12);
+        source.setRedeliveryCount(12);
         source.setTimestamp(150L);
         source.setUserId("Cookie-Monster");
 
@@ -474,7 +474,7 @@ public class AmqpJmsMessageFacadeTest {
         assertEquals(source.getMessageId(), copy.getMessageId());
         assertEquals(source.getPriority(), copy.getPriority());
         assertEquals(source.isPersistent(), copy.isPersistent());
-        assertEquals(source.getRedeliveryCounter(), copy.getRedeliveryCounter());
+        assertEquals(source.getRedeliveryCount(), copy.getRedeliveryCount());
         assertEquals(source.getTimestamp(), copy.getTimestamp());
         assertEquals(source.getUserId(), copy.getUserId());
 

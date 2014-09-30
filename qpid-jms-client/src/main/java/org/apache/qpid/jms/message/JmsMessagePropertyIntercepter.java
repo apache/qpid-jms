@@ -108,12 +108,12 @@ public class JmsMessagePropertyIntercepter {
                 if (rc == null) {
                     throw new JMSException("Property JMSXDeliveryCount cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setRedeliveryCounter(rc.intValue() - 1);
+                message.setDeliveryCount(rc.intValue());
             }
 
             @Override
             public Object getProperty(JmsMessageFacade message) throws JMSException {
-                return Integer.valueOf(message.getRedeliveryCounter() + 1);
+                return Integer.valueOf(message.getDeliveryCount());
             }
 
             @Override

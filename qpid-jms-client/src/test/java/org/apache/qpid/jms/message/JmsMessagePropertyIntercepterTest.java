@@ -592,28 +592,28 @@ public class JmsMessagePropertyIntercepterTest {
     @Test
     public void testGetJMSXDeliveryCountWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        assertEquals(Integer.valueOf(1), JmsMessagePropertyIntercepter.getProperty(message, JMSX_DELIVERY_COUNT));
-        Mockito.verify(message).getRedeliveryCounter();
+        assertEquals(Integer.valueOf(0), JmsMessagePropertyIntercepter.getProperty(message, JMSX_DELIVERY_COUNT));
+        Mockito.verify(message).getDeliveryCount();
     }
 
     @Test
     public void testGetJMSXDeliverCountWhenSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        Mockito.when(message.getRedeliveryCounter()).thenReturn(2);
-        assertEquals(3, JmsMessagePropertyIntercepter.getProperty(message, JMSX_DELIVERY_COUNT));
+        Mockito.when(message.getDeliveryCount()).thenReturn(2);
+        assertEquals(2, JmsMessagePropertyIntercepter.getProperty(message, JMSX_DELIVERY_COUNT));
     }
 
     @Test
     public void testSetJMSXDeliveryCount() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         JmsMessagePropertyIntercepter.setProperty(message, JMSX_DELIVERY_COUNT, 32768);
-        Mockito.verify(message).setRedeliveryCounter(32767);
+        Mockito.verify(message).setDeliveryCount(32768);
     }
 
     @Test
     public void testJMSXDeliveryCountInGetPropertyNamesWhenSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        Mockito.when(message.getRedeliveryCounter()).thenReturn(2);
+        Mockito.when(message.getDeliveryCount()).thenReturn(2);
         assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMSX_DELIVERY_COUNT));
     }
 

@@ -553,7 +553,7 @@ public class JmsMessage implements javax.jms.Message {
     }
 
     public void incrementRedeliveryCount() {
-         facade.setRedeliveryCounter(facade.getRedeliveryCounter() + 1);
+         facade.setRedeliveryCount(facade.getRedeliveryCount() + 1);
     }
 
     public JmsMessageFacade getFacade() {
@@ -565,15 +565,7 @@ public class JmsMessage implements javax.jms.Message {
     }
 
     public void setRedelivered(boolean redelivered) throws JMSException {
-        if (redelivered) {
-            if (!isRedelivered()) {
-                facade.setRedeliveryCounter(1);
-            }
-        } else {
-            if (isRedelivered()) {
-                facade.setRedeliveryCounter(0);
-            }
-        }
+        facade.setRedelivered(redelivered);
     }
 
     protected void checkReadOnlyProperties() throws MessageNotWriteableException {

@@ -203,12 +203,22 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public int getRedeliveryCounter() {
+    public int getDeliveryCount() {
+        return this.redeliveryCount + 1;
+    }
+
+    @Override
+    public void setDeliveryCount(int deliveryCount) {
+        this.redeliveryCount = deliveryCount - 1;
+    }
+
+    @Override
+    public int getRedeliveryCount() {
         return this.redeliveryCount;
     }
 
     @Override
-    public void setRedeliveryCounter(int redeliveryCount) {
+    public void setRedeliveryCount(int redeliveryCount) {
         this.redeliveryCount = redeliveryCount;
     }
 
@@ -221,11 +231,11 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
     public void setRedelivered(boolean redelivered) {
         if (redelivered) {
             if (!isRedelivered()) {
-                setRedeliveryCounter(1);
+                setRedeliveryCount(1);
             }
         } else {
             if (isRedelivered()) {
-                setRedeliveryCounter(0);
+                setRedeliveryCount(0);
             }
         }
     }

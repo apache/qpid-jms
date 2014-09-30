@@ -457,7 +457,17 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public int getRedeliveryCounter() {
+    public int getDeliveryCount() {
+        return getRedeliveryCount() + 1;
+    }
+
+    @Override
+    public void setDeliveryCount(int deliveryCount) {
+        setRedeliveryCount(deliveryCount - 1);
+    }
+
+    @Override
+    public int getRedeliveryCount() {
         if (message.getHeader() != null) {
             UnsignedInteger count = message.getHeader().getDeliveryCount();
             if (count != null) {
@@ -469,7 +479,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public void setRedeliveryCounter(int redeliveryCount) {
+    public void setRedeliveryCount(int redeliveryCount) {
         if (redeliveryCount == 0) {
             if (message.getHeader() != null) {
                 message.getHeader().setDeliveryCount(null);
@@ -481,18 +491,18 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public boolean isRedelivered() {
-        return getRedeliveryCounter() > 0;
+        return getRedeliveryCount() > 0;
     }
 
     @Override
     public void setRedelivered(boolean redelivered) {
         if (redelivered) {
             if (!isRedelivered()) {
-                setRedeliveryCounter(1);
+                setRedeliveryCount(1);
             }
         } else {
             if (isRedelivered()) {
-                setRedeliveryCounter(0);
+                setRedeliveryCount(0);
             }
         }
     }

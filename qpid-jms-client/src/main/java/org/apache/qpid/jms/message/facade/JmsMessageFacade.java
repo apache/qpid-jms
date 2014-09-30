@@ -213,12 +213,28 @@ public interface JmsMessageFacade {
     void setPersistent(boolean value);
 
     /**
+     * Returns the current delivery count of the Message as set in the underlying
+     * message instance.
+     *
+     * @return the current delivery count.
+     */
+    int getDeliveryCount();
+
+    /**
+     * Sets the delivery count on the message.
+     *
+     * @param deliveryCount
+     *        the new delivery count to assign the Message.
+     */
+    void setDeliveryCount(int deliveryCount);
+
+    /**
      * Returns the current redelivery count of the Message as set in the underlying
      * message instance.
      *
      * @return the current redelivery count.
      */
-    int getRedeliveryCounter();
+    int getRedeliveryCount();
 
     /**
      * Used to update the message redelivery after a local redelivery of the Message
@@ -227,7 +243,7 @@ public interface JmsMessageFacade {
      * @param redeliveryCount
      *        the new redelivery count to assign the Message.
      */
-    void setRedeliveryCounter(int redeliveryCount);
+    void setRedeliveryCount(int redeliveryCount);
 
     /**
      * Used to quickly check if a message has been redelivered.

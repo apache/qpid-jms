@@ -16,7 +16,9 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import java.io.ByteArrayOutputStream;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -64,12 +66,13 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     protected static final Symbol JMS_NO_LOCAL_SYMBOL = Symbol.valueOf("no-local");
     protected static final Symbol JMS_SELECTOR_SYMBOL = Symbol.valueOf("jms-selector");
 
+    private static final int INITIAL_BUFFER_CAPACITY = 1024 * 128;
+
     protected final AmqpSession session;
     protected final Map<JmsInboundMessageDispatch, Delivery> delivered = new LinkedHashMap<JmsInboundMessageDispatch, Delivery>();
     protected boolean presettle;
 
-    private final ByteArrayOutputStream streamBuffer = new ByteArrayOutputStream();
-    private final byte incomingBuffer[] = new byte[1024 * 64];
+    private final ByteBuf incomingBuffer = Unpooled.buffer(INITIAL_BUFFER_CAPACITY);
 
     private final AtomicLong _incomingSequence = new AtomicLong(0);
 
@@ -418,22 +421,21 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
     // TODO - Find more efficient ways to produce the Message instance.
     protected Message decodeIncomingMessage(Delivery incoming) {
-        byte[] buffer;
         int count;
 
-        while ((count = endpoint.recv(incomingBuffer, 0, incomingBuffer.length)) > 0) {
-            streamBuffer.write(incomingBuffer, 0, count);
+        while ((count = endpoint.recv(incomingBuffer.array(), incomingBuffer.writerIndex(), incomingBuffer.writableBytes())) > 0) {
+            incomingBuffer.writerIndex(incomingBuffer.writerIndex() + count);
+            if (!incomingBuffer.isWritable()) {
+                incomingBuffer.capacity((int) (incomingBuffer.capacity() * 1.5));
+            }
         }
-
-        // TODO - This will copy, replace with something better later.  Pooled Netty Buffer ?
-        buffer = streamBuffer.toByteArray();
 
         try {
             Message protonMessage = Message.Factory.create();
-            protonMessage.decode(buffer, 0, buffer.length);
+            protonMessage.decode(incomingBuffer.array(), 0, incomingBuffer.readableBytes());
             return protonMessage;
         } finally {
-            streamBuffer.reset();
+            incomingBuffer.clear();
         }
     }
 

@@ -95,11 +95,10 @@ public class AmqpSerializedObjectDelegate implements AmqpObjectTypeDelegate {
                message.setBody(new Data(new Binary(bytes)));
             }
         }
-
-        // TODO: ensure content type is [still] set?
     }
 
     @Override
     public void onSend() {
+        this.message.setContentType(CONTENT_TYPE);
     }
 }

@@ -43,6 +43,7 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
      */
     public AmqpTypedObjectDelegate(Message message) {
         this.message = message;
+        this.message.setContentType(null);
     }
 
     @Override

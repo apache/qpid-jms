@@ -26,7 +26,7 @@ import org.apache.qpid.jms.provider.Provider;
 public class AmqpSslProviderFactory extends AmqpProviderFactory {
 
     @Override
-    public Provider createAsyncProvider(URI remoteURI) throws Exception {
+    public Provider createProvider(URI remoteURI) throws Exception {
         return new AmqpSslProvider(remoteURI);
     }
 }

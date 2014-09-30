@@ -31,7 +31,7 @@ import org.apache.qpid.jms.util.URISupport.CompositeData;
 public class FailoverProviderFactory extends ProviderFactory {
 
     @Override
-    public Provider createAsyncProvider(URI remoteURI) throws Exception {
+    public Provider createProvider(URI remoteURI) throws Exception {
         CompositeData composite = URISupport.parseComposite(remoteURI);
         Map<String, String> options = composite.getParameters();
         Map<String, String> nested = PropertyUtil.filterProperties(options, "nested.");

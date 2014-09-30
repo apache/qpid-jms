@@ -34,7 +34,7 @@ public class DiscoveryProviderFactory extends ProviderFactory {
     private static final String DISCOVERED_OPTION_PREFIX = "discovered.";
 
     @Override
-    public Provider createAsyncProvider(URI remoteURI) throws Exception {
+    public Provider createProvider(URI remoteURI) throws Exception {
 
         CompositeData composite = URISupport.parseComposite(remoteURI);
         Map<String, String> options = composite.getParameters();

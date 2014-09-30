@@ -45,10 +45,10 @@ public abstract class ProviderFactory {
      *
      * @throws Exception if an error occurs while creating the Provider instance.
      */
-    public abstract Provider createAsyncProvider(URI remoteURI) throws Exception;
+    public abstract Provider createProvider(URI remoteURI) throws Exception;
 
     /**
-     * @return the name of this JMS Provider, e.g. STOMP, AMQP, MQTT...etc
+     * @return the name of this JMS Provider.
      */
     public abstract String getName();
 
@@ -68,7 +68,7 @@ public abstract class ProviderFactory {
 
         try {
             ProviderFactory factory = findProviderFactory(remoteURI);
-            result = factory.createAsyncProvider(remoteURI);
+            result = factory.createProvider(remoteURI);
             result.connect();
         } catch (Exception ex) {
             LOG.error("Failed to create Provider instance for {}, due to: {}", remoteURI.getScheme(), ex);

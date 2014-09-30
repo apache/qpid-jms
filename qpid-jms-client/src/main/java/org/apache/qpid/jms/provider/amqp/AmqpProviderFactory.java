@@ -29,7 +29,7 @@ import org.apache.qpid.jms.util.PropertyUtil;
 public class AmqpProviderFactory extends ProviderFactory {
 
     @Override
-    public Provider createAsyncProvider(URI remoteURI) throws Exception {
+    public Provider createProvider(URI remoteURI) throws Exception {
 
         Map<String, String> map = PropertyUtil.parseQuery(remoteURI.getQuery());
         Map<String, String> providerOptions = PropertyUtil.filterProperties(map, "provider.");

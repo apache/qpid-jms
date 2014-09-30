@@ -47,6 +47,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
      */
     public AmqpJmsBytesMessageFacade(AmqpConnection connection) {
         super(connection);
+        setContentType(CONTENT_TYPE);
         setAnnotation(JMS_MSG_TYPE, JMS_BYTES_MESSAGE);
     }
 
@@ -67,20 +68,12 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
     public AmqpJmsBytesMessageFacade copy() {
         AmqpJmsBytesMessageFacade copy = new AmqpJmsBytesMessageFacade(connection);
         copyInto(copy);
-
-        copy.setContent(getContent().copy());
-
         return copy;
     }
 
     @Override
     public byte getJmsMsgType() {
         return JMS_BYTES_MESSAGE;
-    }
-
-    @Override
-    public String getContentType() {
-        return CONTENT_TYPE;
     }
 
     @Override

@@ -34,6 +34,7 @@ import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultBytesMessageFacade;
+import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
 import org.junit.Test;
 
 /**

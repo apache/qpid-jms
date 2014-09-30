@@ -14,18 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.message;
+package org.apache.qpid.jms.message.facade.defaults;
 
 import java.io.Serializable;
 
 import javax.jms.JMSException;
 
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultBytesMessageFacade;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMapMessageFacade;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFacade;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultObjectMessageFacade;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultStreamMessageFacade;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultTextMessageFacade;
+import org.apache.qpid.jms.message.JmsBytesMessage;
+import org.apache.qpid.jms.message.JmsMapMessage;
+import org.apache.qpid.jms.message.JmsMessage;
+import org.apache.qpid.jms.message.JmsMessageFactory;
+import org.apache.qpid.jms.message.JmsObjectMessage;
+import org.apache.qpid.jms.message.JmsStreamMessage;
+import org.apache.qpid.jms.message.JmsTextMessage;
 
 /**
  * Default implementation of the ProviderMessageFactory that create simple

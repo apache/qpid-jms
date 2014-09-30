@@ -31,11 +31,11 @@ import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
 import javax.jms.MessageNotWriteableException;
 
-import org.apache.qpid.jms.message.JmsDefaultMessageFactory;
 import org.apache.qpid.jms.message.JmsMapMessage;
 import org.apache.qpid.jms.message.JmsMessageFactory;
 import org.apache.qpid.jms.message.facade.JmsMapMessageFacade;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMapMessageFacade;
+import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
 import org.junit.Test;
 
 /**

@@ -36,10 +36,10 @@ import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 import javax.jms.ObjectMessage;
 
-import org.apache.qpid.jms.message.JmsDefaultMessageFactory;
 import org.apache.qpid.jms.message.JmsMessageFactory;
 import org.apache.qpid.jms.message.JmsObjectMessage;
 import org.apache.qpid.jms.message.facade.JmsObjectMessageFacade;
+import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultObjectMessageFacade;
 import org.junit.Test;
 import org.mockito.Mockito;

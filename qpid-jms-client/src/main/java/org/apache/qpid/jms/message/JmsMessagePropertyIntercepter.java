@@ -287,7 +287,7 @@ public class JmsMessagePropertyIntercepter {
 
             @Override
             public boolean propertyExists(JmsMessageFacade message) {
-                return true;
+                return message.getTimestamp() > 0;
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_CORRELATIONID, new PropertyIntercepter() {
@@ -327,7 +327,7 @@ public class JmsMessagePropertyIntercepter {
 
             @Override
             public boolean propertyExists(JmsMessageFacade message) {
-                return true;
+                return message.getExpiration() > 0;
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_REDELIVERED, new PropertyIntercepter() {
@@ -347,7 +347,7 @@ public class JmsMessagePropertyIntercepter {
 
             @Override
             public boolean propertyExists(JmsMessageFacade message) {
-                return true;
+                return message.isRedelivered();
             }
         });
         PROPERTY_INTERCEPTERS.put(JMSX_GROUPID, new PropertyIntercepter() {
@@ -387,7 +387,7 @@ public class JmsMessagePropertyIntercepter {
 
             @Override
             public boolean propertyExists(JmsMessageFacade message) {
-                return true;
+                return message.getGroupId() != null;
             }
         });
         PROPERTY_INTERCEPTERS.put(JMSX_USERID, new PropertyIntercepter() {

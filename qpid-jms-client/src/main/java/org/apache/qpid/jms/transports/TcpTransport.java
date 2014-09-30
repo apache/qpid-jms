@@ -109,16 +109,20 @@ public class TcpTransport implements Transport {
                         socket.closeHandler(new Handler<Void>() {
                             @Override
                             public void handle(Void event) {
-                                connected.set(false);
-                                listener.onTransportClosed();
+                                if (!closed.get()) {
+                                    connected.set(false);
+                                    listener.onTransportClosed();
+                                }
                             }
                         });
 
                         socket.exceptionHandler(new Handler<Throwable>() {
                             @Override
                             public void handle(Throwable event) {
-                                connected.set(false);
-                                listener.onTransportError(event);
+                                if (!closed.get()) {
+                                    connected.set(false);
+                                    listener.onTransportError(event);
+                                }
                             }
                         });
 

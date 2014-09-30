@@ -68,6 +68,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
     public AmqpJmsBytesMessageFacade copy() {
         AmqpJmsBytesMessageFacade copy = new AmqpJmsBytesMessageFacade(connection);
         copyInto(copy);
+        copy.setContent(getContent());
         return copy;
     }
 

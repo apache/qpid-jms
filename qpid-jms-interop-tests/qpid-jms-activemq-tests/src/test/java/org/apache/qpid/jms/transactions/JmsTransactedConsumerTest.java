@@ -168,10 +168,6 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Ignore // TODO: failing because the broker appears to be setting the AMQP
-    // delivery-count header too high after the first rollback. It
-    // arrives null initially (i.e, default 0), then jumps to 2 causing
-    // JMSXDeliveryCount to be 3 rather than 2.
     @Test(timeout=60000)
     public void testJMSXDeliveryCount() throws Exception {
         sendToAmqQueue(1);

@@ -57,12 +57,10 @@ public class ClassLoadingAwareObjectInputStream extends ObjectInputStream {
             try {
                 return Proxy.getProxyClass(inLoader, cinterfaces);
             } catch (IllegalArgumentException e1) {
-                // ignore
             }
             try {
                 return Proxy.getProxyClass(FALLBACK_CLASS_LOADER, cinterfaces);
             } catch (IllegalArgumentException e2) {
-                // ignore
             }
 
             throw new ClassNotFoundException(null, e);
@@ -88,7 +86,6 @@ public class ClassLoadingAwareObjectInputStream extends ObjectInputStream {
                 return answer;
             } catch (ClassNotFoundException e) {
                 LOG.trace("Class not found: {} using classloader: {}", className, cl);
-                // ignore
             }
         }
 
@@ -112,7 +109,6 @@ public class ClassLoadingAwareObjectInputStream extends ObjectInputStream {
             return Object[].class;
         } else if ("java.lang.String[]".equals(name) || "String[]".equals(name)) {
             return String[].class;
-            // and these is common as well
         } else if ("java.lang.String".equals(name) || "String".equals(name)) {
             return String.class;
         } else if ("java.lang.Boolean".equals(name) || "Boolean".equals(name)) {

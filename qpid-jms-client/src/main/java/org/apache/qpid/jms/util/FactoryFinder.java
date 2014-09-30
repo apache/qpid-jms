@@ -168,7 +168,6 @@ public class FactoryFinder<T extends Object> {
                 try {
                     clazz = loader.loadClass(className);
                 } catch (ClassNotFoundException e) {
-                    // ignore
                 }
             }
             if (clazz == null) {

@@ -84,9 +84,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
     private final IntegrationTestFixture _testFixture = new IntegrationTestFixture();
 
-    //TODO: use Message instead of TextMessage
     @Test(timeout = 2000)
-    public void testSendTextMessageWithApplicationProperties() throws Exception {
+    public void testSendMessageWithApplicationProperties() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             Connection connection = _testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
@@ -119,10 +118,11 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
             messageMatcher.setPropertiesMatcher(propsMatcher);
             messageMatcher.setApplicationPropertiesMatcher(appPropsMatcher);
-            messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(null));
+            //TODO: currently we aren't sending any body section, decide if this is allowed
+            //messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(null));
             testPeer.expectTransfer(messageMatcher);
 
-            Message message = session.createTextMessage();
+            Message message = session.createMessage();
             message.setStringProperty(NULL_STRING_PROP, NULL_STRING_PROP_VALUE);
             message.setStringProperty(STRING_PROP, STRING_PROP_VALUE);
             message.setBooleanProperty(BOOLEAN_PROP, BOOLEAN_PROP_VALUE);

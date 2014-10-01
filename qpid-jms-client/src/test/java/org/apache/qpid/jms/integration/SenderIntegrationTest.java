@@ -18,11 +18,12 @@
  */
 package org.apache.qpid.jms.integration;
 
+import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.isA;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -48,6 +49,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
+import org.hamcrest.Matcher;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -191,15 +193,19 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
             Queue queue = session.createQueue(queueName);
             MessageProducer producer = session.createProducer(queue);
 
-            // Add matcher to expect the creation time field of the properties section to be set to a value greater than
-            // or equal to 'now'
-            Date currentTime = Calendar.getInstance().getTime();
+            // Create matcher to expect the absolute-expiry-time field of the properties section to
+            // be set to a value greater than 'now'+ttl, within a delta.
+            long currentTime = System.currentTimeMillis();
+            Date creationLower = new Date(currentTime);
+            Date creationUpper = new Date(currentTime + 3000);
+            Matcher<Date> inRange = both(greaterThanOrEqualTo(creationLower)).and(lessThanOrEqualTo(creationUpper));
+
             String text = "myMessage";
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true)
                     .withDurable(equalTo(true));
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
             MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true)
-                    .withCreationTime(greaterThanOrEqualTo(currentTime));
+                    .withCreationTime(inRange);
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
             messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
@@ -229,7 +235,13 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
 
             long currentTime = System.currentTimeMillis();
             long ttl = 100_000;
-            Date expiration = new Date(currentTime + ttl);
+
+            Date expirationLower = new Date(currentTime + ttl);
+            Date expirationUpper = new Date(currentTime + ttl + 3000);
+
+            // Create matcher to expect the absolute-expiry-time field of the properties section to
+            // be set to a value greater than 'now'+ttl, within a delta.
+            Matcher<Date> inRange = both(greaterThanOrEqualTo(expirationLower)).and(lessThanOrEqualTo(expirationUpper));
 
             String text = "myMessage";
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
@@ -237,7 +249,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
             headersMatcher.withTtl(equalTo(UnsignedInteger.valueOf(ttl)));
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
             MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true)
-                    .withAbsoluteExpiryTime(greaterThanOrEqualTo(expiration));
+                    .withAbsoluteExpiryTime(inRange);
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
             messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);

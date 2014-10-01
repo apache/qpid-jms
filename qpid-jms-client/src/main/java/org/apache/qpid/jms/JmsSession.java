@@ -670,6 +670,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
             copy.onSend();
             JmsOutboundMessageDispatch envelope = new JmsOutboundMessageDispatch();
+            envelope.setTtl(timeToLive);
             envelope.setMessage(copy);
             envelope.setProducerId(producer.getProducerId());
             envelope.setDestination(destination);

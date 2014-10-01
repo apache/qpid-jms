@@ -29,6 +29,7 @@ public class JmsOutboundMessageDispatch {
     private JmsDestination destination;
     private boolean sendAsync;
     private String dispatchId;
+    private long ttl;
 
     public JmsDestination getDestination() {
         return destination;
@@ -64,6 +65,19 @@ public class JmsOutboundMessageDispatch {
 
     public void setDispatchId(String dispatchId) {
         this.dispatchId = dispatchId;
+    }
+
+    /**
+     * The ttl value used during the send operation.
+     *
+     * @param ttl value in ms, which may be 0 if none was used
+     */
+    public void setTtl(long ttl) {
+        this.ttl = ttl;
+    }
+
+    public long getTtl() {
+        return ttl;
     }
 
     @Override

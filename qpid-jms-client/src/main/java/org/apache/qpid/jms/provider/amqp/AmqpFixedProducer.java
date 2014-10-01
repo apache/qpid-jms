@@ -35,6 +35,7 @@ import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageFacade;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
+import org.apache.qpid.proton.amqp.messaging.Header;
 import org.apache.qpid.proton.amqp.messaging.Outcome;
 import org.apache.qpid.proton.amqp.messaging.Rejected;
 import org.apache.qpid.proton.amqp.messaging.Source;
@@ -57,6 +58,7 @@ import org.slf4j.LoggerFactory;
 public class AmqpFixedProducer extends AmqpProducer {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpFixedProducer.class);
+    private static final long UINT_MAX = 0xFFFFFFFFL;
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[] {};
 
     private final AmqpTransferTagGenerator tagGenerator = new AmqpTransferTagGenerator(true);
@@ -125,8 +127,28 @@ public class AmqpFixedProducer extends AmqpProducer {
         JmsMessage message = envelope.getMessage();
         message.setReadOnlyBody(true);
 
-        AmqpJmsMessageFacade amqpMessage = (AmqpJmsMessageFacade) facade;
-        encodeAndSend(amqpMessage.getAmqpMessage(), delivery);
+        AmqpJmsMessageFacade amqpMessageFacade = (AmqpJmsMessageFacade) facade;
+        Message amqpMessage = amqpMessageFacade.getAmqpMessage();
+
+        // Set the ttl field of the Header field if needed, complementing the expiration
+        // field of Properties for any peers that only inspect the mutable ttl field.
+        long ttl = 0;
+        if (amqpMessageFacade.hasUserSpecifiedTimeToLive()) {
+            ttl = amqpMessageFacade.getAmqpTimeToLive();
+        } else {
+            ttl = envelope.getTtl();
+        }
+
+        if (ttl > 0 && ttl < UINT_MAX) {
+            amqpMessage.setTtl(ttl);
+        } else {
+            Header hdr = amqpMessage.getHeader();
+            if (hdr != null) {
+                hdr.setTtl(null);
+            }
+        }
+
+        encodeAndSend(amqpMessageFacade.getAmqpMessage(), delivery);
 
         if (presettle) {
             delivery.settle();

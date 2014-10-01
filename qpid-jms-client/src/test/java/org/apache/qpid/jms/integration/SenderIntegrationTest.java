@@ -215,8 +215,6 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Ignore
-    // TODO: currently failing as we arent setting the ttl field of header until later in the JMS converter layer, so the value doesnt match expectation
     @Test(timeout = 10000)
     public void testSendingMessageSetsJMSExpirationRelatedAbsoluteExpiryAndTtlFields() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {

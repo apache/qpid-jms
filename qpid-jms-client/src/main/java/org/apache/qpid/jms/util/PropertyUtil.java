@@ -178,17 +178,15 @@ public class PropertyUtil {
     public static Map<String, String> parseQuery(String uri) throws Exception {
         if (uri != null) {
             Map<String, String> rc = new HashMap<String, String>();
-            if (uri != null) {
-                String[] parameters = uri.split("&");
-                for (int i = 0; i < parameters.length; i++) {
-                    int p = parameters[i].indexOf("=");
-                    if (p >= 0) {
-                        String name = URLDecoder.decode(parameters[i].substring(0, p), "UTF-8");
-                        String value = URLDecoder.decode(parameters[i].substring(p + 1), "UTF-8");
-                        rc.put(name, value);
-                    } else {
-                        rc.put(parameters[i], null);
-                    }
+            String[] parameters = uri.split("&");
+            for (int i = 0; i < parameters.length; i++) {
+                int p = parameters[i].indexOf("=");
+                if (p >= 0) {
+                    String name = URLDecoder.decode(parameters[i].substring(0, p), "UTF-8");
+                    String value = URLDecoder.decode(parameters[i].substring(p + 1), "UTF-8");
+                    rc.put(name, value);
+                } else {
+                    rc.put(parameters[i], null);
                 }
             }
             return rc;

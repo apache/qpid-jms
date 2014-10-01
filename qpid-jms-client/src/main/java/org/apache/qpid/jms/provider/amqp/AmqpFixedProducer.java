@@ -286,7 +286,7 @@ public class AmqpFixedProducer extends AmqpProducer {
         return "AmqpFixedProducer { " + getProducerId() + " }";
     }
 
-    private class PendingSend {
+    private static class PendingSend {
 
         public JmsOutboundMessageDispatch envelope;
         public AsyncResult request;

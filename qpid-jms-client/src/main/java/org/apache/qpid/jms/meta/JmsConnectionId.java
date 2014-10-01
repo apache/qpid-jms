@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.meta;
 
-public class JmsConnectionId extends JmsAbstractResourceId implements Comparable<JmsConnectionId> {
+public final class JmsConnectionId extends JmsAbstractResourceId implements Comparable<JmsConnectionId> {
 
     private final String value;
 

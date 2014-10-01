@@ -37,6 +37,14 @@ public final class TypeConversionSupport {
 
         @Override
         public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+
+            if (o == null || o.getClass() != this.getClass()) {
+                return false;
+            }
+
             ConversionKey x = (ConversionKey) o;
             return x.from == from && x.to == to;
         }

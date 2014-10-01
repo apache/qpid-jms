@@ -281,7 +281,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         return connectionIdGenerator;
     }
 
-    protected void setConnectionIdGenerator(IdGenerator connectionIdGenerator) {
+    protected synchronized void setConnectionIdGenerator(IdGenerator connectionIdGenerator) {
         this.connectionIdGenerator = connectionIdGenerator;
     }
 
@@ -541,7 +541,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         this.prefetchPolicy = prefetchPolicy;
     }
 
-    public String getClientIDPrefix() {
+    public synchronized String getClientIDPrefix() {
         return clientIDPrefix;
     }
 
@@ -551,7 +551,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      *
      * @param clientIDPrefix
      */
-    public void setClientIDPrefix(String clientIDPrefix) {
+    public synchronized void setClientIDPrefix(String clientIDPrefix) {
         this.clientIDPrefix = clientIDPrefix;
     }
 
@@ -566,7 +566,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         return clientIdGenerator;
     }
 
-    protected void setClientIdGenerator(IdGenerator clientIdGenerator) {
+    protected synchronized void setClientIdGenerator(IdGenerator clientIdGenerator) {
         this.clientIdGenerator = clientIdGenerator;
     }
 
@@ -576,7 +576,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      * @param connectionIDPrefix
      *        The string prefix used on all connection Id's created by this factory.
      */
-    public void setConnectionIDPrefix(String connectionIDPrefix) {
+    public synchronized void setConnectionIDPrefix(String connectionIDPrefix) {
         this.connectionIDPrefix = connectionIDPrefix;
     }
 

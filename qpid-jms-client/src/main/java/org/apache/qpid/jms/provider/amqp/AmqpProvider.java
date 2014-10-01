@@ -189,9 +189,7 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
                     }
                 }
 
-                if (serializer != null) {
-                    serializer.shutdown();
-                }
+                serializer.shutdown();
             }
         }
     }

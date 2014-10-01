@@ -503,11 +503,20 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
     /**
      * Tests that receiving a message with a ulong typed message-id results in returning the
-     * expected value for JMSMessageId where the JMS "ID:" prefix has been added to the UUID.tostring()
+     * expected value for JMSMessageId where the JMS "ID:" prefix has been added to the UnsignedLong.tostring()
      */
     @Test(timeout = 2000)
-    public void testReceivedMessageWithLongMessageIdReturnsExpectedJMSMessageID() throws Exception {
+    public void testReceivedMessageWithUnsignedLongMessageIdReturnsExpectedJMSMessageID() throws Exception {
         receivedMessageWithMessageIdTestImpl(UnsignedLong.valueOf(123456789L));
+    }
+
+    /**
+     * Tests that receiving a message with a binary typed message-id results in returning the
+     * expected value for JMSMessageId where the JMS "ID:" prefix has been added to the hex representation of the binary.
+     */
+    @Test(timeout = 2000)
+    public void testReceivedMessageWithBinaryMessageIdReturnsExpectedJMSMessageID() throws Exception {
+        receivedMessageWithMessageIdTestImpl(new Binary(new byte[]{(byte)0x02, (byte)0x20, (byte) 0xAE, (byte) 0x00}));
     }
 
     private void receivedMessageWithMessageIdTestImpl(Object underlyingAmqpMessageId) throws Exception {

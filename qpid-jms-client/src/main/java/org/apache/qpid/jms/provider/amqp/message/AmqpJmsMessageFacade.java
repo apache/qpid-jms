@@ -116,7 +116,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             applicationPropertiesMap = message.getApplicationProperties().getValue();
         }
 
-        Long ttl = message.getTtl();
+        Long ttl = getTtl();
         Long absoluteExpiryTime = getAbsoluteExpiryTime();
         if (absoluteExpiryTime == null && ttl != null) {
             syntheticExpiration = System.currentTimeMillis() + ttl;
@@ -801,6 +801,18 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             Date date = message.getProperties().getAbsoluteExpiryTime();
             if (date != null) {
                 result = date.getTime();
+            }
+        }
+
+        return result;
+    }
+
+    private Long getTtl() {
+        Long result = null;
+        if (message.getHeader() != null) {
+            UnsignedInteger ttl = message.getHeader().getTtl();
+            if (ttl != null) {
+                result = ttl.longValue();
             }
         }
 

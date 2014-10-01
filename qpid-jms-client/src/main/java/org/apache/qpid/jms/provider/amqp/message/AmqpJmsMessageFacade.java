@@ -70,7 +70,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     private JmsDestination destination;
     private JmsDestination consumerDestination;
 
-    private Long syntheticTTL;
+    private Long syntheticExpiration;
 
     /**
      * Used to record the value of JMS_AMQP_TTL property
@@ -119,7 +119,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         Long ttl = message.getTtl();
         Long absoluteExpiryTime = getAbsoluteExpiryTime();
         if (absoluteExpiryTime == null && ttl != null) {
-            syntheticTTL = System.currentTimeMillis() + ttl;
+            syntheticExpiration = System.currentTimeMillis() + ttl;
         }
     }
 
@@ -249,11 +249,21 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         if (consumerDestination != null) {
             target.consumerDestination = consumerDestination;
         }
+
         if (destination != null) {
             target.setDestination(destination);
         }
+
         if (replyTo != null) {
             target.setReplyTo(replyTo);
+        }
+
+        if (syntheticExpiration != null) {
+            target.syntheticExpiration = syntheticExpiration;
+        }
+
+        if (userSpecifiedTTL != null) {
+            target.userSpecifiedTTL = userSpecifiedTTL;
         }
 
         Message targetMsg = target.getAmqpMessage();
@@ -549,8 +559,8 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             return absoluteExpiry;
         }
 
-        if (syntheticTTL != null) {
-            return syntheticTTL;
+        if (syntheticExpiration != null) {
+            return syntheticExpiration;
         }
 
         return 0;
@@ -558,7 +568,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public void setExpiration(long expiration) {
-        syntheticTTL = null;
+        syntheticExpiration = null;
 
         if (expiration != 0) {
             setAbsoluteExpiryTime(expiration);

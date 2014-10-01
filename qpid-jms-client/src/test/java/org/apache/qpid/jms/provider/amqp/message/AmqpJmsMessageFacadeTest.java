@@ -507,4 +507,18 @@ public class AmqpJmsMessageFacadeTest {
         assertEquals("APP-Prop-1-Value", copy.getProperty("APP-Prop-1"));
         assertEquals("APP-Prop-2-Value", copy.getProperty("APP-Prop-2"));
     }
+
+    @Test
+    public void testCopyMessageWithAmqpTtlSet() throws JMSException {
+        AmqpJmsMessageFacade source = createNewMessageFacade();
+
+        long amqpTtl = 17L;
+        source.setAmqpTimeToLive(amqpTtl);
+
+        AmqpJmsMessageFacade copy = source.copy();
+
+        // There should be one since AmqpTtl is used for an extended option
+        assertEquals(1, copy.getPropertyNames().size());
+        assertEquals(amqpTtl, copy.getProperty(AmqpMessageSupport.JMS_AMQP_TTL));
+    }
 }

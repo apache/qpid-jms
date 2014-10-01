@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.jms.JMSException;
+import javax.jms.MessageFormatException;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsQueue;
@@ -76,8 +77,27 @@ public class AmqpJmsMessageFacadeTest {
         return Mockito.mock(AmqpConnection.class);
     }
 
+    // ====== AMQP Header Section =======
+    // ==================================
+
+    // --- ttl field  ---
+
+    @Test(expected = MessageFormatException.class)
+    public void testSetAmqpTimeToLiveRejectsNegatives() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setAmqpTimeToLive(-1L);
+    }
+
+    @Test(expected = MessageFormatException.class)
+    public void testSetAmqpTimeToLiveRejectsValuesFromTwoToThirtyTwo() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        // check values over 2^32 - 1 are rejected
+        amqpMessageFacade.setAmqpTimeToLive(0X100000000L);
+    }
 
     // ====== AMQP Properties Section =======
+    // ======================================
 
     // --- message-id and correlation-id ---
 
@@ -424,8 +444,8 @@ public class AmqpJmsMessageFacadeTest {
         assertEquals("Expected creation-time field to be set on new Properties section", new Date(expected), amqpMessageFacade.getAmqpMessage().getProperties().getCreationTime());
     }
 
-
     // ====== AMQP Message Facade copy() tests =======
+    // ===============================================
 
     @Test
     public void testCopyOfEmptyMessageSucceeds() throws JMSException {

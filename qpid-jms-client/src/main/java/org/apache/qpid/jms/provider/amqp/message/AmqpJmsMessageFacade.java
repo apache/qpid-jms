@@ -567,13 +567,8 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         }
     }
 
-    public void setAmqpTimeToLive(Object value) throws MessageFormatException {
-        Long ttl = null;
-        if (value instanceof Long) {
-            ttl = (Long) value;
-        }
-
-        if (ttl != null && ttl >= 0 && ttl <= MAX_UINT) {
+    public void setAmqpTimeToLive(long ttl) throws MessageFormatException {
+        if (ttl >= 0 && ttl <= MAX_UINT) {
             userSpecifiedTTL = ttl;
         } else {
             throw new MessageFormatException(JMS_AMQP_TTL + " must be a long with value in range 0 to 2^32 - 1");

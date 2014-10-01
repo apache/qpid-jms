@@ -36,8 +36,6 @@ import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 import javax.jms.ObjectMessage;
 
-import org.apache.qpid.jms.message.JmsMessageFactory;
-import org.apache.qpid.jms.message.JmsObjectMessage;
 import org.apache.qpid.jms.message.facade.JmsObjectMessageFacade;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultObjectMessageFacade;
@@ -61,7 +59,7 @@ public class JmsObjectMessageTest {
         JmsObjectMessageFacade facade = new JmsDefaultObjectMessageFacade();
         facade.setObject(content);
         JmsObjectMessage objectMessage = new JmsObjectMessage(facade);
-        objectMessage.onSend();
+        objectMessage.onDispatch();
 
         try {
             objectMessage.setObject("newObject");
@@ -81,7 +79,7 @@ public class JmsObjectMessageTest {
         JmsObjectMessageFacade facade = new JmsDefaultObjectMessageFacade();
         facade.setObject(content);
         JmsObjectMessage objectMessage = new JmsObjectMessage(facade);
-        objectMessage.onSend();
+        objectMessage.onDispatch();
 
         assertTrue("Message should not be writable", objectMessage.isReadOnlyBody());
         objectMessage.clearBody();
@@ -98,7 +96,7 @@ public class JmsObjectMessageTest {
         JmsDefaultObjectMessageFacade facade = new JmsDefaultObjectMessageFacade();
         facade.setObject(content);
         JmsObjectMessage objectMessage = new JmsObjectMessage(facade);
-        objectMessage.onSend();
+        objectMessage.onDispatch();
 
         assertNotNull("Expected body section but none was present", facade.getSerializedObject());
         objectMessage.clearBody();
@@ -123,7 +121,7 @@ public class JmsObjectMessageTest {
         JmsDefaultObjectMessageFacade facade = new JmsDefaultObjectMessageFacade();
         facade.setObject((Serializable) origMap);
         JmsObjectMessage objectMessage = new JmsObjectMessage(facade);
-        objectMessage.onSend();
+        objectMessage.onDispatch();
 
         // verify we get a different-but-equal object back
         Serializable serialized = objectMessage.getObject();

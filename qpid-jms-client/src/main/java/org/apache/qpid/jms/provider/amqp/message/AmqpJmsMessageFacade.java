@@ -57,7 +57,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     private static final int DEFAULT_PRIORITY = javax.jms.Message.DEFAULT_PRIORITY;
     private static final Charset UTF8 = Charset.forName("UTF-8");
-    private static final long MAX_UINT = 0xFFFFFFFFL;
+    private static final long UINT_MAX = 0xFFFFFFFFL;
 
     protected final Message message;
     protected final AmqpConnection connection;
@@ -210,21 +210,41 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public void onSend() throws JMSException {
-        // TODO - Why is this here ?? Seems to be circular reading and reseting
-        String contentType = getContentType();
-        if (contentType != null) {
-            message.setContentType(contentType);
+    public void onSend(boolean disableMsgId, boolean disableTimestamp, long producerTtl) throws JMSException {
+
+        // Set the ttl field of the Header field if needed, complementing the expiration
+        // field of Properties for any peers that only inspect the mutable ttl field.
+        long ttl = 0;
+        if (hasUserSpecifiedTimeToLive()) {
+            ttl = getAmqpTimeToLive();
+        } else {
+            ttl = producerTtl;
         }
 
-        byte jmsMsgType = getJmsMsgType();
-        setAnnotation(JMS_MSG_TYPE, jmsMsgType);
+        if (ttl > 0 && ttl < UINT_MAX) {
+            message.setTtl(ttl);
+        } else {
+            Header hdr = message.getHeader();
+            if (hdr != null) {
+                hdr.setTtl(null);
+            }
+        }
+
+        if (disableMsgId) {
+            // TODO - ActiveMQ will synthesize a message Id, but I don't think it has been
+            //        really well tested, so we should investigate before enabling this.
+            // setMessageId(null);
+        }
+
+        if (disableTimestamp) {
+            setTimestamp(0);
+        }
+
+        setAnnotation(JMS_MSG_TYPE, getJmsMsgType());
     }
 
     @Override
     public void onDispatch() throws JMSException {
-        // TODO - Sort out send vs dispatch processing.
-        onSend();
     }
 
     @Override
@@ -578,7 +598,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     public void setAmqpTimeToLive(long ttl) throws MessageFormatException {
-        if (ttl >= 0 && ttl <= MAX_UINT) {
+        if (ttl >= 0 && ttl <= UINT_MAX) {
             userSpecifiedTTL = ttl;
         } else {
             throw new MessageFormatException(JMS_AMQP_TTL + " must be a long with value in range 0 to 2^32 - 1");

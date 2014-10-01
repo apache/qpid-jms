@@ -31,8 +31,6 @@ import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
 import javax.jms.MessageNotWriteableException;
 
-import org.apache.qpid.jms.message.JmsMapMessage;
-import org.apache.qpid.jms.message.JmsMessageFactory;
 import org.apache.qpid.jms.message.facade.JmsMapMessageFacade;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMapMessageFacade;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
@@ -114,7 +112,7 @@ public class JmsMapMessageTest {
         String myKey1 = "key1";
         facade.put(myKey1, "value1");
         JmsMapMessage mapMessage = new JmsMapMessage(facade);
-        mapMessage.onSend();
+        mapMessage.onDispatch();
 
         try {
             mapMessage.setObject("name", "value");
@@ -134,7 +132,7 @@ public class JmsMapMessageTest {
         facade.put(myKey1, "value1");
 
         JmsMapMessage mapMessage = new JmsMapMessage(facade);
-        mapMessage.onSend();
+        mapMessage.onDispatch();
 
         assertTrue("expected message to be read-only", mapMessage.isReadOnlyBody());
         mapMessage.clearBody();

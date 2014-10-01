@@ -113,9 +113,9 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
     }
 
     @Override
-    public void onSend() throws JMSException {
+    public void onSend(boolean disableMsgId, boolean disableTimestamp, long producerTtl) throws JMSException {
         this.storeContent();
-        super.onSend();
+        super.onSend(disableMsgId, disableTimestamp, producerTtl);
     }
 
     /**

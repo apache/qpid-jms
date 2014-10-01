@@ -122,7 +122,7 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public void onSend() throws JMSException {
+    public void onSend(boolean disableMessageId, boolean disableTimestamp, long producerTtl) throws JMSException {
     }
 
     @Override

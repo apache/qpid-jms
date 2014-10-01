@@ -633,11 +633,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             original.setJMSPriority(priority);
             original.setJMSRedelivered(false);
 
-            long timeStamp = 0;
+            long timeStamp = System.currentTimeMillis();
             boolean hasTTL = timeToLive > 0;
-            if (!disableTimestamp || hasTTL) {
-                timeStamp = System.currentTimeMillis();
-            }
 
             if (!disableTimestamp) {
                 original.setJMSTimestamp(timeStamp);
@@ -647,13 +644,14 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
             if (hasTTL) {
                 original.setJMSExpiration(timeStamp + timeToLive);
+            } else {
+                original.setJMSExpiration(0);
             }
 
-            String msgId = null;
+            String msgId = getNextMessageId(producer);;
             if (!disableMsgId) {
-                msgId = getNextMessageId(producer);
+                original.setJMSMessageID(msgId);
             }
-            original.setJMSMessageID(msgId);
 
             boolean isJmsMessageType = original instanceof JmsMessage;
             if (isJmsMessageType) {
@@ -669,12 +667,16 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
                 copy.setJMSDestination(destination);
             }
 
+            // We always set these on the copy, broker might require them even if client
+            // has asked to not include them.
+            copy.setJMSMessageID(msgId);
+            copy.setJMSTimestamp(timeStamp);
+
             boolean sync = connection.isAlwaysSyncSend() ||
                            (!connection.isForceAsyncSend() && deliveryMode == DeliveryMode.PERSISTENT && !getTransacted());
 
-            copy.onSend();
+            copy.onSend(disableMsgId, disableTimestamp, timeToLive);
             JmsOutboundMessageDispatch envelope = new JmsOutboundMessageDispatch();
-            envelope.setTtl(timeToLive);
             envelope.setMessage(copy);
             envelope.setProducerId(producer.getProducerId());
             envelope.setDestination(destination);

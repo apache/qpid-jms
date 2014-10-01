@@ -119,7 +119,8 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
     }
 
     @Override
-    public void onSend() {
+    public void onSend(boolean disableMsgId, boolean disableTimestamp, long producerTtl) throws JMSException {
+        super.onSend(disableMsgId, disableTimestamp, producerTtl);
         delegate.onSend();
     }
 

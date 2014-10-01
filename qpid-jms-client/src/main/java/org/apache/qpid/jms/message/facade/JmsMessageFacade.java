@@ -81,9 +81,20 @@ public interface JmsMessageFacade {
      * contents from a logical data structure to a binary form for transmission, or
      * other processing such as setting proper message headers etc.
      *
+     * The method allows for passing through producer configuration details not
+     * explicitly mapped into the JMS Message allowing the facade to create the
+     * most correct and compact message on the wire.
+     *
+     * @param disableMessageId
+     *        a hint that the user requested not to send the MessageID if possible.
+     * @param disableTimestamp
+     *        a hint that the user requested not to send the time stamp if possible.
+     * @param producerTtl
+     *        the time to live value configured on the producer when sent.
+     *
      * @throws JMSException if an error occurs while preparing the message for send.
      */
-    void onSend() throws JMSException;
+    void onSend(boolean disableMessageId, boolean disableTimestamp, long producerTtl) throws JMSException;
 
     /**
      * Called before a message is dispatched to its intended consumer to allow for

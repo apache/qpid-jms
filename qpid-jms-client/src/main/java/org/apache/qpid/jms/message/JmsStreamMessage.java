@@ -47,8 +47,8 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     }
 
     @Override
-    public void onSend() throws JMSException {
-        super.onSend();
+    public void onSend(boolean disableMessageId, boolean disableTimestamp, long producerTtl) throws JMSException {
+        super.onSend(disableMessageId, disableTimestamp, producerTtl);
         reset();
     }
 

@@ -72,7 +72,7 @@ public class JmsBytesMessageTest {
     @Test
     public void testReadBytesUsingReceivedMessageWithNoBodyReturnsEOS() throws Exception {
         JmsBytesMessage bytesMessage = factory.createBytesMessage();
-        bytesMessage.onSend();
+        bytesMessage.onDispatch();
         //verify attempting to read bytes returns -1, i.e EOS
         assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, bytesMessage.readBytes(new byte[1]));
     }
@@ -84,7 +84,7 @@ public class JmsBytesMessageTest {
         facade.setContent(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
-        bytesMessage.onSend();
+        bytesMessage.onDispatch();
 
         // retrieve the expected bytes, check they match
         byte[] receivedBytes = new byte[content.array().length];
@@ -109,7 +109,7 @@ public class JmsBytesMessageTest {
         facade.setContent(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
-        bytesMessage.onSend();
+        bytesMessage.onDispatch();
         bytesMessage.writeBytes(content.array());
     }
 
@@ -135,7 +135,7 @@ public class JmsBytesMessageTest {
         facade.setContent(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
-        bytesMessage.onSend();
+        bytesMessage.onDispatch();
         assertTrue("Message should not be writable", bytesMessage.isReadOnlyBody());
         bytesMessage.clearBody();
         assertFalse("Message should be writable", bytesMessage.isReadOnlyBody());
@@ -152,7 +152,7 @@ public class JmsBytesMessageTest {
         facade.setContent(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
-        bytesMessage.onSend();
+        bytesMessage.onDispatch();
 
         assertNotNull("Expected message content but none was present", facade.getContent());
         bytesMessage.clearBody();
@@ -170,7 +170,7 @@ public class JmsBytesMessageTest {
         facade.setContent(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
-        bytesMessage.onSend();
+        bytesMessage.onDispatch();
         assertEquals("Unexpected message length", content.array().length, bytesMessage.getBodyLength());
         bytesMessage.clearBody();
 
@@ -193,7 +193,7 @@ public class JmsBytesMessageTest {
         facade.setContent(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
-        bytesMessage.onSend();
+        bytesMessage.onDispatch();
 
         // retrieve a few bytes, check they match the first few expected bytes
         byte[] partialBytes = new byte[3];

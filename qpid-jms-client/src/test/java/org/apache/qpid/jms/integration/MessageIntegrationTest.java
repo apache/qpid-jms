@@ -26,8 +26,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.UUID;
 
@@ -198,7 +196,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         }
     }
 
-    @Ignore//TODO: currently fails due to NPE during delivery processing due to lack of message id
     @Test(timeout = 2000)
     public void testReceiveMessageWithoutMessageId() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
@@ -499,7 +496,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that receiving a message with a UUID typed message-id results in returning the
      * expected value for JMSMessageId where the JMS "ID:" prefix has been added to the UUID.tostring()
      */
-    @Ignore//TODO: failing because handling of non-String messageid values is not yet implemented
     @Test(timeout = 2000)
     public void testReceivedMessageWithUUIDMessageIdReturnsExpectedJMSMessageID() throws Exception {
         receivedMessageWithMessageIdTestImpl(UUID.randomUUID());
@@ -509,13 +505,12 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that receiving a message with a ulong typed message-id results in returning the
      * expected value for JMSMessageId where the JMS "ID:" prefix has been added to the UUID.tostring()
      */
-    @Ignore//TODO: failing because handling of non-String messageid values is not yet implemented
     @Test(timeout = 2000)
     public void testReceivedMessageWithLongMessageIdReturnsExpectedJMSMessageID() throws Exception {
-        receivedMessageWithMessageIdTestImpl(BigInteger.valueOf(123456789L));
+        receivedMessageWithMessageIdTestImpl(UnsignedLong.valueOf(123456789L));
     }
 
-    private void receivedMessageWithMessageIdTestImpl(Object messageIdForAmqpMessageClass) throws Exception {
+    private void receivedMessageWithMessageIdTestImpl(Object underlyingAmqpMessageId) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             Connection connection = _testFixture.establishConnecton(testPeer);
             connection.start();
@@ -524,8 +519,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
-
-            Object underlyingAmqpMessageId = classifyUnderlyingIdType(messageIdForAmqpMessageClass);
 
             PropertiesDescribedType props = new PropertiesDescribedType();
             props.setMessageId(underlyingAmqpMessageId);
@@ -541,7 +534,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             assertNotNull(receivedMessage);
 
-            String expectedBaseIdString = new AmqpMessageIdHelper().toBaseMessageIdString(messageIdForAmqpMessageClass);
+            String expectedBaseIdString = new AmqpMessageIdHelper().toBaseMessageIdString(underlyingAmqpMessageId);
 
             assertEquals("ID:" + expectedBaseIdString, receivedMessage.getJMSMessageID());
         }
@@ -552,7 +545,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * expected value for JMSCorrelationID where the JMS "ID:" prefix has been added.
      */
     @Test(timeout = 2000)
-    @Ignore//TODO: failing because adding of the 'ID:' prefix to correlation-id values is not yet implemented
     public void testReceivedMessageWithStringCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception {
         receivedMessageWithCorrelationIdTestImpl("myTestCorrelationIdString", false);
     }
@@ -562,8 +554,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * application-specific value, results in returning the expected value for JMSCorrelationID
      * where the JMS "ID:" prefix has NOT been added.
      */
-    @Ignore//TODO: failing because the transformer code tries to set an illegal JMS property based on the 'x-opt-app-correlation-id' message annotation
-           //TODO: would probably fail anyway because explicit handling based on that annotation is not implemented yet
     @Test(timeout = 2000)
     public void testReceivedMessageWithAppSpecificStringCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception {
         receivedMessageWithCorrelationIdTestImpl("myTestCorrelationIdString", true);
@@ -573,7 +563,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that receiving a message with a UUID typed correlation-id results in returning the
      * expected value for JMSCorrelationID where the JMS "ID:" prefix has been added to the UUID.tostring()
      */
-    @Ignore//TODO: failing because handling of non-String correlation-id values is not yet implemented
     @Test(timeout = 2000)
     public void testReceivedMessageWithUUIDCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception {
         receivedMessageWithCorrelationIdTestImpl(UUID.randomUUID(), false);
@@ -583,10 +572,9 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that receiving a message with a UUID typed correlation-id results in returning the
      * expected value for JMSCorrelationID where the JMS "ID:" prefix has been added to the UUID.tostring()
      */
-    @Ignore//TODO: failing because handling of non-String correlation-id values is not yet implemented
     @Test(timeout = 2000)
     public void testReceivedMessageWithLongCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception {
-        receivedMessageWithCorrelationIdTestImpl(BigInteger.valueOf(123456789L), false);
+        receivedMessageWithCorrelationIdTestImpl(UnsignedLong.valueOf(123456789L), false);
     }
 
     private void receivedMessageWithCorrelationIdTestImpl(Object correlationIdForAmqpMessageClass, boolean appSpecific) throws Exception {
@@ -599,14 +587,12 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            Object underlyingAmqpCorrelationId = classifyUnderlyingIdType(correlationIdForAmqpMessageClass);
-
             PropertiesDescribedType props = new PropertiesDescribedType();
             DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
             MessageAnnotationsDescribedType ann = null;
 
             props.setMessageId("myMessageIdString");
-            props.setCorrelationId(underlyingAmqpCorrelationId);
+            props.setCorrelationId(correlationIdForAmqpMessageClass);
             if (appSpecific) {
                 ann = new MessageAnnotationsDescribedType();
                 ann.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID, true);
@@ -638,7 +624,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * no presence of the message annotation to indicate an app-specific correlation-id.
      */
     @Test(timeout = 2000)
-    @Ignore//TODO: failing because handling of non-String correlation-id values is not yet implemented
     public void testSentMessageWithUUIDCorrelationId() throws Exception {
         UUID uuid = UUID.randomUUID();
         String stringCorrelationId = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_UUID_PREFIX +  uuid.toString();
@@ -652,10 +637,9 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * no presence of the message annotation to indicate an app-specific correlation-id.
      */
     @Test(timeout = 2000)
-    @Ignore//TODO: failing because handling of non-String correlation-id values is not yet implemented
     public void testSentMessageWithBinaryCorrelationId() throws Exception
     {
-        ByteBuffer bin = ByteBuffer.wrap(new byte[]{(byte)0x01, (byte)0x23, (byte) 0xAF, (byte) 0x00});
+        Binary bin = new Binary(new byte[]{(byte)0x01, (byte)0x23, (byte) 0xAF, (byte) 0x00});
         String stringCorrelationId = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_BINARY_PREFIX +  "0123af00";
         sentMessageWithCorrelationIdTestImpl(stringCorrelationId, bin, false);
     }
@@ -667,9 +651,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * no presence of the message annotation to indicate an app-specific correlation-id.
      */
     @Test(timeout = 2000)
-    @Ignore//TODO: failing because handling of non-String correlation-id values is not yet implemented
     public void testSentMessageWithUlongCorrelationId() throws Exception {
-        BigInteger ulong = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.TEN);
+        UnsignedLong ulong = UnsignedLong.valueOf(Long.MAX_VALUE);
         String stringCorrelationId = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_ULONG_PREFIX +  ulong.toString();
         sentMessageWithCorrelationIdTestImpl(stringCorrelationId, ulong, false);
     }
@@ -681,7 +664,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * no presence of the message annotation to indicate an app-specific correlation-id.
      */
     @Test(timeout = 2000)
-    @Ignore//TODO: failing because removal of the 'ID:' prefix in correlation-id values is not yet implemented
     public void testSentMessageWithStringCorrelationId() throws Exception {
         String stringCorrelationId = "ID:myTestMessageIdString";
         String underlyingCorrelationId = "myTestMessageIdString";
@@ -693,7 +675,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * app-specific results in an AMQP message with the expected encoding of the correlation-id,
      * and the presence of the message annotation to indicate an app-specific correlation-id.
      */
-    @Ignore//TODO: failing because handling of 'x-opt-app-correlation-id' annotation is not yet implemented
     @Test(timeout = 2000)
     public void testSentMessageWithAppSpecificStringCorrelationId() throws Exception {
         String stringCorrelationId = "myTestAppSpecificString";
@@ -717,8 +698,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             //Set matcher to validate the correlation-id, and the annotation
             //presence+value if it is application-specific
-            Object underlyingAmqpCorrelationId = classifyUnderlyingIdType(correlationIdForAmqpMessageClass);
-            propsMatcher.withCorrelationId(equalTo(underlyingAmqpCorrelationId));
+            propsMatcher.withCorrelationId(equalTo(correlationIdForAmqpMessageClass));
             if (appSpecific) {
                 msgAnnotationsMatcher.withEntry(Symbol.valueOf(AmqpMessageSupport.JMS_APP_CORRELATION_ID), equalTo(Boolean.TRUE));
             }
@@ -749,7 +729,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * uses the result of calling getJMSMessageID as the value for setJMSCorrelationId results in
      * transmission of the expected AMQP message content.
      */
-    @Ignore//TODO: failing because removal of the 'ID:' prefix in correlation-id values is not yet implemented
     @Test(timeout = 2000)
     public void testReceivedMessageWithStringMessageIdAndSendValueAsCorrelationId() throws Exception {
         recieveMessageIdSendCorrelationIdTestImpl("myStringMessageId");
@@ -761,7 +740,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * transmission of the expected AMQP message content.
      */
     @Test(timeout = 2000)
-    @Ignore//TODO: failing because handling of non-String message/correlation-id values is not yet implemented
     public void testReceivedMessageWithUUIDMessageIdAndSendValueAsCorrelationId() throws Exception {
         recieveMessageIdSendCorrelationIdTestImpl(UUID.randomUUID());
     }
@@ -771,10 +749,9 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * uses the result of calling getJMSMessageID as the value for setJMSCorrelationId results in
      * transmission of the expected AMQP message content.
      */
-    @Ignore//TODO: failing because handling of non-String message/correlation-id values is not yet implemented
     @Test(timeout = 2000)
     public void testReceivedMessageWithUlongMessageIdAndSendValueAsCorrelationId() throws Exception {
-        recieveMessageIdSendCorrelationIdTestImpl(BigInteger.valueOf(123456789L));
+        recieveMessageIdSendCorrelationIdTestImpl(UnsignedLong.valueOf(123456789L));
     }
 
     /**
@@ -782,10 +759,9 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * uses the result of calling getJMSMessageID as the value for setJMSCorrelationId results in
      * transmission of the expected AMQP message content.
      */
-    @Ignore//TODO: failing because handling of non-String message/correlation-id values is not yet implemented
     @Test(timeout = 2000)
     public void testReceivedMessageWithBinaryMessageIdAndSendValueAsCorrelationId() throws Exception {
-        recieveMessageIdSendCorrelationIdTestImpl(ByteBuffer.wrap(new byte[]{(byte)0x00, (byte)0xCD, (byte) 0xEF, (byte) 0x01}));
+        recieveMessageIdSendCorrelationIdTestImpl(new Binary(new byte[]{(byte)0x00, (byte)0xCD, (byte) 0xEF, (byte) 0x01}));
     }
 
     private void recieveMessageIdSendCorrelationIdTestImpl(Object idForAmqpMessageClass) throws Exception {
@@ -798,10 +774,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            Object underlyingAmqpMessageId = classifyUnderlyingIdType(idForAmqpMessageClass);
-
             PropertiesDescribedType props = new PropertiesDescribedType();
-            props.setMessageId(underlyingAmqpMessageId);
+            props.setMessageId(idForAmqpMessageClass);
             DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
 
             testPeer.expectReceiverAttach();
@@ -830,7 +804,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true);
 
             //Set matcher to validate the correlation-id matches the previous message-id
-            propsMatcher.withCorrelationId(equalTo(underlyingAmqpMessageId));
+            propsMatcher.withCorrelationId(equalTo(idForAmqpMessageClass));
 
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
@@ -848,28 +822,11 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         }
     }
 
-    private Object classifyUnderlyingIdType(Object idForAmqpMessageClass) {
-        Object underlyingAmqpMessageId = idForAmqpMessageClass;
-
-        // TODO: get rid of this method, use the proton types directly in the tests
-
-        if (underlyingAmqpMessageId instanceof BigInteger) {
-            // Proton uses UnsignedLong
-            underlyingAmqpMessageId = UnsignedLong.valueOf((BigInteger) underlyingAmqpMessageId);
-        } else if (underlyingAmqpMessageId instanceof ByteBuffer) {
-            // Proton uses Binary
-            underlyingAmqpMessageId = Binary.create((ByteBuffer) underlyingAmqpMessageId);
-        }
-
-        return underlyingAmqpMessageId;
-    }
-
     /**
      * Tests that when receiving a message with the group-id, reply-to-group-id, and group-sequence
      * fields of the AMQP properties section set, that the expected values are returned when getting
      * the appropriate JMSX or JMS_AMQP properties from the JMS message.
      */
-    @Ignore//TODO: failing because the JMS_AMQP_REPLY_TO_GROUP_ID property handling is not yet wired up.
     @Test(timeout = 2000)
     public void testReceivedMessageWithGroupRelatedPropertiesSet() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
@@ -914,7 +871,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * properties of the JMS message set, that the expected values are included in the fields of
      * the AMQP message emitted.
      */
-    @Ignore//TODO: failing because the JMSXGROUPID etc property handling is not yet wired up.
     @Test(timeout = 2000)
     public void testSendMessageWithGroupRelatedPropertiesSet() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {

@@ -321,16 +321,6 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             return;
         }
 
-        try {
-            message.setJMSDestination(info.getDestination());
-        } catch (JMSException e) {
-            LOG.warn("Error on transform: {}", e.getMessage());
-            // TODO - We could signal provider error but not sure we want to fail
-            //        the connection just because we can't convert the destination.
-            deliveryFailed(incoming, true);
-            return;
-        }
-
         // Let the message do any final processing before sending it onto a consumer.
         // We could defer this to a later stage such as the JmsConnection or even in
         // the JmsMessageConsumer dispatch method if we needed to.

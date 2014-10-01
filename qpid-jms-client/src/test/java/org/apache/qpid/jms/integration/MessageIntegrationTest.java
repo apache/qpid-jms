@@ -226,7 +226,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * indicate its 'to' address represents a Topic results in the JMSDestination object being a
      * Topic. Ensure the consumers destination is not used by consuming from a Queue.
      */
-    @Ignore//TODO: currently fails due to handling of AmqpMessageSupport.AMQP_TO_ANNOTATION not being complete
     @Test(timeout = 2000)
     public void testReceivedMessageFromQueueWithToTypeAnnotationForTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
@@ -258,7 +257,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             assertNotNull(receivedMessage);
 
             Destination dest = receivedMessage.getJMSDestination();
-            assertTrue(dest instanceof Topic);
+            assertNotNull("Expected Topic destination but got null", dest);
+            assertTrue("Expected Topic instance but did not get one. Actual type was: " + dest.getClass().getName(), dest instanceof Topic);
             assertEquals(myTopicAddress, ((Topic)dest).getTopicName());
         }
     }
@@ -266,19 +266,40 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that the lack of a 'to' in the Properties section of the incoming message (e.g
      * one sent by a non-JMS client) is handled by making the JMSDestination method simply
-     * return the Destination used to create the consumer that received the message.
+     * return the Queue Destination used to create the consumer that received the message.
      */
     @Test(timeout = 2000)
-    public void testReceivedMessageFromQueueWithoutToResultsInUseOfConsumerDestination() throws Exception {
+    public void testReceivedMessageFromQueueWithoutToResultsInUseOfConsumerDestinationQueue() throws Exception {
+        receivedMessageFromQueueWithoutToResultsInUseOfConsumerDestinationImpl(true);
+    }
+
+    /**
+     * Tests that the lack of a 'to' in the Properties section of the incoming message (e.g
+     * one sent by a non-JMS client) is handled by making the JMSDestination method simply
+     * return the Topic Destination used to create the consumer that received the message.
+     */
+    @Test(timeout = 2000)
+    public void testReceivedMessageFromQueueWithoutToResultsInUseOfConsumerDestinationTopic() throws Exception {
+        receivedMessageFromQueueWithoutToResultsInUseOfConsumerDestinationImpl(false);
+    }
+
+    public void receivedMessageFromQueueWithoutToResultsInUseOfConsumerDestinationImpl(boolean useQueue) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             Connection connection = _testFixture.establishConnecton(testPeer);
             connection.start();
 
             testPeer.expectBegin(true);
 
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             String queueName = "myQueue";
-            Queue queue = session.createQueue(queueName);
+            String topicName = "myTopic";
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            Destination destination = null;
+            if (useQueue) {
+                destination = session.createQueue(queueName);
+            } else {
+                destination = session.createTopic(topicName);
+            }
 
             PropertiesDescribedType props = new PropertiesDescribedType();
             props.setMessageId("myMessageIDString");
@@ -289,15 +310,22 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.expectLinkFlowRespondWithTransfer(null, null, props, null, amqpValueNullContent);
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
-            MessageConsumer messageConsumer = session.createConsumer(queue);
+            MessageConsumer messageConsumer = session.createConsumer(destination);
             Message receivedMessage = messageConsumer.receive(1000);
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
 
             Destination dest = receivedMessage.getJMSDestination();
-            assertTrue(dest instanceof Queue);
-            assertEquals(queueName, ((Queue)dest).getQueueName());
+            if (useQueue) {
+                assertNotNull("expected Queue instance, got null", dest);
+                assertTrue("expected Queue instance. Actual type was: " + dest.getClass().getName(), dest instanceof Queue);
+                assertEquals(queueName, ((Queue) dest).getQueueName());
+            } else {
+                assertNotNull("expected Topic instance, got null", dest);
+                assertTrue("expected Topic instance. Actual type was: " + dest.getClass().getName(), dest instanceof Topic);
+                assertEquals(topicName, ((Topic) dest).getTopicName());
+            }
         }
     }
 

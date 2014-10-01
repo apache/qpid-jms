@@ -37,12 +37,100 @@ import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsTemporaryQueue;
 import org.apache.qpid.jms.JmsTemporaryTopic;
 import org.apache.qpid.jms.JmsTopic;
+import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 public class AmqpDestinationHelperTest {
 
     private final AmqpDestinationHelper helper = AmqpDestinationHelper.INSTANCE;
+
+    private static final String QUEUE_PREFIX = "queue://";
+    private static final String TOPIC_PREFIX = "topic://";
+    private static final String TEMP_QUEUE_PREFIX = "temp-queue://";
+    private static final String TEMP_TOPIC_PREFIX = "temp-topic://";
+
+    private AmqpConnection createConnectionWithDestinationPrefixValues() {
+        AmqpConnection connection = Mockito.mock(AmqpConnection.class);
+        Mockito.when(connection.getQueuePrefix()).thenReturn(QUEUE_PREFIX);
+        Mockito.when(connection.getTopicPrefix()).thenReturn(TOPIC_PREFIX);
+        Mockito.when(connection.getTempQueuePrefix()).thenReturn(TEMP_QUEUE_PREFIX);
+        Mockito.when(connection.getTempTopicPrefix()).thenReturn(TEMP_TOPIC_PREFIX);
+
+        return connection;
+    }
+
+    //--------------- Test createDestination method --------------------------//
+
+    @Test(expected=NullPointerException.class)
+    public void testCreateDestinationFromStringWithNullConnection() {
+        helper.createDestination("testName", null);
+    }
+
+    @Test(expected=NullPointerException.class)
+    public void testCreateDestinationFromNullStringWithConnection() {
+        helper.createDestination(null, createConnectionWithDestinationPrefixValues());
+    }
+
+    @Test(expected=NullPointerException.class)
+    public void testCreateDestinationFromNullStringAndConnection() {
+        helper.createDestination(null, null);
+    }
+
+    @Test
+    public void testCreateDestinationFromStringNoPrefixReturnsQueue() {
+        String destinationName = "testDestinationName";
+        AmqpConnection connection = createConnectionWithDestinationPrefixValues();
+        JmsDestination result = helper.createDestination(destinationName, connection);
+        assertNotNull(result);
+        assertTrue(result.isQueue());
+        assertFalse(result.isTemporary());
+        assertEquals(destinationName, result.getName());
+    }
+
+    @Test
+    public void testCreateDestinationFromQeueuePrefixedString() {
+        String destinationName = "testDestinationName";
+        AmqpConnection connection = createConnectionWithDestinationPrefixValues();
+        JmsDestination result = helper.createDestination(QUEUE_PREFIX + destinationName, connection);
+        assertNotNull(result);
+        assertTrue(result.isQueue());
+        assertFalse(result.isTemporary());
+        assertEquals(destinationName, result.getName());
+    }
+
+    @Test
+    public void testCreateDestinationFromTopicPrefixedString() {
+        String destinationName = "testDestinationName";
+        AmqpConnection connection = createConnectionWithDestinationPrefixValues();
+        JmsDestination result = helper.createDestination(TOPIC_PREFIX + destinationName, connection);
+        assertNotNull(result);
+        assertTrue(result.isTopic());
+        assertFalse(result.isTemporary());
+        assertEquals(destinationName, result.getName());
+    }
+
+    @Test
+    public void testCreateDestinationFromTempQueuePrefixedString() {
+        String destinationName = "testDestinationName";
+        AmqpConnection connection = createConnectionWithDestinationPrefixValues();
+        JmsDestination result = helper.createDestination(TEMP_QUEUE_PREFIX + destinationName, connection);
+        assertNotNull(result);
+        assertTrue(result.isQueue());
+        assertTrue(result.isTemporary());
+        assertEquals(destinationName, result.getName());
+    }
+
+    @Test
+    public void testCreateDestinationFromTempTopicPrefixedString() {
+        String destinationName = "testDestinationName";
+        AmqpConnection connection = createConnectionWithDestinationPrefixValues();
+        JmsDestination result = helper.createDestination(TEMP_TOPIC_PREFIX + destinationName, connection);
+        assertNotNull(result);
+        assertTrue(result.isTopic());
+        assertTrue(result.isTemporary());
+        assertEquals(destinationName, result.getName());
+    }
 
     //--------------- Test getJmsDestination method --------------------------//
 

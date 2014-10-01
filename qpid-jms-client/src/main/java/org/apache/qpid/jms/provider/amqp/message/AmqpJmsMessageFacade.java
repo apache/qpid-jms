@@ -34,7 +34,6 @@ import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
 
 import org.apache.qpid.jms.JmsDestination;
-import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.exceptions.IdConversionException;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
@@ -632,7 +631,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public void setDestinationFromString(String destination) {
-        setDestination(new JmsQueue(destination));
+        setDestination(AmqpDestinationHelper.INSTANCE.createDestination(destination, connection));
     }
 
     @Override
@@ -653,7 +652,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public void setReplyToFromString(String destination) {
-        setReplyTo(new JmsQueue(destination));
+        setReplyTo(AmqpDestinationHelper.INSTANCE.createDestination(destination, connection));
     }
 
     public void setReplyToGroupId(String replyToGroupId) {

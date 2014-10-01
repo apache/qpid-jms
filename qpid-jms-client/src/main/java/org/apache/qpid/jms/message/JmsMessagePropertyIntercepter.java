@@ -41,7 +41,6 @@ import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 
-import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 import org.apache.qpid.jms.util.TypeConversionSupport;
@@ -124,11 +123,11 @@ public class JmsMessagePropertyIntercepter {
         PROPERTY_INTERCEPTERS.put(JMS_DESTINATION, new PropertyIntercepter() {
             @Override
             public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
-                JmsDestination rc = (JmsDestination) TypeConversionSupport.convert(value, JmsDestination.class);
+                String rc = (String) TypeConversionSupport.convert(value, String.class);
                 if (rc == null) {
                     throw new JMSException("Property JMSDestination cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setDestination(rc);
+                message.setDestinationFromString(rc);
             }
 
             @Override
@@ -148,11 +147,11 @@ public class JmsMessagePropertyIntercepter {
         PROPERTY_INTERCEPTERS.put(JMS_REPLYTO, new PropertyIntercepter() {
             @Override
             public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
-                JmsDestination rc = (JmsDestination) TypeConversionSupport.convert(value, JmsDestination.class);
+                String rc = (String) TypeConversionSupport.convert(value, String.class);
                 if (rc == null) {
                     throw new JMSException("Property JMSReplyTo cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setReplyTo(rc);
+                message.setReplyToFromString(rc);
             }
 
             @Override

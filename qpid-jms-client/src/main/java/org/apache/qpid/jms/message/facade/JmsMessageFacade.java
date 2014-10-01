@@ -342,6 +342,14 @@ public interface JmsMessageFacade {
     void setDestination(JmsDestination destination);
 
     /**
+     * Sets the Destination that this message is being sent to via a string.
+     *
+     * @param destination
+     *        the string destination name that this message is being sent to.
+     */
+    void setDestinationFromString(String destination);
+
+    /**
      * Gets the Destination where replies for this Message are to be sent to.
      *
      * @return the reply to destination for this message or null if none set.
@@ -355,6 +363,14 @@ public interface JmsMessageFacade {
      *        the Destination where replies should be sent, or null to clear.
      */
     void setReplyTo(JmsDestination replyTo);
+
+    /**
+     * Sets the Destination where replies to this Message are to be sent via a string.
+     *
+     * @param destination
+     *        the string Destination name where replies should be sent, or null to clear.
+     */
+    void setReplyToFromString(String destination);
 
     /**
      * Returns the ID of the user that sent this message if available.

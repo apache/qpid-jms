@@ -71,9 +71,9 @@ public class JmsMessagePropertyIntercepterTest {
     @Test
     public void testSetJMSDestination() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        JmsDestination queue = new JmsQueue("TestDestination");
-        JmsMessagePropertyIntercepter.setProperty(message, JMS_DESTINATION, "TestDestination");
-        Mockito.verify(message).setDestination(queue);
+        String destinationName = new String("TestDestination");
+        JmsMessagePropertyIntercepter.setProperty(message, JMS_DESTINATION, destinationName);
+        Mockito.verify(message).setDestinationFromString(destinationName);
     }
 
     @Test
@@ -115,9 +115,9 @@ public class JmsMessagePropertyIntercepterTest {
     @Test
     public void testSetJMSReplyTo() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        JmsDestination queue = new JmsQueue("TestDestination");
-        JmsMessagePropertyIntercepter.setProperty(message, JMS_REPLYTO, "TestDestination");
-        Mockito.verify(message).setReplyTo(queue);
+        String destinationName = new String("TestDestination");
+        JmsMessagePropertyIntercepter.setProperty(message, JMS_REPLYTO, destinationName);
+        Mockito.verify(message).setReplyToFromString(destinationName);
     }
 
     @Test

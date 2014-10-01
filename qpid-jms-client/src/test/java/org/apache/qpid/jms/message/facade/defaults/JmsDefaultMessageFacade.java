@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 
 /**
@@ -281,6 +282,11 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
     }
 
     @Override
+    public void setDestinationFromString(String destination) {
+        this.destination = new JmsQueue(destination);
+    }
+
+    @Override
     public JmsDestination getReplyTo() {
         return this.replyTo;
     }
@@ -288,6 +294,11 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
     @Override
     public void setReplyTo(JmsDestination replyTo) {
         this.replyTo = replyTo;
+    }
+
+    @Override
+    public void setReplyToFromString(String destination) {
+        this.replyTo = new JmsQueue(destination);
     }
 
     @Override

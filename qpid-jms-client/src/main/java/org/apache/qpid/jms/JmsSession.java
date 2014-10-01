@@ -639,7 +639,11 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
                 timeStamp = System.currentTimeMillis();
             }
 
-            original.setJMSTimestamp(timeStamp);
+            if (!disableTimestamp) {
+                original.setJMSTimestamp(timeStamp);
+            } else {
+                original.setJMSTimestamp(0);
+            }
 
             if (hasTTL) {
                 original.setJMSExpiration(timeStamp + timeToLive);

@@ -26,7 +26,6 @@ import java.util.Set;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsDestination;
-import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
@@ -123,9 +122,6 @@ public class AmqpFixedProducer extends AmqpProducer {
             state.setTxnId(amqpTxId);
             delivery.disposition(state);
         }
-
-        JmsMessage message = envelope.getMessage();
-        message.setReadOnlyBody(true);
 
         AmqpJmsMessageFacade amqpMessageFacade = (AmqpJmsMessageFacade) facade;
         Message amqpMessage = amqpMessageFacade.getAmqpMessage();

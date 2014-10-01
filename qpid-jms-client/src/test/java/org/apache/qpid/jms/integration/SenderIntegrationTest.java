@@ -23,12 +23,12 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.isA;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Calendar;
 import java.util.Date;
 
 import javax.jms.Connection;
@@ -262,6 +262,63 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
             producer.send(message, Message.DEFAULT_DELIVERY_MODE, Message.DEFAULT_PRIORITY, ttl);
 
             testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 10000)
+    public void testSendingMessageWithJMS_AMQP_TTLSetPositive() throws Exception {
+        sendingMessageWithJMS_AMQP_TTLSetTestImpl(100_000, 20_000);
+    }
+
+    @Test(timeout = 10000)
+    public void testSendingMessageWithJMS_AMQP_TTLSetZero() throws Exception {
+        sendingMessageWithJMS_AMQP_TTLSetTestImpl(50_000, 0);
+    }
+
+    public void sendingMessageWithJMS_AMQP_TTLSetTestImpl(long jmsTtl, long amqpTtl) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin(true);
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String queueName = "myQueue";
+            Queue queue = session.createQueue(queueName);
+            MessageProducer producer = session.createProducer(queue);
+
+            long currentTime = System.currentTimeMillis();
+            Date expirationLower = new Date(currentTime + jmsTtl);
+            Date expirationUpper = new Date(currentTime + jmsTtl + 3000);
+
+            // Create matcher to expect the absolute-expiry-time field of the properties section to
+            // be set to a value greater than 'now'+ttl, within a delta.
+            Matcher<Date> inRange = both(greaterThanOrEqualTo(expirationLower)).and(lessThanOrEqualTo(expirationUpper));
+
+            String text = "myMessage";
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            headersMatcher.withDurable(equalTo(true));
+            // verify the ttl field matches the JMS_AMQP_TTL value, rather than the standard JMS send TTL value.
+            if (amqpTtl == 0) {
+                headersMatcher.withTtl(nullValue());
+            } else {
+                headersMatcher.withTtl(equalTo(UnsignedInteger.valueOf(amqpTtl)));
+            }
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true)
+                    .withAbsoluteExpiryTime(inRange);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
+            messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(text));
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createTextMessage(text);
+            message.setLongProperty(AmqpMessageSupport.JMS_AMQP_TTL, amqpTtl);
+
+            producer.send(message, Message.DEFAULT_DELIVERY_MODE, Message.DEFAULT_PRIORITY, jmsTtl);
+
+            testPeer.waitForAllHandlersToComplete(2000);
         }
     }
 

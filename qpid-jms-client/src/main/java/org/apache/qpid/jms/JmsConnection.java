@@ -230,9 +230,11 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
             destroyResource(connectionInfo);
         }
 
-        if (clientIdSet) {
-            connectionInfo.setClientId(null);
-            clientIdSet = false;
+        synchronized (this) {
+            if (clientIdSet) {
+                connectionInfo.setClientId(null);
+                clientIdSet = false;
+            }
         }
 
         tempDestinations.clear();
@@ -303,7 +305,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      * @see javax.jms.Connection#getClientID()
      */
     @Override
-    public String getClientID() throws JMSException {
+    public synchronized String getClientID() throws JMSException {
         checkClosedOrFailed();
         return this.connectionInfo.getClientId();
     }

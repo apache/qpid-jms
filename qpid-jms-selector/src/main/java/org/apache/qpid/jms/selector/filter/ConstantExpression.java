@@ -18,11 +18,8 @@ package org.apache.qpid.jms.selector.filter;
 
 import java.math.BigDecimal;
 
-
 /**
  * Represents a constant expression
- * 
- * @version $Revision: 1.2 $
  */
 public class ConstantExpression implements Expression {
 
@@ -31,6 +28,7 @@ public class ConstantExpression implements Expression {
             super(value);
         }
 
+        @Override
         public boolean matches(Filterable message) throws FilterException {
             Object object = evaluate(message);
             return object != null && object == Boolean.TRUE;
@@ -41,7 +39,7 @@ public class ConstantExpression implements Expression {
     public static final BooleanConstantExpression TRUE = new BooleanConstantExpression(Boolean.TRUE);
     public static final BooleanConstantExpression FALSE = new BooleanConstantExpression(Boolean.FALSE);
 
-    private Object value;
+    private final Object value;
 
     public ConstantExpression(Object value) {
         this.value = value;
@@ -56,7 +54,7 @@ public class ConstantExpression implements Expression {
 
         Number value;
         try {
-            value = new Long(text);
+            value = Long.valueOf(text);
         } catch (NumberFormatException e) {
             // The number may be too big to fit in a long.
             value = new BigDecimal(text);
@@ -92,6 +90,7 @@ public class ConstantExpression implements Expression {
         return new ConstantExpression(value);
     }
 
+    @Override
     public Object evaluate(Filterable message) throws FilterException {
         return value;
     }
@@ -103,6 +102,7 @@ public class ConstantExpression implements Expression {
     /**
      * @see java.lang.Object#toString()
      */
+    @Override
     public String toString() {
         if (value == null) {
             return "NULL";
@@ -118,31 +118,32 @@ public class ConstantExpression implements Expression {
 
     /**
      * TODO: more efficient hashCode()
-     * 
+     *
      * @see java.lang.Object#hashCode()
      */
+    @Override
     public int hashCode() {
         return toString().hashCode();
     }
 
     /**
      * TODO: more efficient hashCode()
-     * 
+     *
      * @see java.lang.Object#equals(java.lang.Object)
      */
+    @Override
     public boolean equals(Object o) {
 
         if (o == null || !this.getClass().equals(o.getClass())) {
             return false;
         }
         return toString().equals(o.toString());
-
     }
 
     /**
      * Encodes the value of string so that it looks like it would look like when
      * it was provided in a selector.
-     * 
+     *
      * @param string
      * @return
      */
@@ -159,5 +160,4 @@ public class ConstantExpression implements Expression {
         b.append('\'');
         return b.toString();
     }
-
 }

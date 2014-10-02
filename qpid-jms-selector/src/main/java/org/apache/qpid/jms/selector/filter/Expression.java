@@ -14,15 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.qpid.jms.selector.filter;
-
-
 
 /**
  * Represents an expression
- * 
- * @version $Revision: 1.2 $
  */
 public interface Expression {
 
@@ -30,5 +25,5 @@ public interface Expression {
      * @return the value of this expression
      */
     Object evaluate(Filterable message) throws FilterException;
-    
+
 }

@@ -22,11 +22,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
-
 /**
  * An expression which performs an operation on two expression values
- * 
- * @version $Revision: 1.3 $
  */
 public abstract class UnaryExpression implements Expression {
 
@@ -39,6 +36,7 @@ public abstract class UnaryExpression implements Expression {
 
     public static Expression createNegate(Expression left) {
         return new UnaryExpression(left) {
+            @Override
             public Object evaluate(Filterable message) throws FilterException {
                 Object rvalue = right.evaluate(message);
                 if (rvalue == null) {
@@ -50,6 +48,7 @@ public abstract class UnaryExpression implements Expression {
                 return null;
             }
 
+            @Override
             public String getExpressionSymbol() {
                 return "-";
             }
@@ -67,9 +66,11 @@ public abstract class UnaryExpression implements Expression {
         } else {
             t = new HashSet<Object>(elements);
         }
+
         final Collection<Object> inList = t;
 
         return new BooleanUnaryExpression(right) {
+            @Override
             public Object evaluate(Filterable message) throws FilterException {
 
                 Object rvalue = right.evaluate(message);
@@ -85,9 +86,9 @@ public abstract class UnaryExpression implements Expression {
                 } else {
                     return Boolean.FALSE;
                 }
-
             }
 
+            @Override
             public String toString() {
                 StringBuffer answer = new StringBuffer();
                 answer.append(right);
@@ -97,7 +98,7 @@ public abstract class UnaryExpression implements Expression {
 
                 int count = 0;
                 for (Iterator<Object> i = inList.iterator(); i.hasNext();) {
-                    Object o = (Object)i.next();
+                    Object o = i.next();
                     if (count != 0) {
                         answer.append(", ");
                     }
@@ -109,6 +110,7 @@ public abstract class UnaryExpression implements Expression {
                 return answer.toString();
             }
 
+            @Override
             public String getExpressionSymbol() {
                 if (not) {
                     return "NOT IN";
@@ -124,6 +126,7 @@ public abstract class UnaryExpression implements Expression {
             super(left);
         }
 
+        @Override
         public boolean matches(Filterable message) throws FilterException {
             Object object = evaluate(message);
             return object != null && object == Boolean.TRUE;
@@ -132,6 +135,7 @@ public abstract class UnaryExpression implements Expression {
 
     public static BooleanExpression createNOT(BooleanExpression left) {
         return new BooleanUnaryExpression(left) {
+            @Override
             public Object evaluate(Filterable message) throws FilterException {
                 Boolean lvalue = (Boolean)right.evaluate(message);
                 if (lvalue == null) {
@@ -140,6 +144,7 @@ public abstract class UnaryExpression implements Expression {
                 return lvalue.booleanValue() ? Boolean.FALSE : Boolean.TRUE;
             }
 
+            @Override
             public String getExpressionSymbol() {
                 return "NOT";
             }
@@ -156,6 +161,7 @@ public abstract class UnaryExpression implements Expression {
 
     public static BooleanExpression createBooleanCast(Expression left) {
         return new BooleanUnaryExpression(left) {
+            @Override
             public Object evaluate(Filterable message) throws FilterException {
                 Object rvalue = right.evaluate(message);
                 if (rvalue == null) {
@@ -167,10 +173,12 @@ public abstract class UnaryExpression implements Expression {
                 return ((Boolean)rvalue).booleanValue() ? Boolean.TRUE : Boolean.FALSE;
             }
 
+            @Override
             public String toString() {
                 return right.toString();
             }
 
+            @Override
             public String getExpressionSymbol() {
                 return "";
             }
@@ -178,24 +186,21 @@ public abstract class UnaryExpression implements Expression {
     }
 
     private static Number negate(Number left) {
-        Class clazz = left.getClass();
+        Class<?> clazz = left.getClass();
         if (clazz == Integer.class) {
-            return new Integer(-left.intValue());
+            return Integer.valueOf(-left.intValue());
         } else if (clazz == Long.class) {
-            return new Long(-left.longValue());
+            return Long.valueOf(-left.longValue());
         } else if (clazz == Float.class) {
             return new Float(-left.floatValue());
         } else if (clazz == Double.class) {
             return new Double(-left.doubleValue());
         } else if (clazz == BigDecimal.class) {
-            // We ussually get a big deciamal when we have Long.MIN_VALUE
-            // constant in the
-            // Selector. Long.MIN_VALUE is too big to store in a Long as a
-            // positive so we store it
-            // as a Big decimal. But it gets Negated right away.. to here we try
-            // to covert it back
-            // to a Long.
-            BigDecimal bd = (BigDecimal)left;
+            // We usually get a big decimal when we have Long.MIN_VALUE constant in
+            // the Selector. Long.MIN_VALUE is too big to store in a Long as a positive
+            // so we store it as a Big decimal. But it gets Negated right away.. to here
+            // we try to covert it back to a Long.
+            BigDecimal bd = (BigDecimal) left;
             bd = bd.negate();
 
             if (BD_LONG_MIN_VALUE.compareTo(bd) == 0) {
@@ -218,37 +223,38 @@ public abstract class UnaryExpression implements Expression {
     /**
      * @see java.lang.Object#toString()
      */
+    @Override
     public String toString() {
         return "(" + getExpressionSymbol() + " " + right.toString() + ")";
     }
 
     /**
      * TODO: more efficient hashCode()
-     * 
+     *
      * @see java.lang.Object#hashCode()
      */
+    @Override
     public int hashCode() {
         return toString().hashCode();
     }
 
     /**
      * TODO: more efficient hashCode()
-     * 
+     *
      * @see java.lang.Object#equals(java.lang.Object)
      */
+    @Override
     public boolean equals(Object o) {
-
         if (o == null || !this.getClass().equals(o.getClass())) {
             return false;
         }
         return toString().equals(o.toString());
-
     }
 
     /**
      * Returns the symbol that represents this binary expression. For example,
      * addition is represented by "+"
-     * 
+     *
      * @return
      */
     public abstract String getExpressionSymbol();

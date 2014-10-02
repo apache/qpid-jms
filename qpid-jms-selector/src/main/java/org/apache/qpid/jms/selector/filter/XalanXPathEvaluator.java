@@ -14,24 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.qpid.jms.selector.filter;
 
-import org.apache.xpath.CachedXPathAPI;
-import org.apache.xpath.objects.XObject;
-import org.w3c.dom.Document;
-import org.w3c.dom.traversal.NodeIterator;
-import org.xml.sax.InputSource;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.apache.xpath.CachedXPathAPI;
+import org.apache.xpath.objects.XObject;
+import org.w3c.dom.Document;
+import org.w3c.dom.traversal.NodeIterator;
+import org.xml.sax.InputSource;
 
 public class XalanXPathEvaluator implements XPathExpression.XPathEvaluator {
     public static final String DOCUMENT_BUILDER_FACTORY_FEATURE = "org.apache.activemq.apollo.documentBuilderFactory.feature";
@@ -41,11 +40,12 @@ public class XalanXPathEvaluator implements XPathExpression.XPathEvaluator {
         this.xpath = xpath;
     }
 
+    @Override
     public boolean evaluate(Filterable m) throws FilterException {
         String stringBody = m.getBodyAs(String.class);
         if (stringBody!=null) {
             return evaluate(stringBody);
-        } 
+        }
         return false;
     }
 
@@ -66,20 +66,19 @@ public class XalanXPathEvaluator implements XPathExpression.XPathEvaluator {
             DocumentBuilder dbuilder = factory.newDocumentBuilder();
             Document doc = dbuilder.parse(inputSource);
 
-            //An XPath expression could return a true or false value instead of a node.
-            //eval() is a better way to determine the boolean value of the exp.
-            //For compliance with legacy behavior where selecting an empty node returns true,
-            //selectNodeIterator is attempted in case of a failure.
+            // An XPath expression could return a true or false value instead of a node.
+            // eval() is a better way to determine the boolean value of the exp.
+            // For compliance with legacy behavior where selecting an empty node returns true,
+            // selectNodeIterator is attempted in case of a failure.
 
             CachedXPathAPI cachedXPathAPI = new CachedXPathAPI();
             XObject result = cachedXPathAPI.eval(doc, xpath);
-            if (result.bool())
-            	return true;
-            else {
-            	NodeIterator iterator = cachedXPathAPI.selectNodeIterator(doc, xpath);
-            	return (iterator.nextNode() != null);
+            if (result.bool()) {
+                return true;
+            } else {
+                NodeIterator iterator = cachedXPathAPI.selectNodeIterator(doc, xpath);
+                return (iterator.nextNode() != null);
             }
-
         } catch (Throwable e) {
             return false;
         }
@@ -101,6 +100,7 @@ public class XalanXPathEvaluator implements XPathExpression.XPathEvaluator {
                 }
             }
         }
+
         if (features.size() > 0) {
             StringBuffer featureString = new StringBuffer();
             // just log the configured feature
@@ -111,6 +111,5 @@ public class XalanXPathEvaluator implements XPathExpression.XPathEvaluator {
                 featureString.append(feature);
             }
         }
-
     }
 }

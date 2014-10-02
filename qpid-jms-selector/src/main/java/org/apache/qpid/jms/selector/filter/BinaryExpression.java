@@ -16,12 +16,9 @@
  */
 package org.apache.qpid.jms.selector.filter;
 
-
-
 /**
  * An expression which performs an operation on two expression values.
- * 
- * @version $Revision: 1.2 $
+ *
  */
 public abstract class BinaryExpression implements Expression {
     protected Expression left;
@@ -40,10 +37,10 @@ public abstract class BinaryExpression implements Expression {
         return right;
     }
 
-
     /**
      * @see java.lang.Object#toString()
      */
+    @Override
     public String toString() {
         return "(" + left.toString() + " " + getExpressionSymbol() + " " + right.toString() + ")";
     }
@@ -53,6 +50,7 @@ public abstract class BinaryExpression implements Expression {
      *
      * @see java.lang.Object#hashCode()
      */
+    @Override
     public int hashCode() {
         return toString().hashCode();
     }
@@ -62,13 +60,13 @@ public abstract class BinaryExpression implements Expression {
      *
      * @see java.lang.Object#equals(java.lang.Object)
      */
+    @Override
     public boolean equals(Object o) {
 
         if (o == null || !this.getClass().equals(o.getClass())) {
             return false;
         }
         return toString().equals(o.toString());
-
     }
 
     /**
@@ -92,5 +90,4 @@ public abstract class BinaryExpression implements Expression {
     public void setLeft(Expression expression) {
         left = expression;
     }
-    
 }

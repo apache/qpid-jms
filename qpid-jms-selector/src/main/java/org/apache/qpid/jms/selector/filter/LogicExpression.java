@@ -16,11 +16,8 @@
  */
 package org.apache.qpid.jms.selector.filter;
 
-
 /**
  * A filter performing a comparison of two objects
- * 
- * @version $Revision: 1.2 $
  */
 public abstract class LogicExpression extends BinaryExpression implements BooleanExpression {
 
@@ -35,6 +32,7 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
     public static BooleanExpression createOR(BooleanExpression lvalue, BooleanExpression rvalue) {
         return new LogicExpression(lvalue, rvalue) {
 
+            @Override
             public Object evaluate(Filterable message) throws FilterException {
 
                 Boolean lv = (Boolean)left.evaluate(message);
@@ -47,6 +45,7 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
                 return rv == null ? null : rv;
             }
 
+            @Override
             public String getExpressionSymbol() {
                 return "OR";
             }
@@ -56,6 +55,7 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
     public static BooleanExpression createAND(BooleanExpression lvalue, BooleanExpression rvalue) {
         return new LogicExpression(lvalue, rvalue) {
 
+            @Override
             public Object evaluate(Filterable message) throws FilterException {
 
                 Boolean lv = (Boolean)left.evaluate(message);
@@ -72,17 +72,19 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
                 return rv == null ? null : rv;
             }
 
+            @Override
             public String getExpressionSymbol() {
                 return "AND";
             }
         };
     }
 
+    @Override
     public abstract Object evaluate(Filterable message) throws FilterException;
 
+    @Override
     public boolean matches(Filterable message) throws FilterException {
         Object object = evaluate(message);
         return object != null && object == Boolean.TRUE;
     }
-
 }

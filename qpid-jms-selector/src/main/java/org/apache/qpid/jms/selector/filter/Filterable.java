@@ -19,8 +19,6 @@ package org.apache.qpid.jms.selector.filter;
 /**
  * A Filterable is the object being evaluated by the filters.  It provides
  * access to filtered properties.
- * 
- * @version $Revision: 1.4 $
  */
 public interface Filterable {
 

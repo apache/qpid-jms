@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.qpid.jms.selector.filter;
 
 public class FilterException extends Exception {
@@ -36,5 +35,4 @@ public class FilterException extends Exception {
     public FilterException(Throwable cause) {
         super(cause);
     }
-    
 }

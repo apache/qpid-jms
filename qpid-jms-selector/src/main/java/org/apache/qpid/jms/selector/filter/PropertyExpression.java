@@ -14,14 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.qpid.jms.selector.filter;
-
 
 /**
  * Represents a property expression
- * 
- * @version $Revision: 1.5 $
  */
 public class PropertyExpression implements Expression {
 
@@ -31,6 +27,7 @@ public class PropertyExpression implements Expression {
         this.name = name;
     }
 
+    @Override
     public Object evaluate(Filterable message) throws FilterException {
         return message.getProperty(name);
     }
@@ -42,6 +39,7 @@ public class PropertyExpression implements Expression {
     /**
      * @see java.lang.Object#toString()
      */
+    @Override
     public String toString() {
         return name;
     }
@@ -49,6 +47,7 @@ public class PropertyExpression implements Expression {
     /**
      * @see java.lang.Object#hashCode()
      */
+    @Override
     public int hashCode() {
         return name.hashCode();
     }
@@ -56,12 +55,11 @@ public class PropertyExpression implements Expression {
     /**
      * @see java.lang.Object#equals(java.lang.Object)
      */
+    @Override
     public boolean equals(Object o) {
         if (o == null || !this.getClass().equals(o.getClass())) {
             return false;
         }
         return name.equals(((PropertyExpression)o).name);
-
     }
-
 }

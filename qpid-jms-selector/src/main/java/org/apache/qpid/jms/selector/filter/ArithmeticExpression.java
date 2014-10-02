@@ -16,11 +16,8 @@
  */
 package org.apache.qpid.jms.selector.filter;
 
-
 /**
  * An expression which performs an operation on two expression values
- * 
- * @version $Revision: 1.2 $
  */
 public abstract class ArithmeticExpression extends BinaryExpression {
 
@@ -40,6 +37,7 @@ public abstract class ArithmeticExpression extends BinaryExpression {
 
     public static Expression createPlus(Expression left, Expression right) {
         return new ArithmeticExpression(left, right) {
+            @Override
             protected Object evaluate(Object lvalue, Object rvalue) {
                 if (lvalue instanceof String) {
                     String text = (String)lvalue;
@@ -50,6 +48,7 @@ public abstract class ArithmeticExpression extends BinaryExpression {
                 }
             }
 
+            @Override
             public String getExpressionSymbol() {
                 return "+";
             }
@@ -58,10 +57,12 @@ public abstract class ArithmeticExpression extends BinaryExpression {
 
     public static Expression createMinus(Expression left, Expression right) {
         return new ArithmeticExpression(left, right) {
+            @Override
             protected Object evaluate(Object lvalue, Object rvalue) {
                 return minus(asNumber(lvalue), asNumber(rvalue));
             }
 
+            @Override
             public String getExpressionSymbol() {
                 return "-";
             }
@@ -71,10 +72,12 @@ public abstract class ArithmeticExpression extends BinaryExpression {
     public static Expression createMultiply(Expression left, Expression right) {
         return new ArithmeticExpression(left, right) {
 
+            @Override
             protected Object evaluate(Object lvalue, Object rvalue) {
                 return multiply(asNumber(lvalue), asNumber(rvalue));
             }
 
+            @Override
             public String getExpressionSymbol() {
                 return "*";
             }
@@ -84,10 +87,12 @@ public abstract class ArithmeticExpression extends BinaryExpression {
     public static Expression createDivide(Expression left, Expression right) {
         return new ArithmeticExpression(left, right) {
 
+            @Override
             protected Object evaluate(Object lvalue, Object rvalue) {
                 return divide(asNumber(lvalue), asNumber(rvalue));
             }
 
+            @Override
             public String getExpressionSymbol() {
                 return "/";
             }
@@ -97,10 +102,12 @@ public abstract class ArithmeticExpression extends BinaryExpression {
     public static Expression createMod(Expression left, Expression right) {
         return new ArithmeticExpression(left, right) {
 
+            @Override
             protected Object evaluate(Object lvalue, Object rvalue) {
                 return mod(asNumber(lvalue), asNumber(rvalue));
             }
 
+            @Override
             public String getExpressionSymbol() {
                 return "%";
             }
@@ -110,9 +117,9 @@ public abstract class ArithmeticExpression extends BinaryExpression {
     protected Number plus(Number left, Number right) {
         switch (numberType(left, right)) {
         case INTEGER:
-            return new Integer(left.intValue() + right.intValue());
+            return Integer.valueOf(left.intValue() + right.intValue());
         case LONG:
-            return new Long(left.longValue() + right.longValue());
+            return Long.valueOf(left.longValue() + right.longValue());
         default:
             return new Double(left.doubleValue() + right.doubleValue());
         }
@@ -121,9 +128,9 @@ public abstract class ArithmeticExpression extends BinaryExpression {
     protected Number minus(Number left, Number right) {
         switch (numberType(left, right)) {
         case INTEGER:
-            return new Integer(left.intValue() - right.intValue());
+            return Integer.valueOf(left.intValue() - right.intValue());
         case LONG:
-            return new Long(left.longValue() - right.longValue());
+            return Long.valueOf(left.longValue() - right.longValue());
         default:
             return new Double(left.doubleValue() - right.doubleValue());
         }
@@ -132,9 +139,9 @@ public abstract class ArithmeticExpression extends BinaryExpression {
     protected Number multiply(Number left, Number right) {
         switch (numberType(left, right)) {
         case INTEGER:
-            return new Integer(left.intValue() * right.intValue());
+            return Integer.valueOf(left.intValue() * right.intValue());
         case LONG:
-            return new Long(left.longValue() * right.longValue());
+            return Long.valueOf(left.longValue() * right.longValue());
         default:
             return new Double(left.doubleValue() * right.doubleValue());
         }
@@ -172,7 +179,7 @@ public abstract class ArithmeticExpression extends BinaryExpression {
                     if( v.contains(".") ) {
                         return new Double(v);
                     } else {
-                        return new Long(v);
+                        return Long.valueOf(v);
                     }
                 } catch (NumberFormatException e) {
                     throw new RuntimeException("Cannot convert value: " + value + " into a number");
@@ -182,6 +189,7 @@ public abstract class ArithmeticExpression extends BinaryExpression {
         }
     }
 
+    @Override
     public Object evaluate(Filterable message) throws FilterException {
         Object lvalue = left.evaluate(message);
         if (lvalue == null) {

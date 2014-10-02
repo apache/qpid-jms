@@ -30,72 +30,74 @@ import org.apache.qpid.jms.selector.filter.Filterable;
  */
 @SuppressWarnings("unchecked")
 public class SelectorTest extends TestCase {
-		
-    class MockMessage implements Filterable {
 
-    	HashMap<String, Object> properties = new HashMap<String, Object>();
-		private String text;
-		private Object destination;
-		private String messageId;
-		private String type;
-		private Object localConnectionId;
-    	
-		public void setDestination(Object destination) {
-			this.destination=destination;
-		}
-		public void setJMSMessageID(String messageId) {
-			this.messageId = messageId;
-		}
-		public void setJMSType(String type) {
-			this.type = type;
-		}
-		public void setText(String text) {
-			this.text = text;
-		}
+    static class MockMessage implements Filterable {
 
-		public void setBooleanProperty(String key, boolean value) {
-			properties.put(key, value);
-		}
+        HashMap<String, Object> properties = new HashMap<String, Object>();
+        private String text;
+        private Object destination;
+        private String messageId;
+        private String type;
+        private Object localConnectionId;
 
-		public void setStringProperty(String key, String value) {
-			properties.put(key, value);
-		}
+        public void setDestination(Object destination) {
+            this.destination=destination;
+        }
+        public void setJMSMessageID(String messageId) {
+            this.messageId = messageId;
+        }
+        public void setJMSType(String type) {
+            this.type = type;
+        }
+        public void setText(String text) {
+            this.text = text;
+        }
 
-		public void setByteProperty(String key, byte value) {
-			properties.put(key, value);
-		}
+        public void setBooleanProperty(String key, boolean value) {
+            properties.put(key, value);
+        }
 
-		public void setDoubleProperty(String key, double value) {
-			properties.put(key, value);
-		}
+        public void setStringProperty(String key, String value) {
+            properties.put(key, value);
+        }
 
-		public void setFloatProperty(String key, float value) {
-			properties.put(key, value);
-		}
+        public void setByteProperty(String key, byte value) {
+            properties.put(key, value);
+        }
 
-		public void setLongProperty(String key, long value) {
-			properties.put(key, value);
-		}
+        public void setDoubleProperty(String key, double value) {
+            properties.put(key, value);
+        }
 
-		public void setIntProperty(String key, int value) {
-			properties.put(key, value);
-		}
+        public void setFloatProperty(String key, float value) {
+            properties.put(key, value);
+        }
 
-		public void setShortProperty(String key, short value) {
-			properties.put(key, value);
-		}
+        public void setLongProperty(String key, long value) {
+            properties.put(key, value);
+        }
 
-		public void setObjectProperty(String key, Object value) {
-			properties.put(key, value);
-		}
+        public void setIntProperty(String key, int value) {
+            properties.put(key, value);
+        }
 
-		public <T> T getBodyAs(Class<T> type) throws FilterException {
-			if( type == String.class ) {
-				return type.cast(text);
-			}
-			return null;
-		}
+        public void setShortProperty(String key, short value) {
+            properties.put(key, value);
+        }
 
+        public void setObjectProperty(String key, Object value) {
+            properties.put(key, value);
+        }
+
+        @Override
+        public <T> T getBodyAs(Class<T> type) throws FilterException {
+            if( type == String.class ) {
+                return type.cast(text);
+            }
+            return null;
+        }
+
+        @Override
         public Object getProperty(String name) {
             if( "JMSType".equals(name) ) {
                 return type;
@@ -107,23 +109,20 @@ public class SelectorTest extends TestCase {
         }
 
         public <T> T getDestination() {
-			return (T)destination;
-		}
+            return (T)destination;
+        }
 
-		public Object getLocalConnectionId() {
-			return localConnectionId;
-		}
-
-    	
+        @Override
+        public Object getLocalConnectionId() {
+            return localConnectionId;
+        }
     }
-
 
     public void testBooleanSelector() throws Exception {
         MockMessage message = createMessage();
 
         assertSelector(message, "(trueProp OR falseProp) AND trueProp", true);
         assertSelector(message, "(trueProp OR falseProp) AND falseProp", false);
-
     }
 
     public void testXPathSelectors() throws Exception {
@@ -139,33 +138,32 @@ public class SelectorTest extends TestCase {
         assertSelector(message, "XPATH '//root/b=\"b\"'", true);
         assertSelector(message, "XPATH '//root/b=\"c\"'", false);
         assertSelector(message, "XPATH '//root/b!=\"c\"'", true);
-        
+
         assertSelector(message, "XPATH '//root/*[@key=''second'']'", true);
         assertSelector(message, "XPATH '//root/*[@key=''third'']'", false);
         assertSelector(message, "XPATH '//root/a[@key=''first'']'", true);
         assertSelector(message, "XPATH '//root/a[@num=1]'", true);
         assertSelector(message, "XPATH '//root/a[@key=''second'']'", false);
-        
+
         assertSelector(message, "XPATH '/root/*[@key=''first'' or @key=''third'']'", true);
         assertSelector(message, "XPATH '//root/*[@key=''third'' or @key=''forth'']'", false);
 
         assertSelector(message, "XPATH '/root/b=''b'' and /root/b[@key=''second'']'", true);
         assertSelector(message, "XPATH '/root/b=''b'' and /root/b[@key=''first'']'", false);
-        
+
         assertSelector(message, "XPATH 'not(//root/a)'", false);
         assertSelector(message, "XPATH 'not(//root/c)'", true);
         assertSelector(message, "XPATH '//root/a[not(@key=''first'')]'", false);
         assertSelector(message, "XPATH '//root/a[not(not(@key=''first''))]'", true);
-        
+
         assertSelector(message, "XPATH 'string(//root/b)'", true);
         assertSelector(message, "XPATH 'string(//root/a)'", false);
-        
+
         assertSelector(message, "XPATH 'sum(//@num) < 10'", true);
         assertSelector(message, "XPATH 'sum(//@num) > 10'", false);
-        
+
         assertSelector(message, "XPATH '//root/a[@num > 1]'", false);
-        assertSelector(message, "XPATH '//root/b[@num > 1]'", true);  
-        
+        assertSelector(message, "XPATH '//root/b[@num > 1]'", true);
     }
 
     public void testJMSPropertySelectors() throws Exception {
@@ -194,7 +192,6 @@ public class SelectorTest extends TestCase {
         assertSelector(message, "rank > 100", true);
         assertSelector(message, "rank >= 123", true);
         assertSelector(message, "rank >= 124", false);
-
     }
 
     public void testPropertyTypes() throws Exception {
@@ -276,7 +273,6 @@ public class SelectorTest extends TestCase {
         assertSelector(message, "rank / 3 > 100.0", false);
         assertSelector(message, "rank / 3 > 100", false);
         assertSelector(message, "version / 2 = 1", true);
-
     }
 
     public void testBetween() throws Exception {
@@ -446,10 +442,10 @@ public class SelectorTest extends TestCase {
         message.setByteProperty("byteProp", (byte)123);
         message.setByteProperty("byteProp2", (byte)33);
         message.setShortProperty("shortProp", (short)123);
-        message.setIntProperty("intProp", (int)123);
-        message.setLongProperty("longProp", (long)123);
-        message.setFloatProperty("floatProp", (float)123);
-        message.setDoubleProperty("doubleProp", (double)123);
+        message.setIntProperty("intProp", 123);
+        message.setLongProperty("longProp", 123);
+        message.setFloatProperty("floatProp", 123);
+        message.setDoubleProperty("doubleProp", 123);
 
         message.setIntProperty("rank", 123);
         message.setIntProperty("version", 2);
@@ -468,7 +464,7 @@ public class SelectorTest extends TestCase {
         } catch (FilterException e) {
         }
     }
-    
+
     protected void assertSelector(MockMessage message, String text, boolean expected) throws FilterException {
         BooleanExpression selector = SelectorParser.parse(text);
         assertTrue("Created a valid selector", selector != null);
@@ -477,7 +473,7 @@ public class SelectorTest extends TestCase {
     }
 
     protected MockMessage createMessage(String subject) {
-    	MockMessage message = new MockMessage();
+        MockMessage message = new MockMessage();
         message.setDestination(subject);
         return message;
     }

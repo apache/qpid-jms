@@ -21,11 +21,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-
 /**
  * A filter performing a comparison of two objects
- * 
- * @version $Revision: 1.2 $
  */
 public abstract class ComparisonExpression extends BinaryExpression implements BooleanExpression {
 
@@ -101,7 +98,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
                     regexp.append(".*?"); // Do a non-greedy match
                 } else if (c == '_') {
                     regexp.append("."); // match one
-                } else if (REGEXP_CONTROL_CHARS.contains(new Character(c))) {
+                } else if (REGEXP_CONTROL_CHARS.contains(Character.valueOf(c))) {
                     regexp.append("\\x");
                     regexp.append(Integer.toHexString(0xFFFF & c));
                 } else {
@@ -116,6 +113,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         /**
          * @see org.apache.activemq.filter.UnaryExpression#getExpressionSymbol()
          */
+        @Override
         public String getExpressionSymbol() {
             return "LIKE";
         }
@@ -123,6 +121,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         /**
          * @see org.apache.activemq.filter.Expression#evaluate(Filterable)
          */
+        @Override
         public Object evaluate(Filterable message) throws FilterException {
 
             Object rv = this.getRight().evaluate(message);
@@ -134,12 +133,13 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             if (!(rv instanceof String)) {
                 return Boolean.FALSE;
                 // throw new RuntimeException("LIKE can only operate on String
-                // identifiers. LIKE attemped on: '" + rv.getClass());
+                // identifiers. LIKE attempted on: '" + rv.getClass());
             }
 
             return likePattern.matcher((String)rv).matches() ? Boolean.TRUE : Boolean.FALSE;
         }
 
+        @Override
         public boolean matches(Filterable message) throws FilterException {
             Object object = evaluate(message);
             return object != null && object == Boolean.TRUE;
@@ -168,7 +168,6 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             throw new RuntimeException("Expected a property for In expression, got: " + left);
         }
         return UnaryExpression.createInExpression((PropertyExpression)left, elements, false);
-
     }
 
     public static BooleanExpression createNotInFilter(Expression left, List elements) {
@@ -177,7 +176,6 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             throw new RuntimeException("Expected a property for In expression, got: " + left);
         }
         return UnaryExpression.createInExpression((PropertyExpression)left, elements, true);
-
     }
 
     public static BooleanExpression createIsNull(Expression left) {
@@ -202,6 +200,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
     private static BooleanExpression doCreateEqual(Expression left, Expression right) {
         return new ComparisonExpression(left, right) {
 
+            @Override
             public Object evaluate(Filterable message) throws FilterException {
                 Object lv = left.evaluate(message);
                 Object rv = right.evaluate(message);
@@ -219,10 +218,12 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
                 return Boolean.FALSE;
             }
 
+            @Override
             protected boolean asBoolean(int answer) {
                 return answer == 0;
             }
 
+            @Override
             public String getExpressionSymbol() {
                 return "=";
             }
@@ -233,10 +234,12 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         checkLessThanOperand(left);
         checkLessThanOperand(right);
         return new ComparisonExpression(left, right) {
+            @Override
             protected boolean asBoolean(int answer) {
                 return answer > 0;
             }
 
+            @Override
             public String getExpressionSymbol() {
                 return ">";
             }
@@ -247,10 +250,12 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         checkLessThanOperand(left);
         checkLessThanOperand(right);
         return new ComparisonExpression(left, right) {
+            @Override
             protected boolean asBoolean(int answer) {
                 return answer >= 0;
             }
 
+            @Override
             public String getExpressionSymbol() {
                 return ">=";
             }
@@ -262,10 +267,12 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         checkLessThanOperand(right);
         return new ComparisonExpression(left, right) {
 
+            @Override
             protected boolean asBoolean(int answer) {
                 return answer < 0;
             }
 
+            @Override
             public String getExpressionSymbol() {
                 return "<";
             }
@@ -278,10 +285,12 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         checkLessThanOperand(right);
         return new ComparisonExpression(left, right) {
 
+            @Override
             protected boolean asBoolean(int answer) {
                 return answer <= 0;
             }
 
+            @Override
             public String getExpressionSymbol() {
                 return "<=";
             }
@@ -290,7 +299,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
 
     /**
      * Only Numeric expressions can be used in >, >=, < or <= expressions.s
-     * 
+     *
      * @param expr
      */
     public static void checkLessThanOperand(Expression expr) {
@@ -311,7 +320,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
     /**
      * Validates that the expression can be used in == or <> expression. Cannot
      * not be NULL TRUE or FALSE litterals.
-     * 
+     *
      * @param expr
      */
     public static void checkEqualOperand(Expression expr) {
@@ -335,6 +344,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         }
     }
 
+    @Override
     public Object evaluate(Filterable message) throws FilterException {
         Comparable<Comparable> lv = (Comparable)left.evaluate(message);
         if (lv == null) {
@@ -465,14 +475,15 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
                 return Boolean.FALSE;
             }
         }
+
         return asBoolean(lv.compareTo(rv)) ? Boolean.TRUE : Boolean.FALSE;
     }
 
     protected abstract boolean asBoolean(int answer);
 
+    @Override
     public boolean matches(Filterable message) throws FilterException {
         Object object = evaluate(message);
         return object != null && object == Boolean.TRUE;
     }
-
 }

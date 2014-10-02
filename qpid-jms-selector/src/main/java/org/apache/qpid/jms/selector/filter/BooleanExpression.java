@@ -16,16 +16,12 @@
  */
 package org.apache.qpid.jms.selector.filter;
 
-
-
 /**
  * A BooleanExpression is an expression that always
  * produces a Boolean result.
- *
- * @version $Revision: 1.2 $
  */
 public interface BooleanExpression extends Expression {
-    
+
     /**
      * @param message
      * @return true if the expression evaluates to Boolean.TRUE.

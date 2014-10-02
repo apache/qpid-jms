@@ -421,7 +421,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         } else {
             boolean appSpecific = false;
             boolean hasMessageIdPrefix = messageIdHelper.hasMessageIdPrefix(correlationId);
-            if (correlationId != null && !hasMessageIdPrefix) {
+            if (!hasMessageIdPrefix) {
                 appSpecific = true;
             }
 

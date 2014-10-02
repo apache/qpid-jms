@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.net.ssl.SSLContext;
 
@@ -122,16 +123,15 @@ public class PropertyUtil {
             if (options.size() > 0) {
                 StringBuffer rc = new StringBuffer();
                 boolean first = true;
-                for (String key : options.keySet()) {
+                for (Entry<String, ? extends Object> entry : options.entrySet()) {
                     if (first) {
                         first = false;
                     } else {
                         rc.append("&");
                     }
-                    String value = (String) options.get(key);
-                    rc.append(URLEncoder.encode(key, "UTF-8"));
+                    rc.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
                     rc.append("=");
-                    rc.append(URLEncoder.encode(value, "UTF-8"));
+                    rc.append(URLEncoder.encode((String) entry.getValue(), "UTF-8"));
                 }
                 return rc.toString();
             } else {
@@ -212,12 +212,11 @@ public class PropertyUtil {
 
         HashMap<String, String> rc = new HashMap<String, String>(props.size());
 
-        for (Iterator<String> iter = props.keySet().iterator(); iter.hasNext();) {
-            String name = iter.next();
-            if (name.startsWith(optionPrefix)) {
-                String value = props.get(name);
-                name = name.substring(optionPrefix.length());
-                rc.put(name, value);
+        for (Iterator<Entry<String, String>> iter = props.entrySet().iterator(); iter.hasNext();) {
+            Entry<String, String> entry = iter.next();
+            if (entry.getKey().startsWith(optionPrefix)) {
+                String name = entry.getKey().substring(optionPrefix.length());
+                rc.put(name, entry.getValue());
                 iter.remove();
             }
         }

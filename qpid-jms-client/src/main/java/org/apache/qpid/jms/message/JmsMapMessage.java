@@ -185,7 +185,7 @@ public class JmsMapMessage extends JmsMessage implements MapMessage {
         Object value = getObject(name);
 
         if (value == null) {
-            return (byte[]) value;
+            return null;
         } else if (value instanceof byte[]) {
             byte[] original = (byte[]) value;
             byte[] clone = new byte[original.length];

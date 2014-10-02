@@ -21,7 +21,6 @@ import io.netty.buffer.ByteBuf;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
@@ -177,14 +176,8 @@ public class RawTcpTransport implements Transport, Runnable {
     public void send(ByteBuffer output) throws IOException {
         checkConnected();
         LOG.info("RawTcpTransport sending packet of size: {}", output.remaining());
-        if (dataOut instanceof OutputStream) {
-            WritableByteChannel channel = Channels.newChannel(dataOut);
-            channel.write(output);
-        } else {
-            while (output.hasRemaining()) {
-                dataOut.writeByte(output.get());
-            }
-        }
+        WritableByteChannel channel = Channels.newChannel(dataOut);
+        channel.write(output);
         dataOut.flush();
     }
 

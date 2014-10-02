@@ -19,6 +19,7 @@ package org.apache.qpid.jms;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.Enumeration;
 import java.util.Vector;
 import java.util.regex.Matcher;
@@ -57,7 +58,7 @@ public final class JmsConnectionMetaData implements ConnectionMetaData {
             InputStream in = null;
             if ((in = JmsConnectionMetaData.class.getResourceAsStream("/org/apache/qpid/jms/version.txt")) != null) {
                 try {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(in, Charset.forName("US-ASCII")));
                     version = reader.readLine();
                     Pattern pattern = Pattern.compile("(\\d+)\\.(\\d+).*");
                     Matcher m = pattern.matcher(version);

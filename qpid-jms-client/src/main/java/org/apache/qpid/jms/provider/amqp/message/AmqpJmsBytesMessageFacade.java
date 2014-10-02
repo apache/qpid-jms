@@ -125,7 +125,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
 
             if (value instanceof Binary) {
                 Binary payload = (Binary)value;
-                if (payload != null && payload.getLength() != 0) {
+                if (payload.getLength() != 0) {
                     result = payload;
                 }
             } else {

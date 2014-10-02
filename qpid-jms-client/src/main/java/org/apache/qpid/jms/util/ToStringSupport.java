@@ -49,9 +49,8 @@ public final class ToStringSupport {
         LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
         addFields(target, target.getClass(), stopClass, map);
         if (overrideFields != null) {
-            for(String key : overrideFields.keySet()) {
-                Object value = overrideFields.get(key);
-                map.put(key, value);
+            for(Entry<String, Object> entry : overrideFields.entrySet()) {
+                map.put(entry.getKey(), entry.getValue());
             }
 
         }

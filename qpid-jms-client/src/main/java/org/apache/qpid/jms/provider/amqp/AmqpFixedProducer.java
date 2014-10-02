@@ -242,7 +242,7 @@ public class AmqpFixedProducer extends AmqpProducer {
         Target target = new Target();
         target.setAddress(destnationName);
 
-        String senderName = sourceAddress + ":" + destnationName != null ? destnationName : "Anonymous";
+        String senderName = sourceAddress + ":" + destnationName;
         endpoint = session.getProtonSession().sender(senderName);
         endpoint.setSource(source);
         endpoint.setTarget(target);

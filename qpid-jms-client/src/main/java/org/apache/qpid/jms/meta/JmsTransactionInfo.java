@@ -48,7 +48,7 @@ public final class JmsTransactionInfo implements JmsResource, Comparable<JmsTran
 
     @Override
     public int hashCode() {
-        return (transactionId == null) ? 0 : transactionId.hashCode();
+        return (transactionId == null) ? super.hashCode() : transactionId.hashCode();
     }
 
     @Override
@@ -65,12 +65,11 @@ public final class JmsTransactionInfo implements JmsResource, Comparable<JmsTran
 
         JmsTransactionInfo other = (JmsTransactionInfo) obj;
 
-        if (transactionId == null && other.transactionId != null) {
-            return false;
-        } else if (!transactionId.equals(other.transactionId)) {
-            return false;
+        if (transactionId != null) {
+            return transactionId.equals(other.transactionId);
         }
-        return true;
+
+        return false;
     }
 
     @Override

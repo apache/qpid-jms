@@ -162,13 +162,35 @@ public class JmsPrefetchPolicy extends Object implements Serializable {
     }
 
     @Override
-    public boolean equals(Object object) {
-        if (object instanceof JmsPrefetchPolicy) {
-            JmsPrefetchPolicy other = (JmsPrefetchPolicy) object;
-            return this.queuePrefetch == other.queuePrefetch && this.queueBrowserPrefetch == other.queueBrowserPrefetch
-                && this.topicPrefetch == other.topicPrefetch && this.durableTopicPrefetch == other.durableTopicPrefetch;
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + durableTopicPrefetch;
+        result = prime * result + maxPrefetchSize;
+        result = prime * result + queueBrowserPrefetch;
+        result = prime * result + queuePrefetch;
+        result = prime * result + topicPrefetch;
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
         }
-        return false;
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+
+        JmsPrefetchPolicy other = (JmsPrefetchPolicy) obj;
+
+        return this.queuePrefetch == other.queuePrefetch &&
+               this.queueBrowserPrefetch == other.queueBrowserPrefetch &&
+               this.topicPrefetch == other.topicPrefetch &&
+               this.durableTopicPrefetch == other.durableTopicPrefetch;
     }
 
     private int getMaxPrefetchLimit(int value) {

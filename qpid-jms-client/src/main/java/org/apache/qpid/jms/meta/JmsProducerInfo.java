@@ -65,7 +65,7 @@ public final class JmsProducerInfo implements JmsResource, Comparable<JmsProduce
 
     @Override
     public int hashCode() {
-        return (producerId == null) ? 0 : producerId.hashCode();
+        return (producerId == null) ? super.hashCode() : producerId.hashCode();
     }
 
     @Override
@@ -82,13 +82,12 @@ public final class JmsProducerInfo implements JmsResource, Comparable<JmsProduce
 
         JmsProducerInfo other = (JmsProducerInfo) obj;
 
-        if (producerId == null && other.producerId != null) {
-            return false;
-        } else if (!producerId.equals(other.producerId)) {
-            return false;
+        if (producerId != null) {
+            return producerId.equals(other.producerId);
         }
 
-        return true;
+        return false;
+
     }
 
     @Override

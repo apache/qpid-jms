@@ -150,7 +150,7 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
 
     @Override
     public int hashCode() {
-        return (consumerId == null) ? 0 : consumerId.hashCode();
+        return (consumerId == null) ? super.hashCode() : consumerId.hashCode();
     }
 
     @Override
@@ -167,12 +167,11 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
 
         JmsConsumerInfo other = (JmsConsumerInfo) obj;
 
-        if (consumerId == null && other.consumerId != null) {
-            return false;
-        } else if (!consumerId.equals(other.consumerId)) {
-            return false;
+        if (consumerId != null) {
+            return consumerId.equals(other.consumerId);
         }
-        return true;
+
+        return false;
     }
 
     @Override

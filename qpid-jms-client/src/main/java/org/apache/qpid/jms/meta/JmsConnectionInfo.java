@@ -214,7 +214,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     @Override
     public int hashCode() {
-        return this.connectionId.hashCode();
+        return (connectionId == null) ? super.hashCode() : connectionId.hashCode();
     }
 
     @Override
@@ -231,12 +231,11 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
         JmsConnectionInfo other = (JmsConnectionInfo) obj;
 
-        if (connectionId == null && other.connectionId != null) {
-            return false;
-        } else if (!connectionId.equals(other.connectionId)) {
-            return false;
+        if (connectionId != null) {
+            return connectionId.equals(other.connectionId);
         }
-        return true;
+
+        return false;
     }
 
     @Override

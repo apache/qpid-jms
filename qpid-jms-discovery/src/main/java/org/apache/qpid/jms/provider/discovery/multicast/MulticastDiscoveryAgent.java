@@ -102,6 +102,10 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
                 } catch (URISyntaxException e) {
                     // Default is always valid.
                 }
+
+                if (discoveryURI == null) {
+                    throw new RuntimeException("Discovery URI unexpectedly null");
+                }
             }
 
             LOG.trace("mcast - discoveryURI = {}", discoveryURI);
@@ -109,7 +113,7 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
             String myHost = discoveryURI.getHost();
             int myPort = discoveryURI.getPort();
 
-            if (DEFAULT_HOST_STR.equals(myHost)) {
+            if (myHost == null || DEFAULT_HOST_STR.equals(myHost)) {
                 myHost = DEFAULT_HOST_IP;
             }
 
@@ -364,7 +368,7 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
 
     // ---------- Discovered Peer Bookkeeping Class ---------------------------//
 
-    private class RemoteBrokerData extends DiscoveryEvent {
+    private static class RemoteBrokerData extends DiscoveryEvent {
 
         long lastHeartBeat;
 

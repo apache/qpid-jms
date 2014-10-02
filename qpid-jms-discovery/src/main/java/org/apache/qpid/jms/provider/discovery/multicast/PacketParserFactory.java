@@ -93,7 +93,7 @@ public abstract class PacketParserFactory {
      */
     protected static PacketParserFactory findAgentFactory(String key) throws IOException {
         if (key == null) {
-            throw new IOException("No PacketParserFactory name specified: [" + key + "]");
+            throw new IOException("No PacketParserFactory name specified: [null]");
         }
 
         PacketParserFactory factory = null;

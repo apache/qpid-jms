@@ -113,14 +113,17 @@ public class FactoryFinder<T extends Object> {
     public T newInstance(String key) throws IllegalAccessException, InstantiationException, IOException, ClassNotFoundException, ClassCastException {
         T factory = cachedFactories.get(key);
         if (factory == null) {
-
             Object found = objectFactory.create(path + key);
-            if (found != null && factoryType.isInstance(found)) {
-                factory = factoryType.cast(found);
-                cachedFactories.put(key, factory);
+            if (found != null) {
+                if (factoryType.isInstance(found)) {
+                    factory = factoryType.cast(found);
+                    cachedFactories.putIfAbsent(key, factory);
+                } else {
+                    throw new ClassCastException("Cannot cast " + found.getClass().getName() +
+                        " to " + factoryType.getName());
+                }
             } else {
-                throw new ClassCastException("Cannot cast " + found.getClass().getName() +
-                    " to " + factoryType.getName());
+                throw new ClassNotFoundException("Could not locate factory for class: " + key);
             }
         }
 
@@ -142,27 +145,29 @@ public class FactoryFinder<T extends Object> {
     /**
      * The default implementation of Object factory which works well in stand-alone applications.
      */
-    @SuppressWarnings("rawtypes")
     protected static class StandaloneObjectFactory implements ObjectFactory {
-        final ConcurrentHashMap<String, Class> classMap = new ConcurrentHashMap<String, Class>();
+        final ConcurrentHashMap<String, Class<?>> classMap = new ConcurrentHashMap<String, Class<?>>();
 
         @Override
         public Object create(final String path) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
-            Class clazz = classMap.get(path);
+            Class<?> clazz = classMap.get(path);
             if (clazz == null) {
                 clazz = loadClass(loadProperties(path));
-                classMap.put(path, clazz);
+                Class<?> previous = classMap.putIfAbsent(path, clazz);
+                if (previous != null) {
+                    clazz = previous;
+                }
             }
             return clazz.newInstance();
         }
 
-        static public Class loadClass(Properties properties) throws ClassNotFoundException, IOException {
+        static public Class<?> loadClass(Properties properties) throws ClassNotFoundException, IOException {
 
             String className = properties.getProperty("class");
             if (className == null) {
                 throw new IOException("Expected property is missing: class");
             }
-            Class clazz = null;
+            Class<?> clazz = null;
             ClassLoader loader = Thread.currentThread().getContextClassLoader();
             if (loader != null) {
                 try {
@@ -192,17 +197,10 @@ public class FactoryFinder<T extends Object> {
             }
 
             // lets load the file
-            BufferedInputStream reader = null;
-            try {
-                reader = new BufferedInputStream(in);
+            try (BufferedInputStream reader = new BufferedInputStream(in)) {
                 Properties properties = new Properties();
                 properties.load(reader);
                 return properties;
-            } finally {
-                try {
-                    reader.close();
-                } catch (Exception e) {
-                }
             }
         }
     }

@@ -417,7 +417,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     public void setCorrelationId(String correlationId) {
         AmqpMessageIdHelper messageIdHelper = AmqpMessageIdHelper.INSTANCE;
         if (correlationId == null) {
-            message.setMessageId(null);
+            message.setCorrelationId(null);
         } else {
             boolean appSpecific = false;
             boolean hasMessageIdPrefix = messageIdHelper.hasMessageIdPrefix(correlationId);
@@ -468,12 +468,12 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public void setCorrelationIdBytes(byte[] correlationId) {
-        if (correlationId == null) {
-            message.setCorrelationId(correlationId);
-        } else {
-            byte[] bytes = Arrays.copyOf(correlationId, correlationId.length);
-            message.setCorrelationId(new Binary(bytes));
+        Binary binaryIdValue = null;
+        if (correlationId != null) {
+            binaryIdValue = new Binary(Arrays.copyOf(correlationId, correlationId.length));
         }
+
+        message.setCorrelationId(binaryIdValue);
     }
 
     @Override

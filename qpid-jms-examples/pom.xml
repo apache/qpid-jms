@@ -24,9 +24,13 @@
   </parent>
 
   <artifactId>qpid-jms-examples</artifactId>
-  <packaging>jar</packaging>
   <name>QpidJMS Examples</name>
   <description>Examples for QpidJMS</description>
+  <packaging>jar</packaging>
+
+  <properties>
+    <jacoco.skip>true</jacoco.skip>
+  </properties>
 
   <dependencies>
     <dependency>

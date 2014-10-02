@@ -64,13 +64,14 @@
     <maven-compiler-plugin-version>3.1</maven-compiler-plugin-version>
     <findbugs-maven-plugin-version>3.0.0</findbugs-maven-plugin-version>
     <build-helper-maven-plugin-version>1.8</build-helper-maven-plugin-version>
+    <jacoco-plugin-version>0.7.2.201409121644</jacoco-plugin-version>
 
     <!-- Test properties -->
     <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
     <proton.trace.frames>false</proton.trace.frames>
 
     <!-- surefire forked jvm arguments -->
-    <argLine>-Xmx2g -enableassertions</argLine>
+    <argLine>-Xmx2g -enableassertions ${jacoco-config}</argLine>
   </properties>
 
   <issueManagement>
@@ -228,6 +229,11 @@
           <artifactId>build-helper-maven-plugin</artifactId>
           <version>${build-helper-maven-plugin-version}</version>
         </plugin>
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${jacoco-plugin-version}</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -243,6 +249,30 @@
           <showWarnings>true</showWarnings>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <propertyName>jacoco-config</propertyName>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
+
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco-plugin-version}</version>
+      </plugin>
+    </plugins>
+  </reporting>
 </project>

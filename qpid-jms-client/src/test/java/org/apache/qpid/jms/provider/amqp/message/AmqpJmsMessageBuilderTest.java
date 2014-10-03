@@ -22,6 +22,7 @@ package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -221,5 +222,103 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         JmsMessageFacade facade = jmsMessage.getFacade();
         assertNotNull("Facade should not be null", facade);
         assertEquals("Unexpected facade class type", AmqpJmsStreamMessageFacade.class, facade.getClass());
+    }
+
+    // =============== Without The Message Type Annotation =========
+    // =============================================================
+
+    // --------- No Body Section ---------
+
+    /**
+     * Test that a message with no body section, but with the content type set to
+     * {@value AmqpMessageSupport#OCTET_STREAM_CONTENT_TYPE} results in a BytesMessage
+     * when not otherwise annotated to indicate the type of JMS message it is.
+     */
+    @Test
+    public void testCreateBytesMessageFromNoBodySectionAndContentType() throws Exception {
+        Message message = Proton.message();
+        message.setContentType(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE);
+
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsBytesMessage.class, jmsMessage.getClass());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsBytesMessageFacade.class, facade.getClass());
+    }
+
+    /**
+     * Test that a message with no body section, and no content-type results in a BytesMessage
+     * when not otherwise annotated to indicate the type of JMS message it is.
+     */
+    @Test
+    public void testCreateBytesMessageFromNoBodySectionAndNoContentType() throws Exception {
+        Message message = Proton.message();
+
+        assertNull(message.getContentType());
+
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsBytesMessage.class, jmsMessage.getClass());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsBytesMessageFacade.class, facade.getClass());
+    }
+
+    /**
+    * Test that a message with no body section, but with the content type set to
+    * {@value AmqpMessageSupport#SERIALIZED_JAVA_OBJECT_CONTENT_TYPE} results in an ObjectMessage
+    * when not otherwise annotated to indicate the type of JMS message it is.
+    */
+    @Test
+    public void testCreateObjectMessageFromNoBodySectionAndContentType() throws Exception {
+        Message message = Proton.message();
+        message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
+
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsObjectMessageFacade.class, facade.getClass());
+
+        AmqpObjectTypeDelegate delegate = ((AmqpJmsObjectMessageFacade) facade).getDelegate();
+        assertTrue("Unexpected delegate type: " + delegate, delegate instanceof AmqpSerializedObjectDelegate);
+    }
+
+    /**
+     * Test that a message with no body section, but with the content type set to
+     * {@value AmqpMessageSupport#TEXT_PLAIN_CONTENT_TYPE} results in a TextMessage
+     * when not otherwise annotated to indicate the type of JMS message it is.
+     */
+    @Test
+    public void testCreateTextMessageFromNoBodySectionAndContentType() throws Exception {
+        Message message = Proton.message();
+        message.setContentType(AmqpMessageSupport.TEXT_PLAIN_CONTENT_TYPE);
+
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, facade.getClass());
+    }
+
+    /**
+     * Test that a message with no body section, and with the content type set to
+     * an unknown value results in an exception when not otherwise annotated to
+     * indicate the type of JMS message it is.
+     */
+    @Test(expected = IOException.class)
+    public void testNoBodySectionAndUnknownContentTypeThrowsException() throws Exception {
+        //TODO: decide if this should instead just be a plain Message
+        Message message = Proton.message();
+        message.setContentType("unknown-content-type");
+
+        AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
     }
 }

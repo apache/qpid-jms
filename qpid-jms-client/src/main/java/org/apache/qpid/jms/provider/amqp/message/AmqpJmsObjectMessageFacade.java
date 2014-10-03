@@ -44,12 +44,11 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
      * @param connection
      *        the AmqpConnection that under which this facade was created.
      */
-    public AmqpJmsObjectMessageFacade(AmqpConnection connection) {
+    public AmqpJmsObjectMessageFacade(AmqpConnection connection, boolean isAmqpTypeEncoded) {
         super(connection);
         setAnnotation(JMS_MSG_TYPE, JMS_OBJECT_MESSAGE);
 
-        // TODO Implement Connection property to control default serialization type
-        initDelegate(false);
+        initDelegate(isAmqpTypeEncoded);
     }
 
     /**
@@ -88,7 +87,7 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
 
     @Override
     public AmqpJmsObjectMessageFacade copy() throws JMSException {
-        AmqpJmsObjectMessageFacade copy = new AmqpJmsObjectMessageFacade(connection);
+        AmqpJmsObjectMessageFacade copy = new AmqpJmsObjectMessageFacade(connection, isAmqpTypedEncoding());
         copyInto(copy);
 
         try {

@@ -102,7 +102,8 @@ public class AmqpJmsMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsObjectMessage createObjectMessage(Serializable payload) throws JMSException {
-        JmsObjectMessageFacade facade = new AmqpJmsObjectMessageFacade(connection);
+        // TODO Implement [Connection?] configuration to control default delegate type?
+        JmsObjectMessageFacade facade = new AmqpJmsObjectMessageFacade(connection, false);
 
         if (payload != null) {
             try {

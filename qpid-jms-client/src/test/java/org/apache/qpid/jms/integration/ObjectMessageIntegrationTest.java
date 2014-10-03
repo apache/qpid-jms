@@ -51,7 +51,6 @@ import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedDataMatcher;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class ObjectMessageIntegrationTest extends QpidJmsTestCase
@@ -217,7 +216,6 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
     //==== AMQP type system encoding ====
 
     @Test(timeout = 5000)
-    @Ignore //TODO: currently failing due to sending the wrong type of section (seemingly still serializing)
     public void testSendBasicObjectMessageWithAmqpTypedContent() throws Exception
     {
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)

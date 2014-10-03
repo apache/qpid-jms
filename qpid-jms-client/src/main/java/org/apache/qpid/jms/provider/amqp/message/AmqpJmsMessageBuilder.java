@@ -102,7 +102,7 @@ public class AmqpJmsMessageBuilder {
                 case JMS_OBJECT_MESSAGE:
                     return createObjectMessage(consumer, message);
                 default:
-                    throw new IOException("Invalid JMS Message Type annotation found in message");
+                    throw new IOException("Invalid JMS Message Type annotation value found in message: " + annotation);
             }
         }
 

@@ -1,0 +1,225 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
+package org.apache.qpid.jms.provider.amqp.message;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.qpid.jms.message.JmsBytesMessage;
+import org.apache.qpid.jms.message.JmsMessage;
+import org.apache.qpid.jms.message.JmsObjectMessage;
+import org.apache.qpid.jms.message.JmsStreamMessage;
+import org.apache.qpid.jms.message.JmsTextMessage;
+import org.apache.qpid.jms.message.facade.JmsMessageFacade;
+import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
+import org.apache.qpid.jms.test.QpidJmsTestCase;
+import org.apache.qpid.proton.Proton;
+import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
+import org.apache.qpid.proton.message.Message;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
+    private AmqpConsumer mockConsumer;
+
+    @Before
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        mockConsumer = Mockito.mock(AmqpConsumer.class);
+    }
+
+    // =============== With The Message Type Annotation =========
+    // ==========================================================
+
+    /**
+     * Test that a message with the {@value AmqpMessageSupport#JMS_MSG_TYPE}
+     * annotation set to  {@value AmqpMessageSupport#JMS_MESSAGE} is
+     * treated as a generic {@link JmsMessage} with {@link AmqpJmsMessageFacade}
+     */
+    @Test(expected = IOException.class)
+    public void testCreateMessageFromUnknownMessageTypeAnnotationValueThrows() throws Exception {
+        Message message = Proton.message();
+
+        Map<Symbol, Object> map = new HashMap<Symbol, Object>();
+        map.put(Symbol.valueOf(AmqpMessageSupport.JMS_MSG_TYPE), (byte) -1);
+
+        MessageAnnotations messageAnnotations = new MessageAnnotations(map);
+        message.setMessageAnnotations(messageAnnotations);
+
+        AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+    }
+
+    /**
+     * Test that a message with the {@value AmqpMessageSupport#JMS_MSG_TYPE}
+     * annotation set to  {@value AmqpMessageSupport#JMS_MESSAGE} is
+     * treated as a generic {@link JmsMessage} with {@link AmqpJmsMessageFacade}
+     */
+    @Test
+    public void testCreateGenericMessageFromMessageTypeAnnotation() throws Exception {
+        Message message = Proton.message();
+
+        Map<Symbol, Object> map = new HashMap<Symbol, Object>();
+        map.put(Symbol.valueOf(AmqpMessageSupport.JMS_MSG_TYPE), AmqpMessageSupport.JMS_MESSAGE);
+
+        MessageAnnotations messageAnnotations = new MessageAnnotations(map);
+        message.setMessageAnnotations(messageAnnotations);
+
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsMessage.class, jmsMessage.getClass());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsMessageFacade.class, facade.getClass());
+    }
+
+    /**
+     * Test that a message with the {@value AmqpMessageSupport#JMS_MSG_TYPE}
+     * annotation set to  {@value AmqpMessageSupport#JMS_BYTES_MESSAGE} is
+     * treated as a {@link JmsBytesMessage} with {@link AmqpJmsBytesMessageFacade}
+     */
+    @Test
+    public void testCreateBytesMessageFromMessageTypeAnnotation() throws Exception {
+        Message message = Proton.message();
+
+        Map<Symbol, Object> map = new HashMap<Symbol, Object>();
+        map.put(Symbol.valueOf(AmqpMessageSupport.JMS_MSG_TYPE), AmqpMessageSupport.JMS_BYTES_MESSAGE);
+
+        MessageAnnotations messageAnnotations = new MessageAnnotations(map);
+        message.setMessageAnnotations(messageAnnotations);
+
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsBytesMessage.class, jmsMessage.getClass());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsBytesMessageFacade.class, facade.getClass());
+    }
+
+    /**
+     * Test that a message with the {@value AmqpMessageSupport#JMS_MSG_TYPE}
+     * annotation set to  {@value AmqpMessageSupport#JMS_BYTES_MESSAGE} is
+     * treated as a {@link JmsTextMessage} with {@link AmqpJmsTextMessageFacade}
+     */
+    @Test
+    public void testCreateTextMessageFromMessageTypeAnnotation() throws Exception {
+        Message message = Proton.message();
+
+        Map<Symbol, Object> map = new HashMap<Symbol, Object>();
+        map.put(Symbol.valueOf(AmqpMessageSupport.JMS_MSG_TYPE), AmqpMessageSupport.JMS_TEXT_MESSAGE);
+
+        MessageAnnotations messageAnnotations = new MessageAnnotations(map);
+        message.setMessageAnnotations(messageAnnotations);
+
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, facade.getClass());
+    }
+
+    /**
+     * Test that a message with the {@value AmqpMessageSupport#JMS_MSG_TYPE}
+     * annotation set to  {@value AmqpMessageSupport#JMS_OBJECT_MESSAGE} and
+     * content-type set to {@value AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE} is
+     * treated as a {@link JmsObjectMessage} with {@link AmqpJmsObjectMessageFacade}
+     * containing a {@link AmqpSerializedObjectDelegate}.
+     */
+    @Test
+    public void testCreateObjectMessageFromMessageTypeAnnotation() throws Exception {
+        createObjectMessageFromMessageTypeAnnotationTestImpl(true);
+    }
+
+    /**
+     * Test that a message with the {@value AmqpMessageSupport#JMS_MSG_TYPE}
+     * annotation set to  {@value AmqpMessageSupport#JMS_OBJECT_MESSAGE} and
+     * content-type not set is treated as a {@link JmsObjectMessage} with
+     * {@link AmqpJmsObjectMessageFacade} containing a {@link AmqpTypedObjectDelegate}.
+     */
+    @Test
+    public void testCreateObjectMessageFromMessageTypeAnnotationAnd() throws Exception {
+        createObjectMessageFromMessageTypeAnnotationTestImpl(false);
+    }
+
+    private void createObjectMessageFromMessageTypeAnnotationTestImpl(boolean setJavaSerializedContentType) throws Exception {
+        Message message = Proton.message();
+
+        Map<Symbol, Object> map = new HashMap<Symbol, Object>();
+        map.put(Symbol.valueOf(AmqpMessageSupport.JMS_MSG_TYPE), AmqpMessageSupport.JMS_OBJECT_MESSAGE);
+
+        MessageAnnotations messageAnnotations = new MessageAnnotations(map);
+        message.setMessageAnnotations(messageAnnotations);
+
+        if (setJavaSerializedContentType) {
+            message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
+        }
+
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsObjectMessageFacade.class, facade.getClass());
+
+        AmqpObjectTypeDelegate delegate = ((AmqpJmsObjectMessageFacade) facade).getDelegate();
+        if (setJavaSerializedContentType) {
+            assertTrue("Unexpected delegate type: " + delegate, delegate instanceof AmqpSerializedObjectDelegate);
+        } else {
+            assertTrue("Unexpected delegate type: " + delegate, delegate instanceof AmqpTypedObjectDelegate);
+        }
+    }
+
+    /**
+     * Test that a message with the {@value AmqpMessageSupport#JMS_MSG_TYPE}
+     * annotation set to  {@value AmqpMessageSupport#JMS_STREAM_MESSAGE} is
+     * treated as a {@link JmsStreamMessage} with {@link AmqpJmsStreamMessageFacade}
+     */
+    @Test
+    public void testCreateStreamMessageFromMessageTypeAnnotation() throws Exception {
+        Message message = Proton.message();
+
+        Map<Symbol, Object> map = new HashMap<Symbol, Object>();
+        map.put(Symbol.valueOf(AmqpMessageSupport.JMS_MSG_TYPE), AmqpMessageSupport.JMS_STREAM_MESSAGE);
+
+        MessageAnnotations messageAnnotations = new MessageAnnotations(map);
+        message.setMessageAnnotations(messageAnnotations);
+
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsStreamMessage.class, jmsMessage.getClass());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsStreamMessageFacade.class, facade.getClass());
+    }
+}

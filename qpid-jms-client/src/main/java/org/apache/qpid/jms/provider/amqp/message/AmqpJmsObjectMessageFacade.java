@@ -150,4 +150,8 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
             delegate = new AmqpTypedObjectDelegate(getAmqpMessage());
         }
     }
+
+    AmqpObjectTypeDelegate getDelegate() {
+        return delegate;
+    }
 }

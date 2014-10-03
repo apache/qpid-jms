@@ -136,14 +136,31 @@ public abstract class JmsDestination extends JNDIStorable implements JmsResource
             return false;
         }
 
-        JmsDestination d = (JmsDestination) o;
-        return getName().equals(d.getName());
+        JmsDestination other = (JmsDestination) o;
+        if (name == null && other.name != null) {
+            return false;
+        } else if (!name.equals(other.name)) {
+            return false;
+        }
+
+        if (temporary != other.temporary) {
+            return false;
+        }
+        if (topic != other.topic) {
+            return false;
+        }
+
+        return true;
     }
 
     @Override
     public int hashCode() {
         if (hashValue == 0) {
-            hashValue = getName().hashCode();
+            final int prime = 31;
+            hashValue = 1;
+            hashValue = prime * hashValue + ((name == null) ? 0 : name.hashCode());
+            hashValue = prime * hashValue + (temporary ? 1231 : 1237);
+            hashValue = prime * hashValue + (topic ? 1231 : 1237);
         }
         return hashValue;
     }

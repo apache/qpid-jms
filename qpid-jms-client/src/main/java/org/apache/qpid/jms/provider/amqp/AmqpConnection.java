@@ -55,6 +55,9 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
     private String tempQueuePrefix;
     private String tempTopicPrefix;
 
+    private boolean anonymousProducerCache = false;
+    private int anonymousProducerCacheSize = 10;
+
     public AmqpConnection(AmqpProvider provider, Connection protonConnection, Sasl sasl, JmsConnectionInfo info) {
         super(info, protonConnection);
 
@@ -271,6 +274,36 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
     }
 
     /**
+     * @return true if anonymous producers should be cached or closed on send complete.
+     */
+    public boolean isAnonymousProducerCache() {
+        return anonymousProducerCache;
+    }
+
+    /**
+     * @param anonymousProducerCache
+     *        enable or disables the caching or anonymous producers.
+     */
+    public void setAnonymousProducerCache(boolean anonymousProducerCache) {
+        this.anonymousProducerCache = anonymousProducerCache;
+    }
+
+    /**
+     * @return the number of anonymous producers stored in each cache.
+     */
+    public int getAnonymousProducerCacheSize() {
+        return anonymousProducerCacheSize;
+    }
+
+    /**
+     * @param anonymousProducerCacheSize
+     *        the number of producers each anonymous producer instance will cache.
+     */
+    public void setAnonymousProducerCacheSize(int anonymousProducerCacheSize) {
+        this.anonymousProducerCacheSize = anonymousProducerCacheSize;
+    }
+
+    /**
      * @return the AMQP based JmsMessageFactory for this Connection.
      */
     public AmqpJmsMessageFactory getAmqpMessageFactory() {
@@ -282,4 +315,3 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
         return "AmqpConnection { " + getConnectionInfo().getConnectionId() + " }";
     }
 }
-

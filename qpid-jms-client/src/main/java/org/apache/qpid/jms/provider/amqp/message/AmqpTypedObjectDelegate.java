@@ -56,15 +56,17 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
             return null;
         } else if (body instanceof AmqpValue) {
             // TODO: This is assuming the object can be immediately returned, and is
-            //       Serializable. We will actually have to ensure elements are
+            //       deeply Serializable. We will actually have to ensure elements are
             //       Serializable and e.g convert the Uint/Ubyte etc wrappers.
             return (Serializable) ((AmqpValue) body).getValue();
         } else if (body instanceof Data) {
             // TODO: return as byte[]? ByteBuffer?
             throw new UnsupportedOperationException("Data support still to be added");
         } else if (body instanceof AmqpSequence) {
-            // TODO: return as list?
-            throw new UnsupportedOperationException("AmqpSequence support still to be added");
+            // TODO: This is assuming the object can be immediately returned, and is
+            //       deeply Serializable. We will actually have to ensure elements are
+            //       Serializable and e.g convert the Uint/Ubyte etc wrappers.
+            return (Serializable) ((AmqpSequence) body).getValue();
         } else {
             throw new IllegalStateException("Unexpected body type: " + body.getClass().getSimpleName());
         }

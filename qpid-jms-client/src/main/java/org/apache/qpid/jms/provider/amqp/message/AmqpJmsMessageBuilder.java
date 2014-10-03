@@ -145,7 +145,7 @@ public class AmqpJmsMessageBuilder {
                 return createObjectMessage(consumer, message);
             }
         } else if (body instanceof AmqpSequence) {
-            return createStreamMessage(consumer, message);
+            return createObjectMessage(consumer, message);
         }
 
         return null;

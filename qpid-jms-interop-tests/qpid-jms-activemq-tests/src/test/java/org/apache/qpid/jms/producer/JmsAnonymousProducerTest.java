@@ -20,6 +20,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
@@ -27,6 +30,7 @@ import javax.jms.Session;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
+import org.apache.qpid.jms.util.StopWatch;
 import org.junit.Test;
 
 /**
@@ -66,28 +70,58 @@ public class JmsAnonymousProducerTest extends AmqpTestSupport {
     }
 
     @Test(timeout = 60000)
-    public void testAnonymousSendToMultipleDestinations() throws Exception {
+    public void testAnonymousSendToThreeDestinations() throws Exception {
+        StopWatch timer = new StopWatch();
+        doTestAnonymousProducerSendToMultipleDests(3, 1);
+        LOG.info("Time to send to three destinations: {} ms", timer.taken());
+    }
+
+    @Test(timeout = 60000)
+    public void testAnonymousSendToTenDestinations() throws Exception {
+        StopWatch timer = new StopWatch();
+        doTestAnonymousProducerSendToMultipleDests(10, 1);
+        LOG.info("Time to send to ten destinations: {} ms", timer.taken());
+    }
+
+    @Test(timeout = 60000)
+    public void testAnonymousSendToOneHundredDestinations() throws Exception {
+        StopWatch timer = new StopWatch();
+        doTestAnonymousProducerSendToMultipleDests(100, 1);
+        LOG.info("Time to send to one hundred destinations: {} ms", timer.taken());
+    }
+
+    @Test(timeout = 60000)
+    public void testAnonymousSendToTenDestinationsTenTimes() throws Exception {
+        StopWatch timer = new StopWatch();
+        doTestAnonymousProducerSendToMultipleDests(10, 10);
+        LOG.info("Time to send to ten destinations ten times: {} ms", timer.taken());
+    }
+
+    public void doTestAnonymousProducerSendToMultipleDests(int numDestinations, int numIterations) throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue1 = session.createQueue(name.getMethodName() + 1);
-        Queue queue2 = session.createQueue(name.getMethodName() + 2);
-        Queue queue3 = session.createQueue(name.getMethodName() + 3);
+
+        List<Queue> queues = new ArrayList<Queue>(numDestinations);
+        for (int i = 0; i < numDestinations; ++i) {
+            queues.add(session.createQueue(name.getMethodName() + i));
+        }
+
         assertNotNull(session);
         MessageProducer producer = session.createProducer(null);
 
-        Message message = session.createMessage();
-        producer.send(queue1, message);
-        producer.send(queue2, message);
-        producer.send(queue3, message);
+        for (int iteration = 1; iteration <= numIterations; ++iteration) {
+            Message message = session.createMessage();
+            for (int i = 0; i < numDestinations; ++i) {
+                producer.send(queues.get(i), message);
+            }
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName() + 1);
-        assertEquals(1, proxy.getQueueSize());
-        proxy = getProxyToQueue(name.getMethodName() + 2);
-        assertEquals(1, proxy.getQueueSize());
-        proxy = getProxyToQueue(name.getMethodName() + 3);
-        assertEquals(1, proxy.getQueueSize());
+            for (int i = 0; i < numDestinations; ++i) {
+                QueueViewMBean proxy = getProxyToQueue(queues.get(i).getQueueName());
+                assertEquals(iteration, proxy.getQueueSize());
+            }
+        }
     }
 }

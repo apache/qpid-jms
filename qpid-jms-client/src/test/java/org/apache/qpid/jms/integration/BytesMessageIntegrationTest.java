@@ -55,7 +55,7 @@ import org.junit.Test;
 public class BytesMessageIntegrationTest extends QpidJmsTestCase {
     private final IntegrationTestFixture _testFixture = new IntegrationTestFixture();
 
-    @Test
+    @Test(timeout = 5000)
     public void testSendBasicBytesMessageWithContent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             Connection connection = _testFixture.establishConnecton(testPeer);
@@ -88,7 +88,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testReceiveBasicBytesMessageWithContentUsingDataSection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             Connection connection = _testFixture.establishConnecton(testPeer);
@@ -134,7 +134,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
      * resent that it results in the expected AMQP data body section and properties content type
      * being received by the test peer.
      */
-    @Test
+    @Test(timeout = 5000)
     public void testReceiveBytesMessageAndResendAfterResetAndPartialRead() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             Connection connection = _testFixture.establishConnecton(testPeer);
@@ -242,7 +242,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
      * AMQP message containing a data body section and content type of
      * {@link AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE}
      */
-    @Test
+    @Test(timeout = 5000)
     public void testReceiveBytesMessageWithAmqpValueAndResendResultsInData() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             Connection connection = _testFixture.establishConnecton(testPeer);

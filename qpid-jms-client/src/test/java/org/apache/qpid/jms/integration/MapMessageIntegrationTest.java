@@ -58,7 +58,7 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
      * a map which holds entries of the various supported entry types is returned as a
      * {@link MapMessage}, and verify the values can all be retrieved as expected.
      */
-    @Test
+    @Test(timeout = 5000)
     public void testReceiveBasicMapMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             Connection connection = _testFixture.establishConnecton(testPeer);
@@ -147,7 +147,7 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
      * This doesn't happen in the above test as the reversed roles mean it is protons DecoderImpl doing the decoding
      * and it does a similarly ugly cast on the integer value to char before output.
      */
-    @Test
+    @Test(timeout = 5000)
     public void testSendBasicMapMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             Connection connection = _testFixture.establishConnecton(testPeer);

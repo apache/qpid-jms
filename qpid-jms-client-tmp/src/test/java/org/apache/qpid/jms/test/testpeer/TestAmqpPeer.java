@@ -481,7 +481,8 @@ public class TestAmqpPeer implements AutoCloseable
         final DetachMatcher detachMatcher = new DetachMatcher().withClosed(equalTo(close));
 
         final DetachFrame detachResponse = new DetachFrame()
-                                .setHandle(UnsignedInteger.valueOf(_nextLinkHandle - 1)); // TODO: this needs to be the value used in the attach response
+                                .setHandle(UnsignedInteger.valueOf(_nextLinkHandle - 1))  // TODO: this needs to be the value used in the attach response
+                                .setClosed(close);
 
         // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
         final FrameSender detachResponseSender = new FrameSender(this, FrameType.AMQP, -1, detachResponse, null);

@@ -67,7 +67,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
             Queue queue = session.createQueue("myQueue");
             MessageProducer producer = session.createProducer(queue);
 
-            testPeer.expectDetach(true);
+            testPeer.expectDetach(true, true);
             producer.close();
 
             testPeer.waitForAllHandlersToComplete(1000);

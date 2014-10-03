@@ -19,7 +19,17 @@ package org.apache.qpid.jms.provider.amqp.message;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_BYTES_MESSAGE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MSG_TYPE;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Arrays;
+
+import javax.jms.IllegalStateException;
+import javax.jms.JMSException;
 
 import org.apache.qpid.jms.message.facade.JmsBytesMessageFacade;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
@@ -37,7 +47,11 @@ import org.apache.qpid.proton.message.Message;
 public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements JmsBytesMessageFacade {
 
     private static final String CONTENT_TYPE = "application/octet-stream";
-    private static final Data EMPTY_DATA = new Data(new Binary(new byte[0]));
+    private static final Binary EMPTY_BODY = new Binary(new byte[0]);
+    private static final Data EMPTY_DATA = new Data(EMPTY_BODY);
+
+    private transient ByteBufInputStream bytesIn;
+    private transient ByteBufOutputStream bytesOut;
 
     /**
      * Creates a new facade instance
@@ -66,9 +80,19 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
 
     @Override
     public AmqpJmsBytesMessageFacade copy() {
+        reset();
         AmqpJmsBytesMessageFacade copy = new AmqpJmsBytesMessageFacade(connection);
         copyInto(copy);
-        copy.setContent(getContent());
+
+        Binary payload = getBinaryFromBody();
+        if (payload != null && payload.getLength() > 0) {
+            byte[] result = new byte[payload.getLength()];
+            System.arraycopy(payload.getArray(), payload.getArrayOffset(), result, 0, payload.getLength());
+            copy.message.setBody(new Data(new Binary(result)));
+        } else {
+            copy.message.setBody(EMPTY_DATA);
+        }
+
         return copy;
     }
 
@@ -84,35 +108,119 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
     }
 
     @Override
-    public ByteBuf getContent() {
-        ByteBuf result = Unpooled.EMPTY_BUFFER;
+    public void clearBody() {
+        if (bytesIn != null) {
+            try {
+                bytesIn.close();
+            } catch (IOException e) {
+            }
+            bytesIn = null;
+        }
+        if (bytesOut != null) {
+            try {
+                bytesOut.close();
+            } catch (IOException e) {
+            }
+
+            bytesOut = null;
+        }
+
+        message.setBody(EMPTY_DATA);
+    }
+
+    @Override
+    public byte[] getBody() throws JMSException {
+        if (bytesIn != null || bytesOut != null) {
+            throw new JMSException("Body cannot be read until message is reset()");
+        }
+
+        byte[] result = new byte[0];
         Binary payload = getBinaryFromBody();
         if (payload != null && payload.getLength() > 0) {
-            result = Unpooled.wrappedBuffer(payload.getArray(), payload.getArrayOffset(), payload.getLength());
+            result = new byte[payload.getLength()];
+            System.arraycopy(payload.getArray(), payload.getArrayOffset(), result, 0, payload.getLength());
         }
 
         return result;
     }
 
     @Override
-    public void setContent(ByteBuf content) {
+    public void setBody(byte[] content) throws JMSException {
+        if (bytesIn != null || bytesOut != null) {
+            throw new JMSException("Body cannot be read until message is reset()");
+        }
+
         Data body = EMPTY_DATA;
         if (content != null) {
-            body = new Data(new Binary(content.array(), content.arrayOffset(), content.readableBytes()));
+            byte[] copy = Arrays.copyOf(content, content.length);
+            body = new Data(new Binary(copy, 0, copy.length));
         }
 
         getAmqpMessage().setBody(body);
     }
 
+    @Override
+    public InputStream getInputStream() throws JMSException {
+        if (bytesOut != null) {
+            throw new IllegalStateException("Body is being written to, cannot perform a read.");
+        }
+
+        if (bytesIn == null) {
+            Binary body = getBinaryFromBody();
+            // Duplicate the content buffer to allow for getBodyLength() validity.
+            bytesIn = new ByteBufInputStream(
+                Unpooled.wrappedBuffer(body.getArray(), body.getArrayOffset(), body.getLength()));
+        }
+
+        return bytesIn;
+    }
+
+    @Override
+    public OutputStream getOutputStream() throws JMSException {
+        if (bytesIn != null) {
+            throw new IllegalStateException("Body is being read from, cannot perform a write.");
+        }
+
+        if (bytesOut == null) {
+            bytesOut = new ByteBufOutputStream(Unpooled.buffer());
+            message.setBody(EMPTY_DATA);
+        }
+
+        return bytesOut;
+    }
+
+    @Override
+    public void reset() {
+        if (bytesOut != null) {
+            ByteBuf writeBuf = bytesOut.buffer();
+            Binary body = new Binary(writeBuf.array(), writeBuf.arrayOffset(), writeBuf.readableBytes());
+            message.setBody(new Data(body));
+            try {
+                bytesOut.close();
+            } catch (IOException e) {
+            }
+            bytesOut = null;
+        } else if (bytesIn != null) {
+            try {
+                bytesIn.close();
+            } catch (IOException e) {
+            }
+            bytesIn = null;
+        }
+    }
+
+    @Override
+    public int getBodyLength() {
+        return getBinaryFromBody().getLength();
+    }
+
     private Binary getBinaryFromBody() {
         Section body = getAmqpMessage().getBody();
-        Binary result = null;
+        Binary result = EMPTY_BODY;
 
         if (body == null) {
             return result;
-        }
-
-        if (body instanceof Data) {
+        } else if (body instanceof Data) {
             Binary payload = ((Data) body).getValue();
             if (payload != null && payload.getLength() != 0) {
                 result = payload;
@@ -129,10 +237,10 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
                     result = payload;
                 }
             } else {
-                throw new IllegalStateException("Unexpected amqp-value body content type: " + value.getClass().getSimpleName());
+                throw new java.lang.IllegalStateException("Unexpected amqp-value body content type: " + value.getClass().getSimpleName());
             }
         } else {
-            throw new IllegalStateException("Unexpected body content type: " + body.getClass().getSimpleName());
+            throw new java.lang.IllegalStateException("Unexpected body content type: " + body.getClass().getSimpleName());
         }
 
         return result;

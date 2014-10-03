@@ -17,6 +17,16 @@
 package org.apache.qpid.jms.message.facade.defaults;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.Unpooled;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import javax.jms.IllegalStateException;
+import javax.jms.JMSException;
 
 import org.apache.qpid.jms.message.facade.JmsBytesMessageFacade;
 
@@ -25,7 +35,9 @@ import org.apache.qpid.jms.message.facade.JmsBytesMessageFacade;
  */
 public final class JmsDefaultBytesMessageFacade extends JmsDefaultMessageFacade implements JmsBytesMessageFacade {
 
-    private ByteBuf content;
+    private ByteBuf content = Unpooled.EMPTY_BUFFER;
+    private ByteBufOutputStream bytesOut;
+    private ByteBufInputStream bytesIn;
 
     @Override
     public JmsMsgType getMsgType() {
@@ -34,10 +46,11 @@ public final class JmsDefaultBytesMessageFacade extends JmsDefaultMessageFacade 
 
     @Override
     public JmsDefaultBytesMessageFacade copy() {
+        reset();
         JmsDefaultBytesMessageFacade copy = new JmsDefaultBytesMessageFacade();
         copyInto(copy);
         if (this.content != null) {
-            copy.setContent(this.content.copy());
+            copy.content = this.content.copy();
         }
 
         return copy;
@@ -54,16 +67,87 @@ public final class JmsDefaultBytesMessageFacade extends JmsDefaultMessageFacade 
 
     @Override
     public void clearBody() {
-        this.content = null;
+        if (bytesIn != null) {
+            try {
+                bytesIn.close();
+            } catch (IOException e) {
+            }
+            bytesIn = null;
+        }
+        if (bytesOut != null) {
+            try {
+                bytesOut.close();
+            } catch (IOException e) {
+            }
+            bytesOut = null;
+        }
+
+        content = Unpooled.EMPTY_BUFFER;
     }
 
     @Override
-    public ByteBuf getContent() {
-        return content;
+    public InputStream getInputStream() throws JMSException {
+        if (bytesOut != null) {
+            throw new IllegalStateException("Body is being written to, cannot perform a read.");
+        }
+
+        if (bytesIn == null) {
+            // Duplicate the content buffer to allow for getBodyLength() validity.
+            bytesIn = new ByteBufInputStream(content.duplicate());
+        }
+
+        return bytesIn;
     }
 
     @Override
-    public void setContent(ByteBuf content) {
-        this.content = content;
+    public OutputStream getOutputStream() throws JMSException {
+        if (bytesIn != null) {
+            throw new IllegalStateException("Body is being read from, cannot perform a write.");
+        }
+
+        if (bytesOut == null) {
+            bytesOut = new ByteBufOutputStream(Unpooled.buffer());
+            content = Unpooled.EMPTY_BUFFER;
+        }
+
+        return bytesOut;
     }
-}
+
+    @Override
+    public void reset() {
+        if (bytesOut != null) {
+            content = bytesOut.buffer();
+            try {
+                bytesOut.close();
+            } catch (IOException e) {
+            }
+            bytesOut = null;
+        } else if (bytesIn != null) {
+            try {
+                bytesIn.close();
+            } catch (IOException e) {
+            }
+            bytesIn = null;
+        }
+    }
+
+    @Override
+    public int getBodyLength() {
+        return content.readableBytes();
+    }
+
+    @Override
+    public byte[] getBody() throws JMSException {
+        if (bytesIn != null || bytesOut != null) {
+            throw new JMSException("Body is in use, call reset before attempting to access it.");
+        }
+        return content.copy().array();
+    }
+
+    @Override
+    public void setBody(byte[] content) throws JMSException {
+        if (bytesIn != null || bytesOut != null) {
+            throw new JMSException("Body is in use, call reset before attempting to access it.");
+        }
+        this.content = Unpooled.copiedBuffer(content);
+    }}

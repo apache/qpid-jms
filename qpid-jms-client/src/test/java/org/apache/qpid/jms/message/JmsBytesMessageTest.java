@@ -18,12 +18,8 @@ package org.apache.qpid.jms.message;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 import java.util.Arrays;
 
@@ -79,23 +75,23 @@ public class JmsBytesMessageTest {
 
     @Test
     public void testReadBytesUsingReceivedMessageWithBodyReturnsBytes() throws Exception {
-        ByteBuf content = Unpooled.wrappedBuffer("myBytesData".getBytes());
+        byte[] content = "myBytesData".getBytes();
         JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
-        facade.setContent(content);
+        facade.setBody(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
         bytesMessage.onDispatch();
 
         // retrieve the expected bytes, check they match
-        byte[] receivedBytes = new byte[content.array().length];
+        byte[] receivedBytes = new byte[content.length];
         bytesMessage.readBytes(receivedBytes);
-        assertTrue(Arrays.equals(content.array(), receivedBytes));
+        assertTrue(Arrays.equals(content, receivedBytes));
 
         // verify no more bytes remain, i.e EOS
         assertEquals("Expected input stream to be at end but data was returned",
                      END_OF_STREAM, bytesMessage.readBytes(new byte[1]));
 
-        assertEquals("Message reports unexpected length", content.array().length, bytesMessage.getBodyLength());
+        assertEquals("Message reports unexpected length", content.length, bytesMessage.getBodyLength());
     }
 
     /**
@@ -104,13 +100,13 @@ public class JmsBytesMessageTest {
      */
     @Test(expected = MessageNotWriteableException.class)
     public void testReceivedBytesMessageThrowsMessageNotWriteableExceptionOnWriteBytes() throws Exception {
-        ByteBuf content = Unpooled.wrappedBuffer("myBytesData".getBytes());
+        byte[] content = "myBytesData".getBytes();
         JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
-        facade.setContent(content);
+        facade.setBody(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
         bytesMessage.onDispatch();
-        bytesMessage.writeBytes(content.array());
+        bytesMessage.writeBytes(content);
     }
 
     /**
@@ -130,9 +126,9 @@ public class JmsBytesMessageTest {
      */
     @Test
     public void testClearBodyOnReceivedBytesMessageMakesMessageWritable() throws Exception {
-        ByteBuf content = Unpooled.wrappedBuffer("myBytesData".getBytes());
+        byte[] content = "myBytesData".getBytes();
         JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
-        facade.setContent(content);
+        facade.setBody(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
         bytesMessage.onDispatch();
@@ -147,16 +143,16 @@ public class JmsBytesMessageTest {
      */
     @Test
     public void testClearBodyOnReceivedBytesMessageClearsUnderlyingMessageBody() throws Exception {
-        ByteBuf content = Unpooled.wrappedBuffer("myBytesData".getBytes());
+        byte[] content = "myBytesData".getBytes();
         JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
-        facade.setContent(content);
+        facade.setBody(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
         bytesMessage.onDispatch();
 
-        assertNotNull("Expected message content but none was present", facade.getContent());
+        assertTrue("Expected message content but none was present", facade.getBody().length > 0);
         bytesMessage.clearBody();
-        assertNull("Expected no message content but was present", facade.getContent());
+        assertTrue("Expected no message content but was present", facade.getBody().length == 0);
     }
 
     /**
@@ -165,13 +161,13 @@ public class JmsBytesMessageTest {
      */
     @Test
     public void testGetBodyLengthOnClearedReceivedMessageThrowsMessageNotReadableException() throws Exception {
-        ByteBuf content = Unpooled.wrappedBuffer("myBytesData".getBytes());
+        byte[] content = "myBytesData".getBytes();
         JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
-        facade.setContent(content);
+        facade.setBody(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
         bytesMessage.onDispatch();
-        assertEquals("Unexpected message length", content.array().length, bytesMessage.getBodyLength());
+        assertEquals("Unexpected message length", content.length, bytesMessage.getBodyLength());
         bytesMessage.clearBody();
 
         try {
@@ -188,9 +184,9 @@ public class JmsBytesMessageTest {
      */
     @Test
     public void testResetOnReceivedBytesMessageResetsMarker() throws Exception {
-        ByteBuf content = Unpooled.wrappedBuffer("resetTestBytes".getBytes());
+        byte[] content = "myBytesData".getBytes();
         JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
-        facade.setContent(content);
+        facade.setBody(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
         bytesMessage.onDispatch();
@@ -198,15 +194,15 @@ public class JmsBytesMessageTest {
         // retrieve a few bytes, check they match the first few expected bytes
         byte[] partialBytes = new byte[3];
         bytesMessage.readBytes(partialBytes);
-        byte[] partialOriginalBytes = Arrays.copyOf(content.array(), 3);
+        byte[] partialOriginalBytes = Arrays.copyOf(content, 3);
         assertTrue(Arrays.equals(partialOriginalBytes, partialBytes));
 
         bytesMessage.reset();
 
         // retrieve all the expected bytes, check they match
-        byte[] resetBytes = new byte[content.array().length];
+        byte[] resetBytes = new byte[content.length];
         bytesMessage.readBytes(resetBytes);
-        assertTrue(Arrays.equals(content.array(), resetBytes));
+        assertTrue(Arrays.equals(content, resetBytes));
     }
 
     /**
@@ -215,21 +211,21 @@ public class JmsBytesMessageTest {
      */
     @Test
     public void testResetOnNewlyPopulatedBytesMessageResetsMarkerAndMakesReadable() throws Exception {
-        ByteBuf content = Unpooled.wrappedBuffer("newResetTestBytes".getBytes());
+        byte[] content = "myBytesData".getBytes();
         JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
-        facade.setContent(content);
+        facade.setBody(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
 
         assertFalse("Message should be writable", bytesMessage.isReadOnlyBody());
-        bytesMessage.writeBytes(content.array());
+        bytesMessage.writeBytes(content);
         bytesMessage.reset();
         assertTrue("Message should not be writable", bytesMessage.isReadOnlyBody());
 
         // retrieve the bytes, check they match
-        byte[] resetBytes = new byte[content.array().length];
+        byte[] resetBytes = new byte[content.length];
         bytesMessage.readBytes(resetBytes);
-        assertTrue(Arrays.equals(content.array(), resetBytes));
+        assertTrue(Arrays.equals(content, resetBytes));
     }
 
     /**

@@ -33,9 +33,6 @@ import javax.jms.MessageNotWriteableException;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsTopic;
-import org.apache.qpid.jms.message.JmsBytesMessage;
-import org.apache.qpid.jms.message.JmsMessage;
-import org.apache.qpid.jms.message.JmsMessageFactory;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
 import org.junit.Before;
 import org.junit.Test;
@@ -511,7 +508,8 @@ public class JmsMessageTest {
         JmsBytesMessage message = factory.createBytesMessage();
         message.clearBody();
         assertFalse(message.isReadOnlyBody());
-        assertNull(message.getContent());
+        message.reset();
+        assertEquals(0, message.getBodyLength());
     }
 
     @Test

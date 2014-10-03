@@ -16,8 +16,10 @@
  */
 package org.apache.qpid.jms.message.facade;
 
-import io.netty.buffer.ByteBuf;
+import java.io.InputStream;
+import java.io.OutputStream;
 
+import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 
 /**
@@ -27,6 +29,10 @@ import javax.jms.JMSException;
 public interface JmsBytesMessageFacade extends JmsMessageFacade {
 
     /**
+     * Performs a copy of this message facade into a new instance.  Calling this method
+     * results in a call to reset() prior to the message copy meaning any in use streams
+     * will be closed on return.
+     *
      * @returns a deep copy of this Message Facade including a complete copy
      * of the byte contents of the wrapped message.
      */
@@ -34,21 +40,73 @@ public interface JmsBytesMessageFacade extends JmsMessageFacade {
     JmsBytesMessageFacade copy() throws JMSException;
 
     /**
-     * Retrieves the contents of this message either wrapped in or copied
-     * into a Buffer instance.  If the message contents are empty a null
-     * Buffer instance may be returned.
+     * Create and return an InputStream instance that can be used to read the contents
+     * of this message.  If an OutputStream was previously created and no call to reset
+     * has yet been made then this method will throw an exception.
      *
-     * @returns a new ByteBuf that contains the contents of this message.
+     * Multiple calls to this method should return the same InputStream instance, only
+     * when the message has been reset should the current input stream instance be discarded
+     * and a new one created on demand.  While this means the multiple concurrent readers
+     * is possible it is strongly discouraged.
+     *
+     * If the message body contains data that has been compressed and can be determined
+     * to be so by the implementation then this method will return an InputStream instance
+     * that can inflate the compressed data.
+     *
+     * @return an InputStream instance to read the message body.
+     *
+     * @throws JMSException if an error occurs creating the stream.
+     * @throws IllegalStateException if there is a current OutputStream in use.
      */
-    ByteBuf getContent();
+    InputStream getInputStream() throws JMSException;
 
     /**
-     * Sets the contents of the message to the new value based on the bytes
-     * stored in the passed in ByteBuf.
+     * Create and return a new OuputStream used to populate the body of the message. If an
+     * InputStream was previously requested this method will fail until such time as a call
+     * to reset has been requested.
      *
-     * @param contents
-     *        the new bytes to store in this message.
+     * If an existing OuputStream has already been created then this method will return
+     * that stream until such time as the reset method has been called.
+     *
+     * @return an OutputStream instance to write the message body.
+     *
+     * @throws JMSException if an error occurs creating the stream.
+     * @throws IllegalStateException if there is a current OutputStream in use.
      */
-    void setContent(ByteBuf content);
+    OutputStream getOutputStream() throws JMSException;
+
+    /**
+     * Reset the message state such that a call to getInputStream or getOutputStream
+     * will succeed.  If an OutputStream instance exists it is closed an the current
+     * contents are stored into the message body.
+     */
+    void reset();
+
+    /**
+     * @return the number of bytes contained in the body of the message.
+     */
+    int getBodyLength();
+
+    /**
+     * Returns a copy of the body of the message in a new byte[] instance.  If the
+     * message body is empty an empty byte[] will be returned.
+     *
+     * @returns a new byte[] that contains a copy of the contents of this message.
+     *
+     * @throws JMSException if an error occurs accessing the message body.
+     */
+    byte[] getBody() throws JMSException;
+
+    /**
+     * Sets the contents of the message from the given byte[] the given bytes are
+     * copied into the body of the message.  Any previous message body content is
+     * discarded.
+     *
+     * @param content
+     *        the new bytes to store in this message.
+     *
+     * @throws JMSException if an error occurs accessing the message body.
+     */
+    void setBody(byte[] content) throws JMSException;
 
 }

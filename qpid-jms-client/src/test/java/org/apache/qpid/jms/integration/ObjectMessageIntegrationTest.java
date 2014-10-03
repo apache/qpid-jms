@@ -55,16 +55,14 @@ import org.junit.Test;
 
 public class ObjectMessageIntegrationTest extends QpidJmsTestCase
 {
-    private final IntegrationTestFixture _testFixture = new IntegrationTestFixture();
+    private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
     //==== Java serialization encoding ====
 
     @Test(timeout = 5000)
-    public void testSendBasicObjectMessageWithSerializedContent() throws Exception
-    {
-        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
-        {
-            Connection connection = _testFixture.establishConnecton(testPeer);
+    public void testSendBasicObjectMessageWithSerializedContent() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
 
@@ -104,11 +102,9 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
     }
 
     @Test(timeout = 5000)
-    public void testReceiveBasicObjectMessageWithSerializedContent() throws Exception
-    {
-        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
-        {
-            Connection connection = _testFixture.establishConnecton(testPeer);
+    public void testReceiveBasicObjectMessageWithSerializedContent() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
             testPeer.expectBegin(true);
@@ -152,11 +148,9 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
     }
 
     @Test(timeout = 5000)
-    public void testReceiveAndThenResendBasicObjectMessageWithSerializedContent() throws Exception
-    {
-        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
-        {
-            Connection connection = _testFixture.establishConnecton(testPeer);
+    public void testReceiveAndThenResendBasicObjectMessageWithSerializedContent() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
             testPeer.expectBegin(true);
@@ -216,11 +210,9 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
     //==== AMQP type system encoding ====
 
     @Test(timeout = 5000)
-    public void testSendBasicObjectMessageWithAmqpTypedContent() throws Exception
-    {
-        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
-        {
-            Connection connection = _testFixture.establishConnecton(testPeer);
+    public void testSendBasicObjectMessageWithAmqpTypedContent() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
 
@@ -254,11 +246,9 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
     }
 
     @Test(timeout = 5000)
-    public void testRecieveBasicObjectMessageWithAmqpTypedContentAndJMSMessageTypeAnnotation() throws Exception
-    {
-        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)
-        {
-            Connection connection = _testFixture.establishConnecton(testPeer);
+    public void testRecieveBasicObjectMessageWithAmqpTypedContentAndJMSMessageTypeAnnotation() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
             testPeer.expectBegin(true);

@@ -53,12 +53,12 @@ import org.apache.qpid.proton.amqp.Symbol;
 import org.junit.Test;
 
 public class BytesMessageIntegrationTest extends QpidJmsTestCase {
-    private final IntegrationTestFixture _testFixture = new IntegrationTestFixture();
+    private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
     @Test(timeout = 5000)
     public void testSendBasicBytesMessageWithContent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
-            Connection connection = _testFixture.establishConnecton(testPeer);
+            Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
 
@@ -91,7 +91,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 5000)
     public void testReceiveBasicBytesMessageWithContentUsingDataSection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
-            Connection connection = _testFixture.establishConnecton(testPeer);
+            Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
             testPeer.expectBegin(true);
@@ -137,7 +137,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 5000)
     public void testReceiveBytesMessageAndResendAfterResetAndPartialRead() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
-            Connection connection = _testFixture.establishConnecton(testPeer);
+            Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
             testPeer.expectBegin(true);
@@ -245,7 +245,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 5000)
     public void testReceiveBytesMessageWithAmqpValueAndResendResultsInData() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
-            Connection connection = _testFixture.establishConnecton(testPeer);
+            Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
             testPeer.expectBegin(true);

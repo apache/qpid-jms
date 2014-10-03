@@ -51,7 +51,7 @@ import org.apache.qpid.proton.amqp.Symbol;
 import org.junit.Test;
 
 public class MapMessageIntegrationTest extends QpidJmsTestCase {
-    private final IntegrationTestFixture _testFixture = new IntegrationTestFixture();
+    private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
     /**
      * Test that a message received from the test peer with an AmqpValue section containing
@@ -61,7 +61,7 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 5000)
     public void testReceiveBasicMapMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
-            Connection connection = _testFixture.establishConnecton(testPeer);
+            Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
             testPeer.expectBegin(true);
@@ -150,7 +150,7 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 5000)
     public void testSendBasicMapMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
-            Connection connection = _testFixture.establishConnecton(testPeer);
+            Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
 

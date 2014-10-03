@@ -64,8 +64,8 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
     public AmqpJmsObjectMessageFacade(AmqpConsumer consumer, Message message) {
         super(consumer, message);
 
-        // TODO detect the content type and init the proper delegate.
-        initDelegate(false);
+        boolean javaSerialized = AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE.equals(message.getContentType());
+        initDelegate(!javaSerialized);
     }
 
     /**

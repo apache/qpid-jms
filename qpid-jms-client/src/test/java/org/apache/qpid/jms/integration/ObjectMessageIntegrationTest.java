@@ -256,7 +256,6 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
     }
 
     @Test(timeout = 5000)
-    @Ignore //TODO: currently failing due to being unable to receive the AmqpValue body section type
     public void testRecieveBasicObjectMessageWithAmqpTypedContentAndJMSMessageTypeAnnotation() throws Exception
     {
         try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);)

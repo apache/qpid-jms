@@ -238,6 +238,7 @@ public class JmsMessage implements javax.jms.Message {
     public void setJMSPriority(int priority) throws JMSException {
         byte scaled = 0;
 
+        //TODO: should we leave this to the facade to do if it wants? We simply trust its return value.
         if (priority < 0) {
             scaled = 0;
         } else if (priority > 9) {

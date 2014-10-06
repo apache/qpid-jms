@@ -22,6 +22,7 @@ package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -46,7 +47,10 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescr
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.UnsignedByte;
+import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.UnsignedLong;
+import org.apache.qpid.proton.amqp.messaging.Header;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Properties;
 import org.apache.qpid.proton.codec.impl.DataImpl;
@@ -96,8 +100,218 @@ public class AmqpJmsMessageFacadeTest {
         amqpMessageFacade.setAmqpTimeToLiveOverride(0X100000000L);
     }
 
+
+    /**
+     * To satisfy the JMS requirement that messages are durable by default, the
+     * {@link AmqpJmsMessageFacade} objects created for sending new messages are
+     * populated with a header section with durable set to true.
+     */
+    @Test
+    public void testNewMessageHasUnderlyingHeaderSectionWithDurableTrue() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        Message underlying = amqpMessageFacade.getAmqpMessage();
+        assertNotNull("Expected message to have Header section", underlying.getHeader());
+        assertTrue("Durable not as expected", underlying.getHeader().getDurable());
+    }
+
+    @Test
+    public void testNewMessageHasUnderlyingHeaderSectionWithNoTtlSet() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        Message underlying = amqpMessageFacade.getAmqpMessage();
+        assertNotNull("Expected message to have Header section", underlying.getHeader());
+        assertNull("Ttl field should not be set", underlying.getHeader().getTtl());
+    }
+
+    @Test
+    public void testGetTtlSynthesizedExpirationOnReceivedMessageWithTtlButNoAbsoluteExpiration() {
+        Long ttl = 123L;
+
+        Message message = Proton.message();
+        Header header = new Header();
+        header.setTtl(UnsignedInteger.valueOf(ttl));
+        message.setHeader(header);
+
+        long start = System.currentTimeMillis();
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+        long end = System.currentTimeMillis();
+
+        long expiration = amqpMessageFacade.getExpiration();
+
+        assertTrue("Should have sythesized expiration based on current time + ttl", start + ttl <= expiration);
+        assertTrue("Should have sythesized expiration based on current time + ttl", expiration <= end + ttl);
+
+        long expiration2 = amqpMessageFacade.getExpiration();
+        assertEquals("Second retrieval should return same result", expiration, expiration2);
+    }
+
+    @Test
+    public void testSetGetTtlOverrideOnNewMessage() throws Exception {
+        long ttl = 123L;
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertFalse("Should not have a ttl override", amqpMessageFacade.hasAmqpTimeToLiveOverride());
+
+        amqpMessageFacade.setAmqpTimeToLiveOverride(ttl);
+
+        assertTrue("Should have a ttl override", amqpMessageFacade.hasAmqpTimeToLiveOverride());
+        assertEquals(ttl, amqpMessageFacade.getAmqpTimeToLiveOverride());
+        // check value on underlying TTL field is NOT set
+        assertNull("TTL field on underlying message should NOT be set", amqpMessageFacade.getAmqpMessage().getHeader().getTtl());
+    }
+
+    @Test
+    public void testOnSendClearsTtlOnMessageReceivedWithTtl() throws Exception {
+        Message message = Proton.message();
+        int origTtl = 5;
+        message.setTtl(origTtl);
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertEquals("TTL has been unset already", origTtl, message.getTtl());
+
+        amqpMessageFacade.onSend(false, false, 0);
+
+        // check value on underlying TTL field is NOT set
+        assertEquals("TTL has not been cleared", 0, message.getTtl());
+        assertNull("TTL field on underlying message should NOT be set", amqpMessageFacade.getAmqpMessage().getHeader().getTtl());
+    }
+
+    @Test
+    public void testOnSendOverridesTtlOnMessageReceivedWithTtl() throws Exception {
+        Message message = Proton.message();
+        int origTtl = 5;
+        int newTtl = 10;
+        message.setTtl(origTtl);
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertEquals("TTL has been unset already", origTtl, message.getTtl());
+
+        amqpMessageFacade.onSend(false, false, newTtl);
+
+        // check value on underlying TTL field is NOT set
+        assertEquals("TTL has not been overriden", newTtl, message.getTtl());
+        assertEquals("TTL field on underlying message should be set", UnsignedInteger.valueOf(newTtl), amqpMessageFacade.getAmqpMessage().getHeader().getTtl());
+    }
+
+    @Test
+    public void testOnSendOverridesProviderTtlWithSpecifiedOverrideTtl() throws Exception {
+        Message message = Proton.message();
+        int overrideTtl = 5;
+        int producerTtl = 10;
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+        amqpMessageFacade.setAmqpTimeToLiveOverride(overrideTtl);
+
+        amqpMessageFacade.onSend(false, false, producerTtl);
+
+        // check value on underlying TTL field is set to the override
+        assertEquals("TTL has not been overriden", overrideTtl, message.getTtl());
+    }
+
+
+    @Test
+    public void testGetPriorityIs4ForNewMessage() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertEquals("expected priority value not found", 4, amqpMessageFacade.getPriority());
+    }
+
+    /**
+     * When messages have no header section, the AMQP spec says the priority has default value of 4.
+     */
+    @Test
+    public void testGetPriorityIs4ForReceivedMessageWithNoHeader() {
+        Message message = Proton.message();
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertNull("expected no header section to exist", message.getHeader());
+        assertEquals("expected priority value not found", 4, amqpMessageFacade.getPriority());
+    }
+
+    // TODO: start of section marker
+
+    /**
+     * When messages have a header section, but lack the priority field,
+     * the AMQP spec says the priority has default value of 4.
+     */
+    @Test
+    public void testGetPriorityIs4ForReceivedMessageWithHeaderButWithoutPriority() {
+        Message message = Proton.message();
+
+        Header header = new Header();
+        message.setHeader(header);
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertEquals("expected priority value not found", 4, amqpMessageFacade.getPriority());
+    }
+
+    /**
+     * When messages have a header section, which have a priority value, ensure it is returned.
+     */
+    @Test
+    public void testGetPriorityForReceivedMessageWithHeaderWithPriority() {
+        // value over 10 deliberately
+        byte priority = 7;
+
+        Message message = Proton.message();
+        Header header = new Header();
+        message.setHeader(header);
+        header.setPriority(UnsignedByte.valueOf(priority));
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertEquals("expected priority value not found", priority, amqpMessageFacade.getPriority());
+    }
+
+    /**
+     * When messages have a header section, which have a priority value outside the JMS range, ensure it is constrained.
+     */
+    @Test
+    public void testGetPriorityForReceivedMessageWithPriorityOutsideJmsRange() {
+        // value over 9 deliberately
+        byte priority = 11;
+
+        Message message = Proton.message();
+        Header header = new Header();
+        message.setHeader(header);
+        header.setPriority(UnsignedByte.valueOf(priority));
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertEquals("expected priority value not found", 9, amqpMessageFacade.getPriority());
+    }
+
+    /**
+     * Test that setting the Priority to a non-default value results in the underlying
+     * message field being populated appropriately, and the value being returned from the Getter.
+     */
+    @Test
+    public void testSetGetNonDefaultPriorityForNewMessage() {
+        byte priority = 6;
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        amqpMessageFacade.setPriority(priority);
+
+        assertEquals("expected priority value not found", priority, amqpMessageFacade.getPriority());
+
+        Message underlying = amqpMessageFacade.getAmqpMessage();
+        assertEquals("expected priority value not found", priority, underlying.getPriority());
+    }
+
     // ====== AMQP Properties Section =======
     // ======================================
+
+    @Test
+    public void testGetExpirationIsZeroForNewMessage() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertEquals("Expected no expiration", 0, amqpMessageFacade.getExpiration());
+    }
 
     // --- message-id and correlation-id ---
 

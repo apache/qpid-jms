@@ -143,15 +143,23 @@ public class PropertyUtil {
     }
 
     /**
-     * Get properties from a URI
+     * Get properties from a URI and return them in a new Map<String, String> instance.
+     *
+     * If the URI is null or the query string of the URI is null an empty Map is returned.
      *
      * @param uri
+     *        the URI whose parameters are to be parsed.
+     *
      * @return <Code>Map</Code> of properties
-     * @throws Exception
+     *
+     * @throws Exception if an error occurs while parsing the query options.
      */
-    @SuppressWarnings("unchecked")
     public static Map<String, String> parseParameters(URI uri) throws Exception {
-        return uri.getQuery() == null ? Collections.EMPTY_MAP : parseQuery(stripPrefix(uri.getQuery(), "?"));
+        if (uri == null || uri.getQuery() == null) {
+            return Collections.emptyMap();
+        }
+
+        return parseQuery(stripPrefix(uri.getQuery(), "?"));
     }
 
     /**
@@ -159,26 +167,34 @@ public class PropertyUtil {
      * foo?name="fred"&size=2
      *
      * @param uri
+     *        the URI whose parameters are to be parsed.
+     *
      * @return <Code>Map</Code> of properties
-     * @throws Exception
+     *
+     * @throws Exception if an error occurs while parsing the query options.
      */
-    @SuppressWarnings("unchecked")
     public static Map<String, String> parseParameters(String uri) throws Exception {
-        return uri == null ? Collections.EMPTY_MAP : parseQuery(stripUpto(uri, '?'));
+        if (uri == null) {
+            return Collections.emptyMap();
+        }
+
+        return parseQuery(stripUpto(uri, '?'));
     }
 
     /**
-     * Get properties from a uri
+     * Get properties from a URI query string.
      *
-     * @param uri
-     * @return <Code>Map</Code> of properties
+     * @param queryString
+     *        the string value returned from a call to the URI class getQuery method.
      *
-     * @throws Exception
+     * @return <Code>Map</Code> of properties from the parsed string.
+     *
+     * @throws Exception if an error occurs while parsing the query options.
      */
-    public static Map<String, String> parseQuery(String uri) throws Exception {
-        if (uri != null) {
+    public static Map<String, String> parseQuery(String queryString) throws Exception {
+        if (queryString != null && !queryString.isEmpty()) {
             Map<String, String> rc = new HashMap<String, String>();
-            String[] parameters = uri.split("&");
+            String[] parameters = queryString.split("&");
             for (int i = 0; i < parameters.length; i++) {
                 int p = parameters[i].indexOf("=");
                 if (p >= 0) {
@@ -191,6 +207,7 @@ public class PropertyUtil {
             }
             return rc;
         }
+
         return Collections.emptyMap();
     }
 
@@ -264,6 +281,8 @@ public class PropertyUtil {
             Map<String, String> map = parseParameters(uri);
             if (!map.isEmpty()) {
                 map.putAll(props);
+            } else {
+                map = props;
             }
             if (!map.isEmpty()) {
                 base.append('?');
@@ -312,13 +331,21 @@ public class PropertyUtil {
     }
 
     /**
-     * Get properties from an object
+     * Get properties from an object using reflection.  If the passed object is null an
+     * empty <code>Map</code> is returned.
      *
      * @param object
-     * @return <Code>Map</Code> of properties
-     * @throws Exception
+     *        the Object whose properties are to be extracted.
+     *
+     * @return <Code>Map</Code> of properties extracted from the given object.
+     *
+     * @throws Exception if an error occurs while examining the object's properties.
      */
     public static Map<String, String> getProperties(Object object) throws Exception {
+        if (object == null) {
+            return Collections.emptyMap();
+        }
+
         Map<String, String> props = new LinkedHashMap<String, String>();
         BeanInfo beanInfo = Introspector.getBeanInfo(object.getClass());
         Object[] NULL_ARG = {};
@@ -410,14 +437,18 @@ public class PropertyUtil {
     }
 
     /**
-     * Return a String past a prefix
+     * Return a String minus the given prefix.  If the string does not start
+     * with the given prefix the original string value is returned.
      *
      * @param value
+     *        The String whose prefix is to be removed.
      * @param prefix
-     * @return stripped
+     *        The prefix string to remove from the target string.
+     *
+     * @return stripped version of the original input string.
      */
     public static String stripPrefix(String value, String prefix) {
-        if (value.startsWith(prefix)) {
+        if (value != null && prefix != null && value.startsWith(prefix)) {
             return value.substring(prefix.length());
         }
         return value;
@@ -432,9 +463,11 @@ public class PropertyUtil {
      */
     public static String stripUpto(String value, char c) {
         String result = null;
-        int index = value.indexOf(c);
-        if (index > 0) {
-            result = value.substring(index + 1);
+        if (value != null) {
+            int index = value.indexOf(c);
+            if (index > 0) {
+                result = value.substring(index + 1);
+            }
         }
         return result;
     }
@@ -448,9 +481,11 @@ public class PropertyUtil {
      */
     public static String stripBefore(String value, char c) {
         String result = value;
-        int index = value.indexOf(c);
-        if (index > 0) {
-            result = value.substring(0, index);
+        if (value != null) {
+            int index = value.indexOf(c);
+            if (index > 0) {
+                result = value.substring(0, index);
+            }
         }
         return result;
     }

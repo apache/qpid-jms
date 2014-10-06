@@ -552,7 +552,13 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         if (message.getHeader() != null) {
             UnsignedByte priority = message.getHeader().getPriority();
             if (priority != null) {
-                return priority.byteValue();
+                byte scaled = priority.byteValue();
+                if (scaled < 0) {
+                    scaled = 0;
+                } else if (scaled > 9) {
+                    scaled = 9;
+                }
+                return scaled;
             }
         }
 
@@ -568,6 +574,12 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
                 message.getHeader().setPriority(null);
             }
         } else {
+            if (priority < 0) {
+                priority = 0;
+            } else if (priority > 9) {
+                priority = 9;
+            }
+
             message.setPriority(priority);
         }
     }

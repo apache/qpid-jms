@@ -55,7 +55,6 @@ import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Properties;
 import org.apache.qpid.proton.codec.impl.DataImpl;
 import org.apache.qpid.proton.message.Message;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -100,7 +99,6 @@ public class AmqpJmsMessageFacadeTest {
         // check values over 2^32 - 1 are rejected
         amqpMessageFacade.setAmqpTimeToLiveOverride(0X100000000L);
     }
-
 
     /**
      * To satisfy the JMS requirement that messages are durable by default, the
@@ -213,7 +211,6 @@ public class AmqpJmsMessageFacadeTest {
         assertEquals("TTL has not been overriden", overrideTtl, message.getTtl());
     }
 
-
     @Test
     public void testGetPriorityIs4ForNewMessage() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
@@ -273,7 +270,6 @@ public class AmqpJmsMessageFacadeTest {
      * When messages have a header section, which have a priority value outside the JMS range, ensure it is constrained.
      */
     @Test
-    @Ignore //TODO: currently we aren't ensuring we map the value into the JMS range
     public void testGetPriorityForReceivedMessageWithPriorityOutsideJmsRange() {
         // value over 9 deliberately
         byte priority = 11;

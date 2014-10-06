@@ -91,7 +91,6 @@ public class JmsMessage implements javax.jms.Message {
         String oMsg = msg.facade.getMessageId();
         String thisMsg = facade.getMessageId();
 
-        //TODO: use super.equals if both id are null?
         return thisMsg != null && oMsg != null && oMsg.equals(thisMsg);
     }
 
@@ -236,18 +235,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void setJMSPriority(int priority) throws JMSException {
-        byte scaled = 0;
-
-        //TODO: should we leave this to the facade to do if it wants? We simply trust its return value.
-        if (priority < 0) {
-            scaled = 0;
-        } else if (priority > 9) {
-            scaled = 9;
-        } else {
-            scaled = (byte) priority;
-        }
-
-        facade.setPriority(scaled);
+        facade.setPriority((byte) priority);
     }
 
     @Override

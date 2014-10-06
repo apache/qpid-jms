@@ -139,7 +139,7 @@ public abstract class JmsDestination extends JNDIStorable implements JmsResource
         JmsDestination other = (JmsDestination) o;
         if (name == null && other.name != null) {
             return false;
-        } else if (!name.equals(other.name)) {
+        } else if (name != null && !name.equals(other.name)) {
             return false;
         }
 

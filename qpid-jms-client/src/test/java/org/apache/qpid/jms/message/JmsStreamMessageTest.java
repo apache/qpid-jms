@@ -34,10 +34,7 @@ import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 import javax.jms.StreamMessage;
 
-import org.apache.qpid.jms.message.JmsMessageFactory;
-import org.apache.qpid.jms.message.JmsStreamMessage;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -657,8 +654,6 @@ public class JmsStreamMessageTest {
         assertGetStreamEntryThrowsMessageFormatException(streamMessage, byte[].class);
     }
 
-    // TODO - Support Big Strings
-    @Ignore
     @Test
     public void testReadBigString() throws JMSException {
         JmsStreamMessage msg = factory.createStreamMessage();

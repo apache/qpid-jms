@@ -41,7 +41,6 @@ import javax.jms.StreamMessage;
 import javax.jms.TextMessage;
 
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -454,7 +453,6 @@ public class JmsMessageIntegrityTest extends AmqpTestSupport {
     }
 
     // TODO - implement proper handling of foreign JMS Message and Destination types.
-    @Ignore("ActiveMQ is dropping messages as expired with current proton lib")
     @Test
     public void testForeignMessage() throws Exception {
         connection.start();

@@ -51,7 +51,7 @@ public class AmqpJmsStreamMessageFacade extends AmqpJmsMessageFacade implements 
      */
     public AmqpJmsStreamMessageFacade(AmqpConnection connection) {
         super(connection);
-        list = initializeEmptyBodyList(false);
+        list = initializeEmptyBodyList(true);
         setAnnotation(JMS_MSG_TYPE, JMS_STREAM_MESSAGE);
     }
 
@@ -70,7 +70,7 @@ public class AmqpJmsStreamMessageFacade extends AmqpJmsMessageFacade implements 
 
         Section body = getAmqpMessage().getBody();
         if (body == null) {
-            list = initializeEmptyBodyList(false);
+            list = initializeEmptyBodyList(true);
         } else if (body instanceof AmqpValue) {
             Object value = ((AmqpValue) body).getValue();
 

@@ -18,31 +18,33 @@
  */
 package org.apache.qpid.jms.test.testpeer.matchers.types;
 
+import java.util.List;
+
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
-import org.apache.qpid.proton.amqp.messaging.AmqpValue;
+import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.hamcrest.Description;
 
-public class EncodedAmqpValueMatcher extends EncodedAmqpTypeMatcher
+public class EncodedAmqpSequenceMatcher extends EncodedAmqpTypeMatcher
 {
-    private static final Symbol DESCRIPTOR_SYMBOL = Symbol.valueOf("amqp:amqp-value:*");
-    private static final UnsignedLong DESCRIPTOR_CODE = UnsignedLong.valueOf(0x0000000000000077L);
+    private static final Symbol DESCRIPTOR_SYMBOL = Symbol.valueOf("amqp:amqp-sequence:list");
+    private static final UnsignedLong DESCRIPTOR_CODE = UnsignedLong.valueOf(0x0000000000000076L);
 
     /**
      * @param expectedValue the value that is expected to be IN the
-     * received {@link AmqpValue}
+     * received {@link AmqpSequence}
      */
-    public EncodedAmqpValueMatcher(Object expectedValue)
+    public EncodedAmqpSequenceMatcher(List<Object> expectedValue)
     {
         this(expectedValue,false);
     }
 
     /**
      * @param expectedValue the value that is expected to be IN the
-     * received {@link AmqpValue}
-     * @param permitTrailingBytes if it is permitted for bytes to be left in the Binary after consuming the {@link AmqpValue}
+     * received {@link AmqpSequence}
+     * @param permitTrailingBytes if it is permitted for bytes to be left in the Binary after consuming the {@link AmqpSequence}
      */
-    public EncodedAmqpValueMatcher(Object expectedValue, boolean permitTrailingBytes)
+    public EncodedAmqpSequenceMatcher(Object expectedValue, boolean permitTrailingBytes)
     {
         super(DESCRIPTOR_SYMBOL, DESCRIPTOR_CODE, expectedValue, permitTrailingBytes);
     }
@@ -51,7 +53,7 @@ public class EncodedAmqpValueMatcher extends EncodedAmqpTypeMatcher
     public void describeTo(Description description)
     {
         description
-            .appendText("a Binary encoding of an AmqpValue that wraps: ")
+            .appendText("a Binary encoding of an AmqpSequence that wraps: ")
             .appendValue(getExpectedValue());
     }
 }

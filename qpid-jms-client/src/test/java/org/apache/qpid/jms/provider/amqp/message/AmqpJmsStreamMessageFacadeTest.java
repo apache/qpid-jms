@@ -43,6 +43,7 @@ import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
+import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.message.Message;
 import org.junit.Before;
 import org.junit.Test;
@@ -73,6 +74,17 @@ public class AmqpJmsStreamMessageFacadeTest extends QpidJmsTestCase {
 
         assertTrue("expected message type annotation to be present", annotationsMap.containsKey(AmqpMessageSupport.getSymbol(AmqpMessageSupport.JMS_MSG_TYPE)));
         assertEquals("unexpected value for message type annotation value", AmqpMessageSupport.JMS_STREAM_MESSAGE, annotationsMap.get(AmqpMessageSupport.getSymbol(AmqpMessageSupport.JMS_MSG_TYPE)));
+    }
+
+    @Test
+    public void testNewMessageToSendContainsAmqpSequenceBody() throws Exception {
+        AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createNewStreamMessageFacade();
+
+        Message protonMessage = amqpStreamMessageFacade.getAmqpMessage();
+        Section body = protonMessage.getBody();
+
+        assertNotNull("Body section was not present", body);
+        assertTrue("Body section was not of expected type: " + body.getClass(), body instanceof AmqpSequence);
     }
 
     @Test(expected = MessageEOFException.class)

@@ -26,7 +26,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.jms.message.JmsBytesMessage;
@@ -40,6 +42,8 @@ import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
+import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.message.Message;
@@ -420,7 +424,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
      * indicate the type of JMS message it is.
      */
     @Test(expected = IOException.class)
-    public void testCreateGenericMessageFromDataWithUnknownContentTypeAndEmptyBinary() throws Exception {
+    public void testDataWithUnknownContentTypeAndEmptyBinaryThrowsException() throws Exception {
         //TODO: decide if this should instead just be a plain Message or BytesMessage instead?
         Message message = Proton.message();
         Binary binary = new Binary(new byte[0]);
@@ -428,5 +432,152 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         message.setContentType("unknown-content-type");
 
         AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+    }
+
+    // --------- AmqpValue Body Section ---------
+
+    /**
+     * Test that an amqp-value body containing a string results in a TextMessage
+     * when not otherwise annotated to indicate the type of JMS message it is.
+     */
+    @Test
+    public void testCreateTextMessageFromAmqpValueWithString() throws Exception {
+        Message message = Proton.message();
+        message.setBody(new AmqpValue("content"));
+
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, facade.getClass());
+    }
+
+    /**
+     * Test that an amqp-value body containing a null results in an TextMessage
+     * when not otherwise annotated to indicate the type of JMS message it is.
+     */
+    @Test
+    public void testCreateTextMessageFromAmqpValueWithNull() throws Exception {
+        Message message = Proton.message();
+        message.setBody(new AmqpValue(null));
+
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, facade.getClass());
+    }
+
+    /**
+     * Test that an amqp-value body containing a map results in an ObjectMessage
+     * when not otherwise annotated to indicate the type of JMS message it is.
+     */
+    @Test
+    public void testCreateAmqpObjectMessageFromAmqpValueWithMap() throws Exception {
+        Message message = Proton.message();
+        Map<String, String> map = new HashMap<String,String>();
+        message.setBody(new AmqpValue(map));
+
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsObjectMessageFacade.class, facade.getClass());
+
+        AmqpObjectTypeDelegate delegate = ((AmqpJmsObjectMessageFacade) facade).getDelegate();
+        assertTrue("Unexpected delegate type: " + delegate, delegate instanceof AmqpTypedObjectDelegate);
+    }
+
+    /**
+     * Test that an amqp-value body containing a list results in an ObjectMessage
+     * when not otherwise annotated to indicate the type of JMS message it is.
+     */
+    @Test
+    public void testCreateAmqpObjectMessageFromAmqpValueWithList() throws Exception {
+        Message message = Proton.message();
+        List<String> list = new ArrayList<String>();
+        message.setBody(new AmqpValue(list));
+
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsObjectMessageFacade.class, facade.getClass());
+
+        AmqpObjectTypeDelegate delegate = ((AmqpJmsObjectMessageFacade) facade).getDelegate();
+        assertTrue("Unexpected delegate type: " + delegate, delegate instanceof AmqpTypedObjectDelegate);
+    }
+
+    /**
+     * Test that an amqp-value body containing a binary value results in BytesMessage
+     * when not otherwise annotated to indicate the type of JMS message it is.
+     */
+    @Test
+    public void testCreateAmqpBytesMessageFromAmqpValueWithBinary() throws Exception {
+        Message message = Proton.message();
+        Binary binary = new Binary(new byte[0]);
+        message.setBody(new AmqpValue(binary));
+
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsBytesMessage.class, jmsMessage.getClass());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsBytesMessageFacade.class, facade.getClass());
+    }
+
+    /**
+     * Test that an amqp-value body containing a value which can't be categorised results in
+     * an ObjectMessage when not otherwise annotated to indicate the type of JMS message it is.
+     */
+    @Test
+    public void testCreateObjectMessageFromAmqpValueWithUncategorisedContent() throws Exception {
+        Message message = Proton.message();
+        message.setBody(new AmqpValue(new Object()));// This obviously shouldn't happen in practice
+
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsObjectMessageFacade.class, facade.getClass());
+
+        AmqpObjectTypeDelegate delegate = ((AmqpJmsObjectMessageFacade) facade).getDelegate();
+        assertTrue("Unexpected delegate type: " + delegate, delegate instanceof AmqpTypedObjectDelegate);
+    }
+
+    // --------- AmqpSequence Body Section ---------
+
+    /**
+     * Test that an amqp-sequence body containing a binary value results in an ObjectMessage
+     * when not otherwise annotated to indicate the type of JMS message it is.
+     */
+    @Test
+    public void testCreateObjectMessageMessageFromAmqpSequence() throws Exception
+    {
+        Message message = Proton.message();
+        List<String> list = new ArrayList<String>();
+        message.setBody(new AmqpSequence(list));
+
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsObjectMessageFacade.class, facade.getClass());
+
+        AmqpObjectTypeDelegate delegate = ((AmqpJmsObjectMessageFacade) facade).getDelegate();
+        assertTrue("Unexpected delegate type: " + delegate, delegate instanceof AmqpTypedObjectDelegate);
     }
 }

@@ -86,14 +86,14 @@ public class AmqpJmsMessageFacadeTest {
     public void testSetAmqpTimeToLiveRejectsNegatives() throws Exception {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        amqpMessageFacade.setAmqpTimeToLive(-1L);
+        amqpMessageFacade.setAmqpTimeToLiveOverride(-1L);
     }
 
     @Test(expected = MessageFormatException.class)
     public void testSetAmqpTimeToLiveRejectsValuesFromTwoToThirtyTwo() throws Exception {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
         // check values over 2^32 - 1 are rejected
-        amqpMessageFacade.setAmqpTimeToLive(0X100000000L);
+        amqpMessageFacade.setAmqpTimeToLiveOverride(0X100000000L);
     }
 
     // ====== AMQP Properties Section =======
@@ -513,7 +513,7 @@ public class AmqpJmsMessageFacadeTest {
         AmqpJmsMessageFacade source = createNewMessageFacade();
 
         long amqpTtl = 17L;
-        source.setAmqpTimeToLive(amqpTtl);
+        source.setAmqpTimeToLiveOverride(amqpTtl);
 
         AmqpJmsMessageFacade copy = source.copy();
 

@@ -49,14 +49,14 @@ public class AmqpJmsMessagePropertyIntercepterTest {
     public void testSetJmsAmqpTtl() throws JMSException {
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
         AmqpJmsMessagePropertyIntercepter.setProperty(message, JMS_AMQP_TTL, 65536L);
-        Mockito.verify(message).setAmqpTimeToLive(65536L);
+        Mockito.verify(message).setAmqpTimeToLiveOverride(65536L);
     }
 
     @Test
     public void testGetJmsAmqpTtlWhenSet() throws JMSException {
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
-        Mockito.when(message.hasUserSpecifiedTimeToLive()).thenReturn(true);
-        Mockito.when(message.getAmqpTimeToLive()).thenReturn(65536L);
+        Mockito.when(message.hasAmqpTimeToLiveOverride()).thenReturn(true);
+        Mockito.when(message.getAmqpTimeToLiveOverride()).thenReturn(65536L);
 
         assertNotNull(AmqpJmsMessagePropertyIntercepter.getProperty(message, JMS_AMQP_TTL));
         assertEquals(65536L, AmqpJmsMessagePropertyIntercepter.getProperty(message, JMS_AMQP_TTL));
@@ -72,8 +72,8 @@ public class AmqpJmsMessagePropertyIntercepterTest {
     @Test
     public void testJmsAmqpTtlInPropertyNamesWhenSet() throws JMSException {
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
-        Mockito.when(message.hasUserSpecifiedTimeToLive()).thenReturn(true);
-        Mockito.when(message.getAmqpTimeToLive()).thenReturn(65536L);
+        Mockito.when(message.hasAmqpTimeToLiveOverride()).thenReturn(true);
+        Mockito.when(message.getAmqpTimeToLiveOverride()).thenReturn(65536L);
         assertTrue(AmqpJmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_AMQP_TTL));
     }
 

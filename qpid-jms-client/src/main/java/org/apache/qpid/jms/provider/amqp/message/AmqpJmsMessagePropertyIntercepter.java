@@ -88,8 +88,8 @@ public class AmqpJmsMessagePropertyIntercepter {
         PROPERTY_INTERCEPTERS.put(JMS_AMQP_TTL, new PropertyIntercepter() {
             @Override
             public Object getProperty(AmqpJmsMessageFacade message) throws JMSException {
-                if (message.hasUserSpecifiedTimeToLive()) {
-                    return message.getAmqpTimeToLive();
+                if (message.hasAmqpTimeToLiveOverride()) {
+                    return message.getAmqpTimeToLiveOverride();
                 }
                 return null;
             }
@@ -100,12 +100,12 @@ public class AmqpJmsMessagePropertyIntercepter {
                 if (rc == null) {
                     throw new JMSException("Property " + JMS_AMQP_TTL + " cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setAmqpTimeToLive(rc.longValue());
+                message.setAmqpTimeToLiveOverride(rc.longValue());
             }
 
             @Override
             public boolean propertyExists(AmqpJmsMessageFacade message) {
-                return message.hasUserSpecifiedTimeToLive();
+                return message.hasAmqpTimeToLiveOverride();
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_AMQP_REPLY_TO_GROUP_ID, new PropertyIntercepter() {

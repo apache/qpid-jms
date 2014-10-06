@@ -215,8 +215,8 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         // Set the ttl field of the Header field if needed, complementing the expiration
         // field of Properties for any peers that only inspect the mutable ttl field.
         long ttl = 0;
-        if (hasUserSpecifiedTimeToLive()) {
-            ttl = getAmqpTimeToLive();
+        if (hasAmqpTimeToLiveOverride()) {
+            ttl = getAmqpTimeToLiveOverride();
         } else {
             ttl = producerTtl;
         }
@@ -597,7 +597,15 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         }
     }
 
-    public void setAmqpTimeToLive(long ttl) throws MessageFormatException {
+    /**
+     * Sets a value which will be used to override any ttl value that may otherwise be set
+     * based on the expiration value when sending the underlying AMQP message. A value of 0
+     * means to clear the ttl field rather than set it to anything.
+     *
+     * @param ttl the value to use, in range 0 <= x <= 2^32 - 1
+     * @throws MessageFormatException
+     */
+    public void setAmqpTimeToLiveOverride(long ttl) throws MessageFormatException {
         if (ttl >= 0 && ttl <= UINT_MAX) {
             userSpecifiedTTL = ttl;
         } else {
@@ -605,11 +613,11 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         }
     }
 
-    public boolean hasUserSpecifiedTimeToLive() {
+    public boolean hasAmqpTimeToLiveOverride() {
         return userSpecifiedTTL != null;
     }
 
-    public long getAmqpTimeToLive() {
+    public long getAmqpTimeToLiveOverride() {
         return userSpecifiedTTL != null ? userSpecifiedTTL : 0;
     }
 

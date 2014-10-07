@@ -321,6 +321,78 @@ public class AmqpJmsMessageFacadeTest {
         assertEquals("expected priority value not found", priority, underlying.getPriority());
     }
 
+    /**
+     * Test that setting the Priority below the JMS range of 0-9 resuls in the underlying
+     * message field being populated with the value 0.
+     */
+    @Test
+    public void testSetPriorityBelowJmsRangeForNewMessage() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        amqpMessageFacade.setPriority(-1);
+
+        assertEquals("expected priority value not found", 0, amqpMessageFacade.getPriority());
+
+        Message underlying = amqpMessageFacade.getAmqpMessage();
+        assertEquals("expected priority value not found", 0, underlying.getPriority());
+    }
+
+    /**
+     * Test that setting the Priority above the JMS range of 0-9 resuls in the underlying
+     * message field being populated with the value 9.
+     */
+    @Test
+    public void testSetPriorityAboveJmsRangeForNewMessage() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        amqpMessageFacade.setPriority(11);
+
+        assertEquals("expected priority value not found", 9, amqpMessageFacade.getPriority());
+
+        Message underlying = amqpMessageFacade.getAmqpMessage();
+        assertEquals("expected priority value not found", 9, underlying.getPriority());
+    }
+
+    /**
+     * Test that setting the Priority to the default value on a message with no
+     * header section does not result in creating the header section.
+     */
+    @Test
+    public void testSetDefaultPriorityForMessageWithoutHeaderSection() {
+        // Using a received message as new messages to send are set durable by default, which creates the header
+        Message message = Proton.message();
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertNull("expected no header section to exist", message.getHeader());
+
+        amqpMessageFacade.setPriority(Message.DEFAULT_PRIORITY);
+
+        assertNull("expected no header section to exist", message.getHeader());
+        assertEquals("expected priority to be default", Message.DEFAULT_PRIORITY, amqpMessageFacade.getPriority());
+    }
+
+    /**
+     * Receive message which has a header section with a priority value. Ensure the headers
+     * underlying field value is cleared when the priority is set to the default priority of 4.
+     */
+    @Test
+    public void testSetPriorityToDefaultOnReceivedMessageWithPriorityClearsPriorityField() {
+        byte priority = 11;
+
+        Message message = Proton.message();
+        Header header = new Header();
+        message.setHeader(header);
+        header.setPriority(UnsignedByte.valueOf(priority));
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+        amqpMessageFacade.setPriority(Message.DEFAULT_PRIORITY);
+
+        //check the expected value is still returned
+        assertEquals("expected priority value not returned", Message.DEFAULT_PRIORITY, amqpMessageFacade.getPriority());
+
+        //check the underlying header field was actually cleared rather than set to Message.DEFAULT_PRIORITY
+        Message underlying = amqpMessageFacade.getAmqpMessage();
+        assertNull("underlying header priority field was not cleared", underlying.getHeader().getPriority());
+    }
+
     // ====== AMQP Properties Section =======
     // ======================================
 

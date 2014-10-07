@@ -404,6 +404,187 @@ public class AmqpJmsMessageFacadeTest {
         assertNull(underlying.getProperties());
     }
 
+    // --- group-id field ---
+
+    @Test
+    public void testGetGroupIdIsNullForNewMessage()
+    {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertNull("expected GroupId to be null on new message", amqpMessageFacade.getGroupId());
+    }
+
+    /**
+     * Check that setting GroupId null on a new message does not cause creation of the underlying properties
+     * section. New messages lack the properties section section,
+     * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
+     */
+    @Test
+    public void testSetGroupIdNullOnNewMessageDoesNotCreatePropertiesSection() throws Exception
+    {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setGroupId(null);
+
+        assertNull("properties section was created", amqpMessageFacade.getAmqpMessage().getProperties());
+    }
+
+    /**
+     * Check that setting GroupId on the message causes creation of the underlying properties
+     * section with the expected value. New messages lack the properties section section,
+     * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
+     */
+    @Test
+    public void testSetGroupIdOnNewMessage() throws Exception
+    {
+        String groupId = "testValue";
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setGroupId(groupId);
+
+        assertNotNull("properties section was not created", amqpMessageFacade.getAmqpMessage().getProperties());
+        assertEquals("value was not set for GroupId as expected", groupId, amqpMessageFacade.getAmqpMessage().getProperties().getGroupId());
+
+        assertEquals("value was not set for GroupId as expected", groupId, amqpMessageFacade.getGroupId());
+    }
+
+    /**
+     * Check that setting UserId null on the message causes any existing value to be cleared
+     */
+    @Test
+    public void testSetGroupIdNullOnMessageWithExistingGroupId() throws Exception
+    {
+        String groupId = "testValue";
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setGroupId(groupId);
+        amqpMessageFacade.setGroupId(null);
+
+        assertNull("value was not cleared for GroupId as expected", amqpMessageFacade.getAmqpMessage().getProperties().getGroupId());
+        assertNull("value was not cleared for GroupId as expected", amqpMessageFacade.getGroupId());
+    }
+
+    // --- reply-to-group-id field ---
+
+    /**
+     * Check that setting the ReplyToGroupId works on new messages without a properties
+     * properties section. New messages lack the properties section,
+     * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
+     */
+    @Test
+    public void testGetReplyToGroupIdIsNullForNewMessage()
+    {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertNull("expected ReplyToGroupId to be null on new message", amqpMessageFacade.getReplyToGroupId());
+    }
+
+    /**
+     * Check that getting the ReplyToGroupId works on received messages without a properties section
+     */
+    @Test
+    public void testGetReplyToGroupIdWithReceivedMessageWithNoProperties()
+    {
+        Message message = Proton.message();
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        String replyToGroupId = amqpMessageFacade.getReplyToGroupId();
+        assertNull("expected ReplyToGroupId to be null on message without properties section", replyToGroupId);
+    }
+
+    /**
+     * Check that setting ReplyToGroupId null on a new message does not cause creation of the
+     * underlying properties section. New messages lack the properties section,
+     * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
+     */
+    @Test
+    public void testSetReplyToGroupIdNullOnNewMessageDoesNotCreatePropertiesSection() throws Exception
+    {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setReplyToGroupId(null);
+
+        assertNull("properties section was created", amqpMessageFacade.getAmqpMessage().getProperties());
+    }
+
+    /**
+     * Check that getting the ReplyToGroupId works on received messages with a
+     * properties section, but no reply-to-group-id
+     */
+    @Test
+    public void testGetReplyToGroupIdWithReceivedMessageWithPropertiesButNoReplyToGroupId()
+    {
+        Message message = Proton.message();
+
+        Properties props = new Properties();
+        props.setContentType(Symbol.valueOf("content-type"));
+        message.setProperties(props);
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        String replyToGroupId = amqpMessageFacade.getReplyToGroupId();
+        assertNull("expected ReplyToGroupId to be null on message with properties section but no reply-to-group-id", replyToGroupId);
+    }
+
+    /**
+     * Check that getting the ReplyToGroupId returns the expected value from a
+     * received messages with a reply-to-group-id.
+     */
+    @Test
+    public void testGetReplyToGroupIdWithReceivedMessage()
+    {
+        String replyToGroupId = "myReplyGroup";
+
+        Message message = Proton.message();
+
+        Properties props = new Properties();
+        props.setReplyToGroupId(replyToGroupId);
+        message.setProperties(props);
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        String actual = amqpMessageFacade.getReplyToGroupId();
+        assertNotNull("expected ReplyToGroupId on message was not found", actual);
+        assertEquals("expected ReplyToGroupId on message was not found", replyToGroupId, actual);
+    }
+
+    /**
+     * Test that setting the ReplyToGroupId sets the expected value into the
+     * reply-to-group-id of the underlying proton message.
+     */
+    @Test
+    public void testSetReplyToGroupId()
+    {
+        String replyToGroupId = "myReplyGroup";
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        Message underlyingMessage = amqpMessageFacade.getAmqpMessage();
+
+        amqpMessageFacade.setReplyToGroupId(replyToGroupId);
+
+        assertNotNull("expected ReplyToGroupId on message was not found", underlyingMessage.getReplyToGroupId());
+        assertEquals("expected ReplyToGroupId on message was not found", replyToGroupId, underlyingMessage.getReplyToGroupId());
+    }
+
+    /**
+     * Test that setting and getting the ReplyToGroupId yields the expected result
+     */
+    @Test
+    public void testSetGetReplyToGroupId()
+    {
+        String replyToGroupId = "myReplyGroup";
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertNull(amqpMessageFacade.getReplyToGroupId());
+
+        amqpMessageFacade.setReplyToGroupId(replyToGroupId);
+
+        assertNotNull("expected ReplyToGroupId on message was not found", amqpMessageFacade.getReplyToGroupId());
+        assertEquals("expected ReplyToGroupId on message was not found", replyToGroupId, amqpMessageFacade.getReplyToGroupId());
+    }
+
     // --- message-id and correlation-id ---
 
     @Test

@@ -386,7 +386,7 @@ public class JmsMessagePropertyIntercepter {
 
             @Override
             public boolean propertyExists(JmsMessageFacade message) {
-                return message.getGroupId() != null;
+                return message.getGroupSequence() != 0;
             }
         });
         PROPERTY_INTERCEPTERS.put(JMSX_USERID, new PropertyIntercepter() {

@@ -572,7 +572,7 @@ public class JmsMessagePropertyIntercepterTest {
     @Test
     public void testJMSXGroupSeqInGetPropertyNamesWhenSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        Mockito.when(message.getGroupId()).thenReturn("GROUP_ID");
+        Mockito.when(message.getGroupSequence()).thenReturn(1);
         assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMSX_GROUPSEQ));
     }
 

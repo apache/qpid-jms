@@ -65,7 +65,7 @@ public class PropertyUtilTest {
         private URI uriValue;
         private SSLContext context;
 
-        private final Embedded embedded = new Embedded();
+        private Embedded embedded = new Embedded();
 
         public Options() {
         }
@@ -115,25 +115,46 @@ public class PropertyUtilTest {
             return booleanValue;
         }
 
-        public URI getUriValue() {
+        public URI getURIValue() {
             return uriValue;
         }
 
-        public URL getUrlValue() {
+        public void setURIValue(URI uriValue) {
+            this.uriValue = uriValue;
+        }
+
+        public URL getURLValue() {
             return urlValue;
+        }
+
+        public void setURLValue(URL urlValue) {
+            this.urlValue = urlValue;
         }
 
         public SSLContext getSSLContext() {
             return context;
         }
 
+        public void setSSLContext(SSLContext context) {
+            this.context = context;
+        }
+
         public Embedded getEmbedded() {
             return embedded;
+        }
+
+        public void setEmbedded(Embedded embedded) {
+            this.embedded = embedded;
         }
 
         public void setNotReadable(String value) {
             this.notReadable = value;
         }
+    }
+
+    @Test
+    public void test() {
+        new PropertyUtil();
     }
 
     @Test
@@ -426,6 +447,48 @@ public class PropertyUtilTest {
     }
 
     @Test
+    public void testGetPropertiesHandlesURIs() throws Exception {
+        Options configObject = new Options("foo", "bar");
+
+        configObject.setURIValue(new URI("test://test"));
+
+        Map<String, String> properties = PropertyUtil.getProperties(configObject);
+
+        assertFalse(properties.isEmpty());
+        assertEquals("foo", properties.get("firstName"));
+        assertEquals("bar", properties.get("lastName"));
+        assertEquals("test://test", properties.get("URIValue"));
+    }
+
+    @Test
+    public void testGetPropertiesHandlesURLs() throws Exception {
+        Options configObject = new Options("foo", "bar");
+
+        configObject.setURLValue(new URL("http://www.domain.com"));
+
+        Map<String, String> properties = PropertyUtil.getProperties(configObject);
+
+        assertFalse(properties.isEmpty());
+        assertEquals("foo", properties.get("firstName"));
+        assertEquals("bar", properties.get("lastName"));
+        assertEquals("http://www.domain.com", properties.get("URLValue"));
+    }
+
+    @Test
+    public void testGetPropertiesIgnoresSSLContext() throws Exception {
+        Options configObject = new Options("foo", "bar");
+
+        configObject.setSSLContext(SSLContext.getDefault());
+        Map<String, String> properties = PropertyUtil.getProperties(configObject);
+
+        assertFalse(properties.isEmpty());
+        assertEquals("foo", properties.get("firstName"));
+        assertEquals("bar", properties.get("lastName"));
+
+        assertFalse(properties.containsKey("sslContext"));
+    }
+
+    @Test
     public void testGetProperty() throws Exception {
         Options configObject = new Options("foo", "bar");
         Object result = PropertyUtil.getProperty(configObject, "firstName");
@@ -453,6 +516,13 @@ public class PropertyUtilTest {
         Options configObject = new Options();
         assertTrue(PropertyUtil.setProperty(configObject, "firstName", "foo"));
         assertEquals("foo", configObject.getFirstName());
+    }
+
+    @Test
+    public void testSetPropertyOfURI() throws Exception {
+        Options configObject = new Options();
+        assertTrue(PropertyUtil.setProperty(configObject, "URIValue", "test://foo"));
+        assertEquals("test://foo", configObject.getURIValue().toString());
     }
 
     @Test

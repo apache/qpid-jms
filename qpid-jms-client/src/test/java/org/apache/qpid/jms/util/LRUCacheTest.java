@@ -32,6 +32,14 @@ public class LRUCacheTest {
     protected static final Logger LOG = LoggerFactory.getLogger(LRUCacheTest.class);
 
     @Test
+    public void testLRUCache() {
+        LRUCache<Long, Long> underTest = new LRUCache<Long, Long>();
+        assertEquals(10000, underTest.getMaxCacheSize());
+        underTest.setMaxCacheSize(1000);
+        assertEquals(1000, underTest.getMaxCacheSize());
+    }
+
+    @Test
     public void testResize() throws Exception {
         LRUCache<Long, Long> underTest = new LRUCache<Long, Long>(1000);
 

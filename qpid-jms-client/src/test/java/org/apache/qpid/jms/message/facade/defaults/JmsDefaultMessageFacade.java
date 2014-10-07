@@ -54,7 +54,7 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
 
     protected Map<String, Object> properties = new HashMap<String, Object>();
 
-    protected byte priority = javax.jms.Message.DEFAULT_PRIORITY;
+    protected int priority = javax.jms.Message.DEFAULT_PRIORITY;
     protected String groupId;
     protected int groupSequence;
     protected String messageId;
@@ -252,12 +252,12 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public byte getPriority() {
+    public int getPriority() {
         return priority;
     }
 
     @Override
-    public void setPriority(byte priority) {
+    public void setPriority(int priority) {
         if (priority < 0) {
             this.priority = 0;
         } else if (priority > 9) {

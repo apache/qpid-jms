@@ -235,7 +235,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void setJMSPriority(int priority) throws JMSException {
-        facade.setPriority((byte) priority);
+        facade.setPriority(priority);
     }
 
     @Override

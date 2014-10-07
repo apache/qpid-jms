@@ -211,6 +211,8 @@ public class AmqpJmsMessageFacadeTest {
         assertEquals("TTL has not been overriden", overrideTtl, message.getTtl());
     }
 
+    // --- priority field  ---
+
     @Test
     public void testGetPriorityIs4ForNewMessage() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
@@ -229,8 +231,6 @@ public class AmqpJmsMessageFacadeTest {
         assertNull("expected no header section to exist", message.getHeader());
         assertEquals("expected priority value not found", 4, amqpMessageFacade.getPriority());
     }
-
-    // TODO: start of section marker
 
     /**
      * When messages have a header section, but lack the priority field,
@@ -267,17 +267,37 @@ public class AmqpJmsMessageFacadeTest {
     }
 
     /**
-     * When messages have a header section, which have a priority value outside the JMS range, ensure it is constrained.
+     * When messages have a header section, which has a priority value just above the
+     * JMS range of 0-9, ensure it is constrained to 9.
      */
     @Test
-    public void testGetPriorityForReceivedMessageWithPriorityOutsideJmsRange() {
-        // value over 9 deliberately
+    public void testGetPriorityForReceivedMessageWithPriorityJustAboveJmsRange() {
+        // value just over 9 deliberately
         byte priority = 11;
 
         Message message = Proton.message();
         Header header = new Header();
         message.setHeader(header);
         header.setPriority(UnsignedByte.valueOf(priority));
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertEquals("expected priority value not found", 9, amqpMessageFacade.getPriority());
+    }
+
+    /**
+     * When messages have a header section, which has a priority value above the
+     * JMS range of 0-9 and also outside the signed byte range (given AMQP
+     * allowing ubyte priority), ensure it is constrained to 9.
+     */
+    @Test
+    public void testGetPriorityForReceivedMessageWithPriorityAboveSignedByteRange() {
+        String priorityString = String.valueOf(255);
+
+        Message message = Proton.message();
+        Header header = new Header();
+        message.setHeader(header);
+        header.setPriority(UnsignedByte.valueOf(priorityString));
 
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 

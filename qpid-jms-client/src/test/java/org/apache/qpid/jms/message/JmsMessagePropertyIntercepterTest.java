@@ -250,7 +250,7 @@ public class JmsMessagePropertyIntercepterTest {
     @Test
     public void testGetJMSPriorityWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        Mockito.when(message.getPriority()).thenReturn((byte) 4);
+        Mockito.when(message.getPriority()).thenReturn(4);
         assertEquals(4, JmsMessagePropertyIntercepter.getProperty(message, JMS_PRIORITY));
         Mockito.verify(message).getPriority();
     }
@@ -258,7 +258,7 @@ public class JmsMessagePropertyIntercepterTest {
     @Test
     public void testGetJMSPriorityWhenSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        Mockito.when(message.getPriority()).thenReturn((byte) 9);
+        Mockito.when(message.getPriority()).thenReturn(9);
         assertEquals(9, JmsMessagePropertyIntercepter.getProperty(message, JMS_PRIORITY));
     }
 
@@ -272,14 +272,14 @@ public class JmsMessagePropertyIntercepterTest {
     @Test
     public void testJMSPriorityInGetPropertyNamesWhenDefault() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        Mockito.when(message.getPriority()).thenReturn((byte) Message.DEFAULT_PRIORITY);
+        Mockito.when(message.getPriority()).thenReturn(Message.DEFAULT_PRIORITY);
         assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_PRIORITY));
     }
 
     @Test
     public void testJMSPriorityInGetPropertyNamesWhenNotDefault() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        Mockito.when(message.getPriority()).thenReturn((byte) 1);
+        Mockito.when(message.getPriority()).thenReturn(1);
         assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_PRIORITY));
     }
 

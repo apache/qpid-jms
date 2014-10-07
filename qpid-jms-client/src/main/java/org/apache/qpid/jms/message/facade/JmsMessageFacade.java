@@ -296,7 +296,7 @@ public interface JmsMessageFacade {
      *
      * @return the priority value assigned to this message.
      */
-    byte getPriority();
+    int getPriority();
 
     /**
      * Sets the message priority for this message using a JMS priority scoped value.
@@ -304,7 +304,7 @@ public interface JmsMessageFacade {
      * @param priority
      *        the new priority value to set on this message.
      */
-    void setPriority(byte priority);
+    void setPriority(int priority);
 
     /**
      * Returns the set expiration time for this message.

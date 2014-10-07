@@ -697,7 +697,12 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public void setUserId(String userId) {
-        message.setUserId(userId.getBytes(UTF8));
+        byte[] bytes = null;
+        if (userId != null) {
+            bytes = userId.getBytes(UTF8);
+        }
+
+        message.setUserId(bytes);
     }
 
     @Override

@@ -29,6 +29,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -575,7 +576,6 @@ public class AmqpJmsMessageFacadeTest {
         assertEquals("expected ReplyToGroupId on message was not found", replyToGroupId, amqpMessageFacade.getReplyToGroupId());
     }
 
-    //TODO: marker
     // --- group-sequence field ---
 
     @Test
@@ -1086,6 +1086,66 @@ public class AmqpJmsMessageFacadeTest {
 
         assertNull("Expected absolute-expiry-time to be null", amqpMessageFacade.getAmqpMessage().getProperties().getAbsoluteExpiryTime());
         assertEquals("Expected no expiration", 0, amqpMessageFacade.getExpiration());
+    }
+
+    // --- user-id field  ---
+
+    @Test
+    public void testGetUserIdIsNullForNewMessage() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertNull("expected userid to be null on new message", amqpMessageFacade.getUserId());
+    }
+
+    @Test
+    public void testGetUserIdOnReceievedMessage() throws Exception {
+        String userIdString = "testValue";
+        byte[] bytes = userIdString.getBytes("UTF-8");
+
+        Message message = Proton.message();
+
+        Properties props = new Properties();
+        props.setUserId(new Binary(bytes));
+        message.setProperties(props);
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertNotNull("Expected a userid on received message", amqpMessageFacade.getUserId());
+        assertEquals("Incorrect messageId value received", userIdString, amqpMessageFacade.getUserId());
+    }
+
+    /**
+     * Check that setting UserId on the message causes creation of the underlying properties
+     * section with the expected value. New messages lack the properties section section,
+     * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
+     */
+    @Test
+    public void testSetUserIdOnNewMessage() throws Exception {
+        String userIdString = "testValue";
+        byte[] bytes = userIdString.getBytes("UTF-8");
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setUserId(userIdString);
+
+        assertNotNull("properties section was not created", amqpMessageFacade.getAmqpMessage().getProperties());
+        assertTrue("bytes were not set as expected for userid", Arrays.equals(bytes, amqpMessageFacade.getAmqpMessage().getProperties().getUserId().getArray()));
+        assertEquals("userid not as expected", userIdString, amqpMessageFacade.getUserId());
+    }
+
+    /**
+     * Check that setting UserId null on the message causes any existing value to be cleared
+     */
+    @Test
+    public void testSetUserIdNullOnMessageWithExistingUserId() throws Exception {
+        String userIdString = "testValue";
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setUserId(userIdString);
+        amqpMessageFacade.setUserId(null);
+
+        assertNotNull("properties section was not created", amqpMessageFacade.getAmqpMessage().getProperties());
+        assertNull("bytes were not cleared as expected for userid", amqpMessageFacade.getAmqpMessage().getProperties().getUserId());
+        assertNull("userid not as expected", amqpMessageFacade.getUserId());
     }
 
     // ====== AMQP Message Facade copy() tests =======

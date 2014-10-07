@@ -416,4 +416,9 @@ public interface JmsMessageFacade {
      *        the group sequence value to assign this message.
      */
     void setGroupSequence(int groupSequence);
+
+    /**
+     * Clears the group sequence value for this message.
+     */
+    void clearGroupSequence();
 }

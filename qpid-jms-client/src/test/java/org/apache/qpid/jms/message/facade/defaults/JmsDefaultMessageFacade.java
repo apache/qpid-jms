@@ -337,6 +337,11 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
         this.groupSequence = groupSequence;
     }
 
+    @Override
+    public void clearGroupSequence() {
+        this.groupSequence = 0;
+    }
+
     private void lazyCreateProperties() {
         if (properties == null) {
             properties = new HashMap<String, Object>();

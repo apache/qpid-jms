@@ -60,6 +60,7 @@ import org.mockito.Mockito;
 
 public class AmqpJmsMessageFacadeTest {
 
+    private static final long MAX_UINT = 0xFFFFFFFFL;
     private final JmsDestination consumerDestination = new JmsTopic("TestTopic");
 
     private AmqpJmsMessageFacade createNewMessageFacade() {
@@ -407,8 +408,7 @@ public class AmqpJmsMessageFacadeTest {
     // --- group-id field ---
 
     @Test
-    public void testGetGroupIdIsNullForNewMessage()
-    {
+    public void testGetGroupIdIsNullForNewMessage() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
         assertNull("expected GroupId to be null on new message", amqpMessageFacade.getGroupId());
@@ -420,8 +420,7 @@ public class AmqpJmsMessageFacadeTest {
      * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
      */
     @Test
-    public void testSetGroupIdNullOnNewMessageDoesNotCreatePropertiesSection() throws Exception
-    {
+    public void testSetGroupIdNullOnNewMessageDoesNotCreatePropertiesSection() throws Exception {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
         amqpMessageFacade.setGroupId(null);
@@ -435,8 +434,7 @@ public class AmqpJmsMessageFacadeTest {
      * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
      */
     @Test
-    public void testSetGroupIdOnNewMessage() throws Exception
-    {
+    public void testSetGroupIdOnNewMessage() throws Exception {
         String groupId = "testValue";
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
@@ -452,8 +450,7 @@ public class AmqpJmsMessageFacadeTest {
      * Check that setting UserId null on the message causes any existing value to be cleared
      */
     @Test
-    public void testSetGroupIdNullOnMessageWithExistingGroupId() throws Exception
-    {
+    public void testSetGroupIdNullOnMessageWithExistingGroupId() throws Exception {
         String groupId = "testValue";
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
@@ -472,8 +469,7 @@ public class AmqpJmsMessageFacadeTest {
      * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
      */
     @Test
-    public void testGetReplyToGroupIdIsNullForNewMessage()
-    {
+    public void testGetReplyToGroupIdIsNullForNewMessage() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
         assertNull("expected ReplyToGroupId to be null on new message", amqpMessageFacade.getReplyToGroupId());
@@ -483,8 +479,7 @@ public class AmqpJmsMessageFacadeTest {
      * Check that getting the ReplyToGroupId works on received messages without a properties section
      */
     @Test
-    public void testGetReplyToGroupIdWithReceivedMessageWithNoProperties()
-    {
+    public void testGetReplyToGroupIdWithReceivedMessageWithNoProperties() {
         Message message = Proton.message();
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
@@ -498,8 +493,7 @@ public class AmqpJmsMessageFacadeTest {
      * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
      */
     @Test
-    public void testSetReplyToGroupIdNullOnNewMessageDoesNotCreatePropertiesSection() throws Exception
-    {
+    public void testSetReplyToGroupIdNullOnNewMessageDoesNotCreatePropertiesSection() throws Exception {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
         amqpMessageFacade.setReplyToGroupId(null);
@@ -512,8 +506,7 @@ public class AmqpJmsMessageFacadeTest {
      * properties section, but no reply-to-group-id
      */
     @Test
-    public void testGetReplyToGroupIdWithReceivedMessageWithPropertiesButNoReplyToGroupId()
-    {
+    public void testGetReplyToGroupIdWithReceivedMessageWithPropertiesButNoReplyToGroupId() {
         Message message = Proton.message();
 
         Properties props = new Properties();
@@ -531,8 +524,7 @@ public class AmqpJmsMessageFacadeTest {
      * received messages with a reply-to-group-id.
      */
     @Test
-    public void testGetReplyToGroupIdWithReceivedMessage()
-    {
+    public void testGetReplyToGroupIdWithReceivedMessage() {
         String replyToGroupId = "myReplyGroup";
 
         Message message = Proton.message();
@@ -553,8 +545,7 @@ public class AmqpJmsMessageFacadeTest {
      * reply-to-group-id of the underlying proton message.
      */
     @Test
-    public void testSetReplyToGroupId()
-    {
+    public void testSetReplyToGroupId() {
         String replyToGroupId = "myReplyGroup";
 
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
@@ -571,8 +562,7 @@ public class AmqpJmsMessageFacadeTest {
      * Test that setting and getting the ReplyToGroupId yields the expected result
      */
     @Test
-    public void testSetGetReplyToGroupId()
-    {
+    public void testSetGetReplyToGroupId() {
         String replyToGroupId = "myReplyGroup";
 
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
@@ -583,6 +573,87 @@ public class AmqpJmsMessageFacadeTest {
 
         assertNotNull("expected ReplyToGroupId on message was not found", amqpMessageFacade.getReplyToGroupId());
         assertEquals("expected ReplyToGroupId on message was not found", replyToGroupId, amqpMessageFacade.getReplyToGroupId());
+    }
+
+    //TODO: marker
+    // --- group-sequence field ---
+
+    @Test
+    public void testSetGetGroupSequenceOnNewMessage() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        int groupSequence = 5;
+        amqpMessageFacade.setGroupSequence(groupSequence);
+
+        assertEquals("underlying message should have groupSequence field value", groupSequence, amqpMessageFacade.getAmqpMessage().getProperties().getGroupSequence().longValue());
+        assertEquals("GroupSequence not as expected", groupSequence, amqpMessageFacade.getGroupSequence());
+    }
+
+    /**
+     * Tests handling of negative values set for group sequence. Negative values are used to map
+     * a value into the upper half of the unsigned int range supported by AMQP group-sequence
+     * field by utilising all of the bits of the signed int value. That is, Integer.MIN_VALUE maps
+     * to the uint value 2^31 and -1 maps to the maximum uint value 2^32-1.
+     */
+    @Test
+    public void testSetGroupSequenceNegativeMapsToUnsignedIntValueOnUnderlyingMessage() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        int delta = 9;
+        UnsignedInteger mapped = UnsignedInteger.valueOf(MAX_UINT - delta);
+        amqpMessageFacade.setGroupSequence(-1 - delta);
+
+        assertEquals("underlying message should have no groupSequence field value",mapped, amqpMessageFacade.getAmqpMessage().getProperties().getGroupSequence());
+        assertEquals("GroupSequence not as expected", -1 - delta, amqpMessageFacade.getGroupSequence());
+    }
+
+    @Test
+    public void testGetGroupSequenceOnReceivedMessageWithGroupSequenceJustAboveSignedIntRange() {
+        Message message = Proton.message();
+
+        Properties props = new Properties();
+        props.setGroupSequence(UnsignedInteger.valueOf(1L + Integer.MAX_VALUE));
+        message.setProperties(props);
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        // The unsigned int value >= 2^31 will be represented as a negative, and so should begin from minimum signed int value
+        assertEquals("GroupSequence not as expected", Integer.MIN_VALUE, amqpMessageFacade.getGroupSequence());
+    }
+
+    @Test
+    public void testGetGroupSequenceOnReceivedMessageWithGroupSequenceMaxUnsignedIntValue() {
+        Message message = Proton.message();
+
+        Properties props = new Properties();
+        props.setGroupSequence(UnsignedInteger.valueOf(MAX_UINT));
+        message.setProperties(props);
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        // The unsigned int value 2^32-1 will be represented as a negative, and should be the largest such value, -1
+        assertEquals("GroupSequence not as expected", -1, amqpMessageFacade.getGroupSequence());
+    }
+
+    @Test
+    public void testClearGroupSequenceOnMessageWithExistingGroupSequence() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setGroupSequence(5);
+
+        amqpMessageFacade.clearGroupSequence();
+
+        assertNull("underlying message should have no groupSequence field value", amqpMessageFacade.getAmqpMessage().getProperties().getGroupSequence());
+        assertEquals("GroupSequence should be 0", 0, amqpMessageFacade.getGroupSequence());
+    }
+
+    @Test
+    public void testClearGroupSequenceOnMessageWithoutExistingGroupSequence() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        amqpMessageFacade.clearGroupSequence();
+
+        assertNull("underlying message should still have no properties setion", amqpMessageFacade.getAmqpMessage().getProperties());
+        assertEquals("GroupSequence should be 0", 0, amqpMessageFacade.getGroupSequence());
     }
 
     // --- message-id and correlation-id ---

@@ -713,9 +713,10 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     @Override
     public int getGroupSequence() {
         if (message.getProperties() != null) {
-            UnsignedInteger sequence = message.getProperties().getGroupSequence();
-            if (sequence != null) {
-                return sequence.intValue();
+            UnsignedInteger groupSeqUint = message.getProperties().getGroupSequence();
+            if (groupSeqUint != null) {
+                // This wraps it into the negative int range if uint is over 2^31-1
+                return groupSeqUint.intValue();
             }
         }
 
@@ -724,10 +725,14 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public void setGroupSequence(int groupSequence) {
-        if (groupSequence < 0 && message.getProperties() != null) {
+        // This wraps it into the upper uint range if a negative was provided
+        message.setGroupSequence(groupSequence);
+    }
+
+    @Override
+    public void clearGroupSequence() {
+        if (message.getProperties() != null) {
             message.getProperties().setGroupSequence(null);
-        } else if (groupSequence > 0) {
-            message.setGroupSequence(groupSequence);
         }
     }
 

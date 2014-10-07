@@ -796,9 +796,11 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      *
      * @param listener
      *        the listener to remove from the collection.
+     *
+     * @return true if the given listener was removed from the current set.
      */
-    public void removeTransportListener(JmsConnectionListener listener) {
-        this.connectionListeners.remove(listener);
+    public boolean removeConnectionListener(JmsConnectionListener listener) {
+        return this.connectionListeners.remove(listener);
     }
 
     public boolean isForceAsyncSend() {

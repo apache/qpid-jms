@@ -241,6 +241,9 @@ public class JmsMessage implements javax.jms.Message {
     @Override
     public void clearProperties() throws JMSException {
         facade.clearProperties();
+
+        //Clear property-defined values that are treated as facade-managed, such as GroupSequence.
+        facade.clearGroupSequence();
     }
 
     @Override

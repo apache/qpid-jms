@@ -33,9 +33,11 @@ import javax.jms.MessageNotWriteableException;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsTopic;
+import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -269,6 +271,18 @@ public class JmsMessageTest {
         msg.clearProperties();
         assertNull(msg.getStringProperty("test"));
         assertNotNull(msg.getJMSMessageID());
+    }
+
+    @Test
+    public void testClearPropertiesClearsFacadeGroupSequence() throws JMSException {
+        JmsMessageFacade facade = Mockito.mock(JmsMessageFacade.class);
+        JmsMessage msg = new JmsMessage(facade);
+
+        Mockito.verify(facade, Mockito.never()).clearGroupSequence();
+
+        msg.clearProperties();
+
+        Mockito.verify(facade).clearGroupSequence();
     }
 
     @Test

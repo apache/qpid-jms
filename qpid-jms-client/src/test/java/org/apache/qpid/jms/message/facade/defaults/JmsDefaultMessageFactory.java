@@ -29,13 +29,8 @@ import org.apache.qpid.jms.message.JmsStreamMessage;
 import org.apache.qpid.jms.message.JmsTextMessage;
 
 /**
- * Default implementation of the ProviderMessageFactory that create simple
- * generic javax.jms.Message types that can be sent to any Provider instance.
- *
- * TODO: Once the AMQP Message Facade stuff is done we should move this factory
- *       and the default JmsMessageFacade implementations into the test package
- *       since their primary use will be to test the JMS spec compliance of the
- *       JmsMessage classes.
+ * Implementation of the JmsMessageFactory that create simple
+ * javax.jms.Message instances with test facades.
  */
 public class JmsDefaultMessageFactory implements JmsMessageFactory {
 

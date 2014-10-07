@@ -98,6 +98,28 @@ public class PriorityMessageQueueTest {
     }
 
     @Test
+    public void testDequeueWhenQueueIsNotEmpty() throws InterruptedException {
+        JmsInboundMessageDispatch message = createEnvelope();
+        queue.enqueueFirst(message);
+        assertFalse(queue.isEmpty());
+        assertSame(message, queue.dequeue(1L));
+    }
+
+    @Test
+    public void testDequeueZeroWhenQueueIsNotEmpty() throws InterruptedException {
+        JmsInboundMessageDispatch message = createEnvelope();
+        queue.enqueueFirst(message);
+        assertFalse(queue.isEmpty());
+        assertSame(message, queue.dequeue(0));
+    }
+
+    @Test
+    public void testDequeueZeroWhenQueueIsEmpty() throws InterruptedException {
+        assertTrue(queue.isEmpty());
+        assertSame(null, queue.dequeue(0));
+    }
+
+    @Test
     public void testDequeueWhenQueueIsStopped() throws InterruptedException {
         JmsInboundMessageDispatch message = createEnvelope();
         queue.enqueueFirst(message);
@@ -261,6 +283,51 @@ public class PriorityMessageQueueTest {
             public void run() {
                 try {
                     TimeUnit.SECONDS.sleep(2);
+                } catch (InterruptedException e) {
+                }
+                queue.enqueueFirst(message);
+            }
+        });
+        runner.start();
+
+        assertSame(message, queue.dequeue(-1));
+    }
+
+    @Test
+    public void testDequeueTimedWaitsUntilMessageArrives() throws InterruptedException {
+        final JmsInboundMessageDispatch message = createEnvelope();
+        Thread runner = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    TimeUnit.SECONDS.sleep(2);
+                } catch (InterruptedException e) {
+                }
+                queue.enqueueFirst(message);
+            }
+        });
+        runner.start();
+
+        assertSame(message, queue.dequeue(10000));
+    }
+
+    @Test
+    public void testDequeueWaitsUntilMessageArrivesWhenLockNotified() throws InterruptedException {
+        final JmsInboundMessageDispatch message = createEnvelope();
+        Thread runner = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    TimeUnit.SECONDS.sleep(2);
+                } catch (InterruptedException e) {
+                }
+                synchronized (queue.getLock()) {
+                    queue.getLock().notify();
+                }
+                try {
+                    TimeUnit.SECONDS.sleep(1);
                 } catch (InterruptedException e) {
                 }
                 queue.enqueueFirst(message);

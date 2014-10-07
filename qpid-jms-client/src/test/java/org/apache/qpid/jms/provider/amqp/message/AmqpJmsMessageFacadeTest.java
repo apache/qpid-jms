@@ -1230,6 +1230,158 @@ public class AmqpJmsMessageFacadeTest {
         assertNull("userid not as expected", amqpMessageFacade.getUserId());
     }
 
+    // ====== AMQP Message Annotations =======
+    // =======================================
+
+    @Test
+    public void testNewMessageHasUnderlyingMessageAnnotationsSectionWithTypeAnnotation() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();;
+
+        Message underlying = amqpMessageFacade.getAmqpMessage();
+        assertNotNull(underlying.getMessageAnnotations());
+        Symbol annotationKey = AmqpMessageSupport.getSymbol(AmqpMessageSupport.JMS_MSG_TYPE);
+        assertEquals(AmqpMessageSupport.JMS_MESSAGE, underlying.getMessageAnnotations().getValue().get(annotationKey));
+    }
+
+    @Test
+    public void testMessageAnnotationExistsUsingReceivedMessageWithoutMessageAnnotationsSection() {
+        String symbolKeyName = "myTestSymbolName";
+
+        Message message = Proton.message();
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertFalse(amqpMessageFacade.messageAnnotationExists(symbolKeyName));
+    }
+
+    @Test
+    public void testMessageAnnotationExistsUsingReceivedMessageWithMessageAnnotationsSection() {
+        String symbolKeyName = "myTestSymbolName";
+        String value = "myTestValue";
+
+        Message message = Proton.message();
+
+        Map<Symbol, Object> annotationsMap = new HashMap<Symbol, Object>();
+        annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
+        message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertTrue(amqpMessageFacade.messageAnnotationExists(symbolKeyName));
+        assertFalse(amqpMessageFacade.messageAnnotationExists("otherName"));
+    }
+
+    @Test
+    public void testGetMessageAnnotationUsingReceivedMessageWithoutMessageAnnotationsSection() {
+        String symbolKeyName = "myTestSymbolName";
+
+        Message message = Proton.message();
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertNull(amqpMessageFacade.getMessageAnnotation(symbolKeyName));
+    }
+
+    @Test
+    public void testGetMessageAnnotationUsingReceivedMessage() {
+        String symbolKeyName = "myTestSymbolName";
+        String value = "myTestValue";
+
+        Message message = Proton.message();
+
+        Map<Symbol, Object> annotationsMap = new HashMap<Symbol, Object>();
+        annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
+        message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertEquals(value, amqpMessageFacade.getMessageAnnotation(symbolKeyName));
+        assertNull(amqpMessageFacade.getMessageAnnotation("otherName"));
+    }
+
+    @Test
+    public void testSetMessageAnnotationsOnNewMessage() {
+        String symbolKeyName = "myTestSymbolName";
+        String symbolKeyName2 = "myTestSymbolName2";
+        String value = "myTestValue";
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        // check setting first annotation
+        amqpMessageFacade.setMessageAnnotation(symbolKeyName, value);
+
+        MessageAnnotations underlyingAnnotations = amqpMessageFacade.getAmqpMessage().getMessageAnnotations();
+        assertNotNull(underlyingAnnotations);
+
+        assertTrue(underlyingAnnotations.getValue().containsKey(Symbol.valueOf(symbolKeyName)));
+        assertEquals(value, underlyingAnnotations.getValue().get(Symbol.valueOf(symbolKeyName)));
+
+        // set another
+        amqpMessageFacade.setMessageAnnotation(symbolKeyName2, value);
+
+        assertTrue(underlyingAnnotations.getValue().containsKey(Symbol.valueOf(symbolKeyName)));
+        assertTrue(underlyingAnnotations.getValue().containsKey(Symbol.valueOf(symbolKeyName2)));
+    }
+
+    @Test
+    public void testRemoveMessageAnnotation() {
+        String symbolKeyName = "myTestSymbolName";
+        String value = "myTestValue";
+
+        Message message = Proton.message();
+
+        Map<Symbol, Object> annotationsMap = new HashMap<Symbol, Object>();
+        annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
+        message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertEquals(value, amqpMessageFacade.getMessageAnnotation(symbolKeyName));
+        assertNull(amqpMessageFacade.getMessageAnnotation("otherName"));
+
+        amqpMessageFacade.removeMessageAnnotation(symbolKeyName);
+        assertNull(amqpMessageFacade.getMessageAnnotation(symbolKeyName));
+    }
+
+    @Test
+    public void testRemoveMessageAnnotationOnMessageWithNoMessageAnnotationSectionDoesntFail() {
+        Message message = Proton.message();
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        amqpMessageFacade.removeMessageAnnotation("keyName");
+    }
+
+    @Test
+    public void testClearAllMessageAnnotationsUsingNewMessage() {
+        Message message = Proton.message();
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        amqpMessageFacade.clearMessageAnnotations();
+
+        Message underlying = amqpMessageFacade.getAmqpMessage();
+        assertNull(underlying.getMessageAnnotations());
+    }
+
+    @Test
+    public void testClearAllMessageAnnotationsUsingReceivedMessageWithMessageAnnotationsSection() {
+        String symbolKeyName = "myTestSymbolName";
+        String value = "myTestValue";
+
+        Message message = Proton.message();
+
+        Map<Symbol, Object> annotationsMap = new HashMap<Symbol, Object>();
+        annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
+        message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        amqpMessageFacade.clearMessageAnnotations();
+
+        Message underlying = amqpMessageFacade.getAmqpMessage();
+        assertNull(underlying.getMessageAnnotations());
+    }
+
     // ====== AMQP Message Facade copy() tests =======
     // ===============================================
 

@@ -242,6 +242,8 @@ public class JmsMessage implements javax.jms.Message {
     public void clearProperties() throws JMSException {
         facade.clearProperties();
 
+        //TODO: Handle any other relevant JMSX properties.
+        //TODO: Possibly push this to the facade or interceptors?
         //Clear property-defined values that are treated as facade-managed, such as GroupSequence.
         facade.clearGroupSequence();
     }

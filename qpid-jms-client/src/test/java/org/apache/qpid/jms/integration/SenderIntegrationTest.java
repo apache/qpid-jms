@@ -326,8 +326,6 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
      * Test that when a message is sent with default priority of 4, the emitted AMQP message has no value in the header
      * priority field, since the default for that field is already 4.
      */
-    @Ignore
-    // TODO: currently failing as we always populate the field
     @Test(timeout = 10000)
     public void testDefaultPriorityProducesMessagesWithoutPriorityField() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {

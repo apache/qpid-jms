@@ -62,8 +62,8 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     protected final Message message;
     protected final AmqpConnection connection;
 
-    private MessageAnnotations annotations;
-    private Map<Symbol,Object> annotationsMap;
+    private MessageAnnotations mesageAnnotations;
+    private Map<Symbol,Object> messageAnnotationsMap;
     private Map<String,Object> applicationPropertiesMap;
 
     private JmsDestination replyTo;
@@ -89,7 +89,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         this.message.setDurable(true);
 
         this.connection = connection;
-        setAnnotation(JMS_MSG_TYPE, JMS_MESSAGE);
+        setMessageAnnotation(JMS_MSG_TYPE, JMS_MESSAGE);
     }
 
     /**
@@ -107,9 +107,9 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         this.connection = consumer.getConnection();
         this.consumerDestination = consumer.getDestination();
 
-        annotations = message.getMessageAnnotations();
-        if (annotations != null) {
-            annotationsMap = annotations.getValue();
+        mesageAnnotations = message.getMessageAnnotations();
+        if (mesageAnnotations != null) {
+            messageAnnotationsMap = mesageAnnotations.getValue();
         }
 
         if (message.getApplicationProperties() != null) {
@@ -240,7 +240,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             setTimestamp(0);
         }
 
-        setAnnotation(JMS_MSG_TYPE, getJmsMsgType());
+        setMessageAnnotation(JMS_MSG_TYPE, getJmsMsgType());
     }
 
     @Override
@@ -335,9 +335,9 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             target.applicationPropertiesMap.putAll(applicationPropertiesMap);
         }
 
-        if (annotationsMap != null) {
-            target.lazyCreateAnnotations();
-            target.annotationsMap.putAll(annotationsMap);
+        if (messageAnnotationsMap != null) {
+            target.lazyCreateMessageAnnotations();
+            target.messageAnnotationsMap.putAll(messageAnnotationsMap);
         }
     }
 
@@ -402,7 +402,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         if (baseIdString == null) {
             return null;
         } else {
-            Object annotation = getAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID);
+            Object annotation = getMessageAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID);
             boolean appSpecific = Boolean.TRUE.equals(annotation);
 
             if (appSpecific) {
@@ -440,9 +440,9 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             }
 
             if (appSpecific) {
-                setAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID, true);
+                setMessageAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID, true);
             } else {
-                removeAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID);
+                removeMessageAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID);
             }
         }
     }
@@ -539,12 +539,12 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public String getType() {
-        return (String) getAnnotation(JMS_TYPE);
+        return (String) getMessageAnnotation(JMS_TYPE);
     }
 
     @Override
     public void setType(String type) {
-        setAnnotation(JMS_TYPE, type);
+        setMessageAnnotation(JMS_TYPE, type);
     }
 
     @Override
@@ -645,7 +645,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     @Override
     public void setDestination(JmsDestination destination) {
         this.destination = destination;
-        lazyCreateAnnotations();
+        lazyCreateMessageAnnotations();
         AmqpDestinationHelper.INSTANCE.setToAddressFromDestination(this, destination);
     }
 
@@ -666,7 +666,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     @Override
     public void setReplyTo(JmsDestination replyTo) {
         this.replyTo = replyTo;
-        lazyCreateAnnotations();
+        lazyCreateMessageAnnotations();
         AmqpDestinationHelper.INSTANCE.setReplyToAddressFromDestination(this, replyTo);
     }
 
@@ -766,30 +766,30 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
      *
      * @return true if the annotation is present, false in not or annotations not initialized.
      */
-    boolean annotationExists(String key) {
-        if (annotationsMap == null) {
+    boolean messageAnnotationExists(String key) {
+        if (messageAnnotationsMap == null) {
             return false;
         }
 
-        return annotationsMap.containsKey(AmqpMessageSupport.getSymbol(key));
+        return messageAnnotationsMap.containsKey(AmqpMessageSupport.getSymbol(key));
     }
 
     /**
-     * Given an annotation name, lookup and return the value associated with that
-     * annotation name.  If the message annotations have not been created yet then
-     * this method will always return null.
+     * Given a message annotation name, lookup and return the value associated with
+     * that annotation name.  If the message annotations have not been created yet
+     * then this method will always return null.
      *
      * @param key
      *        the Symbol name that should be looked up in the message annotations.
      *
      * @return the value of the annotation if it exists, or null if not set or not accessible.
      */
-    Object getAnnotation(String key) {
-        if (annotationsMap == null) {
+    Object getMessageAnnotation(String key) {
+        if (messageAnnotationsMap == null) {
             return null;
         }
 
-        return annotationsMap.get(AmqpMessageSupport.getSymbol(key));
+        return messageAnnotationsMap.get(AmqpMessageSupport.getSymbol(key));
     }
 
     /**
@@ -800,12 +800,12 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
      * @param key
      *        the annotation key that is to be removed from the current set.
      */
-    void removeAnnotation(String key) {
-        if (annotationsMap == null) {
+    void removeMessageAnnotation(String key) {
+        if (messageAnnotationsMap == null) {
             return;
         }
 
-        annotationsMap.remove(AmqpMessageSupport.getSymbol(key));
+        messageAnnotationsMap.remove(AmqpMessageSupport.getSymbol(key));
     }
 
     /**
@@ -817,17 +817,17 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
      * @param value
      *        The new value to set in the annotations of this message.
      */
-    void setAnnotation(String key, Object value) {
-        lazyCreateAnnotations();
-        annotationsMap.put(AmqpMessageSupport.getSymbol(key), value);
+    void setMessageAnnotation(String key, Object value) {
+        lazyCreateMessageAnnotations();
+        messageAnnotationsMap.put(AmqpMessageSupport.getSymbol(key), value);
     }
 
     /**
      * Removes all message annotations from this message.
      */
-    void clearAnnotations() {
-        annotationsMap = null;
-        annotations = null;
+    void clearMessageAnnotations() {
+        messageAnnotationsMap = null;
+        mesageAnnotations = null;
         message.setMessageAnnotations(null);
     }
 
@@ -889,11 +889,11 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         }
     }
 
-    private void lazyCreateAnnotations() {
-        if (annotationsMap == null) {
-            annotationsMap = new HashMap<Symbol,Object>();
-            annotations = new MessageAnnotations(annotationsMap);
-            message.setMessageAnnotations(annotations);
+    private void lazyCreateMessageAnnotations() {
+        if (messageAnnotationsMap == null) {
+            messageAnnotationsMap = new HashMap<Symbol,Object>();
+            mesageAnnotations = new MessageAnnotations(messageAnnotationsMap);
+            message.setMessageAnnotations(mesageAnnotations);
         }
     }
 

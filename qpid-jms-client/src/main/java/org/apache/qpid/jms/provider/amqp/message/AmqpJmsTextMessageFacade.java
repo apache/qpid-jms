@@ -61,7 +61,7 @@ public class AmqpJmsTextMessageFacade extends AmqpJmsMessageFacade implements Jm
      */
     public AmqpJmsTextMessageFacade(AmqpConnection connection) {
         super(connection);
-        setAnnotation(JMS_MSG_TYPE, JMS_TEXT_MESSAGE);
+        setMessageAnnotation(JMS_MSG_TYPE, JMS_TEXT_MESSAGE);
         setText(null);
     }
 

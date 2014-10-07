@@ -105,7 +105,7 @@ public class AmqpDestinationHelper {
 
     public JmsDestination getJmsDestination(AmqpJmsMessageFacade message, JmsDestination consumerDestination) {
         String to = message.getToAddress();
-        String toTypeString = (String) message.getAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        String toTypeString = (String) message.getMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         Set<String> typeSet = null;
 
         if (toTypeString != null) {
@@ -117,7 +117,7 @@ public class AmqpDestinationHelper {
 
     public JmsDestination getJmsReplyTo(AmqpJmsMessageFacade message, JmsDestination consumerDestination) {
         String replyTo = message.getReplyToAddress();
-        String replyToTypeString = (String) message.getAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        String replyToTypeString = (String) message.getMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         Set<String> typeSet = null;
 
         if (replyToTypeString != null) {
@@ -173,9 +173,9 @@ public class AmqpDestinationHelper {
         message.setToAddress(address);
 
         if (address == null || typeString == null) {
-            message.removeAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+            message.removeMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         } else {
-            message.setAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, typeString);
+            message.setMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, typeString);
         }
     }
 
@@ -186,9 +186,9 @@ public class AmqpDestinationHelper {
         message.setReplyToAddress(replyToAddress);
 
         if (replyToAddress == null || typeString == null) {
-            message.removeAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+            message.removeMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         } else {
-            message.setAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, typeString);
+            message.setMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, typeString);
         }
     }
 

@@ -46,7 +46,7 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
      */
     public AmqpJmsObjectMessageFacade(AmqpConnection connection, boolean isAmqpTypeEncoded) {
         super(connection);
-        setAnnotation(JMS_MSG_TYPE, JMS_OBJECT_MESSAGE);
+        setMessageAnnotation(JMS_MSG_TYPE, JMS_OBJECT_MESSAGE);
 
         initDelegate(isAmqpTypeEncoded);
     }

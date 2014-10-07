@@ -52,7 +52,7 @@ public class AmqpJmsStreamMessageFacade extends AmqpJmsMessageFacade implements 
     public AmqpJmsStreamMessageFacade(AmqpConnection connection) {
         super(connection);
         list = initializeEmptyBodyList(true);
-        setAnnotation(JMS_MSG_TYPE, JMS_STREAM_MESSAGE);
+        setMessageAnnotation(JMS_MSG_TYPE, JMS_STREAM_MESSAGE);
     }
 
     /**

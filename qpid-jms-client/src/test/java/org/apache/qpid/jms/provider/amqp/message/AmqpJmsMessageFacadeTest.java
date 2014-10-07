@@ -787,7 +787,7 @@ public class AmqpJmsMessageFacadeTest {
         assertEquals("Unexpected correlationId value on underlying AMQP message", stripped, amqpMessage.getCorrelationId());
         assertEquals("Expected correlationId not returned from facade", testCorrelationId, amqpMessageFacade.getCorrelationId());
 
-        assertNull("Message annotation " + AmqpMessageSupport.JMS_APP_CORRELATION_ID + " not null as expected", amqpMessageFacade.getAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID));
+        assertNull("Message annotation " + AmqpMessageSupport.JMS_APP_CORRELATION_ID + " not null as expected", amqpMessageFacade.getMessageAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID));
     }
 
     /**

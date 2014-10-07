@@ -62,7 +62,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
     public AmqpJmsBytesMessageFacade(AmqpConnection connection) {
         super(connection);
         setContentType(CONTENT_TYPE);
-        setAnnotation(JMS_MSG_TYPE, JMS_BYTES_MESSAGE);
+        setMessageAnnotation(JMS_MSG_TYPE, JMS_BYTES_MESSAGE);
     }
 
     /**

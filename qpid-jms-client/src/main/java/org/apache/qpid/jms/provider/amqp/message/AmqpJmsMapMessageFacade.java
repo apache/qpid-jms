@@ -50,7 +50,7 @@ public class AmqpJmsMapMessageFacade extends AmqpJmsMessageFacade implements Jms
     public AmqpJmsMapMessageFacade(AmqpConnection connection) {
         super(connection);
         initializeEmptyBody();
-        setAnnotation(JMS_MSG_TYPE, JMS_MAP_MESSAGE);
+        setMessageAnnotation(JMS_MSG_TYPE, JMS_MAP_MESSAGE);
     }
 
     /**

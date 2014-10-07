@@ -397,10 +397,11 @@ public class AmqpJmsMessageFacadeTest {
     // ======================================
 
     @Test
-    public void testGetExpirationIsZeroForNewMessage() {
+    public void testNewMessageHasNoUnderlyingPropertiesSection() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
-        assertEquals("Expected no expiration", 0, amqpMessageFacade.getExpiration());
+        Message underlying = amqpMessageFacade.getAmqpMessage();
+        assertNull(underlying.getProperties());
     }
 
     // --- message-id and correlation-id ---
@@ -746,6 +747,51 @@ public class AmqpJmsMessageFacadeTest {
 
         assertEquals("Unexpected timestamp value", expected, amqpMessageFacade.getTimestamp());
         assertEquals("Expected creation-time field to be set on new Properties section", new Date(expected), amqpMessageFacade.getAmqpMessage().getProperties().getCreationTime());
+    }
+
+    // --- absolute-expiry-time field  ---
+
+    @Test
+    public void testGetExpirationIsZeroForNewMessage() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertEquals("Expected no expiration", 0, amqpMessageFacade.getExpiration());
+    }
+
+    @Test
+    public void testSetGetExpirationOnNewMessage() {
+        Long timestamp = System.currentTimeMillis();
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setExpiration(timestamp);
+
+        assertEquals("Expected absolute-expiry-time to be set", timestamp.longValue(), amqpMessageFacade.getAmqpMessage().getProperties().getAbsoluteExpiryTime().getTime());
+        assertEquals("Expected expiration to be set", timestamp.longValue(), amqpMessageFacade.getExpiration());
+    }
+
+    @Test
+    public void testSetExpirationZeroOnNewMessageDoesNotCreatePropertiesSection() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertNull("Expected properties section not to exist", amqpMessageFacade.getAmqpMessage().getProperties());
+
+        amqpMessageFacade.setExpiration(0);
+
+        assertNull("Expected properties section still not to exist", amqpMessageFacade.getAmqpMessage().getProperties());
+    }
+
+    @Test
+    public void testSetExpirationZeroOnMessageWithExistingExpiryTime() {
+        Long timestamp = System.currentTimeMillis();
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        amqpMessageFacade.setExpiration(timestamp);
+
+        amqpMessageFacade.setExpiration(0);
+
+        assertNull("Expected absolute-expiry-time to be null", amqpMessageFacade.getAmqpMessage().getProperties().getAbsoluteExpiryTime());
+        assertEquals("Expected no expiration", 0, amqpMessageFacade.getExpiration());
     }
 
     // ====== AMQP Message Facade copy() tests =======

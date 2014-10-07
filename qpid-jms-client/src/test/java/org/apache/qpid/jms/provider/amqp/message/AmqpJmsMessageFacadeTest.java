@@ -37,6 +37,8 @@ import java.util.UUID;
 
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
+import javax.jms.Queue;
+import javax.jms.Topic;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsQueue;
@@ -654,6 +656,86 @@ public class AmqpJmsMessageFacadeTest {
 
         assertNull("underlying message should still have no properties setion", amqpMessageFacade.getAmqpMessage().getProperties());
         assertEquals("GroupSequence should be 0", 0, amqpMessageFacade.getGroupSequence());
+    }
+
+    // --- to field ---
+
+    // Basic test to see things are wired up at all. See {@link AmqpDestinationHelperTest}
+    // for more comprehensive testing of the underlying bits.
+
+    @Test
+    public void testSetGetDestination() {
+        String testToAddress = "myTestAddress";
+        JmsTopic dest = new JmsTopic(testToAddress);
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        Message underlyingMessage = amqpMessageFacade.getAmqpMessage();
+        assertNull(underlyingMessage.getAddress());
+
+        amqpMessageFacade.setDestination(dest);
+
+        assertNotNull(underlyingMessage.getAddress());
+        assertEquals(testToAddress, underlyingMessage.getAddress());
+        assertEquals(dest, amqpMessageFacade.getDestination());
+    }
+
+    @Test
+    public void testGetDestinationWithReceivedMessage() throws JMSException {
+        String testToAddress = "myTestAddress";
+
+        Message message = Proton.message();
+
+        Properties props = new Properties();
+        props.setTo(testToAddress);
+        message.setProperties(props);
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        JmsDestination dest = amqpMessageFacade.getDestination();
+        //We didn't set any destination type annotations, so the consumer destination type will be used: a topic.
+        assertTrue(dest instanceof Topic);
+        assertEquals(testToAddress, ((Topic) dest).getTopicName());
+    }
+
+    // --- reply-to field ---
+
+    // Basic test to see things are wired up at all. See {@link AmqpDestinationHelperTest}
+    // for more comprehensive testing of the underlying bits.
+
+    @Test
+    public void testSetGetReplyTo() {
+        String testReplyToAddress = "myTestReplyTo";
+        JmsTopic dest = new JmsTopic(testReplyToAddress);
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        Message underlyingMessage = amqpMessageFacade.getAmqpMessage();
+        assertNull(underlyingMessage.getReplyTo());
+
+        amqpMessageFacade.setReplyTo(dest);
+
+        assertNotNull(underlyingMessage.getReplyTo());
+        assertEquals(testReplyToAddress, underlyingMessage.getReplyTo());
+        assertEquals(dest, amqpMessageFacade.getReplyTo());
+    }
+
+    @Test
+    public void testGetReplyToWithReceivedMessage() throws JMSException {
+        String testReplyToAddress = "myTestReplyTo";
+
+        Message message = Proton.message();
+
+        Properties props = new Properties();
+        props.setReplyTo(testReplyToAddress);
+        message.setProperties(props);
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        JmsDestination dest = amqpMessageFacade.getReplyTo();
+        //We didn't set any destination type annotations, so the consumer destination type will be used: a topic.
+        assertTrue(dest instanceof Topic);
+        assertEquals(testReplyToAddress, ((Topic) dest).getTopicName());
     }
 
     // --- message-id and correlation-id ---

@@ -22,6 +22,13 @@ public final class JmsTransactionInfo implements JmsResource, Comparable<JmsTran
     protected JmsTransactionId transactionId;
 
     public JmsTransactionInfo(JmsSessionId sessionId, JmsTransactionId transactionId) {
+        if (sessionId == null) {
+            throw new IllegalArgumentException("Session ID cannot be null");
+        }
+        if (transactionId == null) {
+            throw new IllegalArgumentException("Transaction ID cannot be null");
+        }
+
         this.sessionId = sessionId;
         this.transactionId = transactionId;
     }
@@ -38,17 +45,13 @@ public final class JmsTransactionInfo implements JmsResource, Comparable<JmsTran
         return transactionId;
     }
 
-    public void setTransactionId(JmsTransactionId transactionId) {
-        this.transactionId = transactionId;
-    }
-
     public JmsSessionId getParentId() {
         return this.sessionId;
     }
 
     @Override
     public int hashCode() {
-        return (transactionId == null) ? super.hashCode() : transactionId.hashCode();
+        return transactionId.hashCode();
     }
 
     @Override
@@ -56,20 +59,12 @@ public final class JmsTransactionInfo implements JmsResource, Comparable<JmsTran
         if (this == obj) {
             return true;
         }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
+        if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
 
         JmsTransactionInfo other = (JmsTransactionInfo) obj;
-
-        if (transactionId != null) {
-            return transactionId.equals(other.transactionId);
-        }
-
-        return false;
+        return transactionId.equals(other.transactionId);
     }
 
     @Override

@@ -25,27 +25,47 @@ public final class JmsSessionId extends JmsAbstractResourceId implements Compara
     protected transient JmsConnectionId parentId;
 
     public JmsSessionId(String connectionId, long value) {
+        if (connectionId == null || connectionId.isEmpty()) {
+            throw new IllegalArgumentException("Connection ID cannot be null");
+        }
+
         this.connectionId = connectionId;
         this.value = value;
     }
 
     public JmsSessionId(JmsConnectionId connectionId, long sessionId) {
+        if (connectionId == null) {
+            throw new IllegalArgumentException("Connection ID cannot be null");
+        }
+
         this.connectionId = connectionId.getValue();
         this.value = sessionId;
         this.parentId = connectionId;
     }
 
     public JmsSessionId(JmsSessionId id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Session ID cannot be null");
+        }
+
         this.connectionId = id.getConnectionId();
         this.value = id.getValue();
     }
 
     public JmsSessionId(JmsProducerId id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Producer ID cannot be null");
+        }
+
         this.connectionId = id.getConnectionId();
         this.value = id.getSessionId();
     }
 
     public JmsSessionId(JmsConsumerId id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Consumer ID cannot be null");
+        }
+
         this.connectionId = id.getConnectionId();
         this.value = id.getSessionId();
     }
@@ -60,7 +80,9 @@ public final class JmsSessionId extends JmsAbstractResourceId implements Compara
     @Override
     public int hashCode() {
         if (hashCode == 0) {
-            hashCode = connectionId.hashCode() ^ (int)value;
+            hashCode = 1;
+            hashCode = 31 * hashCode + connectionId.hashCode();
+            hashCode = 31 * hashCode + (int) (value ^ (value >>> 32));
         }
         return hashCode;
     }
@@ -73,6 +95,7 @@ public final class JmsSessionId extends JmsAbstractResourceId implements Compara
         if (o == null || o.getClass() != JmsSessionId.class) {
             return false;
         }
+
         JmsSessionId id = (JmsSessionId)o;
         return value == id.value && connectionId.equals(id.connectionId);
     }

@@ -49,6 +49,10 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private String tempTopicPrefix = "/temp-topic/";
 
     public JmsConnectionInfo(JmsConnectionId connectionId) {
+        if (connectionId == null) {
+            throw new IllegalArgumentException("ConnectionId cannot be null");
+        }
+
         this.connectionId = connectionId;
     }
 
@@ -73,6 +77,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         copy.topicPrefix = topicPrefix;
         copy.tempQueuePrefix = tempQueuePrefix;
         copy.tempTopicPrefix = tempTopicPrefix;
+        copy.connectTimeout = connectTimeout;
     }
 
     public boolean isForceAsyncSend() {
@@ -214,7 +219,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     @Override
     public int hashCode() {
-        return (connectionId == null) ? super.hashCode() : connectionId.hashCode();
+        return connectionId.hashCode();
     }
 
     @Override
@@ -230,12 +235,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         }
 
         JmsConnectionInfo other = (JmsConnectionInfo) obj;
-
-        if (connectionId != null) {
-            return connectionId.equals(other.connectionId);
-        }
-
-        return false;
+        return connectionId.equals(other.connectionId);
     }
 
     @Override

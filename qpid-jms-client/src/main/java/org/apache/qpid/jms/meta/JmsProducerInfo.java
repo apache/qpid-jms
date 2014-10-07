@@ -25,10 +25,18 @@ public final class JmsProducerInfo implements JmsResource, Comparable<JmsProduce
     protected JmsDestination destination;
 
     public JmsProducerInfo(JmsProducerId producerId) {
+        if (producerId == null) {
+            throw new IllegalArgumentException("Producer ID cannot be null");
+        }
+
         this.producerId = producerId;
     }
 
     public JmsProducerInfo(JmsSessionInfo sessionInfo, long producerId) {
+        if (sessionInfo == null) {
+            throw new IllegalArgumentException("Parent Session Info object cannot be null");
+        }
+
         this.producerId = new JmsProducerId(sessionInfo.getSessionId(), producerId);
     }
 
@@ -65,7 +73,7 @@ public final class JmsProducerInfo implements JmsResource, Comparable<JmsProduce
 
     @Override
     public int hashCode() {
-        return (producerId == null) ? super.hashCode() : producerId.hashCode();
+        return producerId.hashCode();
     }
 
     @Override
@@ -81,13 +89,7 @@ public final class JmsProducerInfo implements JmsResource, Comparable<JmsProduce
         }
 
         JmsProducerInfo other = (JmsProducerInfo) obj;
-
-        if (producerId != null) {
-            return producerId.equals(other.producerId);
-        }
-
-        return false;
-
+        return producerId.equals(other.producerId);
     }
 
     @Override

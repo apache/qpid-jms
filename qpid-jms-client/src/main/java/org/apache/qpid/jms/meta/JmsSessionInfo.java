@@ -18,18 +18,36 @@ package org.apache.qpid.jms.meta;
 
 import javax.jms.Session;
 
-public final class JmsSessionInfo implements JmsResource {
+public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionInfo> {
 
     private final JmsSessionId sessionId;
     private int acknowledgementMode;
     private boolean sendAcksAsync;
 
-    public JmsSessionInfo(JmsConnectionInfo connectionMeta, long sessionId) {
-        this.sessionId = new JmsSessionId(connectionMeta.getConnectionId(), sessionId);
+    public JmsSessionInfo(JmsConnectionInfo connectionInfo, long sessionId) {
+        if (connectionInfo == null) {
+            throw new IllegalArgumentException("Connection info object cannot be null");
+        }
+        this.sessionId = new JmsSessionId(connectionInfo.getConnectionId(), sessionId);
     }
 
     public JmsSessionInfo(JmsSessionId sessionId) {
+        if (sessionId == null) {
+            throw new IllegalArgumentException("session Id object cannot be null");
+        }
+
         this.sessionId = sessionId;
+    }
+
+    public JmsSessionInfo copy() {
+        JmsSessionInfo copy = new JmsSessionInfo(sessionId);
+        copy(copy);
+        return copy;
+    }
+
+    private void copy(JmsSessionInfo copy) {
+        copy.acknowledgementMode = acknowledgementMode;
+        copy.sendAcksAsync = sendAcksAsync;
     }
 
     public JmsSessionId getSessionId() {
@@ -59,5 +77,31 @@ public final class JmsSessionInfo implements JmsResource {
 
     public void setSendAcksAsync(boolean sendAcksAsync) {
         this.sendAcksAsync = sendAcksAsync;
+    }
+
+    @Override
+    public int hashCode() {
+        return sessionId.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+
+        JmsSessionInfo other = (JmsSessionInfo) obj;
+        return sessionId.equals(other.sessionId);
+    }
+
+    @Override
+    public int compareTo(JmsSessionInfo other) {
+        return this.sessionId.compareTo(other.sessionId);
     }
 }

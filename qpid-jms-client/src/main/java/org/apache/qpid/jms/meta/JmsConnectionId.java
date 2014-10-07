@@ -21,22 +21,42 @@ public final class JmsConnectionId extends JmsAbstractResourceId implements Comp
     private final String value;
 
     public JmsConnectionId(String connectionId) {
+        if (connectionId == null || connectionId.isEmpty()) {
+            throw new IllegalArgumentException("Connection ID cannot be null or empty");
+        }
+
         this.value = connectionId;
     }
 
     public JmsConnectionId(JmsConnectionId id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Connection ID cannot be null");
+        }
+
         this.value = id.getValue();
     }
 
     public JmsConnectionId(JmsSessionId id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Session ID cannot be null");
+        }
+
         this.value = id.getConnectionId();
     }
 
     public JmsConnectionId(JmsProducerId id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Producer ID cannot be null");
+        }
+
         this.value = id.getConnectionId();
     }
 
     public JmsConnectionId(JmsConsumerId id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Consumer ID cannot be null");
+        }
+
         this.value = id.getConnectionId();
     }
 
@@ -47,7 +67,8 @@ public final class JmsConnectionId extends JmsAbstractResourceId implements Comp
     @Override
     public int hashCode() {
         if (hashCode == 0) {
-            hashCode = value.hashCode();
+            hashCode = 1;
+            hashCode = 31 * hashCode + value.hashCode();
         }
         return hashCode;
     }

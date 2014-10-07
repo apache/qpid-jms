@@ -35,10 +35,16 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
     private transient long lastDeliveredSequenceId;
 
     public JmsConsumerInfo(JmsConsumerId consumerId) {
+        if (consumerId == null) {
+            throw new IllegalArgumentException("Consumer ID cannot be null");
+        }
         this.consumerId = consumerId;
     }
 
     public JmsConsumerInfo(JmsSessionInfo sessionInfo, long consumerId) {
+        if (sessionInfo == null) {
+            throw new IllegalArgumentException("Session info object cannot be null");
+        }
         this.consumerId = new JmsConsumerId(sessionInfo.getSessionId(), consumerId);
     }
 
@@ -57,6 +63,7 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
         info.subscriptionName = subscriptionName;
         info.noLocal = noLocal;
         info.acknowledgementMode = acknowledgementMode;
+        info.lastDeliveredSequenceId = lastDeliveredSequenceId;
     }
 
     public boolean isDurable() {
@@ -150,7 +157,7 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
 
     @Override
     public int hashCode() {
-        return (consumerId == null) ? super.hashCode() : consumerId.hashCode();
+        return consumerId.hashCode();
     }
 
     @Override
@@ -166,12 +173,7 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
         }
 
         JmsConsumerInfo other = (JmsConsumerInfo) obj;
-
-        if (consumerId != null) {
-            return consumerId.equals(other.consumerId);
-        }
-
-        return false;
+        return consumerId.equals(other.consumerId);
     }
 
     @Override

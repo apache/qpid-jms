@@ -26,6 +26,10 @@ public final class JmsProducerId extends JmsAbstractResourceId implements Compar
     private transient JmsSessionId parentId;
 
     public JmsProducerId(JmsSessionId sessionId, long producerId) {
+        if (sessionId == null) {
+            throw new IllegalArgumentException("Session ID cannot be null");
+        }
+
         this.connectionId = sessionId.getConnectionId();
         this.sessionId = sessionId.getValue();
         this.value = producerId;
@@ -33,6 +37,10 @@ public final class JmsProducerId extends JmsAbstractResourceId implements Compar
     }
 
     public JmsProducerId(JmsProducerId id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Producer ID cannot be null");
+        }
+
         this.connectionId = id.getConnectionId();
         this.sessionId = id.getSessionId();
         this.value = id.getValue();
@@ -40,12 +48,20 @@ public final class JmsProducerId extends JmsAbstractResourceId implements Compar
     }
 
     public JmsProducerId(String connectionId, long sessionId, long producerId) {
+        if (connectionId == null || connectionId.isEmpty()) {
+            throw new IllegalArgumentException("Connection ID cannot be null");
+        }
+
         this.connectionId = connectionId;
         this.sessionId = sessionId;
         this.value = producerId;
     }
 
     public JmsProducerId(String producerKey) {
+        if (producerKey == null || producerKey.isEmpty()) {
+            throw new IllegalArgumentException("Producer Key cannot be null or empty");
+        }
+
         // Parse off the producerId
         int p = producerKey.lastIndexOf(":");
         if (p >= 0) {
@@ -99,7 +115,10 @@ public final class JmsProducerId extends JmsAbstractResourceId implements Compar
     @Override
     public int hashCode() {
         if (hashCode == 0) {
-            hashCode = connectionId.hashCode() ^ (int)sessionId ^ (int)value;
+            hashCode = 1;
+            hashCode = 31 * hashCode + connectionId.hashCode();
+            hashCode = 31 * hashCode + (int) (sessionId ^ (sessionId >>> 32));
+            hashCode = 31 * hashCode + (int) (value ^ (value >>> 32));
         }
         return hashCode;
     }
@@ -112,6 +131,7 @@ public final class JmsProducerId extends JmsAbstractResourceId implements Compar
         if (o == null || o.getClass() != JmsProducerId.class) {
             return false;
         }
+
         JmsProducerId id = (JmsProducerId)o;
         return sessionId == id.sessionId && value == id.value && connectionId.equals(id.connectionId);
     }

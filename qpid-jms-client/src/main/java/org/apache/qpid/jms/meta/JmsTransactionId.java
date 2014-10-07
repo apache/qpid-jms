@@ -24,6 +24,10 @@ public final class JmsTransactionId extends JmsAbstractResourceId implements Com
     private transient String transactionKey;
 
     public JmsTransactionId(JmsConnectionId connectionId, long transactionId) {
+        if (connectionId == null) {
+            throw new IllegalArgumentException("Connection ID cannot be null");
+        }
+
         this.connectionId = connectionId;
         this.value = transactionId;
     }
@@ -43,7 +47,9 @@ public final class JmsTransactionId extends JmsAbstractResourceId implements Com
     @Override
     public int hashCode() {
         if (hashCode == 0) {
-            hashCode = connectionId.hashCode() ^ (int)value;
+            hashCode = 1;
+            hashCode = 31 * hashCode + connectionId.hashCode();
+            hashCode = 31 * hashCode + (int) (value ^ (value >>> 32));
         }
         return hashCode;
     }
@@ -58,7 +64,6 @@ public final class JmsTransactionId extends JmsAbstractResourceId implements Com
         }
 
         JmsTransactionId tx = (JmsTransactionId) other;
-
         return value == tx.value && connectionId.equals(tx.connectionId);
     }
 

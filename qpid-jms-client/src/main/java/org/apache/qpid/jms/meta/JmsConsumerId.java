@@ -26,26 +26,42 @@ public final class JmsConsumerId extends JmsAbstractResourceId implements Compar
     private transient JmsSessionId parentId;
 
     public JmsConsumerId(String connectionId, long sessionId, long consumerId) {
+        if (connectionId == null || connectionId.isEmpty()) {
+            throw new IllegalArgumentException("Connection ID cannot be null or an empty string");
+        }
+
         this.connectionId = connectionId;
         this.sessionId = sessionId;
         this.value = consumerId;
     }
 
     public JmsConsumerId(JmsSessionId sessionId, long consumerId) {
+        if (sessionId == null) {
+            throw new IllegalArgumentException("Session ID cannot be null");
+        }
+
         this.connectionId = sessionId.getConnectionId();
         this.sessionId = sessionId.getValue();
         this.value = consumerId;
         this.parentId = sessionId;
     }
 
-    public JmsConsumerId(JmsConsumerId id) {
-        this.connectionId = id.getConnectionId();
-        this.sessionId = id.getSessionId();
-        this.value = id.getValue();
-        this.parentId = id.getParentId();
+    public JmsConsumerId(JmsConsumerId consumerId) {
+        if (consumerId == null) {
+            throw new IllegalArgumentException("Consumer ID cannot be null");
+        }
+
+        this.connectionId = consumerId.getConnectionId();
+        this.sessionId = consumerId.getSessionId();
+        this.value = consumerId.getValue();
+        this.parentId = consumerId.getParentId();
     }
 
     public JmsConsumerId(String consumerKey) throws IllegalArgumentException {
+        if (consumerKey == null || consumerKey.isEmpty()) {
+            throw new IllegalArgumentException("Consumer Key cannot be null or empty");
+        }
+
         // Parse off the consumer Id value
         int p = consumerKey.lastIndexOf(":");
         if (p >= 0) {
@@ -77,7 +93,10 @@ public final class JmsConsumerId extends JmsAbstractResourceId implements Compar
     @Override
     public int hashCode() {
         if (hashCode == 0) {
-            hashCode = connectionId.hashCode() ^ (int) sessionId ^ (int) value;
+            hashCode = 1;
+            hashCode = 31 * hashCode + connectionId.hashCode();
+            hashCode = 31 * hashCode + (int) (sessionId ^ (sessionId >>> 32));
+            hashCode = 31 * hashCode + (int) (value ^ (value >>> 32));
         }
         return hashCode;
     }
@@ -90,6 +109,7 @@ public final class JmsConsumerId extends JmsAbstractResourceId implements Compar
         if (o == null || o.getClass() != JmsConsumerId.class) {
             return false;
         }
+
         JmsConsumerId id = (JmsConsumerId) o;
         return sessionId == id.sessionId && value == id.value && connectionId.equals(id.connectionId);
     }

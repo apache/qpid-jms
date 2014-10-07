@@ -749,6 +749,48 @@ public class AmqpJmsMessageFacadeTest {
         assertEquals("Expected creation-time field to be set on new Properties section", new Date(expected), amqpMessageFacade.getAmqpMessage().getProperties().getCreationTime());
     }
 
+    @Test
+    public void testGetTimestampIsZeroForNewMessage() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertEquals("Expected no timestamp", 0, amqpMessageFacade.getTimestamp());
+    }
+
+    @Test
+    public void testSetTimestampOnNewMessage() {
+        Long timestamp = System.currentTimeMillis();
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setTimestamp(timestamp);
+
+        assertEquals("Expected creation-time field to be set", timestamp.longValue(), amqpMessageFacade.getAmqpMessage().getProperties().getCreationTime().getTime());
+        assertEquals("Expected timestamp", timestamp.longValue(), amqpMessageFacade.getTimestamp());
+    }
+
+    @Test
+    public void testSetTimestampZeroOnNewMessageDoesNotCreatePropertiesSection() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setTimestamp(0);
+
+        assertNull("underlying message should have no properties section", amqpMessageFacade.getAmqpMessage().getProperties());
+        assertEquals("Timestamp should not be set", 0, amqpMessageFacade.getTimestamp());
+    }
+
+    @Test
+    public void testSetTimestampZeroOnMessageWithExistingTimestampClearsCreationTimeField() {
+        Long timestamp = System.currentTimeMillis();
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        amqpMessageFacade.setTimestamp(timestamp);
+
+        amqpMessageFacade.setTimestamp(0);
+
+        assertNull("Expected creation-time to be null", amqpMessageFacade.getAmqpMessage().getProperties().getCreationTime());
+        assertEquals("Expected no timestamp", 0, amqpMessageFacade.getTimestamp());
+    }
+
     // --- absolute-expiry-time field  ---
 
     @Test

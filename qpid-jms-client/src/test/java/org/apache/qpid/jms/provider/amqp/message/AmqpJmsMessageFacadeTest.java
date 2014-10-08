@@ -33,17 +33,18 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
-import javax.jms.Queue;
 import javax.jms.Topic;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsTemporaryQueue;
 import org.apache.qpid.jms.JmsTopic;
+import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescribedType;
@@ -53,6 +54,7 @@ import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.UnsignedLong;
+import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
 import org.apache.qpid.proton.amqp.messaging.Header;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Properties;
@@ -62,7 +64,10 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 public class AmqpJmsMessageFacadeTest {
-
+    private static final String TEST_PROP_A = "TEST_PROP_A";
+    private static final String TEST_PROP_B = "TEST_PROP_B";
+    private static final String TEST_VALUE_STRING_A = "TEST_VALUE_STRING_A";
+    private static final String TEST_VALUE_STRING_B = "TEST_VALUE_STRING_B";
     private static final long MAX_UINT = 0xFFFFFFFFL;
     private final JmsDestination consumerDestination = new JmsTopic("TestTopic");
 
@@ -1380,6 +1385,158 @@ public class AmqpJmsMessageFacadeTest {
 
         Message underlying = amqpMessageFacade.getAmqpMessage();
         assertNull(underlying.getMessageAnnotations());
+    }
+
+
+    // ====== AMQP Application Properties =======
+    // ==========================================
+
+    @Test
+    public void testGetProperties() throws Exception {
+        Map<Object, Object> applicationPropertiesMap = new HashMap<Object, Object>();
+        applicationPropertiesMap.put(TEST_PROP_A, TEST_VALUE_STRING_A);
+        applicationPropertiesMap.put(TEST_PROP_B, TEST_VALUE_STRING_B);
+
+        Message message2 = Proton.message();
+        message2.setApplicationProperties(new ApplicationProperties(applicationPropertiesMap));
+
+        JmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message2);
+
+        Map<String, Object> props = amqpMessageFacade.getProperties();
+        assertEquals(2, props.size());
+        assertTrue(props.containsKey(TEST_PROP_A));
+        assertEquals(TEST_VALUE_STRING_A, props.get(TEST_PROP_A));
+        assertTrue(props.containsKey(TEST_PROP_B));
+        assertEquals(TEST_VALUE_STRING_B, props.get(TEST_PROP_B));
+    }
+
+    @Test
+    public void testGetPropertiesWithoutAnyApplicationPropertiesSection() throws Exception {
+        Message message = Proton.message();
+        JmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        Map<String, Object> applicationProperties = amqpMessageFacade.getProperties();
+        assertNotNull(applicationProperties);
+        assertTrue(applicationProperties.isEmpty());
+    }
+
+    @Test
+    public void testGetPropertyNames() throws Exception {
+        Map<Object, Object> applicationPropertiesMap = new HashMap<Object, Object>();
+        applicationPropertiesMap.put(TEST_PROP_A, TEST_VALUE_STRING_A);
+        applicationPropertiesMap.put(TEST_PROP_B, TEST_VALUE_STRING_B);
+
+        Message message2 = Proton.message();
+        message2.setApplicationProperties(new ApplicationProperties(applicationPropertiesMap));
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message2);
+
+        Set<String> applicationPropertyNames = amqpMessageFacade.getPropertyNames();
+        assertEquals(2, applicationPropertyNames.size());
+        assertTrue(applicationPropertyNames.contains(TEST_PROP_A));
+        assertTrue(applicationPropertyNames.contains(TEST_PROP_B));
+    }
+
+    @Test
+    public void testGetPropertyNamesWithoutAnyApplicationPropertiesSection() throws Exception {
+        Message message = Proton.message();
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        Set<String> applicationPropertyNames = amqpMessageFacade.getPropertyNames();
+        assertNotNull(applicationPropertyNames);
+        assertTrue(applicationPropertyNames.isEmpty());
+    }
+
+    @Test
+    public void testClearProperties() throws Exception {
+        Map<Object, Object> applicationPropertiesMap = new HashMap<Object, Object>();
+        applicationPropertiesMap.put(TEST_PROP_A, TEST_VALUE_STRING_A);
+
+        Message message = Proton.message();
+        message.setApplicationProperties(new ApplicationProperties(applicationPropertiesMap));
+
+        JmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        Map<String, Object> props1 = amqpMessageFacade.getProperties();
+        assertEquals(1, props1.size());
+
+        amqpMessageFacade.clearProperties();
+
+        Map<String, Object> props2 = amqpMessageFacade.getProperties();
+        assertTrue(props2.isEmpty());
+    }
+
+    @Test
+    public void testPropertyExists() throws Exception {
+        Map<Object, Object> applicationPropertiesMap = new HashMap<Object, Object>();
+        applicationPropertiesMap.put(TEST_PROP_A, TEST_VALUE_STRING_A);
+
+        Message message = Proton.message();
+        message.setApplicationProperties(new ApplicationProperties(applicationPropertiesMap));
+
+        JmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertTrue(amqpMessageFacade.propertyExists(TEST_PROP_A));
+        assertFalse(amqpMessageFacade.propertyExists(TEST_PROP_B));
+    }
+
+    @Test
+    public void testPropertyExistsWithNoApplicationPropertiesSection() throws Exception {
+        Message message = Proton.message();
+
+        JmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertFalse(amqpMessageFacade.propertyExists(TEST_PROP_A));
+    }
+
+    @Test
+    public void testGetProperty() throws Exception {
+        Map<Object, Object> applicationPropertiesMap = new HashMap<Object, Object>();
+        applicationPropertiesMap.put(TEST_PROP_A, TEST_VALUE_STRING_A);
+
+        Message message = Proton.message();
+        message.setApplicationProperties(new ApplicationProperties(applicationPropertiesMap));
+
+        JmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertEquals(TEST_VALUE_STRING_A, amqpMessageFacade.getProperty(TEST_PROP_A));
+        assertNull(amqpMessageFacade.getProperty(TEST_PROP_B));
+    }
+
+    @Test
+    public void testSetProperty() throws Exception {
+        Message message = Proton.message();
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertNull(amqpMessageFacade.getProperty(TEST_PROP_A));
+        amqpMessageFacade.setProperty(TEST_PROP_A, TEST_VALUE_STRING_A);
+        assertEquals(TEST_VALUE_STRING_A, amqpMessageFacade.getProperty(TEST_PROP_A));
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> underlyingApplicationProps = amqpMessageFacade.getAmqpMessage().getApplicationProperties().getValue();
+        assertTrue(underlyingApplicationProps.containsKey(TEST_PROP_A));
+        assertEquals(TEST_VALUE_STRING_A, underlyingApplicationProps.get(TEST_PROP_A));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetPropertyUsingNullKeyCausesIAE() throws Exception {
+        JmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setProperty(null, "value");
+    }
+
+    @Test
+    public void testGetPropertyUsingNullKeyReturnsNull() throws Exception {
+        JmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertNull(amqpMessageFacade.getProperty(null));
+    }
+
+    @Test
+    public void testPropertyExistsUsingNullKeyReturnsFalse() throws Exception {
+        JmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertFalse(amqpMessageFacade.propertyExists(null));
     }
 
     // ====== AMQP Message Facade copy() tests =======

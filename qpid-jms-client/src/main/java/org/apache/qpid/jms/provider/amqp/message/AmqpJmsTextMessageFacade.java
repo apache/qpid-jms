@@ -145,6 +145,16 @@ public class AmqpJmsTextMessageFacade extends AmqpJmsMessageFacade implements Jm
 
         if (body == null) {
             return true;
+        } else if (body instanceof AmqpValue) {
+            AmqpValue value = (AmqpValue) body;
+            if (value.getValue() == null) {
+                return true;
+            } else {
+                String text = (String) value.getValue();
+                if (text.isEmpty()) {
+                    return true;
+                }
+            }
         } else if (body instanceof Data) {
             Data data = (Data) body;
             if (data.getValue() == null || data.getValue().getLength() == 0) {

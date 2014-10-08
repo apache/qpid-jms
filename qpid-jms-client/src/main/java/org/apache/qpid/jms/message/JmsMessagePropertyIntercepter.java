@@ -539,7 +539,7 @@ public class JmsMessagePropertyIntercepter {
      *
      * @return true if a getter was removed from the global set.
      */
-    public boolean removePropertySetter(String propertyName) {
+    public static boolean removePropertySetter(String propertyName) {
         if (PROPERTY_INTERCEPTERS.remove(propertyName) != null) {
             return true;
         }

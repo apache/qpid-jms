@@ -796,6 +796,22 @@ public class AmqpJmsMessageFacadeTest {
     }
 
     /**
+     * Test that setting the correlationId null, clears an existing value in the
+     * underlying AMQP message correlation-id field
+     * @throws Exception if unexpected error
+     */
+    @Test
+    public void testSetCorrelationIdNullClearsExistingValue() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setCorrelationId("cid");
+        amqpMessageFacade.setCorrelationId(null);
+
+        assertNull("Unexpected correlationId value on underlying AMQP message", amqpMessageFacade.getAmqpMessage().getCorrelationId());
+        assertNull("Expected correlationId bytes to be null", amqpMessageFacade.getCorrelationId());
+    }
+
+    /**
      * Test that getting the correlationId when using an underlying received message with
      * an application-specific (no 'ID:' prefix) String correlation id returns the expected value.
      */
@@ -897,6 +913,31 @@ public class AmqpJmsMessageFacadeTest {
         assertArrayEquals("Expected correlationId bytes not returned", bytes, amqpMessageFacade.getCorrelationIdBytes());
     }
 
+    /**
+     * Test that setting the correlationId null, clears an existing value in the
+     * underlying AMQP message correlation-id field
+     * @throws Exception if unexpected error
+     */
+    @Test
+    public void testSetCorrelationIdBytesNullClearsExistingValue() throws Exception {
+        Binary testCorrelationId = createBinaryId();
+        byte[] bytes = testCorrelationId.getArray();
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        amqpMessageFacade.setCorrelationIdBytes(bytes);
+        amqpMessageFacade.setCorrelationIdBytes(null);
+
+        assertNull("Unexpected correlationId value on underlying AMQP message", amqpMessageFacade.getAmqpMessage().getCorrelationId());
+        assertNull("Expected correlationId bytes to be null", amqpMessageFacade.getCorrelationIdBytes());
+    }
+
+    @Test
+    public void testGetCorrelationIdBytesOnNewMessage() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertNull("Expected correlationId bytes to be null", amqpMessageFacade.getCorrelationIdBytes());
+    }
+
     @Test
     public void testGetCorrelationIdBytesOnReceievedMessageWithBinaryId() throws Exception {
         Binary testCorrelationId = createBinaryId();
@@ -981,6 +1022,42 @@ public class AmqpJmsMessageFacadeTest {
 
         assertEquals("Expected messageId not returned", testMessageId, amqpMessageFacade.getMessageId());
         assertEquals("ID strings were not equal", testMessageId, amqpMessageFacade.getMessageId());
+    }
+
+    /**
+     * Test that setting an ID: prefixed JMSMessageId results in the underlying AMQP
+     * message holding the value withint the ID: prefix.
+     */
+    @Test
+    public void testSetMessageIdRemovesIdPrefixFromUnderlyingMessage() {
+        String suffix = "myStringMessageIdSuffix";
+        String testMessageId = "ID:" + suffix;
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setMessageId(testMessageId);
+
+        assertEquals("Expected underlying messageId value not returned", suffix, amqpMessageFacade.getAmqpMessage().getMessageId());
+    }
+
+    /**
+     * Test that setting the messageId null clears a previous value in the
+     * underlying amqp message-id field
+     */
+    @Test
+    public void testSetMessageIdNullClearsExistingValue() {
+        String testMessageId = "ID:myStringMessageId";
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setMessageId(testMessageId);
+
+        assertNotNull("messageId should not be null", amqpMessageFacade.getAmqpMessage().getMessageId());
+
+        amqpMessageFacade.setMessageId(null);
+
+        assertNull("Expected messageId to be null", amqpMessageFacade.getAmqpMessage().getMessageId());
+        assertNull("ID was not null", amqpMessageFacade.getMessageId());
     }
 
     /**

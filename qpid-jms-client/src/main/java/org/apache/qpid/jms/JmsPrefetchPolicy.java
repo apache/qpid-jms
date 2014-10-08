@@ -63,6 +63,7 @@ public class JmsPrefetchPolicy extends Object implements Serializable {
         this.queueBrowserPrefetch = source.getQueueBrowserPrefetch();
         this.topicPrefetch = source.getTopicPrefetch();
         this.durableTopicPrefetch = source.getDurableTopicPrefetch();
+        this.maxPrefetchSize = source.getMaxPrefetchSize();
     }
 
     /**

@@ -104,12 +104,6 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public Map<String, Object> getProperties() throws JMSException {
-        lazyCreateProperties();
-        return properties;
-    }
-
-    @Override
     public Set<String> getPropertyNames() throws JMSException {
         Set<String> names = new HashSet<String>();
         if (properties != null) {

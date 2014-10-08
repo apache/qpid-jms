@@ -24,7 +24,6 @@ import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_T
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -149,12 +148,6 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public Map<String, Object> getProperties() throws JMSException {
-        lazyCreateApplicationProperties();
-        return Collections.unmodifiableMap(new HashMap<String, Object>(applicationPropertiesMap));
-    }
-
-    @Override
     public boolean propertyExists(String key) throws JMSException {
         return AmqpJmsMessagePropertyIntercepter.propertyExists(this, key);
     }
@@ -174,6 +167,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
      *
      * @return a set of property names in the message or an empty set if none are set.
      */
+    @Override
     public Set<String> getPropertyNames() {
         Set<String> properties = AmqpJmsMessagePropertyIntercepter.getPropertyNames(this);
         if (applicationPropertiesMap != null) {

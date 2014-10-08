@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms.message.facade;
 
-import java.util.Map;
 import java.util.Set;
 
 import javax.jms.JMSException;
@@ -36,18 +35,6 @@ import org.apache.qpid.jms.JmsDestination;
  *        upper level.
  */
 public interface JmsMessageFacade {
-
-    // TODO: can we get rid of this method? Currently used only in tests, and doesn't
-    // contain everything that will be returned via 'getPropertyNames'
-    /**
-     * Returns the Message properties contained within this Message instance in
-     * a new Unmodifiable Map instance.
-     *
-     * @return a Map containing the properties of this Message that cannot be modified.
-     *
-     * @throws JMSException if an error occurs while accessing the Message properties.
-     */
-    public Map<String, Object> getProperties() throws JMSException;
 
     /**
      * Returns the property names for this Message instance. The Set returned may be

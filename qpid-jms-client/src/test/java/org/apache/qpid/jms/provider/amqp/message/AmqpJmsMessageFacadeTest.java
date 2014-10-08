@@ -1484,12 +1484,12 @@ public class AmqpJmsMessageFacadeTest {
 
         JmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message2);
 
-        Map<String, Object> props = amqpMessageFacade.getProperties();
+        Set<String> props = amqpMessageFacade.getPropertyNames();
         assertEquals(2, props.size());
-        assertTrue(props.containsKey(TEST_PROP_A));
-        assertEquals(TEST_VALUE_STRING_A, props.get(TEST_PROP_A));
-        assertTrue(props.containsKey(TEST_PROP_B));
-        assertEquals(TEST_VALUE_STRING_B, props.get(TEST_PROP_B));
+        assertTrue(props.contains(TEST_PROP_A));
+        assertEquals(TEST_VALUE_STRING_A, amqpMessageFacade.getProperty(TEST_PROP_A));
+        assertTrue(props.contains(TEST_PROP_B));
+        assertEquals(TEST_VALUE_STRING_B, amqpMessageFacade.getProperty(TEST_PROP_B));
     }
 
     @Test
@@ -1497,7 +1497,7 @@ public class AmqpJmsMessageFacadeTest {
         Message message = Proton.message();
         JmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
-        Map<String, Object> applicationProperties = amqpMessageFacade.getProperties();
+        Set<String> applicationProperties = amqpMessageFacade.getPropertyNames();
         assertNotNull(applicationProperties);
         assertTrue(applicationProperties.isEmpty());
     }
@@ -1539,12 +1539,12 @@ public class AmqpJmsMessageFacadeTest {
 
         JmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
-        Map<String, Object> props1 = amqpMessageFacade.getProperties();
+        Set<String> props1 = amqpMessageFacade.getPropertyNames();
         assertEquals(1, props1.size());
 
         amqpMessageFacade.clearProperties();
 
-        Map<String, Object> props2 = amqpMessageFacade.getProperties();
+        Set<String> props2 = amqpMessageFacade.getPropertyNames();
         assertTrue(props2.isEmpty());
     }
 

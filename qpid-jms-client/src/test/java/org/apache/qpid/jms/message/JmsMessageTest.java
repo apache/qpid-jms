@@ -24,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Enumeration;
-import java.util.Map;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -462,16 +461,15 @@ public class JmsMessageTest {
         msg.setBooleanProperty("booleanProperty", Boolean.TRUE);
         msg.setObjectProperty("nullProperty", null);
 
-        Map<String, Object> properties = msg.getFacade().getProperties();
-        assertEquals(properties.get("stringProperty"), "string");
-        assertEquals(((Byte) properties.get("byteProperty")).byteValue(), 1);
-        assertEquals(((Short) properties.get("shortProperty")).shortValue(), 1);
-        assertEquals(((Integer) properties.get("intProperty")).intValue(), 1);
-        assertEquals(((Long) properties.get("longProperty")).longValue(), 1);
-        assertEquals(((Float) properties.get("floatProperty")).floatValue(), 1.1f, 0);
-        assertEquals(((Double) properties.get("doubleProperty")).doubleValue(), 1.1, 0);
-        assertEquals(((Boolean) properties.get("booleanProperty")).booleanValue(), true);
-        assertNull(properties.get("nullProperty"));
+        assertEquals(msg.getFacade().getProperty("stringProperty"), "string");
+        assertEquals(((Byte) msg.getFacade().getProperty("byteProperty")).byteValue(), 1);
+        assertEquals(((Short) msg.getFacade().getProperty("shortProperty")).shortValue(), 1);
+        assertEquals(((Integer) msg.getFacade().getProperty("intProperty")).intValue(), 1);
+        assertEquals(((Long) msg.getFacade().getProperty("longProperty")).longValue(), 1);
+        assertEquals(((Float) msg.getFacade().getProperty("floatProperty")).floatValue(), 1.1f, 0);
+        assertEquals(((Double) msg.getFacade().getProperty("doubleProperty")).doubleValue(), 1.1, 0);
+        assertEquals(((Boolean) msg.getFacade().getProperty("booleanProperty")).booleanValue(), true);
+        assertNull(msg.getFacade().getProperty("nullProperty"));
     }
 
     @Test

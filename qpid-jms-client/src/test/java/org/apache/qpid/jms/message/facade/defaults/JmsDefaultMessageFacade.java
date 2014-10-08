@@ -18,7 +18,9 @@ package org.apache.qpid.jms.message.facade.defaults;
 
 import java.nio.charset.Charset;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javax.jms.JMSException;
 
@@ -105,6 +107,16 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
     public Map<String, Object> getProperties() throws JMSException {
         lazyCreateProperties();
         return properties;
+    }
+
+    @Override
+    public Set<String> getPropertyNames() throws JMSException {
+        Set<String> names = new HashSet<String>();
+        if (properties != null) {
+            names.addAll(properties.keySet());
+        }
+
+        return names;
     }
 
     @Override

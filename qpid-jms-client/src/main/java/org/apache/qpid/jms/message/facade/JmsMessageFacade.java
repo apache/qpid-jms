@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.message.facade;
 
 import java.util.Map;
+import java.util.Set;
 
 import javax.jms.JMSException;
 
@@ -45,6 +46,16 @@ public interface JmsMessageFacade {
      * @throws JMSException if an error occurs while accessing the Message properties.
      */
     public Map<String, Object> getProperties() throws JMSException;
+
+    /**
+     * Returns the property names for this Message instance, including any relevant to
+     * values managed through the facade such as group sequence.
+     *
+     * @return a set containing the property names of this Message
+     *
+     * @throws JMSException if an error occurs while accessing the Message properties.
+     */
+    public Set<String> getPropertyNames() throws JMSException;
 
     /**
      * @returns true if the given property exists within the message.

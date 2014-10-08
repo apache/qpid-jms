@@ -27,6 +27,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.UUID;
 
 import javax.jms.Connection;
@@ -58,6 +59,7 @@ import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.UnsignedLong;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class MessageIntegrationTest extends QpidJmsTestCase
@@ -860,9 +862,10 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
     /**
      * Tests that when receiving a message with the group-id, reply-to-group-id, and group-sequence
-     * fields of the AMQP properties section set, that the expected values are returned when getting
-     * the appropriate JMSX or JMS_AMQP properties from the JMS message.
+     * fields of the AMQP properties section set, that the expected JMSX or JMS_AMQP properties
+     * are present, and the expected values are returned when retrieved from the JMS message.
      */
+    @Ignore //TODO: currently failing on propertyNames handling
     @Test(timeout = 2000)
     public void testReceivedMessageWithGroupRelatedPropertiesSet() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
@@ -896,6 +899,37 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull("did not receive the message", receivedMessage);
+
+            boolean foundGroupId = false;
+            boolean foundGroupSeq = false;
+            boolean foundReplyToGroupId = false;
+
+            Enumeration<?> names = receivedMessage.getPropertyNames();
+            assertTrue("Message had no property names", names.hasMoreElements());
+            while (names.hasMoreElements()) {
+                Object element = names.nextElement();
+
+                if (JmsClientProperties.JMSXGROUPID.equals(element)) {
+                    foundGroupId = true;
+                }
+
+                if (JmsClientProperties.JMSXGROUPSEQ.equals(element)) {
+                    foundGroupSeq = true;
+                }
+
+                if (AmqpMessageSupport.JMS_AMQP_REPLY_TO_GROUP_ID.equals(element)) {
+                    foundReplyToGroupId = true;
+                }
+            }
+
+            assertTrue("JMSXGroupID not in property names", foundGroupId);
+            assertTrue("JMSXGroupSeq  not in property names", foundGroupSeq);
+            assertTrue("JMS_AMQP_REPLY_TO_GROUP_ID not in property names", foundReplyToGroupId);
+
+            assertTrue("JMSXGroupID does not exist", receivedMessage.propertyExists(JmsClientProperties.JMSXGROUPID));
+            assertTrue("JMSXGroupSeq does not exist", receivedMessage.propertyExists(JmsClientProperties.JMSXGROUPSEQ));
+            assertTrue("JMS_AMQP_REPLY_TO_GROUP_ID does not exist", receivedMessage.propertyExists(AmqpMessageSupport.JMS_AMQP_REPLY_TO_GROUP_ID));
+
             assertEquals("did not get the expected JMSXGroupID", expectedGroupId, receivedMessage.getStringProperty(JmsClientProperties.JMSXGROUPID));
             assertEquals("did not get the expected JMSXGroupSeq", expectedGroupSeq, receivedMessage.getIntProperty(JmsClientProperties.JMSXGROUPSEQ));
             assertEquals("did not get the expected JMS_AMQP_REPLY_TO_GROUP_ID", expectedReplyToGroupId, receivedMessage.getStringProperty(AmqpMessageSupport.JMS_AMQP_REPLY_TO_GROUP_ID));

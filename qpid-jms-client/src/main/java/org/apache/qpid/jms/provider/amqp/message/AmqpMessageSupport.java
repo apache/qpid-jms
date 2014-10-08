@@ -18,12 +18,6 @@ package org.apache.qpid.jms.provider.amqp.message;
 
 import java.util.Map;
 
-import javax.jms.Destination;
-import javax.jms.Queue;
-import javax.jms.TemporaryQueue;
-import javax.jms.TemporaryTopic;
-import javax.jms.Topic;
-
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.message.Message;
 
@@ -157,34 +151,6 @@ public final class AmqpMessageSupport {
      */
     public static Symbol getSymbol(String key) {
         return Symbol.valueOf(key);
-    }
-
-    /**
-     * Given a JMS Destination object return the correct message annotations that
-     * will identify the type of Destination the name represents, Queue. Topic, etc.
-     *
-     * @param destination
-     *        The JMS Destination to be examined.
-     *
-     * @return the correct message annotation values to describe the given Destination.
-     */
-    public static String destinationAttributes(Destination destination) {
-        if (destination instanceof Queue) {
-            if (destination instanceof TemporaryQueue) {
-                return TEMP_QUEUE_ATTRIBUTES;
-            } else {
-                return QUEUE_ATTRIBUTES;
-            }
-        }
-        if (destination instanceof Topic) {
-            if (destination instanceof TemporaryTopic) {
-                return TEMP_TOPIC_ATTRIBUTES;
-            } else {
-                return TOPIC_ATTRIBUTES;
-            }
-        }
-
-        return null;
     }
 
     /**

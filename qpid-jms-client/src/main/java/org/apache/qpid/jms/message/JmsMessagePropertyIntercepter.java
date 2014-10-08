@@ -53,6 +53,7 @@ public class JmsMessagePropertyIntercepter {
 
     private static final Map<String, PropertyIntercepter> PROPERTY_INTERCEPTERS =
         new HashMap<String, PropertyIntercepter>();
+    private static final Set<String> STANDARD_HEADERS = new HashSet<String>();
 
     /**
      * Interface for a Property intercepter object used to write JMS style
@@ -100,6 +101,17 @@ public class JmsMessagePropertyIntercepter {
     }
 
     static {
+        STANDARD_HEADERS.add(JMS_MESSAGEID);
+        STANDARD_HEADERS.add(JMS_TIMESTAMP);
+        STANDARD_HEADERS.add(JMS_CORRELATIONID);
+        STANDARD_HEADERS.add(JMS_REPLYTO);
+        STANDARD_HEADERS.add(JMS_DESTINATION);
+        STANDARD_HEADERS.add(JMS_DELIVERY_MODE);
+        STANDARD_HEADERS.add(JMS_REDELIVERED);
+        STANDARD_HEADERS.add(JMS_TYPE);
+        STANDARD_HEADERS.add(JMS_EXPIRATION);
+        STANDARD_HEADERS.add(JMS_PRIORITY);
+
         PROPERTY_INTERCEPTERS.put(JMSX_DELIVERY_COUNT, new PropertyIntercepter() {
             @Override
             public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
@@ -506,11 +518,20 @@ public class JmsMessagePropertyIntercepter {
      * string key value is inserted into an Set and returned if the property has a
      * value and is available for a read operation.
      *
+     * @param message
+     *        the JmsMessageFacade instance to read from
+     * @param excludeStandardJMSHeaders
+     *        whether the standard JMS header names should be excluded from the returned set
+     *
      * @return a Set<String> containing the names of all intercepted properties with a value.
      */
-    public static Set<String> getPropertyNames(JmsMessageFacade message) {
+    public static Set<String> getPropertyNames(JmsMessageFacade message, boolean excludeStandardJMSHeaders) {
         Set<String> names = new HashSet<String>();
         for (Entry<String, PropertyIntercepter> entry : PROPERTY_INTERCEPTERS.entrySet()) {
+            if (excludeStandardJMSHeaders && STANDARD_HEADERS.contains(entry.getKey())) {
+                continue;
+            }
+
             if (entry.getValue().propertyExists(message)) {
                 names.add(entry.getKey());
             }

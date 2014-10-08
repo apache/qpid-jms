@@ -46,7 +46,7 @@ import org.mockito.Mockito;
 
 public class JmsMessagePropertyIntercepterTest {
 
-    //---------- JMSReplyTo --------------------------------------------------//
+    //---------- JMSDestination --------------------------------------------------//
 
     @Test
     public void testJMSDestinationInGetAllPropertyNames() throws JMSException {
@@ -78,16 +78,29 @@ public class JmsMessagePropertyIntercepterTest {
 
     @Test
     public void testJMSDestinationInGetPropertyNamesWhenSet() throws JMSException {
+        doJMSDestinationInGetPropertyNamesWhenSetTestImpl(false);
+    }
+
+    @Test
+    public void testJMSDestinationInGetPropertyNamesWhenSetAndExcludingStandardJMSHeaders() throws JMSException {
+        doJMSDestinationInGetPropertyNamesWhenSetTestImpl(true);
+    }
+
+    private void doJMSDestinationInGetPropertyNamesWhenSetTestImpl(boolean excludeStandardJmsHeaders) {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         JmsDestination queue = new JmsQueue("TestDestination");
         Mockito.when(message.getDestination()).thenReturn(queue);
-        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_DESTINATION));
+        if (excludeStandardJmsHeaders) {
+            assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMS_DESTINATION));
+        } else {
+            assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_DESTINATION));
+        }
     }
 
     @Test
     public void testJMSDestinationNotInGetPropertyNamesWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_DESTINATION));
+        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_DESTINATION));
     }
 
     //---------- JMSReplyTo --------------------------------------------------//
@@ -122,16 +135,29 @@ public class JmsMessagePropertyIntercepterTest {
 
     @Test
     public void testJMSReplyToInGetPropertyNamesWhenSet() throws JMSException {
+        doJMSReplyToInGetPropertyNamesWhenSetTestImpl(false);
+    }
+
+    @Test
+    public void testJMSReplyToNotInGetPropertyNamesWhenSetAndExcludingStandardJMSHeaders() throws JMSException {
+        doJMSReplyToInGetPropertyNamesWhenSetTestImpl(true);
+    }
+
+    private void doJMSReplyToInGetPropertyNamesWhenSetTestImpl(boolean excludeStandardJmsHeaders) {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         JmsDestination queue = new JmsQueue("TestDestination");
         Mockito.when(message.getReplyTo()).thenReturn(queue);
-        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_REPLYTO));
+        if (excludeStandardJmsHeaders) {
+            assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMS_REPLYTO));
+        } else {
+            assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_REPLYTO));
+        }
     }
 
     @Test
     public void testJMSReplyToNotInGetPropertyNamesWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_REPLYTO));
+        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_REPLYTO));
     }
 
     //---------- JMSType -----------------------------------------------------//
@@ -164,15 +190,28 @@ public class JmsMessagePropertyIntercepterTest {
 
     @Test
     public void testJMSTypeInGetPropertyNamesWhenSet() throws JMSException {
+        doJMSTypeInGetPropertyNamesWhenSetTestImpl(false);
+    }
+
+    @Test
+    public void testJMSTypeNotInGetPropertyNamesWhenSetAndExcludingStandardJMSHeaders() throws JMSException {
+        doJMSTypeInGetPropertyNamesWhenSetTestImpl(true);
+    }
+
+    private void doJMSTypeInGetPropertyNamesWhenSetTestImpl(boolean excludeStandardJmsHeaders) {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         Mockito.when(message.getType()).thenReturn("SomeType");
-        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_TYPE));
+        if (excludeStandardJmsHeaders) {
+            assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMS_TYPE));
+        } else {
+            assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_TYPE));
+        }
     }
 
     @Test
     public void testJMSTypeNotInGetPropertyNamesWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_TYPE));
+        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_TYPE));
     }
 
     //---------- JMSDeliveryMode ---------------------------------------------//
@@ -230,14 +269,21 @@ public class JmsMessagePropertyIntercepterTest {
     public void testJMSDeliveryModeInGetPropertyNamesWhenPersistent() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         Mockito.when(message.isPersistent()).thenReturn(true);
-        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_DELIVERY_MODE));
+        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_DELIVERY_MODE));
     }
 
     @Test
     public void testJMSDeliveryModeInGetPropertyNamesWhenNotPersistent() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         Mockito.when(message.isPersistent()).thenReturn(false);
-        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_DELIVERY_MODE));
+        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_DELIVERY_MODE));
+    }
+
+    @Test
+    public void testJMSDeliveryModeNotInGetPropertyNamesWhenExcludingStandardJMSHeaders() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.isPersistent()).thenReturn(true);
+        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMS_DELIVERY_MODE));
     }
 
     //---------- JMSPriority ---------------------------------------------//
@@ -273,14 +319,21 @@ public class JmsMessagePropertyIntercepterTest {
     public void testJMSPriorityInGetPropertyNamesWhenDefault() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         Mockito.when(message.getPriority()).thenReturn(Message.DEFAULT_PRIORITY);
-        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_PRIORITY));
+        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_PRIORITY));
     }
 
     @Test
     public void testJMSPriorityInGetPropertyNamesWhenNotDefault() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         Mockito.when(message.getPriority()).thenReturn(1);
-        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_PRIORITY));
+        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_PRIORITY));
+    }
+
+    @Test
+    public void testJMSPriorityNotInGetPropertyNamesWhenExcludingStandardJMSHeaders() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getPriority()).thenReturn(1);
+        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMS_PRIORITY));
     }
 
     //---------- JMSMessageID ---------------------------------------------//
@@ -313,15 +366,28 @@ public class JmsMessagePropertyIntercepterTest {
 
     @Test
     public void testJMSMessageIDInGetPropertyNamesWhenSet() throws JMSException {
+        doJMSMessageIDInGetPropertyNamesWhenSetTestImpl(false);
+    }
+
+    @Test
+    public void testJMSMessageIDNotInGetPropertyNamesWhenSetAndExcludingStandardJMSHeaders() throws JMSException {
+        doJMSMessageIDInGetPropertyNamesWhenSetTestImpl(true);
+    }
+
+    private void doJMSMessageIDInGetPropertyNamesWhenSetTestImpl(boolean excludeStandardJmsHeaders) {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         Mockito.when(message.getMessageId()).thenReturn("MESSAGE_ID");
-        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_MESSAGEID));
+        if (excludeStandardJmsHeaders) {
+            assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMS_MESSAGEID));
+        } else {
+            assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_MESSAGEID));
+        }
     }
 
     @Test
     public void testJMSMessageIDNotInGetPropertyNamesWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_MESSAGEID));
+        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_MESSAGEID));
     }
 
     //---------- JMSTimestamp ---------------------------------------------//
@@ -355,15 +421,28 @@ public class JmsMessagePropertyIntercepterTest {
 
     @Test
     public void testJMSTimeStampInGetPropertyNamesWhenSet() throws JMSException {
+        doJMSTimeStampInGetPropertyNamesWhenSetTestImpl(false);
+    }
+
+    @Test
+    public void testJMSTimeStampNotInGetPropertyNamesWhenSetAndExcludingStandardJMSHeaders() throws JMSException {
+        doJMSTimeStampInGetPropertyNamesWhenSetTestImpl(true);
+    }
+
+    private void doJMSTimeStampInGetPropertyNamesWhenSetTestImpl(boolean excludeStandardJmsHeaders) {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         Mockito.when(message.getTimestamp()).thenReturn(900L);
-        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_TIMESTAMP));
+        if (excludeStandardJmsHeaders) {
+            assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMS_TIMESTAMP));
+        } else {
+            assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_TIMESTAMP));
+        }
     }
 
     @Test
     public void testJMSTimeStampNotInGetPropertyNamesWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_TIMESTAMP));
+        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_TIMESTAMP));
     }
 
     //---------- JMSCorrelationID ---------------------------------------------//
@@ -396,15 +475,28 @@ public class JmsMessagePropertyIntercepterTest {
 
     @Test
     public void testJMSCorrelationIDInGetPropertyNamesWhenSet() throws JMSException {
+        doJMSCorrelationIDInGetPropertyNamesWhenSetTestImpl(false);
+    }
+
+    @Test
+    public void testJMSCorrelationIDNotInGetPropertyNamesWhenSetAndExcludingStandardJMSHeaders() throws JMSException {
+        doJMSCorrelationIDInGetPropertyNamesWhenSetTestImpl(true);
+    }
+
+    private void doJMSCorrelationIDInGetPropertyNamesWhenSetTestImpl(boolean excludeStandardJmsHeaders) {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         Mockito.when(message.getCorrelationId()).thenReturn("MESSAGE_ID");
-        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_CORRELATIONID));
+        if (excludeStandardJmsHeaders) {
+            assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMS_CORRELATIONID));
+        } else {
+            assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_CORRELATIONID));
+        }
     }
 
     @Test
     public void testJMSCorrelationIDNotInGetPropertyNamesWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_CORRELATIONID));
+        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_CORRELATIONID));
     }
 
     //---------- JMSExpiration ---------------------------------------------//
@@ -438,15 +530,28 @@ public class JmsMessagePropertyIntercepterTest {
 
     @Test
     public void testJMSExpirationInGetPropertyNamesWhenSet() throws JMSException {
+        doJMSExpirationInGetPropertyNamesWhenSetTestImpl(false);
+    }
+
+    @Test
+    public void testJMSExpirationNotInGetPropertyNamesWhenSetAndExcludingStandardJMSHeaders() throws JMSException {
+        doJMSExpirationInGetPropertyNamesWhenSetTestImpl(true);
+    }
+
+    private void doJMSExpirationInGetPropertyNamesWhenSetTestImpl(boolean excludeStandardJmsHeaders) {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         Mockito.when(message.getExpiration()).thenReturn(900L);
-        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_EXPIRATION));
+        if (excludeStandardJmsHeaders) {
+            assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMS_EXPIRATION));
+        } else {
+            assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_EXPIRATION));
+        }
     }
 
     @Test
     public void testJMSExpirationNotInGetPropertyNamesWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_EXPIRATION));
+        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_EXPIRATION));
     }
 
     //---------- JMSRedelivered ---------------------------------------------//
@@ -488,16 +593,29 @@ public class JmsMessagePropertyIntercepterTest {
 
     @Test
     public void testJMSRedeliveredInGetPropertyNamesWhenSet() throws JMSException {
+        doJMSRedeliveredInGetPropertyNamesWhenSetTestImpl(false);
+    }
+
+    @Test
+    public void testJMSRedeliveredNotInGetPropertyNamesWhenSetAndExcludingStandardJMSHeaders() throws JMSException {
+        doJMSRedeliveredInGetPropertyNamesWhenSetTestImpl(true);
+    }
+
+    private void doJMSRedeliveredInGetPropertyNamesWhenSetTestImpl(boolean excludeStandardJmsHeaders) {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         Mockito.when(message.isRedelivered()).thenReturn(true);
-        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_REDELIVERED));
+        if (excludeStandardJmsHeaders) {
+            assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMS_REDELIVERED));
+        } else {
+            assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_REDELIVERED));
+        }
     }
 
     @Test
     public void testJMSRedeliveredNotInGetPropertyNamesWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         Mockito.when(message.isRedelivered()).thenReturn(false);
-        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_REDELIVERED));
+        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_REDELIVERED));
     }
 
     //---------- JMSXGroupID ---------------------------------------------//
@@ -532,13 +650,15 @@ public class JmsMessagePropertyIntercepterTest {
     public void testJMSXGroupIDInGetPropertyNamesWhenSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         Mockito.when(message.getGroupId()).thenReturn("GROUP_ID");
-        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMSX_GROUPID));
+        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMSX_GROUPID));
+        assertTrue(JMSX_GROUPID + " is not a header and should be included",
+                  JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMSX_GROUPID));
     }
 
     @Test
     public void testJMSXGroupIDNotInGetPropertyNamesWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMSX_GROUPID));
+        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMSX_GROUPID));
     }
 
     //---------- JMSXGroupSeq ---------------------------------------------//
@@ -573,13 +693,15 @@ public class JmsMessagePropertyIntercepterTest {
     public void testJMSXGroupSeqInGetPropertyNamesWhenSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         Mockito.when(message.getGroupSequence()).thenReturn(1);
-        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMSX_GROUPSEQ));
+        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMSX_GROUPSEQ));
+        assertTrue(JMSX_GROUPSEQ + " is not a header and should be included",
+                   JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMSX_GROUPSEQ));
     }
 
     @Test
     public void testJMSXGroupSeqNotInGetPropertyNamesWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMSX_GROUPSEQ));
+        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMSX_GROUPSEQ));
     }
 
     //---------- JMSXDeliveryCount ---------------------------------------------//
@@ -614,13 +736,15 @@ public class JmsMessagePropertyIntercepterTest {
     public void testJMSXDeliveryCountInGetPropertyNamesWhenSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         Mockito.when(message.getDeliveryCount()).thenReturn(2);
-        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMSX_DELIVERY_COUNT));
+        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMSX_DELIVERY_COUNT));
+        assertTrue(JMSX_DELIVERY_COUNT + " is not a header and should be included",
+                   JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMSX_DELIVERY_COUNT));
     }
 
     @Test
     public void testJMSXDeliveryCountInGetPropertyNamesWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMSX_DELIVERY_COUNT));
+        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMSX_DELIVERY_COUNT));
     }
 
     //---------- JMSXUserID ---------------------------------------------//
@@ -655,12 +779,14 @@ public class JmsMessagePropertyIntercepterTest {
     public void testJMSXUserIdCountInGetPropertyNamesWhenSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         Mockito.when(message.getUserId()).thenReturn("Administrator");
-        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMSX_USERID));
+        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMSX_USERID));
+        assertTrue(JMSX_USERID + " is not a header and should be included",
+                   JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMSX_USERID));
     }
 
     @Test
     public void testJMSXUserIdNotInGetPropertyNamesWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMSX_USERID));
+        assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMSX_USERID));
     }
 }

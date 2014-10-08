@@ -37,6 +37,8 @@ import org.apache.qpid.jms.JmsDestination;
  */
 public interface JmsMessageFacade {
 
+    // TODO: can we get rid of this method? Currently used only in tests, and doesn't
+    // contain everything that will be returned via 'getPropertyNames'
     /**
      * Returns the Message properties contained within this Message instance in
      * a new Unmodifiable Map instance.

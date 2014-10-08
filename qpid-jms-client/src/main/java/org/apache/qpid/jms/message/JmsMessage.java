@@ -244,6 +244,10 @@ public class JmsMessage implements javax.jms.Message {
 
         //TODO: Handle any other relevant JMSX properties.
         //TODO: Possibly push this to the facade or interceptors?
+        //      It makes sense to chain the call to clear through the JmsMessagePropertyIntercepor
+        //      which would in turn call the clear on the facade which could then allow its own
+        //      intercepter to clear any managed JMS_AMQP properties before the facade does it's
+        //      final clear on the message level properties.
         //Clear property-defined values that are treated as facade-managed, such as GroupSequence.
         facade.clearGroupSequence();
     }

@@ -27,33 +27,17 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.jms.JmsDestination;
-import org.apache.qpid.jms.JmsTopic;
-import org.apache.qpid.jms.provider.amqp.AmqpConnection;
-import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
-import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.message.Message;
-import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 /**
  * Test for the AmqpJmsMapMessageFacade class
  */
-public class AmqpJmsMapMessageFacadeTest extends QpidJmsTestCase {
-
-    private JmsDestination consumerDestination;
-
-    @Before
-    @Override
-    public void setUp() throws Exception {
-        super.setUp();
-        consumerDestination = new JmsTopic("TestTopic");
-    };
+public class AmqpJmsMapMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
 
     //---------- Test initial state of newly created message -----------------//
 
@@ -224,26 +208,5 @@ public class AmqpJmsMapMessageFacadeTest extends QpidJmsTestCase {
         amqpMapMessageFacade.clearBody();
         amqpMapMessageFacade.put("entry", "value");
         assertFalse(amqpMapMessageFacade.isEmpty());
-    }
-
-    //---------- Test Support Methods ----------------------------------------//
-
-    private AmqpJmsMapMessageFacade createNewMapMessageFacade() {
-        return new AmqpJmsMapMessageFacade(createMockAmqpConnection());
-    }
-
-    private AmqpJmsMapMessageFacade createReceivedMapMessageFacade(AmqpConsumer amqpConsumer, Message message) {
-        return new AmqpJmsMapMessageFacade(amqpConsumer, message);
-    }
-
-    private AmqpConsumer createMockAmqpConsumer() {
-        AmqpConsumer consumer = Mockito.mock(AmqpConsumer.class);
-        Mockito.when(consumer.getConnection()).thenReturn(createMockAmqpConnection());
-        Mockito.when(consumer.getDestination()).thenReturn(consumerDestination);
-        return consumer;
-    }
-
-    private AmqpConnection createMockAmqpConnection() {
-        return Mockito.mock(AmqpConnection.class);
     }
 }

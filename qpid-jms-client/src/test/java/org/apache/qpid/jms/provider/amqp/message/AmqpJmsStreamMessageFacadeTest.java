@@ -32,11 +32,6 @@ import java.util.Map;
 
 import javax.jms.MessageEOFException;
 
-import org.apache.qpid.jms.JmsDestination;
-import org.apache.qpid.jms.JmsTopic;
-import org.apache.qpid.jms.provider.amqp.AmqpConnection;
-import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
-import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
@@ -45,21 +40,9 @@ import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.message.Message;
-import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
-public class AmqpJmsStreamMessageFacadeTest extends QpidJmsTestCase {
-
-    private JmsDestination consumerDestination;
-
-    @Before
-    @Override
-    public void setUp() throws Exception {
-        super.setUp();
-
-        consumerDestination = new JmsTopic("TestTopic");
-    };
+public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
 
     @Test
     public void testNewMessageToSendContainsMessageTypeAnnotation() throws Exception {
@@ -345,27 +328,5 @@ public class AmqpJmsStreamMessageFacadeTest extends QpidJmsTestCase {
         //Should be able to use the message, e.g clearing it and adding to it.
         amqpStreamMessageFacade.clearBody();
         amqpStreamMessageFacade.put("myString");
-    }
-
-    // ====== Utility Methods =======
-    // ==============================
-
-    private AmqpJmsStreamMessageFacade createNewStreamMessageFacade() {
-        return new AmqpJmsStreamMessageFacade(createMockAmqpConnection());
-    }
-
-    private AmqpJmsStreamMessageFacade createReceivedStreamMessageFacade(AmqpConsumer amqpConsumer, Message message) {
-        return new AmqpJmsStreamMessageFacade(amqpConsumer, message);
-    }
-
-    private AmqpConsumer createMockAmqpConsumer() {
-        AmqpConsumer consumer = Mockito.mock(AmqpConsumer.class);
-        Mockito.when(consumer.getConnection()).thenReturn(createMockAmqpConnection());
-        Mockito.when(consumer.getDestination()).thenReturn(consumerDestination);
-        return consumer;
-    }
-
-    private AmqpConnection createMockAmqpConnection() {
-        return Mockito.mock(AmqpConnection.class);
     }
 }

@@ -45,8 +45,6 @@ import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsTemporaryQueue;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
-import org.apache.qpid.jms.provider.amqp.AmqpConnection;
-import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescribedType;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
@@ -61,34 +59,14 @@ import org.apache.qpid.proton.amqp.messaging.Properties;
 import org.apache.qpid.proton.codec.impl.DataImpl;
 import org.apache.qpid.proton.message.Message;
 import org.junit.Test;
-import org.mockito.Mockito;
 
-public class AmqpJmsMessageFacadeTest {
+public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
+
     private static final String TEST_PROP_A = "TEST_PROP_A";
     private static final String TEST_PROP_B = "TEST_PROP_B";
     private static final String TEST_VALUE_STRING_A = "TEST_VALUE_STRING_A";
     private static final String TEST_VALUE_STRING_B = "TEST_VALUE_STRING_B";
     private static final long MAX_UINT = 0xFFFFFFFFL;
-    private final JmsDestination consumerDestination = new JmsTopic("TestTopic");
-
-    private AmqpJmsMessageFacade createNewMessageFacade() {
-        return new AmqpJmsMessageFacade(createMockAmqpConnection());
-    }
-
-    private AmqpJmsMessageFacade createReceivedMessageFacade(AmqpConsumer amqpConsumer, Message message) {
-        return new AmqpJmsMessageFacade(amqpConsumer, message);
-    }
-
-    private AmqpConsumer createMockAmqpConsumer() {
-        AmqpConsumer consumer = Mockito.mock(AmqpConsumer.class);
-        Mockito.when(consumer.getConnection()).thenReturn(createMockAmqpConnection());
-        Mockito.when(consumer.getDestination()).thenReturn(consumerDestination);
-        return consumer;
-    }
-
-    private AmqpConnection createMockAmqpConnection() {
-        return Mockito.mock(AmqpConnection.class);
-    }
 
     // ====== AMQP Header Section =======
     // ==================================

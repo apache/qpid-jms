@@ -41,10 +41,7 @@ import org.apache.qpid.jms.provider.amqp.AmqpConnection;
  */
 public class AmqpJmsMessageFactory implements JmsMessageFactory {
 
-    private AmqpConnection connection;
-
-    public AmqpJmsMessageFactory() {
-    }
+    private final AmqpConnection connection;
 
     public AmqpJmsMessageFactory(AmqpConnection connection) {
         this.connection = connection;
@@ -52,10 +49,6 @@ public class AmqpJmsMessageFactory implements JmsMessageFactory {
 
     public AmqpConnection getAmqpConnection() {
         return this.connection;
-    }
-
-    public void setAmqpConnection(AmqpConnection connection) {
-        this.connection = connection;
     }
 
     @Override
@@ -102,8 +95,7 @@ public class AmqpJmsMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsObjectMessage createObjectMessage(Serializable payload) throws JMSException {
-        // TODO Implement [Connection?] configuration to control default delegate type?
-        JmsObjectMessageFacade facade = new AmqpJmsObjectMessageFacade(connection, false);
+        JmsObjectMessageFacade facade = new AmqpJmsObjectMessageFacade(connection, connection.isObjectMessageUsesAmqpTypes());
 
         if (payload != null) {
             try {

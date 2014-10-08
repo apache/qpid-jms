@@ -462,7 +462,7 @@ public class JmsMessageTest {
         msg.setBooleanProperty("booleanProperty", Boolean.TRUE);
         msg.setObjectProperty("nullProperty", null);
 
-        Map<String, Object> properties = msg.getProperties();
+        Map<String, Object> properties = msg.getFacade().getProperties();
         assertEquals(properties.get("stringProperty"), "string");
         assertEquals(((Byte) properties.get("byteProperty")).byteValue(), 1);
         assertEquals(((Short) properties.get("shortProperty")).shortValue(), 1);

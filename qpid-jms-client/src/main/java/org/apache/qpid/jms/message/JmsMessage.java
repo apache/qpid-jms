@@ -254,17 +254,6 @@ public class JmsMessage implements javax.jms.Message {
     }
 
     /**
-     * Returns an unmodifiable Map containing the properties contained within the message.
-     *
-     * @return unmodifiable Map of the current properties in the message.
-     *
-     * @throws JMSException if there is an error accessing the message properties.
-     */
-    public Map<String, Object> getProperties() throws JMSException {
-        return Collections.unmodifiableMap(facade.getProperties());
-    }
-
-    /**
      * Allows for a direct put of an Object value into the message properties.
      *
      * This method bypasses the normal JMS type checking for properties being set on

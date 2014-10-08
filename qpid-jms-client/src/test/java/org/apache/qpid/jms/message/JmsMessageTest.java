@@ -372,25 +372,25 @@ public class JmsMessageTest {
     @SuppressWarnings("rawtypes")
     public void testGetPropertyNames() throws JMSException {
         JmsMessage msg = factory.createMessage();
-        String name1 = "floatProperty";
-        msg.setFloatProperty(name1, 1.3f);
-        String name2 = "JMSXDeliveryCount";
-        msg.setIntProperty(name2, 1);
-        String name3 = "JMSRedelivered";
-        msg.setBooleanProperty(name3, false);
-        boolean found1 = false;
-        boolean found2 = false;
-        boolean found3 = false;
+        String propName = "floatProperty";
+        msg.setFloatProperty(propName, 1.3f);
+        String jmsxName = "JMSXDeliveryCount";
+        msg.setIntProperty(jmsxName, 1);
+        String headerName = "JMSRedelivered";
+        msg.setBooleanProperty(headerName, false);
+        boolean propNameFound = false;
+        boolean jmsxNameFound = false;
+        boolean headerNameFound1 = false;
         for (Enumeration iter = msg.getPropertyNames(); iter.hasMoreElements();) {
             Object element = iter.nextElement();
-            found1 |= element.equals(name1);
-            found2 |= element.equals(name2);
-            found3 |= element.equals(name3);
+            propNameFound |= element.equals(propName);
+            jmsxNameFound |= element.equals(jmsxName);
+            headerNameFound1 |= element.equals(headerName);
         }
-        assertTrue("prop name1 found", found1);
-        // spec compliance, only non JMS (and JMSX) props returned
-        assertFalse("prop name2 not found", found2);
-        assertFalse("prop name4 not found", found3);
+        assertTrue("prop name not found", propNameFound);
+        assertTrue("jmsx prop name not found", jmsxNameFound);
+        // spec compliance, only non-'JMS header' props returned
+        assertFalse("header name should not have been found", headerNameFound1);
     }
 
     @Test

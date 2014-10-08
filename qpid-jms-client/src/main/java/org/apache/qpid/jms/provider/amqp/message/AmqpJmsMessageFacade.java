@@ -169,6 +169,8 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     /**
      * Returns a set of all the property names that have been set in this message.
+     * The Set returned may be manipulated by the receiver without impacting the facade,
+     * and an empty set will be returned if there are no matching properties.
      *
      * @return a set of property names in the message or an empty set if none are set.
      */
@@ -253,6 +255,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     @Override
     public void clearProperties() {
         clearAllApplicationProperties();
+        //TODO: should we clear some/all of those intercepted by AmqpJmsMessagePropertyIntercepter?
     }
 
     @Override

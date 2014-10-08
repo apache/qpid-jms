@@ -248,7 +248,9 @@ public class AmqpJmsMessagePropertyIntercepter {
     /**
      * For each of the currently configured message property intercepter instance a
      * string key value is inserted into an Set and returned if the property has a
-     * value and is available for a read operation.
+     * value and is available for a read operation. The Set returned may be
+     * manipulated by the receiver without impacting the facade, and an empty set
+     * will be returned if there are no matching properties.
      *
      * @return a Set<String> containing the names of all intercepted properties with a value.
      */

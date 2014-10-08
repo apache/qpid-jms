@@ -48,8 +48,9 @@ public interface JmsMessageFacade {
     public Map<String, Object> getProperties() throws JMSException;
 
     /**
-     * Returns the property names for this Message instance, including any relevant to
-     * values managed through the facade such as group sequence.
+     * Returns the property names for this Message instance. The Set returned may be
+     * manipulated by the receiver without impacting the facade, and an empty set
+     * will be returned if there are no matching properties.
      *
      * @return a set containing the property names of this Message
      *

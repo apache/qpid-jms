@@ -865,7 +865,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * fields of the AMQP properties section set, that the expected JMSX or JMS_AMQP properties
      * are present, and the expected values are returned when retrieved from the JMS message.
      */
-    @Ignore //TODO: currently failing on propertyNames handling
     @Test(timeout = 2000)
     public void testReceivedMessageWithGroupRelatedPropertiesSet() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {

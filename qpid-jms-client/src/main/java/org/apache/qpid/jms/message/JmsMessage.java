@@ -286,7 +286,10 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public Enumeration<?> getPropertyNames() throws JMSException {
-        return Collections.enumeration(facade.getPropertyNames());
+        Set<String> result = facade.getPropertyNames();
+        result.addAll(JmsMessagePropertyIntercepter.getPropertyNames(facade, true));
+
+        return Collections.enumeration(result);
     }
 
     /**
@@ -297,7 +300,7 @@ public class JmsMessage implements javax.jms.Message {
      * @throws JMSException
      */
     public Enumeration<?> getAllPropertyNames() throws JMSException {
-        Set<String> result = new HashSet<String>(facade.getProperties().keySet());
+        Set<String> result = new HashSet<String>(facade.getPropertyNames());
         result.addAll(JmsMessagePropertyIntercepter.getAllPropertyNames());
         return Collections.enumeration(result);
     }

@@ -55,6 +55,7 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
     private String tempQueuePrefix;
     private String tempTopicPrefix;
 
+    private boolean objectMessageUsesAmqpTypes = false;
     private boolean anonymousProducerCache = false;
     private int anonymousProducerCacheSize = 10;
 
@@ -301,6 +302,24 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
      */
     public void setAnonymousProducerCacheSize(int anonymousProducerCacheSize) {
         this.anonymousProducerCacheSize = anonymousProducerCacheSize;
+    }
+
+    /**
+     * @return true if new ObjectMessage instance should default to using AMQP Typed bodies.
+     */
+    public boolean isObjectMessageUsesAmqpTypes() {
+        return objectMessageUsesAmqpTypes;
+    }
+
+    /**
+     * Configures the body type used in ObjectMessage instances that are sent from
+     * this connection.
+     *
+     * @param objectMessageUsesAmqpTypes
+     *        the objectMessageUsesAmqpTypes value to set.
+     */
+    public void setObjectMessageUsesAmqpTypes(boolean objectMessageUsesAmqpTypes) {
+        this.objectMessageUsesAmqpTypes = objectMessageUsesAmqpTypes;
     }
 
     /**

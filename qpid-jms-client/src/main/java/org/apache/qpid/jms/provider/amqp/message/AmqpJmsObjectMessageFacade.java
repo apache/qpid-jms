@@ -43,6 +43,8 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
      *
      * @param connection
      *        the AmqpConnection that under which this facade was created.
+     * @param isAmqpTypeEncoded
+     *        controls the type used to encode the body.
      */
     public AmqpJmsObjectMessageFacade(AmqpConnection connection, boolean isAmqpTypeEncoded) {
         super(connection);

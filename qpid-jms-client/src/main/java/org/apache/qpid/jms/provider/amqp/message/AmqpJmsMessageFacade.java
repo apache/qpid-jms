@@ -62,7 +62,6 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     protected final Message message;
     protected final AmqpConnection connection;
 
-    private MessageAnnotations mesageAnnotations;
     private Map<Symbol,Object> messageAnnotationsMap;
     private Map<String,Object> applicationPropertiesMap;
 
@@ -107,9 +106,8 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         this.connection = consumer.getConnection();
         this.consumerDestination = consumer.getDestination();
 
-        mesageAnnotations = message.getMessageAnnotations();
-        if (mesageAnnotations != null) {
-            messageAnnotationsMap = mesageAnnotations.getValue();
+        if (message.getMessageAnnotations() != null) {
+            messageAnnotationsMap = message.getMessageAnnotations().getValue();
         }
 
         if (message.getApplicationProperties() != null) {
@@ -827,7 +825,6 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
      */
     void clearMessageAnnotations() {
         messageAnnotationsMap = null;
-        mesageAnnotations = null;
         message.setMessageAnnotations(null);
     }
 
@@ -892,8 +889,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     private void lazyCreateMessageAnnotations() {
         if (messageAnnotationsMap == null) {
             messageAnnotationsMap = new HashMap<Symbol,Object>();
-            mesageAnnotations = new MessageAnnotations(messageAnnotationsMap);
-            message.setMessageAnnotations(mesageAnnotations);
+            message.setMessageAnnotations(new MessageAnnotations(messageAnnotationsMap));
         }
     }
 

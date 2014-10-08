@@ -175,8 +175,10 @@ public interface JmsMessageFacade {
      *
      * @param correlationId
      *        The correlation ID to set on this message, or null to clear.
+     *
+     * @throws JMSException if an error occurs while setting the correlation ID.
      */
-    void setCorrelationId(String correlationId);
+    void setCorrelationId(String correlationId) throws JMSException;
 
     /**
      * Gets the set correlation ID of the message in raw bytes form.  If no ID was

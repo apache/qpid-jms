@@ -415,12 +415,12 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public void setCorrelationId(String correlationId) {
+    public void setCorrelationId(String correlationId) throws IdConversionException {
         AmqpMessageIdHelper messageIdHelper = AmqpMessageIdHelper.INSTANCE;
+        boolean appSpecific = false;
         if (correlationId == null) {
             message.setCorrelationId(null);
         } else {
-            boolean appSpecific = false;
             boolean hasMessageIdPrefix = messageIdHelper.hasMessageIdPrefix(correlationId);
             if (!hasMessageIdPrefix) {
                 appSpecific = true;
@@ -429,22 +429,17 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             String stripped = messageIdHelper.stripMessageIdPrefix(correlationId);
 
             if (hasMessageIdPrefix) {
-                try {
-                    Object idObject = messageIdHelper.toIdObject(stripped);
-                    message.setCorrelationId(idObject);
-                } catch (IdConversionException e) {
-                    // TODO decided what to do with this exception
-                    throw new RuntimeException(e);
-                }
+                Object idObject = messageIdHelper.toIdObject(stripped);
+                message.setCorrelationId(idObject);
             } else {
                 message.setCorrelationId(stripped);
             }
+        }
 
-            if (appSpecific) {
-                setMessageAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID, true);
-            } else {
-                removeMessageAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID);
-            }
+        if (appSpecific) {
+            setMessageAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID, true);
+        } else {
+            removeMessageAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID);
         }
     }
 

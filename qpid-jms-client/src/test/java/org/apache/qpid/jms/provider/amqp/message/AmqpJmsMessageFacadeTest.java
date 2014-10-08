@@ -756,9 +756,10 @@ public class AmqpJmsMessageFacadeTest {
      * Test that setting then getting an application-specific String as the CorrelationId returns
      * the expected value and sets the expected value on the underlying AMQP message, additionally
      * setting the annotation to indicate an application-specific correlation-id
+     * @throws Exception if unexpected error
      */
     @Test
-    public void testSetGetCorrelationIdOnNewMessageWithStringAppSpecific() {
+    public void testSetGetCorrelationIdOnNewMessageWithStringAppSpecific() throws Exception {
         String testCorrelationId = "myAppSpecificStringCorrelationId";
 
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
@@ -778,9 +779,10 @@ public class AmqpJmsMessageFacadeTest {
      * Test that setting then getting an JMSMessageID String as the CorrelationId returns
      * the expected value and sets the expected value on the underlying AMQP message, additionally
      * checking it does not set the annotation to indicate an application-specific correlation-id
+     * @throws Exception if unexpected error
      */
     @Test
-    public void testSetGetCorrelationIdOnNewMessageWithStringJMSMessageID() {
+    public void testSetGetCorrelationIdOnNewMessageWithStringJMSMessageID() throws Exception {
         String testCorrelationId = "ID:myJMSMessageIDStringCorrelationId";
         //The underlying AMQP message should not contain the ID: prefix
         String stripped = AmqpMessageIdHelper.INSTANCE.stripMessageIdPrefix(testCorrelationId);
@@ -833,9 +835,10 @@ public class AmqpJmsMessageFacadeTest {
     /**
      * Test that setting then getting a UUID as the correlationId returns the expected value,
      * and sets the expected value on the underlying AMQP message.
+     * @throws Exception if unexpected error
      */
     @Test
-    public void testSetGetCorrelationIdOnNewMessageWithUUID() {
+    public void testSetGetCorrelationIdOnNewMessageWithUUID() throws Exception {
         UUID testCorrelationId = UUID.randomUUID();
         String converted = appendIdAndTypePrefix(testCorrelationId);
 
@@ -858,9 +861,10 @@ public class AmqpJmsMessageFacadeTest {
     /**
      * Test that setting then getting a ulong correlationId (using BigInteger) returns the expected value
      * and sets the expected value on the underlying AMQP message
+     * @throws Exception if unexpected error
      */
     @Test
-    public void testSetGetCorrelationIdOnNewMessageWithUnsignedLong() {
+    public void testSetGetCorrelationIdOnNewMessageWithUnsignedLong() throws Exception {
         Object testCorrelationId = UnsignedLong.valueOf(123456789L);
         String converted = appendIdAndTypePrefix(testCorrelationId);
 
@@ -883,9 +887,10 @@ public class AmqpJmsMessageFacadeTest {
     /**
      * Test that setting then getting binary as the correlationId returns the expected value
      * and sets the correlation id field as expected on the underlying AMQP message
+     * @throws Exception if unexpected error
      */
     @Test
-    public void testSetGetCorrelationIdOnNewMessageWithBinary() {
+    public void testSetGetCorrelationIdOnNewMessageWithBinary() throws Exception {
         Binary testCorrelationId = createBinaryId();
         String converted = appendIdAndTypePrefix(testCorrelationId);
 

@@ -123,6 +123,21 @@ public class AmqpJmsMapMessageFacadeTest extends QpidJmsTestCase {
         assertTrue(amqpMapMessageFacade.isEmpty());
     }
 
+    @Test
+    public void testMessageCopy() throws Exception {
+        AmqpJmsMapMessageFacade amqpMapMessageFacade = createNewMapMessageFacade();
+        amqpMapMessageFacade.put("entry1", "value1");
+        amqpMapMessageFacade.put("entry2", "value2");
+        amqpMapMessageFacade.put("entry3", "value3");
+
+        AmqpJmsMapMessageFacade copy = amqpMapMessageFacade.copy();
+        assertTrue(copy.getMapNames().hasMoreElements());
+
+        assertTrue(copy.itemExists("entry1"));
+        assertTrue(copy.itemExists("entry2"));
+        assertTrue(copy.itemExists("entry3"));
+    }
+
     // ---------- test handling of received messages -------------------------//
 
     @Test

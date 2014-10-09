@@ -24,12 +24,15 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Enumeration;
+import java.util.concurrent.Callable;
 
+import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageFormatException;
 import javax.jms.MessageNotWriteableException;
 
+import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
@@ -80,6 +83,26 @@ public class JmsMessageTest {
     }
 
     @Test
+    public void testMessageSetToReadOnlyOnSend() throws Exception {
+        JmsMessage msg = factory.createMessage();
+        assertFalse(msg.isReadOnlyBody());
+        assertFalse(msg.isReadOnlyProperties());
+        msg.onSend(false, false, 0);
+        assertTrue(msg.isReadOnlyBody());
+        assertTrue(msg.isReadOnlyProperties());
+    }
+
+    @Test
+    public void testMessageSetToReadOnlyOnDispatch() throws Exception {
+        JmsMessage msg = factory.createMessage();
+        assertFalse(msg.isReadOnlyBody());
+        assertFalse(msg.isReadOnlyProperties());
+        msg.onDispatch();
+        assertTrue(msg.isReadOnlyBody());
+        assertTrue(msg.isReadOnlyProperties());
+    }
+
+    @Test
     public void testToString() throws Exception {
         JmsMessage msg = factory.createMessage();
         assertTrue(msg.toString().startsWith("JmsMessage"));
@@ -89,7 +112,17 @@ public class JmsMessageTest {
     public void testHashCode() throws Exception {
         JmsMessage msg = factory.createMessage();
         msg.setJMSMessageID(this.jmsMessageID);
-        assertTrue(msg.getJMSMessageID().hashCode() == jmsMessageID.hashCode());
+        assertEquals(msg.getJMSMessageID().hashCode(), jmsMessageID.hashCode());
+        assertEquals(msg.hashCode(), jmsMessageID.hashCode());
+    }
+
+    @Test
+    public void testHashCodeWhenNoMessageIDAssigned() throws Exception {
+        JmsMessage msg1 = factory.createMessage();
+        JmsMessage msg2 = factory.createMessage();
+
+        assertFalse(msg1.hashCode() == msg2.hashCode());
+        assertTrue(msg1.hashCode() == msg1.hashCode());
     }
 
     @Test
@@ -120,8 +153,25 @@ public class JmsMessageTest {
         JmsMessage msg2 = factory.createMessage();
         msg1.setJMSMessageID(this.jmsMessageID);
         assertTrue(!msg1.equals(msg2));
+        assertTrue(!msg2.equals(msg1));
         msg2.setJMSMessageID(this.jmsMessageID);
         assertTrue(msg1.equals(msg2));
+        assertTrue(msg2.equals(msg1));
+        msg2.setJMSMessageID(this.jmsMessageID + "More");
+        assertTrue(!msg1.equals(msg2));
+        assertTrue(!msg2.equals(msg1));
+
+        assertTrue(msg1.equals(msg1));
+        assertFalse(msg1.equals(null));
+        assertFalse(msg1.equals(""));
+    }
+
+    @Test
+    public void testEqualsObjectNullMessageIds() throws Exception {
+        JmsMessage msg1 = factory.createMessage();
+        JmsMessage msg2 = factory.createMessage();
+        assertFalse(msg2.equals(msg1));
+        assertFalse(msg1.equals(msg2));
     }
 
     @Test
@@ -146,6 +196,8 @@ public class JmsMessageTest {
         this.jmsTimestamp = System.currentTimeMillis();
         this.readOnlyMessage = false;
 
+        JmsConnection connection = Mockito.mock(JmsConnection.class);
+
         JmsMessage msg1 = factory.createMessage();
         msg1.setJMSMessageID(this.jmsMessageID);
         msg1.setJMSCorrelationID(this.jmsCorrelationID);
@@ -158,17 +210,19 @@ public class JmsMessageTest {
         msg1.setJMSPriority(this.jmsPriority);
         msg1.setJMSTimestamp(this.jmsTimestamp);
         msg1.setReadOnlyProperties(true);
+        msg1.setConnection(connection);
         JmsMessage msg2 = msg1.copy();
         assertEquals(msg1.getJMSMessageID(), msg2.getJMSMessageID());
         assertTrue(msg1.getJMSCorrelationID().equals(msg2.getJMSCorrelationID()));
         assertTrue(msg1.getJMSDestination().equals(msg2.getJMSDestination()));
         assertTrue(msg1.getJMSReplyTo().equals(msg2.getJMSReplyTo()));
-        assertTrue(msg1.getJMSDeliveryMode() == msg2.getJMSDeliveryMode());
-        assertTrue(msg1.getJMSRedelivered() == msg2.getJMSRedelivered());
-        assertTrue(msg1.getJMSType().equals(msg2.getJMSType()));
-        assertTrue(msg1.getJMSExpiration() == msg2.getJMSExpiration());
-        assertTrue(msg1.getJMSPriority() == msg2.getJMSPriority());
-        assertTrue(msg1.getJMSTimestamp() == msg2.getJMSTimestamp());
+        assertEquals(msg1.getJMSDeliveryMode(), msg2.getJMSDeliveryMode());
+        assertEquals(msg1.getJMSRedelivered(), msg2.getJMSRedelivered());
+        assertEquals(msg1.getJMSType(), msg2.getJMSType());
+        assertEquals(msg1.getJMSExpiration(), msg2.getJMSExpiration());
+        assertEquals(msg1.getJMSPriority(), msg2.getJMSPriority());
+        assertEquals(msg1.getJMSTimestamp(), msg2.getJMSTimestamp());
+        assertEquals(msg1.getConnection(), msg2.getConnection());
 
         LOG.info("Message is:  " + msg1);
     }
@@ -176,8 +230,17 @@ public class JmsMessageTest {
     @Test
     public void testGetAndSetJMSMessageID() throws Exception {
         JmsMessage msg = factory.createMessage();
+        assertNull(msg.getJMSMessageID());
         msg.setJMSMessageID(this.jmsMessageID);
         assertEquals(msg.getJMSMessageID(), this.jmsMessageID);
+    }
+
+    @Test
+    public void testGetJMSMessageIDAlwaysHasIdPrefix() throws Exception {
+        JmsMessageFacade facade = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(facade.getMessageId()).thenReturn("123456");
+        JmsMessage msg = new JmsMessage(facade);
+        assertTrue(msg.getJMSMessageID().startsWith("ID:"));
     }
 
     @Test
@@ -232,6 +295,10 @@ public class JmsMessageTest {
         JmsMessage msg = factory.createMessage();
         msg.setJMSDeliveryMode(this.jmsDeliveryMode);
         assertTrue(msg.getJMSDeliveryMode() == this.jmsDeliveryMode);
+        msg.setJMSDeliveryMode(DeliveryMode.NON_PERSISTENT);
+        assertEquals(DeliveryMode.NON_PERSISTENT, msg.getJMSDeliveryMode());
+        msg.setJMSDeliveryMode(DeliveryMode.PERSISTENT);
+        assertEquals(DeliveryMode.PERSISTENT, msg.getJMSDeliveryMode());
     }
 
     @Test
@@ -849,9 +916,11 @@ public class JmsMessageTest {
         JmsMessage msg = factory.createMessage();
         String propertyName = "property";
         Object obj = new Object();
+        msg.getFacade().setProperty(propertyName, obj);
         try {
-            msg.setProperty(propertyName, obj);
-        } catch (Exception e) {
+            msg.getObjectProperty(null);
+            fail("Should have thrown exception");
+        } catch (IllegalArgumentException e) {
         }
         try {
             msg.getStringProperty(propertyName);
@@ -956,5 +1025,36 @@ public class JmsMessageTest {
         assertTrue(msg.isExpired());
         msg.setJMSExpiration(System.currentTimeMillis() + 10000);
         assertFalse(msg.isExpired());
+    }
+
+    @Test
+    public void testAcknowledgeWitNoCallback() throws JMSException {
+        JmsMessage msg = factory.createMessage();
+        msg.acknowledge();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testAcknowledgeWitCallback() throws Exception {
+        Callable<Void> callback = Mockito.mock(Callable.class);
+        JmsMessage msg = factory.createMessage();
+        msg.setAcknowledgeCallback(callback);
+        msg.acknowledge();
+        Mockito.verify(callback).call();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testAcknowledgeWitCallbackThatThrows() throws Exception {
+        Callable<Void> callback = Mockito.mock(Callable.class);
+        Mockito.doThrow(new Exception()).when(callback).call();
+        JmsMessage msg = factory.createMessage();
+        msg.setAcknowledgeCallback(callback);
+        assertEquals(callback, msg.getAcknowledgeCallback());
+        try {
+            msg.acknowledge();
+            fail("Should have thrown.");
+        } catch (JMSException e) {
+        }
     }
 }

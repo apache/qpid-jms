@@ -19,8 +19,6 @@ package org.apache.qpid.jms.message;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -65,11 +63,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public int hashCode() {
-        String id = null;
-        try {
-            id = getJMSMessageID();
-        } catch (JMSException e) {
-        }
+        String id = facade.getMessageId();
 
         if (id != null) {
             return id.hashCode();
@@ -117,6 +111,10 @@ public class JmsMessage implements javax.jms.Message {
 
     public void setReadOnlyBody(boolean readOnlyBody) {
         this.readOnlyBody = readOnlyBody;
+    }
+
+    public boolean isReadOnlyProperties() {
+        return this.readOnlyProperties;
     }
 
     public void setReadOnlyProperties(boolean readOnlyProperties) {
@@ -200,12 +198,12 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public boolean getJMSRedelivered() throws JMSException {
-        return this.isRedelivered();
+        return facade.isRedelivered();
     }
 
     @Override
     public void setJMSRedelivered(boolean redelivered) throws JMSException {
-        this.setRedelivered(redelivered);
+        facade.setRedelivered(redelivered);
     }
 
     @Override
@@ -257,37 +255,6 @@ public class JmsMessage implements javax.jms.Message {
         return JmsMessagePropertyIntercepter.propertyExists(facade, name);
     }
 
-    /**
-     * Allows for a direct put of an Object value into the message properties.
-     *
-     * This method bypasses the normal JMS type checking for properties being set on
-     * the message and should be used with great care.
-     *
-     * @param key
-     *        the property name to use when setting the value.
-     * @param value
-     *        the value to insert into the message properties.
-     *
-     * @throws JMSException if an error occurs while accessing the Message properties.
-     */
-    public void setProperty(String key, Object value) throws JMSException {
-        this.facade.setProperty(key, value);
-    }
-
-    /**
-     * Returns the Object value referenced by the given key.
-     *
-     * @param key
-     *        the name of the property being accessed.
-     *
-     * @return the value stored at the given location or null if non set.
-     *
-     * @throws JMSException if an error occurs while accessing the Message properties.
-     */
-    public Object getProperty(String key) throws JMSException {
-        return this.facade.getProperty(key);
-    }
-
     @Override
     public Enumeration<?> getPropertyNames() throws JMSException {
         Set<String> result = facade.getPropertyNames();
@@ -317,13 +284,6 @@ public class JmsMessage implements javax.jms.Message {
         JmsMessagePropertyIntercepter.setProperty(facade, name, value);
     }
 
-    public void setProperties(Map<String, Object> properties) throws JMSException {
-        for (Iterator<Map.Entry<String, Object>> iter = properties.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry<String, Object> entry = iter.next();
-            setObjectProperty(entry.getKey(), entry.getValue());
-        }
-    }
-
     protected void checkValidObject(Object value) throws MessageFormatException {
         boolean valid = value instanceof Boolean ||
                         value instanceof Byte ||
@@ -343,10 +303,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public Object getObjectProperty(String name) throws JMSException {
-        if (name == null) {
-            throw new NullPointerException("Property name cannot be null");
-        }
-
+        checkPropertyNameIsValid(name);
         return JmsMessagePropertyIntercepter.getProperty(facade, name);
     }
 
@@ -549,19 +506,11 @@ public class JmsMessage implements javax.jms.Message {
     }
 
     public void incrementRedeliveryCount() {
-         facade.setRedeliveryCount(facade.getRedeliveryCount() + 1);
+        facade.setDeliveryCount(facade.getDeliveryCount() + 1);
     }
 
     public JmsMessageFacade getFacade() {
         return this.facade;
-    }
-
-    public boolean isRedelivered() throws JMSException {
-        return facade.isRedelivered();
-    }
-
-    public void setRedelivered(boolean redelivered) throws JMSException {
-        facade.setRedelivered(redelivered);
     }
 
     @Override

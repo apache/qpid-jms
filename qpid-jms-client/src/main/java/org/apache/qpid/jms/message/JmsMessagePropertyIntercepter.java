@@ -112,26 +112,6 @@ public class JmsMessagePropertyIntercepter {
         STANDARD_HEADERS.add(JMS_EXPIRATION);
         STANDARD_HEADERS.add(JMS_PRIORITY);
 
-        PROPERTY_INTERCEPTERS.put(JMSX_DELIVERY_COUNT, new PropertyIntercepter() {
-            @Override
-            public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
-                Integer rc = (Integer) TypeConversionSupport.convert(value, Integer.class);
-                if (rc == null) {
-                    throw new JMSException("Property JMSXDeliveryCount cannot be set from a " + value.getClass().getName() + ".");
-                }
-                message.setDeliveryCount(rc.intValue());
-            }
-
-            @Override
-            public Object getProperty(JmsMessageFacade message) throws JMSException {
-                return Integer.valueOf(message.getDeliveryCount());
-            }
-
-            @Override
-            public boolean propertyExists(JmsMessageFacade message) {
-                return true;
-            }
-        });
         PROPERTY_INTERCEPTERS.put(JMS_DESTINATION, new PropertyIntercepter() {
             @Override
             public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
@@ -216,9 +196,11 @@ public class JmsMessagePropertyIntercepter {
                             rc = DeliveryMode.PERSISTENT;
                         } else if (((String) value).equalsIgnoreCase("NON_PERSISTENT")) {
                             rc = DeliveryMode.NON_PERSISTENT;
-                        } else {
-                            throw nfe;
                         }
+                    }
+
+                    if (rc == null) {
+                        throw nfe;
                     }
                 }
                 if (rc == null) {
@@ -359,6 +341,26 @@ public class JmsMessagePropertyIntercepter {
             @Override
             public boolean propertyExists(JmsMessageFacade message) {
                 return message.isRedelivered();
+            }
+        });
+        PROPERTY_INTERCEPTERS.put(JMSX_DELIVERY_COUNT, new PropertyIntercepter() {
+            @Override
+            public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
+                Integer rc = (Integer) TypeConversionSupport.convert(value, Integer.class);
+                if (rc == null) {
+                    throw new JMSException("Property JMSXDeliveryCount cannot be set from a " + value.getClass().getName() + ".");
+                }
+                message.setDeliveryCount(rc.intValue());
+            }
+
+            @Override
+            public Object getProperty(JmsMessageFacade message) throws JMSException {
+                return Integer.valueOf(message.getDeliveryCount());
+            }
+
+            @Override
+            public boolean propertyExists(JmsMessageFacade message) {
+                return true;
             }
         });
         PROPERTY_INTERCEPTERS.put(JMSX_GROUPID, new PropertyIntercepter() {

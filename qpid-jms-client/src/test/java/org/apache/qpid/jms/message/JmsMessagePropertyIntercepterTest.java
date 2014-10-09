@@ -133,6 +133,31 @@ public class JmsMessagePropertyIntercepterTest {
         assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_DESTINATION));
     }
 
+    @Test
+    public void testJMSDestinationPropertExistsWhenSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        JmsDestination queue = new JmsQueue("TestDestination");
+        Mockito.when(message.getDestination()).thenReturn(queue);
+        assertTrue(JmsMessagePropertyIntercepter.propertyExists(message, JMS_DESTINATION));
+    }
+
+    @Test
+    public void testJMSDestinationPropertExistsWhenNotSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getDestination()).thenReturn(null);
+        assertFalse(JmsMessagePropertyIntercepter.propertyExists(message, JMS_DESTINATION));
+    }
+
+    @Test
+    public void testSetJMSDestinationConversionChecks() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        try {
+            JmsMessagePropertyIntercepter.setProperty(message, JMS_DESTINATION, new byte[1]);
+            fail("Should have thrown an exception for this call");
+        } catch (JMSException e) {
+        }
+    }
+
     //---------- JMSReplyTo --------------------------------------------------//
 
     @Test
@@ -190,6 +215,31 @@ public class JmsMessagePropertyIntercepterTest {
         assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_REPLYTO));
     }
 
+    @Test
+    public void testJMSReplyToPropertExistsWhenSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        JmsDestination queue = new JmsQueue("TestDestination");
+        Mockito.when(message.getReplyTo()).thenReturn(queue);
+        assertTrue(JmsMessagePropertyIntercepter.propertyExists(message, JMS_REPLYTO));
+    }
+
+    @Test
+    public void testJMSReplyToPropertExistsWhenNotSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getReplyTo()).thenReturn(null);
+        assertFalse(JmsMessagePropertyIntercepter.propertyExists(message, JMS_REPLYTO));
+    }
+
+    @Test
+    public void testSetJMSReplyToConversionChecks() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        try {
+            JmsMessagePropertyIntercepter.setProperty(message, JMS_REPLYTO, new byte[1]);
+            fail("Should have thrown an exception for this call");
+        } catch (JMSException e) {
+        }
+    }
+
     //---------- JMSType -----------------------------------------------------//
 
     @Test
@@ -242,6 +292,30 @@ public class JmsMessagePropertyIntercepterTest {
     public void testJMSTypeNotInGetPropertyNamesWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_TYPE));
+    }
+
+    @Test
+    public void testJMSTypePropertExistsWhenSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getType()).thenReturn("SomeType");
+        assertTrue(JmsMessagePropertyIntercepter.propertyExists(message, JMS_TYPE));
+    }
+
+    @Test
+    public void testJMSTypePropertExistsWhenNotSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getType()).thenReturn(null);
+        assertFalse(JmsMessagePropertyIntercepter.propertyExists(message, JMS_TYPE));
+    }
+
+    @Test
+    public void testSetJMSTypeConversionChecks() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        try {
+            JmsMessagePropertyIntercepter.setProperty(message, JMS_TYPE, new byte[1]);
+            fail("Should have thrown an exception for this call");
+        } catch (JMSException e) {
+        }
     }
 
     //---------- JMSDeliveryMode ---------------------------------------------//
@@ -316,6 +390,35 @@ public class JmsMessagePropertyIntercepterTest {
         assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMS_DELIVERY_MODE));
     }
 
+    @Test
+    public void testJMSDeliveryModePropertExistsWhenSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.isPersistent()).thenReturn(true);
+        assertTrue(JmsMessagePropertyIntercepter.propertyExists(message, JMS_DELIVERY_MODE));
+    }
+
+    @Test
+    public void testJMSDeliveryModePropertExistsWhenNotSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.isPersistent()).thenReturn(false);
+        assertTrue(JmsMessagePropertyIntercepter.propertyExists(message, JMS_DELIVERY_MODE));
+    }
+
+    @Test
+    public void testSetJMSDeliveryModeConversionChecks() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        try {
+            JmsMessagePropertyIntercepter.setProperty(message, JMS_DELIVERY_MODE, new byte[1]);
+            fail("Should have thrown an exception for this call");
+        } catch (JMSException e) {
+        }
+        try {
+            JmsMessagePropertyIntercepter.setProperty(message, JMS_DELIVERY_MODE, "SOMETHING");
+            fail("Should have thrown an exception for this call");
+        } catch (NumberFormatException e) {
+        }
+    }
+
     //---------- JMSPriority ---------------------------------------------//
 
     @Test
@@ -364,6 +467,30 @@ public class JmsMessagePropertyIntercepterTest {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         Mockito.when(message.getPriority()).thenReturn(1);
         assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, true).contains(JMS_PRIORITY));
+    }
+
+    @Test
+    public void testJMSPriorityPropertExistsWhenSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getPriority()).thenReturn(1);
+        assertTrue(JmsMessagePropertyIntercepter.propertyExists(message, JMS_PRIORITY));
+    }
+
+    @Test
+    public void testJMSPriorityPropertExistsWhenSetToDefault() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getPriority()).thenReturn(4);
+        assertTrue(JmsMessagePropertyIntercepter.propertyExists(message, JMS_PRIORITY));
+    }
+
+    @Test
+    public void testSetJMSPriorityConversionChecks() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        try {
+            JmsMessagePropertyIntercepter.setProperty(message, JMS_PRIORITY, new byte[1]);
+            fail("Should have thrown an exception for this call");
+        } catch (JMSException e) {
+        }
     }
 
     //---------- JMSMessageID ---------------------------------------------//
@@ -418,6 +545,30 @@ public class JmsMessagePropertyIntercepterTest {
     public void testJMSMessageIDNotInGetPropertyNamesWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_MESSAGEID));
+    }
+
+    @Test
+    public void testJMSMessageIDPropertExistsWhenSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getMessageId()).thenReturn("MESSAGE_ID");
+        assertTrue(JmsMessagePropertyIntercepter.propertyExists(message, JMS_MESSAGEID));
+    }
+
+    @Test
+    public void testJMSMessageIDPropertExistsWhenNotSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getMessageId()).thenReturn(null);
+        assertFalse(JmsMessagePropertyIntercepter.propertyExists(message, JMS_MESSAGEID));
+    }
+
+    @Test
+    public void testSetJMSMessageIDConversionChecks() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        try {
+            JmsMessagePropertyIntercepter.setProperty(message, JMS_MESSAGEID, new byte[1]);
+            fail("Should have thrown an exception for this call");
+        } catch (JMSException e) {
+        }
     }
 
     //---------- JMSTimestamp ---------------------------------------------//
@@ -475,6 +626,30 @@ public class JmsMessagePropertyIntercepterTest {
         assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_TIMESTAMP));
     }
 
+    @Test
+    public void testJMSTimestampPropertExistsWhenSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getTimestamp()).thenReturn(900L);
+        assertTrue(JmsMessagePropertyIntercepter.propertyExists(message, JMS_TIMESTAMP));
+    }
+
+    @Test
+    public void testJMSTimestampPropertExistsWhenNotSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getTimestamp()).thenReturn(0L);
+        assertFalse(JmsMessagePropertyIntercepter.propertyExists(message, JMS_TIMESTAMP));
+    }
+
+    @Test
+    public void testSetJMSTimestampConversionChecks() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        try {
+            JmsMessagePropertyIntercepter.setProperty(message, JMS_TIMESTAMP, new byte[1]);
+            fail("Should have thrown an exception for this call");
+        } catch (JMSException e) {
+        }
+    }
+
     //---------- JMSCorrelationID ---------------------------------------------//
 
     @Test
@@ -527,6 +702,30 @@ public class JmsMessagePropertyIntercepterTest {
     public void testJMSCorrelationIDNotInGetPropertyNamesWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_CORRELATIONID));
+    }
+
+    @Test
+    public void testJMSCorrelationIDPropertExistsWhenSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getCorrelationId()).thenReturn("MESSAGE_ID");
+        assertTrue(JmsMessagePropertyIntercepter.propertyExists(message, JMS_CORRELATIONID));
+    }
+
+    @Test
+    public void testJMSCorrelationIDPropertExistsWhenNotSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getCorrelationId()).thenReturn(null);
+        assertFalse(JmsMessagePropertyIntercepter.propertyExists(message, JMS_CORRELATIONID));
+    }
+
+    @Test
+    public void testSetJMSCorrelationIDConversionChecks() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        try {
+            JmsMessagePropertyIntercepter.setProperty(message, JMS_CORRELATIONID, new byte[1]);
+            fail("Should have thrown an exception for this call");
+        } catch (JMSException e) {
+        }
     }
 
     //---------- JMSExpiration ---------------------------------------------//
@@ -582,6 +781,30 @@ public class JmsMessagePropertyIntercepterTest {
     public void testJMSExpirationNotInGetPropertyNamesWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_EXPIRATION));
+    }
+
+    @Test
+    public void testJMSExpirationPropertExistsWhenSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getExpiration()).thenReturn(900L);
+        assertTrue(JmsMessagePropertyIntercepter.propertyExists(message, JMS_EXPIRATION));
+    }
+
+    @Test
+    public void testJMSExpirationPropertExistsWhenNotSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getExpiration()).thenReturn(0L);
+        assertFalse(JmsMessagePropertyIntercepter.propertyExists(message, JMS_EXPIRATION));
+    }
+
+    @Test
+    public void testSetJMSExpirationConversionChecks() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        try {
+            JmsMessagePropertyIntercepter.setProperty(message, JMS_EXPIRATION, new byte[1]);
+            fail("Should have thrown an exception for this call");
+        } catch (JMSException e) {
+        }
     }
 
     //---------- JMSRedelivered ---------------------------------------------//
@@ -648,6 +871,30 @@ public class JmsMessagePropertyIntercepterTest {
         assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_REDELIVERED));
     }
 
+    @Test
+    public void testJMSRedeliveredPropertExistsWhenSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.isRedelivered()).thenReturn(true);
+        assertTrue(JmsMessagePropertyIntercepter.propertyExists(message, JMS_REDELIVERED));
+    }
+
+    @Test
+    public void testJMSRedeliveredPropertExistsWhenNotSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.isRedelivered()).thenReturn(false);
+        assertFalse(JmsMessagePropertyIntercepter.propertyExists(message, JMS_REDELIVERED));
+    }
+
+    @Test
+    public void testSetJMSRedeliveredConversionChecks() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        try {
+            JmsMessagePropertyIntercepter.setProperty(message, JMS_REDELIVERED, new byte[1]);
+            fail("Should have thrown an exception for this call");
+        } catch (JMSException e) {
+        }
+    }
+
     //---------- JMSXGroupID ---------------------------------------------//
 
     @Test
@@ -689,6 +936,30 @@ public class JmsMessagePropertyIntercepterTest {
     public void testJMSXGroupIDNotInGetPropertyNamesWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMSX_GROUPID));
+    }
+
+    @Test
+    public void testJMSXGroupIDPropertExistsWhenSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getGroupId()).thenReturn("GROUP_ID");
+        assertTrue(JmsMessagePropertyIntercepter.propertyExists(message, JMSX_GROUPID));
+    }
+
+    @Test
+    public void testJMSXGroupIDPropertExistsWhenNotSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getGroupId()).thenReturn(null);
+        assertFalse(JmsMessagePropertyIntercepter.propertyExists(message, JMSX_GROUPID));
+    }
+
+    @Test
+    public void testSetJMSXGroupIDConversionChecks() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        try {
+            JmsMessagePropertyIntercepter.setProperty(message, JMSX_GROUPID, new byte[1]);
+            fail("Should have thrown an exception for this call");
+        } catch (JMSException e) {
+        }
     }
 
     //---------- JMSXGroupSeq ---------------------------------------------//
@@ -734,6 +1005,30 @@ public class JmsMessagePropertyIntercepterTest {
         assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMSX_GROUPSEQ));
     }
 
+    @Test
+    public void testJMSXGroupSeqPropertExistsWhenSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getGroupSequence()).thenReturn(5);
+        assertTrue(JmsMessagePropertyIntercepter.propertyExists(message, JMSX_GROUPSEQ));
+    }
+
+    @Test
+    public void testJMSXGroupSeqPropertExistsWhenNotSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getGroupSequence()).thenReturn(0);
+        assertFalse(JmsMessagePropertyIntercepter.propertyExists(message, JMSX_GROUPSEQ));
+    }
+
+    @Test
+    public void testSetJMSXGroupSeqConversionChecks() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        try {
+            JmsMessagePropertyIntercepter.setProperty(message, JMSX_GROUPSEQ, new byte[1]);
+            fail("Should have thrown an exception for this call");
+        } catch (JMSException e) {
+        }
+    }
+
     //---------- JMSXDeliveryCount ---------------------------------------------//
 
     @Test
@@ -777,6 +1072,30 @@ public class JmsMessagePropertyIntercepterTest {
         assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMSX_DELIVERY_COUNT));
     }
 
+    @Test
+    public void testJMSXDeliveryCountPropertExistsWhenSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getDeliveryCount()).thenReturn(5);
+        assertTrue(JmsMessagePropertyIntercepter.propertyExists(message, JMSX_DELIVERY_COUNT));
+    }
+
+    @Test
+    public void testJMSXDeliveryCountPropertExistsWhenNotSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getDeliveryCount()).thenReturn(0);
+        assertTrue(JmsMessagePropertyIntercepter.propertyExists(message, JMSX_DELIVERY_COUNT));
+    }
+
+    @Test
+    public void testSetJMSXDeliverCountConversionChecks() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        try {
+            JmsMessagePropertyIntercepter.setProperty(message, JMSX_DELIVERY_COUNT, new byte[1]);
+            fail("Should have thrown an exception for this call");
+        } catch (JMSException e) {
+        }
+    }
+
     //---------- JMSXUserID ---------------------------------------------//
 
     @Test
@@ -810,34 +1129,10 @@ public class JmsMessagePropertyIntercepterTest {
     }
 
     @Test
-    public void testJMSXUserIdPropertExistsWhenSet() throws JMSException {
-        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        Mockito.when(message.getUserId()).thenReturn("Administrator");
-        assertTrue(JmsMessagePropertyIntercepter.propertyExists(message, JMSX_USERID));
-    }
-
-    @Test
-    public void testJMSXUserIdPropertExistsWhenNotSet() throws JMSException {
-        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        Mockito.when(message.getUserId()).thenReturn(null);
-        assertFalse(JmsMessagePropertyIntercepter.propertyExists(message, JMSX_USERID));
-    }
-
-    @Test
     public void testSetJMSXUserId() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         JmsMessagePropertyIntercepter.setProperty(message, JMSX_USERID, "Administrator");
         Mockito.verify(message).setUserId("Administrator");
-    }
-
-    @Test
-    public void testSetJMSXUserIdConversionChecks() throws JMSException {
-        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
-        try {
-            JmsMessagePropertyIntercepter.setProperty(message, JMSX_USERID, true);
-            fail("Cannot set user ID from int value.");
-        } catch (JMSException e) {
-        }
     }
 
     @Test
@@ -853,5 +1148,29 @@ public class JmsMessagePropertyIntercepterTest {
     public void testJMSXUserIdNotInGetPropertyNamesWhenNotSet() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         assertFalse(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMSX_USERID));
+    }
+
+    @Test
+    public void testJMSXUserIdPropertExistsWhenSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getUserId()).thenReturn("Administrator");
+        assertTrue(JmsMessagePropertyIntercepter.propertyExists(message, JMSX_USERID));
+    }
+
+    @Test
+    public void testJMSXUserIdPropertExistsWhenNotSet() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        Mockito.when(message.getUserId()).thenReturn(null);
+        assertFalse(JmsMessagePropertyIntercepter.propertyExists(message, JMSX_USERID));
+    }
+
+    @Test
+    public void testSetJMSXUserIdConversionChecks() throws JMSException {
+        JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
+        try {
+            JmsMessagePropertyIntercepter.setProperty(message, JMSX_USERID, true);
+            fail("Should have thrown an exception for this call");
+        } catch (JMSException e) {
+        }
     }
 }

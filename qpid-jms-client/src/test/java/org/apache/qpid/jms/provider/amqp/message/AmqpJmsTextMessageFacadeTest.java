@@ -24,12 +24,20 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Map;
 
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.DataDescribedType;
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
+import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
+import org.apache.qpid.proton.codec.impl.DataImpl;
 import org.apache.qpid.proton.message.Message;
 import org.junit.Test;
 
@@ -97,6 +105,19 @@ public class AmqpJmsTextMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         assertEquals("SomeTextForMe", copy.getText());
     }
 
+    @Test
+    public void testSetGetTextWithNewMessageToSend() throws Exception {
+        String text = "myTestText";
+        AmqpJmsTextMessageFacade amqpTextMessageFacade = createNewTextMessageFacade();
+
+        amqpTextMessageFacade.setText(text);
+        assertNotNull(amqpTextMessageFacade.getAmqpMessage().getBody());
+        assertTrue(amqpTextMessageFacade.getAmqpMessage().getBody() instanceof AmqpValue);
+        assertEquals(text, ((AmqpValue) amqpTextMessageFacade.getAmqpMessage().getBody()).getValue());
+
+        assertEquals(text, amqpTextMessageFacade.getText());
+    }
+
     // ---------- test handling of received messages -------------------------//
 
     @Test
@@ -125,5 +146,98 @@ public class AmqpJmsTextMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         amqpTextMessageFacade.clearBody();
         amqpTextMessageFacade.setText("TEST-CLEARED");
         assertEquals("TEST-CLEARED", amqpTextMessageFacade.getText());
+    }
+
+    @Test
+    public void testGetTextUsingReceivedMessageWithNoBodySectionReturnsNull() throws Exception {
+        Message message = Message.Factory.create();
+        AmqpJmsTextMessageFacade amqpTextMessageFacade = createReceivedTextMessageFacade(createMockAmqpConsumer(), message);
+
+        assertNull("expected null string", amqpTextMessageFacade.getText());
+    }
+
+    @Test
+    public void testGetTextUsingReceivedMessageWithAmqpValueSectionContainingNull() throws Exception {
+        Message message = Message.Factory.create();
+        message.setBody(new AmqpValue(null));
+
+        AmqpJmsTextMessageFacade amqpTextMessageFacade = createReceivedTextMessageFacade(createMockAmqpConsumer(), message);
+
+        assertNull("expected null string", amqpTextMessageFacade.getText());
+    }
+
+    @Test
+    public void testGetTextUsingReceivedMessageWithDataSectionContainingNothingReturnsEmptyString() throws Exception {
+        Message message = Message.Factory.create();
+        message.setBody(new Data(null));
+
+        // This shouldn't happen with actual received messages, since Data sections can't really
+        // have a null value in them, they would have an empty byte array, but just in case...
+        AmqpJmsTextMessageFacade amqpTextMessageFacade = createReceivedTextMessageFacade(createMockAmqpConsumer(), message);
+
+        assertEquals("expected zero-length string", "", amqpTextMessageFacade.getText());
+    }
+
+    @Test
+    public void testGetTextUsingReceivedMessageWithZeroLengthDataSectionReturnsEmptyString() throws Exception {
+        org.apache.qpid.proton.codec.Data payloadData = new DataImpl();
+        payloadData.putDescribedType(new DataDescribedType(new Binary(new byte[0])));
+        Binary b = payloadData.encode();
+
+        System.out.println("Using encoded AMQP message payload: " + b);
+
+        Message message = Message.Factory.create();
+        int decoded = message.decode(b.getArray(), b.getArrayOffset(), b.getLength());
+        assertEquals(decoded, b.getLength());
+        AmqpJmsTextMessageFacade amqpTextMessageFacade = createReceivedTextMessageFacade(createMockAmqpConsumer(), message);
+
+        assertEquals("expected zero-length string", "", amqpTextMessageFacade.getText());
+    }
+
+    @Test
+    public void testGetTextUsingReceivedMessageWithDataSectionContainingStringBytes() throws Exception {
+        String encodedString = "myEncodedString";
+        byte[] encodedBytes = encodedString.getBytes(Charset.forName("UTF-8"));
+
+        org.apache.qpid.proton.codec.Data payloadData = new DataImpl();
+        payloadData.putDescribedType(new DataDescribedType(new Binary(encodedBytes)));
+        Binary b = payloadData.encode();
+
+        System.out.println("Using encoded AMQP message payload: " + b);
+
+        Message message = Message.Factory.create();
+        int decoded = message.decode(b.getArray(), b.getArrayOffset(), b.getLength());
+        assertEquals(decoded, b.getLength());
+        AmqpJmsTextMessageFacade amqpTextMessageFacade = createReceivedTextMessageFacade(createMockAmqpConsumer(), message);
+
+        assertEquals(encodedString, amqpTextMessageFacade.getText());
+    }
+
+    @Test
+    public void testGetTextWithNonAmqpValueOrDataSectionThrowsISE() throws Exception {
+        Message message = Message.Factory.create();
+        message.setBody(new AmqpSequence(new ArrayList<Object>()));
+        AmqpJmsTextMessageFacade amqpTextMessageFacade = createReceivedTextMessageFacade(createMockAmqpConsumer(), message);
+
+        try {
+            amqpTextMessageFacade.getText();
+            fail("expected exception not thrown");
+        } catch (IllegalStateException ise) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testGetTextWithAmqpValueContainingNonNullNonStringValueThrowsISE() throws Exception {
+        Message message = Message.Factory.create();
+        message.setBody(new AmqpValue(true));
+        AmqpJmsTextMessageFacade amqpTextMessageFacade = createReceivedTextMessageFacade(createMockAmqpConsumer(), message);
+
+        try {
+            amqpTextMessageFacade.getText();
+            fail("expected exception not thrown");
+        } catch (IllegalStateException ise) {
+            // expected
+        }
     }
 }

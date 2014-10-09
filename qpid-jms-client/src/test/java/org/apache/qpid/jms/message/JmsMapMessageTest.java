@@ -367,6 +367,11 @@ public class JmsMapMessageTest {
         assertEquals("value not as expected", value, mapMessage.getBoolean(name));
 
         assertGetMapEntryEquals(mapMessage, name, String.valueOf(value), String.class);
+
+        mapMessage.setBoolean(name, !value);
+        assertEquals("value not as expected", !value, mapMessage.getBoolean(name));
+
+        assertGetMapEntryEquals(mapMessage, name, String.valueOf(!value), String.class);
     }
 
     /**

@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.math.BigInteger;
+import java.net.URI;
 import java.util.Arrays;
 
 import javax.jms.JMSException;
@@ -34,7 +35,9 @@ import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 import javax.jms.StreamMessage;
 
+import org.apache.qpid.jms.message.facade.JmsStreamMessageFacade;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
+import org.apache.qpid.jms.message.facade.defaults.JmsDefaultStreamMessageFacade;
 import org.junit.Test;
 
 public class JmsStreamMessageTest {
@@ -1049,6 +1052,29 @@ public class JmsStreamMessageTest {
         assertGetStreamEntryThrowsMessageFormatException(streamMessage, Long.class);
         assertGetStreamEntryThrowsMessageFormatException(streamMessage, Float.class);
         assertGetStreamEntryThrowsMessageFormatException(streamMessage, byte[].class);
+    }
+
+    // ========= read failures ========
+
+    @Test(expected=NullPointerException.class)
+    public void testReadBytesWithNullArrayThrowsNPE() throws JMSException {
+        JmsStreamMessage streamMessage = factory.createStreamMessage();
+        streamMessage.reset();
+        streamMessage.readBytes(null);
+    }
+
+    @Test
+    public void testReadObjectGetsInvalidObjectThrowsMFE() throws Exception {
+        JmsStreamMessageFacade facade = new JmsDefaultStreamMessageFacade();
+        JmsStreamMessage streamMessage = new JmsStreamMessage(facade);
+        facade.put(new URI("test://test"));
+        streamMessage.reset();
+
+        try {
+            streamMessage.readObject();
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+        }
     }
 
     // ========= utility methods ========

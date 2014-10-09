@@ -27,15 +27,24 @@ import java.net.URI;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
+import org.apache.qpid.jms.meta.JmsConnectionInfo;
+import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.provider.Provider;
+import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.util.IdGenerator;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test basic functionality around JmsConnection
  */
 public class JmsConnectionTest {
+
+    private static final Logger LOG = LoggerFactory.getLogger(JmsConnectionTest.class);
 
     private final Provider provider = Mockito.mock(Provider.class);
     private final IdGenerator clientIdGenerator = new IdGenerator();
@@ -44,6 +53,15 @@ public class JmsConnectionTest {
     public void testJmsConnectionThrowsJMSExceptionProviderStartFails() throws JMSException, IllegalStateException, IOException {
         Mockito.doThrow(IOException.class).when(provider).start();
         new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+    }
+
+    @Test
+    public void testStateAfterCreate() throws JMSException {
+        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+
+        assertFalse(connection.isStarted());
+        assertFalse(connection.isClosed());
+        assertFalse(connection.isConnected());
     }
 
     @Test
@@ -93,5 +111,27 @@ public class JmsConnectionTest {
         assertFalse(connection.removeConnectionListener(listener));
         connection.addConnectionListener(listener);
         assertTrue(connection.removeConnectionListener(listener));
+    }
+
+    @Test
+    public void testConnectionStart() throws JMSException, IOException {
+
+        Mockito.doAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                Object[] args = invocation.getArguments();
+                LOG.debug("Handling provider create call");
+                if (args[0] instanceof JmsConnectionInfo) {
+                    ProviderFuture request = (ProviderFuture) args[1];
+                    request.onSuccess();
+                }
+                return null;
+            }
+        }).when(provider).create(Mockito.any(JmsResource.class), Mockito.any(ProviderFuture.class));
+
+        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        assertFalse(connection.isConnected());
+        connection.start();
+        assertTrue(connection.isConnected());
     }
 }

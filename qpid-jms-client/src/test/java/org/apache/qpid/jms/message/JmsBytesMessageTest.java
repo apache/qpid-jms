@@ -139,10 +139,10 @@ public class JmsBytesMessageTest {
 
     /**
      * Test that calling {@link BytesMessage#clearBody()} of a received message
-     * causes the body of the underlying {@link AmqpBytesMessage} to be emptied.
+     * causes the facade input stream to be empty and body length to return 0.
      */
     @Test
-    public void testClearBodyOnReceivedBytesMessageClearsUnderlyingMessageBody() throws Exception {
+    public void testClearBodyOnReceivedBytesMessageClearsFacadeInputStream() throws Exception {
         byte[] content = "myBytesData".getBytes();
         JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
         facade.setBody(content);
@@ -150,9 +150,11 @@ public class JmsBytesMessageTest {
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
         bytesMessage.onDispatch();
 
-        assertTrue("Expected message content but none was present", facade.getBody().length > 0);
+        assertTrue("Expected message content but none was present", facade.getBodyLength() > 0);
+        assertEquals("Expected data from facade", 1, facade.getInputStream().read(new byte[1]));
         bytesMessage.clearBody();
-        assertTrue("Expected no message content but was present", facade.getBody().length == 0);
+        assertTrue("Expected no message content from facade", facade.getBodyLength() == 0);
+        assertEquals("Expected no data from facade, but got some", END_OF_STREAM, facade.getInputStream().read(new byte[1]));
     }
 
     /**
@@ -425,18 +427,13 @@ public class JmsBytesMessageTest {
     }
 
     @Test
-    public void testClearBody() throws JMSException {
+    public void testClearBodyOnNewMessage() throws JMSException {
         JmsBytesMessage bytesMessage = factory.createBytesMessage();
-        try {
-            bytesMessage.writeInt(1);
-            bytesMessage.clearBody();
-            assertFalse(bytesMessage.isReadOnlyBody());
-            bytesMessage.writeInt(1);
-            bytesMessage.readInt();
-        } catch (MessageNotReadableException mnwe) {
-        } catch (MessageNotWriteableException mnwe) {
-            assertTrue(false);
-        }
+        bytesMessage.writeInt(1);
+        bytesMessage.clearBody();
+        assertFalse(bytesMessage.isReadOnlyBody());
+        bytesMessage.reset();
+        assertEquals(0, bytesMessage.getBodyLength());
     }
 
     @Test

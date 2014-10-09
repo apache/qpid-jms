@@ -137,14 +137,6 @@ public final class JmsDefaultBytesMessageFacade extends JmsDefaultMessageFacade 
     }
 
     @Override
-    public byte[] getBody() throws JMSException {
-        if (bytesIn != null || bytesOut != null) {
-            throw new JMSException("Body is in use, call reset before attempting to access it.");
-        }
-        return content.copy().array();
-    }
-
-    @Override
     public void setBody(byte[] content) throws JMSException {
         if (bytesIn != null || bytesOut != null) {
             throw new JMSException("Body is in use, call reset before attempting to access it.");

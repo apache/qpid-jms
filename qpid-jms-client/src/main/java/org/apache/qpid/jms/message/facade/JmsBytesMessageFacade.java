@@ -88,16 +88,6 @@ public interface JmsBytesMessageFacade extends JmsMessageFacade {
     int getBodyLength();
 
     /**
-     * Returns a copy of the body of the message in a new byte[] instance.  If the
-     * message body is empty an empty byte[] will be returned.
-     *
-     * @returns a new byte[] that contains a copy of the contents of this message.
-     *
-     * @throws JMSException if an error occurs accessing the message body.
-     */
-    byte[] getBody() throws JMSException;
-
-    /**
      * Sets the contents of the message from the given byte[] the given bytes are
      * copied into the body of the message.  Any previous message body content is
      * discarded.

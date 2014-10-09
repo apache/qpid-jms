@@ -70,6 +70,20 @@ public class JmsObjectMessageTest {
     }
 
     /**
+     * Test that calling {@link ObjectMessage#toString()} returns a meaningful value
+     */
+    @Test
+    public void testToString() throws Exception {
+        String content = "myStringContent";
+        JmsObjectMessageFacade facade = new JmsDefaultObjectMessageFacade();
+        facade.setObject(content);
+        JmsObjectMessage objectMessage = new JmsObjectMessage(facade);
+        objectMessage.onDispatch();
+
+        assertTrue(objectMessage.toString().startsWith("JmsObjectMessageFacade"));
+    }
+
+    /**
      * Test that calling {@link ObjectMessage#clearBody()} causes a received
      * message to become writable
      */

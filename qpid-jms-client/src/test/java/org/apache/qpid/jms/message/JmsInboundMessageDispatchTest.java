@@ -32,6 +32,43 @@ import org.junit.Test;
 public class JmsInboundMessageDispatchTest {
 
     @Test
+    public void testEqualsWithNullAndOtherTypes() {
+        JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch(1);
+        assertFalse(envelope.equals(null));
+        assertFalse(envelope.equals(""));
+    }
+
+    @Test
+    public void testEqualAndHashCodeWithNotInitializedAndInitializedEnvelopes() {
+        JmsSessionId sessionId = new JmsSessionId("con", 1);
+
+        long sequence = 1;
+        JmsInboundMessageDispatch envelope1 = new JmsInboundMessageDispatch(sequence);
+
+        JmsInboundMessageDispatch envelope2 = new JmsInboundMessageDispatch(sequence);
+        JmsConsumerId consumerId2 = new JmsConsumerId(sessionId, 2);
+        envelope2.setConsumerId(consumerId2);
+        envelope2.setMessageId("myMessageId");
+
+        assertFalse("objects should not be equal", envelope1.equals(envelope2));
+        assertFalse("objects should still not be equal", envelope2.equals(envelope1));
+
+        // Not strictly a requirement, but expected in this case
+        assertNotEquals("hashCodes should not be the same", envelope1.hashCode(), envelope2.hashCode());
+
+        envelope2.setMessageId(null);
+        assertFalse("objects should not be equal", envelope1.equals(envelope2));
+        assertFalse("objects should still not be equal", envelope2.equals(envelope1));
+
+        // Not strictly a requirement, but expected in this case
+        assertNotEquals("hashCodes should not be the same", envelope1.hashCode(), envelope2.hashCode());
+
+        envelope2.setConsumerId(null);
+        assertTrue("objects should be equal", envelope1.equals(envelope2));
+        assertTrue("objects should still be equal", envelope2.equals(envelope1));
+    }
+
+    @Test
     public void testEqualAndHashCodeWithSameSequenceOnly() {
         int sequence = 1;
         JmsInboundMessageDispatch envelope1 = new JmsInboundMessageDispatch(sequence);

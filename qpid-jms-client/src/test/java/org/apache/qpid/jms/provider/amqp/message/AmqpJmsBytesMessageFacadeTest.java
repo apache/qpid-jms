@@ -26,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
@@ -36,6 +37,7 @@ import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
+import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.message.Message;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -153,6 +155,65 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
 
         // verify no more bytes remain, i.e EOS
         assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, bytesStream.read(new byte[1]));
+    }
+
+    @Test
+    public void testClearBodySetsBodyLength0AndCausesEmptyInputStream() throws Exception {
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
+
+        byte[] bytes = "myBytes".getBytes();
+        amqpBytesMessageFacade.setBody(bytes);
+        amqpBytesMessageFacade.clearBody();
+
+        amqpBytesMessageFacade.clearBody();
+        assertTrue("Expected no message content from facade", amqpBytesMessageFacade.getBodyLength() == 0);
+        assertEquals("Expected no data from facade, but got some", END_OF_STREAM, amqpBytesMessageFacade.getInputStream().read(new byte[1]));
+
+        Section body = amqpBytesMessageFacade.getAmqpMessage().getBody();
+        assertTrue(body instanceof Data);
+        Binary value = ((Data) body).getValue();
+        assertNotNull(value);
+        assertEquals(0, value.getLength());
+    }
+
+    @Test
+    public void testClearBodyWithExistingInputStream() throws Exception {
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
+
+        byte[] bytes = "myBytes".getBytes();
+        amqpBytesMessageFacade.setBody(bytes);
+
+        @SuppressWarnings("unused")
+        InputStream unused = amqpBytesMessageFacade.getInputStream();
+
+        amqpBytesMessageFacade.clearBody();
+
+        assertEquals("Expected no data from facade, but got some", END_OF_STREAM, amqpBytesMessageFacade.getInputStream().read(new byte[1]));
+
+        Section body = amqpBytesMessageFacade.getAmqpMessage().getBody();
+        assertTrue(body instanceof Data);
+        Binary value = ((Data) body).getValue();
+        assertNotNull(value);
+        assertEquals(0, value.getLength());
+    }
+
+    @Test
+    public void testClearBodyWithExistingOutputStream() throws Exception {
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
+
+        byte[] bytes = "myBytes".getBytes();
+        amqpBytesMessageFacade.setBody(bytes);
+
+        @SuppressWarnings("unused")
+        OutputStream unused = amqpBytesMessageFacade.getOutputStream();
+
+        amqpBytesMessageFacade.clearBody();
+
+        Section body = amqpBytesMessageFacade.getAmqpMessage().getBody();
+        assertTrue(body instanceof Data);
+        Binary value = ((Data) body).getValue();
+        assertNotNull(value);
+        assertEquals(0, value.getLength());
     }
 
     // ---------- test handling of received messages -------------------------//

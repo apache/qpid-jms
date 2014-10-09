@@ -505,10 +505,6 @@ public class JmsMessage implements javax.jms.Message {
         return expireTime > 0 && System.currentTimeMillis() > expireTime;
     }
 
-    public void incrementRedeliveryCount() {
-        facade.setDeliveryCount(facade.getDeliveryCount() + 1);
-    }
-
     public JmsMessageFacade getFacade() {
         return this.facade;
     }

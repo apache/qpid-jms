@@ -267,7 +267,8 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             // TODO - increment redelivery counter and apply connection redelivery policy
             //        to those messages that are past max redlivery.
             JmsInboundMessageDispatch envelope = (JmsInboundMessageDispatch) delivery.getContext();
-            envelope.onMessageRedelivered();
+            envelope.getMessage().getFacade().setRedeliveryCount(
+                envelope.getMessage().getFacade().getRedeliveryCount() + 1);
             deliver(envelope);
         }
         delivered.clear();

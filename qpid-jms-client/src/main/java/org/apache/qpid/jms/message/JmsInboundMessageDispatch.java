@@ -49,10 +49,6 @@ public class JmsInboundMessageDispatch extends JmsAbstractResourceId {
         this.consumerId = consumerId;
     }
 
-    public void onMessageRedelivered() {
-        this.message.incrementRedeliveryCount();
-    }
-
     public void setMessageId(Object object) {
         this.messageId = object;
     }

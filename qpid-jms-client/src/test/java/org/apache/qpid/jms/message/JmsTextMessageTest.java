@@ -28,8 +28,6 @@ import javax.jms.JMSException;
 import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 
-import org.apache.qpid.jms.message.JmsMessageFactory;
-import org.apache.qpid.jms.message.JmsTextMessage;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
 import org.junit.Test;
 
@@ -112,21 +110,11 @@ public class JmsTextMessageTest {
         }
     }
 
-    // TODO - Fix toString and null body.
     @Test
-    public void testShortText() throws Exception {
-        String shortText = "Content";
-        JmsTextMessage shortMessage = factory.createTextMessage();
-        shortMessage.setText(shortText);
-        //assertTrue(shortMessage.toString().contains("text = " + shortText));
-        assertTrue(shortMessage.getText().equals(shortText));
-
-        String longText = "Very very very very veeeeeeery loooooooooooooooooooooooooooooooooong text";
-        // String longExpectedText = "Very very very very veeeeeeery looooooooooooo...ooooong text";
-        JmsTextMessage longMessage = factory.createTextMessage();
-        longMessage.setText(longText);
-        //assertTrue(longMessage.toString().contains("text = " + longExpectedText));
-        assertTrue(longMessage.getText().equals(longText));
+    public void testToString() throws Exception {
+        JmsTextMessage textMessage = factory.createTextMessage();
+        textMessage.onDispatch();
+        assertTrue(textMessage.toString().startsWith("JmsTextMessage"));
     }
 
     @Test

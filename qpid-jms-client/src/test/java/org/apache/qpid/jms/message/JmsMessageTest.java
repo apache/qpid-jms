@@ -80,6 +80,12 @@ public class JmsMessageTest {
     }
 
     @Test
+    public void testToString() throws Exception {
+        JmsMessage msg = factory.createMessage();
+        assertTrue(msg.toString().startsWith("JmsMessage"));
+    }
+
+    @Test
     public void testHashCode() throws Exception {
         JmsMessage msg = factory.createMessage();
         msg.setJMSMessageID(this.jmsMessageID);

@@ -399,7 +399,7 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
 
     @Override
     public String toString() {
-        return super.toString() + " JmsBytesMessage{ " + "bytesOut = " + dataOut + ", dataIn = " + dataIn + " }";
+        return "JmsBytesMessage { " + facade + " }";
     }
 
     private void initializeWriting() throws JMSException {

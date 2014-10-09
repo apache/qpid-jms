@@ -42,6 +42,12 @@ public class JmsBytesMessageTest {
 
     private final JmsMessageFactory factory = new JmsDefaultMessageFactory();
 
+    @Test
+    public void testToString() throws Exception {
+        JmsBytesMessage bytesMessage = factory.createBytesMessage();
+        assertTrue(bytesMessage.toString().startsWith("JmsBytesMessage"));
+    }
+
     /**
      * Test that calling {@link BytesMessage#getBodyLength()} on a new message which has been
      * populated and {@link BytesMessage#reset()} causes the length to be reported correctly.

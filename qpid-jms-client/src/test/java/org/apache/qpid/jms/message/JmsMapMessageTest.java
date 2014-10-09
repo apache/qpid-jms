@@ -47,6 +47,12 @@ public class JmsMapMessageTest {
     // ======= general =========
 
     @Test
+    public void testToString() throws Exception {
+        JmsMapMessage mapMessage = factory.createMapMessage();
+        assertTrue(mapMessage.toString().startsWith("JmsMapMessage"));
+    }
+
+    @Test
     public void testGetMapNamesWithNewMessageToSendReturnsEmptyEnumeration() throws Exception {
         JmsMapMessage mapMessage = factory.createMapMessage();
         Enumeration<?> names = mapMessage.getMapNames();

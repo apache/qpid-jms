@@ -472,8 +472,7 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
 
     @Override
     public String toString() {
-        // TODO - Better toString()
-        return super.toString() + " JmsStreamMessage{ " + facade + " }";
+        return "JmsStreamMessage { " + facade.toString() + " }";
     }
 
     private void checkBytesInFlight() throws MessageFormatException {

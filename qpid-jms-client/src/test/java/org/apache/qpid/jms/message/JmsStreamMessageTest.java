@@ -37,14 +37,18 @@ import javax.jms.StreamMessage;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
 import org.junit.Test;
 
-/**
- *
- */
 public class JmsStreamMessageTest {
 
     private final JmsMessageFactory factory = new JmsDefaultMessageFactory();
 
     // ======= general =========
+
+    @Test
+    public void testToString() throws Exception {
+        JmsStreamMessage streamMessage = factory.createStreamMessage();
+        streamMessage.onDispatch();
+        assertTrue(streamMessage.toString().startsWith("JmsStreamMessage"));
+    }
 
     @Test
     public void testReadWithEmptyStreamThrowsMEOFE() throws Exception {

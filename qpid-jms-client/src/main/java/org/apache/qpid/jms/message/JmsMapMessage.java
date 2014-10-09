@@ -300,8 +300,7 @@ public class JmsMapMessage extends JmsMessage implements MapMessage {
 
     @Override
     public String toString() {
-        // TODO - better toString implementation.
-        return "JmsMapMessage{ }";
+        return "JmsMapMessage { " + facade + " }";
     }
 
     private void put(String name, Object value) throws JMSException {

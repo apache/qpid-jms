@@ -564,6 +564,11 @@ public class JmsMessage implements javax.jms.Message {
         facade.setRedelivered(redelivered);
     }
 
+    @Override
+    public String toString() {
+        return "JmsMessage { " + facade + " }";
+    }
+
     protected void checkReadOnlyProperties() throws MessageNotWriteableException {
         if (readOnlyProperties) {
             throw new MessageNotWriteableException("Message properties are read-only");

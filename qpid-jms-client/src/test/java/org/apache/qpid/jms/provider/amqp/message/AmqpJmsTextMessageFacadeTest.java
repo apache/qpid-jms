@@ -30,6 +30,8 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Map;
 
+import javax.jms.JMSException;
+
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.DataDescribedType;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
@@ -237,6 +239,23 @@ public class AmqpJmsTextMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
             amqpTextMessageFacade.getText();
             fail("expected exception not thrown");
         } catch (IllegalStateException ise) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testGetTextWithUnknownEncodedDataThrowsJMSException() throws Exception {
+        String encodedString = "myEncodedString";
+        byte[] encodedBytes = encodedString.getBytes(Charset.forName("UTF-16"));
+
+        Message message = Message.Factory.create();
+        message.setBody(new Data(new Binary(encodedBytes)));
+        AmqpJmsTextMessageFacade amqpTextMessageFacade = createReceivedTextMessageFacade(createMockAmqpConsumer(), message);
+
+        try {
+            amqpTextMessageFacade.getText();
+            fail("expected exception not thrown");
+        } catch (JMSException ise) {
             // expected
         }
     }

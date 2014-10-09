@@ -50,9 +50,6 @@ import org.apache.qpid.proton.message.Message;
  */
 public class AmqpJmsMessageBuilder {
 
-    private AmqpJmsMessageBuilder() {
-    }
-
     /**
      * Create a new JmsMessage and underlying JmsMessageFacade that represents the proper
      * message type for the incoming AMQP message.

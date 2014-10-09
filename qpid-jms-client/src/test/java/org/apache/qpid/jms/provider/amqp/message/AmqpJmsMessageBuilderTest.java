@@ -61,6 +61,11 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         mockConsumer = Mockito.mock(AmqpConsumer.class);
     }
 
+    @Test
+    public void testCreate() {
+        new AmqpJmsMessageBuilder();
+    }
+
     // =============== With The Message Type Annotation =========
     // ==========================================================
 

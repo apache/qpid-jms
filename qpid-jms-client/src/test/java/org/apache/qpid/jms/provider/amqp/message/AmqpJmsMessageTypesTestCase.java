@@ -54,6 +54,14 @@ public class AmqpJmsMessageTypesTestCase extends QpidJmsTestCase {
         return new AmqpJmsTextMessageFacade(amqpConsumer, message);
     }
 
+    protected AmqpJmsBytesMessageFacade createNewBytesMessageFacade() {
+        return new AmqpJmsBytesMessageFacade(createMockAmqpConnection());
+    }
+
+    protected AmqpJmsBytesMessageFacade createReceivedBytesMessageFacade(AmqpConsumer amqpConsumer, Message message) {
+        return new AmqpJmsBytesMessageFacade(amqpConsumer, message);
+    }
+
     protected AmqpJmsMapMessageFacade createNewMapMessageFacade() {
         return new AmqpJmsMapMessageFacade(createMockAmqpConnection());
     }

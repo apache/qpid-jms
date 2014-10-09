@@ -18,6 +18,7 @@ package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_BYTES_MESSAGE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MSG_TYPE;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
@@ -46,7 +47,6 @@ import org.apache.qpid.proton.message.Message;
  */
 public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements JmsBytesMessageFacade {
 
-    private static final String CONTENT_TYPE = "application/octet-stream";
     private static final Binary EMPTY_BODY = new Binary(new byte[0]);
     private static final Data EMPTY_DATA = new Data(EMPTY_BODY);
 
@@ -61,7 +61,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
      */
     public AmqpJmsBytesMessageFacade(AmqpConnection connection) {
         super(connection);
-        setContentType(CONTENT_TYPE);
+        setContentType(OCTET_STREAM_CONTENT_TYPE);
         setMessageAnnotation(JMS_MSG_TYPE, JMS_BYTES_MESSAGE);
     }
 

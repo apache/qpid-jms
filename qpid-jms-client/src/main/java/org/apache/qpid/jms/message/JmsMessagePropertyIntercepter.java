@@ -418,11 +418,10 @@ public class JmsMessagePropertyIntercepter {
 
             @Override
             public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
-                String rc = (String) TypeConversionSupport.convert(value, String.class);
-                if (rc == null) {
+                if (!(value instanceof String)) {
                     throw new JMSException("Property JMSXUserID cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setUserId(rc);
+                message.setUserId((String) value);
             }
 
             @Override

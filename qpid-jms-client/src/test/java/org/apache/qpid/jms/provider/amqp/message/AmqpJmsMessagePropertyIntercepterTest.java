@@ -24,13 +24,44 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import javax.jms.JMSException;
+import javax.jms.MessageFormatException;
 
 import org.junit.Test;
 import org.mockito.Mockito;
 
 public class AmqpJmsMessagePropertyIntercepterTest {
+
+    //---------- Non-Intercepted -------------------------------------------------//
+
+    @Test
+    public void testGetPropertyWithNonInterceptedNameCallsIntoFacade() throws JMSException {
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        assertNull(AmqpJmsMessagePropertyIntercepter.getProperty(message, "SomeRandomPropertyName"));
+        Mockito.verify(message).getApplicationProperty(Mockito.anyString());
+    }
+
+    @Test
+    public void testSetPropertyWithNonInterceptedNameCallsIntoFacade() throws JMSException {
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        AmqpJmsMessagePropertyIntercepter.setProperty(message, "SomeRandomPropertyName", "Something");
+        Mockito.doThrow(new JMSException("Expected")).when(message).setApplicationProperty(Mockito.anyString(), Mockito.anyString());
+        try {
+            AmqpJmsMessagePropertyIntercepter.setProperty(message, "SomeRandomPropertyName", "Something");
+            fail("Should have thrown");
+        } catch (JMSException ex) {
+            assertEquals("Expected", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void testPropertyExistsWithNonInterceptedNameCallsIntoFacade() throws JMSException {
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        assertFalse(AmqpJmsMessagePropertyIntercepter.propertyExists(message, "SomeRandomPropertyName"));
+        Mockito.verify(message).applicationPropertyExists(Mockito.anyString());
+    }
 
     //-------- JMS_AMQP_TTL --------------------------------------------------//
 
@@ -75,6 +106,30 @@ public class AmqpJmsMessagePropertyIntercepterTest {
         Mockito.when(message.hasAmqpTimeToLiveOverride()).thenReturn(true);
         Mockito.when(message.getAmqpTimeToLiveOverride()).thenReturn(65536L);
         assertTrue(AmqpJmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_AMQP_TTL));
+    }
+
+    @Test
+    public void testJmsAmqpTtlIPropertExistsWhenSet() throws JMSException {
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        Mockito.when(message.hasAmqpTimeToLiveOverride()).thenReturn(true);
+        Mockito.when(message.getAmqpTimeToLiveOverride()).thenReturn(65536L);
+        assertTrue(AmqpJmsMessagePropertyIntercepter.propertyExists(message, JMS_AMQP_TTL));
+    }
+
+    @Test
+    public void testJmsAmqpTtlPropertExistsWhenNotSet() throws JMSException {
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        assertFalse(AmqpJmsMessagePropertyIntercepter.propertyExists(message, JMS_AMQP_TTL));
+    }
+
+    @Test
+    public void testSetJmsAmqpTtlConversionChecks() throws JMSException {
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        try {
+            AmqpJmsMessagePropertyIntercepter.setProperty(message, JMS_AMQP_TTL, new byte[1]);
+            fail("Should have thrown an exception for this call");
+        } catch (JMSException e) {
+        }
     }
 
     //-------- JMS_AMQP_REPLY_TO_GROUP_ID ------------------------------------//
@@ -122,6 +177,33 @@ public class AmqpJmsMessagePropertyIntercepterTest {
         assertTrue(AmqpJmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_AMQP_REPLY_TO_GROUP_ID));
     }
 
+    @Test
+    public void testJmsAmqpReplyToGroupIdPropertExistsWhenSet() throws JMSException {
+        String testValue = "ReplyToGroupId";
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        Mockito.when(message.getReplyToGroupId()).thenReturn(testValue);
+        assertTrue(AmqpJmsMessagePropertyIntercepter.propertyExists(message, JMS_AMQP_REPLY_TO_GROUP_ID));
+    }
+
+    @Test
+    public void testJmsAmqpReplyToGroupIdPropertExistsWhenNotSet() throws JMSException {
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        Mockito.when(message.getReplyToGroupId()).thenReturn(null);
+        assertFalse(AmqpJmsMessagePropertyIntercepter.propertyExists(message, JMS_AMQP_REPLY_TO_GROUP_ID));
+        Mockito.when(message.getReplyToGroupId()).thenReturn("");
+        assertFalse(AmqpJmsMessagePropertyIntercepter.propertyExists(message, JMS_AMQP_REPLY_TO_GROUP_ID));
+    }
+
+    @Test
+    public void testSetJmsAmqpReplyToGroupIdConversionChecks() throws JMSException {
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        try {
+            AmqpJmsMessagePropertyIntercepter.setProperty(message, JMS_AMQP_REPLY_TO_GROUP_ID, new byte[1]);
+            fail("Should have thrown an exception for this call");
+        } catch (JMSException e) {
+        }
+    }
+
     //-------- JMS_AMQP_TYPED_ENCODING ---------------------------------------//
 
     @Test
@@ -134,6 +216,16 @@ public class AmqpJmsMessagePropertyIntercepterTest {
         AmqpJmsObjectMessageFacade message = Mockito.mock(AmqpJmsObjectMessageFacade.class);
         AmqpJmsMessagePropertyIntercepter.setProperty(message, JMS_AMQP_TYPED_ENCODING, true);
         Mockito.verify(message).setUseAmqpTypedEncoding(true);
+    }
+
+    @Test
+    public void testSetJmsAmqpTypedEncodingOnNonObjectMessage() throws JMSException {
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        try {
+            AmqpJmsMessagePropertyIntercepter.setProperty(message, JMS_AMQP_TYPED_ENCODING, true);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+        }
     }
 
     @Test
@@ -168,5 +260,35 @@ public class AmqpJmsMessagePropertyIntercepterTest {
         AmqpJmsObjectMessageFacade message = Mockito.mock(AmqpJmsObjectMessageFacade.class);
         Mockito.when(message.isAmqpTypedEncoding()).thenReturn(true);
         assertTrue(AmqpJmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_AMQP_TYPED_ENCODING));
+    }
+
+    @Test
+    public void testJmsAmqpTypedEncodingPropertExistsWhenSet() throws JMSException {
+        AmqpJmsObjectMessageFacade message = Mockito.mock(AmqpJmsObjectMessageFacade.class);
+        Mockito.when(message.isAmqpTypedEncoding()).thenReturn(true);
+        assertTrue(AmqpJmsMessagePropertyIntercepter.propertyExists(message, JMS_AMQP_TYPED_ENCODING));
+    }
+
+    @Test
+    public void testJmsAmqpTypedEncodingdPropertExistsWhenNotSet() throws JMSException {
+        AmqpJmsObjectMessageFacade message = Mockito.mock(AmqpJmsObjectMessageFacade.class);
+        Mockito.when(message.isAmqpTypedEncoding()).thenReturn(false);
+        assertFalse(AmqpJmsMessagePropertyIntercepter.propertyExists(message, JMS_AMQP_TYPED_ENCODING));
+    }
+
+    @Test
+    public void testJmsAmqpTypedEncodingdPropertExistsWhenNotAnObjectMessage() throws JMSException {
+        AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        assertFalse(AmqpJmsMessagePropertyIntercepter.propertyExists(message, JMS_AMQP_TYPED_ENCODING));
+    }
+
+    @Test
+    public void testSetJmsAmqpTypedEncodingConversionChecks() throws JMSException {
+        AmqpJmsObjectMessageFacade message = Mockito.mock(AmqpJmsObjectMessageFacade.class);
+        try {
+            AmqpJmsMessagePropertyIntercepter.setProperty(message, JMS_AMQP_TYPED_ENCODING, new byte[1]);
+            fail("Should have thrown an exception for this call");
+        } catch (JMSException e) {
+        }
     }
 }

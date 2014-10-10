@@ -81,9 +81,9 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
         initializeReading();
         try {
             return this.dataIn.readBoolean();
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (EOFException e) {
             throw JmsExceptionSupport.createMessageEOFException(e);
-        } catch (Throwable e) {
+        } catch (IOException e) {
             throw JmsExceptionSupport.createMessageFormatException(e);
         }
     }
@@ -105,9 +105,9 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
         initializeReading();
         try {
             return this.dataIn.readUnsignedByte();
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (EOFException e) {
             throw JmsExceptionSupport.createMessageEOFException(e);
-        } catch (Throwable e) {
+        } catch (IOException e) {
             throw JmsExceptionSupport.createMessageFormatException(e);
         }
     }
@@ -117,9 +117,9 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
         initializeReading();
         try {
             return this.dataIn.readShort();
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (EOFException e) {
             throw JmsExceptionSupport.createMessageEOFException(e);
-        } catch (Throwable e) {
+        } catch (IOException e) {
             throw JmsExceptionSupport.createMessageFormatException(e);
         }
     }
@@ -129,9 +129,9 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
         initializeReading();
         try {
             return this.dataIn.readUnsignedShort();
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (EOFException e) {
             throw JmsExceptionSupport.createMessageEOFException(e);
-        } catch (Throwable e) {
+        } catch (IOException e) {
             throw JmsExceptionSupport.createMessageFormatException(e);
         }
     }
@@ -141,9 +141,9 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
         initializeReading();
         try {
             return this.dataIn.readChar();
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (EOFException e) {
             throw JmsExceptionSupport.createMessageEOFException(e);
-        } catch (Throwable e) {
+        } catch (IOException e) {
             throw JmsExceptionSupport.createMessageFormatException(e);
         }
     }
@@ -153,9 +153,9 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
         initializeReading();
         try {
             return this.dataIn.readInt();
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (EOFException e) {
             throw JmsExceptionSupport.createMessageEOFException(e);
-        } catch (Throwable e) {
+        } catch (IOException e) {
             throw JmsExceptionSupport.createMessageFormatException(e);
         }
     }
@@ -165,9 +165,9 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
         initializeReading();
         try {
             return this.dataIn.readLong();
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (EOFException e) {
             throw JmsExceptionSupport.createMessageEOFException(e);
-        } catch (Throwable e) {
+        } catch (IOException e) {
             throw JmsExceptionSupport.createMessageFormatException(e);
         }
     }
@@ -177,9 +177,9 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
         initializeReading();
         try {
             return this.dataIn.readFloat();
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (EOFException e) {
             throw JmsExceptionSupport.createMessageEOFException(e);
-        } catch (Throwable e) {
+        } catch (IOException e) {
             throw JmsExceptionSupport.createMessageFormatException(e);
         }
     }
@@ -189,9 +189,9 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
         initializeReading();
         try {
             return this.dataIn.readDouble();
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (EOFException e) {
             throw JmsExceptionSupport.createMessageEOFException(e);
-        } catch (Throwable e) {
+        } catch (IOException e) {
             throw JmsExceptionSupport.createMessageFormatException(e);
         }
     }
@@ -201,9 +201,9 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
         initializeReading();
         try {
             return this.dataIn.readUTF();
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (EOFException e) {
             throw JmsExceptionSupport.createMessageEOFException(e);
-        } catch (Throwable e) {
+        } catch (IOException e) {
             throw JmsExceptionSupport.createMessageFormatException(e);
         }
     }
@@ -235,9 +235,9 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
                 n = -1;
             }
             return n;
-        } catch (ArrayIndexOutOfBoundsException e) {
+        } catch (EOFException e) {
             throw JmsExceptionSupport.createMessageEOFException(e);
-        } catch (Throwable e) {
+        } catch (IOException e) {
             throw JmsExceptionSupport.createMessageFormatException(e);
         }
     }

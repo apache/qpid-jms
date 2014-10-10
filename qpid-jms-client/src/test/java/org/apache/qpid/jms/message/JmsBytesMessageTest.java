@@ -21,17 +21,24 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 
 import javax.jms.BytesMessage;
 import javax.jms.JMSException;
+import javax.jms.MessageEOFException;
 import javax.jms.MessageFormatException;
 import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 
+import org.apache.qpid.jms.message.facade.JmsBytesMessageFacade;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultBytesMessageFacade;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 /**
  * Test for JMS Spec compliance for the JmsBytesMessage class using the default message facade.
@@ -654,6 +661,278 @@ public class JmsBytesMessageTest {
         } catch (MessageNotReadableException e) {
         }
     }
+
+    //---------- Test that errors are trapped correctly ----------------------//
+
+    @Test
+    public void testReadMethodsCaptureEOFExceptionThrowsMessageEOFEx() throws Exception {
+        JmsBytesMessageFacade facade = Mockito.mock(JmsBytesMessageFacade.class);
+        InputStream bytesIn = Mockito.mock(InputStream.class);
+        Mockito.when(facade.getInputStream()).thenReturn(bytesIn);
+
+        Mockito.when(bytesIn.read()).thenThrow(new EOFException());
+        Mockito.when(bytesIn.read(Mockito.any(byte[].class))).thenThrow(new EOFException());
+        Mockito.when(bytesIn.read(Mockito.any(byte[].class), Mockito.anyInt(), Mockito.anyInt())).thenThrow(new EOFException());
+
+        JmsBytesMessage message = new JmsBytesMessage(facade);
+        message.reset();
+
+        try {
+            message.readBoolean();
+        } catch (MessageEOFException ex) {
+            assertTrue(ex.getCause() instanceof EOFException);
+        }
+
+        try {
+            message.readByte();
+        } catch (MessageEOFException ex) {
+            assertTrue(ex.getCause() instanceof EOFException);
+        }
+
+        try {
+            message.readBytes(new byte[10]);
+        } catch (MessageEOFException ex) {
+            assertTrue(ex.getCause() instanceof EOFException);
+        }
+
+        try {
+            message.readBytes(new byte[10], 10);
+        } catch (MessageEOFException ex) {
+            assertTrue(ex.getCause() instanceof EOFException);
+        }
+
+        try {
+            message.readChar();
+        } catch (MessageEOFException ex) {
+            assertTrue(ex.getCause() instanceof EOFException);
+        }
+
+        try {
+            message.readDouble();
+        } catch (MessageEOFException ex) {
+            assertTrue(ex.getCause() instanceof EOFException);
+        }
+
+        try {
+            message.readFloat();
+        } catch (MessageEOFException ex) {
+            assertTrue(ex.getCause() instanceof EOFException);
+        }
+
+        try {
+            message.readInt();
+        } catch (MessageEOFException ex) {
+            assertTrue(ex.getCause() instanceof EOFException);
+        }
+
+        try {
+            message.readLong();
+        } catch (MessageEOFException ex) {
+            assertTrue(ex.getCause() instanceof EOFException);
+        }
+
+        try {
+            message.readShort();
+        } catch (MessageEOFException ex) {
+            assertTrue(ex.getCause() instanceof EOFException);
+        }
+
+        try {
+            message.readUnsignedByte();
+        } catch (MessageEOFException ex) {
+            assertTrue(ex.getCause() instanceof EOFException);
+        }
+
+        try {
+            message.readUnsignedShort();
+        } catch (MessageEOFException ex) {
+            assertTrue(ex.getCause() instanceof EOFException);
+        }
+
+        try {
+            message.readUTF();
+        } catch (MessageEOFException ex) {
+            assertTrue(ex.getCause() instanceof EOFException);
+        }
+    }
+
+    @Test
+    public void testReadMethodsCaptureIOExceptionThrowsJMSEx() throws Exception {
+        JmsBytesMessageFacade facade = Mockito.mock(JmsBytesMessageFacade.class);
+        InputStream bytesIn = Mockito.mock(InputStream.class);
+        Mockito.when(facade.getInputStream()).thenReturn(bytesIn);
+
+        Mockito.when(bytesIn.read()).thenThrow(new IOException());
+        Mockito.when(bytesIn.read(Mockito.any(byte[].class))).thenThrow(new IOException());
+        Mockito.when(bytesIn.read(Mockito.any(byte[].class), Mockito.anyInt(), Mockito.anyInt())).thenThrow(new IOException());
+
+        JmsBytesMessage message = new JmsBytesMessage(facade);
+        message.reset();
+
+        try {
+            message.readBoolean();
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.readByte();
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.readBytes(new byte[10]);
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.readBytes(new byte[10], 10);
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.readChar();
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.readDouble();
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.readFloat();
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.readInt();
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.readLong();
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.readShort();
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.readUnsignedByte();
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.readUnsignedShort();
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.readUTF();
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+    }
+
+    @Test
+    public void testWriteMethodsCaptureIOExceptionThrowsJMSEx() throws Exception {
+        JmsBytesMessageFacade facade = Mockito.mock(JmsBytesMessageFacade.class);
+        OutputStream bytesOut = Mockito.mock(OutputStream.class);
+        Mockito.when(facade.getOutputStream()).thenReturn(bytesOut);
+
+        Mockito.doThrow(new IOException()).when(bytesOut).write(Mockito.anyByte());
+        Mockito.doThrow(new IOException()).when(bytesOut).write(Mockito.any(byte[].class));
+        Mockito.doThrow(new IOException()).when(bytesOut).write(Mockito.any(byte[].class), Mockito.anyInt(), Mockito.anyInt());
+        JmsBytesMessage message = new JmsBytesMessage(facade);
+
+        try {
+            message.writeBoolean(false);
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.writeByte((byte) 128);
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.writeBytes(new byte[10]);
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.writeBytes(new byte[10], 0, 10);
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.writeChar('a');
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.writeDouble(100.0);
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.writeFloat(10.2f);
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.writeInt(125);
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.writeLong(65536L);
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.writeObject("");
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.writeShort((short) 32768);
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+
+        try {
+            message.writeUTF("");
+        } catch (JMSException ex) {
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+    }
+
+    //---------- Test for misc message methods -------------------------------//
 
     @Test
     public void testHashCode() throws Exception {

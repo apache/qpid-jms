@@ -62,6 +62,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
         super(connection);
         setContentType(OCTET_STREAM_CONTENT_TYPE);
         setMessageAnnotation(JMS_MSG_TYPE, JMS_BYTES_MESSAGE);
+        getAmqpMessage().setBody(EMPTY_BODY);
     }
 
     /**
@@ -84,7 +85,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
         copyInto(copy);
 
         Binary payload = getBinaryFromBody();
-        if (payload != null && payload.getLength() > 0) {
+        if (payload.getLength() > 0) {
             byte[] result = new byte[payload.getLength()];
             System.arraycopy(payload.getArray(), payload.getArrayOffset(), result, 0, payload.getLength());
             copy.message.setBody(new Data(new Binary(result)));
@@ -182,6 +183,12 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
         return getBinaryFromBody().getLength();
     }
 
+    /**
+     * Get the underlying Binary object from the body, or
+     * {@link EMPTY_BINARY} if there is none. Never returns null.
+     *
+     * @return the body binary, or empty substitute if there is none
+     */
     private Binary getBinaryFromBody() {
         Section body = getAmqpMessage().getBody();
         Binary result = EMPTY_BINARY;

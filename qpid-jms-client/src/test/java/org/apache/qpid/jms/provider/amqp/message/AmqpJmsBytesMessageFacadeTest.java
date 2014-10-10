@@ -22,6 +22,7 @@ import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.getSy
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -85,15 +86,11 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
     }
 
     @Test
-    public void testNewMessageHasContentTypeButNoBodySection() throws Exception {
-        // TODO: this test assumes we can omit the body section. If we decide otherwise
-        // it should instead check for e.g. a data section containing 0 length binary
+    public void testNewMessageHasContentType() throws Exception {
         AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
         Message protonMessage = amqpBytesMessageFacade.getAmqpMessage();
 
         assertNotNull(protonMessage);
-        assertNull(protonMessage.getBody());
-
         String contentType = protonMessage.getContentType();
         assertNotNull("content type should be set", contentType);
         assertEquals("application/octet-stream", contentType);
@@ -114,9 +111,27 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         assertEquals("Message reports unexpected length", bytes.length, amqpBytesMessageFacade.getBodyLength());
     }
 
+    @Test
+    public void testGetOutputStreamReturnsSameStream() throws Exception {
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
+
+        OutputStream os1 = amqpBytesMessageFacade.getOutputStream();
+        OutputStream os2 = amqpBytesMessageFacade.getOutputStream();
+        assertSame("Got different output streams", os1, os2);
+    }
+
+    @Test
+    public void testGetInputStreamReturnsSameStream() throws Exception {
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
+
+        InputStream is1 = amqpBytesMessageFacade.getInputStream();
+        InputStream is2 = amqpBytesMessageFacade.getInputStream();
+        assertSame("Got different input streams", is1, is2);
+    }
+
     /**
-     * Test that copying a new messages which has been written to creates the data section of the underlying message,
-     * which as tested by {@link #testNewMessageHasContentTypeButNoBodySection} does not exist initially.
+     * Test that copying a new messages which has been written to creates the
+     * non-empty data section of the underlying message.
      */
     @Test
     public void testCopyOnPopulatedNewMessageCreatesDataSection() throws Exception {
@@ -124,7 +139,7 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         Message protonMessage = amqpBytesMessageFacade.getAmqpMessage();
 
         assertNotNull("underlying proton message was null", protonMessage);
-        assertNull("Expected no body section to be present", protonMessage.getBody());
+        assertDataBodyAsExpected(protonMessage, 0);
 
         byte[] bytes = "myBytes".getBytes();
         OutputStream os = amqpBytesMessageFacade.getOutputStream();
@@ -134,6 +149,24 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
 
         assertDataBodyAsExpected(protonMessage, bytes.length);
         assertDataBodyAsExpected(copy.getAmqpMessage(), bytes.length);
+    }
+
+    /**
+     * Test that copying a new messages which has not been written to creates the
+     * (empty) data section of the underlying message on the copy.
+     */
+    @Test
+    public void testCopyOfNewMessageDoesNotCreateDataSection() throws Exception {
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
+        Message origAmqpMessage = amqpBytesMessageFacade.getAmqpMessage();
+
+        assertNotNull("underlying proton message was null", origAmqpMessage);
+        assertDataBodyAsExpected(origAmqpMessage, 0);
+
+        AmqpJmsBytesMessageFacade copy = amqpBytesMessageFacade.copy();
+
+        assertDataBodyAsExpected(origAmqpMessage, 0);
+        assertDataBodyAsExpected(copy.getAmqpMessage(), 0);
     }
 
     @Test
@@ -218,6 +251,15 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
 
         assertEquals("Message reports unexpected length", length, amqpBytesMessageFacade.getBodyLength());
+    }
+
+    @Test
+    public void testGetBodyLengthUsingReceivedMessageWithAmqpValueSectionContainingZeroLengthBinary() throws Exception {
+        Message message = Message.Factory.create();
+        message.setBody(new AmqpValue(new Binary(new byte[0])));
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
+
+        assertEquals("Message reports unexpected length", 0, amqpBytesMessageFacade.getBodyLength());
     }
 
     @Test

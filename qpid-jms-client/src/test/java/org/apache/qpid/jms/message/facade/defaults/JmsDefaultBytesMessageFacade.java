@@ -39,6 +39,13 @@ public final class JmsDefaultBytesMessageFacade extends JmsDefaultMessageFacade 
     private ByteBufOutputStream bytesOut;
     private ByteBufInputStream bytesIn;
 
+    public JmsDefaultBytesMessageFacade() {
+    }
+
+    public JmsDefaultBytesMessageFacade(byte[] content) {
+        this.content = Unpooled.copiedBuffer(content);
+    }
+
     @Override
     public JmsMsgType getMsgType() {
         return JmsMsgType.BYTES;
@@ -135,11 +142,4 @@ public final class JmsDefaultBytesMessageFacade extends JmsDefaultMessageFacade 
     public int getBodyLength() {
         return content.readableBytes();
     }
-
-    @Override
-    public void setBody(byte[] content) throws JMSException {
-        if (bytesIn != null || bytesOut != null) {
-            throw new JMSException("Body is in use, call reset before attempting to access it.");
-        }
-        this.content = Unpooled.copiedBuffer(content);
-    }}
+}

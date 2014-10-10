@@ -82,8 +82,7 @@ public class JmsBytesMessageTest {
     @Test
     public void testReadBytesUsingReceivedMessageWithBodyReturnsBytes() throws Exception {
         byte[] content = "myBytesData".getBytes();
-        JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
-        facade.setBody(content);
+        JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
         bytesMessage.onDispatch();
@@ -107,8 +106,7 @@ public class JmsBytesMessageTest {
     @Test(expected = MessageNotWriteableException.class)
     public void testReceivedBytesMessageThrowsMessageNotWriteableExceptionOnWriteBytes() throws Exception {
         byte[] content = "myBytesData".getBytes();
-        JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
-        facade.setBody(content);
+        JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
         bytesMessage.onDispatch();
@@ -133,8 +131,7 @@ public class JmsBytesMessageTest {
     @Test
     public void testClearBodyOnReceivedBytesMessageMakesMessageWritable() throws Exception {
         byte[] content = "myBytesData".getBytes();
-        JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
-        facade.setBody(content);
+        JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
         bytesMessage.onDispatch();
@@ -150,8 +147,7 @@ public class JmsBytesMessageTest {
     @Test
     public void testClearBodyOnReceivedBytesMessageClearsFacadeInputStream() throws Exception {
         byte[] content = "myBytesData".getBytes();
-        JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
-        facade.setBody(content);
+        JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
         bytesMessage.onDispatch();
@@ -170,8 +166,7 @@ public class JmsBytesMessageTest {
     @Test
     public void testGetBodyLengthOnClearedReceivedMessageThrowsMessageNotReadableException() throws Exception {
         byte[] content = "myBytesData".getBytes();
-        JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
-        facade.setBody(content);
+        JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
         bytesMessage.onDispatch();
@@ -193,8 +188,7 @@ public class JmsBytesMessageTest {
     @Test
     public void testResetOnReceivedBytesMessageResetsMarker() throws Exception {
         byte[] content = "myBytesData".getBytes();
-        JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
-        facade.setBody(content);
+        JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
         bytesMessage.onDispatch();
@@ -220,8 +214,7 @@ public class JmsBytesMessageTest {
     @Test
     public void testResetOnNewlyPopulatedBytesMessageResetsMarkerAndMakesReadable() throws Exception {
         byte[] content = "myBytesData".getBytes();
-        JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade();
-        facade.setBody(content);
+        JmsDefaultBytesMessageFacade facade = new JmsDefaultBytesMessageFacade(content);
 
         JmsBytesMessage bytesMessage = new JmsBytesMessage(facade);
 

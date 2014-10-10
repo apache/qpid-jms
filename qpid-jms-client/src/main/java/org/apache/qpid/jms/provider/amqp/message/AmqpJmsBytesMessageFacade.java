@@ -129,21 +129,6 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
     }
 
     @Override
-    public void setBody(byte[] content) throws JMSException {
-        if (bytesIn != null || bytesOut != null) {
-            throw new JMSException("Body cannot be read until message is reset()");
-        }
-
-        Data body = EMPTY_DATA;
-        if (content != null) {
-            byte[] copy = Arrays.copyOf(content, content.length);
-            body = new Data(new Binary(copy, 0, copy.length));
-        }
-
-        getAmqpMessage().setBody(body);
-    }
-
-    @Override
     public InputStream getInputStream() throws JMSException {
         if (bytesOut != null) {
             throw new IllegalStateException("Body is being written to, cannot perform a read.");

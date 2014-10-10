@@ -86,17 +86,4 @@ public interface JmsBytesMessageFacade extends JmsMessageFacade {
      * @return the number of bytes contained in the body of the message.
      */
     int getBodyLength();
-
-    /**
-     * Sets the contents of the message from the given byte[] the given bytes are
-     * copied into the body of the message.  Any previous message body content is
-     * discarded.
-     *
-     * @param content
-     *        the new bytes to store in this message.
-     *
-     * @throws JMSException if an error occurs accessing the message body.
-     */
-    void setBody(byte[] content) throws JMSException;
-
 }

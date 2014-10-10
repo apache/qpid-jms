@@ -39,7 +39,6 @@ import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.message.Message;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -107,81 +106,59 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
 
         byte[] bytes = "myBytes".getBytes();
-        amqpBytesMessageFacade.setBody(bytes);
+        OutputStream os = amqpBytesMessageFacade.getOutputStream();
+        os.write(bytes);
+
+        amqpBytesMessageFacade.reset();
 
         assertEquals("Message reports unexpected length", bytes.length, amqpBytesMessageFacade.getBodyLength());
     }
 
     /**
-     * Test that setting bytes on a new messages creates the data section of the underlying message,
+     * Test that copying a new messages which has been written to creates the data section of the underlying message,
      * which as tested by {@link #testNewMessageHasContentTypeButNoBodySection} does not exist initially.
      */
     @Test
-    public void testSetBodyOnNewMessageCreatesDataSection() throws Exception {
-        byte[] testBytes = "myTestBytes".getBytes();
+    public void testCopyOnPopulatedNewMessageCreatesDataSection() throws Exception {
         AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
         Message protonMessage = amqpBytesMessageFacade.getAmqpMessage();
 
         assertNotNull("underlying proton message was null", protonMessage);
         assertNull("Expected no body section to be present", protonMessage.getBody());
 
-        amqpBytesMessageFacade.setBody(testBytes);
+        byte[] bytes = "myBytes".getBytes();
+        OutputStream os = amqpBytesMessageFacade.getOutputStream();
+        os.write(bytes);
 
-        assertNotNull("Expected body section to be present", protonMessage.getBody());
-        assertEquals("Unexpected body section type", Data.class, protonMessage.getBody().getClass());
-    }
+        AmqpJmsBytesMessageFacade copy = amqpBytesMessageFacade.copy();
 
-    /**
-     * Test that setting bytes on a new message results in the expected content in the body section
-     * of the underlying message and returned by a new InputStream requested from the message.
-     */
-    @Test
-    public void testSetGetBytesOnNewMessage() throws Exception {
-        byte[] bytes = "myTestBytes".getBytes();
-        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
-        Message protonMessage = amqpBytesMessageFacade.getAmqpMessage();
-
-        amqpBytesMessageFacade.setBody(bytes);
-
-        // retrieve the bytes from the underlying message, check they match
-        Data body = (Data) protonMessage.getBody();
-        assertTrue("Underlying message data section did not contain the expected bytes", Arrays.equals(bytes, body.getValue().getArray()));
-
-        // retrieve the bytes via an InputStream, check they match expected
-        byte[] receivedBytes = new byte[bytes.length];
-        InputStream bytesStream = amqpBytesMessageFacade.getInputStream();
-        bytesStream.read(receivedBytes);
-        assertTrue("Retrieved bytes from input steam did not match expected bytes", Arrays.equals(bytes, receivedBytes));
-
-        // verify no more bytes remain, i.e EOS
-        assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, bytesStream.read(new byte[1]));
+        assertDataBodyAsExpected(protonMessage, bytes.length);
+        assertDataBodyAsExpected(copy.getAmqpMessage(), bytes.length);
     }
 
     @Test
     public void testClearBodySetsBodyLength0AndCausesEmptyInputStream() throws Exception {
-        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
-
         byte[] bytes = "myBytes".getBytes();
-        amqpBytesMessageFacade.setBody(bytes);
-        amqpBytesMessageFacade.clearBody();
+
+        Message message = Message.Factory.create();
+        message.setBody(new Data(new Binary(bytes)));
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
 
         amqpBytesMessageFacade.clearBody();
+
         assertTrue("Expected no message content from facade", amqpBytesMessageFacade.getBodyLength() == 0);
         assertEquals("Expected no data from facade, but got some", END_OF_STREAM, amqpBytesMessageFacade.getInputStream().read(new byte[1]));
 
-        Section body = amqpBytesMessageFacade.getAmqpMessage().getBody();
-        assertTrue(body instanceof Data);
-        Binary value = ((Data) body).getValue();
-        assertNotNull(value);
-        assertEquals(0, value.getLength());
+        assertDataBodyAsExpected(amqpBytesMessageFacade.getAmqpMessage(), 0);
     }
 
     @Test
     public void testClearBodyWithExistingInputStream() throws Exception {
-        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
-
         byte[] bytes = "myBytes".getBytes();
-        amqpBytesMessageFacade.setBody(bytes);
+
+        Message message = Message.Factory.create();
+        message.setBody(new Data(new Binary(bytes)));
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
 
         @SuppressWarnings("unused")
         InputStream unused = amqpBytesMessageFacade.getInputStream();
@@ -190,30 +167,23 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
 
         assertEquals("Expected no data from facade, but got some", END_OF_STREAM, amqpBytesMessageFacade.getInputStream().read(new byte[1]));
 
-        Section body = amqpBytesMessageFacade.getAmqpMessage().getBody();
-        assertTrue(body instanceof Data);
-        Binary value = ((Data) body).getValue();
-        assertNotNull(value);
-        assertEquals(0, value.getLength());
+        assertDataBodyAsExpected(amqpBytesMessageFacade.getAmqpMessage(), 0);
     }
 
     @Test
     public void testClearBodyWithExistingOutputStream() throws Exception {
-        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
-
         byte[] bytes = "myBytes".getBytes();
-        amqpBytesMessageFacade.setBody(bytes);
+
+        Message message = Message.Factory.create();
+        message.setBody(new Data(new Binary(bytes)));
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
 
         @SuppressWarnings("unused")
         OutputStream unused = amqpBytesMessageFacade.getOutputStream();
 
         amqpBytesMessageFacade.clearBody();
 
-        Section body = amqpBytesMessageFacade.getAmqpMessage().getBody();
-        assertTrue(body instanceof Data);
-        Binary value = ((Data) body).getValue();
-        assertNotNull(value);
-        assertEquals(0, value.getLength());
+        assertDataBodyAsExpected(amqpBytesMessageFacade.getAmqpMessage(), 0);
     }
 
     // ---------- test handling of received messages -------------------------//
@@ -367,13 +337,17 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
         Message protonMessage = amqpBytesMessageFacade.getAmqpMessage();
 
-        amqpBytesMessageFacade.setBody(replacement);
+        OutputStream os = amqpBytesMessageFacade.getOutputStream();
+        os.write(replacement);
 
-        // retrieve the new bytes from the underlying message, check they match
+        amqpBytesMessageFacade.reset();
+
+        // Retrieve the new Binary from the underlying message, check they match
+        // (the backing arrays may be different length so not checking arrayEquals)
         Data body = (Data) protonMessage.getBody();
-        assertTrue("Underlying message data section did not contain the expected bytes", Arrays.equals(replacement, body.getValue().getArray()));
+        assertEquals("Underlying message data section did not contain the expected bytes", new Binary(replacement), body.getValue());
 
-        assertEquals("expected length to match replacement bytes", replacement.length, amqpBytesMessageFacade.getBodyLength());
+        assertEquals("expected body length to match replacement bytes", replacement.length, amqpBytesMessageFacade.getBodyLength());
 
         // retrieve the new bytes via an InputStream, check they match expected
         byte[] receivedBytes = new byte[replacement.length];
@@ -385,26 +359,15 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, bytesStream.read(new byte[1]));
     }
 
-    /**
-     * Test that setting bytes on a received message results which had no content type
-     * results in the content type being set.
-     */
-    @Test
-    @Ignore
-    // TODO: failing because we dont set the content type except at creation. Decide if we actually care.
-    public void testSetBytesOnReceivedMessageSetsContentTypeIfBodyTypeChanged() throws Exception {
-        byte[] orig = "myOrigBytes".getBytes();
-        byte[] replacement = "myReplacementBytes".getBytes();
+    //--------- utility methods ----------
 
-        Message message = Message.Factory.create();
-        message.setBody(new AmqpValue(new Binary(orig)));
-        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
-        Message protonMessage = amqpBytesMessageFacade.getAmqpMessage();
-
-        amqpBytesMessageFacade.setBody(replacement);
-
-        String contentType = protonMessage.getContentType();
-        assertNotNull("content type should be set", contentType);
-        assertEquals("application/octet-stream", contentType);
+    private void assertDataBodyAsExpected(Message protonMessage, int length) {
+        Section body = protonMessage.getBody();
+        assertNotNull("Expected body section to be present", body);
+        assertEquals("Unexpected body section type", Data.class, protonMessage.getBody().getClass());
+        Binary value = ((Data) body).getValue();
+        assertNotNull(value);
+        assertEquals("Unexpected body length", length, value.getLength());
     }
+
 }

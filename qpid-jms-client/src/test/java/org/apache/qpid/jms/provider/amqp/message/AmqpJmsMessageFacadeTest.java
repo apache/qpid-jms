@@ -141,6 +141,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
         assertFalse("Should not have a ttl override", amqpMessageFacade.hasAmqpTimeToLiveOverride());
+        assertEquals(0, amqpMessageFacade.getAmqpTimeToLiveOverride());
 
         amqpMessageFacade.setAmqpTimeToLiveOverride(ttl);
 

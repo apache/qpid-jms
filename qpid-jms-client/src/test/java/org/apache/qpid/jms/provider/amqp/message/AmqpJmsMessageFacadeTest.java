@@ -59,6 +59,7 @@ import org.apache.qpid.proton.amqp.messaging.Properties;
 import org.apache.qpid.proton.codec.impl.DataImpl;
 import org.apache.qpid.proton.message.Message;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
@@ -1675,5 +1676,22 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         // There should be one since AmqpTtl is used for an extended option
         assertEquals(1, copy.getPropertyNames().size());
         assertEquals(amqpTtl, copy.getProperty(AmqpMessageSupport.JMS_AMQP_TTL));
+    }
+
+    // ====== AMQP Message Facade misc tests =========
+    // ===============================================
+
+    @Test
+    public void testIsEmpty() {
+        AmqpJmsMessageFacade message = createNewMessageFacade();
+        assertTrue(message.isEmpty());
+    }
+
+    @Test
+    public void testClearBodyRemoveMessageBody() {
+        Message message = Mockito.mock(Message.class);
+        JmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+        amqpMessageFacade.clearBody();
+        Mockito.verify(message).setBody(null);
     }
 }

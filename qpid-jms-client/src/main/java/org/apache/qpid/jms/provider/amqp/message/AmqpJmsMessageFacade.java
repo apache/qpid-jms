@@ -733,14 +733,16 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     @Override
     public void setGroupSequence(int groupSequence) {
         // This wraps it into the upper uint range if a negative was provided
-        message.setGroupSequence(groupSequence);
-    }
 
-    @Override
-    public void clearGroupSequence() {
-        if (message.getProperties() != null) {
-            message.getProperties().setGroupSequence(null);
-        }
+        // TODO Can a zero value clear the property?  Or do we really need specific
+        //      clear methods?
+        // if (groupSequence == 0) {
+        //     if (message.getProperties() != null) {
+        //        message.getProperties().setGroupSequence(null);
+        //     }
+        // }
+
+        message.setGroupSequence(groupSequence);
     }
 
     /**

@@ -349,12 +349,8 @@ public class JmsMessageTest {
     public void testClearPropertiesClearsFacadeGroupSequence() throws JMSException {
         JmsMessageFacade facade = Mockito.mock(JmsMessageFacade.class);
         JmsMessage msg = new JmsMessage(facade);
-
-        Mockito.verify(facade, Mockito.never()).clearGroupSequence();
-
         msg.clearProperties();
-
-        Mockito.verify(facade).clearGroupSequence();
+        Mockito.verify(facade).setGroupSequence(0);
     }
 
     @Test

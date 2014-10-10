@@ -342,9 +342,4 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
     public void setGroupSequence(int groupSequence) {
         this.groupSequence = groupSequence;
     }
-
-    @Override
-    public void clearGroupSequence() {
-        this.groupSequence = 0;
-    }
 }

@@ -40,6 +40,7 @@ import java.util.Set;
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.JMSException;
+import javax.jms.Message;
 
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
@@ -98,6 +99,17 @@ public class JmsMessagePropertyIntercepter {
          */
         boolean propertyExists(JmsMessageFacade message);
 
+        /**
+         * Request that the intercepted property be cleared.  For properties that
+         * cannot be cleared the value should be set to the default value for that
+         * property.
+         *
+         * @param message
+         *        the target message object whose property should be cleared.
+         *
+         * @throws JMSException if an error occurs clearing the property.
+         */
+        void clearProperty(JmsMessageFacade message) throws JMSException;
     }
 
     static {
@@ -135,6 +147,11 @@ public class JmsMessagePropertyIntercepter {
             public boolean propertyExists(JmsMessageFacade message) {
                 return message.getDestination() != null;
             }
+
+            @Override
+            public void clearProperty(JmsMessageFacade message) {
+                message.setDestination(null);
+            }
         });
         PROPERTY_INTERCEPTERS.put(JMS_REPLYTO, new PropertyIntercepter() {
             @Override
@@ -158,6 +175,11 @@ public class JmsMessagePropertyIntercepter {
             public boolean propertyExists(JmsMessageFacade message) {
                 return message.getReplyTo() != null;
             }
+
+            @Override
+            public void clearProperty(JmsMessageFacade message) {
+                message.setReplyTo(null);
+            }
         });
         PROPERTY_INTERCEPTERS.put(JMS_TYPE, new PropertyIntercepter() {
             @Override
@@ -177,6 +199,11 @@ public class JmsMessagePropertyIntercepter {
             @Override
             public boolean propertyExists(JmsMessageFacade message) {
                 return message.getType() != null;
+            }
+
+            @Override
+            public void clearProperty(JmsMessageFacade message) {
+                message.setType(null);
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_DELIVERY_MODE, new PropertyIntercepter() {
@@ -219,6 +246,11 @@ public class JmsMessagePropertyIntercepter {
             public boolean propertyExists(JmsMessageFacade message) {
                 return true;
             }
+
+            @Override
+            public void clearProperty(JmsMessageFacade message) {
+                message.setPersistent(true); // Default value
+            }
         });
         PROPERTY_INTERCEPTERS.put(JMS_PRIORITY, new PropertyIntercepter() {
             @Override
@@ -238,6 +270,11 @@ public class JmsMessagePropertyIntercepter {
             @Override
             public boolean propertyExists(JmsMessageFacade message) {
                 return true;
+            }
+
+            @Override
+            public void clearProperty(JmsMessageFacade message) {
+                message.setPriority(Message.DEFAULT_PRIORITY);
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_MESSAGEID, new PropertyIntercepter() {
@@ -262,6 +299,11 @@ public class JmsMessagePropertyIntercepter {
             public boolean propertyExists(JmsMessageFacade message) {
                 return message.getMessageId() != null;
             }
+
+            @Override
+            public void clearProperty(JmsMessageFacade message) {
+                message.setMessageId(null);
+            }
         });
         PROPERTY_INTERCEPTERS.put(JMS_TIMESTAMP, new PropertyIntercepter() {
             @Override
@@ -281,6 +323,11 @@ public class JmsMessagePropertyIntercepter {
             @Override
             public boolean propertyExists(JmsMessageFacade message) {
                 return message.getTimestamp() > 0;
+            }
+
+            @Override
+            public void clearProperty(JmsMessageFacade message) {
+                message.setTimestamp(0);
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_CORRELATIONID, new PropertyIntercepter() {
@@ -302,6 +349,11 @@ public class JmsMessagePropertyIntercepter {
             public boolean propertyExists(JmsMessageFacade message) {
                 return message.getCorrelationId() != null;
             }
+
+            @Override
+            public void clearProperty(JmsMessageFacade message) throws JMSException {
+                message.setCorrelationId(null);
+            }
         });
         PROPERTY_INTERCEPTERS.put(JMS_EXPIRATION, new PropertyIntercepter() {
             @Override
@@ -321,6 +373,11 @@ public class JmsMessagePropertyIntercepter {
             @Override
             public boolean propertyExists(JmsMessageFacade message) {
                 return message.getExpiration() > 0;
+            }
+
+            @Override
+            public void clearProperty(JmsMessageFacade message) {
+                message.setExpiration(0);
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_REDELIVERED, new PropertyIntercepter() {
@@ -342,6 +399,11 @@ public class JmsMessagePropertyIntercepter {
             public boolean propertyExists(JmsMessageFacade message) {
                 return message.isRedelivered();
             }
+
+            @Override
+            public void clearProperty(JmsMessageFacade message) {
+                message.setRedelivered(false);
+            }
         });
         PROPERTY_INTERCEPTERS.put(JMSX_DELIVERY_COUNT, new PropertyIntercepter() {
             @Override
@@ -361,6 +423,11 @@ public class JmsMessagePropertyIntercepter {
             @Override
             public boolean propertyExists(JmsMessageFacade message) {
                 return true;
+            }
+
+            @Override
+            public void clearProperty(JmsMessageFacade message) {
+                message.setDeliveryCount(1);  // TODO - Delivery Count cleanup
             }
         });
         PROPERTY_INTERCEPTERS.put(JMSX_GROUPID, new PropertyIntercepter() {
@@ -382,6 +449,11 @@ public class JmsMessagePropertyIntercepter {
             public boolean propertyExists(JmsMessageFacade message) {
                 return message.getGroupId() != null;
             }
+
+            @Override
+            public void clearProperty(JmsMessageFacade message) {
+                message.setGroupId(null);
+            }
         });
         PROPERTY_INTERCEPTERS.put(JMSX_GROUPSEQ, new PropertyIntercepter() {
             @Override
@@ -401,6 +473,11 @@ public class JmsMessagePropertyIntercepter {
             @Override
             public boolean propertyExists(JmsMessageFacade message) {
                 return message.getGroupSequence() != 0;
+            }
+
+            @Override
+            public void clearProperty(JmsMessageFacade message) {
+                message.setGroupSequence(0);
             }
         });
         PROPERTY_INTERCEPTERS.put(JMSX_USERID, new PropertyIntercepter() {
@@ -429,6 +506,11 @@ public class JmsMessagePropertyIntercepter {
             @Override
             public boolean propertyExists(JmsMessageFacade message) {
                 return message.getUserId() != null;
+            }
+
+            @Override
+            public void clearProperty(JmsMessageFacade message) {
+                message.setUserId(null);
             }
         });
     }
@@ -505,13 +587,44 @@ public class JmsMessagePropertyIntercepter {
     }
 
     /**
+     * For each of the currently configured message property intercepter instances clear or
+     * reset the value to its default.  Once complete the method will direct the given provider
+     * message facade to clear any message properties that might have been set.
+     *
+     * @param message
+     *        the JmsMessageFacade instance to read from
+     * @param excludeStandardJMSHeaders
+     *        whether the standard JMS header names should be excluded from the returned set
+     *
+     * @throws JMSException if an error occurs while validating the defined property.
+     */
+    public static void clearProperties(JmsMessageFacade message, boolean excludeStandardJMSHeaders) throws JMSException {
+        for (Entry<String, PropertyIntercepter> entry : PROPERTY_INTERCEPTERS.entrySet()) {
+            if (excludeStandardJMSHeaders && STANDARD_HEADERS.contains(entry.getKey())) {
+                continue;
+            }
+
+            entry.getValue().clearProperty(message);
+        }
+
+        message.clearProperties();
+    }
+
+    /**
      * For each of the currently configured message property intercepter instance a
      * string key value is inserted into an Set and returned.
      *
+     * @param message
+     *        the JmsMessageFacade instance to read property names from.
+     *
      * @return a Set<String> containing the names of all intercepted properties.
+     *
+     * @throws JMSException if an error occurs while gathering the message property names.
      */
-    public static Set<String> getAllPropertyNames() {
-        return PROPERTY_INTERCEPTERS.keySet();
+    public static Set<String> getAllPropertyNames(JmsMessageFacade message) throws JMSException {
+        Set<String> names = new HashSet<String>(PROPERTY_INTERCEPTERS.keySet());
+        names.addAll(message.getPropertyNames());
+        return names;
     }
 
     /**
@@ -527,8 +640,10 @@ public class JmsMessagePropertyIntercepter {
      *        whether the standard JMS header names should be excluded from the returned set
      *
      * @return a Set<String> containing the names of all intercepted properties with a value.
+     *
+     * @throws JMSException if an error occurs while gathering the message property names.
      */
-    public static Set<String> getPropertyNames(JmsMessageFacade message, boolean excludeStandardJMSHeaders) {
+    public static Set<String> getPropertyNames(JmsMessageFacade message, boolean excludeStandardJMSHeaders) throws JMSException {
         Set<String> names = new HashSet<String>();
         for (Entry<String, PropertyIntercepter> entry : PROPERTY_INTERCEPTERS.entrySet()) {
             if (excludeStandardJMSHeaders && STANDARD_HEADERS.contains(entry.getKey())) {
@@ -539,6 +654,9 @@ public class JmsMessagePropertyIntercepter {
                 names.add(entry.getKey());
             }
         }
+
+        names.addAll(message.getPropertyNames());
+
         return names;
     }
 }

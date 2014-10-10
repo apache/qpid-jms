@@ -238,16 +238,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void clearProperties() throws JMSException {
-        facade.clearProperties();
-
-        //TODO: Handle any other relevant JMSX properties.
-        //TODO: Possibly push this to the facade or interceptors?
-        //      It makes sense to chain the call to clear through the JmsMessagePropertyIntercepor
-        //      which would in turn call the clear on the facade which could then allow its own
-        //      intercepter to clear any managed JMS_AMQP properties before the facade does it's
-        //      final clear on the message level properties.
-        //Clear property-defined values that are treated as facade-managed, such as GroupSequence.
-        facade.clearGroupSequence();
+        JmsMessagePropertyIntercepter.clearProperties(facade, true);
     }
 
     @Override
@@ -257,9 +248,8 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public Enumeration<?> getPropertyNames() throws JMSException {
-        Set<String> result = facade.getPropertyNames();
+        Set<String> result = new HashSet<String>();
         result.addAll(JmsMessagePropertyIntercepter.getPropertyNames(facade, true));
-
         return Collections.enumeration(result);
     }
 
@@ -271,8 +261,8 @@ public class JmsMessage implements javax.jms.Message {
      * @throws JMSException
      */
     public Enumeration<?> getAllPropertyNames() throws JMSException {
-        Set<String> result = new HashSet<String>(facade.getPropertyNames());
-        result.addAll(JmsMessagePropertyIntercepter.getAllPropertyNames());
+        Set<String> result = new HashSet<String>();
+        result.addAll(JmsMessagePropertyIntercepter.getAllPropertyNames(facade));
         return Collections.enumeration(result);
     }
 

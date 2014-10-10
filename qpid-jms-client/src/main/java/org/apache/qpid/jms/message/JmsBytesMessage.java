@@ -392,12 +392,6 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
     }
 
     @Override
-    public void setObjectProperty(String name, Object value) throws JMSException {
-        initializeWriting();
-        super.setObjectProperty(name, value);
-    }
-
-    @Override
     public String toString() {
         return "JmsBytesMessage { " + facade + " }";
     }

@@ -27,7 +27,6 @@ import io.netty.buffer.Unpooled;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Arrays;
 
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
@@ -47,8 +46,8 @@ import org.apache.qpid.proton.message.Message;
  */
 public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements JmsBytesMessageFacade {
 
-    private static final Binary EMPTY_BODY = new Binary(new byte[0]);
-    private static final Data EMPTY_DATA = new Data(EMPTY_BODY);
+    private static final Binary EMPTY_BINARY = new Binary(new byte[0]);
+    private static final Data EMPTY_BODY = new Data(EMPTY_BINARY);
 
     private transient ByteBufInputStream bytesIn;
     private transient ByteBufOutputStream bytesOut;
@@ -90,7 +89,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
             System.arraycopy(payload.getArray(), payload.getArrayOffset(), result, 0, payload.getLength());
             copy.message.setBody(new Data(new Binary(result)));
         } else {
-            copy.message.setBody(EMPTY_DATA);
+            copy.message.setBody(EMPTY_BODY);
         }
 
         return copy;
@@ -125,7 +124,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
             bytesOut = null;
         }
 
-        message.setBody(EMPTY_DATA);
+        message.setBody(EMPTY_BODY);
     }
 
     @Override
@@ -152,7 +151,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
 
         if (bytesOut == null) {
             bytesOut = new ByteBufOutputStream(Unpooled.buffer());
-            message.setBody(EMPTY_DATA);
+            message.setBody(EMPTY_BODY);
         }
 
         return bytesOut;
@@ -185,7 +184,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
 
     private Binary getBinaryFromBody() {
         Section body = getAmqpMessage().getBody();
-        Binary result = EMPTY_BODY;
+        Binary result = EMPTY_BINARY;
 
         if (body == null) {
             return result;

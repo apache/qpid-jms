@@ -160,6 +160,8 @@ public class AmqpJmsTextMessageFacade extends AmqpJmsMessageFacade implements Jm
             if (data.getValue() == null || data.getValue().getLength() == 0) {
                 return true;
             }
+        } else {
+            return true;  // This should never happen but report empty in case
         }
 
         return false;

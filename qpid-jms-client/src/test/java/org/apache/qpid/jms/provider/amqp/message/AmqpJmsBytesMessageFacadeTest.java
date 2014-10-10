@@ -21,7 +21,6 @@ import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_M
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.getSymbol;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -217,6 +216,32 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         amqpBytesMessageFacade.clearBody();
 
         assertDataBodyAsExpected(amqpBytesMessageFacade.getAmqpMessage(), 0);
+    }
+
+    @Test
+    public void testGetInputStreamThrowsJMSISEWhenFacadeBeingWrittenTo() throws Exception {
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
+
+        amqpBytesMessageFacade.getOutputStream();
+        try {
+            amqpBytesMessageFacade.getInputStream();
+            fail("expected exception not thrown");
+        } catch (javax.jms.IllegalStateException ise) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testGetOutputStreamThrowsJMSISEWhenFacadeBeingReadFrom() throws Exception {
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
+
+        amqpBytesMessageFacade.getInputStream();
+        try {
+            amqpBytesMessageFacade.getOutputStream();
+            fail("expected exception not thrown");
+        } catch (javax.jms.IllegalStateException ise) {
+            // expected
+        }
     }
 
     // ---------- test handling of received messages -------------------------//

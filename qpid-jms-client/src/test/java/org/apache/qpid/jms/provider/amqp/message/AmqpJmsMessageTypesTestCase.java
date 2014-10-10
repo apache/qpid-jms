@@ -78,6 +78,14 @@ public class AmqpJmsMessageTypesTestCase extends QpidJmsTestCase {
         return new AmqpJmsStreamMessageFacade(amqpConsumer, message);
     }
 
+    protected AmqpJmsObjectMessageFacade createNewObjectMessageFacade(boolean javaSerialized) {
+        return new AmqpJmsObjectMessageFacade(createMockAmqpConnection(), javaSerialized);
+    }
+
+    protected AmqpJmsObjectMessageFacade createReceivedObjectMessageFacade(AmqpConsumer amqpConsumer, Message message) {
+        return new AmqpJmsObjectMessageFacade(amqpConsumer, message);
+    }
+
     protected AmqpConsumer createMockAmqpConsumer() {
         AmqpConsumer consumer = Mockito.mock(AmqpConsumer.class);
         Mockito.when(consumer.getConnection()).thenReturn(createMockAmqpConnection());

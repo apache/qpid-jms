@@ -78,8 +78,8 @@ public class AmqpJmsMessageTypesTestCase extends QpidJmsTestCase {
         return new AmqpJmsStreamMessageFacade(amqpConsumer, message);
     }
 
-    protected AmqpJmsObjectMessageFacade createNewObjectMessageFacade(boolean javaSerialized) {
-        return new AmqpJmsObjectMessageFacade(createMockAmqpConnection(), javaSerialized);
+    protected AmqpJmsObjectMessageFacade createNewObjectMessageFacade(boolean amqpTyped) {
+        return new AmqpJmsObjectMessageFacade(createMockAmqpConnection(), amqpTyped);
     }
 
     protected AmqpJmsObjectMessageFacade createReceivedObjectMessageFacade(AmqpConsumer amqpConsumer, Message message) {

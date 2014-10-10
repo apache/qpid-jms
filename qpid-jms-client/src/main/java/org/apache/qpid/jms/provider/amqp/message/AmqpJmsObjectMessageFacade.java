@@ -84,7 +84,7 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
     }
 
     public boolean isAmqpTypedEncoding() {
-        return this.delegate instanceof AmqpTypedObjectDelegate;
+        return delegate.isAmqpTypeEncoded();
     }
 
     @Override

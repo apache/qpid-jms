@@ -93,17 +93,17 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
             // TODO: Data and AmqpSequence?
             throw new IllegalArgumentException("Encoding this object type with the AMQP type system is not supported: " + value.getClass().getName());
         }
-
-        // TODO: ensure content type is not set (assuming we aren't using data sections)?
     }
 
     @Override
     public void onSend() {
+        message.setContentType(null);
     }
 
     private boolean isSupportedAmqpValueObjectType(Serializable serializable) {
         // TODO: augment supported types to encode as an AmqpValue?
-        return serializable instanceof Map<?,?> ||
+        return serializable instanceof String ||
+               serializable instanceof Map<?,?> ||
                serializable instanceof List<?> ||
                serializable.getClass().isArray();
     }

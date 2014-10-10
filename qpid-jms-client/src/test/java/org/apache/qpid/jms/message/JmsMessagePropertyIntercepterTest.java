@@ -50,6 +50,11 @@ public class JmsMessagePropertyIntercepterTest {
     //---------- Non-Intercepted -------------------------------------------------//
 
     @Test
+    public void testCreate() throws JMSException {
+        new JmsMessagePropertyIntercepter();
+    }
+
+    @Test
     public void testGetPropertyWithNonInterceptedNameCallsIntoFacade() throws JMSException {
         JmsMessageFacade message = Mockito.mock(JmsMessageFacade.class);
         assertNull(JmsMessagePropertyIntercepter.getProperty(message, "SomeRandomPropertyName"));

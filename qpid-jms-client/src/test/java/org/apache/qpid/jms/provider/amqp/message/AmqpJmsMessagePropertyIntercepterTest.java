@@ -37,6 +37,11 @@ public class AmqpJmsMessagePropertyIntercepterTest {
     //---------- Non-Intercepted -------------------------------------------------//
 
     @Test
+    public void testCreate() throws JMSException {
+        new AmqpJmsMessagePropertyIntercepter();
+    }
+
+    @Test
     public void testGetPropertyWithNonInterceptedNameCallsIntoFacade() throws JMSException {
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
         assertNull(AmqpJmsMessagePropertyIntercepter.getProperty(message, "SomeRandomPropertyName"));

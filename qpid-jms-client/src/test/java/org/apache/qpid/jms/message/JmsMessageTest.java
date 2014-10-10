@@ -1019,15 +1019,6 @@ public class JmsMessageTest {
     }
 
     @Test
-    public void testIsExpired() throws JMSException {
-        JmsMessage msg = factory.createMessage();
-        msg.setJMSExpiration(System.currentTimeMillis() - 1);
-        assertTrue(msg.isExpired());
-        msg.setJMSExpiration(System.currentTimeMillis() + 10000);
-        assertFalse(msg.isExpired());
-    }
-
-    @Test
     public void testAcknowledgeWitNoCallback() throws JMSException {
         JmsMessage msg = factory.createMessage();
         msg.acknowledge();

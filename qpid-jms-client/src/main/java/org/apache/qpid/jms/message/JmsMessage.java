@@ -500,11 +500,6 @@ public class JmsMessage implements javax.jms.Message {
         this.connection = connection;
     }
 
-    public boolean isExpired() throws JMSException {
-        long expireTime = facade.getExpiration();
-        return expireTime > 0 && System.currentTimeMillis() > expireTime;
-    }
-
     public JmsMessageFacade getFacade() {
         return this.facade;
     }

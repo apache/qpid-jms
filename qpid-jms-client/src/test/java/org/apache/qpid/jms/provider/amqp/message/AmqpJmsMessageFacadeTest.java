@@ -201,6 +201,125 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         assertEquals("TTL has not been overriden", overrideTtl, message.getTtl());
     }
 
+    // --- delivery count  ---
+
+    @Test
+    public void testGetDeliveryCountIs1ForNewMessage() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        // JMS delivery count starts at one.
+        assertEquals("expected delivery count value not found", 1, amqpMessageFacade.getDeliveryCount());
+
+        // Redelivered state inferred from delivery count
+        assertFalse(amqpMessageFacade.isRedelivered());
+        assertEquals(0, amqpMessageFacade.getRedeliveryCount());;
+    }
+
+    @Test
+    public void testGetDeliveryCountForReceivedMessageWithNoHeader() {
+        Message message = Proton.message();
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertNull("expected no header section to exist", message.getHeader());
+        // JMS delivery count starts at one.
+        assertEquals("expected delivery count value not found", 1, amqpMessageFacade.getDeliveryCount());
+
+        // Redelivered state inferred from delivery count
+        assertFalse(amqpMessageFacade.isRedelivered());
+        assertEquals(0, amqpMessageFacade.getRedeliveryCount());;
+    }
+
+    @Test
+    public void testGetDeliveryCountForReceivedMessageWithHeaderButNoDeliveryCount() {
+        Message message = Proton.message();
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        Header header = new Header();
+        message.setHeader(header);
+
+        // JMS delivery count starts at one.
+        assertEquals("expected delivery count value not found", 1, amqpMessageFacade.getDeliveryCount());
+
+        // Redelivered state inferred from delivery count
+        assertFalse(amqpMessageFacade.isRedelivered());
+        assertEquals(0, amqpMessageFacade.getRedeliveryCount());;
+    }
+
+    @Test
+    public void testGetDeliveryCountForReceivedMessageWithHeaderWithDeliveryCount() {
+        Message message = Proton.message();
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        Header header = new Header();
+        header.setDeliveryCount(new UnsignedInteger(1));
+        message.setHeader(header);
+
+        // JMS delivery count starts at one.
+        assertEquals("expected delivery count value not found", 2, amqpMessageFacade.getDeliveryCount());
+
+        // Redelivered state inferred from delivery count
+        assertTrue(amqpMessageFacade.isRedelivered());
+        assertEquals(1, amqpMessageFacade.getRedeliveryCount());;
+    }
+
+    @Test
+    public void testSetRedeliveredAltersDeliveryCount() {
+        Message message = Proton.message();
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        // Redelivered state inferred from delivery count
+        assertFalse(amqpMessageFacade.isRedelivered());
+        assertEquals(0, amqpMessageFacade.getRedeliveryCount());;
+
+        amqpMessageFacade.setRedelivered(true);
+        assertTrue(amqpMessageFacade.isRedelivered());
+        assertEquals(1, amqpMessageFacade.getRedeliveryCount());;
+    }
+
+    @Test
+    public void testSetRedeliveredWhenAlreadyRedeliveredDoesNotChangeDeliveryCount() {
+        Message message = Proton.message();
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        Header header = new Header();
+        header.setDeliveryCount(new UnsignedInteger(1));
+        message.setHeader(header);
+
+        // Redelivered state inferred from delivery count
+        assertTrue(amqpMessageFacade.isRedelivered());
+        assertEquals(1, amqpMessageFacade.getRedeliveryCount());;
+
+        amqpMessageFacade.setRedelivered(true);
+        assertTrue(amqpMessageFacade.isRedelivered());
+        assertEquals(1, amqpMessageFacade.getRedeliveryCount());;
+    }
+
+    @Test
+    public void testSetRedeliveredFalseClearsDeliveryCount() {
+        Message message = Proton.message();
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        Header header = new Header();
+        header.setDeliveryCount(new UnsignedInteger(1));
+        message.setHeader(header);
+
+        // Redelivered state inferred from delivery count
+        assertTrue(amqpMessageFacade.isRedelivered());
+        assertEquals(1, amqpMessageFacade.getRedeliveryCount());;
+
+        amqpMessageFacade.setRedelivered(false);
+        assertFalse(amqpMessageFacade.isRedelivered());
+        assertEquals(0, amqpMessageFacade.getRedeliveryCount());;
+    }
+
+    @Test
+    public void testSetRedeliveryCountToZeroWhenNoHeadersNoNPE() {
+        Message message = Proton.message();
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+        assertNull("expected no header section to exist", message.getHeader());
+        amqpMessageFacade.setRedeliveryCount(0);
+    }
+
     // --- priority field  ---
 
     @Test

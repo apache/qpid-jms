@@ -654,4 +654,33 @@ public class JmsBytesMessageTest {
         } catch (MessageNotReadableException e) {
         }
     }
+
+    @Test
+    public void testHashCode() throws Exception {
+        String messageId = "ID:SOME-ID:0:1:1";
+        JmsBytesMessage message = factory.createBytesMessage();
+        message.setJMSMessageID(messageId);
+        assertEquals(message.getJMSMessageID().hashCode(), messageId.hashCode());
+        assertEquals(message.hashCode(), messageId.hashCode());
+    }
+
+    @Test
+    public void testEqualsObject() throws Exception {
+        String messageId = "ID:SOME-ID:0:1:1";
+        JmsBytesMessage message1 = factory.createBytesMessage();
+        JmsBytesMessage message2 = factory.createBytesMessage();
+        message1.setJMSMessageID(messageId);
+        assertTrue(!message1.equals(message2));
+        assertTrue(!message2.equals(message1));
+        message2.setJMSMessageID(messageId);
+        assertTrue(message1.equals(message2));
+        assertTrue(message2.equals(message1));
+        message2.setJMSMessageID(messageId + "More");
+        assertTrue(!message1.equals(message2));
+        assertTrue(!message2.equals(message1));
+
+        assertTrue(message1.equals(message1));
+        assertFalse(message1.equals(null));
+        assertFalse(message1.equals(""));
+    }
 }

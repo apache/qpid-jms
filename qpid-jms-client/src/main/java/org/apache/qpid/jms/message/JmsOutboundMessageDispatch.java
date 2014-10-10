@@ -62,6 +62,10 @@ public class JmsOutboundMessageDispatch {
         return sendAsync;
     }
 
+    public String getDispatchId() {
+        return dispatchId;
+    }
+
     public void setDispatchId(String dispatchId) {
         this.dispatchId = dispatchId;
     }

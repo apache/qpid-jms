@@ -107,4 +107,9 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
                serializable instanceof List<?> ||
                serializable.getClass().isArray();
     }
+
+    @Override
+    public boolean isAmqpTypeEncoded() {
+        return true;
+    }
 }

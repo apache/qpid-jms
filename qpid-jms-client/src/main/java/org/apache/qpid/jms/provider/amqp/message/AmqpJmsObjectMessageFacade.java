@@ -126,22 +126,23 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
     }
 
     void setUseAmqpTypedEncoding(boolean useAmqpTypedEncoding) throws JMSException {
-        if (useAmqpTypedEncoding && delegate instanceof AmqpSerializedObjectDelegate) {
-            AmqpTypedObjectDelegate newDelegate = new AmqpTypedObjectDelegate(message);
+        if (useAmqpTypedEncoding != delegate.isAmqpTypeEncoded()) {
             try {
-                newDelegate.setObject(delegate.getObject());
+                Serializable existingObject = delegate.getObject();
+
+                AmqpObjectTypeDelegate newDelegate = null;
+                if (useAmqpTypedEncoding) {
+                    newDelegate = new AmqpTypedObjectDelegate(message);
+                } else {
+                    newDelegate = new AmqpSerializedObjectDelegate(message);
+                }
+
+                newDelegate.setObject(existingObject);
+
+                delegate = newDelegate;
             } catch (ClassNotFoundException | IOException e) {
                 throw JmsExceptionSupport.create(e);
             }
-            delegate = newDelegate;
-        } else if (delegate instanceof AmqpTypedObjectDelegate) {
-            AmqpSerializedObjectDelegate newDelegate = new AmqpSerializedObjectDelegate(message);
-            try {
-                newDelegate.setObject(delegate.getObject());
-            } catch (ClassNotFoundException | IOException e) {
-                throw JmsExceptionSupport.create(e);
-            }
-            delegate = newDelegate;
         }
     }
 

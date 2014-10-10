@@ -53,4 +53,5 @@ public interface AmqpObjectTypeDelegate {
      */
     void onSend();
 
+    boolean isAmqpTypeEncoded();
 }

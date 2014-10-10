@@ -101,4 +101,9 @@ public class AmqpSerializedObjectDelegate implements AmqpObjectTypeDelegate {
     public void onSend() {
         this.message.setContentType(CONTENT_TYPE);
     }
+
+    @Override
+    public boolean isAmqpTypeEncoded() {
+        return false;
+    }
 }

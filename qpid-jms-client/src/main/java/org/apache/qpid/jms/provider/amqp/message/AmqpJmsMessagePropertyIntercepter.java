@@ -82,6 +82,18 @@ public class AmqpJmsMessagePropertyIntercepter {
          */
         boolean propertyExists(AmqpJmsMessageFacade message);
 
+        /**
+         * Request that the intercepted property be cleared.  For properties that
+         * cannot be cleared the value should be set to the default value for that
+         * property.
+         *
+         * @param message
+         *        the target message object whose property should be cleared.
+         *
+         * @throws JMSException if an error occurs clearing the property.
+         */
+        void clearProperty(AmqpJmsMessageFacade message) throws JMSException;
+
     }
 
     static {
@@ -107,6 +119,11 @@ public class AmqpJmsMessagePropertyIntercepter {
             public boolean propertyExists(AmqpJmsMessageFacade message) {
                 return message.hasAmqpTimeToLiveOverride();
             }
+
+            @Override
+            public void clearProperty(AmqpJmsMessageFacade message) throws JMSException {
+                message.setAmqpTimeToLiveOverride(0);
+            }
         });
         PROPERTY_INTERCEPTERS.put(JMS_AMQP_REPLY_TO_GROUP_ID, new PropertyIntercepter() {
             @Override
@@ -127,6 +144,11 @@ public class AmqpJmsMessagePropertyIntercepter {
             public boolean propertyExists(AmqpJmsMessageFacade message) {
                 String replyToGroupId = message.getReplyToGroupId();
                 return replyToGroupId != null && !replyToGroupId.equals("");
+            }
+
+            @Override
+            public void clearProperty(AmqpJmsMessageFacade message) throws JMSException {
+                message.setReplyToGroupId(null);
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_AMQP_TYPED_ENCODING, new PropertyIntercepter() {
@@ -160,6 +182,11 @@ public class AmqpJmsMessagePropertyIntercepter {
                 }
 
                 return false;
+            }
+
+            @Override
+            public void clearProperty(AmqpJmsMessageFacade message) throws JMSException {
+                // TODO - Should we leave encoding intact or change to the default.
             }
         });
     }
@@ -262,5 +289,20 @@ public class AmqpJmsMessagePropertyIntercepter {
             }
         }
         return names;
+    }
+
+    /**
+     * For each of the currently configured message property intercepter instances clear or
+     * reset the value to its default.
+     *
+     * @param message
+     *        the AmqpJmsMessageFacade instance to read from
+     *
+     * @throws JMSException if an error occurs while validating the defined property.
+     */
+    public static void clearProperties(AmqpJmsMessageFacade message) throws JMSException {
+        for (Entry<String, PropertyIntercepter> entry : PROPERTY_INTERCEPTERS.entrySet()) {
+            entry.getValue().clearProperty(message);
+        }
     }
 }

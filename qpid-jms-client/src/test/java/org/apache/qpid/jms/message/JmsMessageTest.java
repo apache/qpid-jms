@@ -1057,4 +1057,281 @@ public class JmsMessageTest {
         } catch (JMSException e) {
         }
     }
+
+    //---- Test that message property getters throw expected exceptions ------//
+
+    /**
+     * When a property is not set, the behaviour of JMS specifies that it is equivalent to a null value,
+     * and the primitive property accessors should behave in the same fashion as <primitive>.valueOf(String).
+     * Test that this is the case.
+     */
+    @Test
+    public void testGetMissingPrimitivePropertyResultsInExpectedBehaviour() throws Exception {
+        String propertyName = "does_not_exist";
+        JmsMessage testMessage = factory.createMessage();
+
+        //expect false from Boolean.valueOf(null).
+        assertFalse(testMessage.getBooleanProperty(propertyName));
+
+        //expect an NFE from the primitive integral <type>.valueOf(null) conversions
+        assertGetMissingPropertyThrowsNumberFormatException(testMessage, propertyName, Byte.class);
+        assertGetMissingPropertyThrowsNumberFormatException(testMessage, propertyName, Short.class);
+        assertGetMissingPropertyThrowsNumberFormatException(testMessage, propertyName, Integer.class);
+        assertGetMissingPropertyThrowsNumberFormatException(testMessage, propertyName, Long.class);
+
+        // expect an NPE from the primitive floating point .valueOf(null)
+        // conversions
+        try {
+            testMessage.getFloatProperty(propertyName);
+            fail("expected NPE from Float.valueOf(null) was not thrown");
+        } catch (NullPointerException npe) {
+        }
+
+        try {
+            testMessage.getDoubleProperty(propertyName);
+            fail("expected NPE from Double.valueOf(null) was not thrown");
+        } catch (NullPointerException npe) {
+        }
+    }
+
+    //---------- Test Message Properties enforce compliant names -------------//
+
+    /**
+     * Property 'identifiers' (i.e. names) must begin with a letter for which
+     * {@link Character#isJavaLetter(char)} is true, as described in
+     * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
+     * beginning with a non-letter character.
+     */
+    @Test
+    public void testSetPropertyWithNonLetterAsFirstCharacterThrowsIAE() throws Exception {
+        String propertyName = "1name";
+        JmsMessage testMessage = factory.createMessage();
+        try {
+            testMessage.setObjectProperty(propertyName, "value");
+            fail("expected rejection of identifier starting with non-letter character");
+        } catch (IllegalArgumentException iae) {
+        }
+    }
+
+    /**
+     * Property 'identifiers' (i.e. names) must continue with a letter or digit
+     * for which {@link Character#isJavaLetterOrDigit(char)} is true, as
+     * described in {@link javax.jms.Message}. Verify an IAE is thrown if
+     * setting a property continuing with a non-letter-or-digit character.
+     */
+    @Test
+    public void testSetPropertyWithNonLetterOrDigitCharacterThrowsIAE() throws Exception {
+        String propertyName = "name-invalid";
+        JmsMessage testMessage = factory.createMessage();
+        try {
+            testMessage.setObjectProperty(propertyName, "value");
+            fail("expected rejection of identifier starting with non-letter character");
+        } catch (IllegalArgumentException iae) {
+        }
+    }
+
+    /**
+     * Property 'identifiers' (i.e. names) are not allowed to be NULL, TRUE, or
+     * FALSE, as described in {@link javax.jms.Message}. Verify an IAE is thrown
+     * if setting a property with these values.
+     */
+    @Test
+    public void testSetPropertyWithNameNULL() throws Exception {
+        JmsMessage testMessage = factory.createMessage();
+        try {
+            testMessage.setObjectProperty("NULL", "value");
+            fail("expected rejection of identifier named NULL");
+        } catch (IllegalArgumentException iae) {
+        }
+    }
+
+    /**
+     * Property 'identifiers' (i.e. names) are not allowed to be NULL, TRUE, or
+     * FALSE, as described in {@link javax.jms.Message}. Verify an IAE is thrown
+     * if setting a property with these values.
+     */
+    @Test
+    public void testSetPropertyWithNameTRUE() throws Exception {
+        JmsMessage testMessage = factory.createMessage();
+        try {
+            testMessage.setObjectProperty("TRUE", "value");
+            fail("expected rejection of identifier named TRUE");
+        } catch (IllegalArgumentException iae) {
+        }
+    }
+
+    /**
+     * Property 'identifiers' (i.e. names) are not allowed to be NULL, TRUE, or
+     * FALSE, as described in {@link javax.jms.Message}. Verify an IAE is thrown
+     * if setting a property with these values.
+     */
+    @Test
+    public void testSetPropertyWithNameFALSE() throws Exception {
+        JmsMessage testMessage = factory.createMessage();
+        try {
+            testMessage.setObjectProperty("FALSE", "value");
+            fail("expected rejection of identifier named FALSE");
+        } catch (IllegalArgumentException iae) {
+        }
+    }
+
+    /**
+     * Property 'identifiers' (i.e. names) are not allowed to be NOT, AND, OR,
+     * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
+     * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
+     * with these values.
+     */
+    @Test
+    public void testSetPropertyWithNameNOT() throws Exception {
+        JmsMessage testMessage = factory.createMessage();
+        try {
+            testMessage.setObjectProperty("NOT", "value");
+            fail("expected rejection of identifier named NOT");
+        } catch (IllegalArgumentException iae) {
+        }
+    }
+
+    /**
+     * Property 'identifiers' (i.e. names) are not allowed to be NOT, AND, OR,
+     * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
+     * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
+     * with these values.
+     */
+    @Test
+    public void testSetPropertyWithNameAND() throws Exception {
+        JmsMessage testMessage = factory.createMessage();
+        try {
+            testMessage.setObjectProperty("AND", "value");
+            fail("expected rejection of identifier named AND");
+        } catch (IllegalArgumentException iae) {
+        }
+    }
+
+    /**
+     * Property 'identifiers' (i.e. names) are not allowed to be NOT, AND, OR,
+     * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
+     * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
+     * with these values.
+     */
+    @Test
+    public void testSetPropertyWithNameOR() throws Exception {
+        JmsMessage testMessage = factory.createMessage();
+        try {
+            testMessage.setObjectProperty("OR", "value");
+            fail("expected rejection of identifier named OR");
+        } catch (IllegalArgumentException iae) {
+        }
+    }
+
+    /**
+     * Property 'identifiers' (i.e. names) are not allowed to be NOT, AND, OR,
+     * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
+     * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
+     * with these values.
+     */
+    @Test
+    public void testSetPropertyWithNameBETWEEN() throws Exception {
+        JmsMessage testMessage = factory.createMessage();
+        try {
+            testMessage.setObjectProperty("BETWEEN", "value");
+            fail("expected rejection of identifier named BETWEEN");
+        } catch (IllegalArgumentException iae) {
+        }
+    }
+
+    /**
+     * Property 'identifiers' (i.e. names) are not allowed to be NOT, AND, OR,
+     * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
+     * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
+     * with these values.
+     */
+    @Test
+    public void testSetPropertyWithNameLIKE() throws Exception {
+        JmsMessage testMessage = factory.createMessage();
+        try {
+            testMessage.setObjectProperty("LIKE", "value");
+            fail("expected rejection of identifier named LIKE");
+        } catch (IllegalArgumentException iae) {
+        }
+    }
+
+    /**
+     * Property 'identifiers' (i.e. names) are not allowed to be NOT, AND, OR,
+     * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
+     * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
+     * with these values.
+     */
+    @Test
+    public void testSetPropertyWithNameIN() throws Exception {
+        JmsMessage testMessage = factory.createMessage();
+        try {
+            testMessage.setObjectProperty("IN", "value");
+            fail("expected rejection of identifier named IN");
+        } catch (IllegalArgumentException iae) {
+        }
+    }
+
+    /**
+     * Property 'identifiers' (i.e. names) are not allowed to be NOT, AND, OR,
+     * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
+     * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
+     * with these values.
+     */
+    @Test
+    public void testSetPropertyWithNameIS() throws Exception {
+        JmsMessage testMessage = factory.createMessage();
+        try {
+            testMessage.setObjectProperty("IS", "value");
+            fail("expected rejection of identifier named IS");
+        } catch (IllegalArgumentException iae) {
+        }
+    }
+
+    /**
+     * Property 'identifiers' (i.e. names) are not allowed to be NOT, AND, OR,
+     * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
+     * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
+     * with these values.
+     */
+    @Test
+    public void testSetPropertyWithNameESCAPE() throws Exception {
+        JmsMessage testMessage = factory.createMessage();
+        try {
+            testMessage.setObjectProperty("ESCAPE", "value");
+            fail("expected rejection of identifier named ESCAPE");
+        } catch (IllegalArgumentException iae) {
+        }
+    }
+
+    //--------- Test support method ------------------------------------------//
+
+    private void assertGetMissingPropertyThrowsNumberFormatException(JmsMessage testMessage, String propertyName, Class<?> clazz) throws JMSException {
+        try {
+            getMessagePropertyUsingTypeMethod(testMessage, propertyName, clazz);
+            fail("expected exception to be thrown");
+        } catch (NumberFormatException nfe) {
+        }
+    }
+
+    private Object getMessagePropertyUsingTypeMethod(JmsMessage testMessage, String propertyName, Class<?> clazz) throws JMSException {
+        if (clazz == Boolean.class) {
+            return testMessage.getBooleanProperty(propertyName);
+        } else if (clazz == Byte.class) {
+            return testMessage.getByteProperty(propertyName);
+        } else if (clazz == Short.class) {
+            return testMessage.getShortProperty(propertyName);
+        } else if (clazz == Integer.class) {
+            return testMessage.getIntProperty(propertyName);
+        } else if (clazz == Long.class) {
+            return testMessage.getLongProperty(propertyName);
+        } else if (clazz == Float.class) {
+            return testMessage.getFloatProperty(propertyName);
+        } else if (clazz == Double.class) {
+            return testMessage.getDoubleProperty(propertyName);
+        } else if (clazz == String.class) {
+            return testMessage.getStringProperty(propertyName);
+        } else {
+            throw new RuntimeException("Unexpected property type class");
+        }
+    }
 }

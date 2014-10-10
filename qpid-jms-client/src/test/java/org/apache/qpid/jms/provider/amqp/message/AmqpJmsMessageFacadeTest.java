@@ -58,6 +58,7 @@ import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Properties;
 import org.apache.qpid.proton.codec.impl.DataImpl;
 import org.apache.qpid.proton.message.Message;
+import org.apache.qpid.proton.message.impl.MessageImpl;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -1448,6 +1449,56 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         assertNull(underlying.getMessageAnnotations());
     }
 
+    // ====== Type =======
+
+    @Test
+    public void testGetJMSTypeIsNullOnNewMessage() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        assertNull("did not expect a JMSType value to be present", amqpMessageFacade.getType());
+    }
+
+    @Test
+    public void testSetJMSTypeSetsUnderlyingMessageAnnotation() throws Exception {
+        String jmsType = "myJMSType";
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        amqpMessageFacade.setType(jmsType);
+
+        assertTrue("MessageAnnotation should exist to hold JMSType value",
+            amqpMessageFacade.messageAnnotationExists(AmqpMessageSupport.JMS_TYPE));
+        assertEquals("MessageAnnotation should be set to the provded JMSType string", jmsType,
+            amqpMessageFacade.getMessageAnnotation(AmqpMessageSupport.JMS_TYPE));
+    }
+
+    @Test
+    public void testSetTypeNullClearsExistingValue() throws Exception {
+        String jmsType = "myJMSType";
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setType(jmsType);
+        assertTrue("MessageAnnotation should exist to hold JMSType value",
+            amqpMessageFacade.messageAnnotationExists(AmqpMessageSupport.JMS_TYPE));
+        amqpMessageFacade.setType(null);
+        assertNull("JMSType value was not as expected", amqpMessageFacade.getType());
+        assertFalse("MessageAnnotation should exist to hold JMSType value",
+            amqpMessageFacade.messageAnnotationExists(AmqpMessageSupport.JMS_TYPE));
+    }
+
+    /**
+     * Test that {@link MessageImpl#getJMSType()} returns the expected value for a message
+     * received with the {@link ClientProperties#X_OPT_JMS_TYPE} message annotation set.
+     */
+    @Test
+    public void testGetJMSTypeWithReceivedMessage() throws Exception {
+        String myJMSType = "myJMSType";
+
+        Message message = Proton.message();
+        Map<Symbol, Object> annotationsMap = new HashMap<Symbol, Object>();
+        annotationsMap.put(Symbol.valueOf(AmqpMessageSupport.JMS_TYPE), myJMSType);
+        message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertEquals("JMSType value was not as expected", myJMSType, amqpMessageFacade.getType());
+    }
 
     // ====== AMQP Application Properties =======
     // ==========================================

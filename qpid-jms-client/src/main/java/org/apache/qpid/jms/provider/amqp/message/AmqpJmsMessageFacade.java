@@ -534,7 +534,11 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public void setType(String type) {
-        setMessageAnnotation(JMS_TYPE, type);
+        if (type != null) {
+            setMessageAnnotation(JMS_TYPE, type);
+        } else {
+            removeMessageAnnotation(JMS_TYPE);
+        }
     }
 
     @Override

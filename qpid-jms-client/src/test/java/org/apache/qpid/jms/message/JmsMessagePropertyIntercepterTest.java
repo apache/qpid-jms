@@ -454,11 +454,6 @@ public class JmsMessagePropertyIntercepterTest {
             fail("Should have thrown an exception for this call");
         } catch (NumberFormatException e) {
         }
-        try {
-            JmsMessagePropertyIntercepter.setProperty(message, JMS_DELIVERY_MODE, null);
-            fail("Should have thrown an exception for this call");
-        } catch (NumberFormatException e) {
-        }
     }
 
     @Test

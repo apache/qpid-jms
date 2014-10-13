@@ -193,7 +193,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         int producerTtl = 10;
 
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
-        amqpMessageFacade.setAmqpTimeToLiveOverride(overrideTtl);
+        amqpMessageFacade.setAmqpTimeToLiveOverride((long) overrideTtl);
 
         amqpMessageFacade.onSend(false, false, producerTtl);
 

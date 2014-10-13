@@ -123,7 +123,7 @@ public interface JmsMessageFacade {
      *
      * @throws JMSException if an error occurs while accessing the message properties.
      */
-    void clearProperties();
+    void clearProperties() throws JMSException;
 
     /**
      * Create a new instance and perform a deep copy of this object's

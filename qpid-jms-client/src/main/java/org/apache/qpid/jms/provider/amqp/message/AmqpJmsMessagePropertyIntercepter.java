@@ -122,7 +122,7 @@ public class AmqpJmsMessagePropertyIntercepter {
 
             @Override
             public void clearProperty(AmqpJmsMessageFacade message) throws JMSException {
-                message.setAmqpTimeToLiveOverride(0);
+                message.setAmqpTimeToLiveOverride(null);
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_AMQP_REPLY_TO_GROUP_ID, new PropertyIntercepter() {
@@ -288,7 +288,8 @@ public class AmqpJmsMessagePropertyIntercepter {
                 names.add(entry.getKey());
             }
         }
-        return names;
+
+        return message.getApplicationPropertyNames(names);
     }
 
     /**
@@ -304,5 +305,7 @@ public class AmqpJmsMessagePropertyIntercepter {
         for (Entry<String, PropertyIntercepter> entry : PROPERTY_INTERCEPTERS.entrySet()) {
             entry.getValue().clearProperty(message);
         }
+
+        message.clearAllApplicationProperties();
     }
 }

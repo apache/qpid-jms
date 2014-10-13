@@ -169,11 +169,15 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
      */
     @Override
     public Set<String> getPropertyNames() {
-        Set<String> properties = AmqpJmsMessagePropertyIntercepter.getPropertyNames(this);
+        return AmqpJmsMessagePropertyIntercepter.getPropertyNames(this);
+    }
+
+    public Set<String> getApplicationPropertyNames(Set<String> propertyNames) {
         if (applicationPropertiesMap != null) {
-            properties.addAll(applicationPropertiesMap.keySet());
+            propertyNames.addAll(applicationPropertiesMap.keySet());
         }
-        return properties;
+
+        return propertyNames;
     }
 
     @Override
@@ -247,9 +251,8 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public void clearProperties() {
-        clearAllApplicationProperties();
-        //TODO: should we clear some/all of those intercepted by AmqpJmsMessagePropertyIntercepter?
+    public void clearProperties() throws JMSException {
+        AmqpJmsMessagePropertyIntercepter.clearProperties(this);
     }
 
     @Override
@@ -616,14 +619,20 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
      * based on the expiration value when sending the underlying AMQP message. A value of 0
      * means to clear the ttl field rather than set it to anything.
      *
-     * @param ttl the value to use, in range 0 <= x <= 2^32 - 1
+     * @param ttl
+     *        the value to use, in range 0 <= x <= 2^32 - 1
+     *
      * @throws MessageFormatException
      */
-    public void setAmqpTimeToLiveOverride(long ttl) throws MessageFormatException {
-        if (ttl >= 0 && ttl <= UINT_MAX) {
-            userSpecifiedTTL = ttl;
+    public void setAmqpTimeToLiveOverride(Long ttl) throws MessageFormatException {
+        if (ttl != null) {
+            if (ttl >= 0 && ttl <= UINT_MAX) {
+                userSpecifiedTTL = ttl;
+            } else {
+                throw new MessageFormatException(JMS_AMQP_TTL + " must be a long with value in range 0 to 2^32 - 1");
+            }
         } else {
-            throw new MessageFormatException(JMS_AMQP_TTL + " must be a long with value in range 0 to 2^32 - 1");
+            userSpecifiedTTL = null;
         }
     }
 
@@ -733,16 +742,13 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     @Override
     public void setGroupSequence(int groupSequence) {
         // This wraps it into the upper uint range if a negative was provided
-
-        // TODO Can a zero value clear the property?  Or do we really need specific
-        //      clear methods?
-        // if (groupSequence == 0) {
-        //     if (message.getProperties() != null) {
-        //        message.getProperties().setGroupSequence(null);
-        //     }
-        // }
-
-        message.setGroupSequence(groupSequence);
+        if (groupSequence == 0) {
+            if (message.getProperties() != null) {
+                message.getProperties().setGroupSequence(null);
+            }
+        } else {
+            message.setGroupSequence(groupSequence);
+        }
     }
 
     /**

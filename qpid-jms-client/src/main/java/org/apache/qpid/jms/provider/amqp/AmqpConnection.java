@@ -49,6 +49,7 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
     private boolean connected;
     private AmqpSaslAuthenticator authenticator;
     private final AmqpSession connectionSession;
+    private AmqpConnectionProperties properties;
 
     private String queuePrefix;
     private String topicPrefix;
@@ -114,6 +115,10 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
 
         if (!connected && isOpen()) {
             connected = true;
+
+            this.properties = new AmqpConnectionProperties(
+                endpoint.getRemoteOfferedCapabilities(), endpoint.getRemoteProperties());
+
             connectionSession.open(new AsyncResult() {
 
                 @Override
@@ -327,6 +332,17 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
      */
     public AmqpJmsMessageFactory getAmqpMessageFactory() {
         return this.amqpMessageFactory;
+    }
+
+    /**
+     * Returns the connection properties for an established connection which defines the various
+     * capabilities and configuration options of the remote connection.  Prior to the establishment
+     * of a connection this method returns null.
+     *
+     * @return the properties available for this connection or null if not connected.
+     */
+    public AmqpConnectionProperties getProperties() {
+        return properties;
     }
 
     @Override

@@ -233,16 +233,22 @@ public class AmqpFixedProducer extends AmqpProducer {
 
     @Override
     protected void doOpen() {
-        JmsDestination destination = info.getDestination();
+        String targetAddress;
 
-        String destnationName = session.getQualifiedName(destination);
+        if (info.getDestination() != null) {
+            JmsDestination destination = info.getDestination();
+            targetAddress = session.getQualifiedName(destination);
+        } else {
+            targetAddress = connection.getProperties().getAnonymousRelayName();
+        }
+
         String sourceAddress = getProducerId().toString();
         Source source = new Source();
         source.setAddress(sourceAddress);
         Target target = new Target();
-        target.setAddress(destnationName);
+        target.setAddress(targetAddress);
 
-        String senderName = sourceAddress + ":" + destnationName;
+        String senderName = sourceAddress + ":" + targetAddress;
         endpoint = session.getProtonSession().sender(senderName);
         endpoint.setSource(source);
         endpoint.setTarget(target);
@@ -268,7 +274,7 @@ public class AmqpFixedProducer extends AmqpProducer {
 
     @Override
     public boolean isAnonymous() {
-        return false;
+        return this.info.getDestination() == null;
     }
 
     @Override

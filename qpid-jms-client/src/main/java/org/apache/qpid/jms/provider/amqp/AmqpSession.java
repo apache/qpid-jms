@@ -101,10 +101,7 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
     public AmqpProducer createProducer(JmsProducerInfo producerInfo) {
         AmqpProducer producer = null;
 
-        // TODO - There seems to be an issue with Proton not allowing links with a Target
-        //        that has no address.  Otherwise we could just ensure that messages sent
-        //        to these anonymous targets have their 'to' value set to the destination.
-        if (producerInfo.getDestination() != null) {
+        if (producerInfo.getDestination() != null || connection.getProperties().isAnonymousRelaySupported()) {
             LOG.debug("Creating fixed Producer for: {}", producerInfo.getDestination());
             producer = new AmqpFixedProducer(this, producerInfo);
         } else {

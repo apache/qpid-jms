@@ -20,13 +20,19 @@ import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_B
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MSG_TYPE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.getSymbol;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.Unpooled;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
@@ -40,6 +46,7 @@ import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.message.Message;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 /**
  * Tests for class AmqpJmsBytesMessageFacade
@@ -266,6 +273,7 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
 
         assertEquals("Message reports unexpected length", length, amqpBytesMessageFacade.getBodyLength());
+        assertFalse(amqpBytesMessageFacade.isEmpty());
     }
 
     @Test
@@ -285,6 +293,7 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
 
         assertEquals("Message reports unexpected length", 0, amqpBytesMessageFacade.getBodyLength());
+        assertTrue(amqpBytesMessageFacade.isEmpty());
     }
 
     @Test
@@ -390,6 +399,24 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         }
     }
 
+    @Test
+    public void testIsEmpty() throws Exception {
+        Message message = Message.Factory.create();
+        message.setBody(new Data(new Binary(new byte[1])));
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
+
+        // Very small payload.
+        assertFalse(amqpBytesMessageFacade.isEmpty());
+
+        // Ensure no NPE
+        message.setBody(null);
+        assertTrue(amqpBytesMessageFacade.isEmpty());
+
+        byte[] bytes = "myBytes".getBytes();
+        message.setBody(new AmqpValue(new Binary(bytes)));
+        assertFalse(amqpBytesMessageFacade.isEmpty());
+    }
+
     /**
      * Test that setting bytes on a received message results in the expected content in the body section
      * of the underlying message and returned by a new InputStream requested from the message.
@@ -426,6 +453,66 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         assertEquals("Expected input stream to be at end but data was returned", END_OF_STREAM, bytesStream.read(new byte[1]));
     }
 
+    @Test
+    public void testClearBodyHandlesErrorFromOutputStream() throws Exception {
+        byte[] bodyBytes = "myOrigBytes".getBytes();
+
+        Message message = Message.Factory.create();
+        message.setBody(new Data(new Binary(bodyBytes)));
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
+
+        OutputStream outputStream = amqpBytesMessageFacade.getOutputStream();
+        outputStream = substituteMockOutputStream(amqpBytesMessageFacade);
+        Mockito.doThrow(new IOException()).when(outputStream).close();
+
+        amqpBytesMessageFacade.clearBody();
+    }
+
+    @Test
+    public void testClearBodyHandlesErrorFromInputStream() throws Exception {
+        byte[] bodyBytes = "myOrigBytes".getBytes();
+
+        Message message = Message.Factory.create();
+        message.setBody(new Data(new Binary(bodyBytes)));
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
+
+        InputStream inputStream = amqpBytesMessageFacade.getInputStream();
+        inputStream = substituteMockInputStream(amqpBytesMessageFacade);
+        Mockito.doThrow(new IOException()).when(inputStream).close();
+
+        amqpBytesMessageFacade.clearBody();
+    }
+
+    @Test
+    public void testResetHandlesErrorFromOutputStream() throws Exception {
+        byte[] bodyBytes = "myOrigBytes".getBytes();
+
+        Message message = Message.Factory.create();
+        message.setBody(new Data(new Binary(bodyBytes)));
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
+
+        OutputStream outputStream = amqpBytesMessageFacade.getOutputStream();
+        outputStream = substituteMockOutputStream(amqpBytesMessageFacade);
+        Mockito.doThrow(new IOException()).when(outputStream).close();
+
+        amqpBytesMessageFacade.reset();
+    }
+
+    @Test
+    public void testResetHandlesErrorFromInputStream() throws Exception {
+        byte[] bodyBytes = "myOrigBytes".getBytes();
+
+        Message message = Message.Factory.create();
+        message.setBody(new Data(new Binary(bodyBytes)));
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
+
+        InputStream inputStream = amqpBytesMessageFacade.getInputStream();
+        inputStream = substituteMockInputStream(amqpBytesMessageFacade);
+        Mockito.doThrow(new IOException()).when(inputStream).close();
+
+        amqpBytesMessageFacade.reset();
+    }
+
     //--------- utility methods ----------
 
     private void assertDataBodyAsExpected(Message protonMessage, int length) {
@@ -437,4 +524,24 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         assertEquals("Unexpected body length", length, value.getLength());
     }
 
+    private InputStream substituteMockInputStream(AmqpJmsBytesMessageFacade bytesMessage) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+        InputStream mock = Mockito.mock(ByteBufInputStream.class);
+
+        Field ishField = bytesMessage.getClass().getDeclaredField("bytesIn");
+        ishField.setAccessible(true);
+        ishField.set(bytesMessage, mock);
+
+        return mock;
+    }
+
+    private OutputStream substituteMockOutputStream(AmqpJmsBytesMessageFacade bytesMessage) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+        ByteBufOutputStream mock = Mockito.mock(ByteBufOutputStream.class);
+        Mockito.when(mock.buffer()).thenReturn(Unpooled.EMPTY_BUFFER);
+
+        Field oshField = bytesMessage.getClass().getDeclaredField("bytesOut");
+        oshField.setAccessible(true);
+        oshField.set(bytesMessage, mock);
+
+        return mock;
+    }
 }

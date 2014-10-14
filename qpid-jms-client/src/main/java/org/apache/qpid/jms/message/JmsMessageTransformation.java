@@ -45,9 +45,6 @@ import org.apache.qpid.jms.JmsTopic;
  */
 public final class JmsMessageTransformation {
 
-    private JmsMessageTransformation() {
-    }
-
     /**
      * Creates a an available JMS message from another provider.
      *
@@ -63,9 +60,19 @@ public final class JmsMessageTransformation {
         JmsDestination result = null;
 
         if (destination != null) {
+
             if (destination instanceof JmsDestination) {
                 return (JmsDestination) destination;
-
+            } else if (destination instanceof Queue && destination instanceof Topic) {
+                String queueName = ((Queue) destination).getQueueName();
+                String topicName = ((Topic) destination).getTopicName();
+                if (queueName != null && topicName == null) {
+                    return new JmsQueue(queueName);
+                } else if (queueName == null && topicName != null) {
+                    return new JmsTopic(topicName);
+                } else {
+                    throw new JMSException("Could not transform destination: " + destination);
+                }
             } else {
                 if (destination instanceof TemporaryQueue) {
                     result = new JmsTemporaryQueue(((TemporaryQueue) destination).getQueueName());
@@ -75,6 +82,8 @@ public final class JmsMessageTransformation {
                     result = new JmsQueue(((Queue) destination).getQueueName());
                 } else if (destination instanceof Topic) {
                     result = new JmsTopic(((Topic) destination).getTopicName());
+                } else {
+                    throw new JMSException("Could not transform destination: " + destination);
                 }
             }
         }

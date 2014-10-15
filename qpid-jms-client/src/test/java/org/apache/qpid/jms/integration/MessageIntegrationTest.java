@@ -59,7 +59,6 @@ import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.UnsignedLong;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class MessageIntegrationTest extends QpidJmsTestCase
@@ -84,6 +83,9 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     private static final double DOUBLE_PROP_VALUE = Double.MAX_VALUE;
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
+
+    //==== Application Properties Section ====
+    //========================================
 
     @Test(timeout = 2000)
     public void testSendMessageWithApplicationProperties() throws Exception {
@@ -197,30 +199,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         }
     }
 
-    @Test(timeout = 2000)
-    public void testReceiveMessageWithoutMessageId() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
-            Connection connection = testFixture.establishConnecton(testPeer);
-            connection.start();
-
-            testPeer.expectBegin(true);
-
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Queue queue = session.createQueue("myQueue");
-
-            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
-
-            testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent);
-            testPeer.expectDispositionThatIsAcceptedAndSettled();
-
-            MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
-            testPeer.waitForAllHandlersToComplete(2000);
-
-            assertNull(receivedMessage.getJMSMessageID());
-        }
-    }
+    //==== Destination Handling ====
+    //==============================
 
     /**
      * Tests that the {@link AmqpMessageSupport#AMQP_TO_ANNOTATION} set on a message to
@@ -443,6 +423,9 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         }
     }
 
+    //==== TTL / Expiration Handling ====
+    //===================================
+
     /**
      * Tests that lack of the absolute-expiry-time and ttl fields on a message results
      * in it returning 0 for for JMSExpiration
@@ -509,6 +492,34 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             assertNotNull(receivedMessage);
             assertEquals(timestamp, receivedMessage.getJMSExpiration());
+        }
+    }
+
+    //==== MessageID and CorrelationID Handling ====
+    //==============================================
+
+    @Test(timeout = 2000)
+    public void testReceiveMessageWithoutMessageId() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin(true);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent);
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+            Message receivedMessage = messageConsumer.receive(1000);
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            assertNull(receivedMessage.getJMSMessageID());
         }
     }
 
@@ -859,6 +870,9 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.waitForAllHandlersToComplete(3000);
         }
     }
+
+    //==== Group Property Handling ====
+    //=================================
 
     /**
      * Tests that when receiving a message with the group-id, reply-to-group-id, and group-sequence

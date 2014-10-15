@@ -36,6 +36,8 @@ import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFacade;
+import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
+import org.apache.qpid.jms.message.foreign.ForeignJmsMessage;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -63,6 +65,15 @@ public class JmsMessageTransformationTest {
         assertNotNull(copy.getJMSMessageID());
         assertEquals(source, copy);
         assertNotSame(source, copy);
+    }
+
+    @Test
+    public void testBasicMessageTransformCreateNewMessage() throws JMSException {
+        ForeignJmsMessage foreignMessage = new ForeignJmsMessage();
+
+        JmsMessage transformed = JmsMessageTransformation.transformMessage(createMockJmsConnection(), foreignMessage);
+        assertNotSame(foreignMessage, transformed);
+        assertFalse(transformed.equals(foreignMessage));
     }
 
     //---------- Test Generic Property Copy ----------------------------------//
@@ -204,6 +215,8 @@ public class JmsMessageTransformationTest {
 
     private JmsConnection createMockJmsConnection() {
         JmsConnection connection = Mockito.mock(JmsConnection.class);
+
+        Mockito.when(connection.getMessageFactory()).thenReturn(new JmsDefaultMessageFactory());
 
         return connection;
     }

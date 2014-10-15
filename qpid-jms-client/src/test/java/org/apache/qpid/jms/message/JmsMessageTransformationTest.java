@@ -27,6 +27,7 @@ import static org.junit.Assert.fail;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
+import javax.jms.MessageEOFException;
 import javax.jms.Queue;
 import javax.jms.TemporaryQueue;
 import javax.jms.TemporaryTopic;
@@ -37,7 +38,12 @@ import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFacade;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
+import org.apache.qpid.jms.message.foreign.ForeignJmsBytesMessage;
+import org.apache.qpid.jms.message.foreign.ForeignJmsMapMessage;
 import org.apache.qpid.jms.message.foreign.ForeignJmsMessage;
+import org.apache.qpid.jms.message.foreign.ForeignJmsObjectMessage;
+import org.apache.qpid.jms.message.foreign.ForeignJmsStreamMessage;
+import org.apache.qpid.jms.message.foreign.ForeignJmsTextMessage;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -68,12 +74,203 @@ public class JmsMessageTransformationTest {
     }
 
     @Test
-    public void testBasicMessageTransformCreateNewMessage() throws JMSException {
+    public void testForeignMessageTransformCreateNewMessage() throws JMSException {
         ForeignJmsMessage foreignMessage = new ForeignJmsMessage();
 
         JmsMessage transformed = JmsMessageTransformation.transformMessage(createMockJmsConnection(), foreignMessage);
         assertNotSame(foreignMessage, transformed);
         assertFalse(transformed.equals(foreignMessage));
+    }
+
+    @Test
+    public void testEmptyForeignBytesMessageTransformCreateNewMessage() throws JMSException {
+        ForeignJmsBytesMessage foreignMessage = new ForeignJmsBytesMessage();
+
+        JmsMessage transformed = JmsMessageTransformation.transformMessage(createMockJmsConnection(), foreignMessage);
+        assertNotSame(foreignMessage, transformed);
+        assertFalse(transformed.equals(foreignMessage));
+
+        assertTrue(transformed instanceof JmsBytesMessage);
+        JmsBytesMessage message = (JmsBytesMessage) transformed;
+        message.reset();
+        assertEquals(0, message.getBodyLength());
+    }
+
+    @Test
+    public void testForeignBytesMessageTransformCreateNewMessage() throws JMSException {
+        ForeignJmsBytesMessage foreignMessage = new ForeignJmsBytesMessage();
+        foreignMessage.writeBoolean(true);
+        foreignMessage.setBooleanProperty("boolProperty", true);
+
+        JmsMessage transformed = JmsMessageTransformation.transformMessage(createMockJmsConnection(), foreignMessage);
+        assertNotSame(foreignMessage, transformed);
+        assertFalse(transformed.equals(foreignMessage));
+
+        assertTrue(transformed instanceof JmsBytesMessage);
+        JmsBytesMessage message = (JmsBytesMessage) transformed;
+        message.reset();
+        assertTrue(message.getBodyLength() > 0);
+        assertTrue(message.propertyExists("boolProperty"));
+    }
+
+    @Test
+    public void testEmptyForeignTextMessageTransformCreateNewMessage() throws JMSException {
+        ForeignJmsTextMessage foreignMessage = new ForeignJmsTextMessage();
+
+        JmsMessage transformed = JmsMessageTransformation.transformMessage(createMockJmsConnection(), foreignMessage);
+        assertNotSame(foreignMessage, transformed);
+        assertFalse(transformed.equals(foreignMessage));
+
+        assertTrue(transformed instanceof JmsTextMessage);
+        JmsTextMessage message = (JmsTextMessage) transformed;
+        assertNull(message.getText());
+    }
+
+    @Test
+    public void testForeignTextMessageTransformCreateNewMessage() throws JMSException {
+        final String MESSAGE_BODY = "TEST-MESSAGE-BODY";
+
+        ForeignJmsTextMessage foreignMessage = new ForeignJmsTextMessage();
+        foreignMessage.setText(MESSAGE_BODY);
+        foreignMessage.setBooleanProperty("boolProperty", true);
+
+        JmsMessage transformed = JmsMessageTransformation.transformMessage(createMockJmsConnection(), foreignMessage);
+        assertNotSame(foreignMessage, transformed);
+        assertFalse(transformed.equals(foreignMessage));
+
+        assertTrue(transformed instanceof JmsTextMessage);
+        JmsTextMessage message = (JmsTextMessage) transformed;
+        assertEquals(MESSAGE_BODY, message.getText());
+        assertTrue(message.propertyExists("boolProperty"));
+    }
+
+    @Test
+    public void testEmptyForeignMapMessageTransformCreateNewMessage() throws JMSException {
+        ForeignJmsMapMessage foreignMessage = new ForeignJmsMapMessage();
+
+        JmsMessage transformed = JmsMessageTransformation.transformMessage(createMockJmsConnection(), foreignMessage);
+        assertNotSame(foreignMessage, transformed);
+        assertFalse(transformed.equals(foreignMessage));
+
+        assertTrue(transformed instanceof JmsMapMessage);
+        JmsMapMessage message = (JmsMapMessage) transformed;
+        assertFalse(message.getMapNames().hasMoreElements());
+    }
+
+    @Test
+    public void testForeignMapMessageTransformCreateNewMessage() throws JMSException {
+        ForeignJmsMapMessage foreignMessage = new ForeignJmsMapMessage();
+        foreignMessage.setBoolean("property1", true);
+        foreignMessage.setShort("property2", (short) 65535);
+        foreignMessage.setBooleanProperty("boolProperty", true);
+
+        JmsMessage transformed = JmsMessageTransformation.transformMessage(createMockJmsConnection(), foreignMessage);
+        assertNotSame(foreignMessage, transformed);
+        assertFalse(transformed.equals(foreignMessage));
+
+        assertTrue(transformed instanceof JmsMapMessage);
+        JmsMapMessage message = (JmsMapMessage) transformed;
+        assertTrue(message.propertyExists("boolProperty"));
+        assertTrue(message.getMapNames().hasMoreElements());
+        assertTrue(message.itemExists("property1"));
+        assertTrue(message.itemExists("property2"));
+    }
+
+    @Test
+    public void testEmptyForeignStreamMessageTransformCreateNewMessage() throws JMSException {
+        ForeignJmsStreamMessage foreignMessage = new ForeignJmsStreamMessage();
+
+        JmsMessage transformed = JmsMessageTransformation.transformMessage(createMockJmsConnection(), foreignMessage);
+        assertNotSame(foreignMessage, transformed);
+        assertFalse(transformed.equals(foreignMessage));
+
+        assertTrue(transformed instanceof JmsStreamMessage);
+        JmsStreamMessage message = (JmsStreamMessage) transformed;
+        message.reset();
+        try {
+            message.readBoolean();
+        } catch (MessageEOFException ex) {}
+    }
+
+    @Test
+    public void tesAbnormalForeignStreamMessageTransformCreateNewMessage() throws JMSException {
+        ForeignJmsStreamMessage foreignMessage = new ForeignJmsStreamMessage();
+        foreignMessage.writeObject(true);
+        foreignMessage.reset();
+        foreignMessage = Mockito.spy(foreignMessage);
+
+        // Test for an odd StreamMessage that return null instead of throwing a MessageEOFException
+        Mockito.when(foreignMessage.readObject()).thenReturn(true).
+                                                  thenReturn(false).
+                                                  thenReturn(true).
+                                                  thenReturn(null);
+
+        JmsMessage transformed = JmsMessageTransformation.transformMessage(createMockJmsConnection(), foreignMessage);
+        assertNotSame(foreignMessage, transformed);
+        assertFalse(transformed.equals(foreignMessage));
+
+        assertTrue(transformed instanceof JmsStreamMessage);
+        JmsStreamMessage message = (JmsStreamMessage) transformed;
+        message.reset();
+
+        assertTrue(message.readBoolean());
+        assertFalse(message.readBoolean());
+        assertTrue(message.readBoolean());
+        try {
+            message.readBoolean();
+        } catch (MessageEOFException ex) {}
+    }
+
+    @Test
+    public void testForeignStreamMessageTransformCreateNewMessage() throws JMSException {
+        ForeignJmsStreamMessage foreignMessage = new ForeignJmsStreamMessage();
+        foreignMessage.writeBoolean(true);
+        foreignMessage.writeString("test");
+        foreignMessage.writeBoolean(true);
+        foreignMessage.setBooleanProperty("boolProperty", true);
+
+        JmsMessage transformed = JmsMessageTransformation.transformMessage(createMockJmsConnection(), foreignMessage);
+        assertNotSame(foreignMessage, transformed);
+        assertFalse(transformed.equals(foreignMessage));
+
+        assertTrue(transformed instanceof JmsStreamMessage);
+        JmsStreamMessage message = (JmsStreamMessage) transformed;
+        assertTrue(message.propertyExists("boolProperty"));
+        message.reset();
+        assertTrue(message.readBoolean());
+        assertEquals("test", message.readString());
+        assertTrue(message.readBoolean());
+    }
+
+    @Test
+    public void testEmptyForeignObjectMessageTransformCreateNewMessage() throws JMSException {
+        ForeignJmsObjectMessage foreignMessage = new ForeignJmsObjectMessage();
+
+        JmsMessage transformed = JmsMessageTransformation.transformMessage(createMockJmsConnection(), foreignMessage);
+        assertNotSame(foreignMessage, transformed);
+        assertFalse(transformed.equals(foreignMessage));
+
+        assertTrue(transformed instanceof JmsObjectMessage);
+        JmsObjectMessage message = (JmsObjectMessage) transformed;
+        assertNull(message.getObject());
+    }
+
+    @Test
+    public void testForeignObjectMessageTransformCreateNewMessage() throws JMSException {
+        final String MESSAGE_BODY = "TEST-MESSAGE-BODY";
+
+        ForeignJmsObjectMessage foreignMessage = new ForeignJmsObjectMessage();
+        foreignMessage.setBooleanProperty("boolProperty", true);
+        foreignMessage.setObject(MESSAGE_BODY);
+
+        JmsMessage transformed = JmsMessageTransformation.transformMessage(createMockJmsConnection(), foreignMessage);
+        assertNotSame(foreignMessage, transformed);
+        assertFalse(transformed.equals(foreignMessage));
+
+        assertTrue(transformed instanceof JmsObjectMessage);
+        JmsObjectMessage message = (JmsObjectMessage) transformed;
+        assertTrue(message.propertyExists("boolProperty"));
+        assertEquals(MESSAGE_BODY, message.getObject());
     }
 
     //---------- Test Generic Property Copy ----------------------------------//

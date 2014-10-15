@@ -124,7 +124,6 @@ public final class JmsMessageTransformation {
                     }
                 } catch (MessageEOFException e) {
                     // Indicates all the bytes have been read from the source.
-                } catch (JMSException e) {
                 }
 
                 activeMessage = msg;
@@ -156,7 +155,6 @@ public final class JmsMessageTransformation {
                     }
                 } catch (MessageEOFException e) {
                     // Indicates all the stream values have been read from the source.
-                } catch (JMSException e) {
                 }
 
                 activeMessage = msg;

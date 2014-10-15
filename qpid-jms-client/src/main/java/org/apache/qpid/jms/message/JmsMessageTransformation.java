@@ -165,7 +165,7 @@ public final class JmsMessageTransformation {
                 msg.setText(textMsg.getText());
                 activeMessage = msg;
             } else {
-                activeMessage = factory.createTextMessage();
+                activeMessage = factory.createMessage();
             }
 
             copyProperties(connection, message, activeMessage);

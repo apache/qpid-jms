@@ -35,6 +35,7 @@ import javax.jms.Topic;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFacade;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
@@ -301,6 +302,13 @@ public class JmsMessageTransformationTest {
     }
 
     @Test
+    public void testUnresolvedDestinationTransformerGetReturnsNonNull() throws JMSException {
+        assertNotNull(JmsMessageTransformation.getUnresolvedDestinationTransformer());
+        JmsMessageTransformation.setUnresolvedDestinationHandler(null);
+        assertNotNull(JmsMessageTransformation.getUnresolvedDestinationTransformer());
+    }
+
+    @Test
     public void testPlainDestinationThrowsJMSEx() throws JMSException {
         ForeignDestination destination = new ForeignDestination(DESTINATION_NAME);
         try {
@@ -311,6 +319,16 @@ public class JmsMessageTransformationTest {
     }
 
     @Test
+    public void testPlainDestinationWithCustomInterceper() throws JMSException {
+        ForeignDestination destination = new ForeignDestination(DESTINATION_NAME);
+        JmsMessageTransformation.setUnresolvedDestinationHandler(new AlwaysQueueUnresolvedDestinationHandler());
+        JmsDestination result = JmsMessageTransformation.transformDestination(createMockJmsConnection(), destination);
+
+        assertNotNull(result);
+        assertTrue(result instanceof JmsQueue);
+    }
+
+    @Test
     public void testCompositeTopicAndQueueDestinationThrowsJMSEx() throws JMSException {
         ForeignDestination destination = new ForeignTopicAndQueue(DESTINATION_NAME);
         try {
@@ -318,6 +336,16 @@ public class JmsMessageTransformationTest {
             fail("Should have thrown an JMSException");
         } catch (JMSException ex) {
         }
+    }
+
+    @Test
+    public void testCompositeTopicAndQueueDestinationCanBeInterceper() throws JMSException {
+        ForeignDestination destination = new ForeignTopicAndQueue(DESTINATION_NAME);
+        JmsMessageTransformation.setUnresolvedDestinationHandler(new AlwaysQueueUnresolvedDestinationHandler());
+        JmsDestination result = JmsMessageTransformation.transformDestination(createMockJmsConnection(), destination);
+
+        assertNotNull(result);
+        assertTrue(result instanceof JmsQueue);
     }
 
     @Test
@@ -519,6 +547,19 @@ public class JmsMessageTransformationTest {
 
         public void setReturnQueueName(boolean returnQueueName) {
             this.returnQueueName = returnQueueName;
+        }
+    }
+
+    private class AlwaysQueueUnresolvedDestinationHandler implements JmsUnresolvedDestinationTransformer {
+
+        @Override
+        public JmsDestination transform(Destination destination) throws JMSException {
+            return new JmsQueue(destination.toString());
+        }
+
+        @Override
+        public JmsDestination transform(String destination) throws JMSException {
+            return new JmsQueue(destination);
         }
     }
 }

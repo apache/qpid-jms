@@ -45,6 +45,9 @@ import org.apache.qpid.jms.JmsTopic;
  */
 public final class JmsMessageTransformation {
 
+    private static JmsUnresolvedDestinationTransformer unresolvedDestinationHandler =
+        new JmsDefaultUnresolvedDestinationTransformer();
+
     /**
      * Creates a an available JMS message from another provider.
      *
@@ -62,16 +65,16 @@ public final class JmsMessageTransformation {
         if (destination != null) {
 
             if (destination instanceof JmsDestination) {
-                return (JmsDestination) destination;
+                result = (JmsDestination) destination;
             } else if (destination instanceof Queue && destination instanceof Topic) {
                 String queueName = ((Queue) destination).getQueueName();
                 String topicName = ((Topic) destination).getTopicName();
                 if (queueName != null && topicName == null) {
-                    return new JmsQueue(queueName);
+                    result = new JmsQueue(queueName);
                 } else if (queueName == null && topicName != null) {
-                    return new JmsTopic(topicName);
+                    result = new JmsTopic(topicName);
                 } else {
-                    throw new JMSException("Could not transform destination: " + destination);
+                    result = unresolvedDestinationHandler.transform(destination);
                 }
             } else {
                 if (destination instanceof TemporaryQueue) {
@@ -83,7 +86,7 @@ public final class JmsMessageTransformation {
                 } else if (destination instanceof Topic) {
                     result = new JmsTopic(((Topic) destination).getTopicName());
                 } else {
-                    throw new JMSException("Could not transform destination: " + destination);
+                    result = unresolvedDestinationHandler.transform(destination);
                 }
             }
         }
@@ -206,5 +209,17 @@ public final class JmsMessageTransformation {
             Object obj = source.getObjectProperty(name);
             target.setObjectProperty(name, obj);
         }
+    }
+
+    public static void setUnresolvedDestinationHandler(JmsUnresolvedDestinationTransformer handler) {
+        unresolvedDestinationHandler = handler;
+    }
+
+    public static JmsUnresolvedDestinationTransformer getUnresolvedDestinationTransformer() {
+        if (unresolvedDestinationHandler == null) {
+            unresolvedDestinationHandler = new JmsDefaultUnresolvedDestinationTransformer();
+        }
+
+        return unresolvedDestinationHandler;
     }
 }

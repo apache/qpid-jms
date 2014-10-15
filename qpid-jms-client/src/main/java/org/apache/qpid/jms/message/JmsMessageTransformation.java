@@ -97,12 +97,14 @@ public final class JmsMessageTransformation {
      * provider.
      *
      * @param message
-     *        - Message to be converted into Jms's implementation.
+     *        Message to be converted into Jms's implementation.
      * @param connection
-     * @return JmsMessage - Jms's implementation object of the
-     *         message.
-     * @throws JMSException
-     *         if an error occurs
+     *        The JmsConnection where this transformation is being initiated.
+     *
+     * @return JmsMessage
+     *         The client's implementation object for the incoming message.
+     *
+     * @throws JMSException if an error occurs during the copy.
      */
     public static JmsMessage transformMessage(JmsConnection connection, Message message) throws JMSException {
         if (message instanceof JmsMessage) {
@@ -117,12 +119,11 @@ public final class JmsMessageTransformation {
                 JmsBytesMessage msg = factory.createBytesMessage();
                 try {
                     for (;;) {
-                        // Reads a byte from the message stream until the stream
-                        // is empty
+                        // Reads a byte from the message stream until the stream is empty
                         msg.writeByte(bytesMsg.readByte());
                     }
                 } catch (MessageEOFException e) {
-                    // if an end of message stream as expected
+                    // Indicates all the bytes have been read from the source.
                 } catch (JMSException e) {
                 }
 
@@ -154,7 +155,7 @@ public final class JmsMessageTransformation {
                         msg.writeObject(obj);
                     }
                 } catch (MessageEOFException e) {
-                    // if an end of message stream as expected
+                    // Indicates all the stream values have been read from the source.
                 } catch (JMSException e) {
                 }
 
@@ -175,33 +176,37 @@ public final class JmsMessageTransformation {
     }
 
     /**
-     * Copies the standard JMS and user defined properties from the givem
-     * message to the specified message
+     * Copies the standard JMS and user defined properties from the given source
+     * message to the specified target message.  The copy can only handle the JMS
+     * specific message properties and known JMS Headers, any headers that are
+     * specific to the foreign message may be lost if not returned directly via
+     * the <code>propertyNames</code> method.
      *
-     * @param fromMessage
+     * @param source
      *        the message to take the properties from
-     * @param toMessage
+     * @param target
      *        the message to add the properties to
-     * @throws JMSException
+     *
+     * @throws JMSException if an error occurs during the copy of message properties.
      */
-    public static void copyProperties(JmsConnection connection, Message fromMessage, Message toMessage) throws JMSException {
-        toMessage.setJMSMessageID(fromMessage.getJMSMessageID());
-        toMessage.setJMSCorrelationID(fromMessage.getJMSCorrelationID());
-        toMessage.setJMSReplyTo(transformDestination(connection, fromMessage.getJMSReplyTo()));
-        toMessage.setJMSDestination(transformDestination(connection, fromMessage.getJMSDestination()));
-        toMessage.setJMSDeliveryMode(fromMessage.getJMSDeliveryMode());
-        toMessage.setJMSRedelivered(fromMessage.getJMSRedelivered());
-        toMessage.setJMSType(fromMessage.getJMSType());
-        toMessage.setJMSExpiration(fromMessage.getJMSExpiration());
-        toMessage.setJMSPriority(fromMessage.getJMSPriority());
-        toMessage.setJMSTimestamp(fromMessage.getJMSTimestamp());
+    public static void copyProperties(JmsConnection connection, Message source, Message target) throws JMSException {
+        target.setJMSMessageID(source.getJMSMessageID());
+        target.setJMSCorrelationID(source.getJMSCorrelationID());
+        target.setJMSReplyTo(transformDestination(connection, source.getJMSReplyTo()));
+        target.setJMSDestination(transformDestination(connection, source.getJMSDestination()));
+        target.setJMSDeliveryMode(source.getJMSDeliveryMode());
+        target.setJMSRedelivered(source.getJMSRedelivered());
+        target.setJMSType(source.getJMSType());
+        target.setJMSExpiration(source.getJMSExpiration());
+        target.setJMSPriority(source.getJMSPriority());
+        target.setJMSTimestamp(source.getJMSTimestamp());
 
-        Enumeration<?> propertyNames = fromMessage.getPropertyNames();
+        Enumeration<?> propertyNames = source.getPropertyNames();
 
         while (propertyNames.hasMoreElements()) {
             String name = propertyNames.nextElement().toString();
-            Object obj = fromMessage.getObjectProperty(name);
-            toMessage.setObjectProperty(name, obj);
+            Object obj = source.getObjectProperty(name);
+            target.setObjectProperty(name, obj);
         }
     }
 }

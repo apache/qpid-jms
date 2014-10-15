@@ -72,6 +72,10 @@ public class JmsDefaultUnresolvedDestinationTransformer implements JmsUnresolved
 
     @Override
     public JmsDestination transform(String destination) throws JMSException {
+        if (destination == null) {
+            throw new JMSException("Destination objects cannot have a null name value");
+        }
+
         return new JmsQueue(destination);
     }
 }

@@ -19,6 +19,7 @@ package org.apache.qpid.jms.message;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -51,6 +52,12 @@ public class JmsMessageTransformationTest {
     //---------- Test Destination Transformation -----------------------------//
 
     @Test
+    public void testTransformNullDestinationNoExceptions() throws JMSException {
+        JmsDestination transformed = JmsMessageTransformation.transformDestination(createMockJmsConnection(), null);
+        assertNull(transformed);
+    }
+
+    @Test
     public void testPlainDestinationThrowsJMSEx() throws JMSException {
         ForeignDestination destination = new ForeignDestination(DESTINATION_NAME);
         try {
@@ -68,6 +75,43 @@ public class JmsMessageTransformationTest {
             fail("Should have thrown an JMSException");
         } catch (JMSException ex) {
         }
+    }
+
+    @Test
+    public void testCompositeTopicAndQueueDestinationNoNameThrowsJMSEx() throws JMSException {
+        ForeignTopicAndQueue destination = new ForeignTopicAndQueue(DESTINATION_NAME);
+        destination.setReturnQueueName(false);
+        destination.setReturnTopicName(false);
+
+        try {
+            JmsMessageTransformation.transformDestination(createMockJmsConnection(), destination);
+            fail("Should have thrown an JMSException");
+        } catch (JMSException ex) {
+        }
+    }
+
+    @Test
+    public void testTransformCompositeDestinationFromForeignTopic() throws JMSException {
+        ForeignTopicAndQueue destination = new ForeignTopicAndQueue(DESTINATION_NAME);
+        destination.setReturnQueueName(false);
+
+        JmsDestination transformed = JmsMessageTransformation.transformDestination(createMockJmsConnection(), destination);
+        assertNotNull(transformed);
+        assertTrue(transformed.isTopic());
+        assertFalse(transformed.isTemporary());
+        assertEquals(DESTINATION_NAME, transformed.getName());
+    }
+
+    @Test
+    public void testTransformCompositeDestinationFromForeignQueue() throws JMSException {
+        ForeignTopicAndQueue destination = new ForeignTopicAndQueue(DESTINATION_NAME);
+        destination.setReturnTopicName(false);
+
+        JmsDestination transformed = JmsMessageTransformation.transformDestination(createMockJmsConnection(), destination);
+        assertNotNull(transformed);
+        assertTrue(transformed.isQueue());
+        assertFalse(transformed.isTemporary());
+        assertEquals(DESTINATION_NAME, transformed.getName());
     }
 
     @Test
@@ -164,23 +208,6 @@ public class JmsMessageTransformationTest {
         }
     }
 
-    private class ForeignTopicAndQueue extends ForeignDestination implements Queue, Topic {
-
-        public ForeignTopicAndQueue(String name) {
-            super(name);
-        }
-
-        @Override
-        public String getTopicName() throws JMSException {
-            return name;
-        }
-
-        @Override
-        public String getQueueName() throws JMSException {
-            return name;
-        }
-    }
-
     private class ForeignTemporaryQueue extends ForeignQueue implements TemporaryQueue {
 
         public ForeignTemporaryQueue(String name) {
@@ -211,6 +238,42 @@ public class JmsMessageTransformationTest {
 
         @Override
         public void delete() throws JMSException {
+        }
+    }
+
+    private class ForeignTopicAndQueue extends ForeignDestination implements Queue, Topic {
+
+        private boolean returnTopicName = true;
+        private boolean returnQueueName = true;
+
+        public ForeignTopicAndQueue(String name) {
+            super(name);
+        }
+
+        @Override
+        public String getTopicName() throws JMSException {
+            if (returnTopicName) {
+                return name;
+            }
+
+            return null;
+        }
+
+        @Override
+        public String getQueueName() throws JMSException {
+            if (returnQueueName) {
+                return name;
+            }
+
+            return null;
+        }
+
+        public void setReturnTopicName(boolean returnTopicName) {
+            this.returnTopicName = returnTopicName;
+        }
+
+        public void setReturnQueueName(boolean returnQueueName) {
+            this.returnQueueName = returnQueueName;
         }
     }
 }

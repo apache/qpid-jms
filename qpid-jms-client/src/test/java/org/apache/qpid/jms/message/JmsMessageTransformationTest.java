@@ -19,6 +19,7 @@ package org.apache.qpid.jms.message;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -34,6 +35,7 @@ import javax.jms.Topic;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsTopic;
+import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFacade;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -47,6 +49,39 @@ public class JmsMessageTransformationTest {
     @Test
     public void testJmsDestinationCreate() throws JMSException {
         new JmsMessageTransformation();
+    }
+
+    //---------- Test Message Transformation ---------------------------------//
+
+    @Test
+    public void testTransformJmsMessageCopies() throws JMSException {
+        JmsMessage source = new JmsMessage(new JmsDefaultMessageFacade());
+
+        source.setJMSMessageID("ID:CONNECTION:1:1");
+
+        JmsMessage copy = JmsMessageTransformation.transformMessage(createMockJmsConnection(), source);
+        assertNotNull(copy.getJMSMessageID());
+        assertEquals(source, copy);
+        assertNotSame(source, copy);
+    }
+
+    //---------- Test Generic Property Copy ----------------------------------//
+
+    @Test
+    public void testJMSMessagePropertiesAreCopied() throws JMSException {
+        JmsMessage source = new JmsMessage(new JmsDefaultMessageFacade());
+        JmsMessage target = new JmsMessage(new JmsDefaultMessageFacade());
+
+        source.setJMSType("text/test");
+
+        source.setBooleanProperty("boolValue", true);
+        source.setStringProperty("stringValue", "foo");
+
+        JmsMessageTransformation.copyProperties(createMockJmsConnection(), source, target);
+
+        assertEquals(true, target.getBooleanProperty("boolValue"));
+        assertEquals("foo", target.getStringProperty("stringValue"));
+        assertEquals("text/test", target.getJMSType());
     }
 
     //---------- Test Destination Transformation -----------------------------//

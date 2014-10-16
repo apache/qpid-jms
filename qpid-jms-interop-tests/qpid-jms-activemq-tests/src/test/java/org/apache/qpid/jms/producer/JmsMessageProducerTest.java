@@ -144,6 +144,36 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         assertEquals(0, message.getJMSExpiration());
     }
 
+    @Test
+    public void testProducerWithNoMessageIdCanBeConsumed() throws Exception {
+        connection = createAmqpConnection();
+        assertNotNull(connection);
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageProducer producer = session.createProducer(queue);
+        producer.setDisableMessageID(true);
+
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(0, proxy.getQueueSize());
+
+        for (int i = 0; i < 10; ++i) {
+            Message message = session.createMessage();
+            producer.send(message);
+        }
+
+        assertEquals(10, proxy.getQueueSize());
+
+        MessageConsumer consumer = session.createConsumer(queue);
+        for (int i = 0; i < 10; i++) {
+            Message message = consumer.receive(5000);
+            assertNotNull(message);
+            assertEquals(0, message.getJMSExpiration());
+        }
+    }
+
     private String createLargeString(int sizeInBytes) {
         byte[] base = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 0 };
         StringBuilder builder = new StringBuilder();

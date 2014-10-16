@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.URI;
 
 import javax.jms.JMSException;
+import javax.jms.Session;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
@@ -133,5 +134,72 @@ public class JmsConnectionTest {
         assertFalse(connection.isConnected());
         connection.start();
         assertTrue(connection.isConnected());
+    }
+
+    //---------- Test methods fail after connection closed -------------------//
+
+    @Test(expected=javax.jms.IllegalStateException.class)
+    public void testSetClientIdAfterClose() throws JMSException {
+        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.close();
+        connection.setClientID("test-Id");
+    }
+
+    @Test(expected=javax.jms.IllegalStateException.class)
+    public void testStartCalledAfterClose() throws JMSException {
+        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.close();
+        connection.start();
+    }
+
+    @Test(expected=javax.jms.IllegalStateException.class)
+    public void testStopCalledAfterClose() throws JMSException {
+        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.close();
+        connection.stop();
+    }
+
+    @Test(expected=javax.jms.IllegalStateException.class)
+    public void testSetExceptionListenerAfterClose() throws JMSException {
+        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.close();
+        connection.setExceptionListener(null);
+    }
+
+    @Test(expected=javax.jms.IllegalStateException.class)
+    public void testFetExceptionListenerAfterClose() throws JMSException {
+        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.close();
+        connection.getExceptionListener();
+    }
+
+    @Test(expected=javax.jms.IllegalStateException.class)
+    public void testCreateConnectionConsumerForTopicAfterClose() throws JMSException {
+        JmsDestination destination = new JmsTopic("test");
+        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.close();
+        connection.createConnectionConsumer(destination, null, null, 0);
+    }
+
+    @Test(expected=javax.jms.IllegalStateException.class)
+    public void testCreateConnectionConsumerForQueueAfterClose() throws JMSException {
+        JmsDestination destination = new JmsQueue("test");
+        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.close();
+        connection.createConnectionConsumer(destination, null, null, 0);
+    }
+
+    @Test(expected=javax.jms.IllegalStateException.class)
+    public void testCreateTopicSessionAfterClose() throws JMSException {
+        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.close();
+        connection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+    }
+
+    @Test(expected=javax.jms.IllegalStateException.class)
+    public void testCreateQueueSessionAfterClose() throws JMSException {
+        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.close();
+        connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
     }
 }

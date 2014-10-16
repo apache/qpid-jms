@@ -523,20 +523,20 @@ public class AmqpDestinationHelperTest {
     @Test
     public void testSetToAddressFromDestinationWithNullDestination() {
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
-        helper.setToAddressFromDestination(message, null);
+        helper.setToAddressFromDestination(message, null, false);
         Mockito.verify(message).setToAddress(null);
         Mockito.verify(message).removeMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
     }
 
     @Test(expected=NullPointerException.class)
     public void testSetToAddressFromDestinationWithNullDestinationAndNullMessage() {
-        helper.setToAddressFromDestination(null, null);
+        helper.setToAddressFromDestination(null, null, false);
     }
 
     @Test(expected=NullPointerException.class)
     public void testSetToAddressFromDestinationWithNullMessage() {
         JmsDestination destination = new JmsQueue("testAddress");
-        helper.setToAddressFromDestination(null, destination);
+        helper.setToAddressFromDestination(null, destination, false);
     }
 
     @Test
@@ -545,7 +545,7 @@ public class AmqpDestinationHelperTest {
         JmsDestination destination = new JmsQueue("testAddress");
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
 
-        helper.setToAddressFromDestination(message, destination);
+        helper.setToAddressFromDestination(message, destination, false);
 
         Mockito.verify(message).setToAddress(testAddress);
         Mockito.verify(message).setMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, QUEUE_ATTRIBUTES_STRING);
@@ -557,7 +557,7 @@ public class AmqpDestinationHelperTest {
         JmsDestination destination = new JmsTopic("testAddress");
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
 
-        helper.setToAddressFromDestination(message, destination);
+        helper.setToAddressFromDestination(message, destination, false);
 
         Mockito.verify(message).setToAddress(testAddress);
         Mockito.verify(message).setMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, TOPIC_ATTRIBUTES_STRING);
@@ -569,7 +569,7 @@ public class AmqpDestinationHelperTest {
         JmsDestination destination = new JmsTemporaryQueue("testAddress");
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
 
-        helper.setToAddressFromDestination(message, destination);
+        helper.setToAddressFromDestination(message, destination, false);
 
         Mockito.verify(message).setToAddress(testAddress);
         Mockito.verify(message).setMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, TEMP_QUEUE_ATTRIBUTES_STRING);
@@ -581,7 +581,7 @@ public class AmqpDestinationHelperTest {
         JmsDestination destination = new JmsTemporaryTopic("testAddress");
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
 
-        helper.setToAddressFromDestination(message, destination);
+        helper.setToAddressFromDestination(message, destination, false);
 
         Mockito.verify(message).setToAddress(testAddress);
         Mockito.verify(message).setMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, TEMP_TOPIC_ATTRIBUTES_STRING);
@@ -594,7 +594,7 @@ public class AmqpDestinationHelperTest {
         Mockito.when(destination.getName()).thenReturn(testAddress);
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
 
-        helper.setToAddressFromDestination(message, destination);
+        helper.setToAddressFromDestination(message, destination, false);
 
         Mockito.verify(message).setToAddress(testAddress);
         Mockito.verify(message).removeMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
@@ -605,20 +605,20 @@ public class AmqpDestinationHelperTest {
     @Test
     public void testSetReplyToAddressFromDestinationWithNullDestination() {
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
-        helper.setReplyToAddressFromDestination(message, null);
+        helper.setReplyToAddressFromDestination(message, null, false);
         Mockito.verify(message).setReplyToAddress(null);
         Mockito.verify(message).removeMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
     }
 
     @Test(expected=NullPointerException.class)
     public void testSetReplyToAddressFromDestinationWithNullDestinationAndNullMessage() {
-        helper.setReplyToAddressFromDestination(null, null);
+        helper.setReplyToAddressFromDestination(null, null, false);
     }
 
     @Test(expected=NullPointerException.class)
     public void testSetReplyToAddressFromDestinationWithNullMessage() {
         JmsDestination destination = new JmsQueue("testAddress");
-        helper.setReplyToAddressFromDestination(null, destination);
+        helper.setReplyToAddressFromDestination(null, destination, false);
     }
 
     @Test
@@ -627,7 +627,7 @@ public class AmqpDestinationHelperTest {
         JmsDestination destination = new JmsQueue("testAddress");
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
 
-        helper.setReplyToAddressFromDestination(message, destination);
+        helper.setReplyToAddressFromDestination(message, destination, false);
 
         Mockito.verify(message).setReplyToAddress(testAddress);
         Mockito.verify(message).setMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, QUEUE_ATTRIBUTES_STRING);
@@ -639,7 +639,7 @@ public class AmqpDestinationHelperTest {
         JmsDestination destination = new JmsTopic("testAddress");
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
 
-        helper.setReplyToAddressFromDestination(message, destination);
+        helper.setReplyToAddressFromDestination(message, destination, false);
 
         Mockito.verify(message).setReplyToAddress(testAddress);
         Mockito.verify(message).setMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, TOPIC_ATTRIBUTES_STRING);
@@ -651,7 +651,7 @@ public class AmqpDestinationHelperTest {
         JmsDestination destination = new JmsTemporaryQueue("testAddress");
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
 
-        helper.setReplyToAddressFromDestination(message, destination);
+        helper.setReplyToAddressFromDestination(message, destination, false);
 
         Mockito.verify(message).setReplyToAddress(testAddress);
         Mockito.verify(message).setMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, TEMP_QUEUE_ATTRIBUTES_STRING);
@@ -663,7 +663,7 @@ public class AmqpDestinationHelperTest {
         JmsDestination destination = new JmsTemporaryTopic("testAddress");
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
 
-        helper.setReplyToAddressFromDestination(message, destination);
+        helper.setReplyToAddressFromDestination(message, destination, false);
 
         Mockito.verify(message).setReplyToAddress(testAddress);
         Mockito.verify(message).setMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, TEMP_TOPIC_ATTRIBUTES_STRING);
@@ -676,7 +676,7 @@ public class AmqpDestinationHelperTest {
         Mockito.when(destination.getName()).thenReturn(testAddress);
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
 
-        helper.setReplyToAddressFromDestination(message, destination);
+        helper.setReplyToAddressFromDestination(message, destination, false);
 
         Mockito.verify(message).setReplyToAddress(testAddress);
         Mockito.verify(message).removeMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
@@ -692,30 +692,30 @@ public class AmqpDestinationHelperTest {
         set.add(AmqpDestinationHelper.TEMPORARY_ATTRIBUTE);
 
         // test for no NPE errors.
-        assertNull(helper.splitAttributes(null));
+        assertNull(helper.splitAttributesString(null));
 
         // test a single comma separator produces expected set
-        assertEquals(set, helper.splitAttributes(AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING + "," +
+        assertEquals(set, helper.splitAttributesString(AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING + "," +
                                                  AmqpDestinationHelper.TEMPORARY_ATTRIBUTE));
 
         // test trailing comma doesn't alter produced set
-        assertEquals(set, helper.splitAttributes(AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING + "," +
+        assertEquals(set, helper.splitAttributesString(AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING + "," +
                                                  AmqpDestinationHelper.TEMPORARY_ATTRIBUTE + ","));
 
         // test leading comma doesn't alter produced set
-        assertEquals(set, helper.splitAttributes("," + AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING + ","
+        assertEquals(set, helper.splitAttributesString("," + AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING + ","
                                                      + AmqpDestinationHelper.TEMPORARY_ATTRIBUTE));
 
         // test consecutive central commas don't alter produced set
-        assertEquals(set, helper.splitAttributes(AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING + ",," +
+        assertEquals(set, helper.splitAttributesString(AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING + ",," +
                                                  AmqpDestinationHelper.TEMPORARY_ATTRIBUTE));
 
         // test consecutive trailing commas don't alter produced set
-        assertEquals(set, helper.splitAttributes(AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING + "," +
+        assertEquals(set, helper.splitAttributesString(AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING + "," +
                                                  AmqpDestinationHelper.TEMPORARY_ATTRIBUTE + ",,"));
 
         // test consecutive leading commas don't alter produced set
-        assertEquals(set, helper.splitAttributes("," + AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING + ","
+        assertEquals(set, helper.splitAttributesString("," + AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING + ","
                                                      + AmqpDestinationHelper.TEMPORARY_ATTRIBUTE));
     }
 }

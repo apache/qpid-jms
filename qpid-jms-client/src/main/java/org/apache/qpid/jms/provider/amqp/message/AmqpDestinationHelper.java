@@ -37,6 +37,13 @@ public class AmqpDestinationHelper {
     public static final String TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-to-type";
     public static final String REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-reply-type";
 
+    // For support of current byte type values
+    public static final byte QUEUE_TYPE = 0x00;
+    public static final byte TOPIC_TYPE = 0x01;
+    public static final byte TEMP_QUEUE_TYPE = 0x02;
+    public static final byte TEMP_TOPIC_TYPE = 0x03;
+
+    // For support of old string type values
     static final String QUEUE_ATTRIBUTE = "queue";
     static final String TOPIC_ATTRIBUTE = "topic";
     static final String TEMPORARY_ATTRIBUTE = "temporary";
@@ -45,18 +52,6 @@ public class AmqpDestinationHelper {
     public static final String TOPIC_ATTRIBUTES_STRING = TOPIC_ATTRIBUTE;
     public static final String TEMP_QUEUE_ATTRIBUTES_STRING = QUEUE_ATTRIBUTE + "," + TEMPORARY_ATTRIBUTE;
     public static final String TEMP_TOPIC_ATTRIBUTES_STRING = TOPIC_ATTRIBUTE + "," + TEMPORARY_ATTRIBUTE;
-
-    // TODO - The Type Annotation seems like it could just be a byte value
-
-    /*
-     *  One possible way to encode destination types that isn't a string.
-     *
-     *  public static final byte QUEUE_TYPE = 0x01;
-     *  public static final byte TOPIC_TYPE = 0x02;
-     *  public static final byte TEMP_MASK = 0x04;
-     *  public static final byte TEMP_TOPIC_TYPE = TOPIC_TYPE | TEMP_MASK;
-     *  public static final byte TEMP_QUEUE_TYPE = QUEUE_TYPE | TEMP_MASK;
-     */
 
     /**
      * Given a destination name string, create a JmsDestination object based on the
@@ -95,56 +90,42 @@ public class AmqpDestinationHelper {
      *
      * If an address and type description is provided then this will be used to
      * create the Destination. If the type information is missing, it will be
-     * derived from the consumer destination if present, or default to a generic
+     * derived from the consumer destination if present, or default to a queue
      * destination if not.
      *
      * If the address is null then the consumer destination is returned, unless
      * the useConsumerDestForTypeOnly flag is true, in which case null will be
      * returned.
      */
-
     public JmsDestination getJmsDestination(AmqpJmsMessageFacade message, JmsDestination consumerDestination) {
         String to = message.getToAddress();
-        String toTypeString = (String) message.getMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
-        Set<String> typeSet = null;
+        Byte typeByte = getTypeByte(message, TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
 
-        if (toTypeString != null) {
-            typeSet = splitAttributes(toTypeString);
-        }
-
-        return createDestination(to, typeSet, consumerDestination, false);
+        return createDestination(to, typeByte, consumerDestination, false);
     }
 
     public JmsDestination getJmsReplyTo(AmqpJmsMessageFacade message, JmsDestination consumerDestination) {
         String replyTo = message.getReplyToAddress();
-        String replyToTypeString = (String) message.getMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
-        Set<String> typeSet = null;
+        Byte typeByte = getTypeByte(message, REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
 
-        if (replyToTypeString != null) {
-            typeSet = splitAttributes(replyToTypeString);
-        }
-
-        return createDestination(replyTo, typeSet, consumerDestination, true);
+        return createDestination(replyTo, typeByte, consumerDestination, true);
     }
 
-    private JmsDestination createDestination(String address, Set<String> typeSet, JmsDestination consumerDestination, boolean useConsumerDestForTypeOnly) {
+    private JmsDestination createDestination(String address, Byte typeByte, JmsDestination consumerDestination, boolean useConsumerDestForTypeOnly) {
         if (address == null) {
             return useConsumerDestForTypeOnly ? null : consumerDestination;
         }
 
-        if (typeSet != null && !typeSet.isEmpty()) {
-            if (typeSet.contains(QUEUE_ATTRIBUTE)) {
-                if (typeSet.contains(TEMPORARY_ATTRIBUTE)) {
-                    return new JmsTemporaryQueue(address);
-                } else {
-                    return new JmsQueue(address);
-                }
-            } else if (typeSet.contains(TOPIC_ATTRIBUTE)) {
-                if (typeSet.contains(TEMPORARY_ATTRIBUTE)) {
-                    return new JmsTemporaryTopic(address);
-                } else {
-                    return new JmsTopic(address);
-                }
+        if (typeByte != null) {
+            switch (typeByte) {
+            case QUEUE_TYPE:
+                return new JmsQueue(address);
+            case TOPIC_TYPE:
+                return new JmsTopic(address);
+            case TEMP_QUEUE_TYPE:
+                return new JmsTemporaryQueue(address);
+            case TEMP_TOPIC_TYPE:
+                return new JmsTemporaryTopic(address);
             }
         }
 
@@ -166,59 +147,75 @@ public class AmqpDestinationHelper {
         return new JmsQueue(address);
     }
 
-    public void setToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
+    public void setToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination, boolean useByteValue) {
         String address = destination != null ? destination.getName() : null;
-        String typeString = toTypeAnnotation(destination);
+        Object typeValue = toTypeAnnotation(destination, useByteValue);
 
         message.setToAddress(address);
 
-        if (address == null || typeString == null) {
+        if (address == null || typeValue == null) {
             message.removeMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         } else {
-            message.setMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, typeString);
+            message.setMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, typeValue);
         }
     }
 
-    public void setReplyToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
+    public void setReplyToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination, boolean useByteValue) {
         String replyToAddress = destination != null ? destination.getName() : null;
-        String typeString = toTypeAnnotation(destination);
+        Object typeValue = toTypeAnnotation(destination, useByteValue);
 
         message.setReplyToAddress(replyToAddress);
 
-        if (replyToAddress == null || typeString == null) {
+        if (replyToAddress == null || typeValue == null) {
             message.removeMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         } else {
-            message.setMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, typeString);
+            message.setMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, typeValue);
         }
     }
 
     /**
-     * @return the annotation type string, or null if the supplied destination
+     * @return the annotation type value, or null if the supplied destination
      *         is null or can't be classified
      */
-    private String toTypeAnnotation(JmsDestination destination) {
+    private Object toTypeAnnotation(JmsDestination destination, boolean useByteValue) {
         if (destination == null) {
             return null;
         }
 
-        if (destination.isQueue()) {
-            if (destination.isTemporary()) {
-                return TEMP_QUEUE_ATTRIBUTES_STRING;
-            } else {
-                return QUEUE_ATTRIBUTES_STRING;
+        if(useByteValue)
+        {
+            if (destination.isQueue()) {
+                if (destination.isTemporary()) {
+                    return TEMP_QUEUE_TYPE;
+                } else {
+                    return QUEUE_TYPE;
+                }
+            } else if (destination.isTopic()) {
+                if (destination.isTemporary()) {
+                    return TEMP_TOPIC_TYPE;
+                } else {
+                    return TOPIC_TYPE;
+                }
             }
-        } else if (destination.isTopic()) {
-            if (destination.isTemporary()) {
-                return TEMP_TOPIC_ATTRIBUTES_STRING;
-            } else {
-                return TOPIC_ATTRIBUTES_STRING;
+        } else {
+            if (destination.isQueue()) {
+                if (destination.isTemporary()) {
+                    return TEMP_QUEUE_ATTRIBUTES_STRING;
+                } else {
+                    return QUEUE_ATTRIBUTES_STRING;
+                }
+            } else if (destination.isTopic()) {
+                if (destination.isTemporary()) {
+                    return TEMP_TOPIC_ATTRIBUTES_STRING;
+                } else {
+                    return TOPIC_ATTRIBUTES_STRING;
+                }
             }
         }
-
         return null;
     }
 
-    public Set<String> splitAttributes(String typeString) {
+    Set<String> splitAttributesString(String typeString) {
         if (typeString == null) {
             return null;
         }
@@ -235,4 +232,43 @@ public class AmqpDestinationHelper {
 
         return typeSet;
     }
+
+    private Byte getTypeByte(AmqpJmsMessageFacade message, String annotationName) {
+        Object typeAnnotation = message.getMessageAnnotation(annotationName);
+
+        if (typeAnnotation == null) {
+            // Doesn't exist, or null.
+            return null;
+        } else if (typeAnnotation instanceof Byte) {
+            // Return the value found.
+            return (Byte) typeAnnotation;
+        } else {
+            // Handle legacy strings.
+            String typeString = String.valueOf(typeAnnotation);
+            Set<String> typeSet = null;
+
+            if (typeString != null) {
+                typeSet = splitAttributesString(typeString);
+            }
+
+            if (typeSet != null && !typeSet.isEmpty()) {
+                if (typeSet.contains(QUEUE_ATTRIBUTE)) {
+                    if (typeSet.contains(TEMPORARY_ATTRIBUTE)) {
+                        return TEMP_QUEUE_TYPE;
+                    } else {
+                        return QUEUE_TYPE;
+                    }
+                } else if (typeSet.contains(TOPIC_ATTRIBUTE)) {
+                    if (typeSet.contains(TEMPORARY_ATTRIBUTE)) {
+                        return TEMP_TOPIC_TYPE;
+                    } else {
+                        return TOPIC_TYPE;
+                    }
+                }
+            }
+
+            return null;
+        }
+    }
+
 }

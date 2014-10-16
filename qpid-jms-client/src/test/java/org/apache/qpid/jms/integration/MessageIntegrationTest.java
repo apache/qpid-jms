@@ -203,48 +203,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     //==============================
 
     /**
-     * Tests that the {@link AmqpMessageSupport#AMQP_TO_ANNOTATION} set on a message to
-     * indicate its 'to' address represents a Topic results in the JMSDestination object being a
-     * Topic. Ensure the consumers destination is not used by consuming from a Queue.
-     */
-    @Test(timeout = 2000)
-    public void testReceivedMessageFromQueueWithToTypeAnnotationForTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
-            Connection connection = testFixture.establishConnecton(testPeer);
-            connection.start();
-
-            testPeer.expectBegin(true);
-
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Queue queue = session.createQueue("myQueue");
-
-            MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
-            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.AMQP_TO_ANNOTATION, AmqpMessageSupport.TOPIC_ATTRIBUTES);
-
-            PropertiesDescribedType props = new PropertiesDescribedType();
-            String myTopicAddress = "myTopicAddress";
-            props.setTo(myTopicAddress );
-            props.setMessageId("myMessageIDString");
-            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
-
-            testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlowRespondWithTransfer(null, msgAnnotations, props, null, amqpValueNullContent);
-            testPeer.expectDispositionThatIsAcceptedAndSettled();
-
-            MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
-            testPeer.waitForAllHandlersToComplete(3000);
-
-            assertNotNull(receivedMessage);
-
-            Destination dest = receivedMessage.getJMSDestination();
-            assertNotNull("Expected Topic destination but got null", dest);
-            assertTrue("Expected Topic instance but did not get one. Actual type was: " + dest.getClass().getName(), dest instanceof Topic);
-            assertEquals(myTopicAddress, ((Topic)dest).getTopicName());
-        }
-    }
-
-    /**
      * Tests that the lack of a 'to' in the Properties section of the incoming message (e.g
      * one sent by a non-JMS client) is handled by making the JMSDestination method simply
      * return the Queue Destination used to create the consumer that received the message.
@@ -307,6 +265,50 @@ public class MessageIntegrationTest extends QpidJmsTestCase
                 assertTrue("expected Topic instance. Actual type was: " + dest.getClass().getName(), dest instanceof Topic);
                 assertEquals(topicName, ((Topic) dest).getTopicName());
             }
+        }
+    }
+
+    // --- old string values --- //
+
+    /**
+     * Tests that the {@link AmqpMessageSupport#AMQP_TO_ANNOTATION} set on a message to
+     * indicate its 'to' address represents a Topic results in the JMSDestination object being a
+     * Topic. Ensure the consumers destination is not used by consuming from a Queue.
+     */
+    @Test(timeout = 2000)
+    public void testReceivedMessageFromQueueWithToTypeAnnotationForTopic() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin(true);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
+            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.AMQP_TO_ANNOTATION, AmqpMessageSupport.TOPIC_ATTRIBUTES);
+
+            PropertiesDescribedType props = new PropertiesDescribedType();
+            String myTopicAddress = "myTopicAddress";
+            props.setTo(myTopicAddress );
+            props.setMessageId("myMessageIDString");
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, msgAnnotations, props, null, amqpValueNullContent);
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+            Message receivedMessage = messageConsumer.receive(1000);
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            assertNotNull(receivedMessage);
+
+            Destination dest = receivedMessage.getJMSDestination();
+            assertNotNull("Expected Topic destination but got null", dest);
+            assertTrue("Expected Topic instance but did not get one. Actual type was: " + dest.getClass().getName(), dest instanceof Topic);
+            assertEquals(myTopicAddress, ((Topic)dest).getTopicName());
         }
     }
 

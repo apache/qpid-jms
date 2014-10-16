@@ -87,6 +87,6 @@ public class FailoverProviderTest extends AmqpTestSupport {
 
         provider.connect();
 
-        assertTrue(failed.await(2, TimeUnit.SECONDS));
+        assertTrue("Did not trip latch within expected time", failed.await(2, TimeUnit.SECONDS));
     }
 }

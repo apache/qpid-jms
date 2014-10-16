@@ -1855,6 +1855,23 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     // ===============================================
 
     @Test
+    public void testOnSendWithDisableMessageIdClearsMessageID() throws JMSException {
+        Message message = Mockito.mock(Message.class);
+        JmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+        amqpMessageFacade.onSend(true, false, 0);
+        Mockito.verify(message).setMessageId(null);
+    }
+
+    @Test
+    public void testOnSendWithDisableTimestampClearsTimestamp() throws JMSException {
+        AmqpJmsMessageFacade message = createNewMessageFacade();
+        message.setTimestamp(MAX_UINT);
+        assertEquals(MAX_UINT, message.getTimestamp());
+        message.onSend(false, true, 0);
+        assertEquals(0, message.getTimestamp());
+    }
+
+    @Test
     public void testIsEmpty() {
         AmqpJmsMessageFacade message = createNewMessageFacade();
         assertTrue(message.isEmpty());

@@ -48,7 +48,7 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
     private final AmqpProvider provider;
     private boolean connected;
     private AmqpSaslAuthenticator authenticator;
-    private final AmqpSession connectionSession;
+    private final AmqpConnectionSession connectionSession;
     private AmqpConnectionProperties properties;
 
     private String queuePrefix;
@@ -83,7 +83,7 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
         JmsSessionInfo sessionInfo = new JmsSessionInfo(this.info, -1);
         sessionInfo.setAcknowledgementMode(Session.AUTO_ACKNOWLEDGE);
 
-        this.connectionSession = new AmqpSession(this, sessionInfo);
+        this.connectionSession = new AmqpConnectionSession(this, sessionInfo);
     }
 
     @Override
@@ -104,6 +104,10 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
     public AmqpTemporaryDestination createTemporaryDestination(JmsDestination destination) {
         AmqpTemporaryDestination temporary = new AmqpTemporaryDestination(connectionSession, destination);
         return temporary;
+    }
+
+    public void unsubscribe(String subscriptionName, AsyncResult request) {
+        connectionSession.unsubscribe(subscriptionName, request);
     }
 
     /**

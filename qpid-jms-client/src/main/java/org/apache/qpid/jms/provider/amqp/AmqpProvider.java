@@ -524,8 +524,8 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
             public void run() {
                 try {
                     checkClosed();
+                    connection.unsubscribe(subscription, request);
                     pumpToProtonTransport();
-                    request.onSuccess();
                 } catch (Exception error) {
                     request.onFailure(error);
                 }

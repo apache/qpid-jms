@@ -29,7 +29,7 @@ import org.apache.qpid.proton.engine.Sender;
 /**
  * Base class for Producer instances.
  */
-public abstract class AmqpProducer extends AbstractAmqpResource<JmsProducerInfo, Sender> {
+public abstract class AmqpProducer extends AmqpAbstractResource<JmsProducerInfo, Sender> {
 
     protected final AmqpSession session;
     protected final AmqpConnection connection;
@@ -41,7 +41,7 @@ public abstract class AmqpProducer extends AbstractAmqpResource<JmsProducerInfo,
         this.connection = session.getConnection();
 
         // Add a shortcut back to this Producer for quicker lookup.
-        this.info.getProducerId().setProviderHint(this);
+        this.resource.getProducerId().setProviderHint(this);
     }
 
     /**
@@ -69,7 +69,7 @@ public abstract class AmqpProducer extends AbstractAmqpResource<JmsProducerInfo,
      * @return the JmsProducerId that was assigned to this AmqpProducer.
      */
     public JmsProducerId getProducerId() {
-        return this.info.getProducerId();
+        return this.resource.getProducerId();
     }
 
     /**

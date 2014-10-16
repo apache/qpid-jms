@@ -34,7 +34,7 @@ import org.apache.qpid.proton.engine.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
+public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpSession.class);
 
@@ -48,8 +48,8 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
         super(info, connection.getProtonConnection().session());
         this.connection = connection;
 
-        this.info.getSessionId().setProviderHint(this);
-        if (this.info.isTransacted()) {
+        this.resource.getSessionId().setProviderHint(this);
+        if (this.resource.isTransacted()) {
             txContext = new AmqpTransactionContext(this);
         } else {
             txContext = null;
@@ -165,7 +165,7 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
      * @throws Exception if an error occurs while performing the operation.
      */
     public void begin(JmsTransactionId txId, AsyncResult request) throws Exception {
-        if (!this.info.isTransacted()) {
+        if (!this.resource.isTransacted()) {
             throw new IllegalStateException("Non-transacted Session cannot start a TX.");
         }
 
@@ -181,7 +181,7 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
      * @throws Exception if an error occurs while performing the operation.
      */
     public void commit(AsyncResult request) throws Exception {
-        if (!this.info.isTransacted()) {
+        if (!this.resource.isTransacted()) {
             throw new IllegalStateException("Non-transacted Session cannot start a TX.");
         }
 
@@ -197,7 +197,7 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
      * @throws Exception if an error occurs while performing the operation.
      */
     public void rollback(AsyncResult request) throws Exception {
-        if (!this.info.isTransacted()) {
+        if (!this.resource.isTransacted()) {
             throw new IllegalStateException("Non-transacted Session cannot start a TX.");
         }
 
@@ -256,7 +256,7 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
     }
 
     public JmsSessionId getSessionId() {
-        return this.info.getSessionId();
+        return this.resource.getSessionId();
     }
 
     public Session getProtonSession() {
@@ -264,11 +264,11 @@ public class AmqpSession extends AbstractAmqpResource<JmsSessionInfo, Session> {
     }
 
     boolean isTransacted() {
-        return this.info.isTransacted();
+        return this.resource.isTransacted();
     }
 
     boolean isAsyncAck() {
-        return this.info.isSendAcksAsync() || isTransacted();
+        return this.resource.isSendAcksAsync() || isTransacted();
     }
 
     @Override

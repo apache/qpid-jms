@@ -38,38 +38,36 @@ import org.slf4j.LoggerFactory;
  * object don't have to reproduce it.  Provides hooks for the subclasses to initialize
  * and shutdown.
  */
-public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endpoint> implements AmqpResource {
+public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endpoint> implements AmqpResource {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractAmqpResource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AmqpAbstractResource.class);
 
     protected AsyncResult openRequest;
     protected AsyncResult closeRequest;
 
     protected E endpoint;
-    protected R info;
+    protected R resource;
 
     /**
-     * Creates a new AbstractAmqpResource instance with the JmsResource provided, and
-     * sets the Endpoint to null.
+     * Creates a new instance with the JmsResource provided, and sets the Endpoint to null.
      *
-     * @param info
+     * @param resource
      *        The JmsResource instance that this AmqpResource is managing.
      */
-    public AbstractAmqpResource(R info) {
-        this(info, null);
+    public AmqpAbstractResource(R resource) {
+        this(resource, null);
     }
 
     /**
-     * Creates a new AbstractAmqpResource instance with the JmsResource provided, and
-     * sets the Endpoint to the given value.
+     * Creates a new instance with the JmsResource provided, and sets the Endpoint to the given value.
      *
-     * @param info
+     * @param resource
      *        The JmsResource instance that this AmqpResource is managing.
      * @param endpoint
      *        The Proton Endpoint instance that this object maps to.
      */
-    public AbstractAmqpResource(R info, E endpoint) {
-        this.info = info;
+    public AmqpAbstractResource(R resource, E endpoint) {
+        this.resource = resource;
         this.endpoint = endpoint;
     }
 
@@ -156,7 +154,7 @@ public abstract class AbstractAmqpResource<R extends JmsResource, E extends Endp
     }
 
     public R getJmsResource() {
-        return this.info;
+        return this.resource;
     }
 
     public EndpointState getLocalState() {

@@ -235,8 +235,8 @@ public class AmqpFixedProducer extends AmqpProducer {
     protected void doOpen() {
         String targetAddress;
 
-        if (info.getDestination() != null) {
-            JmsDestination destination = info.getDestination();
+        if (resource.getDestination() != null) {
+            JmsDestination destination = resource.getDestination();
             targetAddress = session.getQualifiedName(destination);
         } else {
             targetAddress = connection.getProperties().getAnonymousRelayName();
@@ -274,7 +274,7 @@ public class AmqpFixedProducer extends AmqpProducer {
 
     @Override
     public boolean isAnonymous() {
-        return this.info.getDestination() == null;
+        return this.resource.getDestination() == null;
     }
 
     @Override

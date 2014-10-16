@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
  * the broker in the case where the user does not have authorization to access temporary
  * destinations.
  */
-public class AmqpTemporaryDestination extends AbstractAmqpResource<JmsDestination, Sender> {
+public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestination, Sender> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpTemporaryDestination.class);
 
@@ -58,10 +58,10 @@ public class AmqpTemporaryDestination extends AbstractAmqpResource<JmsDestinatio
 
         EndpointState remoteState = endpoint.getRemoteState();
         if (remoteState == EndpointState.ACTIVE) {
-            LOG.trace("Temporary Destination: {} is now open", this.info);
+            LOG.trace("Temporary Destination: {} is now open", this.resource);
             opened();
         } else if (remoteState == EndpointState.CLOSED) {
-            LOG.trace("Temporary Destination: {} is now closed", this.info);
+            LOG.trace("Temporary Destination: {} is now closed", this.resource);
             closed();
         }
     }
@@ -70,12 +70,12 @@ public class AmqpTemporaryDestination extends AbstractAmqpResource<JmsDestinatio
     public void opened() {
 
         // Once our producer is opened we can read the updated name from the target address.
-        String oldDestinationName = info.getName();
+        String oldDestinationName = resource.getName();
         String destinationName = this.endpoint.getRemoteTarget().getAddress();
 
-        this.info.setName(destinationName);
+        this.resource.setName(destinationName);
 
-        LOG.trace("Updated temp destination to: {} from: {}", info, oldDestinationName);
+        LOG.trace("Updated temp destination to: {} from: {}", resource, oldDestinationName);
 
         super.opened();
     }
@@ -83,8 +83,8 @@ public class AmqpTemporaryDestination extends AbstractAmqpResource<JmsDestinatio
     @Override
     protected void doOpen() {
 
-        String sourceAddress = info.getName();
-        if (info.isQueue()) {
+        String sourceAddress = resource.getName();
+        if (resource.isQueue()) {
             sourceAddress = connection.getTempQueuePrefix() + sourceAddress;
         } else {
             // TODO - AMQ doesn't support temp topics so we make everything a temp queue for now
@@ -123,11 +123,11 @@ public class AmqpTemporaryDestination extends AbstractAmqpResource<JmsDestinatio
     }
 
     public JmsDestination getJmsDestination() {
-        return this.info;
+        return this.resource;
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + " { " + info + "}";
+        return getClass().getSimpleName() + " { " + resource + "}";
     }
 }

@@ -46,7 +46,7 @@ public class AmqpQueueBrowser extends AmqpConsumer {
      */
     @Override
     public void start(AsyncResult request) {
-        this.endpoint.flow(info.getPrefetchSize());
+        this.endpoint.flow(resource.getPrefetchSize());
         request.onSuccess();
     }
 
@@ -66,7 +66,7 @@ public class AmqpQueueBrowser extends AmqpConsumer {
     public void pull(long timeout) {
         if (!endpoint.getDrain() && endpoint.current() == null && endpoint.getUnsettled() == 0) {
             LOG.trace("QueueBrowser {} will try to drain remote.", getConsumerId());
-            this.endpoint.drain(info.getPrefetchSize());
+            this.endpoint.drain(resource.getPrefetchSize());
         } else {
             endpoint.setDrain(false);
         }
@@ -113,7 +113,7 @@ public class AmqpQueueBrowser extends AmqpConsumer {
 
     @Override
     protected void configureSource(Source source) {
-        if (info.isBrowser()) {
+        if (resource.isBrowser()) {
             source.setDistributionMode(COPY);
         }
 

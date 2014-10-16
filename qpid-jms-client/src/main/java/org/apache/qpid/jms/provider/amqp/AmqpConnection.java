@@ -36,7 +36,7 @@ import org.apache.qpid.proton.engine.Sasl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Connection> {
+public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Connection> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
 
@@ -71,7 +71,7 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
             this.authenticator = new AmqpSaslAuthenticator(sasl, info);
         }
 
-        this.info.getConnectionId().setProviderHint(this);
+        this.resource.getConnectionId().setProviderHint(this);
 
         this.queuePrefix = info.getQueuePrefix();
         this.topicPrefix = info.getTopicPrefix();
@@ -80,7 +80,7 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
 
         // Create a Session for this connection that is used for Temporary Destinations
         // and perhaps later on management and advisory monitoring.
-        JmsSessionInfo sessionInfo = new JmsSessionInfo(this.info, -1);
+        JmsSessionInfo sessionInfo = new JmsSessionInfo(this.resource, -1);
         sessionInfo.setAcknowledgementMode(Session.AUTO_ACKNOWLEDGE);
 
         this.connectionSession = new AmqpConnectionSession(this, sessionInfo);
@@ -88,7 +88,7 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
 
     @Override
     protected void doOpen() {
-        this.endpoint.setContainer(info.getClientId());
+        this.endpoint.setContainer(resource.getClientId());
         this.endpoint.setHostname(remoteURI.getHost());
     }
 
@@ -199,7 +199,7 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
     }
 
     public JmsConnectionInfo getConnectionInfo() {
-        return this.info;
+        return this.resource;
     }
 
     public Connection getProtonConnection() {
@@ -211,11 +211,11 @@ public class AmqpConnection extends AbstractAmqpResource<JmsConnectionInfo, Conn
     }
 
     public String getUsername() {
-        return this.info.getUsername();
+        return this.resource.getUsername();
     }
 
     public String getPassword() {
-        return this.info.getPassword();
+        return this.resource.getPassword();
     }
 
     public AmqpProvider getProvider() {

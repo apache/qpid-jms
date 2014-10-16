@@ -52,7 +52,7 @@ import org.slf4j.LoggerFactory;
  * The Transaction will carry a JmsTransactionId while the Transaction is open, once a
  * transaction has been committed or rolled back the Transaction Id is cleared.
  */
-public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo, Sender> {
+public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo, Sender> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpTransactionContext.class);
 
@@ -72,7 +72,7 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
      *
      * @param session
      *        The session that owns this transaction
-     * @param info
+     * @param resource
      *        The JmsTransactionInfo that defines this Transaction.
      */
     public AmqpTransactionContext(AmqpSession session) {
@@ -134,7 +134,7 @@ public class AmqpTransactionContext extends AbstractAmqpResource<JmsSessionInfo,
         coordinator.setCapabilities(TxnCapability.LOCAL_TXN, TxnCapability.MULTI_TXNS_PER_SSN);
         Source source = new Source();
 
-        String coordinatorName = info.getSessionId().toString();
+        String coordinatorName = resource.getSessionId().toString();
         endpoint = session.getProtonSession().sender(coordinatorName);
         endpoint.setSource(source);
         endpoint.setTarget(coordinator);

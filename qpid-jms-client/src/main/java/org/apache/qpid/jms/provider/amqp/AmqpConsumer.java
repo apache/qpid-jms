@@ -58,7 +58,7 @@ import org.slf4j.LoggerFactory;
 /**
  * AMQP Consumer object that is used to manage JMS MessageConsumer semantics.
  */
-public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver> {
+public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConsumer.class);
 
@@ -81,20 +81,20 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         this.session = session;
 
         // Add a shortcut back to this Consumer for quicker lookups
-        this.info.getConsumerId().setProviderHint(this);
+        this.resource.getConsumerId().setProviderHint(this);
     }
 
     /**
      * Starts the consumer by setting the link credit to the given prefetch value.
      */
     public void start(AsyncResult request) {
-        this.endpoint.flow(info.getPrefetchSize());
+        this.endpoint.flow(resource.getPrefetchSize());
         request.onSuccess();
     }
 
     @Override
     protected void doOpen() {
-        JmsDestination destination  = info.getDestination();
+        JmsDestination destination  = resource.getDestination();
         String subscription = session.getQualifiedName(destination);
 
         Source source = new Source();
@@ -104,10 +104,10 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
         configureSource(source);
 
         String receiverName = getConsumerId() + ":" + subscription;
-        if (info.getSubscriptionName() != null && !info.getSubscriptionName().isEmpty()) {
+        if (resource.getSubscriptionName() != null && !resource.getSubscriptionName().isEmpty()) {
             // In the case of Durable Topic Subscriptions the client must use the same
             // receiver name which is derived from the subscription name property.
-            receiverName = info.getSubscriptionName();
+            receiverName = resource.getSubscriptionName();
         }
 
         endpoint = session.getProtonSession().receiver(receiverName);
@@ -136,7 +136,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     protected void configureSource(Source source) {
         Map<Symbol, DescribedType> filters = new HashMap<Symbol, DescribedType>();
 
-        if (info.getSubscriptionName() != null && !info.getSubscriptionName().isEmpty()) {
+        if (resource.getSubscriptionName() != null && !resource.getSubscriptionName().isEmpty()) {
             source.setExpiryPolicy(TerminusExpiryPolicy.NEVER);
             source.setDurable(TerminusDurability.UNSETTLED_STATE);
             source.setDistributionMode(COPY);
@@ -145,12 +145,12 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
             source.setExpiryPolicy(TerminusExpiryPolicy.LINK_DETACH);
         }
 
-        if (info.isNoLocal()) {
+        if (resource.isNoLocal()) {
             filters.put(JMS_NO_LOCAL_SYMBOL, AmqpJmsNoLocalType.NO_LOCAL);
         }
 
-        if (info.getSelector() != null && !info.getSelector().trim().equals("")) {
-            filters.put(JMS_SELECTOR_SYMBOL, new AmqpJmsSelectorType(info.getSelector()));
+        if (resource.getSelector() != null && !resource.getSelector().trim().equals("")) {
+            filters.put(JMS_SELECTOR_SYMBOL, new AmqpJmsSelectorType(resource.getSelector()));
         }
 
         if (!filters.isEmpty()) {
@@ -168,7 +168,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
      * would already have been given for these so we just need to settle them.
      */
     public void acknowledge() {
-        LOG.trace("Session Acknowledge for consumer: {}", info.getConsumerId());
+        LOG.trace("Session Acknowledge for consumer: {}", resource.getConsumerId());
         for (Delivery delivery : delivered.values()) {
             delivery.disposition(Accepted.getInstance());
             delivery.settle();
@@ -246,13 +246,13 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
      * then we open the window back up to full prefetch size.
      */
     private void sendFlowIfNeeded() {
-        if (info.getPrefetchSize() == 0) {
+        if (resource.getPrefetchSize() == 0) {
             return;
         }
 
         int currentCredit = endpoint.getCredit();
-        if (currentCredit <= info.getPrefetchSize() * 0.2) {
-            endpoint.flow(info.getPrefetchSize() - currentCredit);
+        if (currentCredit <= resource.getPrefetchSize() * 0.2) {
+            endpoint.flow(resource.getPrefetchSize() - currentCredit);
         }
     }
 
@@ -262,7 +262,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
      * @throws Exception if an error occurs while performing the recover.
      */
     public void recover() throws Exception {
-        LOG.debug("Session Recover for consumer: {}", info.getConsumerId());
+        LOG.debug("Session Recover for consumer: {}", resource.getConsumerId());
         for (Delivery delivery : delivered.values()) {
             // TODO - increment redelivery counter and apply connection redelivery policy
             //        to those messages that are past max redlivery.
@@ -281,7 +281,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
      * @param timeout
      */
     public void pull(long timeout) {
-        if (info.getPrefetchSize() == 0 && endpoint.getCredit() == 0) {
+        if (resource.getPrefetchSize() == 0 && endpoint.getCredit() == 0) {
             // expand the credit window by one.
             endpoint.flow(1);
         }
@@ -329,7 +329,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
         JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch(getNextIncomingSequenceNumber());
         envelope.setMessage(message);
-        envelope.setConsumerId(info.getConsumerId());
+        envelope.setConsumerId(resource.getConsumerId());
         // Store link to delivery in the hint for use in acknowledge requests.
         envelope.setProviderHint(incoming);
         envelope.setMessageId(message.getFacade().getProviderMessageIdObject());
@@ -357,11 +357,11 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
     }
 
     public JmsConsumerId getConsumerId() {
-        return this.info.getConsumerId();
+        return this.resource.getConsumerId();
     }
 
     public JmsDestination getDestination() {
-        return this.info.getDestination();
+        return this.resource.getDestination();
     }
 
     public Receiver getProtonReceiver() {
@@ -382,7 +382,7 @@ public class AmqpConsumer extends AbstractAmqpResource<JmsConsumerInfo, Receiver
 
     @Override
     public String toString() {
-        return "AmqpConsumer { " + this.info.getConsumerId() + " }";
+        return "AmqpConsumer { " + this.resource.getConsumerId() + " }";
     }
 
     protected void deliveryFailed(Delivery incoming, boolean expandCredit) {

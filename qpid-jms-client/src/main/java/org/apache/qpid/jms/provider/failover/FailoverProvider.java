@@ -518,6 +518,8 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     return;
                 }
 
+                // TODO: if this is already at/past the limit when we arrive, we should
+                // stop here rather than initialise the provider and only fail (again) after.
                 reconnectAttempts++;
                 Throwable failure = null;
                 URI target = uris.getNext();

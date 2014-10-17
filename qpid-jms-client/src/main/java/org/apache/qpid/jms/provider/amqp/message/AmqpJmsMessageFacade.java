@@ -655,7 +655,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     public void setDestination(JmsDestination destination) {
         this.destination = destination;
         lazyCreateMessageAnnotations();
-        AmqpDestinationHelper.INSTANCE.setToAddressFromDestination(this, destination, false);
+        AmqpDestinationHelper.INSTANCE.setToAddressFromDestination(this, destination, connection.isUseByteDestintionTypeAnnotation());
     }
 
     @Override
@@ -676,7 +676,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     public void setReplyTo(JmsDestination replyTo) {
         this.replyTo = replyTo;
         lazyCreateMessageAnnotations();
-        AmqpDestinationHelper.INSTANCE.setReplyToAddressFromDestination(this, replyTo, false);
+        AmqpDestinationHelper.INSTANCE.setReplyToAddressFromDestination(this, replyTo, connection.isUseByteDestintionTypeAnnotation());
     }
 
     @Override

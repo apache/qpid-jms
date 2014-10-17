@@ -88,6 +88,7 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
     private boolean traceBytes;
     private boolean presettleConsumers;
     private boolean presettleProducers;
+    private boolean useByteDestintionTypeAnnotation = false;//TODO: enable
     private long connectTimeout = JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT;
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
     private long requestTimeout = JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
@@ -821,6 +822,14 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
 
     public void setPresettleProducers(boolean presettle) {
         this.presettleProducers = presettle;
+    }
+
+    public void setUseByteDestintionTypeAnnotation(boolean useByteDestintionTypeAnnotation) {
+        this.useByteDestintionTypeAnnotation = useByteDestintionTypeAnnotation;
+    }
+
+    public boolean isUseByteDestintionTypeAnnotation() {
+        return useByteDestintionTypeAnnotation;
     }
 
     /**

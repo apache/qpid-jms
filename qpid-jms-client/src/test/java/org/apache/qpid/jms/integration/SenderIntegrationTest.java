@@ -50,7 +50,6 @@ import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.hamcrest.Matcher;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class SenderIntegrationTest extends QpidJmsTestCase {

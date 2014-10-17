@@ -284,6 +284,14 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     }
 
     /**
+     * @return true if the provider has been configured to use byte values for
+     * destination type annotations.
+     */
+    public boolean isUseByteDestintionTypeAnnotation() {
+        return provider.isUseByteDestintionTypeAnnotation();
+    }
+
+    /**
      * @return true if anonymous producers should be cached or closed on send complete.
      */
     public boolean isAnonymousProducerCache() {

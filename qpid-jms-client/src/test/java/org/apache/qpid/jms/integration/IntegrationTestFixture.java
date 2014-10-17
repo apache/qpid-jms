@@ -31,12 +31,22 @@ public class IntegrationTestFixture {
     static final int PORT = 25672;
 
     Connection establishConnecton(TestAmqpPeer testPeer) throws JMSException {
+        return establishConnecton(testPeer, null);
+    }
+
+    Connection establishConnecton(TestAmqpPeer testPeer, String optionsString) throws JMSException {
         testPeer.expectPlainConnect("guest", "guest", true);
 
         // Each connection creates a session for managing temporary destinations etc
         testPeer.expectBegin(true);
 
-        ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + PORT);
+        final String baseURI = "amqp://localhost:" + PORT;
+        String brokerURI = baseURI;
+        if (optionsString != null) {
+            brokerURI = baseURI + optionsString;
+        }
+
+        ConnectionFactory factory = new JmsConnectionFactory(brokerURI);
         Connection connection = factory.createConnection("guest", "guest");
 
         // Set a clientId to provoke the actual AMQP connection process to occur.

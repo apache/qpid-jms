@@ -40,6 +40,7 @@ import javax.jms.Session;
 import javax.jms.Topic;
 
 import org.apache.qpid.jms.JmsClientProperties;
+import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageIdHelper;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -59,6 +60,7 @@ import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.UnsignedLong;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class MessageIntegrationTest extends QpidJmsTestCase
@@ -268,7 +270,174 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         }
     }
 
-    // --- old string values --- //
+    // --- byte type annotation values --- //
+
+    /**
+     * Tests that the {@link AmqpMessageSupport#AMQP_TO_ANNOTATION} is set as a byte on
+     * a sent message to indicate its 'to' address represents a Topic JMSDestination.
+     */
+    @Ignore //TODO: enable when toggling default
+    @Test(timeout = 5000)
+    public void testSentMessageContainsToTypeAnnotationByte() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin(true);
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String topicName = "myTopic";
+
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            Symbol annotationKey = AmqpMessageSupport.getSymbol(AmqpMessageSupport.AMQP_TO_ANNOTATION);
+            msgAnnotationsMatcher.withEntry(annotationKey, equalTo(AmqpDestinationHelper.TOPIC_TYPE));
+
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true).withTo(equalTo(topicName));
+
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
+
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createMessage();
+            Topic topic = session.createTopic(topicName);
+            MessageProducer producer = session.createProducer(topic);
+            producer.send(message);
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    /**
+     * Tests that the {@link AmqpMessageSupport#AMQP_REPLY_TO_ANNOTATION} is set as a byte on
+     * a sent message to indicate its 'reply-to' address represents a Topic JMSDestination.
+     */
+    @Ignore //TODO: enable when toggling default
+    @Test(timeout = 5000)
+    public void testSentMessageContainsReplyToTypeAnnotationByte() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+
+            testPeer.expectBegin(true);
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String queueName = "myQueue";
+            String replyTopicName = "myReplyTopic";
+
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            Symbol annotationKey = AmqpMessageSupport.getSymbol(AmqpMessageSupport.AMQP_REPLY_TO_ANNOTATION);
+            msgAnnotationsMatcher.withEntry(annotationKey, equalTo(AmqpDestinationHelper.TOPIC_TYPE));
+
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true).withReplyTo(equalTo(replyTopicName));
+
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
+
+            testPeer.expectTransfer(messageMatcher);
+
+            Topic replyTopic = session.createTopic(replyTopicName);
+            Message message = session.createMessage();
+            message.setJMSReplyTo(replyTopic);
+
+            Queue queue = session.createQueue(queueName);
+            MessageProducer producer = session.createProducer(queue);
+            producer.send(message);
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    // --- old string type annotation values --- //
+
+    /**
+     * Tests that the {@link AmqpMessageSupport#AMQP_TO_ANNOTATION} is set as a string on
+     * a sent message to indicate its 'to' address represents a Topic JMSDestination, when
+     * the provider has been configured to do so.
+     */
+    @Test(timeout = 5000)
+    public void testSentMessageContainsToTypeAnnotationStringIfConfigured() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            // Enable the old string destination type annotation values
+            Connection connection = testFixture.establishConnecton(testPeer, "?provider.useByteDestintionTypeAnnotation=false");
+
+            testPeer.expectBegin(true);
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String topicName = "myTopic";
+
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            Symbol annotationKey = AmqpMessageSupport.getSymbol(AmqpMessageSupport.AMQP_TO_ANNOTATION);
+            msgAnnotationsMatcher.withEntry(annotationKey, equalTo(AmqpDestinationHelper.TOPIC_ATTRIBUTES_STRING));
+
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true).withTo(equalTo(topicName));
+
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
+
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createMessage();
+            Topic topic = session.createTopic(topicName);
+            MessageProducer producer = session.createProducer(topic);
+            producer.send(message);
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    /**
+     * Tests that the {@link AmqpMessageSupport#AMQP_REPLY_TO_ANNOTATION} is set as a string on
+     * a sent message to indicate its 'reply-to' address represents a Topic JMSDestination, when
+     * the provider has been configured to do so.
+     */
+    @Test(timeout = 5000)
+    public void testSentMessageContainsReplyToTypeAnnotationStringIfConfigured() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            // Enable the old string destination type annotation values
+            Connection connection = testFixture.establishConnecton(testPeer, "?provider.useByteDestintionTypeAnnotation=false");
+
+            testPeer.expectBegin(true);
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String queueName = "myQueue";
+            String replyTopicName = "myReplyTopic";
+
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            Symbol annotationKey = AmqpMessageSupport.getSymbol(AmqpMessageSupport.AMQP_REPLY_TO_ANNOTATION);
+            msgAnnotationsMatcher.withEntry(annotationKey, equalTo(AmqpDestinationHelper.TOPIC_ATTRIBUTES_STRING));
+
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true).withReplyTo(equalTo(replyTopicName));
+
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
+
+            testPeer.expectTransfer(messageMatcher);
+
+            Topic replyTopic = session.createTopic(replyTopicName);
+            Message message = session.createMessage();
+            message.setJMSReplyTo(replyTopic);
+
+            Queue queue = session.createQueue(queueName);
+            MessageProducer producer = session.createProducer(queue);
+            producer.send(message);
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
 
     /**
      * Tests that the {@link AmqpMessageSupport#AMQP_TO_ANNOTATION} set on a message to

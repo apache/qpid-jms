@@ -229,8 +229,6 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         }
 
         if (disableMsgId) {
-            // TODO - ActiveMQ will synthesize a message Id, but I don't think it has been
-            //        really well tested, so we should investigate before enabling this.
             setMessageId(null);
         }
 

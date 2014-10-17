@@ -221,6 +221,47 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    /**
+     * Test that after sending a message with the disableMessageTimestamp hint set, the
+     * message object has a 0 JMSTimestamp value, and no creation-time field value was set.
+     */
+    @Test(timeout = 5000)
+    public void testSendingMessageWithDisableMessageTimestampHint() throws Exception {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin(true);
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String queueName = "myQueue";
+            Queue queue = session.createQueue(queueName);
+            MessageProducer producer = session.createProducer(queue);
+
+            String text = "myMessage";
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true);
+            propsMatcher.withCreationTime(nullValue()); // Check there is no creation-time value;
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
+            messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(text));
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createTextMessage(text);
+
+            assertEquals("JMSTimestamp should not yet be set", 0, message.getJMSTimestamp());
+
+            producer.setDisableMessageTimestamp(true);
+
+            producer.send(message);
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            assertEquals("JMSTimestamp should still not be set", 0, message.getJMSTimestamp());
+        }
+    }
+
     @Test(timeout = 10000)
     public void testSendingMessageSetsJMSExpirationRelatedAbsoluteExpiryAndTtlFields() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
@@ -439,6 +480,47 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
 
             assertTrue("Expected string message id to be sent", receivedMessageId instanceof String);
             assertTrue("Expected JMSMessageId value to be present in AMQP message", jmsMessageID.endsWith((String)receivedMessageId));
+        }
+    }
+
+    /**
+     * Test that after sending a message with the disableMessageID hint set, the message
+     * object has a null JMSMessageID value, and no message-id field value was set.
+     */
+    @Test(timeout = 5000)
+    public void testSendingMessageWithDisableMessageIDHint() throws Exception {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin(true);
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String queueName = "myQueue";
+            Queue queue = session.createQueue(queueName);
+            MessageProducer producer = session.createProducer(queue);
+
+            String text = "myMessage";
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true);
+            propsMatcher.withMessageId(nullValue()); // Check there is no message-id value;
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
+            messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(text));
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createTextMessage(text);
+
+            assertNull("JMSMessageID should not yet be set", message.getJMSMessageID());
+
+            producer.setDisableMessageID(true);
+
+            producer.send(message);
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            assertNull("JMSMessageID should still not yet be set", message.getJMSMessageID());
         }
     }
 }

@@ -26,6 +26,7 @@ import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.WrappedAsyncResult;
 import org.apache.qpid.jms.util.IdGenerator;
 import org.apache.qpid.jms.util.LRUCache;
 import org.apache.qpid.proton.engine.EndpointState;
@@ -140,21 +141,15 @@ public class AmqpAnonymousProducer extends AmqpProducer {
         return new JmsProducerId(producerIdKey, -1, producerIdCount++);
     }
 
-    private abstract class AnonymousRequest implements AsyncResult {
+    private abstract class AnonymousRequest extends WrappedAsyncResult {
 
-        protected final AsyncResult sendResult;
         protected final AmqpProducer producer;
         protected final JmsOutboundMessageDispatch envelope;
 
         public AnonymousRequest(AsyncResult sendResult, AmqpProducer producer, JmsOutboundMessageDispatch envelope) {
-            this.sendResult = sendResult;
+            super(sendResult);
             this.producer = producer;
             this.envelope = envelope;
-        }
-
-        @Override
-        public boolean isComplete() {
-            return sendResult.isComplete();
         }
 
         /**
@@ -164,7 +159,7 @@ public class AmqpAnonymousProducer extends AmqpProducer {
         @Override
         public void onFailure(Throwable result) {
             LOG.debug("Send failed during {} step in chain: {}", this.getClass().getName(), getProducerId());
-            sendResult.onFailure(result);
+            super.onFailure(result);
         }
     }
 
@@ -181,7 +176,7 @@ public class AmqpAnonymousProducer extends AmqpProducer {
             try {
                 producer.send(envelope, send);
             } catch (Exception e) {
-                sendResult.onFailure(e);
+                super.onFailure(e);
             }
         }
     }
@@ -189,7 +184,7 @@ public class AmqpAnonymousProducer extends AmqpProducer {
     private final class AnonymousSendRequest extends AnonymousRequest {
 
         public AnonymousSendRequest(AnonymousOpenRequest open) {
-            super(open.sendResult, open.producer, open.envelope);
+            super(open.getWrappedRequest(), open.producer, open.envelope);
         }
 
         @Override
@@ -206,7 +201,7 @@ public class AmqpAnonymousProducer extends AmqpProducer {
                 AnonymousCloseRequest close = new AnonymousCloseRequest(this);
                 producer.close(close);
             } else {
-                sendResult.onSuccess();
+                super.onSuccess();
             }
         }
     }
@@ -214,13 +209,13 @@ public class AmqpAnonymousProducer extends AmqpProducer {
     private final class AnonymousCloseRequest extends AnonymousRequest {
 
         public AnonymousCloseRequest(AnonymousSendRequest send) {
-            super(send.sendResult, send.producer, send.envelope);
+            super(send.getWrappedRequest(), send.producer, send.envelope);
         }
 
         @Override
         public void onSuccess() {
             LOG.trace("Close phase of anonymous send complete: {} ", getProducerId());
-            sendResult.onSuccess();
+            super.onSuccess();
         }
     }
 

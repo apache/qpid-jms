@@ -788,7 +788,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             if (provider == null) {
                 if (failureWhenOffline()) {
                     requests.remove(id);
-                    watcher.onFailure(new IOException("Provider disconnected"));
+                    getWrappedRequest().onFailure(new IOException("Provider disconnected"));
                 } else if (succeedsWhenOffline()) {
                     onSuccess();
                 }
@@ -798,7 +798,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     doTask();
                 } catch (UnsupportedOperationException e) {
                     requests.remove(id);
-                    watcher.onFailure(e);
+                    getWrappedRequest().onFailure(e);
                 } catch (Exception e) {
                     // TODO Should we let JMSException through?
                     LOG.debug("Caught exception while executing task: {}", e.getMessage());
@@ -859,7 +859,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
      * Captures the initial request to create a JmsConnectionInfo based resources and ensures
      * that if the connection is successfully established that the connection established event
      * is triggered once before moving on to sending only connection interrupted and restored
-     * events.  
+     * events.
      */
     protected abstract class CreateConnectionRequest extends FailoverRequest {
 

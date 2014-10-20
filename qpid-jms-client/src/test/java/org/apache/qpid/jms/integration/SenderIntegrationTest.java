@@ -137,11 +137,10 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
     }
 
     /**
-     * Test that when a message is sent the JMSDestination header is set to the Destination used by the
-     * producer, and the emitted AMQP message has the relevant value set in the 'to' field of properties,
-     * with associated message annotation value to indicate the Destination type.
+     * Test that when a message is sent the JMSDestination header is set to
+     * the Destination used by the producer.
      */
-    @Test(timeout = 10000)
+    @Test(timeout = 5000)
     public void testSendingMessageSetsJMSDestination() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -154,13 +153,9 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
             MessageProducer producer = session.createProducer(queue);
 
             String text = "myMessage";
-            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true)
-                    .withDurable(equalTo(true));
-            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true)
-                    .withEntry(Symbol.valueOf(AmqpMessageSupport.AMQP_TO_ANNOTATION),
-                            equalTo(AmqpMessageSupport.QUEUE_ATTRIBUTES));
-            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true)
-                    .withTo(equalTo(queueName));
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true);
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
             messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);

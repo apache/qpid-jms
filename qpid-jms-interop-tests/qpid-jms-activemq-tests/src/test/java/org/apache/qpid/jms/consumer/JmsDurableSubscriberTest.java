@@ -19,19 +19,24 @@ package org.apache.qpid.jms.consumer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.Topic;
 import javax.jms.TopicSubscriber;
 
+import org.apache.activemq.broker.jmx.BrokerViewMBean;
 import org.apache.activemq.broker.jmx.TopicViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +68,109 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
         assertEquals(0, proxy.getQueueSize());
 
         assertEquals(1, brokerService.getAdminView().getDurableTopicSubscribers().length);
+    }
+
+    @Test(timeout = 60000)
+    public void testDuableSubscriptionUnsubscribe() throws Exception {
+        connection = createAmqpConnection();
+        connection.setClientID("DURABLE-AMQP");
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+        Topic topic = session.createTopic(name.getMethodName());
+        session.createDurableSubscriber(topic, name.getMethodName() + "-subscriber").close();
+
+        BrokerViewMBean broker = getProxyToBroker();
+        assertEquals(1, broker.getInactiveDurableTopicSubscribers().length);
+
+        session.unsubscribe(name.getMethodName() + "-subscriber");
+
+        assertEquals(0, broker.getInactiveDurableTopicSubscribers().length);
+        assertEquals(0, broker.getDurableTopicSubscribers().length);
+    }
+
+    @Test(timeout = 60000)
+    public void testDuableSubscriptionUnsubscribeNoExistingSubThrowsJMSEx() throws Exception {
+        connection = createAmqpConnection();
+        connection.setClientID("DURABLE-AMQP");
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+
+        BrokerViewMBean broker = getProxyToBroker();
+        assertEquals(0, broker.getDurableTopicSubscribers().length);
+        assertEquals(0, broker.getInactiveDurableTopicSubscribers().length);
+
+        try {
+            session.unsubscribe(name.getMethodName() + "-subscriber");
+            fail("Should have thrown a JMSException");
+        } catch (JMSException ex) {
+        }
+    }
+
+    @Test(timeout = 60000)
+    public void testDuableSubscriptionUnsubscribeInUseThrowsJMSEx() throws Exception {
+        connection = createAmqpConnection();
+        connection.setClientID("DURABLE-AMQP");
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+        Topic topic = session.createTopic(name.getMethodName());
+        MessageConsumer consumer = session.createDurableSubscriber(topic, name.getMethodName() + "-subscriber");
+        assertNotNull(consumer);
+
+        BrokerViewMBean broker = getProxyToBroker();
+        assertEquals(1, broker.getDurableTopicSubscribers().length);
+        assertEquals(0, broker.getInactiveDurableTopicSubscribers().length);
+
+        try {
+            session.unsubscribe(name.getMethodName() + "-subscriber");
+            fail("Should have thrown a JMSException");
+        } catch (JMSException ex) {
+        }
+
+        assertEquals(1, broker.getDurableTopicSubscribers().length);
+        assertEquals(0, broker.getInactiveDurableTopicSubscribers().length);
+    }
+
+    @Ignore
+    @Test(timeout = 60000)
+    public void testDuableSubscriptionUnsubscribeInUseThrowsAndRecovers() throws Exception {
+        connection = createAmqpConnection();
+        connection.setClientID("DURABLE-AMQP");
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+        Topic topic = session.createTopic(name.getMethodName());
+        MessageConsumer consumer = session.createDurableSubscriber(topic, name.getMethodName() + "-subscriber");
+        assertNotNull(consumer);
+
+        BrokerViewMBean broker = getProxyToBroker();
+        assertEquals(1, broker.getDurableTopicSubscribers().length);
+        assertEquals(0, broker.getInactiveDurableTopicSubscribers().length);
+
+        try {
+            session.unsubscribe(name.getMethodName() + "-subscriber");
+            fail("Should have thrown a JMSException");
+        } catch (JMSException ex) {
+        }
+
+        assertEquals(1, broker.getDurableTopicSubscribers().length);
+        assertEquals(0, broker.getInactiveDurableTopicSubscribers().length);
+
+        consumer.close();
+
+        assertEquals(0, broker.getDurableTopicSubscribers().length);
+        assertEquals(1, broker.getInactiveDurableTopicSubscribers().length);
+
+        session.unsubscribe(name.getMethodName() + "-subscriber");
+
+        assertEquals(0, broker.getDurableTopicSubscribers().length);
+        assertEquals(0, broker.getInactiveDurableTopicSubscribers().length);
     }
 
     @Test(timeout = 60000)

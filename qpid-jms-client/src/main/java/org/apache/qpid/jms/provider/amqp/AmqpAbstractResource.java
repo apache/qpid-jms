@@ -122,13 +122,13 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
     @Override
     public void closed() {
+        this.endpoint.close();
+        this.endpoint.free();
+
         if (this.closeRequest != null) {
             this.closeRequest.onSuccess();
             this.closeRequest = null;
         }
-
-        this.endpoint.close();
-        this.endpoint.free();
     }
 
     @Override
@@ -147,6 +147,21 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
             closeRequest.onFailure(cause);
             closeRequest = null;
         }
+    }
+
+    @Override
+    public void remotelyClosed() {
+        if (isAwaitingOpen()) {
+            Exception error = getRemoteError();
+            if (error == null) {
+                error = new IOException("Remote has closed without error information");
+            }
+
+            openRequest.onFailure(error);
+            openRequest = null;
+        }
+
+        // TODO - We need a way to signal that the remote closed unexpectedly.
     }
 
     public E getEndpoint() {
@@ -172,14 +187,21 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     }
 
     @Override
+    public boolean hasRemoteError() {
+        return endpoint.getRemoteCondition().getCondition() != null;
+    }
+
+    @Override
     public Exception getRemoteError() {
         String message = getRemoteErrorMessage();
         Exception remoteError = null;
         Symbol error = endpoint.getRemoteCondition().getCondition();
-        if (error.equals(AmqpError.UNAUTHORIZED_ACCESS)) {
-            remoteError = new JMSSecurityException(message);
-        } else {
-            remoteError = new JMSException(message);
+        if (error != null) {
+            if (error.equals(AmqpError.UNAUTHORIZED_ACCESS)) {
+                remoteError = new JMSSecurityException(message);
+            } else {
+                remoteError = new JMSException(message);
+            }
         }
 
         return remoteError;
@@ -213,14 +235,13 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
             if (isAwaitingClose()) {
                 LOG.debug("{} is now closed: ", this);
                 closed();
-            } else if (isAwaitingOpen()) {
+            } else if (isAwaitingOpen() && hasRemoteError()) {
                 // Error on Open, create exception and signal failure.
                 LOG.warn("Open of {} failed: ", this);
                 Exception remoteError = this.getRemoteError();
                 failed(remoteError);
             } else {
-                // TODO - Handle remote asynchronous close.
-                LOG.warn("{} was closed remotely.", this);
+                remotelyClosed();
             }
         }
     }

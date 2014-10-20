@@ -85,6 +85,13 @@ public interface AmqpResource {
     void failed();
 
     /**
+     * Called to indicate that the remote end has become closed but the resource
+     * was not awaiting a close.  This could happen during an open request where
+     * the remote does not set an error condition or during normal operation.
+     */
+    void remotelyClosed();
+
+    /**
      * Sets the failed state for this Resource and triggers a failure signal for
      * any pending ProduverRequest.
      *
@@ -116,6 +123,11 @@ public interface AmqpResource {
      * @throws IOException if an error occurs while processing the update.
      */
     void processFlowUpdates() throws IOException;
+
+    /**
+     * @returns true if the remote end has sent an error
+     */
+    boolean hasRemoteError();
 
     /**
      * @return an Exception derived from the error state of the endpoint's Remote Condition.

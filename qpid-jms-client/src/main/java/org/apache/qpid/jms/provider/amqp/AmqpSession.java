@@ -247,6 +247,17 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> {
         return result;
     }
 
+    /**
+     * Call to send an error that occurs outside of the normal asynchronous processing
+     * of a session resource such as a remote close etc.
+     *
+     * @param error
+     *        The error to forward on to the Provider error event handler.
+     */
+    public void reportError(Exception error) {
+        getConnection().getProvider().fireProviderException(error);
+    }
+
     public AmqpProvider getProvider() {
         return this.connection.getProvider();
     }

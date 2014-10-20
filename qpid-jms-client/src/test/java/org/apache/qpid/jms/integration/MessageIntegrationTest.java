@@ -364,7 +364,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     public void testSentMessageContainsToTypeAnnotationStringIfConfigured() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             // Enable the old string destination type annotation values
-            Connection connection = testFixture.establishConnecton(testPeer, "?provider.useByteDestintionTypeAnnotation=false");
+            Connection connection = testFixture.establishConnecton(testPeer, "?provider.useByteDestinationTypeAnnotation=false");
 
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
@@ -404,7 +404,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     public void testSentMessageContainsReplyToTypeAnnotationStringIfConfigured() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             // Enable the old string destination type annotation values
-            Connection connection = testFixture.establishConnecton(testPeer, "?provider.useByteDestintionTypeAnnotation=false");
+            Connection connection = testFixture.establishConnecton(testPeer, "?provider.useByteDestinationTypeAnnotation=false");
 
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();

@@ -287,8 +287,8 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
      * @return true if the provider has been configured to use byte values for
      * destination type annotations.
      */
-    public boolean isUseByteDestintionTypeAnnotation() {
-        return provider.isUseByteDestintionTypeAnnotation();
+    public boolean isUseByteDestinationTypeAnnotation() {
+        return provider.isUseByteDestinationTypeAnnotation();
     }
 
     /**

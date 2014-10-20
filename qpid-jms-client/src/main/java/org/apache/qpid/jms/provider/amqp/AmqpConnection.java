@@ -30,6 +30,7 @@ import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageFactory;
 import org.apache.qpid.jms.util.IOExceptionSupport;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Sasl;
@@ -62,6 +63,10 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
 
     public AmqpConnection(AmqpProvider provider, Connection protonConnection, Sasl sasl, JmsConnectionInfo info) {
         super(info, protonConnection);
+
+        Map<Symbol, Object> properties = new HashMap<>();
+        properties.put(AmqpConnectionProperties.JMS_MAPPING_VERSION_KEY, AmqpConnectionProperties.JMS_MAPPING_VERSION_VALUE);
+        protonConnection.setProperties(properties);
 
         this.provider = provider;
         this.remoteURI = provider.getRemoteURI();

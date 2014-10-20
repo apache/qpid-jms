@@ -276,7 +276,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that the {@link AmqpMessageSupport#AMQP_TO_ANNOTATION} is set as a byte on
      * a sent message to indicate its 'to' address represents a Topic JMSDestination.
      */
-    @Ignore //TODO: enable when toggling default
     @Test(timeout = 5000)
     public void testSentMessageContainsToTypeAnnotationByte() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
@@ -314,7 +313,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that the {@link AmqpMessageSupport#AMQP_REPLY_TO_ANNOTATION} is set as a byte on
      * a sent message to indicate its 'reply-to' address represents a Topic JMSDestination.
      */
-    @Ignore //TODO: enable when toggling default
     @Test(timeout = 5000)
     public void testSentMessageContainsReplyToTypeAnnotationByte() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
@@ -456,7 +454,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Queue queue = session.createQueue("myQueue");
 
             MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
-            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.AMQP_TO_ANNOTATION, AmqpMessageSupport.TOPIC_ATTRIBUTES);
+            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.AMQP_TO_ANNOTATION, AmqpDestinationHelper.TOPIC_ATTRIBUTES_STRING);
 
             PropertiesDescribedType props = new PropertiesDescribedType();
             String myTopicAddress = "myTopicAddress";
@@ -498,7 +496,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Queue queue = session.createQueue("myQueue");
 
             MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
-            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.AMQP_REPLY_TO_ANNOTATION, AmqpMessageSupport.TOPIC_ATTRIBUTES);
+            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.AMQP_REPLY_TO_ANNOTATION, AmqpDestinationHelper.TOPIC_ATTRIBUTES_STRING);
 
             PropertiesDescribedType props = new PropertiesDescribedType();
             String myTopicAddress = "myTopicAddress";

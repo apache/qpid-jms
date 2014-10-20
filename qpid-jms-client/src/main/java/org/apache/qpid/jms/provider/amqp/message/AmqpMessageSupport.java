@@ -44,31 +44,6 @@ public final class AmqpMessageSupport {
     public static final String AMQP_REPLY_TO_ANNOTATION = "x-opt-reply-type";
 
     /**
-     * Attribute used to mark a destination as temporary.
-     */
-    public static final String TEMPORARY_ATTRIBUTE = "temporary";
-
-    /**
-     * Attribute used to mark a destination as being a Queue type.
-     */
-    public static final String QUEUE_ATTRIBUTES = "queue";
-
-    /**
-     * Attribute used to mark a destination as being a Topic type.
-     */
-    public static final String TOPIC_ATTRIBUTES = "topic";
-
-    /**
-     * Convenience value used to mark a destination as a Temporary Queue.
-     */
-    public static final String TEMP_QUEUE_ATTRIBUTES = TEMPORARY_ATTRIBUTE + "," + QUEUE_ATTRIBUTES;
-
-    /**
-     * Convenience value used to mark a destination as a Temporary Topic.
-     */
-    public static final String TEMP_TOPIC_ATTRIBUTES = TEMPORARY_ATTRIBUTE + "," + TOPIC_ATTRIBUTES;
-
-    /**
      * Attribute used to mark the Application defined correlation Id that has been
      * set for the message.
      */

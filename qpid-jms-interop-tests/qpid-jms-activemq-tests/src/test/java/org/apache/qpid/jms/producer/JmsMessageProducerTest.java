@@ -18,9 +18,13 @@ package org.apache.qpid.jms.producer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.concurrent.TimeUnit;
+
 import javax.jms.DeliveryMode;
+import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -30,6 +34,7 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
+import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.junit.Test;
 
@@ -220,4 +225,53 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         Queue queue = session.createQueue("USERS." + name.getMethodName());
         session.createProducer(queue);
     }
+
+    @Test(timeout = 20 * 1000)
+    public void testProducerWithTTL() throws Exception {
+        doProducerWithTTLTestImpl(false, null);
+    }
+
+    @Test(timeout = 20 * 1000)
+    public void testProducerWithTTLDisableTimestamp() throws Exception {
+        doProducerWithTTLTestImpl(true, null);
+    }
+
+    @Test(timeout = 20 * 1000)
+    public void testProducerWithTTLDisableTimestampAndNoAmqpTtl() throws Exception {
+        doProducerWithTTLTestImpl(true, 0L);
+    }
+
+    private void doProducerWithTTLTestImpl(boolean disableTimestamp, Long propJMS_AMQP_TTL) throws Exception {
+        connection = createAmqpConnection();
+        assertNotNull(connection);
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+        Queue queue = session.createQueue(name.getMethodName());
+
+        Message message = session.createMessage();
+        if(propJMS_AMQP_TTL != null) {
+            message.setLongProperty(AmqpMessageSupport.JMS_AMQP_TTL, propJMS_AMQP_TTL);
+        }
+
+        MessageProducer producer = session.createProducer(queue);
+        if(disableTimestamp) {
+            producer.setDisableMessageTimestamp(true);
+        }
+        producer.setTimeToLive(100);
+        producer.send(message);
+
+        TimeUnit.SECONDS.sleep(1);
+
+        MessageConsumer consumer = session.createConsumer(queue);
+        message = consumer.receive(150);
+        if (message != null) {
+            LOG.info("Unexpected message received: JMSExpiration = {} JMSTimeStamp = {} TTL = {}",
+                    new Object[] { message.getJMSExpiration(), message.getJMSTimestamp(),
+                    message.getJMSExpiration() - message.getJMSTimestamp()});
+        }
+        assertNull("Unexpected message received, see log for details", message);
+    }
+
 }

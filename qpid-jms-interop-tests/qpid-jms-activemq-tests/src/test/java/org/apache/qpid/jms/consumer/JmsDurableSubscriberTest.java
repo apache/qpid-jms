@@ -36,7 +36,6 @@ import javax.jms.TopicSubscriber;
 import org.apache.activemq.broker.jmx.BrokerViewMBean;
 import org.apache.activemq.broker.jmx.TopicViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -136,7 +135,6 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
         assertEquals(0, broker.getInactiveDurableTopicSubscribers().length);
     }
 
-    @Ignore
     @Test(timeout = 60000)
     public void testDuableSubscriptionUnsubscribeInUseThrowsAndRecovers() throws Exception {
         connection = createAmqpConnection();

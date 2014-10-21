@@ -109,19 +109,21 @@ public class AmqpConnectionSession extends AmqpSession {
 
         @Override
         public void onSuccess() {
-            final Source returnedSource = (Source) requestor.getEndpoint().getRemoteSource();
-            if (returnedSource == null) {
+            Object result = requestor.getEndpoint().getRemoteSource();
+            if (result == null || !(result instanceof Source)) {
                 LOG.trace("No Source returned for subscription: {}", requestor.getSubscriptionName());
                 pendingUnsubs.remove(requestor.getSubscriptionName());
+                requestor.closed();
                 super.onFailure(new IOException("Could not fetch remote subscription information"));
             } else {
+                final Source remoteSource = (Source) result;
                 LOG.trace("Source returned for subscription: {} closing first stage", requestor.getSubscriptionName());
                 requestor.close(new AsyncResult() {
 
                     @Override
                     public void onSuccess() {
                         RemoveDurabilityRequestor removeRequestor =
-                            new RemoveDurabilityRequestor(getJmsResource(), requestor.getSubscriptionName(), returnedSource);
+                            new RemoveDurabilityRequestor(getJmsResource(), requestor.getSubscriptionName(), remoteSource);
                         RemoveDurabilityRequest removeRequest = new RemoveDurabilityRequest(removeRequestor, getWrappedRequest());
                         pendingUnsubs.put(requestor.getSubscriptionName(), removeRequest);
                         LOG.trace("Second stage remove started for subscription: {}", requestor.getSubscriptionName());
@@ -146,6 +148,7 @@ public class AmqpConnectionSession extends AmqpSession {
         @Override
         public void onFailure(Throwable result) {
             pendingUnsubs.remove(requestor.getSubscriptionName());
+            requestor.closed();
             super.onFailure(result);
         }
     }
@@ -179,6 +182,7 @@ public class AmqpConnectionSession extends AmqpSession {
             if (isAwaitingOpen()) {
                 openRequest.onSuccess();
             } else {
+                closed();
                 AmqpConnectionSession.this.reportError(new IOException("Durable unsubscribe failed unexpectedly"));
             }
         }
@@ -212,6 +216,7 @@ public class AmqpConnectionSession extends AmqpSession {
         public void onFailure(Throwable result) {
             LOG.trace("Second stage remove failed for subscription: {}", requestor.getSubscriptionName());
             pendingUnsubs.remove(requestor.getSubscriptionName());
+            requestor.closed();
             super.onFailure(result);
         }
     }

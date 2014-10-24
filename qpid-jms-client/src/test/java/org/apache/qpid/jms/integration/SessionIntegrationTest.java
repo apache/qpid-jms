@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNotNull;
 import javax.jms.Connection;
 import javax.jms.Queue;
 import javax.jms.Session;
+import javax.jms.TemporaryQueue;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -75,6 +76,26 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             session.createConsumer(queue);
 
             testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateTemporaryQueue() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin(true);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            testPeer.expectTempQueueCreationAttach();
+
+            TemporaryQueue tempQueue = session.createTemporaryQueue();
+            assertNotNull("TemporaryQueue object was null", tempQueue);
+            assertNotNull("TemporaryQueue queue name was null", tempQueue.getQueueName());
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 }

@@ -22,12 +22,28 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
 import org.hamcrest.Matcher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends FrameMatchingHandler
+public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends AbstractFieldAndDescriptorMatcher implements FrameHandler
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractFrameFieldAndPayloadMatchingHandler.class);
+
+    public static int ANY_CHANNEL = -1;
+
+    private final FrameType _frameType;
+
+    /** The expected channel number, or {@link #ANY_CHANNEL} if we don't care */
+    private int _expectedChannel;
+    private int _actualChannel;
+
+    private Runnable _onSuccessAction;
+    private volatile boolean _isComplete;
+
     /**
      * @param fieldMatchers a map of field matchers, keyed by enums representing the fields
      * (the enums just need to have an ordinal number matching the AMQP spec field order,
@@ -38,12 +54,18 @@ public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends FrameM
                                                 UnsignedLong numericDescriptor,
                                                 Symbol symbolicDescriptor,
                                                 Map<Enum<?>, Matcher<?>> fieldMatchers,
-                                                Runnable onSuccess)
+                                                Runnable onSuccessAction)
     {
-        super(frameType, channel, numericDescriptor, symbolicDescriptor, onSuccess, fieldMatchers);
+        super(numericDescriptor, symbolicDescriptor, fieldMatchers);
+        _frameType = frameType;
+        _expectedChannel = channel;
+        _onSuccessAction = onSuccessAction;
     }
 
-    @Override
+    /**
+     * Handle the supplied frame and its payload, e.g. by checking that it matches what we expect
+     * @throws RuntimeException or a subclass thereof if the frame does not match what we expect
+     */
     protected void verifyFrame(List<Object> described, Binary payload)
     {
         verifyFields(described);
@@ -51,4 +73,83 @@ public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends FrameM
     }
 
     protected abstract void verifyPayload(Binary payload);
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void frame(int type, int ch, DescribedType dt, Binary payload, TestAmqpPeer peer)
+    {
+        if(type == _frameType.ordinal()
+           && (_expectedChannel == ANY_CHANNEL || _expectedChannel == ch)
+           && descriptorMatches(dt.getDescriptor())
+           && (dt.getDescribed() instanceof List))
+        {
+            _actualChannel = ch;
+            verifyFrame((List<Object>)dt.getDescribed(),payload);
+            succeeded();
+        }
+        else
+        {
+            throw new IllegalArgumentException(String.format(
+                    "Frame was not as expected. Expected: " +
+                    "type=%s, channel=%s, descriptor=%s/%s but got: " +
+                    "type=%s, channel=%s, descriptor=%s",
+                    _frameType.ordinal(), expectedChannelString(), getSymbolicDescriptor(), getNumericDescriptor(),
+                    type, ch, dt.getDescriptor()));
+        }
+    }
+
+    private String expectedChannelString()
+    {
+        return _expectedChannel == ANY_CHANNEL ? "<any>" : String.valueOf(_expectedChannel);
+    }
+
+    private void succeeded()
+    {
+        if(_onSuccessAction != null)
+        {
+            _onSuccessAction.run();
+        }
+        else
+        {
+            LOGGER.debug("No onSuccess action, doing nothing.");
+        }
+
+        _isComplete = true;
+    }
+
+    public Runnable getOnSuccessAction()
+    {
+        return _onSuccessAction;
+    }
+
+    public AbstractFrameFieldAndPayloadMatchingHandler onSuccess(Runnable onSuccessAction)
+    {
+        _onSuccessAction = onSuccessAction;
+        return this;
+    }
+
+    public AbstractFrameFieldAndPayloadMatchingHandler onChannel(int channel)
+    {
+        _expectedChannel = channel;
+        return this;
+    }
+
+    public int getActualChannel()
+    {
+        return _actualChannel;
+    }
+
+    @Override
+    public boolean isComplete()
+    {
+        return _isComplete;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "AbstractFrameFieldAndPayloadMatchingHandler [_symbolicDescriptor=" + getSymbolicDescriptor()
+                + ", _expectedChannel=" + expectedChannelString()
+                + "]";
+    }
 }

@@ -25,17 +25,16 @@ import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
+import org.hamcrest.Matcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-abstract class FrameMatchingHandler implements FrameHandler
+abstract class FrameMatchingHandler extends AbstractFieldAndDescriptorMatcher implements FrameHandler
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(FrameMatchingHandler.class);
 
     public static int ANY_CHANNEL = -1;
 
-    private final UnsignedLong _numericDescriptor;
-    private final Symbol _symbolicDescriptor;
     private final FrameType _frameType;
 
     /** The expected channel number, or {@link #ANY_CHANNEL} if we don't care */
@@ -48,16 +47,14 @@ abstract class FrameMatchingHandler implements FrameHandler
     protected FrameMatchingHandler(FrameType frameType,
                                    int channel,
                                    UnsignedLong numericDescriptor,
-                                   Symbol symbolicDescriptor, Runnable onSuccessAction)
+                                   Symbol symbolicDescriptor, Runnable onSuccessAction,
+                                   Map<Enum<?>, Matcher<?>> fieldMatchers)
     {
+        super(numericDescriptor, symbolicDescriptor, fieldMatchers);
         _frameType = frameType;
-        _numericDescriptor = numericDescriptor;
-        _symbolicDescriptor = symbolicDescriptor;
         _expectedChannel = channel;
         _onSuccessAction = onSuccessAction;
     }
-
-    protected abstract Map<Enum<?>,Object> getReceivedFields();
 
     /**
      * Handle the supplied frame and its payload, e.g. by checking that it matches what we expect
@@ -71,7 +68,7 @@ abstract class FrameMatchingHandler implements FrameHandler
     {
         if(type == _frameType.ordinal()
            && (_expectedChannel == ANY_CHANNEL || _expectedChannel == ch)
-           && (_numericDescriptor.equals(dt.getDescriptor()) || _symbolicDescriptor.equals(dt.getDescriptor()))
+           && descriptorMatches(dt.getDescriptor())
            && (dt.getDescribed() instanceof List))
         {
             _actualChannel = ch;
@@ -84,7 +81,7 @@ abstract class FrameMatchingHandler implements FrameHandler
                     "Frame was not as expected. Expected: " +
                     "type=%s, channel=%s, descriptor=%s/%s but got: " +
                     "type=%s, channel=%s, descriptor=%s",
-                    _frameType.ordinal(), expectedChannelString(), _symbolicDescriptor, _numericDescriptor,
+                    _frameType.ordinal(), expectedChannelString(), getSymbolicDescriptor(), getNumericDescriptor(),
                     type, ch, dt.getDescriptor()));
         }
     }
@@ -139,7 +136,7 @@ abstract class FrameMatchingHandler implements FrameHandler
     @Override
     public String toString()
     {
-        return "FrameMatchingHandler [_symbolicDescriptor=" + _symbolicDescriptor
+        return "FrameMatchingHandler [_symbolicDescriptor=" + getSymbolicDescriptor()
                 + ", _expectedChannel=" + expectedChannelString()
                 + "]";
     }

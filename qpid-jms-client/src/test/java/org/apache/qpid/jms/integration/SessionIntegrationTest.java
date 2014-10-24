@@ -18,6 +18,7 @@
  */
 package org.apache.qpid.jms.integration;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import javax.jms.Connection;
@@ -89,11 +90,13 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            testPeer.expectTempQueueCreationAttach();
+            String dynamicAddress = "myTempQueueAddress";
+            testPeer.expectTempQueueCreationAttach(dynamicAddress);
 
             TemporaryQueue tempQueue = session.createTemporaryQueue();
             assertNotNull("TemporaryQueue object was null", tempQueue);
             assertNotNull("TemporaryQueue queue name was null", tempQueue.getQueueName());
+            assertEquals("TemporaryQueue name not as expected", dynamicAddress, tempQueue.getQueueName());
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

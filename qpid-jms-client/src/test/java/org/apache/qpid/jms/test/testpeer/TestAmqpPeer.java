@@ -20,6 +20,7 @@ package org.apache.qpid.jms.test.testpeer;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -40,6 +41,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.FlowFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.OpenFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.SaslMechanismsFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.SaslOutcomeFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Target;
 import org.apache.qpid.jms.test.testpeer.describedtypes.TransferFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.ApplicationPropertiesDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.HeaderDescribedType;
@@ -387,7 +389,7 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(endMatcher);
     }
 
-    public void expectTempQueueCreationAttach()
+    public void expectTempQueueCreationAttach(final String dynamicAddress)
     {
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())
@@ -415,7 +417,11 @@ public class TestAmqpPeer implements AutoCloseable
                 attachResponseSender.setChannel(attachMatcher.getActualChannel());
                 attachResponse.setName(attachMatcher.getReceivedName());
                 attachResponse.setSource(attachMatcher.getReceivedSource());
-                attachResponse.setTarget(attachMatcher.getReceivedTarget());//TODO: need to create the new target and set its address
+
+                Target t = createTargetObjectFromDescribedType(attachMatcher.getReceivedTarget());
+                t.setAddress(dynamicAddress);
+
+                attachResponse.setTarget(t);
             }
         });
 
@@ -681,5 +687,15 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(new DispositionMatcher()
             .withSettled(equalTo(true))
             .withState(new DescriptorMatcher(Accepted.DESCRIPTOR_CODE, Accepted.DESCRIPTOR_SYMBOL)));
+    }
+
+    private Target createTargetObjectFromDescribedType(Object o) {
+        assertThat(o, instanceOf(DescribedType.class));
+        Object described = ((DescribedType)o).getDescribed();
+        assertThat(described, instanceOf(List.class));
+        @SuppressWarnings("unchecked")
+        List<Object> targetFields = (List<Object>) described;
+
+        return new Target(targetFields);
     }
 }

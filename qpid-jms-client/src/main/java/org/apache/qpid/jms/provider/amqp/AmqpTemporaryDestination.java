@@ -19,6 +19,8 @@ package org.apache.qpid.jms.provider.amqp;
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
+import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
+import org.apache.qpid.proton.amqp.messaging.TerminusExpiryPolicy;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.EndpointState;
@@ -94,6 +96,8 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestinatio
         source.setAddress(sourceAddress);
         Target target = new Target();
         target.setDynamic(true);
+        target.setDurable(TerminusDurability.NONE);
+        target.setExpiryPolicy(TerminusExpiryPolicy.LINK_DETACH);
 
         String senderName = sourceAddress;
         endpoint = session.getProtonSession().sender(senderName);

@@ -395,8 +395,7 @@ public class TestAmqpPeer implements AutoCloseable
         TargetMatcher targetMatcher = new TargetMatcher();
         targetMatcher.withAddress(nullValue());
         targetMatcher.withDynamic(equalTo(true));
-        //TODO: this is currently being set as session-end
-        //targetMatcher.withExpiryPolicy(equalTo(Symbol.valueOf("link-detach")));//TODO: values for ExpiryPolicy etc.
+        targetMatcher.withExpiryPolicy(equalTo(Symbol.valueOf("link-detach")));//TODO: non-literal values for ExpiryPolicy etc.
 
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())

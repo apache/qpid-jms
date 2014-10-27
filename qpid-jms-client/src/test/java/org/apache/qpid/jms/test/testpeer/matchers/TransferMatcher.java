@@ -32,7 +32,7 @@ import org.hamcrest.Matcher;
  */
 public class TransferMatcher extends FrameWithPayloadMatchingHandler
 {
-    /** Note that the ordinals of the Field enums match the order specified in the spec */
+    /** Note that the ordinals of the Field enums match the order specified in the AMQP spec */
     public enum Field
     {
         HANDLE,

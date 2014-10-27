@@ -19,12 +19,16 @@
 package org.apache.qpid.jms.integration;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import javax.jms.Connection;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TemporaryQueue;
+import javax.jms.Topic;
+import javax.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -96,6 +100,30 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             assertNotNull("TemporaryQueue object was null", tempQueue);
             assertNotNull("TemporaryQueue queue name was null", tempQueue.getQueueName());
             assertEquals("TemporaryQueue name not as expected", dynamicAddress, tempQueue.getQueueName());
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateDurableTopicSubscriber() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin(true);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String topicName = "myTopic";
+            Topic dest = session.createTopic(topicName);
+            String subscriptionName = "mySubscription";
+
+            testPeer.expectDurableSubscriberAttach(topicName, subscriptionName);
+
+            TopicSubscriber subscriber = session.createDurableSubscriber(dest, subscriptionName);
+            assertNotNull("TopicSubscriber object was null", subscriber);
+            assertFalse("TopicSubscriber should not be no-local", subscriber.getNoLocal());
+            assertNull("TopicSubscriber should not have a selector", subscriber.getMessageSelector());
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

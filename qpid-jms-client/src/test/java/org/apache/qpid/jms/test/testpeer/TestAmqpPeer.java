@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.qpid.jms.JmsConnectionFactory;
+import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
 import org.apache.qpid.jms.test.testpeer.describedtypes.AttachFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.BeginFrame;
@@ -56,6 +58,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.EndMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.FlowMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.OpenMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.SaslInitMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.SourceMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.TargetMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.TransferMatcher;
 import org.apache.qpid.proton.Proton;
@@ -516,6 +519,53 @@ public class TestAmqpPeer implements AutoCloseable
         composite.add(flowFrameSender);
 
         attachMatcher.onSuccess(composite);
+
+        addHandler(attachMatcher);
+    }
+
+    public void expectDurableSubscriberAttach(String topicName, String subscriptionName)
+    {
+        String topicPrefix = "topic://"; //TODO: this will be removed, delete when tests start failing
+
+        SourceMatcher sourceMatcher = new SourceMatcher();
+        sourceMatcher.withAddress(equalTo(topicPrefix + topicName));
+        sourceMatcher.withDynamic(equalTo(false));
+        //TODO: will possibly be changed to a 1/config durability
+        sourceMatcher.withDurable(equalTo(UnsignedInteger.valueOf(2)));//TODO: non-literal values for TerminusDurability etc.
+        sourceMatcher.withExpiryPolicy(equalTo(Symbol.valueOf("never")));//TODO: non-literal values for ExpiryPolicy etc.
+
+        final AttachMatcher attachMatcher = new AttachMatcher()
+                .withName(equalTo(subscriptionName))
+                .withHandle(notNullValue())
+                .withRole(equalTo(RECEIVER_ROLE))
+                .withSndSettleMode(equalTo(ATTACH_SND_SETTLE_MODE_UNSETTLED))
+                .withRcvSettleMode(equalTo(ATTACH_RCV_SETTLE_MODE_FIRST))
+                .withSource(sourceMatcher)
+                .withTarget(notNullValue());
+
+        UnsignedInteger linkHandle = UnsignedInteger.valueOf(_nextLinkHandle++);
+        final AttachFrame attachResponse = new AttachFrame()
+                            .setHandle(linkHandle)
+                            .setRole(SENDER_ROLE)
+                            .setSndSettleMode(ATTACH_SND_SETTLE_MODE_UNSETTLED)
+                            .setRcvSettleMode(ATTACH_RCV_SETTLE_MODE_FIRST)
+                            .setInitialDeliveryCount(UnsignedInteger.ZERO);
+
+        // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+        final FrameSender attachResponseSender = new FrameSender(this, FrameType.AMQP, -1, attachResponse, null);
+        attachResponseSender.setValueProvider(new ValueProvider()
+        {
+            @Override
+            public void setValues()
+            {
+                attachResponseSender.setChannel(attachMatcher.getActualChannel());
+                attachResponse.setName(attachMatcher.getReceivedName());
+                attachResponse.setSource(attachMatcher.getReceivedSource());
+                attachResponse.setTarget(attachMatcher.getReceivedTarget());
+            }
+        });
+
+        attachMatcher.onSuccess(attachResponseSender);
 
         addHandler(attachMatcher);
     }

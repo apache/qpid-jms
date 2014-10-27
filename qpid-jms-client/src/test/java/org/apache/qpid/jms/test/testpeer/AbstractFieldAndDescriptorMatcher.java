@@ -27,19 +27,19 @@ public abstract class AbstractFieldAndDescriptorMatcher {
         this.fieldMatchers = fieldMatchers;
     }
 
-    protected UnsignedLong getNumericDescriptor() {
+    public UnsignedLong getNumericDescriptor() {
         return numericDescriptor;
     }
 
-    protected Symbol getSymbolicDescriptor() {
+    public Symbol getSymbolicDescriptor() {
         return symbolicDescriptor;
     }
 
-    protected boolean descriptorMatches(Object descriptor) {
+    public boolean descriptorMatches(Object descriptor) {
         return numericDescriptor.equals(descriptor) || symbolicDescriptor.equals(descriptor);
     }
 
-    protected Map<Enum<?>, Matcher<?>> getMatchers() {
+    public Map<Enum<?>, Matcher<?>> getMatchers() {
         return fieldMatchers;
     }
 
@@ -52,7 +52,12 @@ public abstract class AbstractFieldAndDescriptorMatcher {
         return receivedFields;
     }
 
-    protected void verifyFields(List<Object> described) {
+    /**
+     * Verifies the fields of the provided list against any matchers registered.
+     * @param described the list of fields from the described type.
+     * @throws AssertionError if a registered matcher assertion is not met.
+     */
+    public void verifyFields(List<Object> described) throws AssertionError {
         int fieldNumber = 0;
         HashMap<Enum<?>, Object> valueMap = new HashMap<>();
         for (Object value : described) {

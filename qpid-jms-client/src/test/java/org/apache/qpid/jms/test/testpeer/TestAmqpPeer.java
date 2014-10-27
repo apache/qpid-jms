@@ -56,6 +56,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.EndMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.FlowMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.OpenMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.SaslInitMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.TargetMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.TransferMatcher;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
@@ -391,6 +392,12 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectTempQueueCreationAttach(final String dynamicAddress)
     {
+        TargetMatcher targetMatcher = new TargetMatcher();
+        targetMatcher.withAddress(nullValue());
+        targetMatcher.withDynamic(equalTo(true));
+        //TODO: this is currently being set as session-end
+        //targetMatcher.withExpiryPolicy(equalTo(Symbol.valueOf("link-detach")));//TODO: values for ExpiryPolicy etc.
+
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())
                 .withHandle(notNullValue())
@@ -398,7 +405,7 @@ public class TestAmqpPeer implements AutoCloseable
                 .withSndSettleMode(equalTo(ATTACH_SND_SETTLE_MODE_UNSETTLED))
                 .withRcvSettleMode(equalTo(ATTACH_RCV_SETTLE_MODE_FIRST))
                 .withSource(notNullValue())
-                .withTarget(notNullValue());//TODO match on the actual Target object details
+                .withTarget(targetMatcher);
 
         UnsignedInteger linkHandle = UnsignedInteger.valueOf(_nextLinkHandle++);
         final AttachFrame attachResponse = new AttachFrame()

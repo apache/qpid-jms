@@ -395,6 +395,7 @@ public class TestAmqpPeer implements AutoCloseable
         TargetMatcher targetMatcher = new TargetMatcher();
         targetMatcher.withAddress(nullValue());
         targetMatcher.withDynamic(equalTo(true));
+        targetMatcher.withDurable(equalTo(UnsignedInteger.valueOf(0)));//TODO: non-literal values for TerminusDurability etc.
         targetMatcher.withExpiryPolicy(equalTo(Symbol.valueOf("link-detach")));//TODO: non-literal values for ExpiryPolicy etc.
 
         final AttachMatcher attachMatcher = new AttachMatcher()

@@ -87,7 +87,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             connection.start();
 
             testPeer.expectBegin(true);
-
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             String dynamicAddress = "myTempQueueAddress";

@@ -61,12 +61,18 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
         Topic topic = session.createTopic(name.getMethodName());
-        session.createDurableSubscriber(topic, name.getMethodName() + "-subscriber");
+        MessageConsumer consumer = session.createDurableSubscriber(topic, name.getMethodName() + "-subscriber");
 
         TopicViewMBean proxy = getProxyToTopic(name.getMethodName());
         assertEquals(0, proxy.getQueueSize());
 
         assertEquals(1, brokerService.getAdminView().getDurableTopicSubscribers().length);
+        assertEquals(0, brokerService.getAdminView().getInactiveDurableTopicSubscribers().length);
+
+        consumer.close();
+
+        assertEquals(0, brokerService.getAdminView().getDurableTopicSubscribers().length);
+        assertEquals(1, brokerService.getAdminView().getInactiveDurableTopicSubscribers().length);
     }
 
     @Test(timeout = 60000)

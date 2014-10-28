@@ -30,7 +30,7 @@
 </xsl:variable>
 
     <xsl:for-each select="descendant-or-self::node()[name()='type']">
-        <xsl:if test="@name = 'terminus-durability' or @name = 'terminus-expiry-policy' or @name = 'std-dist-mode' or @name = 'txn-capability' or @provides = 'error-condition'">
+        <xsl:if test="@name = 'terminus-durability' or @name = 'terminus-expiry-policy' or @name = 'std-dist-mode' or @name = 'txn-capability' or @provides = 'error-condition' or @name = 'role' or @name = 'sender-settle-mode' or @name = 'receiver-settle-mode' ">
           <xsl:variable name="classname"><xsl:call-template name="dashToCamel"><xsl:with-param name="input" select="@name"/></xsl:call-template></xsl:variable>
           <xsl:call-template name="typeClass">
               <xsl:with-param name="license" select="$license"/>
@@ -83,13 +83,14 @@ public class <xsl:value-of select="$classname"/> {
     <xsl:choose>
         <xsl:when test="$type = 'string'">String <xsl:value-of select="$constantName"/> ="<xsl:value-of select="$value"/>";</xsl:when>
         <xsl:when test="$type = 'symbol'">Symbol <xsl:value-of select="$constantName"/> = Symbol.valueOf("<xsl:value-of select="$value"/>")</xsl:when>
-        <xsl:when test="$type = 'ubyte'">UnsignedByte<xsl:value-of select="$constantName"/> = UnsignedByte.valueOf((byte) <xsl:value-of select="$value"/>)</xsl:when>
+        <xsl:when test="$type = 'ubyte'">UnsignedByte <xsl:value-of select="$constantName"/> = UnsignedByte.valueOf((byte) <xsl:value-of select="$value"/>)</xsl:when>
         <xsl:when test="$type = 'ushort'">UnsignedShort <xsl:value-of select="$constantName"/> = UnsignedShort.valueOf((short) <xsl:value-of select="$value"/>)</xsl:when>
         <xsl:when test="$type = 'uint'">UnsignedInteger <xsl:value-of select="$constantName"/> = UnsignedInteger.valueOf(<xsl:value-of select="$value"/>)</xsl:when>
         <xsl:when test="$type = 'ulong'">UnsignedLong <xsl:value-of select="$constantName"/> = UnsignedLong.valueOf(<xsl:value-of select="$value"/>L)</xsl:when>
         <xsl:when test="$type = 'long'">long <xsl:value-of select="$constantName"/> = <xsl:value-of select="$value"/>L</xsl:when>
         <xsl:when test="$type = 'short'">short <xsl:value-of select="$constantName"/> = (short)<xsl:value-of select="$value"/></xsl:when>
         <xsl:when test="$type = 'short'">byte <xsl:value-of select="$constantName"/> = (byte)<xsl:value-of select="$value"/></xsl:when>
+        <xsl:when test="$type = 'boolean'">boolean <xsl:value-of select="$constantName"/> = <xsl:value-of select="$value"/></xsl:when>
         <xsl:otherwise><xsl:value-of select="$value"/></xsl:otherwise>
     </xsl:choose>
 </xsl:template>

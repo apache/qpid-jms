@@ -40,7 +40,7 @@
           </xsl:call-template>
         </xsl:if>
 
-        <xsl:if test="@provides = 'delivery-state, outcome' or @provides = 'source' or @provides = 'target'">
+        <xsl:if test="@provides = 'delivery-state, outcome' or @provides = 'delivery-state' or @provides = 'source' or @provides = 'target'">
           <xsl:variable name="classname"><xsl:call-template name="dashToCamel"><xsl:with-param name="input" select="@name"/></xsl:call-template></xsl:variable>
 
           <xsl:call-template name="typeClass">

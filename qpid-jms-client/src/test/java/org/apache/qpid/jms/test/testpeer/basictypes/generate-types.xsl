@@ -30,7 +30,7 @@
 </xsl:variable>
 
     <xsl:for-each select="descendant-or-self::node()[name()='type']">
-        <xsl:if test="@name = 'terminus-durability' or @name = 'terminus-expiry-policy' or @name = 'std-dist-mode'">
+        <xsl:if test="@name = 'terminus-durability' or @name = 'terminus-expiry-policy' or @name = 'std-dist-mode' or @name = 'txn-capability' or @name = 'transaction-error'">
           <xsl:variable name="classname"><xsl:call-template name="dashToCamel"><xsl:with-param name="input" select="@name"/></xsl:call-template></xsl:variable>
           <xsl:call-template name="typeClass">
               <xsl:with-param name="license" select="$license"/>

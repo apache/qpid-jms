@@ -46,9 +46,9 @@
           </xsl:call-template>
         </xsl:if>
 
-        <xsl:if test="@provides = 'source' or @provides = 'target'">
+        <xsl:if test="@provides = 'source' or @provides = 'target' or @name='transactional-state'">
           <xsl:variable name="typename"><xsl:call-template name="dashToCamel"><xsl:with-param name="input" select="@name"/></xsl:call-template></xsl:variable>
-          <xsl:call-template name="sourceOrTargetClass">
+          <xsl:call-template name="fieldClass">
               <xsl:with-param name="license" select="$license"/>
               <xsl:with-param name="classname" select="$classname"/>
               <xsl:with-param name="typename" select="$typename"/>
@@ -129,7 +129,7 @@ public class <xsl:value-of select="$classname"/> extends <xsl:value-of select="$
 
 <!-- *************************************************************************************************************** -->
 
-<xsl:template name="sourceOrTargetClass">
+<xsl:template name="fieldClass">
     <xsl:param name="license"/>
     <xsl:param name="classname"/>
     <xsl:param name="typename"/>

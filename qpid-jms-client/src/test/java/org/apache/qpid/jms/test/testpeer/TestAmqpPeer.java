@@ -32,6 +32,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
+import org.apache.qpid.jms.test.testpeer.basictypes.TerminusDurability;
+import org.apache.qpid.jms.test.testpeer.basictypes.TerminusExpiryPolicy;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
 import org.apache.qpid.jms.test.testpeer.describedtypes.AttachFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.BeginFrame;
@@ -398,8 +400,8 @@ public class TestAmqpPeer implements AutoCloseable
         TargetMatcher targetMatcher = new TargetMatcher();
         targetMatcher.withAddress(nullValue());
         targetMatcher.withDynamic(equalTo(true));
-        targetMatcher.withDurable(equalTo(UnsignedInteger.valueOf(0)));//TODO: non-literal values for TerminusDurability etc.
-        targetMatcher.withExpiryPolicy(equalTo(Symbol.valueOf("link-detach")));//TODO: non-literal values for ExpiryPolicy etc.
+        targetMatcher.withDurable(equalTo(TerminusDurability.NONE));
+        targetMatcher.withExpiryPolicy(equalTo(TerminusExpiryPolicy.LINK_DETACH));
 
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())
@@ -531,8 +533,8 @@ public class TestAmqpPeer implements AutoCloseable
         sourceMatcher.withAddress(equalTo(topicPrefix + topicName));
         sourceMatcher.withDynamic(equalTo(false));
         //TODO: will possibly be changed to a 1/config durability
-        sourceMatcher.withDurable(equalTo(UnsignedInteger.valueOf(2)));//TODO: non-literal values for TerminusDurability etc.
-        sourceMatcher.withExpiryPolicy(equalTo(Symbol.valueOf("never")));//TODO: non-literal values for ExpiryPolicy etc.
+        sourceMatcher.withDurable(equalTo(TerminusDurability.UNSETTLED_STATE));
+        sourceMatcher.withExpiryPolicy(equalTo(TerminusExpiryPolicy.NEVER));
 
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(equalTo(subscriptionName))

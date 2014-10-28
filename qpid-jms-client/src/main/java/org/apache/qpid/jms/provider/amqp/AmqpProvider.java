@@ -81,6 +81,9 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
     private static final Logger TRACE_BYTES = LoggerFactory.getLogger(AmqpConnection.class.getPackage().getName() + ".BYTES");
     private static final Logger TRACE_FRAMES = LoggerFactory.getLogger(AmqpConnection.class.getPackage().getName() + ".FRAMES");
     private static final int DEFAULT_MAX_FRAME_SIZE = 1024 * 1024 * 1;
+    // NOTE: Limit default channel max to signed short range to deal with
+    //       brokers that don't currently handle the unsigned range well.
+    private static final int DEFAULT_CHANNEL_MAX = 32767;
 
     private AmqpConnection connection;
     private org.apache.qpid.jms.transports.Transport transport;
@@ -93,6 +96,7 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
     private long requestTimeout = JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
     private long sendTimeout = JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
+    private int channelMax = DEFAULT_CHANNEL_MAX;
 
     private final Transport protonTransport = Transport.Factory.create();
     private final Collector protonCollector = new CollectorImpl();
@@ -235,6 +239,7 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
 
                             Connection protonConnection = Connection.Factory.create();
                             protonTransport.setMaxFrameSize(getMaxFrameSize());
+                            protonTransport.setChannelMax(getChannelMax());
                             protonTransport.bind(protonConnection);
                             protonConnection.collect(protonCollector);
                             Sasl sasl = protonTransport.sasl();
@@ -842,5 +847,13 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
     @Override
     public String toString() {
         return "AmqpProvider: " + getRemoteURI().getHost() + ":" + getRemoteURI().getPort();
+    }
+
+    public int getChannelMax() {
+        return channelMax;
+    }
+
+    public void setChannelMax(int channelMax) {
+        this.channelMax = channelMax;
     }
 }

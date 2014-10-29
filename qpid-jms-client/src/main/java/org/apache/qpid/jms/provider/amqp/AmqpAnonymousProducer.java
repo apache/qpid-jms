@@ -115,14 +115,6 @@ public class AmqpAnonymousProducer extends AmqpProducer {
     }
 
     @Override
-    protected void doOpen() {
-    }
-
-    @Override
-    protected void doClose() {
-    }
-
-    @Override
     public boolean isAnonymous() {
         return true;
     }

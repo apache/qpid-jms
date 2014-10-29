@@ -119,6 +119,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
         }
         endpoint.setReceiverSettleMode(ReceiverSettleMode.FIRST);
+        super.doOpen();
     }
 
     @Override
@@ -346,6 +347,11 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     @Override
     protected void doClose() {
+        if (resource.isDurable()) {
+            this.endpoint.detach();
+        } else {
+            this.endpoint.close();
+        }
     }
 
     public AmqpConnection getConnection() {

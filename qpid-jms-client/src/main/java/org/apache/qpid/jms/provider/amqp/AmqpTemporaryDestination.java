@@ -107,11 +107,15 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestinatio
         endpoint.setReceiverSettleMode(ReceiverSettleMode.FIRST);
 
         this.connection.addTemporaryDestination(this);
+
+        super.doOpen();
     }
 
     @Override
     protected void doClose() {
         this.connection.removeTemporaryDestination(this);
+
+        super.doClose();
     }
 
     public AmqpConnection getConnection() {

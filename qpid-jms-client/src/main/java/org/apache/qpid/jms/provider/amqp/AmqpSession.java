@@ -69,11 +69,13 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> {
     protected void doOpen() {
         this.endpoint.setIncomingCapacity(Integer.MAX_VALUE);
         this.connection.addSession(this);
+        super.doOpen();
     }
 
     @Override
     protected void doClose() {
         this.connection.removeSession(this);
+        super.doClose();
     }
 
     /**
@@ -245,6 +247,25 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> {
         }
 
         return result;
+    }
+
+    /**
+     * Query the Session to see if there are any registered consumer instances that have
+     * a durable subscription with the given subscription name.
+     *
+     * @param subscriptionName
+     *        the name of the subscription being searched for.
+     *
+     * @return true if there is a consumer that has the given subscription.
+     */
+    public boolean containsSubscription(String subscriptionName) {
+        for (AmqpConsumer consumer : consumers.values()) {
+            if (subscriptionName.equals(consumer.getJmsResource().getSubscriptionName())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

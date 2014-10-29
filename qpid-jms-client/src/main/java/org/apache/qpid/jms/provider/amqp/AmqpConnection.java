@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
 import javax.jms.Session;
 
@@ -95,10 +96,7 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     protected void doOpen() {
         this.endpoint.setContainer(resource.getClientId());
         this.endpoint.setHostname(remoteURI.getHost());
-    }
-
-    @Override
-    protected void doClose() {
+        super.doOpen();
     }
 
     public AmqpSession createSession(JmsSessionInfo sessionInfo) {
@@ -112,6 +110,14 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     }
 
     public void unsubscribe(String subscriptionName, AsyncResult request) {
+
+        for (AmqpSession session : sessions.values()) {
+            if (session.containsSubscription(subscriptionName)) {
+                request.onFailure(new JMSException("Cannot remove an active durable subscription"));
+                return;
+            }
+        }
+
         connectionSession.unsubscribe(subscriptionName, request);
     }
 

@@ -16,17 +16,16 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.jms.JMSException;
+
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.NoOpAsyncResult;
 import org.apache.qpid.jms.provider.WrappedAsyncResult;
-import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
-import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
-import org.apache.qpid.proton.amqp.messaging.TerminusExpiryPolicy;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Receiver;
@@ -64,33 +63,28 @@ public class AmqpConnectionSession extends AmqpSession {
      *        the request that awaits the completion of this action.
      */
     public void unsubscribe(String subscriptionName, AsyncResult request) {
-        SubscriptionSourceRequestor requestor = new SubscriptionSourceRequestor(getJmsResource(), subscriptionName);
-        SubscriptionSourceRequest sourceRequest = new SubscriptionSourceRequest(requestor, request);
-        pendingUnsubs.put(subscriptionName, sourceRequest);
+        DurableSubscriptionReattach subscriber = new DurableSubscriptionReattach(getJmsResource(), subscriptionName);
+        DurableSubscriptionReattachRequest subscribeRequest = new DurableSubscriptionReattachRequest(subscriber, request);
+        pendingUnsubs.put(subscriptionName, subscribeRequest);
 
         LOG.debug("Attempting remove of subscription: {}", subscriptionName);
-        requestor.open(sourceRequest);
+        subscriber.open(subscribeRequest);
     }
 
-    private class SubscriptionSourceRequestor extends AmqpAbstractResource<JmsSessionInfo, Receiver> {
-
+    private class DurableSubscriptionReattach extends AmqpAbstractResource<JmsSessionInfo, Receiver> {
         private final String subscriptionName;
 
-        public SubscriptionSourceRequestor(JmsSessionInfo resource, String subscriptionName) {
-            super(resource);
+        public DurableSubscriptionReattach(JmsSessionInfo resource, String subscriptionName) {
+            super(resource, AmqpConnectionSession.this.getProtonSession().receiver(subscriptionName));
             this.subscriptionName = subscriptionName;
         }
 
         @Override
         protected void doOpen() {
-            endpoint = AmqpConnectionSession.this.getProtonSession().receiver(subscriptionName);
             endpoint.setTarget(new Target());
             endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
             endpoint.setReceiverSettleMode(ReceiverSettleMode.FIRST);
-        }
-
-        @Override
-        protected void doClose() {
+            super.doOpen();
         }
 
         public String getSubscriptionName() {
@@ -98,125 +92,32 @@ public class AmqpConnectionSession extends AmqpSession {
         }
     }
 
-    private class SubscriptionSourceRequest extends WrappedAsyncResult {
+    private class DurableSubscriptionReattachRequest extends WrappedAsyncResult {
 
-        private final SubscriptionSourceRequestor requestor;
+        private final DurableSubscriptionReattach subscriber;
 
-        public SubscriptionSourceRequest(SubscriptionSourceRequestor requestor, AsyncResult originalRequest) {
+        public DurableSubscriptionReattachRequest(DurableSubscriptionReattach subscriber, AsyncResult originalRequest) {
             super(originalRequest);
-            this.requestor = requestor;
+            this.subscriber = subscriber;
         }
 
         @Override
         public void onSuccess() {
-            Object result = requestor.getEndpoint().getRemoteSource();
-            if (result == null || !(result instanceof Source)) {
-                LOG.trace("No Source returned for subscription: {}", requestor.getSubscriptionName());
-                pendingUnsubs.remove(requestor.getSubscriptionName());
-                requestor.closed();
-                super.onFailure(new IOException("Could not fetch remote subscription information"));
+            LOG.trace("Reattached to subscription: {}", subscriber.getSubscriptionName());
+            pendingUnsubs.remove(subscriber.getSubscriptionName());
+            if (subscriber.getEndpoint().getRemoteSource() != null) {
+                subscriber.close(getWrappedRequest());
             } else {
-                final Source remoteSource = (Source) result;
-                LOG.trace("Source returned for subscription: {} closing first stage", requestor.getSubscriptionName());
-                requestor.close(new AsyncResult() {
-
-                    @Override
-                    public void onSuccess() {
-                        RemoveDurabilityRequestor removeRequestor =
-                            new RemoveDurabilityRequestor(getJmsResource(), requestor.getSubscriptionName(), remoteSource);
-                        RemoveDurabilityRequest removeRequest = new RemoveDurabilityRequest(removeRequestor, getWrappedRequest());
-                        pendingUnsubs.put(requestor.getSubscriptionName(), removeRequest);
-                        LOG.trace("Second stage remove started for subscription: {}", requestor.getSubscriptionName());
-                        removeRequestor.open(removeRequest);
-                    }
-
-                    @Override
-                    public void onFailure(Throwable result) {
-                        LOG.trace("Second stage remove failed for subscription: {}", requestor.getSubscriptionName());
-                        pendingUnsubs.remove(requestor.getSubscriptionName());
-                        getWrappedRequest().onFailure(result);
-                    }
-
-                    @Override
-                    public boolean isComplete() {
-                        return getWrappedRequest().isComplete();
-                    }
-                });
+                subscriber.close(NoOpAsyncResult.INSTANCE);
+                getWrappedRequest().onFailure(new JMSException("Cannot remove a subscription that does not exist"));
             }
         }
 
         @Override
         public void onFailure(Throwable result) {
-            pendingUnsubs.remove(requestor.getSubscriptionName());
-            requestor.closed();
-            super.onFailure(result);
-        }
-    }
-
-    private class RemoveDurabilityRequestor extends AmqpAbstractResource<JmsSessionInfo, Receiver> {
-
-        private final String subscriptionName;
-        private final Source subscriptionSource;
-
-        public RemoveDurabilityRequestor(JmsSessionInfo resource, String subscriptionName, Source subscriptionSource) {
-            super(resource);
-            this.subscriptionSource = subscriptionSource;
-            this.subscriptionName = subscriptionName;
-        }
-
-        @Override
-        protected void doOpen() {
-            endpoint = AmqpConnectionSession.this.getProtonSession().receiver(subscriptionName);
-
-            subscriptionSource.setDurable(TerminusDurability.NONE);
-            subscriptionSource.setExpiryPolicy(TerminusExpiryPolicy.LINK_DETACH);
-
-            endpoint.setSource(subscriptionSource);
-            endpoint.setTarget(new Target());
-            endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
-            endpoint.setReceiverSettleMode(ReceiverSettleMode.FIRST);
-        }
-
-        @Override
-        public void remotelyClosed() {
-            if (isAwaitingOpen()) {
-                openRequest.onSuccess();
-            } else {
-                closed();
-                AmqpConnectionSession.this.reportError(new IOException("Durable unsubscribe failed unexpectedly"));
-            }
-        }
-
-        @Override
-        protected void doClose() {
-        }
-
-        public String getSubscriptionName() {
-            return subscriptionName;
-        }
-    }
-
-    private class RemoveDurabilityRequest extends WrappedAsyncResult {
-
-        private final RemoveDurabilityRequestor requestor;
-
-        public RemoveDurabilityRequest(RemoveDurabilityRequestor requestor, AsyncResult originalRequest) {
-            super(originalRequest);
-            this.requestor = requestor;
-        }
-
-        @Override
-        public void onSuccess() {
-            LOG.trace("Second stage remove complete for subscription: {}", requestor.getSubscriptionName());
-            pendingUnsubs.remove(requestor.getSubscriptionName());
-            requestor.close(getWrappedRequest());
-        }
-
-        @Override
-        public void onFailure(Throwable result) {
-            LOG.trace("Second stage remove failed for subscription: {}", requestor.getSubscriptionName());
-            pendingUnsubs.remove(requestor.getSubscriptionName());
-            requestor.closed();
+            LOG.trace("Failed to reattach to subscription: {}", subscriber.getSubscriptionName());
+            pendingUnsubs.remove(subscriber.getSubscriptionName());
+            subscriber.closed();
             super.onFailure(result);
         }
     }

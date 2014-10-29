@@ -140,10 +140,7 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
         endpoint.setTarget(coordinator);
         endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
         endpoint.setReceiverSettleMode(ReceiverSettleMode.FIRST);
-    }
-
-    @Override
-    protected void doClose() {
+        super.doOpen();
     }
 
     public void begin(JmsTransactionId txId, AsyncResult request) throws Exception {

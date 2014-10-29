@@ -258,10 +258,7 @@ public class AmqpFixedProducer extends AmqpProducer {
             endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
         }
         endpoint.setReceiverSettleMode(ReceiverSettleMode.FIRST);
-    }
-
-    @Override
-    protected void doClose() {
+        super.doOpen();
     }
 
     public AmqpSession getSession() {

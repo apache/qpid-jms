@@ -698,7 +698,15 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
                         session.processStateChange();
                         break;
                     case LINK_REMOTE_CLOSE:
+                        LOG.info("Link closed: {}", protonEvent.getLink().getContext());
+                        AmqpResource cloedResource = (AmqpResource) protonEvent.getLink().getContext();
+                        cloedResource.processStateChange();
+                        break;
                     case LINK_REMOTE_DETACH:
+                        LOG.info("Link detach: {}", protonEvent.getLink().getContext());
+                        AmqpResource detachedResource = (AmqpResource) protonEvent.getLink().getContext();
+                        detachedResource.processStateChange();
+                        break;
                     case LINK_REMOTE_OPEN:
                         AmqpResource resource = (AmqpResource) protonEvent.getLink().getContext();
                         resource.processStateChange();

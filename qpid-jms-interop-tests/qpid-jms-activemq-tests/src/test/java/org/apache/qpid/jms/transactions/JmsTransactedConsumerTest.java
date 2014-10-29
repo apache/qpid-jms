@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
@@ -69,6 +70,29 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         session.commit();
 
         assertEquals(0, proxy.getQueueSize());
+    }
+
+    @Test(timeout=30000)
+    public void testRollbackRececeivedMessageAndClose() throws Exception {
+
+        connection = createAmqpConnection();
+        connection.start();
+
+        Session session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(getDestinationName());
+        MessageProducer producer = session.createProducer(queue);
+        producer.send(session.createTextMessage("TestMessage-0"));
+        producer.close();
+        session.commit();
+
+        MessageConsumer consumer = session.createConsumer(queue);
+
+        Message msg = consumer.receive(2000);
+        assertNotNull(msg);
+
+        session.rollback();
+
+        connection.close();
     }
 
     @Test(timeout = 60000)

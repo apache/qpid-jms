@@ -76,7 +76,6 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
         this.openRequest = request;
         doOpen();
         this.endpoint.setContext(this);
-        this.endpoint.open();
     }
 
     @Override
@@ -107,7 +106,6 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
         this.closeRequest = request;
         doClose();
-        this.endpoint.close();
     }
 
     @Override
@@ -254,8 +252,21 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     public void processFlowUpdates() throws IOException {
     }
 
-    protected abstract void doOpen();
+    /**
+     * Perform the open operation on the managed endpoint.  A subclass may
+     * override this method to provide additional open actions or configuration
+     * updates.
+     */
+    protected void doOpen() {
+        endpoint.open();
+    }
 
-    protected abstract void doClose();
-
+    /**
+     * Perform the close operation on the managed endpoint.  A subclass may
+     * override this method to provide additional close actions or alter the
+     * standard close path such as endpoint detach etc.
+     */
+    protected void doClose() {
+        endpoint.close();
+    }
 }

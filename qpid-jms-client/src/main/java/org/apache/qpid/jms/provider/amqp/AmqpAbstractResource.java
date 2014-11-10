@@ -228,10 +228,8 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
         if (remoteState == EndpointState.ACTIVE) {
             if (isAwaitingOpen()) {
-                LOG.debug("{} is now open: ", this);
-                opened();
+                doOpenCompletion();
             }
-
             // Should not receive an ACTIVE event if not awaiting the open state.
         } else if (remoteState == EndpointState.CLOSED) {
             if (isAwaitingClose()) {
@@ -263,6 +261,16 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
      */
     protected void doOpen() {
         getEndpoint().open();
+    }
+
+    /**
+     * Complete the open operation on the managed endpoint. A subclass may
+     * override this method to provide additional verification actions or configuration
+     * updates.
+     */
+    protected void doOpenCompletion() {
+        LOG.debug("{} is now open: ", this);
+        opened();
     }
 
     /**

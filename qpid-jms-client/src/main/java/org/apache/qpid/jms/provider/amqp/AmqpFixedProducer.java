@@ -264,6 +264,18 @@ public class AmqpFixedProducer extends AmqpProducer {
         super.doOpen();
     }
 
+    @Override
+    protected void doOpenCompletion() {
+        // Verify the attach response contained a non-null target
+        org.apache.qpid.proton.amqp.transport.Target t = getEndpoint().getRemoteTarget();
+        if (t == null) {
+            // No link terminus was created, the peer should now detach us. Producer creation has failed.
+            failed(new RuntimeException("link was refused")); //TODO: proper exception.
+        } else {
+            super.doOpenCompletion();
+        }
+    }
+
     public AmqpSession getSession() {
         return this.session;
     }

@@ -30,8 +30,9 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.qpid.jms.JmsConnectionFactory;
-import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
+import org.apache.qpid.jms.test.testpeer.basictypes.ReceiverSettleMode;
+import org.apache.qpid.jms.test.testpeer.basictypes.Role;
+import org.apache.qpid.jms.test.testpeer.basictypes.SenderSettleMode;
 import org.apache.qpid.jms.test.testpeer.basictypes.TerminusDurability;
 import org.apache.qpid.jms.test.testpeer.basictypes.TerminusExpiryPolicy;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
@@ -82,16 +83,6 @@ import org.slf4j.LoggerFactory;
 public class TestAmqpPeer implements AutoCloseable
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(TestAmqpPeer.class.getName());
-
-    /** Roles are represented as booleans - see AMQP spec 2.8.1*/
-    private static final boolean SENDER_ROLE = false;
-
-    /** Roles are represented as booleans - see AMQP spec 2.8.1*/
-    private static final boolean RECEIVER_ROLE = true;
-
-    private static final UnsignedByte ATTACH_SND_SETTLE_MODE_UNSETTLED = UnsignedByte.valueOf((byte) 0);
-
-    private static final UnsignedByte ATTACH_RCV_SETTLE_MODE_FIRST = UnsignedByte.valueOf((byte)0);
 
     private final TestAmqpPeerRunner _driverRunnable;
     private final Thread _driverThread;
@@ -406,18 +397,18 @@ public class TestAmqpPeer implements AutoCloseable
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())
                 .withHandle(notNullValue())
-                .withRole(equalTo(SENDER_ROLE))
-                .withSndSettleMode(equalTo(ATTACH_SND_SETTLE_MODE_UNSETTLED))
-                .withRcvSettleMode(equalTo(ATTACH_RCV_SETTLE_MODE_FIRST))
+                .withRole(equalTo(Role.SENDER))
+                .withSndSettleMode(equalTo(SenderSettleMode.UNSETTLED))
+                .withRcvSettleMode(equalTo(ReceiverSettleMode.FIRST))
                 .withSource(notNullValue())
                 .withTarget(targetMatcher);
 
         UnsignedInteger linkHandle = UnsignedInteger.valueOf(_nextLinkHandle++);
         final AttachFrame attachResponse = new AttachFrame()
                             .setHandle(linkHandle)
-                            .setRole(RECEIVER_ROLE)
-                            .setSndSettleMode(ATTACH_SND_SETTLE_MODE_UNSETTLED)
-                            .setRcvSettleMode(ATTACH_RCV_SETTLE_MODE_FIRST);
+                            .setRole(Role.RECEIVER)
+                            .setSndSettleMode(SenderSettleMode.UNSETTLED)
+                            .setRcvSettleMode(ReceiverSettleMode.FIRST);
 
         // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
         final FrameSender attachResponseSender = new FrameSender(this, FrameType.AMQP, -1, attachResponse, null);
@@ -470,18 +461,18 @@ public class TestAmqpPeer implements AutoCloseable
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())
                 .withHandle(notNullValue())
-                .withRole(equalTo(SENDER_ROLE))
-                .withSndSettleMode(equalTo(ATTACH_SND_SETTLE_MODE_UNSETTLED))
-                .withRcvSettleMode(equalTo(ATTACH_RCV_SETTLE_MODE_FIRST))
+                .withRole(equalTo(Role.SENDER))
+                .withSndSettleMode(equalTo(SenderSettleMode.UNSETTLED))
+                .withRcvSettleMode(equalTo(ReceiverSettleMode.FIRST))
                 .withSource(notNullValue())
                 .withTarget(notNullValue());
 
         UnsignedInteger linkHandle = UnsignedInteger.valueOf(_nextLinkHandle++);
         final AttachFrame attachResponse = new AttachFrame()
                             .setHandle(linkHandle)
-                            .setRole(RECEIVER_ROLE)
-                            .setSndSettleMode(ATTACH_SND_SETTLE_MODE_UNSETTLED)
-                            .setRcvSettleMode(ATTACH_RCV_SETTLE_MODE_FIRST);
+                            .setRole(Role.RECEIVER)
+                            .setSndSettleMode(SenderSettleMode.UNSETTLED)
+                            .setRcvSettleMode(ReceiverSettleMode.FIRST);
 
         // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
         final FrameSender attachResponseSender = new FrameSender(this, FrameType.AMQP, -1, attachResponse, null);
@@ -539,18 +530,18 @@ public class TestAmqpPeer implements AutoCloseable
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(equalTo(subscriptionName))
                 .withHandle(notNullValue())
-                .withRole(equalTo(RECEIVER_ROLE))
-                .withSndSettleMode(equalTo(ATTACH_SND_SETTLE_MODE_UNSETTLED))
-                .withRcvSettleMode(equalTo(ATTACH_RCV_SETTLE_MODE_FIRST))
+                .withRole(equalTo(Role.RECEIVER))
+                .withSndSettleMode(equalTo(SenderSettleMode.UNSETTLED))
+                .withRcvSettleMode(equalTo(ReceiverSettleMode.FIRST))
                 .withSource(sourceMatcher)
                 .withTarget(notNullValue());
 
         UnsignedInteger linkHandle = UnsignedInteger.valueOf(_nextLinkHandle++);
         final AttachFrame attachResponse = new AttachFrame()
                             .setHandle(linkHandle)
-                            .setRole(SENDER_ROLE)
-                            .setSndSettleMode(ATTACH_SND_SETTLE_MODE_UNSETTLED)
-                            .setRcvSettleMode(ATTACH_RCV_SETTLE_MODE_FIRST)
+                            .setRole(Role.SENDER)
+                            .setSndSettleMode(SenderSettleMode.UNSETTLED)
+                            .setRcvSettleMode(ReceiverSettleMode.FIRST)
                             .setInitialDeliveryCount(UnsignedInteger.ZERO);
 
         // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
@@ -577,18 +568,18 @@ public class TestAmqpPeer implements AutoCloseable
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())
                 .withHandle(notNullValue())
-                .withRole(equalTo(RECEIVER_ROLE))
-                .withSndSettleMode(equalTo(ATTACH_SND_SETTLE_MODE_UNSETTLED))
-                .withRcvSettleMode(equalTo(ATTACH_RCV_SETTLE_MODE_FIRST))
+                .withRole(equalTo(Role.RECEIVER))
+                .withSndSettleMode(equalTo(SenderSettleMode.UNSETTLED))
+                .withRcvSettleMode(equalTo(ReceiverSettleMode.FIRST))
                 .withSource(notNullValue())
                 .withTarget(notNullValue());
 
         UnsignedInteger linkHandle = UnsignedInteger.valueOf(_nextLinkHandle++);
         final AttachFrame attachResponse = new AttachFrame()
                             .setHandle(linkHandle)
-                            .setRole(SENDER_ROLE)
-                            .setSndSettleMode(ATTACH_SND_SETTLE_MODE_UNSETTLED)
-                            .setRcvSettleMode(ATTACH_RCV_SETTLE_MODE_FIRST)
+                            .setRole(Role.SENDER)
+                            .setSndSettleMode(SenderSettleMode.UNSETTLED)
+                            .setRcvSettleMode(ReceiverSettleMode.FIRST)
                             .setInitialDeliveryCount(UnsignedInteger.ZERO);
 
         // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
@@ -721,7 +712,7 @@ public class TestAmqpPeer implements AutoCloseable
         transferMatcher.setPayloadMatcher(expectedPayloadMatcher);
 
         final DispositionFrame dispositionFrame = new DispositionFrame()
-                                                   .setRole(RECEIVER_ROLE)
+                                                   .setRole(Role.RECEIVER)
                                                    .setSettled(true)
                                                    .setState(new Accepted());
 

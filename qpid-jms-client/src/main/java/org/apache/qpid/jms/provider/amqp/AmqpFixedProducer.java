@@ -38,6 +38,7 @@ import org.apache.qpid.proton.amqp.messaging.Outcome;
 import org.apache.qpid.proton.amqp.messaging.Rejected;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
+import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
 import org.apache.qpid.proton.amqp.transaction.TransactionalState;
 import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
@@ -233,13 +234,11 @@ public class AmqpFixedProducer extends AmqpProducer {
 
     @Override
     protected void doOpen() {
-        String targetAddress;
+        String targetAddress = null;
 
         if (resource.getDestination() != null) {
             JmsDestination destination = resource.getDestination();
             targetAddress = session.getQualifiedName(destination);
-        } else {
-            targetAddress = connection.getProperties().getAnonymousRelayName();
         }
 
         String sourceAddress = getProducerId().toString();

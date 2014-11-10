@@ -458,6 +458,11 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectSenderAttach()
     {
+        expectSenderAttach(notNullValue());
+    }
+
+    public void expectSenderAttach(final Matcher<?> targetMatcher)
+    {
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())
                 .withHandle(notNullValue())
@@ -465,7 +470,7 @@ public class TestAmqpPeer implements AutoCloseable
                 .withSndSettleMode(equalTo(SenderSettleMode.UNSETTLED))
                 .withRcvSettleMode(equalTo(ReceiverSettleMode.FIRST))
                 .withSource(notNullValue())
-                .withTarget(notNullValue());
+                .withTarget(targetMatcher);
 
         UnsignedInteger linkHandle = UnsignedInteger.valueOf(_nextLinkHandle++);
         final AttachFrame attachResponse = new AttachFrame()

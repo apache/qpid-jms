@@ -648,7 +648,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
                 original.setJMSExpiration(0);
             }
 
-            String msgId = getNextMessageId(producer);;
+            String msgId = getNextMessageId(producer);
             if (!disableMsgId) {
                 original.setJMSMessageID(msgId);
             }

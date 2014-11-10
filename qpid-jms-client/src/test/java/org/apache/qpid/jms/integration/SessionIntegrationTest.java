@@ -18,12 +18,16 @@
  */
 package org.apache.qpid.jms.integration;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import javax.jms.Connection;
+import javax.jms.Message;
+import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TemporaryQueue;
@@ -32,6 +36,12 @@ import javax.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
+import org.apache.qpid.jms.test.testpeer.basictypes.TerminusDurability;
+import org.apache.qpid.jms.test.testpeer.basictypes.TerminusExpiryPolicy;
+import org.apache.qpid.jms.test.testpeer.matchers.TargetMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.junit.Test;
 
 public class SessionIntegrationTest extends QpidJmsTestCase {
@@ -124,6 +134,45 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             assertNotNull("TopicSubscriber object was null", subscriber);
             assertFalse("TopicSubscriber should not be no-local", subscriber.getNoLocal());
             assertNull("TopicSubscriber should not have a selector", subscriber.getMessageSelector());
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateAnonymousProducerWhenAnonymousRelaySupported() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin(true);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String topicName = "myTopic";
+            Topic dest = session.createTopic(topicName);
+
+            //Expect and accept a link to the anonymous relay node
+            TargetMatcher targetMatcher = new TargetMatcher();
+            targetMatcher.withAddress(nullValue());
+            targetMatcher.withDynamic(nullValue());//default = false
+            targetMatcher.withDurable(nullValue());//default = none/0
+
+            testPeer.expectSenderAttach(targetMatcher);
+
+            //Create an anonymous producer
+            MessageProducer producer = session.createProducer(null);
+            assertNotNull("Producer object was null", producer);
+
+            //Expect a new message sent on the above link to the anonymous relay
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createMessage();
+            producer.send(dest, message);
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

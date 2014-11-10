@@ -458,10 +458,10 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectSenderAttach()
     {
-        expectSenderAttach(notNullValue());
+        expectSenderAttach(notNullValue(), false);
     }
 
-    public void expectSenderAttach(final Matcher<?> targetMatcher)
+    public void expectSenderAttach(final Matcher<?> targetMatcher, final boolean refuseLink)
     {
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())
@@ -489,7 +489,11 @@ public class TestAmqpPeer implements AutoCloseable
                 attachResponseSender.setChannel(attachMatcher.getActualChannel());
                 attachResponse.setName(attachMatcher.getReceivedName());
                 attachResponse.setSource(attachMatcher.getReceivedSource());
-                attachResponse.setTarget(attachMatcher.getReceivedTarget());
+                if(refuseLink) {
+                    attachResponse.setTarget(null);
+                } else {
+                    attachResponse.setTarget(attachMatcher.getReceivedTarget());
+                }
             }
         });
 
@@ -512,9 +516,25 @@ public class TestAmqpPeer implements AutoCloseable
             }
         });
 
+        final DetachFrame detachResonse = new DetachFrame().setHandle(
+                 linkHandle).setClosed(true);
+        // The response frame channel will be dynamically set based on the
+        // incoming frame. Using the -1 is an illegal placeholder.
+        final FrameSender detachResonseSender = new FrameSender(this, FrameType.AMQP, -1, detachResonse, null);
+        detachResonseSender.setValueProvider(new ValueProvider() {
+             @Override
+             public void setValues() {
+                  detachResonseSender.setChannel(attachMatcher.getActualChannel());
+             }
+        });
+
         CompositeAmqpPeerRunnable composite = new CompositeAmqpPeerRunnable();
         composite.add(attachResponseSender);
-        composite.add(flowFrameSender);
+        if (refuseLink) {
+            composite.add(detachResonseSender);
+        } else {
+            composite.add(flowFrameSender);
+        }
 
         attachMatcher.onSuccess(composite);
 

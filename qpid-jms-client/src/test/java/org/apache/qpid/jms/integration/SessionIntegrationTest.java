@@ -210,4 +210,44 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
         }
     }
+
+    @Test(timeout = 5000)
+    @Ignore //TODO: enable once completed. Expect additional sender attaches and detaches for each message
+    public void testCreateAnonymousProducerWhenAnonymousRelayNodeIsNotSupported() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin(true);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String topicName = "myTopic";
+            Topic dest = session.createTopic(topicName);
+
+            //Expect and accept a link to the anonymous relay node
+            TargetMatcher targetMatcher = new TargetMatcher();
+            targetMatcher.withAddress(nullValue());
+            targetMatcher.withDynamic(nullValue());//default = false
+            targetMatcher.withDurable(nullValue());//default = none/0
+
+            testPeer.expectSenderAttach(targetMatcher, true);
+
+            //Create an anonymous producer
+            MessageProducer producer = session.createProducer(null);
+            assertNotNull("Producer object was null", producer);
+
+            //Expect a new message sent on the above link to the anonymous relay
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createMessage();
+            producer.send(dest, message);
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
 }

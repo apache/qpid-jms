@@ -86,7 +86,7 @@ public class AmqpFixedProducer extends AmqpProducer {
         // TODO - Handle the case where remote has no credit which means we can't send to it.
         //        We need to hold the send until remote credit becomes available but we should
         //        also have a send timeout option and filter timed out sends.
-        if (endpoint.getCredit() <= 0) {
+        if (getEndpoint().getCredit() <= 0) {
             LOG.trace("Holding Message send until credit is available.");
             // Once a message goes into a held mode we no longer can send it async, so
             // we clear the async flag if set to avoid the sender never getting notified.
@@ -108,9 +108,9 @@ public class AmqpFixedProducer extends AmqpProducer {
         Delivery delivery = null;
 
         if (presettle) {
-            delivery = endpoint.delivery(EMPTY_BYTE_ARRAY, 0, 0);
+            delivery = getEndpoint().delivery(EMPTY_BYTE_ARRAY, 0, 0);
         } else {
-            delivery = endpoint.delivery(tag, 0, tag.length);
+            delivery = getEndpoint().delivery(tag, 0, tag.length);
         }
 
         delivery.setContext(request);
@@ -129,7 +129,7 @@ public class AmqpFixedProducer extends AmqpProducer {
             delivery.settle();
         } else {
             pending.add(delivery);
-            endpoint.advance();
+            getEndpoint().advance();
         }
 
         if (envelope.isSendAsync() || presettle) {
@@ -152,7 +152,7 @@ public class AmqpFixedProducer extends AmqpProducer {
         int sentSoFar = 0;
 
         while (true) {
-            int sent = endpoint.send(encodeBuffer, sentSoFar, encodedSize - sentSoFar);
+            int sent = getEndpoint().send(encodeBuffer, sentSoFar, encodedSize - sentSoFar);
             if (sent > 0) {
                 sentSoFar += sent;
                 if ((encodedSize - sentSoFar) == 0) {
@@ -166,8 +166,8 @@ public class AmqpFixedProducer extends AmqpProducer {
 
     @Override
     public void processFlowUpdates() throws IOException {
-        if (!pendingSends.isEmpty() && endpoint.getCredit() > 0) {
-            while (endpoint.getCredit() > 0 && !pendingSends.isEmpty()) {
+        if (!pendingSends.isEmpty() && getEndpoint().getCredit() > 0) {
+            while (getEndpoint().getCredit() > 0 && !pendingSends.isEmpty()) {
                 LOG.trace("Dispatching previously held send");
                 PendingSend held = pendingSends.pop();
                 try {
@@ -248,15 +248,19 @@ public class AmqpFixedProducer extends AmqpProducer {
         target.setAddress(targetAddress);
 
         String senderName = sourceAddress + ":" + targetAddress;
-        endpoint = session.getProtonSession().sender(senderName);
-        endpoint.setSource(source);
-        endpoint.setTarget(target);
+
+        Sender sender = session.getProtonSession().sender(senderName);
+        sender.setSource(source);
+        sender.setTarget(target);
         if (presettle) {
-            endpoint.setSenderSettleMode(SenderSettleMode.SETTLED);
+            sender.setSenderSettleMode(SenderSettleMode.SETTLED);
         } else {
-            endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
+            sender.setSenderSettleMode(SenderSettleMode.UNSETTLED);
         }
-        endpoint.setReceiverSettleMode(ReceiverSettleMode.FIRST);
+        sender.setReceiverSettleMode(ReceiverSettleMode.FIRST);
+
+        setEndpoint(sender);
+
         super.doOpen();
     }
 
@@ -265,7 +269,7 @@ public class AmqpFixedProducer extends AmqpProducer {
     }
 
     public Sender getProtonSender() {
-        return this.endpoint;
+        return this.getEndpoint();
     }
 
     @Override

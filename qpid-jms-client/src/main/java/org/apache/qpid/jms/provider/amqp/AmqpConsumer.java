@@ -88,7 +88,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      * Starts the consumer by setting the link credit to the given prefetch value.
      */
     public void start(AsyncResult request) {
-        this.endpoint.flow(resource.getPrefetchSize());
+        getEndpoint().flow(resource.getPrefetchSize());
         request.onSuccess();
     }
 
@@ -110,15 +110,18 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             receiverName = resource.getSubscriptionName();
         }
 
-        endpoint = session.getProtonSession().receiver(receiverName);
-        endpoint.setSource(source);
-        endpoint.setTarget(target);
+        Receiver receiver = session.getProtonSession().receiver(receiverName);
+        receiver.setSource(source);
+        receiver.setTarget(target);
         if (isPresettle()) {
-            endpoint.setSenderSettleMode(SenderSettleMode.SETTLED);
+            receiver.setSenderSettleMode(SenderSettleMode.SETTLED);
         } else {
-            endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
+            receiver.setSenderSettleMode(SenderSettleMode.UNSETTLED);
         }
-        endpoint.setReceiverSettleMode(ReceiverSettleMode.FIRST);
+        receiver.setReceiverSettleMode(ReceiverSettleMode.FIRST);
+
+        setEndpoint(receiver);
+
         super.doOpen();
     }
 
@@ -251,9 +254,9 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             return;
         }
 
-        int currentCredit = endpoint.getCredit();
+        int currentCredit = getEndpoint().getCredit();
         if (currentCredit <= resource.getPrefetchSize() * 0.2) {
-            endpoint.flow(resource.getPrefetchSize() - currentCredit);
+            getEndpoint().flow(resource.getPrefetchSize() - currentCredit);
         }
     }
 
@@ -282,9 +285,9 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      * @param timeout
      */
     public void pull(long timeout) {
-        if (resource.getPrefetchSize() == 0 && endpoint.getCredit() == 0) {
+        if (resource.getPrefetchSize() == 0 && getEndpoint().getCredit() == 0) {
             // expand the credit window by one.
-            endpoint.flow(1);
+            getEndpoint().flow(1);
         }
     }
 
@@ -292,7 +295,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     public void processDeliveryUpdates() throws IOException {
         Delivery incoming = null;
         do {
-            incoming = endpoint.current();
+            incoming = getEndpoint().current();
             if (incoming != null && incoming.isReadable() && !incoming.isPartial()) {
                 LOG.trace("{} has incoming Message(s).", this);
                 try {
@@ -300,7 +303,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                 } catch (Exception e) {
                     throw IOExceptionSupport.create(e);
                 }
-                endpoint.advance();
+                getEndpoint().advance();
             } else {
                 LOG.trace("{} has a partial incoming Message(s), deferring.", this);
                 incoming = null;
@@ -348,9 +351,9 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     @Override
     protected void doClose() {
         if (resource.isDurable()) {
-            this.endpoint.detach();
+            getEndpoint().detach();
         } else {
-            this.endpoint.close();
+            getEndpoint().close();
         }
     }
 
@@ -371,7 +374,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     public Receiver getProtonReceiver() {
-        return this.endpoint;
+        return this.getEndpoint();
     }
 
     public boolean isBrowser() {
@@ -398,7 +401,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         incoming.disposition(disposition);
         incoming.settle();
         if (expandCredit) {
-            endpoint.flow(1);
+            getEndpoint().flow(1);
         }
     }
 
@@ -420,7 +423,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     protected Message decodeIncomingMessage(Delivery incoming) {
         int count;
 
-        while ((count = endpoint.recv(incomingBuffer.array(), incomingBuffer.writerIndex(), incomingBuffer.writableBytes())) > 0) {
+        while ((count = getEndpoint().recv(incomingBuffer.array(), incomingBuffer.writerIndex(), incomingBuffer.writableBytes())) > 0) {
             incomingBuffer.writerIndex(incomingBuffer.writerIndex() + count);
             if (!incomingBuffer.isWritable()) {
                 incomingBuffer.capacity((int) (incomingBuffer.capacity() * 1.5));

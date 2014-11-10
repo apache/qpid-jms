@@ -46,7 +46,7 @@ public class AmqpQueueBrowser extends AmqpConsumer {
      */
     @Override
     public void start(AsyncResult request) {
-        this.endpoint.flow(resource.getPrefetchSize());
+        getEndpoint().flow(resource.getPrefetchSize());
         request.onSuccess();
     }
 
@@ -64,17 +64,17 @@ public class AmqpQueueBrowser extends AmqpConsumer {
      */
     @Override
     public void pull(long timeout) {
-        if (!endpoint.getDrain() && endpoint.current() == null && endpoint.getUnsettled() == 0) {
+        if (!getEndpoint().getDrain() && getEndpoint().current() == null && getEndpoint().getUnsettled() == 0) {
             LOG.trace("QueueBrowser {} will try to drain remote.", getConsumerId());
-            this.endpoint.drain(resource.getPrefetchSize());
+            getEndpoint().drain(resource.getPrefetchSize());
         } else {
-            endpoint.setDrain(false);
+            getEndpoint().setDrain(false);
         }
     }
 
     @Override
     public void processFlowUpdates() throws IOException {
-        if (endpoint.getDrain() && endpoint.getCredit() == endpoint.getRemoteCredit()) {
+        if (getEndpoint().getDrain() && getEndpoint().getCredit() == getEndpoint().getRemoteCredit()) {
             JmsInboundMessageDispatch browseDone = new JmsInboundMessageDispatch(getNextIncomingSequenceNumber());
             browseDone.setConsumerId(getConsumerId());
             try {
@@ -83,7 +83,7 @@ public class AmqpQueueBrowser extends AmqpConsumer {
                 throw IOExceptionSupport.create(e);
             }
         } else {
-            endpoint.setDrain(false);
+            getEndpoint().setDrain(false);
         }
 
         super.processFlowUpdates();
@@ -91,14 +91,14 @@ public class AmqpQueueBrowser extends AmqpConsumer {
 
     @Override
     public void processDeliveryUpdates() throws IOException {
-        if (endpoint.getDrain() && endpoint.current() != null) {
+        if (getEndpoint().getDrain() && getEndpoint().current() != null) {
             LOG.trace("{} incoming delivery, cancel drain.", getConsumerId());
-            endpoint.setDrain(false);
+            getEndpoint().setDrain(false);
         }
 
         super.processDeliveryUpdates();
 
-        if (endpoint.getDrain() && endpoint.getCredit() == endpoint.getRemoteCredit()) {
+        if (getEndpoint().getDrain() && getEndpoint().getCredit() == getEndpoint().getRemoteCredit()) {
             JmsInboundMessageDispatch browseDone = new JmsInboundMessageDispatch(getNextIncomingSequenceNumber());
             browseDone.setConsumerId(getConsumerId());
             try {
@@ -107,7 +107,7 @@ public class AmqpQueueBrowser extends AmqpConsumer {
                 throw IOExceptionSupport.create(e);
             }
         } else {
-            endpoint.setDrain(false);
+            getEndpoint().setDrain(false);
         }
     }
 

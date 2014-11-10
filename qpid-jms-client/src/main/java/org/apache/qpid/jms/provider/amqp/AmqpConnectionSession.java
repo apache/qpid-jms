@@ -81,9 +81,10 @@ public class AmqpConnectionSession extends AmqpSession {
 
         @Override
         protected void doOpen() {
-            endpoint.setTarget(new Target());
-            endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
-            endpoint.setReceiverSettleMode(ReceiverSettleMode.FIRST);
+            Receiver receiver = getEndpoint();
+            receiver.setTarget(new Target());
+            receiver.setSenderSettleMode(SenderSettleMode.UNSETTLED);
+            receiver.setReceiverSettleMode(ReceiverSettleMode.FIRST);
             super.doOpen();
         }
 

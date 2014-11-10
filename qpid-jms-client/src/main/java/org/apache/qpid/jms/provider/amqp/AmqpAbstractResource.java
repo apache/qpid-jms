@@ -45,7 +45,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     protected AsyncResult openRequest;
     protected AsyncResult closeRequest;
 
-    protected E endpoint;
+    private E endpoint;
     protected R resource;
 
     /**
@@ -68,19 +68,19 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
      */
     public AmqpAbstractResource(R resource, E endpoint) {
         this.resource = resource;
-        this.endpoint = endpoint;
+        setEndpoint(endpoint);
     }
 
     @Override
     public void open(AsyncResult request) {
         this.openRequest = request;
         doOpen();
-        this.endpoint.setContext(this);
+        getEndpoint().setContext(this);
     }
 
     @Override
     public boolean isOpen() {
-        return this.endpoint.getRemoteState() == EndpointState.ACTIVE;
+        return getEndpoint().getRemoteState() == EndpointState.ACTIVE;
     }
 
     @Override
@@ -99,7 +99,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     @Override
     public void close(AsyncResult request) {
         // If already closed signal success or else the caller might never get notified.
-        if (endpoint.getLocalState() == EndpointState.CLOSED) {
+        if (getEndpoint().getLocalState() == EndpointState.CLOSED) {
             request.onSuccess();
             return;
         }
@@ -110,7 +110,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
     @Override
     public boolean isClosed() {
-        return this.endpoint.getLocalState() == EndpointState.CLOSED;
+        return getEndpoint().getLocalState() == EndpointState.CLOSED;
     }
 
     @Override
@@ -120,8 +120,8 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
     @Override
     public void closed() {
-        this.endpoint.close();
-        this.endpoint.free();
+        getEndpoint().close();
+        getEndpoint().free();
 
         if (this.closeRequest != null) {
             this.closeRequest.onSuccess();
@@ -166,34 +166,38 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
         return this.endpoint;
     }
 
+    public void setEndpoint(E endpoint) {
+        this.endpoint = endpoint;
+    }
+
     public R getJmsResource() {
         return this.resource;
     }
 
     public EndpointState getLocalState() {
-        if (endpoint == null) {
+        if (getEndpoint() == null) {
             return EndpointState.UNINITIALIZED;
         }
-        return this.endpoint.getLocalState();
+        return getEndpoint().getLocalState();
     }
 
     public EndpointState getRemoteState() {
-        if (endpoint == null) {
+        if (getEndpoint() == null) {
             return EndpointState.UNINITIALIZED;
         }
-        return this.endpoint.getRemoteState();
+        return getEndpoint().getRemoteState();
     }
 
     @Override
     public boolean hasRemoteError() {
-        return endpoint.getRemoteCondition().getCondition() != null;
+        return getEndpoint().getRemoteCondition().getCondition() != null;
     }
 
     @Override
     public Exception getRemoteError() {
         String message = getRemoteErrorMessage();
         Exception remoteError = null;
-        Symbol error = endpoint.getRemoteCondition().getCondition();
+        Symbol error = getEndpoint().getRemoteCondition().getCondition();
         if (error != null) {
             if (error.equals(AmqpError.UNAUTHORIZED_ACCESS)) {
                 remoteError = new JMSSecurityException(message);
@@ -208,8 +212,8 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     @Override
     public String getRemoteErrorMessage() {
         String message = "Received unkown error from remote peer";
-        if (endpoint.getRemoteCondition() != null) {
-            ErrorCondition error = endpoint.getRemoteCondition();
+        if (getEndpoint().getRemoteCondition() != null) {
+            ErrorCondition error = getEndpoint().getRemoteCondition();
             if (error.getDescription() != null && !error.getDescription().isEmpty()) {
                 message = error.getDescription();
             }
@@ -220,7 +224,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
     @Override
     public void processStateChange() throws IOException {
-        EndpointState remoteState = endpoint.getRemoteState();
+        EndpointState remoteState = getEndpoint().getRemoteState();
 
         if (remoteState == EndpointState.ACTIVE) {
             if (isAwaitingOpen()) {
@@ -258,7 +262,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
      * updates.
      */
     protected void doOpen() {
-        endpoint.open();
+        getEndpoint().open();
     }
 
     /**
@@ -267,6 +271,6 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
      * standard close path such as endpoint detach etc.
      */
     protected void doClose() {
-        endpoint.close();
+        getEndpoint().close();
     }
 }

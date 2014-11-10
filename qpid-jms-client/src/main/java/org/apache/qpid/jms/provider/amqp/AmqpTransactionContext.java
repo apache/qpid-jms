@@ -135,11 +135,15 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
         Source source = new Source();
 
         String coordinatorName = resource.getSessionId().toString();
-        endpoint = session.getProtonSession().sender(coordinatorName);
-        endpoint.setSource(source);
-        endpoint.setTarget(coordinator);
-        endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
-        endpoint.setReceiverSettleMode(ReceiverSettleMode.FIRST);
+
+        Sender sender = session.getProtonSession().sender(coordinatorName);
+        sender.setSource(source);
+        sender.setTarget(coordinator);
+        sender.setSenderSettleMode(SenderSettleMode.UNSETTLED);
+        sender.setReceiverSettleMode(ReceiverSettleMode.FIRST);
+
+        setEndpoint(sender);
+
         super.doOpen();
     }
 
@@ -152,7 +156,7 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
         Declare declare = new Declare();
         message.setBody(new AmqpValue(declare));
 
-        pendingDelivery = endpoint.delivery(tagGenerator.getNextTag());
+        pendingDelivery = getEndpoint().delivery(tagGenerator.getNextTag());
         pendingRequest = request;
         current = txId;
 
@@ -172,7 +176,7 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
         discharge.setTxnId((Binary) current.getProviderHint());
         message.setBody(new AmqpValue(discharge));
 
-        pendingDelivery = endpoint.delivery(tagGenerator.getNextTag());
+        pendingDelivery = getEndpoint().delivery(tagGenerator.getNextTag());
         pendingDelivery.setContext(COMMIT_MARKER);
         pendingRequest = request;
 
@@ -192,7 +196,7 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
         discharge.setTxnId((Binary) current.getProviderHint());
         message.setBody(new AmqpValue(discharge));
 
-        pendingDelivery = endpoint.delivery(tagGenerator.getNextTag());
+        pendingDelivery = getEndpoint().delivery(tagGenerator.getNextTag());
         pendingDelivery.setContext(ROLLBACK_MARKER);
         pendingRequest = request;
 
@@ -260,7 +264,8 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
             }
         }
 
-        this.endpoint.send(buffer, 0, encodedSize);
-        this.endpoint.advance();
+        Sender sender = getEndpoint();
+        sender.send(buffer, 0, encodedSize);
+        sender.advance();
     }
 }

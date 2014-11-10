@@ -58,7 +58,7 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestinatio
         // TODO - We might want to check on our producer to see if it becomes closed
         //        which might indicate that the broker purged the temporary destination.
 
-        EndpointState remoteState = endpoint.getRemoteState();
+        EndpointState remoteState = getEndpoint().getRemoteState();
         if (remoteState == EndpointState.ACTIVE) {
             LOG.trace("Temporary Destination: {} is now open", this.resource);
             opened();
@@ -73,7 +73,7 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestinatio
 
         // Once our producer is opened we can read the updated name from the target address.
         String oldDestinationName = resource.getName();
-        String destinationName = this.endpoint.getRemoteTarget().getAddress();
+        String destinationName = getEndpoint().getRemoteTarget().getAddress();
 
         this.resource.setName(destinationName);
 
@@ -100,11 +100,14 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestinatio
         target.setExpiryPolicy(TerminusExpiryPolicy.LINK_DETACH);
 
         String senderName = sourceAddress;
-        endpoint = session.getProtonSession().sender(senderName);
-        endpoint.setSource(source);
-        endpoint.setTarget(target);
-        endpoint.setSenderSettleMode(SenderSettleMode.UNSETTLED);
-        endpoint.setReceiverSettleMode(ReceiverSettleMode.FIRST);
+
+        Sender sender = session.getProtonSession().sender(senderName);
+        sender.setSource(source);
+        sender.setTarget(target);
+        sender.setSenderSettleMode(SenderSettleMode.UNSETTLED);
+        sender.setReceiverSettleMode(ReceiverSettleMode.FIRST);
+
+        setEndpoint(sender);
 
         this.connection.addTemporaryDestination(this);
 
@@ -127,7 +130,7 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestinatio
     }
 
     public Sender getProtonSender() {
-        return this.endpoint;
+        return getEndpoint();
     }
 
     public JmsDestination getJmsDestination() {

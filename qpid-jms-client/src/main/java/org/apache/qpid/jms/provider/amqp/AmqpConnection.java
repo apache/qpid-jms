@@ -94,8 +94,8 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
 
     @Override
     protected void doOpen() {
-        this.endpoint.setContainer(resource.getClientId());
-        this.endpoint.setHostname(remoteURI.getHost());
+        getEndpoint().setContainer(resource.getClientId());
+        getEndpoint().setHostname(remoteURI.getHost());
         super.doOpen();
     }
 
@@ -132,7 +132,7 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
             connected = true;
 
             this.properties = new AmqpConnectionProperties(
-                endpoint.getRemoteOfferedCapabilities(), endpoint.getRemoteProperties());
+                getEndpoint().getRemoteOfferedCapabilities(), getEndpoint().getRemoteProperties());
 
             connectionSession.open(new AsyncResult() {
 
@@ -155,14 +155,14 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
             });
         }
 
-        EndpointState localState = endpoint.getLocalState();
-        EndpointState remoteState = endpoint.getRemoteState();
+        EndpointState localState = getEndpoint().getLocalState();
+        EndpointState remoteState = getEndpoint().getRemoteState();
 
         // We are still active (connected or not) and something on the remote end has
         // closed us, signal an error if one was sent.
         if (localState == EndpointState.ACTIVE && remoteState != EndpointState.ACTIVE) {
-            if (endpoint.getRemoteCondition().getCondition() != null) {
-                LOG.info("Error condition detected on Connection open {}.", endpoint.getRemoteCondition().getCondition());
+            if (getEndpoint().getRemoteCondition().getCondition() != null) {
+                LOG.info("Error condition detected on Connection open {}.", getEndpoint().getRemoteCondition().getCondition());
                 Exception remoteError = getRemoteError();
                 if (isAwaitingOpen()) {
                     openRequest.onFailure(remoteError);
@@ -214,7 +214,7 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     }
 
     public Connection getProtonConnection() {
-        return this.endpoint;
+        return this.getEndpoint();
     }
 
     public URI getRemoteURI() {

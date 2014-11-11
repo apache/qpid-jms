@@ -31,13 +31,11 @@ import javax.jms.Session;
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.util.StopWatch;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  * Test JMS Anonymous Producer functionality.
  */
-@Ignore //TODO: Disabling until client updates and dependent broker changes are complete
 public class JmsAnonymousProducerTest extends AmqpTestSupport {
 
     @Test(timeout = 60000)

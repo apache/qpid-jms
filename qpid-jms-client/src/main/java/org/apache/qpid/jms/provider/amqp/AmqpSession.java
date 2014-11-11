@@ -42,7 +42,6 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> {
     private final AmqpTransactionContext txContext;
 
     private final Map<JmsConsumerId, AmqpConsumer> consumers = new HashMap<JmsConsumerId, AmqpConsumer>();
-    private final Map<JmsProducerId, AmqpProducer> producers = new HashMap<JmsProducerId, AmqpProducer>();
 
     public AmqpSession(AmqpConnection connection, JmsSessionInfo info) {
         super(info, connection.getProtonConnection().session());
@@ -124,7 +123,8 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> {
         if (producerId.getProviderHint() instanceof AmqpProducer) {
             return (AmqpProducer) producerId.getProviderHint();
         }
-        return this.producers.get(producerId);
+
+        return null;
     }
 
     public AmqpConsumer createConsumer(JmsConsumerInfo consumerInfo) {
@@ -212,14 +212,6 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> {
 
     void removeResource(AmqpConsumer consumer) {
         consumers.remove(consumer.getConsumerId());
-    }
-
-    void addResource(AmqpProducer producer) {
-        producers.put(producer.getProducerId(), producer);
-    }
-
-    void removeResource(AmqpProducer producer) {
-        producers.remove(producer.getProducerId());
     }
 
     /**

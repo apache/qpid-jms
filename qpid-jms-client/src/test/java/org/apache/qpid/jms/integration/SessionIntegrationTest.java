@@ -26,6 +26,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
+
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -158,7 +160,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             targetMatcher.withDynamic(nullValue());//default = false
             targetMatcher.withDurable(nullValue());//default = none/0
 
-            testPeer.expectSenderAttach(targetMatcher, false);
+            testPeer.expectSenderAttach(targetMatcher, false, false);
 
             //Create an anonymous producer
             MessageProducer producer = session.createProducer(null);
@@ -180,7 +182,16 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 5000)
-    public void testCreateProducerFailsWhenLinkRefused() throws Exception {
+    public void testCreateProducerFailsWhenLinkRefusedAndAttachFrameWriteIsNotDeferred() throws Exception {
+        doCreateProducerFailsWhenLinkRefusedTestImpl(false);
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateProducerFailsWhenLinkRefusedAndAttachFrameWriteIsDeferred() throws Exception {
+        doCreateProducerFailsWhenLinkRefusedTestImpl(true);
+    }
+
+    private void doCreateProducerFailsWhenLinkRefusedTestImpl(boolean deferAttachFrameWrite) throws JMSException, InterruptedException, Exception, IOException {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
@@ -197,7 +208,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             targetMatcher.withDynamic(nullValue());//default = false
             targetMatcher.withDurable(nullValue());//default = none/0
 
-            testPeer.expectSenderAttach(targetMatcher, true);
+            testPeer.expectSenderAttach(targetMatcher, true, deferAttachFrameWrite);
 
             try {
                 //Create a producer, expect it to throw exception due to the link-refusal
@@ -230,7 +241,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             targetMatcher.withDynamic(nullValue());//default = false
             targetMatcher.withDurable(nullValue());//default = none/0
 
-            testPeer.expectSenderAttach(targetMatcher, true);
+            testPeer.expectSenderAttach(targetMatcher, true, false);
 
             //Create an anonymous producer
             MessageProducer producer = session.createProducer(null);

@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -99,6 +100,8 @@ public class TestAmqpPeer implements AutoCloseable
     private CountDownLatch _handlersCompletedLatch;
 
     private volatile int _nextLinkHandle = 100;
+
+    private byte[] _deferredBytes;
 
     public TestAmqpPeer(int port) throws IOException
     {
@@ -235,7 +238,7 @@ public class TestAmqpPeer implements AutoCloseable
         _driverRunnable.sendBytes(header);
     }
 
-    public void sendFrame(FrameType type, int channel, DescribedType describedType, Binary payload)
+    public void sendFrame(FrameType type, int channel, DescribedType describedType, Binary payload, boolean deferWrite)
     {
         if(channel < 0)
         {
@@ -244,7 +247,36 @@ public class TestAmqpPeer implements AutoCloseable
 
         LOGGER.debug("About to send: {}", describedType);
         byte[] output = AmqpDataFramer.encodeFrame(type, channel, describedType, payload);
-        _driverRunnable.sendBytes(output);
+
+        if(deferWrite && _deferredBytes == null)
+        {
+            _deferredBytes = output;
+        }
+        else if(_deferredBytes != null)
+        {
+            int newCapacity = _deferredBytes.length + output.length;
+            //TODO: check overflow
+
+            byte[] newOutput = new byte[newCapacity];
+            System.arraycopy(_deferredBytes, 0, newOutput, 0, _deferredBytes.length);
+            System.arraycopy(output, 0, newOutput, _deferredBytes.length, output.length);
+
+            _deferredBytes = newOutput;
+            output = newOutput;
+        }
+
+        if(deferWrite)
+        {
+            LOGGER.debug("Deferring write until pipelined with future frame bytes");
+            return;
+        }
+        else
+        {
+            //clear the deferred bytes to avoid corrupting future sends
+            _deferredBytes = null;
+
+            _driverRunnable.sendBytes(output);
+        }
     }
 
     public void expectAnonymousConnect(boolean authorize)
@@ -265,7 +297,8 @@ public class TestAmqpPeer implements AutoCloseable
                     TestAmqpPeer.this.sendFrame(
                             FrameType.SASL, 0,
                             new SaslOutcomeFrame().setCode(UnsignedByte.valueOf((byte)0)),
-                            null);
+                            null,
+                            false);
                     _driverRunnable.expectHeader();
                 }
             }));
@@ -305,7 +338,8 @@ public class TestAmqpPeer implements AutoCloseable
                     TestAmqpPeer.this.sendFrame(
                             FrameType.SASL, 0,
                             new SaslOutcomeFrame().setCode(UnsignedByte.valueOf((byte)0)),
-                            null);
+                            null,
+                            false);
                     _driverRunnable.expectHeader();
                 }
             }));
@@ -458,10 +492,10 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectSenderAttach()
     {
-        expectSenderAttach(notNullValue(), false);
+        expectSenderAttach(notNullValue(), false, false);
     }
 
-    public void expectSenderAttach(final Matcher<?> targetMatcher, final boolean refuseLink)
+    public void expectSenderAttach(final Matcher<?> targetMatcher, final boolean refuseLink, boolean deferAttachResponseWrite)
     {
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())
@@ -496,6 +530,12 @@ public class TestAmqpPeer implements AutoCloseable
                 }
             }
         });
+
+        if(deferAttachResponseWrite)
+        {
+            // Defer writing the attach frame until the subsequent frame is also ready
+            attachResponseSender.setDeferWrite(true);
+        }
 
         final FlowFrame flowFrame = new FlowFrame().setNextIncomingId(UnsignedInteger.ZERO)
                 .setIncomingWindow(UnsignedInteger.valueOf(2048))

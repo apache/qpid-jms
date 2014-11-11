@@ -86,6 +86,11 @@ public class AmqpAnonymousProducerWrapper extends AmqpProducer {
         return delegate.getRemoteState();
     }
 
+    @Override
+    public void setPresettle(boolean presettle) {
+        delegate.setPresettle(presettle);
+    };
+
     private class AnonymousRelayRequest extends WrappedAsyncResult {
 
         public AnonymousRelayRequest(AsyncResult openResult) {
@@ -99,7 +104,11 @@ public class AmqpAnonymousProducerWrapper extends AmqpProducer {
         @Override
         public void onFailure(Throwable result) {
             LOG.debug("Attempt to open producer to anonymous relay failed, entering fallback mode");
-            delegate = new AmqpAnonymousFallbackProducer(session, getJmsResource());
+
+            AmqpProducer newProducer = new AmqpAnonymousFallbackProducer(session, getJmsResource());
+            newProducer.setPresettle(delegate.isPresettle());
+            delegate = newProducer;
+
             delegate.open(getWrappedRequest());
         }
     }

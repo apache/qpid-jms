@@ -30,10 +30,6 @@ public class AmqpConnectionProperties {
     public static final Symbol JMS_MAPPING_VERSION_KEY = Symbol.valueOf("x-opt-jms-mapping-version");
     public static final short JMS_MAPPING_VERSION_VALUE = 0;
 
-    private static final Symbol ANONYMOUS_RELAY = Symbol.valueOf("x-opt-anonymous-relay");
-
-    private String anonymousRelayName;
-
     /**
      * Creates a new instance of this class from the given remote capabilities and properties.
      *
@@ -52,21 +48,11 @@ public class AmqpConnectionProperties {
         }
     }
 
-    public boolean isAnonymousRelaySupported() {
-        return anonymousRelayName != null;
-    }
-
-    public String getAnonymousRelayName() {
-        return anonymousRelayName;
-    }
-
     protected void processCapabilities(Symbol[] capabilities) {
         // TODO - Inspect capabilities for configuration options
     }
 
     protected void processProperties(Map<Symbol, Object> properties) {
-        if (properties.containsKey(ANONYMOUS_RELAY)) {
-            anonymousRelayName = (String) properties.get(ANONYMOUS_RELAY);
-        }
+        // TODO - Inspect properties for configuration options
     }
 }

@@ -39,9 +39,9 @@ import org.slf4j.LoggerFactory;
  * In order to simulate the anonymous producer we must create a sender for each message
  * send attempt and close it following a successful send.
  */
-public class AmqpAnonymousProducer extends AmqpProducer {
+public class AmqpAnonymousFallbackProducer extends AmqpProducer {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AmqpAnonymousProducer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AmqpAnonymousFallbackProducer.class);
     private static final IdGenerator producerIdGenerator = new IdGenerator();
 
     private final AnonymousProducerCache producerCache = new AnonymousProducerCache(10);
@@ -56,7 +56,7 @@ public class AmqpAnonymousProducer extends AmqpProducer {
      * @param info
      *        the JmsProducerInfo for this producer.
      */
-    public AmqpAnonymousProducer(AmqpSession session, JmsProducerInfo info) {
+    public AmqpAnonymousFallbackProducer(AmqpSession session, JmsProducerInfo info) {
         super(session, info);
 
         if (connection.isAnonymousProducerCache()) {
@@ -182,7 +182,7 @@ public class AmqpAnonymousProducer extends AmqpProducer {
         @Override
         public void onFailure(Throwable result) {
             // Ensure that cache get purged of any failed producers.
-            AmqpAnonymousProducer.this.producerCache.remove(producer.getJmsResource().getDestination());
+            AmqpAnonymousFallbackProducer.this.producerCache.remove(producer.getJmsResource().getDestination());
             super.onFailure(result);
         }
 
@@ -221,7 +221,7 @@ public class AmqpAnonymousProducer extends AmqpProducer {
 
         @Override
         public void onFailure(Throwable result) {
-            AmqpAnonymousProducer.this.connection.getProvider().fireProviderException(result);
+            AmqpAnonymousFallbackProducer.this.connection.getProvider().fireProviderException(result);
         }
 
         @Override

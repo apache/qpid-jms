@@ -666,29 +666,32 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(attachMatcher);
     }
 
-    public void expectDetach(boolean expectClosed, boolean replyClosed)
+    public void expectDetach(boolean expectClosed, boolean sendResponse, boolean replyClosed)
     {
         final DetachMatcher detachMatcher = new DetachMatcher().withClosed(equalTo(expectClosed));
 
-        final DetachFrame detachResponse = new DetachFrame();
-        detachResponse.setHandle(UnsignedInteger.valueOf(_nextLinkHandle - 1)); // TODO: this needs to be the value used in the attach response
-        if(replyClosed)
+        if (sendResponse)
         {
-            detachResponse.setClosed(replyClosed);
-        }
-
-        // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
-        final FrameSender detachResponseSender = new FrameSender(this, FrameType.AMQP, -1, detachResponse, null);
-        detachResponseSender.setValueProvider(new ValueProvider()
-        {
-            @Override
-            public void setValues()
+            final DetachFrame detachResponse = new DetachFrame();
+            detachResponse.setHandle(UnsignedInteger.valueOf(_nextLinkHandle - 1)); // TODO: this needs to be the value used in the attach response
+            if(replyClosed)
             {
-                detachResponseSender.setChannel(detachMatcher.getActualChannel());
+                detachResponse.setClosed(replyClosed);
             }
-        });
 
-        detachMatcher.onSuccess(detachResponseSender);
+            // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+            final FrameSender detachResponseSender = new FrameSender(this, FrameType.AMQP, -1, detachResponse, null);
+            detachResponseSender.setValueProvider(new ValueProvider()
+            {
+                @Override
+                public void setValues()
+                {
+                    detachResponseSender.setChannel(detachMatcher.getActualChannel());
+                }
+            });
+
+            detachMatcher.onSuccess(detachResponseSender);
+        }
 
         addHandler(detachMatcher);
     }

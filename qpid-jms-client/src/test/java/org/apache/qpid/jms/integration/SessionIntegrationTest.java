@@ -266,7 +266,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectSenderAttach(targetMatcher2, false, false);
             testPeer.expectTransfer(messageMatcher);
-            testPeer.expectDetach(true, true);
+            testPeer.expectDetach(true, true, true);
 
             Message message = session.createMessage();
             producer.send(dest, message);
@@ -274,7 +274,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             //Repeat the send and observe another attach->transfer->detach.
             testPeer.expectSenderAttach(targetMatcher2, false, false);
             testPeer.expectTransfer(messageMatcher);
-            testPeer.expectDetach(true, true);
+            testPeer.expectDetach(true, true, true);
 
             producer.send(dest, message);
 

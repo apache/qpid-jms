@@ -166,15 +166,21 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             MessageProducer producer = session.createProducer(null);
             assertNotNull("Producer object was null", producer);
 
-            //Expect a new message sent on the above link to the anonymous relay
+            //Expect a new message sent with this producer to use the link to the anonymous relay matched above
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
             messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+
             testPeer.expectTransfer(messageMatcher);
 
             Message message = session.createMessage();
+            producer.send(dest, message);
+
+            //Repeat the send and observe another transfer on the existing link.
+            testPeer.expectTransfer(messageMatcher);
+
             producer.send(dest, message);
 
             testPeer.waitForAllHandlersToComplete(1000);

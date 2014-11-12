@@ -25,7 +25,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -640,7 +639,17 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectDetach(boolean expectClosed, boolean sendResponse, boolean replyClosed)
     {
-        final DetachMatcher detachMatcher = new DetachMatcher().withClosed(equalTo(expectClosed));
+        Matcher<Boolean> closeMatcher = null;
+        if(expectClosed)
+        {
+            closeMatcher = equalTo(true);
+        }
+        else
+        {
+            closeMatcher = Matchers.anyOf(equalTo(false), nullValue());
+        }
+
+        final DetachMatcher detachMatcher = new DetachMatcher().withClosed(closeMatcher);
 
         if (sendResponse)
         {

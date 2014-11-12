@@ -131,6 +131,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             String subscriptionName = "mySubscription";
 
             testPeer.expectDurableSubscriberAttach(topicName, subscriptionName);
+            testPeer.expectLinkFlow();
 
             TopicSubscriber subscriber = session.createDurableSubscriber(dest, subscriptionName);
             assertNotNull("TopicSubscriber object was null", subscriber);

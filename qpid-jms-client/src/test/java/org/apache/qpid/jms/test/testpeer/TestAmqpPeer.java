@@ -581,19 +581,10 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(attachMatcher);
     }
 
-    public void expectDurableSubscriberAttach(String topicName, String subscriptionName)
+    public void expectReceiverAttach(final Matcher<?> linkNameMatcher, final Matcher<?> sourceMatcher)
     {
-        String topicPrefix = "topic://"; //TODO: this will be removed, delete when tests start failing
-
-        SourceMatcher sourceMatcher = new SourceMatcher();
-        sourceMatcher.withAddress(equalTo(topicPrefix + topicName));
-        sourceMatcher.withDynamic(equalTo(false));
-        //TODO: will possibly be changed to a 1/config durability
-        sourceMatcher.withDurable(equalTo(TerminusDurability.UNSETTLED_STATE));
-        sourceMatcher.withExpiryPolicy(equalTo(TerminusExpiryPolicy.NEVER));
-
         final AttachMatcher attachMatcher = new AttachMatcher()
-                .withName(equalTo(subscriptionName))
+                .withName(linkNameMatcher)
                 .withHandle(notNullValue())
                 .withRole(equalTo(Role.RECEIVER))
                 .withSndSettleMode(equalTo(SenderSettleMode.UNSETTLED))
@@ -630,40 +621,21 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectReceiverAttach()
     {
-        final AttachMatcher attachMatcher = new AttachMatcher()
-                .withName(notNullValue())
-                .withHandle(notNullValue())
-                .withRole(equalTo(Role.RECEIVER))
-                .withSndSettleMode(equalTo(SenderSettleMode.UNSETTLED))
-                .withRcvSettleMode(equalTo(ReceiverSettleMode.FIRST))
-                .withSource(notNullValue())
-                .withTarget(notNullValue());
+        expectReceiverAttach(notNullValue(), notNullValue());
+    }
 
-        UnsignedInteger linkHandle = UnsignedInteger.valueOf(_nextLinkHandle++);
-        final AttachFrame attachResponse = new AttachFrame()
-                            .setHandle(linkHandle)
-                            .setRole(Role.SENDER)
-                            .setSndSettleMode(SenderSettleMode.UNSETTLED)
-                            .setRcvSettleMode(ReceiverSettleMode.FIRST)
-                            .setInitialDeliveryCount(UnsignedInteger.ZERO);
+    public void expectDurableSubscriberAttach(String topicName, String subscriptionName)
+    {
+        String topicPrefix = "topic://"; //TODO: this will be removed, delete when tests start failing
 
-        // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
-        final FrameSender attachResponseSender = new FrameSender(this, FrameType.AMQP, -1, attachResponse, null);
-        attachResponseSender.setValueProvider(new ValueProvider()
-        {
-            @Override
-            public void setValues()
-            {
-                attachResponseSender.setChannel(attachMatcher.getActualChannel());
-                attachResponse.setName(attachMatcher.getReceivedName());
-                attachResponse.setSource(attachMatcher.getReceivedSource());
-                attachResponse.setTarget(attachMatcher.getReceivedTarget());
-            }
-        });
+        SourceMatcher sourceMatcher = new SourceMatcher();
+        sourceMatcher.withAddress(equalTo(topicPrefix + topicName));
+        sourceMatcher.withDynamic(equalTo(false));
+        //TODO: will possibly be changed to a 1/config durability
+        sourceMatcher.withDurable(equalTo(TerminusDurability.UNSETTLED_STATE));
+        sourceMatcher.withExpiryPolicy(equalTo(TerminusExpiryPolicy.NEVER));
 
-        attachMatcher.onSuccess(attachResponseSender);
-
-        addHandler(attachMatcher);
+        expectReceiverAttach(equalTo(subscriptionName), sourceMatcher);
     }
 
     public void expectDetach(boolean expectClosed, boolean sendResponse, boolean replyClosed)

@@ -746,7 +746,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     protected void checkClosed() throws IllegalStateException {
         if (this.closed.get()) {
-            throw new IllegalStateException("The MessageProducer is closed");
+            throw new IllegalStateException("The Session is closed");
         }
     }
 

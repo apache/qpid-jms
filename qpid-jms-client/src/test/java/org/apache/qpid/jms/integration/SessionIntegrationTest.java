@@ -44,7 +44,6 @@ import org.apache.qpid.jms.test.testpeer.matchers.TargetMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class SessionIntegrationTest extends QpidJmsTestCase {
@@ -229,7 +228,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 5000)
-    @Ignore //TODO: enable once completed. Expect additional sender attaches and detaches for each message
     public void testCreateAnonymousProducerWhenAnonymousRelayNodeIsNotSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -241,7 +239,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             String topicName = "myTopic";
             Topic dest = session.createTopic(topicName);
 
-            //Expect and accept a link to the anonymous relay node
+            //Expect and refuse a link to the anonymous relay node
             TargetMatcher targetMatcher = new TargetMatcher();
             targetMatcher.withAddress(nullValue());
             targetMatcher.withDynamic(nullValue());//default = false
@@ -253,15 +251,31 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             MessageProducer producer = session.createProducer(null);
             assertNotNull("Producer object was null", producer);
 
-            //Expect a new message sent on the above link to the anonymous relay
+            //Expect a new message sent by the above producer to cause creation of a new
+            //sender link to the given destination, then closing the link after the message is sent.
+            TargetMatcher targetMatcher2 = new TargetMatcher();
+            targetMatcher.withAddress(equalTo("topic://" + topicName)); //TODO: remove prefix
+            targetMatcher.withDynamic(nullValue());//default = false
+            targetMatcher.withDurable(nullValue());//default = none/0
+
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
             messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+
+            testPeer.expectSenderAttach(targetMatcher2, false, false);
             testPeer.expectTransfer(messageMatcher);
+            testPeer.expectDetach(true, true);
 
             Message message = session.createMessage();
+            producer.send(dest, message);
+
+            //Repeat the send and observe another attach->transfer->detach.
+            testPeer.expectSenderAttach(targetMatcher2, false, false);
+            testPeer.expectTransfer(messageMatcher);
+            testPeer.expectDetach(true, true);
+
             producer.send(dest, message);
 
             testPeer.waitForAllHandlersToComplete(1000);

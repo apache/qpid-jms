@@ -137,6 +137,11 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     @Override
     public void failed(Exception cause) {
         if (openRequest != null) {
+            if(endpoint != null) {
+                //TODO: if this is a producer/consumer link then we may only be detached,
+                //rather than fully closed, and should respond appropriately.
+                endpoint.close();
+            }
             openRequest.onFailure(cause);
             openRequest = null;
         }
@@ -153,6 +158,12 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
             Exception error = getRemoteError();
             if (error == null) {
                 error = new IOException("Remote has closed without error information");
+            }
+
+            if(endpoint != null) {
+                //TODO: if this is a producer/consumer link then we may only be detached,
+                //rather than fully closed, and should respond appropriately.
+                endpoint.close();
             }
 
             openRequest.onFailure(error);

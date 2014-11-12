@@ -680,7 +680,8 @@ public class TestAmqpPeer implements AutoCloseable
     public void expectLinkFlow()
     {
         final FlowMatcher flowMatcher = new FlowMatcher()
-                        .withLinkCredit(Matchers.greaterThan(UnsignedInteger.ZERO));
+                        .withLinkCredit(Matchers.greaterThan(UnsignedInteger.ZERO))
+                        .withHandle(Matchers.notNullValue());
 
         addHandler(flowMatcher);
     }

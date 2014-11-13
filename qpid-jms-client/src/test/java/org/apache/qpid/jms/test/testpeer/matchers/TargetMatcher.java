@@ -23,8 +23,8 @@ package org.apache.qpid.jms.test.testpeer.matchers;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 
-import java.util.HashMap;
 import java.util.List;
+
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
@@ -197,8 +197,7 @@ public class TargetMatcher extends TypeSafeMatcher<Object>
         public TargetMatcherCore()
         {
             super(UnsignedLong.valueOf(0x0000000000000029L),
-                  Symbol.valueOf("amqp:target:list"),
-                  new HashMap<Enum<?>, Matcher<?>>());
+                  Symbol.valueOf("amqp:target:list"));
         }
 
 

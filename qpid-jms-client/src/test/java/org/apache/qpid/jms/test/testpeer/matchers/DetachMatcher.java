@@ -20,7 +20,6 @@
 
 package org.apache.qpid.jms.test.testpeer.matchers;
 
-import java.util.HashMap;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
 import org.apache.qpid.jms.test.testpeer.FrameType;
@@ -46,7 +45,6 @@ public class DetachMatcher extends FrameWithNoPayloadMatchingHandler
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000016L),
               Symbol.valueOf("amqp:detach:list"),
-              new HashMap<Enum<?>, Matcher<?>>(),
               null);
     }
 

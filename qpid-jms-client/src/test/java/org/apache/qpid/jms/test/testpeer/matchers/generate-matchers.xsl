@@ -68,7 +68,6 @@
   <xsl:value-of select="$license"/>
 package org.apache.qpid.jms.test.testpeer.matchers;
 
-import java.util.HashMap;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
 import org.apache.qpid.jms.test.testpeer.FrameType;
@@ -93,7 +92,6 @@ public class <xsl:value-of select="$classname"/> extends <xsl:value-of select="$
               ANY_CHANNEL,
               UnsignedLong.valueOf(<xsl:value-of select="concat(substring(descendant::node()[name()='descriptor']/@code,1,10),substring(descendant::node()[name()='descriptor']/@code,14))"/>L),
               Symbol.valueOf("<xsl:value-of select="descendant::node()[name()='descriptor']/@name"/>"),
-              new HashMap&lt;Enum&lt;?&gt;, Matcher&lt;?&gt;&gt;(),
               null);
     }
 
@@ -140,8 +138,8 @@ package org.apache.qpid.jms.test.testpeer.matchers;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 
-import java.util.HashMap;
 import java.util.List;
+
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
@@ -244,8 +242,7 @@ public class <xsl:value-of select="$classname"/> extends TypeSafeMatcher&lt;Obje
         public <xsl:value-of select="$classname"/>Core()
         {
             super(UnsignedLong.valueOf(<xsl:value-of select="concat(substring(descendant::node()[name()='descriptor']/@code,1,10),substring(descendant::node()[name()='descriptor']/@code,14))"/>L),
-                  Symbol.valueOf("<xsl:value-of select="descendant::node()[name()='descriptor']/@name"/>"),
-                  new HashMap&lt;Enum&lt;?&gt;, Matcher&lt;?&gt;&gt;());
+                  Symbol.valueOf("<xsl:value-of select="descendant::node()[name()='descriptor']/@name"/>"));
         }
 
 <xsl:for-each select="descendant::node()[name()='field']">

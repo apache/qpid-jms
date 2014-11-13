@@ -19,13 +19,12 @@ public abstract class AbstractFieldAndDescriptorMatcher {
 
     private final UnsignedLong numericDescriptor;
     private final Symbol symbolicDescriptor;
-    protected final Map<Enum<?>, Matcher<?>> fieldMatchers;
+    protected final Map<Enum<?>, Matcher<?>> fieldMatchers = new LinkedHashMap<>();
     private Map<Enum<?>, Object> receivedFields;
 
-    public AbstractFieldAndDescriptorMatcher(UnsignedLong numericDescriptor, Symbol symbolicDescriptor, Map<Enum<?>, Matcher<?>> fieldMatchers) {
+    public AbstractFieldAndDescriptorMatcher(UnsignedLong numericDescriptor, Symbol symbolicDescriptor) {
         this.numericDescriptor = numericDescriptor;
         this.symbolicDescriptor = symbolicDescriptor;
-        this.fieldMatchers = fieldMatchers;
     }
 
     public UnsignedLong getNumericDescriptor() {
@@ -40,14 +39,25 @@ public abstract class AbstractFieldAndDescriptorMatcher {
         return numericDescriptor.equals(descriptor) || symbolicDescriptor.equals(descriptor);
     }
 
+    /**
+     * A map of field matchers, keyed by enums representing the field to match against.
+     *
+     * The enums need to have an ordinal number matching their field order position within
+     * the frame in the AMQP spec, and should be named according to the spec.
+     *
+     * @return the map of matchers
+     */
     public Map<Enum<?>, Matcher<?>> getMatchers() {
         return fieldMatchers;
     }
 
     /**
-     * Returns the received values, keyed by enums representing the fields
-     * (the enums have an ordinal number matching the AMQP spec field order,
-     * and a sensible name)
+     * Returns the received values, keyed by enums representing the field.
+     *
+     * The enums have an ordinal number matching their field order position within
+     * the frame in the AMQP spec, and are named according to the spec.
+     *
+     * @return the map of received values
      */
     protected Map<Enum<?>, Object> getReceivedFields() {
         return receivedFields;

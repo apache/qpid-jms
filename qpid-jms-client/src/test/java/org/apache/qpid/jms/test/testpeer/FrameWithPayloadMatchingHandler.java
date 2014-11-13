@@ -20,8 +20,6 @@ package org.apache.qpid.jms.test.testpeer;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.util.Map;
-
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
@@ -36,10 +34,9 @@ public class FrameWithPayloadMatchingHandler extends AbstractFrameFieldAndPayloa
                                                 int channel,
                                                 UnsignedLong numericDescriptor,
                                                 Symbol symbolicDescriptor,
-                                                Map<Enum<?>, Matcher<?>> matchers,
                                                 Runnable onSuccess)
     {
-        super(frameType, channel, numericDescriptor, symbolicDescriptor, matchers, onSuccess);
+        super(frameType, channel, numericDescriptor, symbolicDescriptor, onSuccess);
     }
 
     public void setPayloadMatcher(Matcher<Binary> payloadMatcher)

@@ -19,13 +19,11 @@
 package org.apache.qpid.jms.test.testpeer;
 
 import java.util.List;
-import java.util.Map;
 
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
-import org.hamcrest.Matcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,19 +42,13 @@ public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends Abstra
     private Runnable _onSuccessAction;
     private volatile boolean _isComplete;
 
-    /**
-     * @param fieldMatchers a map of field matchers, keyed by enums representing the fields
-     * (the enums just need to have an ordinal number matching the AMQP spec field order,
-     * and preferably a sensible name)
-     */
     protected AbstractFrameFieldAndPayloadMatchingHandler(FrameType frameType,
                                                 int channel,
                                                 UnsignedLong numericDescriptor,
                                                 Symbol symbolicDescriptor,
-                                                Map<Enum<?>, Matcher<?>> fieldMatchers,
                                                 Runnable onSuccessAction)
     {
-        super(numericDescriptor, symbolicDescriptor, fieldMatchers);
+        super(numericDescriptor, symbolicDescriptor);
         _frameType = frameType;
         _expectedChannel = channel;
         _onSuccessAction = onSuccessAction;

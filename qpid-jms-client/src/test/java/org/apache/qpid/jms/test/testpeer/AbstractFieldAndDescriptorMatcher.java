@@ -3,6 +3,7 @@ package org.apache.qpid.jms.test.testpeer;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -59,7 +60,7 @@ public abstract class AbstractFieldAndDescriptorMatcher {
      */
     public void verifyFields(List<Object> described) throws AssertionError {
         int fieldNumber = 0;
-        HashMap<Enum<?>, Object> valueMap = new HashMap<>();
+        HashMap<Enum<?>, Object> valueMap = new LinkedHashMap<>();
         for (Object value : described) {
             valueMap.put(getField(fieldNumber++), value);
         }

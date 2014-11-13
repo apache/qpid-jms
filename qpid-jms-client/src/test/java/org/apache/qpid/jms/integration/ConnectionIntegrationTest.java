@@ -29,6 +29,8 @@ import javax.jms.Session;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
+import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
+import org.junit.Ignore;
 import org.junit.Test;
 
 // TODO find a way to make the test abort immediately if the TestAmqpPeer throws an exception
@@ -50,6 +52,21 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            assertNotNull("Session should not be null", session);
+        }
+    }
+
+    @Test(timeout=5000)
+    @Ignore // TODO: fails because DataImpl used to encode the TestPeer output can't encode arrays yet
+    public void testCreateTransactedSession() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+
+            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
+
+            testPeer.expectBegin(true);
+            testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             assertNotNull("Session should not be null", session);
         }
     }

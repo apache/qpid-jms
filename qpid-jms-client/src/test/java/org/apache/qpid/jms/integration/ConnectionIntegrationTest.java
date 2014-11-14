@@ -22,6 +22,7 @@ package org.apache.qpid.jms.integration;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.instanceOf;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionMetaData;
@@ -30,6 +31,7 @@ import javax.jms.Session;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.junit.Test;
 
 // TODO find a way to make the test abort immediately if the TestAmqpPeer throws an exception
@@ -60,10 +62,12 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             Connection connection = testFixture.establishConnecton(testPeer);
 
-            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
-
             testPeer.expectBegin(true);
+            // Expect the session, with an immediate link to the transaction coordinator
+            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
+            txCoordinatorMatcher.withCapabilities(instanceOf(Symbol[].class));
             testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             assertNotNull("Session should not be null", session);
         }

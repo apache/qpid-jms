@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.jms.integration;
 
+import static org.hamcrest.Matchers.arrayContaining;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.hamcrest.Matchers.instanceOf;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionMetaData;
@@ -31,7 +31,7 @@ import javax.jms.Session;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
-import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.transaction.TxnCapability;
 import org.junit.Test;
 
 // TODO find a way to make the test abort immediately if the TestAmqpPeer throws an exception
@@ -64,8 +64,9 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectBegin(true);
             // Expect the session, with an immediate link to the transaction coordinator
+            // using a target with the expected capabilities only.
             CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
-            txCoordinatorMatcher.withCapabilities(instanceOf(Symbol[].class));
+            txCoordinatorMatcher.withCapabilities(arrayContaining(TxnCapability.LOCAL_TXN));
             testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);

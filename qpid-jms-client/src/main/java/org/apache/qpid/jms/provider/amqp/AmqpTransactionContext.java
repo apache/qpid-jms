@@ -131,7 +131,7 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
     @Override
     protected void doOpen() {
         Coordinator coordinator = new Coordinator();
-        coordinator.setCapabilities(TxnCapability.LOCAL_TXN, TxnCapability.MULTI_TXNS_PER_SSN);
+        coordinator.setCapabilities(TxnCapability.LOCAL_TXN);
         Source source = new Source();
 
         String coordinatorName = resource.getSessionId().toString();

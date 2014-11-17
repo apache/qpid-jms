@@ -357,9 +357,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
             testPeer.expectTransfer(declareMatcher, false, new Declared().setTxnId(txnId), true);
 
-
             for (int i = 1; i <= consumeCount; i++) {
-                // Then expect a TransactionalState disposition for each message once received by the consumer
+                // Then expect an *unsettled* TransactionalState disposition for each message once received by the consumer
                 TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
                 stateMatcher.withTxnId(equalTo(txnId));
                 stateMatcher.withOutcome(new DescriptorMatcher(Accepted.DESCRIPTOR_CODE, Accepted.DESCRIPTOR_SYMBOL));
@@ -383,6 +382,14 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
             dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
             testPeer.expectTransfer(dischargeMatcher, false, new Accepted(), true);
+
+            for (int i = 1; i <= consumeCount; i++) {
+                // Then expect a *settled* TransactionalState disposition for each message received by the consumer
+                TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
+                stateMatcher.withTxnId(equalTo(txnId));
+                stateMatcher.withOutcome(new DescriptorMatcher(Accepted.DESCRIPTOR_CODE, Accepted.DESCRIPTOR_SYMBOL));
+                testPeer.expectDisposition(true, stateMatcher);
+            }
 
             session.commit();
 

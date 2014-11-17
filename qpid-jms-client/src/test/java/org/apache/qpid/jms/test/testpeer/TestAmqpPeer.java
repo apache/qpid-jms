@@ -237,15 +237,15 @@ public class TestAmqpPeer implements AutoCloseable
         _driverRunnable.sendBytes(header);
     }
 
-    public void sendFrame(FrameType type, int channel, DescribedType describedType, Binary payload, boolean deferWrite)
+    public void sendFrame(FrameType type, int channel, DescribedType frameDescribedType, Binary framePayload, boolean deferWrite)
     {
         if(channel < 0)
         {
             throw new IllegalArgumentException("Frame must be sent on a channel >= 0");
         }
 
-        LOGGER.debug("About to send: {}", describedType);
-        byte[] output = AmqpDataFramer.encodeFrame(type, channel, describedType, payload);
+        LOGGER.debug("About to send: {}", frameDescribedType);
+        byte[] output = AmqpDataFramer.encodeFrame(type, channel, frameDescribedType, framePayload);
 
         if(deferWrite && _deferredBytes == null)
         {
@@ -696,21 +696,76 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     public void expectLinkFlowRespondWithTransfer(final HeaderDescribedType headerDescribedType,
+                                                 final MessageAnnotationsDescribedType messageAnnotationsDescribedType,
+                                                 final PropertiesDescribedType propertiesDescribedType,
+                                                 final ApplicationPropertiesDescribedType appPropertiesDescribedType,
+                                                 final DescribedType content)
+    {
+        expectLinkFlowRespondWithTransfer(headerDescribedType, messageAnnotationsDescribedType, propertiesDescribedType, appPropertiesDescribedType, content, 1);
+    }
+
+    public void expectLinkFlowRespondWithTransfer(final HeaderDescribedType headerDescribedType,
                                                   final MessageAnnotationsDescribedType messageAnnotationsDescribedType,
                                                   final PropertiesDescribedType propertiesDescribedType,
                                                   final ApplicationPropertiesDescribedType appPropertiesDescribedType,
-                                                  final DescribedType content)
+                                                  final DescribedType content,
+                                                  final int count)
     {
-        final FlowMatcher flowMatcher = new FlowMatcher()
-                        .withLinkCredit(Matchers.greaterThan(UnsignedInteger.ZERO));
+        if(count <= 0)
+        {
+            throw new IllegalArgumentException("Message count must be >= 1");
+        }
 
-        final TransferFrame transferResponse = new TransferFrame()
+        int nextIncomingId = 0; // TODO: we shouldn't assume this will be the first transfer on the session
+
+        final FlowMatcher flowMatcher = new FlowMatcher()
+                        .withLinkCredit(Matchers.greaterThanOrEqualTo(UnsignedInteger.valueOf(count)))
+                        .withNextIncomingId(Matchers.equalTo(UnsignedInteger.valueOf(nextIncomingId)));
+
+        CompositeAmqpPeerRunnable composite = new CompositeAmqpPeerRunnable();
+
+        for(int i = 0; i < count; i++)
+        {
+            final int nextId = nextIncomingId + i;
+
+            String tagString = "theDeliveryTag" + nextId;
+            Binary dtag = new Binary(tagString.getBytes());
+
+            final TransferFrame transferResponse = new TransferFrame()
             .setHandle(UnsignedInteger.valueOf(_nextLinkHandle - 1)) // TODO: this needs to be the value used in the attach response
-            .setDeliveryId(UnsignedInteger.ZERO) // TODO: we shouldn't assume this is the first transfer on the session
-            .setDeliveryTag(new Binary("theDeliveryTag".getBytes()))
+            .setDeliveryId(UnsignedInteger.valueOf(nextId))
+            .setDeliveryTag(dtag)
             .setMessageFormat(UnsignedInteger.ZERO)
             .setSettled(false);
 
+            Binary payload = prepareTransferPayload(headerDescribedType, messageAnnotationsDescribedType,
+                    propertiesDescribedType, appPropertiesDescribedType, content);
+
+            // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+            final FrameSender transferResponseSender = new FrameSender(this, FrameType.AMQP, -1, transferResponse, payload);
+            transferResponseSender.setValueProvider(new ValueProvider()
+            {
+                @Override
+                public void setValues()
+                {
+                    transferResponseSender.setChannel(flowMatcher.getActualChannel());
+                }
+            });
+
+            composite.add(transferResponseSender);
+        }
+
+        flowMatcher.onSuccess(composite);
+
+        addHandler(flowMatcher);
+    }
+
+    private Binary prepareTransferPayload(final HeaderDescribedType headerDescribedType,
+                                          final MessageAnnotationsDescribedType messageAnnotationsDescribedType,
+                                          final PropertiesDescribedType propertiesDescribedType,
+                                          final ApplicationPropertiesDescribedType appPropertiesDescribedType,
+                                          final DescribedType content)
+    {
         Data payloadData = Proton.data(1024);
 
         if(headerDescribedType != null)
@@ -738,22 +793,7 @@ public class TestAmqpPeer implements AutoCloseable
             payloadData.putDescribedType(content);
         }
 
-        Binary payload = payloadData.encode();
-
-        // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
-        final FrameSender transferResponseSender = new FrameSender(this, FrameType.AMQP, -1, transferResponse, payload);
-        transferResponseSender.setValueProvider(new ValueProvider()
-        {
-            @Override
-            public void setValues()
-            {
-                transferResponseSender.setChannel(flowMatcher.getActualChannel());
-            }
-        });
-
-        flowMatcher.onSuccess(transferResponseSender);
-
-        addHandler(flowMatcher);
+        return payloadData.encode();
     }
 
     public void expectTransfer(Matcher<Binary> expectedPayloadMatcher)

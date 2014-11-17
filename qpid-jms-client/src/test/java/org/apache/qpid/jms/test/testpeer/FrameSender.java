@@ -24,19 +24,19 @@ class FrameSender implements AmqpPeerRunnable
 {
     private final TestAmqpPeer _testAmqpPeer;
     private final FrameType _type;
-    private final ListDescribedType _listDescribedType;
-    private final Binary _payload;
+    private final ListDescribedType _frameDescribedType;
+    private final Binary _framePayload;
     private ValueProvider _valueProvider;
     private int _channel;
     private boolean _deferWrite = false;
 
-    FrameSender(TestAmqpPeer testAmqpPeer, FrameType type, int channel, ListDescribedType listDescribedType, Binary payload)
+    FrameSender(TestAmqpPeer testAmqpPeer, FrameType type, int channel, ListDescribedType frameDescribedType, Binary framePayload)
     {
         _testAmqpPeer = testAmqpPeer;
         _type = type;
         _channel = channel;
-        _listDescribedType = listDescribedType;
-        _payload = payload;
+        _frameDescribedType = frameDescribedType;
+        _framePayload = framePayload;
     }
 
     @Override
@@ -47,7 +47,7 @@ class FrameSender implements AmqpPeerRunnable
             _valueProvider.setValues();
         }
 
-        _testAmqpPeer.sendFrame(_type, _channel, _listDescribedType, _payload, _deferWrite);
+        _testAmqpPeer.sendFrame(_type, _channel, _frameDescribedType, _framePayload, _deferWrite);
     }
 
     public FrameSender setValueProvider(ValueProvider valueProvider)

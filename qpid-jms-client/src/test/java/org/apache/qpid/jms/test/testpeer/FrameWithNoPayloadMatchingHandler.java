@@ -37,6 +37,7 @@ public class FrameWithNoPayloadMatchingHandler extends AbstractFrameFieldAndPayl
     @Override
     protected void verifyPayload(Binary payload)
     {
+        _logger.debug("About to check that there is no payload");
         if(payload != null && payload.getLength() > 0)
         {
             throw new IllegalArgumentException("Expected no payload but received payload of length: " + payload.getLength());

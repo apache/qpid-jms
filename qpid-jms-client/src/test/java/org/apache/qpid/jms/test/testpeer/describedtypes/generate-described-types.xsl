@@ -61,7 +61,8 @@
   <xsl:value-of select="$license"/>
 package org.apache.qpid.jms.test.testpeer.describedtypes;
 
-import org.apache.qpid.jms.test.testpeer.ListDescribedType;
+import org.apache.qpid.jms.test.testpeer.ListDescribedType;<xsl:if test="@name = 'declare' or @name = 'discharge'">
+import org.apache.qpid.proton.amqp.DescribedType;</xsl:if>
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
 
@@ -98,6 +99,44 @@ public class <xsl:value-of select="$classname"/> extends ListDescribedType
         return this;
     }
 </xsl:for-each>
+<xsl:if test="@name = 'declare' or @name = 'discharge'">
+    @Override
+    public boolean equals(Object obj)
+    {
+        if(obj == this)
+        {
+            return true;
+        }
+
+        if(!(obj instanceof DescribedType))
+        {
+            return false;
+        }
+
+        DescribedType d = (DescribedType) obj;
+        if(!(DESCRIPTOR_CODE.equals(d.getDescriptor()) || DESCRIPTOR_SYMBOL.equals(d.getDescriptor())))
+        {
+            return false;
+        }
+
+        Object described = getDescribed();
+        Object described2 = d.getDescribed();
+        if(described == null)
+        {
+            return described2 == null;
+        }
+        else {
+            return described.equals(described2);
+        }
+    }
+
+    @Override
+    public int hashCode()
+    {
+        //This is a hack, but we aren't going to hash lots of these test objects.
+        return 1;
+    }
+</xsl:if>
 }
 
 </exsl:document>

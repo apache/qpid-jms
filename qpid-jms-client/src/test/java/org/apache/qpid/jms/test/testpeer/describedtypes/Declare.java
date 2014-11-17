@@ -21,6 +21,7 @@
 package org.apache.qpid.jms.test.testpeer.describedtypes;
 
 import org.apache.qpid.jms.test.testpeer.ListDescribedType;
+import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
 
@@ -55,6 +56,43 @@ public class Declare extends ListDescribedType
     {
         getFields()[FIELD_GLOBAL_ID] = o;
         return this;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if(obj == this)
+        {
+            return true;
+        }
+
+        if(!(obj instanceof DescribedType))
+        {
+            return false;
+        }
+
+        DescribedType d = (DescribedType) obj;
+        if(!(DESCRIPTOR_CODE.equals(d.getDescriptor()) || DESCRIPTOR_SYMBOL.equals(d.getDescriptor())))
+        {
+            return false;
+        }
+
+        Object described = getDescribed();
+        Object described2 = d.getDescribed();
+        if(described == null)
+        {
+            return described2 == null;
+        }
+        else {
+            return described.equals(described2);
+        }
+    }
+
+    @Override
+    public int hashCode()
+    {
+        //This is a hack, but we aren't going to hash lots of these test objects.
+        return 1;
     }
 
 }

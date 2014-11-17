@@ -71,6 +71,7 @@ import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.UnsignedShort;
+import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.codec.Data;
 import org.apache.qpid.proton.engine.impl.AmqpHeader;
 import org.hamcrest.Matcher;
@@ -758,23 +759,29 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectTransfer(Matcher<Binary> expectedPayloadMatcher)
     {
+        expectTransfer(expectedPayloadMatcher, new Accepted(), true);
+    }
+
+    //TODO: fix responseState to only admit applicable types.
+    public void expectTransfer(Matcher<Binary> expectedPayloadMatcher, ListDescribedType responseState, boolean responseSettled)
+    {
         final TransferMatcher transferMatcher = new TransferMatcher();
         transferMatcher.setPayloadMatcher(expectedPayloadMatcher);
 
-        final DispositionFrame dispositionFrame = new DispositionFrame()
+        final DispositionFrame dispositionResponse = new DispositionFrame()
                                                    .setRole(Role.RECEIVER)
-                                                   .setSettled(true)
-                                                   .setState(new Accepted());
+                                                   .setSettled(responseSettled)
+                                                   .setState(responseState);
 
         // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
-        final FrameSender dispositionFrameSender = new FrameSender(this, FrameType.AMQP, -1, dispositionFrame, null);
+        final FrameSender dispositionFrameSender = new FrameSender(this, FrameType.AMQP, -1, dispositionResponse, null);
         dispositionFrameSender.setValueProvider(new ValueProvider()
         {
             @Override
             public void setValues()
             {
                 dispositionFrameSender.setChannel(transferMatcher.getActualChannel());
-                dispositionFrame.setFirst(transferMatcher.getReceivedDeliveryId());
+                dispositionResponse.setFirst(transferMatcher.getReceivedDeliveryId());
             }
         });
         transferMatcher.onSuccess(dispositionFrameSender);

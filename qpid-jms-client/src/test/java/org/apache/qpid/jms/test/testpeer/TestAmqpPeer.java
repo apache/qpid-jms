@@ -71,7 +71,6 @@ import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.UnsignedShort;
-import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.codec.Data;
 import org.apache.qpid.proton.engine.impl.AmqpHeader;
 import org.hamcrest.Matcher;

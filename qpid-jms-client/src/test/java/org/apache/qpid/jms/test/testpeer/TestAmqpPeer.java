@@ -791,9 +791,24 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectDispositionThatIsAcceptedAndSettled()
     {
+        expectDisposition(true, new DescriptorMatcher(Accepted.DESCRIPTOR_CODE, Accepted.DESCRIPTOR_SYMBOL));
+    }
+
+    public void expectDisposition(boolean settled, Matcher<?> stateMatcher)
+    {
+        Matcher<Boolean> settledMatcher = null;
+        if(settled)
+        {
+            settledMatcher = equalTo(true);
+        }
+        else
+        {
+            settledMatcher = Matchers.anyOf(equalTo(false), nullValue());
+        }
+
         addHandler(new DispositionMatcher()
-            .withSettled(equalTo(true))
-            .withState(new DescriptorMatcher(Accepted.DESCRIPTOR_CODE, Accepted.DESCRIPTOR_SYMBOL)));
+            .withSettled(settledMatcher)
+            .withState(stateMatcher));
     }
 
     private Target createTargetObjectFromDescribedType(Object o) {

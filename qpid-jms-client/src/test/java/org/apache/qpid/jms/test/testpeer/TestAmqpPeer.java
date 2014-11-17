@@ -759,14 +759,25 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectTransfer(Matcher<Binary> expectedPayloadMatcher)
     {
-        expectTransfer(expectedPayloadMatcher, new Accepted(), true);
+        expectTransfer(expectedPayloadMatcher, false, new Accepted(), true);
     }
 
     //TODO: fix responseState to only admit applicable types.
-    public void expectTransfer(Matcher<Binary> expectedPayloadMatcher, ListDescribedType responseState, boolean responseSettled)
+    public void expectTransfer(Matcher<Binary> expectedPayloadMatcher, boolean settled, ListDescribedType responseState, boolean responseSettled)
     {
+        Matcher<Boolean> settledMatcher = null;
+        if(settled)
+        {
+            settledMatcher = equalTo(true);
+        }
+        else
+        {
+            settledMatcher = Matchers.anyOf(equalTo(false), nullValue());
+        }
+
         final TransferMatcher transferMatcher = new TransferMatcher();
         transferMatcher.setPayloadMatcher(expectedPayloadMatcher);
+        transferMatcher.withSettled(settledMatcher);
 
         final DispositionFrame dispositionResponse = new DispositionFrame()
                                                    .setRole(Role.RECEIVER)

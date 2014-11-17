@@ -92,7 +92,15 @@ class TestAmqpPeerRunner implements Runnable
             }
             else
             {
-                LOGGER.debug("Caught throwable, ignoring as socket is closed: " + t);
+                if(t instanceof IOException)
+                {
+                    LOGGER.debug("Caught throwable, ignoring as socket is closed: " + t, t);
+                }
+                else
+                {
+                    LOGGER.debug("Caught throwable after socket is closed: " + t);
+                    _throwable = t;
+                }
             }
         }
         finally

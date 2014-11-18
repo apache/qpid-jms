@@ -27,9 +27,6 @@ import org.apache.qpid.proton.amqp.Symbol;
  */
 public class AmqpConnectionProperties {
 
-    public static final Symbol JMS_MAPPING_VERSION_KEY = Symbol.valueOf("x-opt-jms-mapping-version");
-    public static final short JMS_MAPPING_VERSION_VALUE = 0;
-
     /**
      * Creates a new instance of this class from the given remote capabilities and properties.
      *

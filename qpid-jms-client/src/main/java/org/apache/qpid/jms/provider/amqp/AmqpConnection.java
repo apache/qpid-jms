@@ -65,10 +65,6 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     public AmqpConnection(AmqpProvider provider, Connection protonConnection, Sasl sasl, JmsConnectionInfo info) {
         super(info, protonConnection);
 
-        Map<Symbol, Object> properties = new HashMap<>();
-        properties.put(AmqpConnectionProperties.JMS_MAPPING_VERSION_KEY, AmqpConnectionProperties.JMS_MAPPING_VERSION_VALUE);
-        protonConnection.setProperties(properties);
-
         this.provider = provider;
         this.remoteURI = provider.getRemoteURI();
         this.amqpMessageFactory = new AmqpJmsMessageFactory(this);

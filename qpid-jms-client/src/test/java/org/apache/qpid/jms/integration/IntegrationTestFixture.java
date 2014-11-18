@@ -26,16 +26,25 @@ import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
+import org.apache.qpid.proton.amqp.Symbol;
 
 public class IntegrationTestFixture {
     static final int PORT = 25672;
 
     Connection establishConnecton(TestAmqpPeer testPeer) throws JMSException {
-        return establishConnecton(testPeer, null);
+        return establishConnecton(testPeer, null, null);
     }
 
     Connection establishConnecton(TestAmqpPeer testPeer, String optionsString) throws JMSException {
-        testPeer.expectPlainConnect("guest", "guest", true);
+        return establishConnecton(testPeer, optionsString, null);
+    }
+
+    Connection establishConnecton(TestAmqpPeer testPeer, Symbol[] serverCapabilities) throws JMSException {
+        return establishConnecton(testPeer, null, serverCapabilities);
+    }
+
+    Connection establishConnecton(TestAmqpPeer testPeer, String optionsString, Symbol[] serverCapabilities) throws JMSException {
+        testPeer.expectPlainConnect("guest", "guest", serverCapabilities);
 
         // Each connection creates a session for managing temporary destinations etc
         testPeer.expectBegin(true);

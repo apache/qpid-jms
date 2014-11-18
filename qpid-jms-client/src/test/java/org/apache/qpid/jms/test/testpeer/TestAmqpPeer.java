@@ -312,7 +312,7 @@ public class TestAmqpPeer implements AutoCloseable
                     null)));
     }
 
-    public void expectPlainConnect(String username, String password, boolean authorize)
+    public void expectPlainConnect(String username, String password, Symbol[] serverCapabilities)
     {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(Symbol.valueOf("PLAIN"));
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
@@ -345,11 +345,18 @@ public class TestAmqpPeer implements AutoCloseable
 
         addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
 
+        OpenFrame open = new OpenFrame();
+        open.setContainerId("test-amqp-peer-container-id");
+        if(serverCapabilities != null)
+        {
+            open.setOfferedCapabilities(serverCapabilities);
+        }
+
         addHandler(new OpenMatcher()
             .withContainerId(notNullValue(String.class))
             .onSuccess(new FrameSender(
                     this, FrameType.AMQP, 0,
-                    new OpenFrame().setContainerId("test-amqp-peer-container-id"),
+                    open,
                     null)));
     }
 

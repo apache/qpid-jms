@@ -102,12 +102,12 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> {
     public AmqpProducer createProducer(JmsProducerInfo producerInfo) {
         AmqpProducer producer = null;
 
-        if (producerInfo.getDestination() != null) {
+        if (producerInfo.getDestination() != null || connection.getProperties().isAnonymousRelaySupported()) {
             LOG.debug("Creating AmqpFixedProducer for: {}", producerInfo.getDestination());
             producer = new AmqpFixedProducer(this, producerInfo);
         } else {
-            LOG.debug("Creating an AmqpAnonymousProducerWrapper");
-            producer = new AmqpAnonymousProducerWrapper(this, producerInfo);
+            LOG.debug("Creating an AmqpAnonymousFallbackProducer");
+            producer = new AmqpAnonymousFallbackProducer(this, producerInfo);
         }
 
         producer.setPresettle(connection.isPresettleProducers());

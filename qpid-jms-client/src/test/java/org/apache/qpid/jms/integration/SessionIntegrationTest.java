@@ -41,6 +41,7 @@ import javax.jms.TextMessage;
 import javax.jms.Topic;
 import javax.jms.TopicSubscriber;
 
+import org.apache.qpid.jms.provider.amqp.AmqpConnectionProperties;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.DescriptorMatcher;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -58,6 +59,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionM
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.junit.Test;
 
 public class SessionIntegrationTest extends QpidJmsTestCase {
@@ -184,7 +186,10 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 5000)
     public void testCreateAnonymousProducerWhenAnonymousRelayNodeIsSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
-            Connection connection = testFixture.establishConnecton(testPeer);
+            //Add capability to indicate support for ANONYMOUS-RELAY
+            Symbol[] serverCapabilities = new Symbol[]{AmqpConnectionProperties.ANONYMOUS_RELAY};
+
+            Connection connection = testFixture.establishConnecton(testPeer, serverCapabilities);
             connection.start();
 
             testPeer.expectBegin(true);
@@ -227,16 +232,54 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 5000)
-    public void testCreateProducerFailsWhenLinkRefusedAndAttachFrameWriteIsNotDeferred() throws Exception {
+    public void testCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
+        doCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedTestImpl(false);
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
+        doCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedTestImpl(true);
+    }
+
+    private void doCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedTestImpl(boolean deferAttachFrameWrite) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            //Add capability to indicate support for ANONYMOUS-RELAY
+            Symbol[] serverCapabilities = new Symbol[]{AmqpConnectionProperties.ANONYMOUS_RELAY};
+
+            Connection connection = testFixture.establishConnecton(testPeer, serverCapabilities);
+            connection.start();
+
+            testPeer.expectBegin(true);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            //Expect and refuse a link to the anonymous relay node
+            TargetMatcher targetMatcher = new TargetMatcher();
+            targetMatcher.withAddress(nullValue());
+            targetMatcher.withDynamic(nullValue());//default = false
+            targetMatcher.withDurable(nullValue());//default = none/0
+
+            testPeer.expectSenderAttach(targetMatcher, true, false);
+
+            try {
+                session.createProducer(null);
+                fail("Expected producer creation to fail if anonymous-relay link refused");
+            } catch (JMSException jmse) {
+                //expected
+            }
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateProducerFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateProducerFailsWhenLinkRefusedTestImpl(false);
     }
 
     @Test(timeout = 5000)
-    public void testCreateProducerFailsWhenLinkRefusedAndAttachFrameWriteIsDeferred() throws Exception {
+    public void testCreateProducerFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
         doCreateProducerFailsWhenLinkRefusedTestImpl(true);
     }
 
-    private void doCreateProducerFailsWhenLinkRefusedTestImpl(boolean deferAttachFrameWrite) throws JMSException, InterruptedException, Exception, IOException {
+    private void doCreateProducerFailsWhenLinkRefusedTestImpl(boolean deferAttachResponseWrite) throws JMSException, InterruptedException, Exception, IOException {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
@@ -253,7 +296,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             targetMatcher.withDynamic(nullValue());//default = false
             targetMatcher.withDurable(nullValue());//default = none/0
 
-            testPeer.expectSenderAttach(targetMatcher, true, deferAttachFrameWrite);
+            testPeer.expectSenderAttach(targetMatcher, true, deferAttachResponseWrite);
             //Expect the detach response to the test peer closing the producer link after refusal.
             testPeer.expectDetach(true, false, false);
 
@@ -272,6 +315,9 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 5000)
     public void testCreateAnonymousProducerWhenAnonymousRelayNodeIsNotSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+
+            //DO NOT add capability to indicate server support for ANONYMOUS-RELAY
+
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
@@ -281,15 +327,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             String topicName = "myTopic";
             Topic dest = session.createTopic(topicName);
 
-            //Expect and refuse a link to the anonymous relay node
-            TargetMatcher targetMatcher = new TargetMatcher();
-            targetMatcher.withAddress(nullValue());
-            targetMatcher.withDynamic(nullValue());//default = false
-            targetMatcher.withDurable(nullValue());//default = none/0
-
-            testPeer.expectSenderAttach(targetMatcher, true, false);
-            //Expect the detach response to the test peer closing the producer link after refusal.
-            testPeer.expectDetach(true, false, false);
+            // Expect no AMQP traffic when we create the anonymous producer, as it will wait
+            // for an actual send to occur on the producer before anything occurs on the wire
 
             //Create an anonymous producer
             MessageProducer producer = session.createProducer(null);
@@ -297,7 +336,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             //Expect a new message sent by the above producer to cause creation of a new
             //sender link to the given destination, then closing the link after the message is sent.
-            TargetMatcher targetMatcher2 = new TargetMatcher();
+            TargetMatcher targetMatcher = new TargetMatcher();
             targetMatcher.withAddress(equalTo("topic://" + topicName)); //TODO: remove prefix
             targetMatcher.withDynamic(nullValue());//default = false
             targetMatcher.withDurable(nullValue());//default = none/0
@@ -308,7 +347,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             messageMatcher.setHeadersMatcher(headersMatcher);
             messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
 
-            testPeer.expectSenderAttach(targetMatcher2, false, false);
+            testPeer.expectSenderAttach(targetMatcher, false, false);
             testPeer.expectTransfer(messageMatcher);
             testPeer.expectDetach(true, true, true);
 
@@ -316,7 +355,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             producer.send(dest, message);
 
             //Repeat the send and observe another attach->transfer->detach.
-            testPeer.expectSenderAttach(targetMatcher2, false, false);
+            testPeer.expectSenderAttach(targetMatcher, false, false);
             testPeer.expectTransfer(messageMatcher);
             testPeer.expectDetach(true, true, true);
 

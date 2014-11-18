@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.proton.amqp.Symbol;
@@ -26,6 +28,10 @@ import org.apache.qpid.proton.amqp.Symbol;
  * simpler and more easy to digest manner.
  */
 public class AmqpConnectionProperties {
+
+    public static final Symbol ANONYMOUS_RELAY = Symbol.valueOf("ANONYMOUS-RELAY");
+
+    private boolean anonymousRelaySupported = false;
 
     /**
      * Creates a new instance of this class from the given remote capabilities and properties.
@@ -46,10 +52,19 @@ public class AmqpConnectionProperties {
     }
 
     protected void processCapabilities(Symbol[] capabilities) {
-        // TODO - Inspect capabilities for configuration options
+        List<Symbol> list = Arrays.asList(capabilities);
+        if (list.contains(ANONYMOUS_RELAY)) {
+            anonymousRelaySupported = true;
+        }
+
+        // TODO - Inspect capabilities for any other configuration options
     }
 
     protected void processProperties(Map<Symbol, Object> properties) {
         // TODO - Inspect properties for configuration options
+    }
+
+    public boolean isAnonymousRelaySupported() {
+        return anonymousRelaySupported;
     }
 }

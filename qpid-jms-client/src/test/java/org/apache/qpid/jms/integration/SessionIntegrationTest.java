@@ -43,15 +43,15 @@ import javax.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.provider.amqp.AmqpConnectionProperties;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
-import org.apache.qpid.jms.test.testpeer.DescriptorMatcher;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Declare;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Declared;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Discharge;
-import org.apache.qpid.jms.test.testpeer.describedtypes.Modified;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
+import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.TargetMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.TransactionalStateMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
@@ -401,7 +401,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 // Then expect an *unsettled* TransactionalState disposition for each message once received by the consumer
                 TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
                 stateMatcher.withTxnId(equalTo(txnId));
-                stateMatcher.withOutcome(new DescriptorMatcher(Accepted.DESCRIPTOR_CODE, Accepted.DESCRIPTOR_SYMBOL));
+                stateMatcher.withOutcome(new AcceptedMatcher());
                 testPeer.expectDisposition(false, stateMatcher);
             }
 
@@ -427,7 +427,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 // Then expect a *settled* TransactionalState disposition for each message received by the consumer
                 TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
                 stateMatcher.withTxnId(equalTo(txnId));
-                stateMatcher.withOutcome(new DescriptorMatcher(Accepted.DESCRIPTOR_CODE, Accepted.DESCRIPTOR_SYMBOL));
+                stateMatcher.withOutcome(new AcceptedMatcher());
                 testPeer.expectDisposition(true, stateMatcher);
             }
 
@@ -473,7 +473,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 // Then expect a TransactionalState disposition for each message once received by the consumer
                 TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
                 stateMatcher.withTxnId(equalTo(txnId));
-                stateMatcher.withOutcome(new DescriptorMatcher(Accepted.DESCRIPTOR_CODE, Accepted.DESCRIPTOR_SYMBOL));
+                stateMatcher.withOutcome(new AcceptedMatcher());
                 testPeer.expectDisposition(false, stateMatcher);
             }
 
@@ -497,7 +497,11 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             for (int i = 1; i <= consumeCount; i++) {
                 // Then expect a 'Modified' disposition for each message received by the consumer
-                testPeer.expectDisposition(true, new DescriptorMatcher(Modified.DESCRIPTOR_CODE, Modified.DESCRIPTOR_SYMBOL));
+                // indicating that delivery failed but it can still be consumed.
+                ModifiedMatcher modifiedMatcher = new ModifiedMatcher()
+                                                      .withDeliveryFailed(equalTo(true))
+                                                      .withUndeliverableHere(equalTo(false));
+                testPeer.expectDisposition(true, modifiedMatcher);
             }
 
             session.rollback();

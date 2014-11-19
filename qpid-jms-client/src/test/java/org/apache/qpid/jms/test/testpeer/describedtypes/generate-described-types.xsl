@@ -61,7 +61,7 @@
   <xsl:value-of select="$license"/>
 package org.apache.qpid.jms.test.testpeer.describedtypes;
 
-import org.apache.qpid.jms.test.testpeer.ListDescribedType;<xsl:if test="@name = 'declare' or @name = 'discharge'">
+import org.apache.qpid.jms.test.testpeer.ListDescribedType;<xsl:if test="@name = 'declare' or @name = 'discharge' or @provides = 'delivery-state, outcome'">
 import org.apache.qpid.proton.amqp.DescribedType;</xsl:if>
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
@@ -99,7 +99,7 @@ public class <xsl:value-of select="$classname"/> extends ListDescribedType
         return this;
     }
 </xsl:for-each>
-<xsl:if test="@name = 'declare' or @name = 'discharge'">
+<xsl:if test="@name = 'declare' or @name = 'discharge' or @provides = 'delivery-state, outcome'">
     @Override
     public boolean equals(Object obj)
     {

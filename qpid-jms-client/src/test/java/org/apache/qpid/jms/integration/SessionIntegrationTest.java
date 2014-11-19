@@ -259,6 +259,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             targetMatcher.withDurable(nullValue());//default = none/0
 
             testPeer.expectSenderAttach(targetMatcher, true, false);
+            //Expect the detach response to the test peer closing the producer link after refusal.
+            testPeer.expectDetach(true, false, false);
 
             try {
                 session.createProducer(null);
@@ -266,6 +268,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             } catch (JMSException jmse) {
                 //expected
             }
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 

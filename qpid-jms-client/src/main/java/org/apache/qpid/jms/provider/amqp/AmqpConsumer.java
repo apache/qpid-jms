@@ -42,6 +42,8 @@ import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.Modified;
+import org.apache.qpid.proton.amqp.messaging.Rejected;
+import org.apache.qpid.proton.amqp.messaging.Released;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
@@ -139,6 +141,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     protected void configureSource(Source source) {
         Map<Symbol, DescribedType> filters = new HashMap<Symbol, DescribedType>();
+        Symbol[] outcomes = new Symbol[]{Accepted.DESCRIPTOR_SYMBOL, Rejected.DESCRIPTOR_SYMBOL,
+                                         Released.DESCRIPTOR_SYMBOL, Modified.DESCRIPTOR_SYMBOL};
 
         if (resource.getSubscriptionName() != null && !resource.getSubscriptionName().isEmpty()) {
             source.setExpiryPolicy(TerminusExpiryPolicy.NEVER);
@@ -148,6 +152,14 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             source.setDurable(TerminusDurability.NONE);
             source.setExpiryPolicy(TerminusExpiryPolicy.LINK_DETACH);
         }
+
+        source.setOutcomes(outcomes);
+
+        Modified modified = new Modified();
+        modified.setDeliveryFailed(true);
+        modified.setUndeliverableHere(false);
+
+        source.setDefaultOutcome(modified);
 
         if (resource.isNoLocal()) {
             filters.put(JMS_NO_LOCAL_SYMBOL, AmqpJmsNoLocalType.NO_LOCAL);

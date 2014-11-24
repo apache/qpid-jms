@@ -99,6 +99,32 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 5000)
+    public void testCreateProducerLinkSupportsAcceptedAndRejectedOutcomes() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin(true);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String queueName = "myQueue";
+
+            SourceMatcher sourceMatcher = new SourceMatcher();
+            sourceMatcher.withOutcomes(arrayContaining(Accepted.DESCRIPTOR_SYMBOL, Rejected.DESCRIPTOR_SYMBOL));
+            //TODO: what default outcome for producers?
+            //Accepted normally, Rejected for transaction controller?
+            //sourceMatcher.withDefaultOutcome(outcomeMatcher);
+
+            TargetMatcher targetMatcher = new TargetMatcher();
+            targetMatcher.withAddress(equalTo("queue://" + queueName));
+
+            testPeer.expectSenderAttach(sourceMatcher, targetMatcher, false, false);
+
+            Queue queue = session.createQueue(queueName);
+            session.createProducer(queue);
+        }
+    }
+
+    @Test(timeout = 5000)
     public void testCreateConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             Connection connection = testFixture.establishConnecton(testPeer);

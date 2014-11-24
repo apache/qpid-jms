@@ -33,9 +33,12 @@ import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageFacade;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
+import org.apache.qpid.proton.amqp.messaging.Modified;
 import org.apache.qpid.proton.amqp.messaging.Outcome;
 import org.apache.qpid.proton.amqp.messaging.Rejected;
+import org.apache.qpid.proton.amqp.messaging.Released;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.transaction.TransactionalState;
@@ -240,9 +243,13 @@ public class AmqpFixedProducer extends AmqpProducer {
             targetAddress = session.getQualifiedName(destination);
         }
 
+        Symbol[] outcomes = new Symbol[]{Accepted.DESCRIPTOR_SYMBOL, Rejected.DESCRIPTOR_SYMBOL};
         String sourceAddress = getProducerId().toString();
         Source source = new Source();
         source.setAddress(sourceAddress);
+        source.setOutcomes(outcomes);
+        //TODO: default outcome. Accepted normally, Rejected for transaction controller?
+
         Target target = new Target();
         target.setAddress(targetAddress);
 

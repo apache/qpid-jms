@@ -246,7 +246,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     JmsInboundMessageDispatch ack(final JmsInboundMessageDispatch envelope) throws JMSException {
         if (envelope != null && envelope.getMessage() != null) {
             JmsMessage message = envelope.getMessage();
-            if (message.getAcknowledgeCallback() != null || session.isTransacted()) {
+            if (message.getAcknowledgeCallback() != null) {
                 // Message has been received by the app.. expand the credit
                 // window so that we receive more messages.
                 doAckDelivered(envelope);

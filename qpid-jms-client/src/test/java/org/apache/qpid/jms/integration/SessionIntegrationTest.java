@@ -434,11 +434,12 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectTransfer(declareMatcher, false, new Declared().setTxnId(txnId), true);
 
             for (int i = 1; i <= consumeCount; i++) {
-                // Then expect an *unsettled* TransactionalState disposition for each message once received by the consumer
+                // Then expect an *settled* TransactionalState disposition for each message once received by the consumer
                 TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
                 stateMatcher.withTxnId(equalTo(txnId));
                 stateMatcher.withOutcome(new AcceptedMatcher());
-                testPeer.expectDisposition(false, stateMatcher);
+
+                testPeer.expectDisposition(true, stateMatcher);
             }
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
@@ -458,14 +459,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
             dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
             testPeer.expectTransfer(dischargeMatcher, false, new Accepted(), true);
-
-            for (int i = 1; i <= consumeCount; i++) {
-                // Then expect a *settled* TransactionalState disposition for each message received by the consumer
-                TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
-                stateMatcher.withTxnId(equalTo(txnId));
-                stateMatcher.withOutcome(new AcceptedMatcher());
-                testPeer.expectDisposition(true, stateMatcher);
-            }
 
             session.commit();
 
@@ -506,11 +499,12 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectTransfer(declareMatcher, false, new Declared().setTxnId(txnId), true);
 
             for (int i = 1; i <= consumeCount; i++) {
-                // Then expect a TransactionalState disposition for each message once received by the consumer
+                // Then expect a *settled* TransactionalState disposition for each message once received by the consumer
                 TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
                 stateMatcher.withTxnId(equalTo(txnId));
                 stateMatcher.withOutcome(new AcceptedMatcher());
-                testPeer.expectDisposition(false, stateMatcher);
+
+                testPeer.expectDisposition(true, stateMatcher);
             }
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
@@ -530,15 +524,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
             dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
             testPeer.expectTransfer(dischargeMatcher, false, new Accepted(), true);
-
-            for (int i = 1; i <= consumeCount; i++) {
-                // Then expect a 'Modified' disposition for each message received by the consumer
-                // indicating that delivery failed but it can still be consumed.
-                ModifiedMatcher modifiedMatcher = new ModifiedMatcher()
-                                                      .withDeliveryFailed(equalTo(true))
-                                                      .withUndeliverableHere(equalTo(false));
-                testPeer.expectDisposition(true, modifiedMatcher);
-            }
 
             session.rollback();
 

@@ -219,16 +219,6 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
         if (ackType.equals(ACK_TYPE.DELIVERED)) {
             LOG.debug("Delivered Ack of message: {}", envelope);
-            if (session.isTransacted()) {
-                Binary txnId = session.getTransactionContext().getAmqpTransactionId();
-                if (txnId != null) {
-                    TransactionalState txState = new TransactionalState();
-                    txState.setOutcome(Accepted.getInstance());
-                    txState.setTxnId(txnId);
-                    delivery.disposition(txState);
-                    session.getTransactionContext().registerTxConsumer(this);
-                }
-            }
             if (!isPresettle()) {
                 delivered.put(envelope, delivery);
             }
@@ -241,10 +231,24 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             }
             LOG.debug("Consumed Ack of message: {}", envelope);
             if (!delivery.isSettled()) {
-                delivery.disposition(Accepted.getInstance());
-                delivery.settle();
+                if (session.isTransacted()) {
+                    Binary txnId = session.getTransactionContext().getAmqpTransactionId();
+                    if (txnId != null) {
+                        TransactionalState txState = new TransactionalState();
+                        txState.setOutcome(Accepted.getInstance());
+                        txState.setTxnId(txnId);
+                        delivery.disposition(txState);
+                        delivery.settle();
+                        session.getTransactionContext().registerTxConsumer(this);
+                    }
+                } else {
+                    delivery.disposition(Accepted.getInstance());
+                    delivery.settle();
+                }
             }
         } else if (ackType.equals(ACK_TYPE.REDELIVERED)) {
+            //TODO: Trace usage of this.
+            //TODO: Don't bother doing anything if it is [remotely]Settled already.
             Modified disposition = new Modified();
             disposition.setUndeliverableHere(false);
             disposition.setDeliveryFailed(true);

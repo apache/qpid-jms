@@ -503,13 +503,18 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectSenderAttach(final Matcher<?> targetMatcher, final boolean refuseLink, boolean deferAttachResponseWrite)
     {
+        expectSenderAttach(notNullValue(), targetMatcher, refuseLink, deferAttachResponseWrite);
+    }
+
+    public void expectSenderAttach(final Matcher<?> sourceMatcher, final Matcher<?> targetMatcher, final boolean refuseLink, boolean deferAttachResponseWrite)
+    {
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())
                 .withHandle(notNullValue())
                 .withRole(equalTo(Role.SENDER))
                 .withSndSettleMode(equalTo(SenderSettleMode.UNSETTLED))
                 .withRcvSettleMode(equalTo(ReceiverSettleMode.FIRST))
-                .withSource(notNullValue())
+                .withSource(sourceMatcher)
                 .withTarget(targetMatcher);
 
         UnsignedInteger linkHandle = UnsignedInteger.valueOf(_nextLinkHandle++);

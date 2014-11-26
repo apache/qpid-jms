@@ -20,6 +20,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -193,13 +196,22 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
 
         // Consume again.. the previously consumed messages should get delivered
         // again after the rollback and then the remainder should follow
+        List<Integer> messageNumbers = new ArrayList<Integer>();
         for(int i = 1; i <= totalCount; i++) {
             Message message = consumer.receive(1000);
             assertNotNull(message);
-            assertEquals("Unexpected message number after rollback", i, message.getIntProperty(QpidJmsTestSupport.MESSAGE_NUMBER));
+            int msgNum = message.getIntProperty(QpidJmsTestSupport.MESSAGE_NUMBER);
+            messageNumbers.add(msgNum);
         }
 
         session.commit();
+
+        assertEquals("Unexpected size of list", totalCount, messageNumbers.size());
+        for(int i = 0; i < messageNumbers.size(); i++)
+        {
+            assertEquals("Unexpected order of messages: " + messageNumbers, Integer.valueOf(i + 1), messageNumbers.get(i));
+        }
+
 
         assertEquals(0, proxy.getQueueSize());
     }

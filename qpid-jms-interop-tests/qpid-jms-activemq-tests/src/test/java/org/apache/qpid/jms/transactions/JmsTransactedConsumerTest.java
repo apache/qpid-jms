@@ -29,6 +29,8 @@ import javax.jms.TextMessage;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
+import org.apache.qpid.jms.support.QpidJmsTestSupport;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -157,6 +159,46 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         assertNotNull("Should have re-received the message again!", message);
         message = consumer.receive(5000);
         assertNotNull("Should have re-received the message again!", message);
+        session.commit();
+
+        assertEquals(0, proxy.getQueueSize());
+    }
+
+    @Ignore //TODO: enable after fixing ordering issue
+    @Test(timeout = 60000)
+    public void testReceiveSomeThenRollback() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+
+        int totalCount = 5;
+        int consumeBeforeRollback = 2;
+        sendToAmqQueue(totalCount);
+
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(totalCount, proxy.getQueueSize());
+
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageConsumer consumer = session.createConsumer(queue);
+
+        for(int i = 1; i <= consumeBeforeRollback; i++) {
+            Message message = consumer.receive(1000);
+            assertNotNull(message);
+            assertEquals("Unexpected message number", i, message.getIntProperty(QpidJmsTestSupport.MESSAGE_NUMBER));
+        }
+
+        session.rollback();
+
+        assertEquals(totalCount, proxy.getQueueSize());
+
+        // Consume again.. the previously consumed messages should get delivered
+        // again after the rollback and then the remainder should follow
+        for(int i = 1; i <= totalCount; i++) {
+            Message message = consumer.receive(1000);
+            assertNotNull(message);
+            assertEquals("Unexpected message number after rollback", i, message.getIntProperty(QpidJmsTestSupport.MESSAGE_NUMBER));
+        }
+
         session.commit();
 
         assertEquals(0, proxy.getQueueSize());

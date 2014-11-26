@@ -67,6 +67,8 @@ import org.slf4j.LoggerFactory;
  */
 public class QpidJmsTestSupport {
 
+    public static final String MESSAGE_NUMBER = "MessageNumber";
+
     public static final String KAHADB_DIRECTORY = "target/activemq-data";
 
     @Rule public TestName name = new TestName();
@@ -258,9 +260,10 @@ public class QpidJmsTestSupport {
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         MessageProducer p = session.createProducer(destination);
 
-        for (int i = 0; i < count; i++) {
+        for (int i = 1; i <= count; i++) {
             TextMessage message = session.createTextMessage();
             message.setText("TextMessage: " + i);
+            message.setIntProperty(MESSAGE_NUMBER, i);
             p.send(message);
         }
 

@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.jms.DeliveryMode;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -40,6 +41,8 @@ import org.junit.Test;
  * Test consumer behavior for Transacted Session Consumers.
  */
 public class JmsTransactedConsumerTest extends AmqpTestSupport {
+
+    private static final String MSG_NUM = "MSG_NUM";
 
     @Test(timeout = 60000)
     public void testCreateConsumerFromTxSession() throws Exception {
@@ -282,5 +285,69 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         LOG.info("Redelivered message has delivery count: {}", jmsxDeliveryCount);
         assertEquals(3, jmsxDeliveryCount);
         session.commit();
+    }
+
+    @Ignore //TODO: enable after fixing rollback issue on broker
+    @Test(timeout=30000)
+    public void testSessionTransactedCommitWithPriorityReordering() throws Exception {
+        connection = createAmqpConnection();
+        Session session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(getDestinationName());
+
+        connection.start();
+
+        MessageProducer pr = session.createProducer(queue);
+        for (int i = 1; i <= 2; i++) {
+            Message m = session.createTextMessage("TestMessage" + i);
+            m.setIntProperty(MSG_NUM, i);
+            pr.send(m, DeliveryMode.NON_PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+        }
+        session.commit();
+
+        // Receive first message.
+        MessageConsumer consumer = session.createConsumer(queue);
+        Message msg = consumer.receive(5000);
+        assertNotNull(msg);
+        assertEquals(1, msg.getIntProperty(MSG_NUM));
+        assertEquals(Message.DEFAULT_PRIORITY, msg.getJMSPriority());
+
+        // Send a couple higher priority, expect them to 'overtake' upon arrival at the consumer.
+        for (int i = 3; i <= 4; i++) {
+            Message m = session.createTextMessage("TestMessage" + i);
+            m.setIntProperty(MSG_NUM, i);
+            pr.send(m, DeliveryMode.NON_PERSISTENT, 5 , Message.DEFAULT_TIME_TO_LIVE);
+        }
+        session.commit();
+
+        // Wait for them to arrive at the consumer
+        Thread.sleep(3000);
+
+        // Receive the other messages. Expect higher priority messages first.
+        msg = consumer.receive(50);
+        assertNotNull(msg);
+        assertEquals(3, msg.getIntProperty(MSG_NUM));
+        assertEquals(5, msg.getJMSPriority());
+
+        msg = consumer.receive(50);
+        assertNotNull(msg);
+        assertEquals(4, msg.getIntProperty(MSG_NUM));
+        assertEquals(5, msg.getJMSPriority());
+
+        msg = consumer.receive(50);
+        assertNotNull(msg);
+        assertEquals(2, msg.getIntProperty(MSG_NUM));
+        assertEquals(Message.DEFAULT_PRIORITY, msg.getJMSPriority());
+
+        session.commit();
+
+        // Send a couple messages to check the session still works.
+        for (int i = 5; i <= 6; i++) {
+            Message m = session.createTextMessage("TestMessage" + i);
+            m.setIntProperty(MSG_NUM, i);
+            pr.send(m, DeliveryMode.NON_PERSISTENT, Message.DEFAULT_PRIORITY , Message.DEFAULT_TIME_TO_LIVE);
+        }
+        session.commit();
+
+        session.close();
     }
 }

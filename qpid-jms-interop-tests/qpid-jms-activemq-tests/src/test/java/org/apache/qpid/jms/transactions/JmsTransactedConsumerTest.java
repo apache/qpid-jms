@@ -287,7 +287,7 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         session.commit();
     }
 
-    @Ignore //TODO: enable after fixing rollback issue on broker
+    @Ignore //TODO: enable after fixing commit issue on broker
     @Test(timeout=30000)
     public void testSessionTransactedCommitWithPriorityReordering() throws Exception {
         connection = createAmqpConnection();

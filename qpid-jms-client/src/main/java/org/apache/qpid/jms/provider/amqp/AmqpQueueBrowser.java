@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
-import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.slf4j.Logger;

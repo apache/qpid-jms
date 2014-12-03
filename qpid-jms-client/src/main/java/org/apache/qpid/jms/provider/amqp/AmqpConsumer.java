@@ -247,13 +247,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                 }
             }
         } else if (ackType.equals(ACK_TYPE.REDELIVERED)) {
-            //TODO: Trace usage of this.
-            //TODO: Don't bother doing anything if it is [remotely]Settled already.
-            Modified disposition = new Modified();
-            disposition.setUndeliverableHere(false);
-            disposition.setDeliveryFailed(true);
-            delivery.disposition(disposition);
-            delivery.settle();
+            //TODO: remove ack type?
         } else if (ackType.equals(ACK_TYPE.POISONED)) {
             deliveryFailed(delivery, false);
         } else {
@@ -462,29 +456,14 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     /**
-     * Ensures that all delivered messages are marked as settled locally before the TX state
-     * is cleared and the next TX started.
-     *
      * @throws Exception if an error occurs while performing this action.
      */
     public void postCommit() throws Exception {
-        for (Delivery delivery : delivered.values()) {
-            delivery.settle();
-        }
-        this.delivered.clear();
     }
 
     /**
-     * Redeliver Acknowledge all previously delivered messages and clear state to prepare for
-     * the next TX to start.
-     *
      * @throws Exception if an error occurs while performing this action.
      */
     public void postRollback() throws Exception {
-        for (Delivery delivery : delivered.values()) {
-            JmsInboundMessageDispatch envelope = (JmsInboundMessageDispatch) delivery.getContext();
-            acknowledge(envelope, ACK_TYPE.REDELIVERED);
-        }
-        this.delivered.clear();
     }
 }

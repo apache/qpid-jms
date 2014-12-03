@@ -42,15 +42,6 @@ public class AmqpQueueBrowser extends AmqpConsumer {
     }
 
     /**
-     * Starts the QueueBrowser by activating drain mode with the initial credits.
-     */
-    @Override
-    public void start(AsyncResult request) {
-        getEndpoint().flow(resource.getPrefetchSize());
-        request.onSuccess();
-    }
-
-    /**
      * QueueBrowser will attempt to initiate a pull whenever there are no pending Messages.
      *
      * We need to initiate a drain to see if there are any messages and if the remote sender

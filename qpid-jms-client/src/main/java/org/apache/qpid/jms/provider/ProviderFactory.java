@@ -63,7 +63,7 @@ public abstract class ProviderFactory {
      *
      * @throws Exception if an error occurs while creating the AsyncProvider instance.
      */
-    public static Provider createAsync(URI remoteURI) throws Exception {
+    public static Provider create(URI remoteURI) throws Exception {
         Provider result = null;
 
         try {

@@ -527,7 +527,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     try {
                         LOG.debug("Attempting connection to: {}", target);
                         JmsSslContext.setCurrentSslContext(sslContext);
-                        Provider provider = ProviderFactory.createAsync(target);
+                        Provider provider = ProviderFactory.create(target);
                         initializeNewConnection(provider);
                         return;
                     } catch (Throwable e) {

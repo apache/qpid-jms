@@ -64,7 +64,7 @@ public class JmsDiscoveryProviderTest {
     @Test(timeout=30000)
     public void testCreateDiscvoeryProvider() throws Exception {
         URI discoveryUri = new URI("discovery:multicast://default");
-        Provider provider = DiscoveryProviderFactory.createAsync(discoveryUri);
+        Provider provider = DiscoveryProviderFactory.create(discoveryUri);
         assertNotNull(provider);
 
         DefaultProviderListener listener = new DefaultProviderListener();
@@ -77,7 +77,7 @@ public class JmsDiscoveryProviderTest {
     public void testStartFailsWithNoListener() throws Exception {
         URI discoveryUri = new URI("discovery:multicast://default");
         Provider provider =
-            DiscoveryProviderFactory.createAsync(discoveryUri);
+            DiscoveryProviderFactory.create(discoveryUri);
         assertNotNull(provider);
         provider.start();
         provider.close();
@@ -86,7 +86,7 @@ public class JmsDiscoveryProviderTest {
     @Test(timeout=30000, expected=IOException.class)
     public void testCreateFailsWithUnknownAgent() throws Exception {
         URI discoveryUri = new URI("discovery:unknown://default");
-        Provider provider = DiscoveryProviderFactory.createAsync(discoveryUri);
+        Provider provider = DiscoveryProviderFactory.create(discoveryUri);
         provider.close();
     }
 

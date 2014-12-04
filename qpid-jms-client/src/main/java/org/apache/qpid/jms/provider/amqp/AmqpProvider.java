@@ -320,6 +320,33 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
     }
 
     @Override
+    public void stop(final JmsResource resource, final AsyncResult request) throws IOException {
+        checkClosed();
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    checkClosed();
+                    resource.visit(new JmsDefaultResourceVisitor() {
+
+                        @Override
+                        public void processConsumerInfo(JmsConsumerInfo consumerInfo) throws Exception {
+                            AmqpSession session = connection.getSession(consumerInfo.getParentId());
+                            AmqpConsumer consumer = session.getConsumer(consumerInfo);
+                            consumer.stop(request);
+                        }
+                    });
+
+                    pumpToProtonTransport();
+                } catch (Exception error) {
+                    request.onFailure(error);
+                }
+            }
+        });
+    }
+
+    @Override
     public void destroy(final JmsResource resource, final AsyncResult request) throws IOException {
         //TODO: improve or delete this logging
         LOG.debug("Destroy called");

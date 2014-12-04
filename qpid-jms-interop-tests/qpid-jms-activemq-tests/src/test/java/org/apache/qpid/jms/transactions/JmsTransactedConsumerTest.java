@@ -170,7 +170,6 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Ignore //TODO: enable after fixing ordering issue
     @Test(timeout = 60000)
     public void testReceiveSomeThenRollback() throws Exception {
         connection = createAmqpConnection();

@@ -171,16 +171,16 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             throw new javax.jms.IllegalStateException("Not a transacted session");
         }
 
+        //Stop processing any new messages that arrive
+        for (JmsMessageConsumer c : consumers.values()) {
+            c.suspendForRollback();
+        }
+
         this.transactionContext.rollback();
 
-        getExecutor().execute(new Runnable() {
-            @Override
-            public void run() {
-                for (JmsMessageConsumer c : consumers.values()) {
-                    c.drainMessageQueueToListener();
-                }
-            }
-        });
+        for (JmsMessageConsumer c : consumers.values()) {
+            c.resumeAfterRollback();
+        }
     }
 
     @Override

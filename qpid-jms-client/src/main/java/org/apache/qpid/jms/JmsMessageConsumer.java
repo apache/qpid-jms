@@ -118,6 +118,10 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
 
     public void init() throws JMSException {
         session.add(this);
+        startConsumerResource();
+    }
+
+    private void startConsumerResource() throws JMSException {
         try {
             session.getConnection().startResource(consumerInfo);
         } catch (JMSException ex) {
@@ -278,6 +282,15 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         }
     }
 
+    private void doAckReleased(final JmsInboundMessageDispatch envelope) throws JMSException {
+        try {
+            session.acknowledge(envelope, ACK_TYPE.RELEASED);
+        } catch (JMSException ex) {
+            session.onException(ex);
+            throw ex;
+        }
+    }
+
     /**
      * Called from the session when a new Message has been dispatched to this Consumer
      * from the connection.
@@ -332,7 +345,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         try {
             this.started = true;
             this.messageQueue.start();
-            drainMessageQueueToListener();
+            drainMessageQueueToListener(); //TODO: this should be handed off to the executor.
         } finally {
             lock.unlock();
         }
@@ -346,6 +359,28 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         } finally {
             lock.unlock();
         }
+    }
+
+    public void suspendForRollback() throws JMSException {
+        // TODO: this isnt really sufficient if we are in onMessage and there
+        // are previously-scheduled delivery tasks remaining after the currently executing one
+        stop();
+
+        session.getConnection().stopResource(consumerInfo);
+    }
+
+    public void resumeAfterRollback() throws JMSException {
+        if (!this.messageQueue.isEmpty()) {
+            List<JmsInboundMessageDispatch> drain = this.messageQueue.removeAll();
+            for (JmsInboundMessageDispatch envelope : drain) {
+                doAckReleased(envelope);
+            }
+            drain.clear();
+        }
+
+        start();
+
+        startConsumerResource();
     }
 
     void drainMessageQueueToListener() {

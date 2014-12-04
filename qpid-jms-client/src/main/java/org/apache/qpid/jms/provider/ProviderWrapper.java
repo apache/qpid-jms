@@ -81,6 +81,11 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
     }
 
     @Override
+    public void stop(JmsResource resource, AsyncResult request) throws IOException, JMSException {
+        next.stop(resource, request);
+    }
+
+    @Override
     public void destroy(JmsResource resourceId, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
         next.destroy(resourceId, request);
     }

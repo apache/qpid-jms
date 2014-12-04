@@ -28,7 +28,8 @@ public final class ProviderConstants {
         CONSUMED(1),
         REDELIVERED(2),
         POISONED(3),
-        EXPIRED(4);
+        EXPIRED(4),
+        RELEASED(5);
 
         private final int value;
 

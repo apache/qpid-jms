@@ -630,6 +630,18 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         }
     }
 
+    void stopResource(JmsResource resource) throws JMSException {
+        connect();
+
+        try {
+            ProviderFuture request = new ProviderFuture();
+            provider.stop(resource, request);
+            request.sync();
+        } catch (Exception ioe) {
+            throw JmsExceptionSupport.create(ioe);
+        }
+    }
+
     void destroyResource(JmsResource resource) throws JMSException {
         connect();
 

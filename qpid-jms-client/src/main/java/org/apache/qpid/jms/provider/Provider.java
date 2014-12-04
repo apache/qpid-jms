@@ -123,6 +123,9 @@ public interface Provider {
      */
     void start(JmsResource resource, AsyncResult request) throws IOException, JMSException;
 
+    //TODO: javadoc. Possibly call 'pause' instead?
+    void stop(JmsResource resource, AsyncResult request) throws IOException, JMSException;
+
     /**
      * Instruct the Provider to dispose of a given JmsResource.
      *

@@ -78,6 +78,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     private final AtomicLong _incomingSequence = new AtomicLong(0);
 
+    private AsyncResult drainRequest;
+
     public AmqpConsumer(AmqpSession session, JmsConsumerInfo info) {
         super(info);
         this.session = session;
@@ -92,6 +94,32 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     public void start(AsyncResult request) {
         getEndpoint().flow(resource.getPrefetchSize());
         request.onSuccess();
+    }
+
+    /**
+     * Stops the consumer, using all link credit and waiting for in-flight messages to arrive.
+     */
+    public void stop(AsyncResult request) {
+        //TODO: We dont actually want the additional messages that could be sent while
+        // draining. We could explicitly reduce credit first, or possibly use 'echo' instead
+        // of drain if it was supported. We would first need to understand what happens
+        // if we reduce credit below the number of messages already in-flight before
+        // the peer sees the update.
+        getEndpoint().drain(0);
+        drainRequest = request;
+    }
+
+    @Override
+    public void processFlowUpdates() throws IOException {
+        if (drainRequest != null) {
+            Receiver receiver = getEndpoint();
+            if (receiver.getDrain() && !receiver.draining()) {
+                drainRequest.onSuccess();
+                drainRequest = null;
+            }
+        }
+
+        super.processFlowUpdates();
     }
 
     @Override
@@ -250,7 +278,11 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             //TODO: remove ack type?
         } else if (ackType.equals(ACK_TYPE.POISONED)) {
             deliveryFailed(delivery, false);
-        } else {
+        } else if (ackType.equals(ACK_TYPE.RELEASED)) {
+            delivery.disposition(Released.getInstance());
+            delivery.settle();
+        }
+        else {
             LOG.warn("Unsupported Ack Type for message: {}", envelope);
         }
     }

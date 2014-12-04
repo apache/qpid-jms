@@ -807,12 +807,14 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     protected void stop() throws JMSException {
         started.set(false);
+
+        for (JmsMessageConsumer consumer : consumers.values()) {
+            consumer.stop();
+        }
+
         if (executor != null) {
             executor.shutdown();
             executor = null;
-        }
-        for (JmsMessageConsumer consumer : consumers.values()) {
-            consumer.stop();
         }
     }
 

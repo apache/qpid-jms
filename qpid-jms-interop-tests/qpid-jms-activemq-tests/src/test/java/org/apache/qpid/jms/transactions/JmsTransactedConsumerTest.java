@@ -202,7 +202,7 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         List<Integer> messageNumbers = new ArrayList<Integer>();
         for(int i = 1; i <= totalCount; i++) {
             Message message = consumer.receive(1000);
-            assertNotNull(message);
+            assertNotNull("Failed to receive message: " + i, message);
             int msgNum = message.getIntProperty(QpidJmsTestSupport.MESSAGE_NUMBER);
             messageNumbers.add(msgNum);
         }

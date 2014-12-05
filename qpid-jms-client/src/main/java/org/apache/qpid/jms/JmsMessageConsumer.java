@@ -266,7 +266,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     private void doAckConsumed(final JmsInboundMessageDispatch envelope) throws JMSException {
         checkClosed();
         try {
-            session.acknowledge(envelope, ACK_TYPE.CONSUMED);
+            session.acknowledge(envelope, ACK_TYPE.CONSUMED, true);
         } catch (JMSException ex) {
             session.onException(ex);
             throw ex;
@@ -275,7 +275,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
 
     private void doAckDelivered(final JmsInboundMessageDispatch envelope) throws JMSException {
         try {
-            session.acknowledge(envelope, ACK_TYPE.DELIVERED);
+            session.acknowledge(envelope, ACK_TYPE.DELIVERED, true);
         } catch (JMSException ex) {
             session.onException(ex);
             throw ex;
@@ -284,7 +284,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
 
     private void doAckReleased(final JmsInboundMessageDispatch envelope) throws JMSException {
         try {
-            session.acknowledge(envelope, ACK_TYPE.RELEASED);
+            session.acknowledge(envelope, ACK_TYPE.RELEASED, false);
         } catch (JMSException ex) {
             session.onException(ex);
             throw ex;

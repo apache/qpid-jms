@@ -689,8 +689,11 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         }
     }
 
-    void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws JMSException {
-        startNextTransaction();
+    void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, boolean startNextTransaction) throws JMSException {
+        if(startNextTransaction) {
+            startNextTransaction();
+        }
+
         this.connection.acknowledge(envelope, ackType);
     }
 

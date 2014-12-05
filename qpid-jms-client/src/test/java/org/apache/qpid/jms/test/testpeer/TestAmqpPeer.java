@@ -82,6 +82,8 @@ import org.slf4j.LoggerFactory;
 // TODO should expectXXXYYYZZZ methods just be expect(matcher)?
 public class TestAmqpPeer implements AutoCloseable
 {
+    private static final int LINK_HANDLE_OFFSET = 100;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(TestAmqpPeer.class.getName());
 
     private final TestAmqpPeerRunner _driverRunnable;
@@ -98,7 +100,7 @@ public class TestAmqpPeer implements AutoCloseable
      */
     private CountDownLatch _handlersCompletedLatch;
 
-    private volatile int _nextLinkHandle = 100;
+    private volatile int _nextLinkHandle = LINK_HANDLE_OFFSET;
 
     private byte[] _deferredBytes;
 
@@ -700,11 +702,66 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectLinkFlow()
     {
+        expectLinkFlow(false);
+    }
+
+    public void expectLinkFlow(boolean drain)
+    {
+        Matcher<Boolean> drainMatcher = null;
+        if(drain)
+        {
+            drainMatcher = equalTo(true);
+        }
+        else
+        {
+            drainMatcher = Matchers.anyOf(equalTo(false), nullValue());
+        }
+
         final FlowMatcher flowMatcher = new FlowMatcher()
                         .withLinkCredit(Matchers.greaterThan(UnsignedInteger.ZERO))
-                        .withHandle(Matchers.notNullValue());
+                        .withHandle(Matchers.notNullValue())
+                        .withDrain(drainMatcher);
+
+        if(drain)
+        {
+            final FlowFrame drainResponse = new FlowFrame();
+            drainResponse.setOutgoingWindow(UnsignedInteger.ZERO); //TODO: shouldnt be hard coded
+            drainResponse.setIncomingWindow(UnsignedInteger.valueOf(Integer.MAX_VALUE)); //TODO: shouldnt be hard coded
+            drainResponse.setLinkCredit(UnsignedInteger.ZERO);
+            drainResponse.setDrain(true);
+
+            // The flow frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+            final FrameSender flowResponseSender = new FrameSender(this, FrameType.AMQP, -1, drainResponse, null);
+            flowResponseSender.setValueProvider(new ValueProvider()
+            {
+                @Override
+                public void setValues()
+                {
+                    flowResponseSender.setChannel(flowMatcher.getActualChannel());
+                    drainResponse.setHandle(calculateLinkHandle(flowMatcher));
+                    drainResponse.setDeliveryCount(calculateNewDeliveryCount(flowMatcher));
+                    drainResponse.setNextOutgoingId(flowMatcher.getReceivedNextIncomingId()); // Assuming no 'in-flight' messages.
+                    drainResponse.setNextIncomingId(flowMatcher.getReceivedNextOutgoingId());
+                }
+            });
+
+            flowMatcher.onSuccess(flowResponseSender);
+        }
 
         addHandler(flowMatcher);
+    }
+
+    private UnsignedInteger calculateLinkHandle(final FlowMatcher flowMatcher) {
+        UnsignedInteger h = (UnsignedInteger) flowMatcher.getReceivedHandle();
+
+        return h.add(UnsignedInteger.valueOf(LINK_HANDLE_OFFSET));
+    }
+
+    private UnsignedInteger calculateNewDeliveryCount(FlowMatcher flowMatcher) {
+        UnsignedInteger dc = (UnsignedInteger) flowMatcher.getReceivedDeliveryCount();
+        UnsignedInteger lc = (UnsignedInteger) flowMatcher.getReceivedLinkCredit();
+
+        return dc.add(lc);
     }
 
     public void expectLinkFlowRespondWithTransfer(final HeaderDescribedType headerDescribedType,

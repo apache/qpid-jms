@@ -373,13 +373,13 @@ public class TestAmqpPeer implements AutoCloseable
     {
         final BeginMatcher beginMatcher = new BeginMatcher()
                 .withRemoteChannel(nullValue())
-                .withNextOutgoingId(notNullValue())
+                .withNextOutgoingId(equalTo(UnsignedInteger.ONE))
                 .withIncomingWindow(notNullValue())
                 .withOutgoingWindow(notNullValue());
 
         // The response will have its remoteChannel field dynamically set based on incoming value
         final BeginFrame beginResponse = new BeginFrame()
-            .setNextOutgoingId(UnsignedInteger.ZERO)
+            .setNextOutgoingId(UnsignedInteger.ONE)
             .setIncomingWindow(UnsignedInteger.ZERO)
             .setOutgoingWindow(UnsignedInteger.ZERO);
 
@@ -468,9 +468,9 @@ public class TestAmqpPeer implements AutoCloseable
             }
         });
 
-        final FlowFrame flowFrame = new FlowFrame().setNextIncomingId(UnsignedInteger.ZERO)
+        final FlowFrame flowFrame = new FlowFrame().setNextIncomingId(UnsignedInteger.ONE)  //TODO: shouldnt be hard coded
                 .setIncomingWindow(UnsignedInteger.valueOf(2048))
-                .setNextOutgoingId(UnsignedInteger.ZERO)
+                .setNextOutgoingId(UnsignedInteger.ONE) //TODO: shouldnt be hard coded
                 .setOutgoingWindow(UnsignedInteger.valueOf(2048))
                 .setLinkCredit(UnsignedInteger.valueOf(100))
                 .setHandle(linkHandle);
@@ -548,9 +548,9 @@ public class TestAmqpPeer implements AutoCloseable
             attachResponseSender.setDeferWrite(true);
         }
 
-        final FlowFrame flowFrame = new FlowFrame().setNextIncomingId(UnsignedInteger.ZERO)
+        final FlowFrame flowFrame = new FlowFrame().setNextIncomingId(UnsignedInteger.ONE) //TODO: shouldnt be hard coded
                 .setIncomingWindow(UnsignedInteger.valueOf(2048))
-                .setNextOutgoingId(UnsignedInteger.ZERO)
+                .setNextOutgoingId(UnsignedInteger.ONE) //TODO: shouldnt be hard coded
                 .setOutgoingWindow(UnsignedInteger.valueOf(2048))
                 .setLinkCredit(UnsignedInteger.valueOf(100))
                 .setHandle(linkHandle);
@@ -728,7 +728,7 @@ public class TestAmqpPeer implements AutoCloseable
             throw new IllegalArgumentException("Message count must be >= 1");
         }
 
-        int nextIncomingId = 0; // TODO: we shouldn't assume this will be the first transfer on the session
+        int nextIncomingId = 1; // TODO: we shouldn't assume this will be the first transfer on the session
 
         final FlowMatcher flowMatcher = new FlowMatcher()
                         .withLinkCredit(Matchers.greaterThanOrEqualTo(UnsignedInteger.valueOf(count)))

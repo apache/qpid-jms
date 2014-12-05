@@ -57,6 +57,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescri
 import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.ReleasedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.SourceMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.TargetMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.TransactionalStateMatcher;
@@ -66,7 +67,6 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompos
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class SessionIntegrationTest extends QpidJmsTestCase {
@@ -467,13 +467,11 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Ignore //TODO: fix test expectations after rollback updates
     @Test(timeout=5000)
     public void testRollbackTransactedSessionWithConsumerReceivingAllMessages() throws Exception {
         doRollbackTransactedSessionWithConsumerTestImpl(1, 1);
     }
 
-    @Ignore //TODO: fix test expectations after rollback updates
     @Test(timeout=5000)
     public void testRollbackTransactedSessionWithConsumerReceivingSomeMessages() throws Exception {
         doRollbackTransactedSessionWithConsumerTestImpl(5, 2);
@@ -519,6 +517,9 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 assertTrue(receivedMessage instanceof TextMessage);
             }
 
+            // Expect the consumer to be 'stopped' prior to rollback
+            testPeer.expectLinkFlow(true);
+
             // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
             // and reply with accepted and settled disposition to indicate the rollback succeeded
             Discharge discharge = new Discharge();
@@ -528,9 +529,16 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
             testPeer.expectTransfer(dischargeMatcher, false, new Accepted(), true);
 
-            session.rollback();
+            // Expect the messages that were not consumed to be released
+            int unconsumed = transferCount - consumeCount;
+            for (int i = 1; i <= unconsumed; i++) {
+                testPeer.expectDisposition(true, new ReleasedMatcher());
+            }
 
-            //TODO: what about messages not received by the consumer?
+            // Expect the consumer to be 'started' again as rollback completes
+            testPeer.expectLinkFlow(false);
+
+            session.rollback();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

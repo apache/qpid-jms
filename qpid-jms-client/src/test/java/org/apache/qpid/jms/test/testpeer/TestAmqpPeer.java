@@ -707,6 +707,47 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectLinkFlow(boolean drain, boolean sendDrainFlowResponse, Matcher<UnsignedInteger> creditMatcher)
     {
+        expectLinkFlowRespondWithTransfer(null, null, null, null, null, 0, drain, sendDrainFlowResponse, creditMatcher, null);
+    }
+
+    public void expectLinkFlowRespondWithTransfer(final HeaderDescribedType headerDescribedType,
+                                                 final MessageAnnotationsDescribedType messageAnnotationsDescribedType,
+                                                 final PropertiesDescribedType propertiesDescribedType,
+                                                 final ApplicationPropertiesDescribedType appPropertiesDescribedType,
+                                                 final DescribedType content)
+    {
+        expectLinkFlowRespondWithTransfer(headerDescribedType, messageAnnotationsDescribedType, propertiesDescribedType,
+                                          appPropertiesDescribedType, content, 1);
+    }
+
+    public void expectLinkFlowRespondWithTransfer(final HeaderDescribedType headerDescribedType,
+                                                  final MessageAnnotationsDescribedType messageAnnotationsDescribedType,
+                                                  final PropertiesDescribedType propertiesDescribedType,
+                                                  final ApplicationPropertiesDescribedType appPropertiesDescribedType,
+                                                  final DescribedType content,
+                                                  final int count)
+    {
+        expectLinkFlowRespondWithTransfer(headerDescribedType, messageAnnotationsDescribedType, propertiesDescribedType,
+                                          appPropertiesDescribedType, content, count, false, false,
+                                          Matchers.greaterThanOrEqualTo(UnsignedInteger.valueOf(count)), 1);
+    }
+
+    public void expectLinkFlowRespondWithTransfer(final HeaderDescribedType headerDescribedType,
+            final MessageAnnotationsDescribedType messageAnnotationsDescribedType,
+            final PropertiesDescribedType propertiesDescribedType,
+            final ApplicationPropertiesDescribedType appPropertiesDescribedType,
+            final DescribedType content,
+            final int count,
+            final boolean drain,
+            final boolean sendDrainFlowResponse,
+            Matcher<UnsignedInteger> creditMatcher,
+            final Integer nextIncomingId)
+    {
+        if (nextIncomingId == null && count > 0)
+        {
+            throw new IllegalArgumentException("The remote NextIncomingId must be specified if transfers have been requested");
+        }
+
         Matcher<Boolean> drainMatcher = null;
         if(drain)
         {
@@ -717,82 +758,23 @@ public class TestAmqpPeer implements AutoCloseable
             drainMatcher = Matchers.anyOf(equalTo(false), nullValue());
         }
 
-        final FlowMatcher flowMatcher = new FlowMatcher()
-                        .withLinkCredit(creditMatcher)
-                        .withHandle(Matchers.notNullValue())
-                        .withDrain(drainMatcher);
-
-        if(drain && sendDrainFlowResponse)
+        Matcher<UnsignedInteger> remoteNextIncomingIdMatcher = null;
+        if(nextIncomingId != null)
         {
-            final FlowFrame drainResponse = new FlowFrame();
-            drainResponse.setOutgoingWindow(UnsignedInteger.ZERO); //TODO: shouldnt be hard coded
-            drainResponse.setIncomingWindow(UnsignedInteger.valueOf(Integer.MAX_VALUE)); //TODO: shouldnt be hard coded
-            drainResponse.setLinkCredit(UnsignedInteger.ZERO);
-            drainResponse.setDrain(true);
-
-            // The flow frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
-            final FrameSender flowResponseSender = new FrameSender(this, FrameType.AMQP, -1, drainResponse, null);
-            flowResponseSender.setValueProvider(new ValueProvider()
-            {
-                @Override
-                public void setValues()
-                {
-                    flowResponseSender.setChannel(flowMatcher.getActualChannel());
-                    drainResponse.setHandle(calculateLinkHandle(flowMatcher));
-                    drainResponse.setDeliveryCount(calculateNewDeliveryCount(flowMatcher));
-                    drainResponse.setNextOutgoingId(flowMatcher.getReceivedNextIncomingId()); // Assuming no 'in-flight' messages.
-                    drainResponse.setNextIncomingId(flowMatcher.getReceivedNextOutgoingId());
-                }
-            });
-
-            flowMatcher.onSuccess(flowResponseSender);
+             remoteNextIncomingIdMatcher = Matchers.equalTo(UnsignedInteger.valueOf(nextIncomingId));
         }
-
-        addHandler(flowMatcher);
-    }
-
-    private UnsignedInteger calculateLinkHandle(final FlowMatcher flowMatcher) {
-        UnsignedInteger h = (UnsignedInteger) flowMatcher.getReceivedHandle();
-
-        return h.add(UnsignedInteger.valueOf(LINK_HANDLE_OFFSET));
-    }
-
-    private UnsignedInteger calculateNewDeliveryCount(FlowMatcher flowMatcher) {
-        UnsignedInteger dc = (UnsignedInteger) flowMatcher.getReceivedDeliveryCount();
-        UnsignedInteger lc = (UnsignedInteger) flowMatcher.getReceivedLinkCredit();
-
-        return dc.add(lc);
-    }
-
-    public void expectLinkFlowRespondWithTransfer(final HeaderDescribedType headerDescribedType,
-                                                 final MessageAnnotationsDescribedType messageAnnotationsDescribedType,
-                                                 final PropertiesDescribedType propertiesDescribedType,
-                                                 final ApplicationPropertiesDescribedType appPropertiesDescribedType,
-                                                 final DescribedType content)
-    {
-        expectLinkFlowRespondWithTransfer(headerDescribedType, messageAnnotationsDescribedType, propertiesDescribedType, appPropertiesDescribedType, content, 1);
-    }
-
-    public void expectLinkFlowRespondWithTransfer(final HeaderDescribedType headerDescribedType,
-                                                  final MessageAnnotationsDescribedType messageAnnotationsDescribedType,
-                                                  final PropertiesDescribedType propertiesDescribedType,
-                                                  final ApplicationPropertiesDescribedType appPropertiesDescribedType,
-                                                  final DescribedType content,
-                                                  final int count)
-    {
-        if(count <= 0)
+        else
         {
-            throw new IllegalArgumentException("Message count must be >= 1");
+            remoteNextIncomingIdMatcher = Matchers.greaterThanOrEqualTo(UnsignedInteger.ONE);
         }
-
-        int nextIncomingId = 1; // TODO: we shouldn't assume this will be the first transfer on the session
 
         final FlowMatcher flowMatcher = new FlowMatcher()
                         .withLinkCredit(Matchers.greaterThanOrEqualTo(UnsignedInteger.valueOf(count)))
-                        .withDrain(Matchers.anyOf(equalTo(false), nullValue()))
-                        .withNextIncomingId(Matchers.equalTo(UnsignedInteger.valueOf(nextIncomingId)));
+                        .withDrain(drainMatcher)
+                        .withNextIncomingId(remoteNextIncomingIdMatcher);
 
         CompositeAmqpPeerRunnable composite = new CompositeAmqpPeerRunnable();
+        boolean addComposite = false;
 
         for(int i = 0; i < count; i++)
         {
@@ -822,12 +804,61 @@ public class TestAmqpPeer implements AutoCloseable
                 }
             });
 
+            addComposite = true;
             composite.add(transferResponseSender);
         }
 
-        flowMatcher.onSuccess(composite);
+        if(drain && sendDrainFlowResponse)
+        {
+            final FlowFrame drainResponse = new FlowFrame();
+            drainResponse.setOutgoingWindow(UnsignedInteger.ZERO); //TODO: shouldnt be hard coded
+            drainResponse.setIncomingWindow(UnsignedInteger.valueOf(Integer.MAX_VALUE)); //TODO: shouldnt be hard coded
+            drainResponse.setLinkCredit(UnsignedInteger.ZERO);
+            drainResponse.setDrain(true);
+
+            // The flow frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+            final FrameSender flowResponseSender = new FrameSender(this, FrameType.AMQP, -1, drainResponse, null);
+            flowResponseSender.setValueProvider(new ValueProvider()
+            {
+                @Override
+                public void setValues()
+                {
+                    flowResponseSender.setChannel(flowMatcher.getActualChannel());
+                    drainResponse.setHandle(calculateLinkHandle(flowMatcher));
+                    drainResponse.setDeliveryCount(calculateNewDeliveryCount(flowMatcher));
+                    drainResponse.setNextOutgoingId(calculateNewOutgoingId(flowMatcher, count));
+                    drainResponse.setNextIncomingId(flowMatcher.getReceivedNextOutgoingId());
+                }
+            });
+
+            addComposite = true;
+            composite.add(flowResponseSender);
+        }
+
+        if(addComposite) {
+            flowMatcher.onSuccess(composite);
+        }
 
         addHandler(flowMatcher);
+    }
+
+    private UnsignedInteger calculateLinkHandle(final FlowMatcher flowMatcher) {
+        UnsignedInteger h = (UnsignedInteger) flowMatcher.getReceivedHandle();
+
+        return h.add(UnsignedInteger.valueOf(LINK_HANDLE_OFFSET));
+    }
+
+    private UnsignedInteger calculateNewDeliveryCount(FlowMatcher flowMatcher) {
+        UnsignedInteger dc = (UnsignedInteger) flowMatcher.getReceivedDeliveryCount();
+        UnsignedInteger lc = (UnsignedInteger) flowMatcher.getReceivedLinkCredit();
+
+        return dc.add(lc);
+    }
+
+    private UnsignedInteger calculateNewOutgoingId(FlowMatcher flowMatcher, int sentCount) {
+        UnsignedInteger nid = (UnsignedInteger) flowMatcher.getReceivedNextIncomingId();
+
+        return nid.add(UnsignedInteger.valueOf(sentCount));
     }
 
     private Binary prepareTransferPayload(final HeaderDescribedType headerDescribedType,

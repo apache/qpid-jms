@@ -326,8 +326,18 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                     JmsInboundMessageDispatch envelope;
                     while (session.isStarted() && (envelope = messageQueue.dequeueNoWait()) != null) {
                         try {
+                            // TODO - We are currently acking early.  We need to ack after onMessage
+                            //        with either a delivered or a consumed ack based on the session
+                            //        ack mode.  We also need to check for the message having been
+                            //        acked by message.acknowledge() in onMessage so we don't do a
+                            //        delivered ack following a real ack in the case of client ack
+                            //        mode or a future individual ack mode.
                             messageListener.onMessage(copy(ack(envelope)));
                         } catch (Exception e) {
+                            // TODO - We need to handle exception of on message with some other
+                            //        ack such as rejected and consider adding a redlivery policy
+                            //        to control when we might just poison the message with an ack
+                            //        of modified set to not deliverable here.
                             session.getConnection().onException(e);
                         }
                     }

@@ -121,7 +121,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     public void processFlowUpdates() throws IOException {
         if (drainRequest != null) {
             Receiver receiver = getEndpoint();
-            if (receiver.getDrain() && !receiver.draining()) {
+            if (receiver.getDrain() && receiver.getRemoteCredit() <= 0) {
                 drainRequest.onSuccess();
                 drainRequest = null;
             }
@@ -346,17 +346,28 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         Delivery incoming = null;
         do {
             incoming = getEndpoint().current();
-            if (incoming != null && incoming.isReadable() && !incoming.isPartial()) {
-                LOG.trace("{} has incoming Message(s).", this);
-                try {
-                    processDelivery(incoming);
-                } catch (Exception e) {
-                    throw IOExceptionSupport.create(e);
+            if (incoming != null) {
+                if(incoming.isReadable() && !incoming.isPartial()) {
+                    LOG.trace("{} has incoming Message(s).", this);
+                    try {
+                        processDelivery(incoming);
+                    } catch (Exception e) {
+                        throw IOExceptionSupport.create(e);
+                    }
+                    getEndpoint().advance();
+                } else {
+                    LOG.trace("{} has a partial incoming Message(s), deferring.", this);
+                    incoming = null;
                 }
-                getEndpoint().advance();
             } else {
-                LOG.trace("{} has a partial incoming Message(s), deferring.", this);
-                incoming = null;
+                //We have exhausted the currently available messages on this link. Check if we tried to drain.
+                if(drainRequest != null) {
+                    if(getEndpoint().getDrain() && getEndpoint().getRemoteCredit() <= 0)
+                    {
+                        drainRequest.onSuccess();
+                        drainRequest = null;
+                    }
+                }
             }
         } while (incoming != null);
     }

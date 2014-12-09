@@ -105,8 +105,16 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         // of drain if it was supported. We would first need to understand what happens
         // if we reduce credit below the number of messages already in-flight before
         // the peer sees the update.
-        getEndpoint().drain(0);
-        drainRequest = request;
+
+        Receiver receiver = getEndpoint();
+        if(receiver.getRemoteCredit() <= 0) {
+            // Sender already used all the credit on offer
+            request.onSuccess();
+        }
+        else{
+            drainRequest = request;
+            receiver.drain(0);
+        }
     }
 
     @Override

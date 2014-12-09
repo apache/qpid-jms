@@ -548,7 +548,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout=5000)
-    public void testRollbackTransactedSessionWithPrefetchFullBeforeDrain() throws Exception {
+    public void testRollbackTransactedSessionWithPrefetchFullBeforeStoppingConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             Connection connection = testFixture.establishConnecton(testPeer);
             int messageCount = 5;
@@ -587,9 +587,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             producer.send(session.createMessage());
 
-            // Expect the consumer to be 'stopped' prior to rollback by issuing a 'drain'. We will NOT send a flow
-            // response as we have manipulated that all the 'on the wire' credit was already used.
-            testPeer.expectLinkFlow(true, false, equalTo(UnsignedInteger.ZERO));
+            // The consumer will be 'stopped' prior to rollback, however we will NOT send a 'drain' Flow
+            // frame as we have manipulated that all the credit was already used, i.e. it already stopped.
 
             // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
             // and reply with accepted and settled disposition to indicate the rollback succeeded

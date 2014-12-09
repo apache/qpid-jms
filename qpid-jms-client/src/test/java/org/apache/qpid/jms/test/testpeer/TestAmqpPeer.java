@@ -702,10 +702,10 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectLinkFlow()
     {
-        expectLinkFlow(false, Matchers.greaterThan(UnsignedInteger.ZERO));
+        expectLinkFlow(false, false, Matchers.greaterThan(UnsignedInteger.ZERO));
     }
 
-    public void expectLinkFlow(boolean drain, Matcher<UnsignedInteger> creditMatcher)
+    public void expectLinkFlow(boolean drain, boolean sendDrainFlowResponse, Matcher<UnsignedInteger> creditMatcher)
     {
         Matcher<Boolean> drainMatcher = null;
         if(drain)
@@ -722,7 +722,7 @@ public class TestAmqpPeer implements AutoCloseable
                         .withHandle(Matchers.notNullValue())
                         .withDrain(drainMatcher);
 
-        if(drain)
+        if(drain && sendDrainFlowResponse)
         {
             final FlowFrame drainResponse = new FlowFrame();
             drainResponse.setOutgoingWindow(UnsignedInteger.ZERO); //TODO: shouldnt be hard coded

@@ -521,7 +521,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             }
 
             // Expect the consumer to be 'stopped' prior to rollback by issuing a 'drain'
-            testPeer.expectLinkFlow(true, greaterThan(UnsignedInteger.ZERO));
+            testPeer.expectLinkFlow(true, true, greaterThan(UnsignedInteger.ZERO));
 
             // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
             // and reply with accepted and settled disposition to indicate the rollback succeeded
@@ -539,7 +539,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             }
 
             // Expect the consumer to be 'started' again as rollback completes
-            testPeer.expectLinkFlow(false, greaterThan(UnsignedInteger.ZERO));
+            testPeer.expectLinkFlow(false, false, greaterThan(UnsignedInteger.ZERO));
 
             session.rollback();
 
@@ -591,7 +591,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Queue queue = session.createQueue("myQueue");
 
             testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.valueOf(newPrefetch)));
+            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(newPrefetch)));
 
             session.createConsumer(queue);
 

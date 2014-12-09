@@ -784,7 +784,6 @@ public class TestAmqpPeer implements AutoCloseable
             Binary dtag = new Binary(tagString.getBytes());
 
             final TransferFrame transferResponse = new TransferFrame()
-            .setHandle(UnsignedInteger.valueOf(_nextLinkHandle - 1)) // TODO: this needs to be the value used in the attach response
             .setDeliveryId(UnsignedInteger.valueOf(nextId))
             .setDeliveryTag(dtag)
             .setMessageFormat(UnsignedInteger.ZERO)
@@ -800,6 +799,7 @@ public class TestAmqpPeer implements AutoCloseable
                 @Override
                 public void setValues()
                 {
+                    transferResponse.setHandle(calculateLinkHandle(flowMatcher));
                     transferResponseSender.setChannel(flowMatcher.getActualChannel());
                 }
             });

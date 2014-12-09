@@ -789,6 +789,7 @@ public class TestAmqpPeer implements AutoCloseable
 
         final FlowMatcher flowMatcher = new FlowMatcher()
                         .withLinkCredit(Matchers.greaterThanOrEqualTo(UnsignedInteger.valueOf(count)))
+                        .withDrain(Matchers.anyOf(equalTo(false), nullValue()))
                         .withNextIncomingId(Matchers.equalTo(UnsignedInteger.valueOf(nextIncomingId)));
 
         CompositeAmqpPeerRunnable composite = new CompositeAmqpPeerRunnable();

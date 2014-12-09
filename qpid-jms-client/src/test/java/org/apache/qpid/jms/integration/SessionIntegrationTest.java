@@ -20,6 +20,7 @@ package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
@@ -67,6 +68,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompos
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.junit.Test;
 
 public class SessionIntegrationTest extends QpidJmsTestCase {
@@ -517,8 +519,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 assertTrue(receivedMessage instanceof TextMessage);
             }
 
-            // Expect the consumer to be 'stopped' prior to rollback
-            testPeer.expectLinkFlow(true);
+            // Expect the consumer to be 'stopped' prior to rollback by issuing a 'drain'
+            testPeer.expectLinkFlow(true, greaterThan(UnsignedInteger.ZERO));
 
             // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
             // and reply with accepted and settled disposition to indicate the rollback succeeded
@@ -536,7 +538,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             }
 
             // Expect the consumer to be 'started' again as rollback completes
-            testPeer.expectLinkFlow(false);
+            testPeer.expectLinkFlow(false, greaterThan(UnsignedInteger.ZERO));
 
             session.rollback();
 

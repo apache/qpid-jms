@@ -39,6 +39,7 @@ import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -357,5 +358,40 @@ public class JmsClientAckTest extends AmqpTestSupport {
         producer.send(session.createTextMessage("test"));
 
         assertTrue("we got 6 redeliveries", redelivery.await(20, TimeUnit.SECONDS));
+    }
+
+    @Ignore("Fails until Broker get it's prefetch issues resolved.")
+    @Test(timeout=60000)
+    public void testConsumeBeyondInitialPrefetch() throws Exception {
+        final int MESSAGE_COUNT = 2000;
+
+        final CountDownLatch consumed = new CountDownLatch(MESSAGE_COUNT);
+        connection = createAmqpConnection();
+        connection.start();
+
+        final Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageConsumer consumer = session.createConsumer(queue);
+
+        consumer.setMessageListener(new MessageListener() {
+            @Override
+            public void onMessage(Message message) {
+                try {
+                    LOG.debug("Got message: " + message.getJMSMessageID());
+                    consumed.countDown();
+                } catch (JMSException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        connection.start();
+
+        MessageProducer producer = session.createProducer(queue);
+        for (int i = 0; i < MESSAGE_COUNT; ++i) {
+            producer.send(session.createTextMessage("test: message[" + (i + 1) + "]"));
+        }
+
+        assertTrue("Failed to get all deliveries", consumed.await(45, TimeUnit.SECONDS));
     }
 }

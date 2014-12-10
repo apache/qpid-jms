@@ -78,7 +78,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     private final AtomicLong _incomingSequence = new AtomicLong(0);
 
-    private AsyncResult drainRequest;
+    private AsyncResult stopRequest;
 
     public AmqpConsumer(AmqpSession session, JmsConsumerInfo info) {
         super(info);
@@ -100,30 +100,35 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      * Stops the consumer, using all link credit and waiting for in-flight messages to arrive.
      */
     public void stop(AsyncResult request) {
-        //TODO: We dont actually want the additional messages that could be sent while
-        // draining. We could explicitly reduce credit first, or possibly use 'echo' instead
-        // of drain if it was supported. We would first need to understand what happens
-        // if we reduce credit below the number of messages already in-flight before
-        // the peer sees the update.
-
         Receiver receiver = getEndpoint();
-        if(receiver.getRemoteCredit() <= 0) {
-            // Sender already used all the credit on offer
-            request.onSuccess();
-        }
-        else{
-            drainRequest = request;
+        if (receiver.getRemoteCredit() <= 0) {
+            if (receiver.getQueued() == 0) {
+                // We have no remote credit and all the deliveries have been processed.
+                request.onSuccess();
+            } else {
+                // There are still deliveries to process, wait for them to be.
+                stopRequest = request;
+            }
+        } else {
+            //TODO: We dont actually want the additional messages that could be sent while
+            // draining. We could explicitly reduce credit first, or possibly use 'echo' instead
+            // of drain if it was supported. We would first need to understand what happens
+            // if we reduce credit below the number of messages already in-flight before
+            // the peer sees the update.
+            stopRequest = request;
             receiver.drain(0);
         }
     }
 
     @Override
     public void processFlowUpdates() throws IOException {
-        if (drainRequest != null) {
+        // Check if we tried to stop and have now run out of credit, and
+        // processed all locally queued messages
+        if (stopRequest != null) {
             Receiver receiver = getEndpoint();
-            if (receiver.getDrain() && receiver.getRemoteCredit() <= 0) {
-                drainRequest.onSuccess();
-                drainRequest = null;
+            if (receiver.getRemoteCredit() <= 0 && receiver.getQueued() == 0) {
+                stopRequest.onSuccess();
+                stopRequest = null;
             }
         }
 
@@ -360,12 +365,13 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                     incoming = null;
                 }
             } else {
-                //We have exhausted the currently available messages on this link. Check if we tried to drain.
-                if(drainRequest != null) {
-                    if(getEndpoint().getDrain() && getEndpoint().getRemoteCredit() <= 0)
+                // We have exhausted the locally queued messages on this link.
+                // Check if we tried to stop and have now run out of credit.
+                if(stopRequest != null) {
+                    if(getEndpoint().getRemoteCredit() <= 0)
                     {
-                        drainRequest.onSuccess();
-                        drainRequest = null;
+                        stopRequest.onSuccess();
+                        stopRequest = null;
                     }
                 }
             }

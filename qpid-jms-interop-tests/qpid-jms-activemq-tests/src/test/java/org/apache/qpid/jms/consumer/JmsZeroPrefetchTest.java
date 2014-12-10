@@ -19,6 +19,7 @@ package org.apache.qpid.jms.consumer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -29,8 +30,10 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
+import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.support.AmqpTestSupport;
+import org.apache.qpid.jms.support.Wait;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -80,6 +83,45 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
         assertNull("Should have not received a message!", answer);
     }
 
+    // TODO - Enable once broker side credit handling is fixed
+    @Ignore // ActiveMQ doesn't honor link credit.
+    @Test(timeout = 60000)
+    public void testPullConsumerOnlyRequestsOneMessage() throws Exception {
+        connection = createAmqpConnection();
+        ((JmsConnection)connection).getPrefetchPolicy().setAll(0);
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageProducer producer = session.createProducer(queue);
+        producer.send(session.createTextMessage("Hello World! 1"));
+        producer.send(session.createTextMessage("Hello World! 2"));
+
+        final QueueViewMBean queueView = getProxyToQueue(name.getMethodName());
+
+        // Check initial Queue State
+        assertEquals(2, queueView.getQueueSize());
+        assertEquals(0, queueView.getInFlightCount());
+
+        // now lets receive it
+        MessageConsumer consumer = session.createConsumer(queue);
+        Message answer = consumer.receive(5000);
+        assertNotNull("Should have received a message!", answer);
+
+        // Assert that we only pulled one message and that we didn't cause
+        // the other message to be dispatched.
+        assertTrue(Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return queueView.getQueueSize() == 1;
+            }
+        }));
+
+        assertEquals(0, queueView.getInFlightCount());
+    }
+
+    // TODO - Enable once broker side credit handling is fixed
     @Ignore // ActiveMQ doesn't honor link credit.
     @Test(timeout = 60000)
     public void testTwoConsumers() throws Exception {

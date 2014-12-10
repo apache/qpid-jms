@@ -360,6 +360,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         assertTrue("we got 6 redeliveries", redelivery.await(20, TimeUnit.SECONDS));
     }
 
+    // TODO - Enable once broker prefetch is fully worked out.
     @Ignore("Fails until Broker get it's prefetch issues resolved.")
     @Test(timeout=60000)
     public void testConsumeBeyondInitialPrefetch() throws Exception {

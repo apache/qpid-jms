@@ -24,13 +24,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.jms.Message;
+import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
+import javax.jms.Topic;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
+import org.apache.activemq.broker.jmx.TopicViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.util.StopWatch;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -67,6 +71,31 @@ public class JmsAnonymousProducerTest extends AmqpTestSupport {
 
         QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
+    }
+
+    @Ignore //TODO: enable this once destination type handling is fixed
+    @Test(timeout = 60000)
+    public void testAnonymousSendToTopic() throws Exception {
+        connection = createAmqpConnection();
+        // Hack to check it works if we send the old annotation value the broker is currently aware of.
+        // AmqpProvider prov = (AmqpProvider) ((JmsConnection) connection).getProvider();
+        // prov.setUseByteDestinationTypeAnnotation(false);
+        assertNotNull(connection);
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Topic topic = session.createTopic(name.getMethodName());
+        assertNotNull(session);
+        MessageProducer producer = session.createProducer(null);
+        assertNotNull(producer);
+        MessageConsumer consumer = session.createConsumer(topic);
+        assertNotNull(consumer);
+
+        Message message = session.createMessage();
+        producer.send(topic, message);
+
+        TopicViewMBean proxy = getProxyToTopic(name.getMethodName());
+        assertEquals(1, proxy.getEnqueueCount());
     }
 
     @Test(timeout = 60000)

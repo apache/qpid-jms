@@ -34,7 +34,6 @@ import javax.jms.TextMessage;
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.QpidJmsTestSupport;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**

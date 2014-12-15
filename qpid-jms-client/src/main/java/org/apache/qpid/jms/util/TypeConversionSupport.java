@@ -19,9 +19,6 @@ package org.apache.qpid.jms.util;
 import java.util.Date;
 import java.util.HashMap;
 
-import org.apache.qpid.jms.JmsDestination;
-import org.apache.qpid.jms.JmsQueue;
-
 public final class TypeConversionSupport {
 
     static class ConversionKey {
@@ -158,14 +155,6 @@ public final class TypeConversionSupport {
             }
         });
 
-        CONVERSION_MAP.put(new ConversionKey(String.class, JmsDestination.class), new Converter() {
-            @Override
-            public Object convert(Object value) {
-                // TODO - Right now we go right to a Queue, we need to examine the name
-                //        and correctly map to the appropriate destination type.
-                return new JmsQueue(value.toString());
-            }
-        });
     }
 
     private TypeConversionSupport() {

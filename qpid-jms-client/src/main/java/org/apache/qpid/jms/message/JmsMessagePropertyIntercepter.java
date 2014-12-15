@@ -127,11 +127,7 @@ public class JmsMessagePropertyIntercepter {
         PROPERTY_INTERCEPTERS.put(JMS_DESTINATION, new PropertyIntercepter() {
             @Override
             public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
-                String rc = (String) TypeConversionSupport.convert(value, String.class);
-                if (rc == null) {
-                    throw new JMSException("Property JMSDestination cannot be set from a " + value.getClass().getName() + ".");
-                }
-                message.setDestinationFromString(rc);
+                throw new JMSException("Cannot set JMS Destination as a property, use setJMSDestination() instead");
             }
 
             @Override
@@ -156,11 +152,7 @@ public class JmsMessagePropertyIntercepter {
         PROPERTY_INTERCEPTERS.put(JMS_REPLYTO, new PropertyIntercepter() {
             @Override
             public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
-                String rc = (String) TypeConversionSupport.convert(value, String.class);
-                if (rc == null) {
-                    throw new JMSException("Property JMSReplyTo cannot be set from a " + value.getClass().getName() + ".");
-                }
-                message.setReplyToFromString(rc);
+                throw new JMSException("Cannot set JMS ReplyTo as a property, use setJMSReplTo() instead");
             }
 
             @Override

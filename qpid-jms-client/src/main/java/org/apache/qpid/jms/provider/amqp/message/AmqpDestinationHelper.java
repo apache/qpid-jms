@@ -115,9 +115,9 @@ public class AmqpDestinationHelper {
         return new JmsQueue(address);
     }
 
-    public void setToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination, boolean useByteValue) {
+    public void setToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
         String address = destination != null ? destination.getName() : null;
-        Object typeValue = toTypeAnnotation(destination, useByteValue);
+        Object typeValue = toTypeAnnotation(destination);
 
         message.setToAddress(address);
 
@@ -128,9 +128,9 @@ public class AmqpDestinationHelper {
         }
     }
 
-    public void setReplyToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination, boolean useByteValue) {
+    public void setReplyToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
         String replyToAddress = destination != null ? destination.getName() : null;
-        Object typeValue = toTypeAnnotation(destination, useByteValue);
+        Object typeValue = toTypeAnnotation(destination);
 
         message.setReplyToAddress(replyToAddress);
 
@@ -145,41 +145,25 @@ public class AmqpDestinationHelper {
      * @return the annotation type value, or null if the supplied destination
      *         is null or can't be classified
      */
-    private Object toTypeAnnotation(JmsDestination destination, boolean useByteValue) {
+    private Object toTypeAnnotation(JmsDestination destination) {
         if (destination == null) {
             return null;
         }
 
-        if(useByteValue)
-        {
-            if (destination.isQueue()) {
-                if (destination.isTemporary()) {
-                    return TEMP_QUEUE_TYPE;
-                } else {
-                    return QUEUE_TYPE;
-                }
-            } else if (destination.isTopic()) {
-                if (destination.isTemporary()) {
-                    return TEMP_TOPIC_TYPE;
-                } else {
-                    return TOPIC_TYPE;
-                }
+        if (destination.isQueue()) {
+            if (destination.isTemporary()) {
+                return TEMP_QUEUE_TYPE;
+            } else {
+                return QUEUE_TYPE;
             }
-        } else {
-            if (destination.isQueue()) {
-                if (destination.isTemporary()) {
-                    return TEMP_QUEUE_ATTRIBUTES_STRING;
-                } else {
-                    return QUEUE_ATTRIBUTES_STRING;
-                }
-            } else if (destination.isTopic()) {
-                if (destination.isTemporary()) {
-                    return TEMP_TOPIC_ATTRIBUTES_STRING;
-                } else {
-                    return TOPIC_ATTRIBUTES_STRING;
-                }
+        } else if (destination.isTopic()) {
+            if (destination.isTemporary()) {
+                return TEMP_TOPIC_TYPE;
+            } else {
+                return TOPIC_TYPE;
             }
         }
+
         return null;
     }
 

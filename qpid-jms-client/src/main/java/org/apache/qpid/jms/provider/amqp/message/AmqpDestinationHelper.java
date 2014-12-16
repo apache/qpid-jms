@@ -24,7 +24,6 @@ import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsTemporaryQueue;
 import org.apache.qpid.jms.JmsTemporaryTopic;
 import org.apache.qpid.jms.JmsTopic;
-import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 
 /**
  * A set of static utility method useful when mapping JmsDestination types to / from the AMQP
@@ -52,37 +51,6 @@ public class AmqpDestinationHelper {
     public static final String TOPIC_ATTRIBUTES_STRING = TOPIC_ATTRIBUTE;
     public static final String TEMP_QUEUE_ATTRIBUTES_STRING = QUEUE_ATTRIBUTE + "," + TEMPORARY_ATTRIBUTE;
     public static final String TEMP_TOPIC_ATTRIBUTES_STRING = TOPIC_ATTRIBUTE + "," + TEMPORARY_ATTRIBUTE;
-
-    /**
-     * Given a destination name string, create a JmsDestination object based on the
-     * configured destination prefix values.  If no prefix values are configured or the
-     * name has no matching prefix we create a Queue instance by default.
-     *
-     * @param destinationName
-     *        the name to use to construct the new JmsDestination instance.
-     * @param connection
-     *        the connection where this destination will be handled.
-     *
-     * @throws NullPointerException if destinationName or connection is null.
-     */
-    public JmsDestination createDestination(String destinationName, AmqpConnection connection) {
-
-        JmsDestination result = null;
-
-        if (connection.getQueuePrefix() != null && destinationName.startsWith(connection.getQueuePrefix())) {
-            result = new JmsQueue(destinationName.substring(connection.getQueuePrefix().length()));
-        } else if (connection.getTopicPrefix() != null && destinationName.startsWith(connection.getTopicPrefix())) {
-            result = new JmsTopic(destinationName.substring(connection.getTopicPrefix().length()));
-        } else if (connection.getTempQueuePrefix() != null && destinationName.startsWith(connection.getTempQueuePrefix())) {
-            result = new JmsTemporaryQueue(destinationName.substring(connection.getTempQueuePrefix().length()));
-        } else if (connection.getTempTopicPrefix() != null && destinationName.startsWith(connection.getTempTopicPrefix())) {
-            result = new JmsTemporaryTopic(destinationName.substring(connection.getTempTopicPrefix().length()));
-        } else {
-            result = new JmsQueue(destinationName);
-        }
-
-        return result;
-    }
 
     /**
      * Decode the provided To address, type description, and consumer destination

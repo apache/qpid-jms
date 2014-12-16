@@ -659,11 +659,6 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public void setDestinationFromString(String destination) {
-        setDestination(AmqpDestinationHelper.INSTANCE.createDestination(destination, connection));
-    }
-
-    @Override
     public JmsDestination getReplyTo() {
         if (replyTo == null) {
             replyTo = AmqpDestinationHelper.INSTANCE.getJmsReplyTo(this, consumerDestination);
@@ -677,11 +672,6 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         this.replyTo = replyTo;
         lazyCreateMessageAnnotations();
         AmqpDestinationHelper.INSTANCE.setReplyToAddressFromDestination(this, replyTo, connection.isUseByteDestinationTypeAnnotation());
-    }
-
-    @Override
-    public void setReplyToFromString(String destination) {
-        setReplyTo(AmqpDestinationHelper.INSTANCE.createDestination(destination, connection));
     }
 
     public void setReplyToGroupId(String replyToGroupId) {

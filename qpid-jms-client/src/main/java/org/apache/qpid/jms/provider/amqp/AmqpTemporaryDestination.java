@@ -42,6 +42,9 @@ import org.slf4j.LoggerFactory;
  */
 public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestination, Sender> {
 
+    private static final String TEMP_QUEUE_CREATOR = "temp-queue-creator:";
+    private static final String TEMP_TOPIC_CREATOR = "temp-topic-creator:";
+
     private static final Logger LOG = LoggerFactory.getLogger(AmqpTemporaryDestination.class);
 
     private final AmqpConnection connection;
@@ -84,26 +87,27 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestinatio
 
     @Override
     protected void doOpen() {
-        //TODO: debug what this is actually doing, then likely replace with a generated Source name.
-        String sourceAddress = resource.getName();
-        String tempQueuePrefix = "temp-queue://";
+        // Form a link name, use the local generated name with a prefix to aid debugging
+        String localDestinationName = resource.getName();
+        String senderLinkName = null;
         if (resource.isQueue()) {
-            sourceAddress = tempQueuePrefix + sourceAddress;
+            senderLinkName = TEMP_QUEUE_CREATOR + localDestinationName;
         } else {
-            // TODO - AMQ doesn't support temp topics so we make everything a temp queue for now
-            sourceAddress = tempQueuePrefix + sourceAddress;
+            senderLinkName = TEMP_TOPIC_CREATOR + localDestinationName;
         }
+
+        // Just use a bare Source, this is a producer which
+        // wont send anything and the link name is unique.
         Source source = new Source();
-        source.setAddress(sourceAddress);
 
         Target target = new Target();
         target.setDynamic(true);
         target.setDurable(TerminusDurability.NONE);
         target.setExpiryPolicy(TerminusExpiryPolicy.LINK_DETACH);
 
-        String senderName = sourceAddress;
+        //TODO: set the dynamic node lifetime-policy
 
-        Sender sender = session.getProtonSession().sender(senderName);
+        Sender sender = session.getProtonSession().sender(senderLinkName);
         sender.setSource(source);
         sender.setTarget(target);
         sender.setSenderSettleMode(SenderSettleMode.UNSETTLED);

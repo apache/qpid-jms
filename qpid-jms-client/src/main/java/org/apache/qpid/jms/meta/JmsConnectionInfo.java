@@ -43,8 +43,8 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     public long requestTimeout = DEFAULT_REQUEST_TIMEOUT;
     public long connectTimeout = DEFAULT_CONNECT_TIMEOUT;
     public long closeTimeout = DEFAULT_CLOSE_TIMEOUT;
-    private String queuePrefix = "/queue/";//TODO: use null? It is defaulted/configured elsewhere to a different value.
-    private String topicPrefix = "/topic/";//TODO: use null? It is defaulted/configured elsewhere to a different value.
+    private String queuePrefix = null;
+    private String topicPrefix = null;
 
     public JmsConnectionInfo(JmsConnectionId connectionId) {
         if (connectionId == null) {

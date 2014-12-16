@@ -61,8 +61,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private boolean messagePrioritySupported = true;
     private String queuePrefix = "queue://";
     private String topicPrefix = "topic://";
-    private String tempQueuePrefix = "temp-queue://";
-    private String tempTopicPrefix = "temp-topic://";
     private long sendTimeout = JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
     private long requestTimeout = JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
@@ -429,32 +427,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     public void setQueuePrefix(String queuePrefix) {
         this.queuePrefix = queuePrefix;
-    }
-
-    /**
-     * Returns the prefix applied to Temporary Queues that are created by the client.
-     *
-     * @return the currently configured Temporary Queue prefix.
-     */
-    public String getTempQueuePrefix() {
-        return tempQueuePrefix;
-    }
-
-    public void setTempQueuePrefix(String tempQueuePrefix) {
-        this.tempQueuePrefix = tempQueuePrefix;
-    }
-
-    /**
-     * Returns the prefix applied to Temporary Topics that are created by the client.
-     *
-     * @return the currently configured Temporary Topic prefix.
-     */
-    public String getTempTopicPrefix() {
-        return tempTopicPrefix;
-    }
-
-    public void setTempTopicPrefix(String tempTopicPrefix) {
-        this.tempTopicPrefix = tempTopicPrefix;
     }
 
     /**

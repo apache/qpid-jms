@@ -43,10 +43,8 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     public long requestTimeout = DEFAULT_REQUEST_TIMEOUT;
     public long connectTimeout = DEFAULT_CONNECT_TIMEOUT;
     public long closeTimeout = DEFAULT_CLOSE_TIMEOUT;
-    private String queuePrefix = "/queue/";
-    private String topicPrefix = "/topic/";
-    private String tempQueuePrefix = "/temp-queue/";
-    private String tempTopicPrefix = "/temp-topic/";
+    private String queuePrefix = "/queue/";//TODO: use null? It is defaulted/configured elsewhere to a different value.
+    private String topicPrefix = "/topic/";//TODO: use null? It is defaulted/configured elsewhere to a different value.
 
     public JmsConnectionInfo(JmsConnectionId connectionId) {
         if (connectionId == null) {
@@ -75,8 +73,6 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         copy.closeTimeout = closeTimeout;
         copy.queuePrefix = queuePrefix;
         copy.topicPrefix = topicPrefix;
-        copy.tempQueuePrefix = tempQueuePrefix;
-        copy.tempTopicPrefix = tempTopicPrefix;
         copy.connectTimeout = connectTimeout;
     }
 
@@ -154,22 +150,6 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     public void setTopicPrefix(String topicPrefix) {
         this.topicPrefix = topicPrefix;
-    }
-
-    public String getTempQueuePrefix() {
-        return tempQueuePrefix;
-    }
-
-    public void setTempQueuePrefix(String tempQueuePrefix) {
-        this.tempQueuePrefix = tempQueuePrefix;
-    }
-
-    public String getTempTopicPrefix() {
-        return tempTopicPrefix;
-    }
-
-    public void setTempTopicPrefix(String tempTopicPrefix) {
-        this.tempTopicPrefix = tempTopicPrefix;
     }
 
     public long getCloseTimeout() {

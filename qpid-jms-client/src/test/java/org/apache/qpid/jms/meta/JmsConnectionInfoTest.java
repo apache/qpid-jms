@@ -71,8 +71,6 @@ public class JmsConnectionInfoTest {
         info.setQueuePrefix("queue");
         info.setRequestTimeout(50);
         info.setSendTimeout(150);
-        info.setTempQueuePrefix("tempQueue");
-        info.setTempTopicPrefix("tempTopic");
         info.setTopicPrefix("topic");
         info.setUsername("user");
         info.setWatchRemoteDestinations(false);
@@ -90,8 +88,6 @@ public class JmsConnectionInfoTest {
         assertEquals("queue", copy.getQueuePrefix());
         assertEquals(50, copy.getRequestTimeout());
         assertEquals(150, copy.getSendTimeout());
-        assertEquals("tempQueue", copy.getTempQueuePrefix());
-        assertEquals("tempTopic", copy.getTempTopicPrefix());
         assertEquals("topic", copy.getTopicPrefix());
         assertEquals("user", copy.getUsername());
         assertEquals(false, copy.isWatchRemoteDestinations());

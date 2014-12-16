@@ -84,16 +84,18 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestinatio
 
     @Override
     protected void doOpen() {
-
+        //TODO: debug what this is actually doing, then likely replace with a generated Source name.
         String sourceAddress = resource.getName();
+        String tempQueuePrefix = "temp-queue://";
         if (resource.isQueue()) {
-            sourceAddress = connection.getTempQueuePrefix() + sourceAddress;
+            sourceAddress = tempQueuePrefix + sourceAddress;
         } else {
             // TODO - AMQ doesn't support temp topics so we make everything a temp queue for now
-            sourceAddress = connection.getTempQueuePrefix() + sourceAddress;
+            sourceAddress = tempQueuePrefix + sourceAddress;
         }
         Source source = new Source();
         source.setAddress(sourceAddress);
+
         Target target = new Target();
         target.setDynamic(true);
         target.setDurable(TerminusDurability.NONE);

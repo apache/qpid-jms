@@ -839,22 +839,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         connectionInfo.setTopicPrefix(topicPrefix);
     }
 
-    public String getTempTopicPrefix() {
-        return connectionInfo.getTempTopicPrefix();
-    }
-
-    public void setTempTopicPrefix(String tempTopicPrefix) {
-        connectionInfo.setTempTopicPrefix(tempTopicPrefix);
-    }
-
-    public String getTempQueuePrefix() {
-        return connectionInfo.getTempQueuePrefix();
-    }
-
-    public void setTempQueuePrefix(String tempQueuePrefix) {
-        connectionInfo.setTempQueuePrefix(tempQueuePrefix);
-    }
-
     public String getQueuePrefix() {
         return connectionInfo.getQueuePrefix();
     }

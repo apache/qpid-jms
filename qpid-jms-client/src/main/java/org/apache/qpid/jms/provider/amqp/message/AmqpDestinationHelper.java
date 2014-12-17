@@ -47,6 +47,7 @@ public class AmqpDestinationHelper {
     static final String TOPIC_ATTRIBUTE = "topic";
     static final String TEMPORARY_ATTRIBUTE = "temporary";
 
+    // TODO - Can we move these to the test code as we don't write these anymore.
     public static final String QUEUE_ATTRIBUTES_STRING = QUEUE_ATTRIBUTE;
     public static final String TOPIC_ATTRIBUTES_STRING = TOPIC_ATTRIBUTE;
     public static final String TEMP_QUEUE_ATTRIBUTES_STRING = QUEUE_ATTRIBUTE + "," + TEMPORARY_ATTRIBUTE;

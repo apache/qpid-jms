@@ -54,8 +54,6 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
 
     private String queuePrefix;
     private String topicPrefix;
-    private String tempQueuePrefix;
-    private String tempTopicPrefix;
 
     private boolean objectMessageUsesAmqpTypes = false;
     private boolean anonymousProducerCache = false;
@@ -240,22 +238,6 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
 
     public void setTopicPrefix(String topicPrefix) {
         this.topicPrefix = topicPrefix;
-    }
-
-    public String getTempQueuePrefix() {
-        return tempQueuePrefix;
-    }
-
-    public void setTempQueuePrefix(String tempQueuePrefix) {
-        this.tempQueuePrefix = tempQueuePrefix;
-    }
-
-    public String getTempTopicPrefix() {
-        return tempTopicPrefix;
-    }
-
-    public void setTempTopicPrefix(String tempTopicPrefix) {
-        this.tempTopicPrefix = tempTopicPrefix;
     }
 
     /**

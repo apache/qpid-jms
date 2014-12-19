@@ -487,6 +487,8 @@ public class AmqpDestinationHelperTest {
         String testAddress = "testAddress";
         JmsDestination destination = new JmsQueue("testAddress");
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        AmqpConnection conn = Mockito.mock(AmqpConnection.class);
+        Mockito.when(message.getConnection()).thenReturn(conn);
 
         helper.setToAddressFromDestination(message, destination);
 
@@ -499,6 +501,8 @@ public class AmqpDestinationHelperTest {
         String testAddress = "testAddress";
         JmsDestination destination = new JmsTopic("testAddress");
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        AmqpConnection conn = Mockito.mock(AmqpConnection.class);
+        Mockito.when(message.getConnection()).thenReturn(conn);
 
         helper.setToAddressFromDestination(message, destination);
 
@@ -569,6 +573,8 @@ public class AmqpDestinationHelperTest {
         String testAddress = "testAddress";
         JmsDestination destination = new JmsQueue("testAddress");
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        AmqpConnection conn = Mockito.mock(AmqpConnection.class);
+        Mockito.when(message.getConnection()).thenReturn(conn);
 
         helper.setReplyToAddressFromDestination(message, destination);
 
@@ -581,6 +587,8 @@ public class AmqpDestinationHelperTest {
         String testAddress = "testAddress";
         JmsDestination destination = new JmsTopic("testAddress");
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
+        AmqpConnection conn = Mockito.mock(AmqpConnection.class);
+        Mockito.when(message.getConnection()).thenReturn(conn);
 
         helper.setReplyToAddressFromDestination(message, destination);
 

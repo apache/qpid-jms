@@ -150,7 +150,7 @@ public class AmqpDestinationHelper {
     }
 
     public void setToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
-        String address = destination != null ? destination.getName() : null;
+        String address = getDestinationAddress(destination, message.getConnection());
         Object typeValue = toTypeAnnotation(destination);
 
         message.setToAddress(address);
@@ -163,7 +163,7 @@ public class AmqpDestinationHelper {
     }
 
     public void setReplyToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
-        String replyToAddress = destination != null ? destination.getName() : null;
+        String replyToAddress = getDestinationAddress(destination, message.getConnection());
         Object typeValue = toTypeAnnotation(destination);
 
         message.setReplyToAddress(replyToAddress);
@@ -173,6 +173,33 @@ public class AmqpDestinationHelper {
         } else {
             message.setMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, typeValue);
         }
+    }
+
+    private String getDestinationAddress(JmsDestination destination, AmqpConnection conn) {
+        if (destination == null) {
+            return null;
+        }
+
+        final String name = destination.getName();
+
+        // Add prefix if necessary
+        if (!destination.isTemporary()) {
+            if (destination.isQueue()) {
+                String queuePrefix = conn.getQueuePrefix();
+                if (queuePrefix != null && !name.startsWith(queuePrefix)) {
+                    return queuePrefix + name;
+                }
+            }
+
+            if (destination.isTopic()) {
+                String topicPrefix = conn.getTopicPrefix();
+                if (topicPrefix != null && !name.startsWith(topicPrefix)) {
+                    return topicPrefix + name;
+                }
+            }
+        }
+
+        return name;
     }
 
     /**

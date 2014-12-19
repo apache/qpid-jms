@@ -34,7 +34,6 @@ import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.activemq.broker.jmx.TopicViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.util.StopWatch;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -73,13 +72,9 @@ public class JmsAnonymousProducerTest extends AmqpTestSupport {
         assertEquals(1, proxy.getQueueSize());
     }
 
-    @Ignore //TODO: enable this once destination type handling is fixed
     @Test(timeout = 60000)
     public void testAnonymousSendToTopic() throws Exception {
         connection = createAmqpConnection();
-        // Hack to check it works if we send the old annotation value the broker is currently aware of.
-        // AmqpProvider prov = (AmqpProvider) ((JmsConnection) connection).getProvider();
-        // prov.setUseByteDestinationTypeAnnotation(false);
         assertNotNull(connection);
         connection.start();
 

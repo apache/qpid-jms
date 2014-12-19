@@ -19,7 +19,6 @@ package org.apache.qpid.jms.provider.amqp;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -127,11 +126,11 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
 
         transport = createTransport(getRemoteURI());
 
-        Map<String, String> map = Collections.emptyMap();
+        Map<String, String> map = null;
         try {
             map = PropertyUtil.parseQuery(remoteURI.getQuery());
         } catch (Exception e) {
-            IOExceptionSupport.create(e);
+            throw IOExceptionSupport.create(e);
         }
         Map<String, String> providerOptions = PropertyUtil.filterProperties(map, "transport.");
 

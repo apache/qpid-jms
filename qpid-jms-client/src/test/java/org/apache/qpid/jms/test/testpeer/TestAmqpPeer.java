@@ -101,6 +101,7 @@ public class TestAmqpPeer implements AutoCloseable
     private CountDownLatch _handlersCompletedLatch;
 
     private volatile int _nextLinkHandle = LINK_HANDLE_OFFSET;
+    private volatile int _tempDestLinkHandle = LINK_HANDLE_OFFSET;
 
     private byte[] _deferredBytes;
 
@@ -445,7 +446,7 @@ public class TestAmqpPeer implements AutoCloseable
                 .withSource(notNullValue())
                 .withTarget(targetMatcher);
 
-        UnsignedInteger linkHandle = UnsignedInteger.valueOf(_nextLinkHandle++);
+        UnsignedInteger linkHandle = UnsignedInteger.valueOf(_tempDestLinkHandle++);
         final AttachFrame attachResponse = new AttachFrame()
                             .setHandle(linkHandle)
                             .setRole(Role.RECEIVER)

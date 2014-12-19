@@ -24,6 +24,7 @@ import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsTemporaryQueue;
 import org.apache.qpid.jms.JmsTemporaryTopic;
 import org.apache.qpid.jms.JmsTopic;
+import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 
 /**
  * A set of static utility method useful when mapping JmsDestination types to / from the AMQP
@@ -69,15 +70,47 @@ public class AmqpDestinationHelper {
     public JmsDestination getJmsDestination(AmqpJmsMessageFacade message, JmsDestination consumerDestination) {
         String to = message.getToAddress();
         Byte typeByte = getTypeByte(message, TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        String name = stripPrefixIfNecessary(to, message.getConnection(), typeByte, consumerDestination);
 
-        return createDestination(to, typeByte, consumerDestination, false);
+        return createDestination(name, typeByte, consumerDestination, false);
     }
 
     public JmsDestination getJmsReplyTo(AmqpJmsMessageFacade message, JmsDestination consumerDestination) {
         String replyTo = message.getReplyToAddress();
         Byte typeByte = getTypeByte(message, REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        String name = stripPrefixIfNecessary(replyTo, message.getConnection(), typeByte, consumerDestination);
 
-        return createDestination(replyTo, typeByte, consumerDestination, true);
+        return createDestination(name, typeByte, consumerDestination, true);
+    }
+
+    private String stripPrefixIfNecessary(String address, AmqpConnection conn, Byte typeByte, JmsDestination consumerDestination) {
+        if (address == null) {
+            return null;
+        }
+
+        if (typeByte == null) {
+            String queuePrefix = conn.getQueuePrefix();
+            if (queuePrefix != null && address.startsWith(queuePrefix)) {
+                return address.substring(queuePrefix.length());
+            }
+
+            String topicPrefix = conn.getTopicPrefix();
+            if (topicPrefix != null && address.startsWith(topicPrefix)) {
+                return address.substring(topicPrefix.length());
+            }
+        } else if (typeByte == QUEUE_TYPE) {
+            String queuePrefix = conn.getQueuePrefix();
+            if (queuePrefix != null && address.startsWith(queuePrefix)) {
+                return address.substring(queuePrefix.length());
+            }
+        } else if (typeByte == TOPIC_TYPE) {
+            String topicPrefix = conn.getTopicPrefix();
+            if (topicPrefix != null && address.startsWith(topicPrefix)) {
+                return address.substring(topicPrefix.length());
+            }
+        }
+
+        return address;
     }
 
     private JmsDestination createDestination(String address, Byte typeByte, JmsDestination consumerDestination, boolean useConsumerDestForTypeOnly) {

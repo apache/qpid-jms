@@ -19,6 +19,7 @@
 package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -37,9 +38,12 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
+import javax.jms.TemporaryQueue;
+import javax.jms.TemporaryTopic;
 import javax.jms.Topic;
 
 import org.apache.qpid.jms.JmsClientProperties;
+import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageIdHelper;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
@@ -49,6 +53,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescri
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.ApplicationPropertiesDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.MessageAnnotationsDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescribedType;
+import org.apache.qpid.jms.test.testpeer.matchers.SourceMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.ApplicationPropertiesSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
@@ -265,6 +270,246 @@ public class MessageIntegrationTest extends QpidJmsTestCase
                 assertNotNull("expected Topic instance, got null", dest);
                 assertTrue("expected Topic instance. Actual type was: " + dest.getClass().getName(), dest instanceof Topic);
                 assertEquals(topicName, ((Topic) dest).getTopicName());
+            }
+        }
+    }
+
+    /**
+     * Tests that the a connection with a 'topic prefix' set on it strips the
+     * prefix from the content of the to/reply-to fields for incoming messages.
+     */
+    @Test(timeout = 2000)
+    public void testReceivedMessageWithTopicDestinationsOnConnectionWithTopicPrefix() throws Exception {
+        Class<? extends Destination> destType = Topic.class;
+        String destPrefix = "t12321-";
+        String destName = "myTopic";
+        String replyName = "myReplyTopic";
+        String destAddress = destPrefix + destName;
+        String replyAddress = destPrefix + replyName;
+        String annotationName = AmqpMessageSupport.AMQP_TO_ANNOTATION;
+        Byte annotationValue = AmqpDestinationHelper.TOPIC_TYPE;
+        String replyAnnotationName = AmqpMessageSupport.AMQP_REPLY_TO_ANNOTATION;
+        Byte replyAnnotationValue = AmqpDestinationHelper.TOPIC_TYPE;
+
+        doReceivedMessageOnConnectionWithPrefixTestImpl(destType, destPrefix, destName, replyName,
+                                                        destAddress, replyAddress, annotationName,
+                                                        annotationValue, replyAnnotationName, replyAnnotationValue);
+    }
+
+    /**
+     * Tests that the a connection with a 'topic prefix' set on it strips the
+     * prefix from the content of the to/reply-to fields for incoming messages
+     * if they don't have the 'destination type annotation' set.
+     */
+    @Test(timeout = 2000)
+    public void testReceivedMessageWithNoTypeAnnotationAndTopicDestinationsOnConnectionWithTopicPrefix() throws Exception {
+        Class<? extends Destination> destType = Topic.class;
+        String destPrefix = "t12321-";
+        String destName = "myTopic";
+        String replyName = "myReplyTopic";
+        String destAddress = destPrefix + destName;
+        String replyAddress = destPrefix + replyName;
+        String annotationName = null;
+        Byte annotationValue = null;
+        String replyAnnotationName = null;
+        Byte replyAnnotationValue = null;
+
+        doReceivedMessageOnConnectionWithPrefixTestImpl(destType, destPrefix, destName, replyName,
+                                                        destAddress, replyAddress, annotationName,
+                                                        annotationValue, replyAnnotationName, replyAnnotationValue);
+    }
+
+    /**
+     * Tests that the a connection with a 'queue prefix' set on it strips the
+     * prefix from the content of the to/reply-to fields for incoming messages.
+     */
+    @Test(timeout = 2000)
+    public void testReceivedMessageWithQueueDestinationsOnConnectionWithQueuePrefix() throws Exception {
+        Class<? extends Destination> destType = Queue.class;
+        String destPrefix = "q12321-";
+        String destName = "myQueue";
+        String replyName = "myReplyQueue";
+        String destAddress = destPrefix + destName;
+        String replyAddress = destPrefix + replyName;
+        String annotationName = AmqpMessageSupport.AMQP_TO_ANNOTATION;
+        Byte annotationValue = AmqpDestinationHelper.QUEUE_TYPE;
+        String replyAnnotationName = AmqpMessageSupport.AMQP_REPLY_TO_ANNOTATION;
+        Byte replyAnnotationValue = AmqpDestinationHelper.QUEUE_TYPE;
+
+        doReceivedMessageOnConnectionWithPrefixTestImpl(destType, destPrefix, destName, replyName,
+                                                        destAddress, replyAddress, annotationName,
+                                                        annotationValue, replyAnnotationName, replyAnnotationValue);
+    }
+
+    /**
+     * Tests that the a connection with a 'queue prefix' set on it strips the
+     * prefix from the content of the to/reply-to fields for incoming messages
+     * if they don't have the 'destination type annotation' set.
+     */
+    @Test(timeout = 2000)
+    public void testReceivedMessageWithNoTypeAnnotationAndQueueDestinationsOnConnectionWithQueuePrefix() throws Exception {
+        Class<? extends Destination> destType = Queue.class;
+        String destPrefix = "q12321-";
+        String destName = "myQueue";
+        String replyName = "myReplyQueue";
+        String destAddress = destPrefix + destName;
+        String replyAddress = destPrefix + replyName;
+        String annotationName = null;
+        Byte annotationValue = null;
+        String replyAnnotationName = null;
+        Byte replyAnnotationValue = null;
+
+        doReceivedMessageOnConnectionWithPrefixTestImpl(destType, destPrefix, destName, replyName,
+                                                        destAddress, replyAddress, annotationName,
+                                                        annotationValue, replyAnnotationName, replyAnnotationValue);
+    }
+
+    /**
+     * Tests that a connection with a 'prefixes' set on its does not alter the
+     * address for a temporary queue in the to/reply-to fields for incoming messages.
+     */
+    @Test(timeout = 2000)
+    public void testReceivedMessageWithTemporaryQueueDestinationsOnConnectionWithPrefixes() throws Exception {
+        Class<? extends Destination> destType = TemporaryQueue.class;
+        String destPrefix = "q12321-";
+        String destName = "temp-queue://myTempQueue";
+        String replyName = "temp-queue://myReplyTempQueue";
+        String destAddress = destName; // We won't manipulate the temporary addresses generated by the broker
+        String replyAddress = replyName; // We won't manipulate the temporary addresses generated by the broker
+        String annotationName = AmqpMessageSupport.AMQP_TO_ANNOTATION;
+        Byte annotationValue = AmqpDestinationHelper.TEMP_QUEUE_TYPE;
+        String replyAnnotationName = AmqpMessageSupport.AMQP_REPLY_TO_ANNOTATION;
+        Byte replyAnnotationValue = AmqpDestinationHelper.TEMP_QUEUE_TYPE;
+
+        doReceivedMessageOnConnectionWithPrefixTestImpl(destType, destPrefix, destName, replyName,
+                                                        destAddress, replyAddress, annotationName,
+                                                        annotationValue, replyAnnotationName, replyAnnotationValue);
+    }
+
+    /**
+     * Tests that a connection with a 'prefixes' set on its does not alter the
+     * address for a temporary queue in the to/reply-to fields for incoming messages.
+     */
+    @Test(timeout = 2000)
+    public void testReceivedMessageWithTemporaryTopicDestinationsOnConnectionWithPrefixes() throws Exception {
+        Class<? extends Destination> destType = TemporaryTopic.class;
+        String destPrefix = "q12321-";
+        String destName = "temp-topic://myTempTopic";
+        String replyName = "temp-topic://myReplyTempTopic";
+        String destAddress = destName; // We won't manipulate the temporary addresses generated by the broker
+        String replyAddress = replyName; // We won't manipulate the temporary addresses generated by the broker
+        String annotationName = AmqpMessageSupport.AMQP_TO_ANNOTATION;
+        Byte annotationValue = AmqpDestinationHelper.TEMP_TOPIC_TYPE;
+        String replyAnnotationName = AmqpMessageSupport.AMQP_REPLY_TO_ANNOTATION;
+        Byte replyAnnotationValue = AmqpDestinationHelper.TEMP_TOPIC_TYPE;
+
+        doReceivedMessageOnConnectionWithPrefixTestImpl(destType, destPrefix, destName, replyName,
+                                                        destAddress, replyAddress, annotationName,
+                                                        annotationValue, replyAnnotationName, replyAnnotationValue);
+    }
+
+    private void doReceivedMessageOnConnectionWithPrefixTestImpl(Class<? extends Destination> destType,
+                                                                 String destPrefix,
+                                                                 String destName,
+                                                                 String replyName,
+                                                                 String destAddress,
+                                                                 String replyAddress,
+                                                                 String annotationName,
+                                                                 Object annotationValue,
+                                                                 String replyAnnotationName,
+                                                                 Object replyAnnotationValue) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = null;
+            if (destType == Topic.class) {
+                connection = testFixture.establishConnecton(testPeer, "?jms.topicPrefix=" + destPrefix);
+            } else if (destType == Queue.class) {
+                connection = testFixture.establishConnecton(testPeer, "?jms.queuePrefix=" + destPrefix);
+            } else {
+                //Set both the non-temporary prefixes, we wont use non-temp dests but want to ensure they don't affect anything
+                connection = testFixture.establishConnecton(testPeer, "?jms.topicPrefix=" + destPrefix + "&jms.queuePrefix=" + destPrefix);
+            }
+
+            connection.start();
+
+            // Set the prefix if Topic or Queue dest type.
+            if (destType == Topic.class) {
+                ((JmsConnection) connection).setTopicPrefix(destPrefix);
+            } else if (destType == Queue.class) {
+                ((JmsConnection) connection).setQueuePrefix(destPrefix);
+            }
+
+            testPeer.expectBegin(true);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            // Create the destination
+            Destination dest = null;
+            if (destType == Topic.class) {
+                dest= session.createTopic(destName);
+            } else if (destType == Queue.class) {
+                dest = session.createQueue(destName);
+            } else if (destType == TemporaryTopic.class) {
+                //TODO:add method to expect temp topic creation
+                testPeer.expectTempQueueCreationAttach(destAddress);
+                dest = session.createTemporaryTopic();
+            } else if (destType == TemporaryQueue.class) {
+                testPeer.expectTempQueueCreationAttach(destAddress);
+                dest = session.createTemporaryQueue();
+            }
+
+            MessageAnnotationsDescribedType msgAnnotations = null;
+            if (annotationName != null || replyAnnotationName != null) {
+                msgAnnotations = new MessageAnnotationsDescribedType();
+                if (annotationName != null) {
+                    msgAnnotations.setSymbolKeyedAnnotation(annotationName, annotationValue);
+                }
+
+                if (replyAnnotationName != null) {
+                    msgAnnotations.setSymbolKeyedAnnotation(replyAnnotationName, replyAnnotationValue);
+                }
+            }
+
+            PropertiesDescribedType props = new PropertiesDescribedType();
+            props.setTo(destAddress);
+            props.setReplyTo(replyAddress);
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+            SourceMatcher sourceMatcher = new SourceMatcher();
+            sourceMatcher.withAddress(equalTo(destAddress));
+
+            testPeer.expectReceiverAttach(notNullValue(), sourceMatcher);
+            testPeer.expectLinkFlowRespondWithTransfer(null, msgAnnotations, props, null, amqpValueNullContent);
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(dest);
+            Message receivedMessage = messageConsumer.receive(1000);
+
+            testPeer.waitForAllHandlersToComplete(2000);
+            assertNotNull(receivedMessage);
+
+            Destination jmsDest = receivedMessage.getJMSDestination();
+            Destination jmsReplyTo = receivedMessage.getJMSReplyTo();
+
+            assertNotNull("Expected JMSDestination but got null", jmsDest);
+            assertNotNull("Expected JMSReplyTo but got null", jmsReplyTo);
+
+            // Verify destination/replyto names on received message
+            String recievedName = null;
+            String recievedReplyName = null;
+            if (destType == Topic.class || destType == TemporaryTopic.class) {
+                recievedName = ((Topic) jmsDest).getTopicName();
+                recievedReplyName = ((Topic) jmsReplyTo).getTopicName();
+            } else if (destType == Queue.class || destType == TemporaryQueue.class) {
+                recievedName = ((Queue) jmsDest).getQueueName();
+                recievedReplyName = ((Queue) jmsReplyTo).getQueueName();
+            }
+
+            assertEquals("Unexpected name for JMSDestination", destName, recievedName);
+            assertEquals("Unexpected name for JMSReplyTo", replyName, recievedReplyName);
+
+            if (destType == TemporaryQueue.class || destType == TemporaryTopic.class) {
+                assertEquals("Temporary destination name and address should be equal", destName, destAddress);
+                assertEquals("Temporary replyto name and address should be equal", replyName, replyAddress);
             }
         }
     }

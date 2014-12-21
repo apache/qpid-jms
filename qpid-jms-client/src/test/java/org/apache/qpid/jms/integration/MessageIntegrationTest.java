@@ -752,7 +752,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Queue queue = session.createQueue("myQueue");
 
             MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
-            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.AMQP_TO_ANNOTATION, AmqpDestinationHelper.TOPIC_ATTRIBUTES_STRING);
+            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.AMQP_TO_ANNOTATION, AmqpDestinationHelper.TOPIC_ATTRIBUTE);
 
             PropertiesDescribedType props = new PropertiesDescribedType();
             String myTopicAddress = "myTopicAddress";
@@ -794,7 +794,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Queue queue = session.createQueue("myQueue");
 
             MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
-            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.AMQP_REPLY_TO_ANNOTATION, AmqpDestinationHelper.TOPIC_ATTRIBUTES_STRING);
+            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.AMQP_REPLY_TO_ANNOTATION, AmqpDestinationHelper.TOPIC_ATTRIBUTE);
 
             PropertiesDescribedType props = new PropertiesDescribedType();
             String myTopicAddress = "myTopicAddress";

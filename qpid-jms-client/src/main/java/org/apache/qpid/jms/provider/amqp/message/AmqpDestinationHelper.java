@@ -44,15 +44,9 @@ public class AmqpDestinationHelper {
     public static final byte TEMP_TOPIC_TYPE = 0x03;
 
     // For support of old string type values
-    static final String QUEUE_ATTRIBUTE = "queue";
-    static final String TOPIC_ATTRIBUTE = "topic";
-    static final String TEMPORARY_ATTRIBUTE = "temporary";
-
-    // TODO - Can we move these to the test code as we don't write these anymore.
-    public static final String QUEUE_ATTRIBUTES_STRING = QUEUE_ATTRIBUTE;
-    public static final String TOPIC_ATTRIBUTES_STRING = TOPIC_ATTRIBUTE;
-    public static final String TEMP_QUEUE_ATTRIBUTES_STRING = QUEUE_ATTRIBUTE + "," + TEMPORARY_ATTRIBUTE;
-    public static final String TEMP_TOPIC_ATTRIBUTES_STRING = TOPIC_ATTRIBUTE + "," + TEMPORARY_ATTRIBUTE;
+    public static final String QUEUE_ATTRIBUTE = "queue";
+    public static final String TOPIC_ATTRIBUTE = "topic";
+    public static final String TEMPORARY_ATTRIBUTE = "temporary";
 
     /**
      * Decode the provided To address, type description, and consumer destination

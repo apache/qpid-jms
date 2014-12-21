@@ -16,14 +16,13 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
-import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.QUEUE_ATTRIBUTE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.QUEUE_TYPE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TEMP_QUEUE_ATTRIBUTES_STRING;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TEMPORARY_ATTRIBUTE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TEMP_QUEUE_TYPE;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TEMP_TOPIC_ATTRIBUTES_STRING;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TEMP_TOPIC_TYPE;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TOPIC_ATTRIBUTES_STRING;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TOPIC_ATTRIBUTE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TOPIC_TYPE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
 import static org.junit.Assert.assertEquals;
@@ -46,6 +45,8 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 public class AmqpDestinationHelperTest {
+    public static final String TEMP_QUEUE_ATTRIBUTES_STRING = QUEUE_ATTRIBUTE + "," + TEMPORARY_ATTRIBUTE;
+    public static final String TEMP_TOPIC_ATTRIBUTES_STRING = TOPIC_ATTRIBUTE + "," + TEMPORARY_ATTRIBUTE;
 
     private final AmqpDestinationHelper helper = AmqpDestinationHelper.INSTANCE;
 
@@ -56,7 +57,7 @@ public class AmqpDestinationHelperTest {
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
         Mockito.when(message.getToAddress()).thenReturn(null);
         Mockito.when(message.getMessageAnnotation(
-            TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTES_STRING);
+            TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTE);
 
         assertNull(helper.getJmsDestination(message, null));
     }
@@ -66,7 +67,7 @@ public class AmqpDestinationHelperTest {
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
         Mockito.when(message.getToAddress()).thenReturn(null);
         Mockito.when(message.getMessageAnnotation(
-            TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTES_STRING);
+            TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTE);
 
         JmsDestination consumerDestination = new JmsQueue("ConsumerDestination");
         assertSame(consumerDestination, helper.getJmsDestination(message, consumerDestination));
@@ -203,7 +204,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTES_STRING);
+        Mockito.when(message.getMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTE);
 
         JmsDestination destination = helper.getJmsDestination(message, null);
         assertNotNull(destination);
@@ -219,7 +220,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TOPIC_ATTRIBUTES_STRING);
+        Mockito.when(message.getMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TOPIC_ATTRIBUTE);
 
         JmsDestination destination = helper.getJmsDestination(message, null);
         assertNotNull(destination);
@@ -263,7 +264,7 @@ public class AmqpDestinationHelperTest {
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
         Mockito.when(message.getReplyToAddress()).thenReturn(null);
         Mockito.when(message.getMessageAnnotation(
-            REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTES_STRING);
+            REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTE);
 
         assertNull(helper.getJmsDestination(message, null));
     }
@@ -273,7 +274,7 @@ public class AmqpDestinationHelperTest {
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
         Mockito.when(message.getReplyToAddress()).thenReturn(null);
         Mockito.when(message.getMessageAnnotation(
-            REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTES_STRING);
+            REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTE);
         JmsQueue consumerDestination = new JmsQueue("ConsumerDestination");
 
         assertNull(helper.getJmsReplyTo(message, consumerDestination));
@@ -408,7 +409,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTES_STRING);
+        Mockito.when(message.getMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTE);
 
         JmsDestination destination = helper.getJmsReplyTo(message, null);
         assertNotNull(destination);
@@ -424,7 +425,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TOPIC_ATTRIBUTES_STRING);
+        Mockito.when(message.getMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TOPIC_ATTRIBUTE);
 
         JmsDestination destination = helper.getJmsReplyTo(message, null);
         assertNotNull(destination);
@@ -646,27 +647,27 @@ public class AmqpDestinationHelperTest {
         assertNull(helper.splitAttributesString(null));
 
         // test a single comma separator produces expected set
-        assertEquals(set, helper.splitAttributesString(AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING + "," +
+        assertEquals(set, helper.splitAttributesString(QUEUE_ATTRIBUTE + "," +
                                                  AmqpDestinationHelper.TEMPORARY_ATTRIBUTE));
 
         // test trailing comma doesn't alter produced set
-        assertEquals(set, helper.splitAttributesString(AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING + "," +
+        assertEquals(set, helper.splitAttributesString(QUEUE_ATTRIBUTE + "," +
                                                  AmqpDestinationHelper.TEMPORARY_ATTRIBUTE + ","));
 
         // test leading comma doesn't alter produced set
-        assertEquals(set, helper.splitAttributesString("," + AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING + ","
+        assertEquals(set, helper.splitAttributesString("," + QUEUE_ATTRIBUTE + ","
                                                      + AmqpDestinationHelper.TEMPORARY_ATTRIBUTE));
 
         // test consecutive central commas don't alter produced set
-        assertEquals(set, helper.splitAttributesString(AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING + ",," +
+        assertEquals(set, helper.splitAttributesString(QUEUE_ATTRIBUTE + ",," +
                                                  AmqpDestinationHelper.TEMPORARY_ATTRIBUTE));
 
         // test consecutive trailing commas don't alter produced set
-        assertEquals(set, helper.splitAttributesString(AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING + "," +
+        assertEquals(set, helper.splitAttributesString(QUEUE_ATTRIBUTE + "," +
                                                  AmqpDestinationHelper.TEMPORARY_ATTRIBUTE + ",,"));
 
         // test consecutive leading commas don't alter produced set
-        assertEquals(set, helper.splitAttributesString("," + AmqpDestinationHelper.QUEUE_ATTRIBUTES_STRING + ","
+        assertEquals(set, helper.splitAttributesString("," + QUEUE_ATTRIBUTE + ","
                                                      + AmqpDestinationHelper.TEMPORARY_ATTRIBUTE));
     }
 }

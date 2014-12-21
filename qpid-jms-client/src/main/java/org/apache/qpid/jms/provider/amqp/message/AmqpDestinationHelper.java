@@ -31,19 +31,19 @@ import org.apache.qpid.jms.provider.amqp.AmqpConnection;
  * destination fields in a Message that's being sent or received.
  */
 public class AmqpDestinationHelper {
-
     public static final AmqpDestinationHelper INSTANCE = new AmqpDestinationHelper();
 
-    public static final String TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-to-type";
-    public static final String REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-reply-type";
-
     // For support of current byte type values
+    public static final String JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-jms-dest";
+    public static final String JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-jms-reply-to";
     public static final byte QUEUE_TYPE = 0x00;
     public static final byte TOPIC_TYPE = 0x01;
     public static final byte TEMP_QUEUE_TYPE = 0x02;
     public static final byte TEMP_TOPIC_TYPE = 0x03;
 
     // For support of old string type values
+    public static final String TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-to-type";
+    public static final String REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-reply-type";
     public static final String QUEUE_ATTRIBUTE = "queue";
     public static final String TOPIC_ATTRIBUTE = "topic";
     public static final String TEMPORARY_ATTRIBUTE = "temporary";
@@ -63,7 +63,12 @@ public class AmqpDestinationHelper {
      */
     public JmsDestination getJmsDestination(AmqpJmsMessageFacade message, JmsDestination consumerDestination) {
         String to = message.getToAddress();
-        Byte typeByte = getTypeByte(message, TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        Byte typeByte = getTypeByte(message, JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        if (typeByte == null) {
+            // Try the legacy string type annotation
+            typeByte = getTypeByte(message, TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        }
+
         String name = stripPrefixIfNecessary(to, message.getConnection(), typeByte, consumerDestination);
 
         return createDestination(name, typeByte, consumerDestination, false);
@@ -71,7 +76,12 @@ public class AmqpDestinationHelper {
 
     public JmsDestination getJmsReplyTo(AmqpJmsMessageFacade message, JmsDestination consumerDestination) {
         String replyTo = message.getReplyToAddress();
-        Byte typeByte = getTypeByte(message, REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        Byte typeByte = getTypeByte(message, JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        if (typeByte == null) {
+            // Try the legacy string type annotation
+            typeByte = getTypeByte(message, REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        }
+
         String name = stripPrefixIfNecessary(replyTo, message.getConnection(), typeByte, consumerDestination);
 
         return createDestination(name, typeByte, consumerDestination, true);

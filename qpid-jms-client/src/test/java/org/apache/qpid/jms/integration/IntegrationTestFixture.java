@@ -20,6 +20,8 @@ package org.apache.qpid.jms.integration;
 
 import static org.junit.Assert.assertNull;
 
+import java.util.Map;
+
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
@@ -32,19 +34,23 @@ public class IntegrationTestFixture {
     static final int PORT = 25672;
 
     Connection establishConnecton(TestAmqpPeer testPeer) throws JMSException {
-        return establishConnecton(testPeer, null, null);
+        return establishConnecton(testPeer, null, null, null);
     }
 
     Connection establishConnecton(TestAmqpPeer testPeer, String optionsString) throws JMSException {
-        return establishConnecton(testPeer, optionsString, null);
+        return establishConnecton(testPeer, optionsString, null, null);
     }
 
     Connection establishConnecton(TestAmqpPeer testPeer, Symbol[] serverCapabilities) throws JMSException {
-        return establishConnecton(testPeer, null, serverCapabilities);
+        return establishConnecton(testPeer, null, serverCapabilities, null);
     }
 
-    Connection establishConnecton(TestAmqpPeer testPeer, String optionsString, Symbol[] serverCapabilities) throws JMSException {
-        testPeer.expectPlainConnect("guest", "guest", serverCapabilities);
+    Connection establishConnecton(TestAmqpPeer testPeer, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties) throws JMSException {
+        return establishConnecton(testPeer, null, serverCapabilities, serverProperties);
+    }
+
+    Connection establishConnecton(TestAmqpPeer testPeer, String optionsString, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties) throws JMSException {
+        testPeer.expectPlainConnect("guest", "guest", serverCapabilities, serverProperties);
 
         // Each connection creates a session for managing temporary destinations etc
         testPeer.expectBegin(true);

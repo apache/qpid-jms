@@ -27,6 +27,7 @@ import static org.hamcrest.Matchers.nullValue;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -315,7 +316,7 @@ public class TestAmqpPeer implements AutoCloseable
                     null)));
     }
 
-    public void expectPlainConnect(String username, String password, Symbol[] serverCapabilities)
+    public void expectPlainConnect(String username, String password, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties)
     {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(Symbol.valueOf("PLAIN"));
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
@@ -353,6 +354,11 @@ public class TestAmqpPeer implements AutoCloseable
         if(serverCapabilities != null)
         {
             open.setOfferedCapabilities(serverCapabilities);
+        }
+
+        if(serverProperties != null)
+        {
+            open.setProperties(serverProperties);
         }
 
         addHandler(new OpenMatcher()

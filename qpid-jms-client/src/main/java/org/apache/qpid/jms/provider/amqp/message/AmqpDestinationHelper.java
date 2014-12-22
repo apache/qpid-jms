@@ -160,10 +160,13 @@ public class AmqpDestinationHelper {
         message.setToAddress(address);
 
         if (address == null || typeValue == null) {
-            message.removeMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+            message.removeMessageAnnotation(JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         } else {
-            message.setMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, typeValue);
+            message.setMessageAnnotation(JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME, typeValue);
         }
+
+        // Always clear the legacy string type annotation
+        message.removeMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
     }
 
     public void setReplyToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
@@ -173,10 +176,13 @@ public class AmqpDestinationHelper {
         message.setReplyToAddress(replyToAddress);
 
         if (replyToAddress == null || typeValue == null) {
-            message.removeMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+            message.removeMessageAnnotation(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         } else {
-            message.setMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, typeValue);
+            message.setMessageAnnotation(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, typeValue);
         }
+
+        // Always clear the legacy string type annotation
+        message.removeMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
     }
 
     private String getDestinationAddress(JmsDestination destination, AmqpConnection conn) {

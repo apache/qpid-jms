@@ -28,22 +28,6 @@ import org.apache.qpid.proton.message.Message;
 public final class AmqpMessageSupport {
 
     /**
-     * The Annotation name to store the destination name that the Message
-     * will be sent to.  The Message should also be tagged with the appropriate
-     * destination attribute to allow the receiver to determine the correct
-     * destination type.
-     */
-    public static final String AMQP_TO_ANNOTATION = "x-opt-to-type";
-
-    /**
-     * The Annotation name to store the destination name that the sender wants
-     * to receive replies on.  The Message should also be tagged with the
-     * appropriate destination attribute to allow the receiver to determine the
-     * correct destination type.
-     */
-    public static final String AMQP_REPLY_TO_ANNOTATION = "x-opt-reply-type";
-
-    /**
      * Attribute used to mark the Application defined correlation Id that has been
      * set for the message.
      */

@@ -215,33 +215,6 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> {
     }
 
     /**
-     * Adds Topic or Queue qualifiers to the destination target.  We don't add qualifiers to
-     * Temporary Topics and Queues since AMQP works a bit differently.
-     *
-     * @param destination
-     *        The destination to Qualify.
-     *
-     * @return the qualified destination name.
-     */
-    public String getQualifiedName(JmsDestination destination) {
-        if (destination == null) {
-            return null;
-        }
-
-        String result = destination.getName();
-
-        if (!destination.isTemporary()) {
-            if (destination.isTopic()) {
-                result = connection.getTopicPrefix() + destination.getName();
-            } else {
-                result = connection.getQueuePrefix() + destination.getName();
-            }
-        }
-
-        return result;
-    }
-
-    /**
      * Query the Session to see if there are any registered consumer instances that have
      * a durable subscription with the given subscription name.
      *

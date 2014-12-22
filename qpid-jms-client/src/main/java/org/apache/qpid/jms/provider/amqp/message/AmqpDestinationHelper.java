@@ -185,7 +185,7 @@ public class AmqpDestinationHelper {
         message.removeMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
     }
 
-    private String getDestinationAddress(JmsDestination destination, AmqpConnection conn) {
+    public String getDestinationAddress(JmsDestination destination, AmqpConnection conn) {
         if (destination == null) {
             return null;
         }

@@ -35,6 +35,7 @@ import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderListener;
+import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageBuilder;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.Binary;
@@ -138,7 +139,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     @Override
     protected void doOpen() {
         JmsDestination destination  = resource.getDestination();
-        String subscription = session.getQualifiedName(destination);
+        String subscription = AmqpDestinationHelper.INSTANCE.getDestinationAddress(destination, session.getConnection());
 
         Source source = new Source();
         source.setAddress(subscription);

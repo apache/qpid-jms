@@ -20,7 +20,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class used to examine the capabilities and connection properties of the
@@ -29,23 +32,36 @@ import org.apache.qpid.proton.amqp.Symbol;
  */
 public class AmqpConnectionProperties {
 
+    private static final Logger LOG = LoggerFactory.getLogger(AmqpConnectionProperties.class);
+
     public static final Symbol ANONYMOUS_RELAY = Symbol.valueOf("ANONYMOUS-RELAY");
     public static final Symbol QUEUE_PREFIX = Symbol.valueOf("queue-prefix");
     public static final Symbol TOPIC_PREFIX = Symbol.valueOf("topic-prefix");
 
+    private final JmsConnectionInfo connectionInfo;
+
     private boolean anonymousRelaySupported = false;
-    private String queuePrefix = null;
-    private String topicPrefix = null;
 
     /**
-     * Creates a new instance of this class from the given remote capabilities and properties.
+     * Creates a new instance of this class with default values read from the
+     * given JmsConnectionInfo object.
+     *
+     * @param connectionInfo
+     *        the JmsConnectionInfo object used to populate defaults.
+     */
+    public AmqpConnectionProperties(JmsConnectionInfo connectionInfo) {
+        this.connectionInfo = connectionInfo;
+    }
+
+    /**
+     * Configure the properties using values provided from the remote peer.
      *
      * @param capabilities
      *        the capabilities offered by the remote connection.
      * @param properties
      *        the properties offered by the remote connection.
      */
-    public AmqpConnectionProperties(Symbol[] capabilities, Map<Symbol, Object> properties) {
+    public void initialize(Symbol[] capabilities, Map<Symbol, Object> properties) {
         if (capabilities != null) {
             processCapabilities(capabilities);
         }
@@ -68,29 +84,70 @@ public class AmqpConnectionProperties {
         if (properties.containsKey(QUEUE_PREFIX)) {
             Object o = properties.get(QUEUE_PREFIX);
             if (o instanceof String) {
-                queuePrefix = (String) o;
+                LOG.trace("Remote sent Queue prefix value of: {}", o);
+                connectionInfo.setQueuePrefix((String) o);
             }
         }
 
         if (properties.containsKey(TOPIC_PREFIX)) {
             Object o = properties.get(TOPIC_PREFIX);
             if (o instanceof String) {
-                topicPrefix = (String) o;
+                LOG.trace("Remote sent Topic prefix value of: {}", o);
+                connectionInfo.setTopicPrefix((String) o);
             }
         }
 
         // TODO - Inspect properties for any other configuration options
     }
 
+    /**
+     * @return true if the connection supports sending to an anonymous relay.
+     */
     public boolean isAnonymousRelaySupported() {
         return anonymousRelaySupported;
     }
 
-    public String getQueuePrefix() {
-        return queuePrefix;
+    /**
+     * Sets if the connection supports sending to an anonymous relay link.
+     *
+     * @param anonymousRelaySupported
+     *        true if anonymous relay link is supported.
+     */
+    public void setAnonymousRelaySupported(boolean anonymousRelaySupported) {
+        this.anonymousRelaySupported = anonymousRelaySupported;
     }
 
+    /**
+     * @return the prefix value used to decorate Queue address values.
+     */
+    public String getQueuePrefix() {
+        return connectionInfo.getQueuePrefix();
+    }
+
+    /**
+     * Sets the prefix value used to decorate Queue address values.
+     *
+     * @param queuePrefix
+     *        the current queue address prefix.
+     */
+    public void setQueuePrefix(String queuePrefix) {
+        connectionInfo.setQueuePrefix(queuePrefix);
+    }
+
+    /**
+     * @return the prefix value used to decorate Topic address values.
+     */
     public String getTopicPrefix() {
-        return topicPrefix;
+        return connectionInfo.getTopicPrefix();
+    }
+
+    /**
+     * Sets the prefix value used to decorate Topic address values.
+     *
+     * @param topicPrefix
+     *        the current topic address prefix.
+     */
+    public void setTopicPrefix(String topicPrefix) {
+        connectionInfo.setTopicPrefix(topicPrefix);
     }
 }

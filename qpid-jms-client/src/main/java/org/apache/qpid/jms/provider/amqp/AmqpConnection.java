@@ -50,10 +50,7 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     private boolean connected;
     private AmqpSaslAuthenticator authenticator;
     private final AmqpConnectionSession connectionSession;
-    private AmqpConnectionProperties properties;
-
-    private String queuePrefix;
-    private String topicPrefix;
+    private final AmqpConnectionProperties properties;
 
     private boolean objectMessageUsesAmqpTypes = false;
     private boolean anonymousProducerCache = false;
@@ -72,8 +69,8 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
 
         this.resource.getConnectionId().setProviderHint(this);
 
-        this.queuePrefix = info.getQueuePrefix();
-        this.topicPrefix = info.getTopicPrefix();
+        // Create connection properties initialized with defaults from the JmsConnectionInfo
+        this.properties = new AmqpConnectionProperties(info);
 
         // Create a Session for this connection that is used for Temporary Destinations
         // and perhaps later on management and advisory monitoring.
@@ -122,20 +119,7 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
         if (!connected && isOpen()) {
             connected = true;
 
-            this.properties = new AmqpConnectionProperties(
-                getEndpoint().getRemoteOfferedCapabilities(), getEndpoint().getRemoteProperties());
-
-            String brokerQueuePrefix = properties.getQueuePrefix();
-            if (brokerQueuePrefix != null) {
-                queuePrefix = brokerQueuePrefix;
-                resource.setQueuePrefix(brokerQueuePrefix);
-            }
-
-            String brokerTopicPrefix = properties.getTopicPrefix();
-            if (brokerTopicPrefix != null) {
-                topicPrefix = brokerTopicPrefix;
-                resource.setTopicPrefix(brokerTopicPrefix);
-            }
+            properties.initialize(getEndpoint().getRemoteOfferedCapabilities(), getEndpoint().getRemoteProperties());
 
             connectionSession.open(new AsyncResult() {
 
@@ -237,19 +221,19 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     }
 
     public String getQueuePrefix() {
-        return queuePrefix;
+        return properties.getQueuePrefix();
     }
 
     public void setQueuePrefix(String queuePrefix) {
-        this.queuePrefix = queuePrefix;
+        properties.setQueuePrefix(queuePrefix);
     }
 
     public String getTopicPrefix() {
-        return topicPrefix;
+        return properties.getTopicPrefix();
     }
 
     public void setTopicPrefix(String topicPrefix) {
-        this.topicPrefix = topicPrefix;
+        properties.setTopicPrefix(topicPrefix);
     }
 
     /**

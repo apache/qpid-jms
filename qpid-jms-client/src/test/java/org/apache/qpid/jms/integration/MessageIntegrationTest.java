@@ -26,9 +26,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.jms.Connection;
@@ -44,6 +47,7 @@ import javax.jms.Topic;
 
 import org.apache.qpid.jms.JmsClientProperties;
 import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.provider.amqp.AmqpConnectionProperties;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageIdHelper;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
@@ -617,6 +621,227 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             } else if (destType == TemporaryQueue.class) {
                 testPeer.expectTempQueueCreationAttach(destAddress);
                 dest = session.createTemporaryQueue();
+            }
+
+            TargetMatcher targetMatcher = new TargetMatcher();
+            targetMatcher.withAddress(equalTo(destAddress));
+
+            testPeer.expectSenderAttach(targetMatcher, false, false);
+
+            MessageProducer producer = session.createProducer(dest);
+
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            msgAnnotationsMatcher.withEntry(Symbol.valueOf(AmqpDestinationHelper.JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME), equalTo(destTypeAnnotationValue));
+            msgAnnotationsMatcher.withEntry(Symbol.valueOf(AmqpDestinationHelper.JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME), equalTo(destTypeAnnotationValue));
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true);
+            propsMatcher.withTo(equalTo(destAddress));
+            propsMatcher.withReplyTo(equalTo(destAddress));
+
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
+
+            //TODO: currently we aren't sending any body section, decide if this is allowed
+            //messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(null));
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createMessage();
+            message.setJMSReplyTo(dest);
+
+            producer.send(message);
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    /**
+     * Tests that a connection with 'prefixes' set on it via broker-provided connection properties
+     * strips the prefix from the to/reply-to fields for incoming messages with Topic destinations.
+     */
+    @Test(timeout = 2000)
+    public void testReceivedMessageWithTopicDestinationsOnConnectionWithBrokerDefinedPrefixProperties() throws Exception {
+        Class<? extends Destination> destType = Topic.class;
+        String destPrefix = "t-broker-provided-prefix-";
+        String destName = "myTopic";
+        String replyName = "myReplyTopic";
+        String destAddress = destPrefix + destName;
+        String replyAddress = destPrefix + replyName;
+        String annotationName = AmqpDestinationHelper.JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
+        Byte annotationValue = AmqpDestinationHelper.TOPIC_TYPE;
+        String replyAnnotationName = AmqpDestinationHelper.JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
+        Byte replyAnnotationValue = AmqpDestinationHelper.TOPIC_TYPE;
+
+        doReceivedMessageOnConnectionWithBrokerDefinedPrefixPropertiesTestImpl(destType, destPrefix, destName, replyName,
+                                                                        destAddress, replyAddress, annotationName,
+                                                                        annotationValue, replyAnnotationName, replyAnnotationValue);
+    }
+
+    /**
+     * Tests that a connection with 'prefixes' set on it via broker-provided connection properties
+     * strips the prefix from the to/reply-to fields for incoming messages with Queue destinations.
+     */
+    @Test(timeout = 2000)
+    public void testReceivedMessageWithQueueDestinationsOnConnectionWithBrokerDefinedPrefixProperties() throws Exception {
+        Class<? extends Destination> destType = Queue.class;
+        String destPrefix = "q-broker-provided-prefix-";
+        String destName = "myQueue";
+        String replyName = "myReplyQueue";
+        String destAddress = destPrefix + destName;
+        String replyAddress = destPrefix + replyName;
+        String annotationName = AmqpDestinationHelper.JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
+        Byte annotationValue = AmqpDestinationHelper.QUEUE_TYPE;
+        String replyAnnotationName = AmqpDestinationHelper.JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
+        Byte replyAnnotationValue = AmqpDestinationHelper.QUEUE_TYPE;
+
+        doReceivedMessageOnConnectionWithBrokerDefinedPrefixPropertiesTestImpl(destType, destPrefix, destName, replyName,
+                                                                        destAddress, replyAddress, annotationName,
+                                                                        annotationValue, replyAnnotationName, replyAnnotationValue);
+    }
+
+    private void doReceivedMessageOnConnectionWithBrokerDefinedPrefixPropertiesTestImpl(Class<? extends Destination> destType,
+                                                                                  String destPrefix,
+                                                                                  String destName,
+                                                                                  String replyName,
+                                                                                  String destAddress,
+                                                                                  String replyAddress,
+                                                                                  String annotationName,
+                                                                                  Object annotationValue,
+                                                                                  String replyAnnotationName,
+                                                                                  Object replyAnnotationValue) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            // Have the test peer provide the destination prefixes as connection properties
+            Map<Symbol, Object> properties = new HashMap<Symbol, Object>();
+            properties.put(AmqpConnectionProperties.QUEUE_PREFIX, destPrefix);
+            properties.put(AmqpConnectionProperties.TOPIC_PREFIX, destPrefix);
+
+            Connection connection = testFixture.establishConnecton(testPeer, null, null, properties);
+            connection.start();
+
+            testPeer.expectBegin(true);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            // Create the destination
+            Destination dest = null;
+            if (destType == Topic.class) {
+                dest= session.createTopic(destName);
+            } else if (destType == Queue.class) {
+                dest = session.createQueue(destName);
+            } else {
+                fail("non-temporary destination type set");
+            }
+
+            MessageAnnotationsDescribedType msgAnnotations = null;
+            if (annotationName != null || replyAnnotationName != null) {
+                msgAnnotations = new MessageAnnotationsDescribedType();
+                if (annotationName != null) {
+                    msgAnnotations.setSymbolKeyedAnnotation(annotationName, annotationValue);
+                }
+
+                if (replyAnnotationName != null) {
+                    msgAnnotations.setSymbolKeyedAnnotation(replyAnnotationName, replyAnnotationValue);
+                }
+            }
+
+            PropertiesDescribedType props = new PropertiesDescribedType();
+            props.setTo(destAddress);
+            props.setReplyTo(replyAddress);
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+            SourceMatcher sourceMatcher = new SourceMatcher();
+            sourceMatcher.withAddress(equalTo(destAddress));
+
+            testPeer.expectReceiverAttach(notNullValue(), sourceMatcher);
+            testPeer.expectLinkFlowRespondWithTransfer(null, msgAnnotations, props, null, amqpValueNullContent);
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(dest);
+            Message receivedMessage = messageConsumer.receive(1000);
+
+            testPeer.waitForAllHandlersToComplete(2000);
+            assertNotNull(receivedMessage);
+
+            Destination jmsDest = receivedMessage.getJMSDestination();
+            Destination jmsReplyTo = receivedMessage.getJMSReplyTo();
+
+            assertNotNull("Expected JMSDestination but got null", jmsDest);
+            assertNotNull("Expected JMSReplyTo but got null", jmsReplyTo);
+
+            // Verify destination/replyto names on received message
+            String recievedName = null;
+            String recievedReplyName = null;
+            if (destType == Topic.class) {
+                recievedName = ((Topic) jmsDest).getTopicName();
+                recievedReplyName = ((Topic) jmsReplyTo).getTopicName();
+            } else if (destType == Queue.class) {
+                recievedName = ((Queue) jmsDest).getQueueName();
+                recievedReplyName = ((Queue) jmsReplyTo).getQueueName();
+            }
+
+            assertEquals("Unexpected name for JMSDestination", destName, recievedName);
+            assertEquals("Unexpected name for JMSReplyTo", replyName, recievedReplyName);
+        }
+    }
+
+    /**
+     * Tests that the a connection with a 'queue prefix' set on it via broker-provided connection
+     * properties adds the prefix to the content of the to/reply-to fields for outgoing messages.
+     */
+    @Test(timeout = 2000)
+    public void testSendMessageWithQueueDestinationsOnConnectionWithBrokerDefinedPrefixProperties() throws Exception {
+        Class<? extends Destination> destType = Queue.class;
+        String destPrefix = "q-broker-provided-prefix-";
+        String destName = "myQueue";
+        String destAddress = destPrefix + destName;
+        Byte annotationValue = AmqpDestinationHelper.QUEUE_TYPE;
+
+        doSendMessageOnConnectionWithBrokerDefinedPrefixPropertiesTestImpl(destType, destPrefix, destName, destAddress, annotationValue);
+    }
+
+    /**
+     * Tests that the a connection with a 'topic prefix' set on it via broker-provided connection
+     * properties adds the prefix to the content of the to/reply-to fields for outgoing messages.
+     */
+    @Test(timeout = 2000)
+    public void testSendMessageWithTopicDestinationsOnConnectionWithBrokerDefinedPrefixProperties() throws Exception {
+        Class<? extends Destination> destType = Topic.class;
+        String destPrefix = "t-broker-provided-prefix-";
+        String destName = "myTopic";
+        String destAddress = destPrefix + destName;
+        Byte annotationValue = AmqpDestinationHelper.TOPIC_TYPE;
+
+        doSendMessageOnConnectionWithBrokerDefinedPrefixPropertiesTestImpl(destType, destPrefix, destName, destAddress, annotationValue);
+    }
+
+    private void doSendMessageOnConnectionWithBrokerDefinedPrefixPropertiesTestImpl(Class<? extends Destination> destType,
+                                                             String destPrefix,
+                                                             String destName,
+                                                             String destAddress,
+                                                             Byte destTypeAnnotationValue) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            // Have the test peer provide the destination prefixes as connection properties
+            Map<Symbol, Object> properties = new HashMap<Symbol, Object>();
+            properties.put(AmqpConnectionProperties.QUEUE_PREFIX, destPrefix);
+            properties.put(AmqpConnectionProperties.TOPIC_PREFIX, destPrefix);
+
+            Connection connection = testFixture.establishConnecton(testPeer, null, null, properties);
+
+            connection.start();
+
+            testPeer.expectBegin(true);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            // Create the destination
+            Destination dest = null;
+            if (destType == Topic.class) {
+                dest = session.createTopic(destName);
+            } else if (destType == Queue.class) {
+                dest = session.createQueue(destName);
+            } else {
+                fail("non-temporary destination type set");
             }
 
             TargetMatcher targetMatcher = new TargetMatcher();

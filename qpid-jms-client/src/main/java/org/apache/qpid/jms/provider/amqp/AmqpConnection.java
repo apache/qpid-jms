@@ -125,6 +125,18 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
             this.properties = new AmqpConnectionProperties(
                 getEndpoint().getRemoteOfferedCapabilities(), getEndpoint().getRemoteProperties());
 
+            String brokerQueuePrefix = properties.getQueuePrefix();
+            if (brokerQueuePrefix != null) {
+                queuePrefix = brokerQueuePrefix;
+                resource.setQueuePrefix(brokerQueuePrefix);
+            }
+
+            String brokerTopicPrefix = properties.getTopicPrefix();
+            if (brokerTopicPrefix != null) {
+                topicPrefix = brokerTopicPrefix;
+                resource.setTopicPrefix(brokerTopicPrefix);
+            }
+
             connectionSession.open(new AsyncResult() {
 
                 @Override

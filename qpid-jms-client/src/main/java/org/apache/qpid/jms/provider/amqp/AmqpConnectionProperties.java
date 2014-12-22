@@ -30,8 +30,12 @@ import org.apache.qpid.proton.amqp.Symbol;
 public class AmqpConnectionProperties {
 
     public static final Symbol ANONYMOUS_RELAY = Symbol.valueOf("ANONYMOUS-RELAY");
+    public static final Symbol QUEUE_PREFIX = Symbol.valueOf("queue-prefix");
+    public static final Symbol TOPIC_PREFIX = Symbol.valueOf("topic-prefix");
 
     private boolean anonymousRelaySupported = false;
+    private String queuePrefix = null;
+    private String topicPrefix = null;
 
     /**
      * Creates a new instance of this class from the given remote capabilities and properties.
@@ -61,10 +65,32 @@ public class AmqpConnectionProperties {
     }
 
     protected void processProperties(Map<Symbol, Object> properties) {
-        // TODO - Inspect properties for configuration options
+        if (properties.containsKey(QUEUE_PREFIX)) {
+            Object o = properties.get(QUEUE_PREFIX);
+            if (o instanceof String) {
+                queuePrefix = (String) o;
+            }
+        }
+
+        if (properties.containsKey(TOPIC_PREFIX)) {
+            Object o = properties.get(TOPIC_PREFIX);
+            if (o instanceof String) {
+                topicPrefix = (String) o;
+            }
+        }
+
+        // TODO - Inspect properties for any other configuration options
     }
 
     public boolean isAnonymousRelaySupported() {
         return anonymousRelaySupported;
+    }
+
+    public String getQueuePrefix() {
+        return queuePrefix;
+    }
+
+    public String getTopicPrefix() {
+        return topicPrefix;
     }
 }

@@ -646,10 +646,8 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectDurableSubscriberAttach(String topicName, String subscriptionName)
     {
-        String topicPrefix = "topic://"; //TODO: this will be removed, delete when tests start failing
-
         SourceMatcher sourceMatcher = new SourceMatcher();
-        sourceMatcher.withAddress(equalTo(topicPrefix + topicName));
+        sourceMatcher.withAddress(equalTo(topicName));
         sourceMatcher.withDynamic(equalTo(false));
         //TODO: will possibly be changed to a 1/config durability
         sourceMatcher.withDurable(equalTo(TerminusDurability.UNSETTLED_STATE));

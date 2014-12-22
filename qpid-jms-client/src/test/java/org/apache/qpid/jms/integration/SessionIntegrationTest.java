@@ -119,7 +119,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             //sourceMatcher.withDefaultOutcome(outcomeMatcher);
 
             TargetMatcher targetMatcher = new TargetMatcher();
-            targetMatcher.withAddress(equalTo("queue://" + queueName));
+            targetMatcher.withAddress(equalTo(queueName));
 
             testPeer.expectSenderAttach(sourceMatcher, targetMatcher, false, false);
 
@@ -332,7 +332,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             //Expect a link to a topic node, which we will then refuse
             TargetMatcher targetMatcher = new TargetMatcher();
-            targetMatcher.withAddress(equalTo("topic://" + topicName)); //TODO: remove prefix
+            targetMatcher.withAddress(equalTo(topicName));
             targetMatcher.withDynamic(nullValue());//default = false
             targetMatcher.withDurable(nullValue());//default = none/0
 
@@ -377,7 +377,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             //Expect a new message sent by the above producer to cause creation of a new
             //sender link to the given destination, then closing the link after the message is sent.
             TargetMatcher targetMatcher = new TargetMatcher();
-            targetMatcher.withAddress(equalTo("topic://" + topicName)); //TODO: remove prefix
+            targetMatcher.withAddress(equalTo(topicName));
             targetMatcher.withDynamic(nullValue());//default = false
             targetMatcher.withDurable(nullValue());//default = none/0
 
@@ -698,7 +698,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Queue queue = session.createQueue(queueName);
 
             SourceMatcher sourceMatcher = new SourceMatcher();
-            sourceMatcher.withAddress(equalTo("queue://" + queueName));
+            sourceMatcher.withAddress(equalTo(queueName));
             sourceMatcher.withDynamic(equalTo(false));
             sourceMatcher.withOutcomes(arrayContaining(Accepted.DESCRIPTOR_SYMBOL, Rejected.DESCRIPTOR_SYMBOL, Released.DESCRIPTOR_SYMBOL, Modified.DESCRIPTOR_SYMBOL));
             ModifiedMatcher outcomeMatcher = new ModifiedMatcher().withDeliveryFailed(equalTo(true)).withUndeliverableHere(equalTo(false));

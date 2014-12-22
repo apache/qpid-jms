@@ -59,8 +59,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private boolean sendAcksAsync;
     private boolean omitHost;
     private boolean messagePrioritySupported = true;
-    private String queuePrefix = "queue://";
-    private String topicPrefix = "topic://";
+    private String queuePrefix = null;
+    private String topicPrefix = null;
     private long sendTimeout = JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
     private long requestTimeout = JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;

@@ -40,6 +40,7 @@ public class AmqpDestinationHelper {
     public static final byte TOPIC_TYPE = 0x01;
     public static final byte TEMP_QUEUE_TYPE = 0x02;
     public static final byte TEMP_TOPIC_TYPE = 0x03;
+    private static final byte UNKNOWN_TYPE = -1;
 
     // For support of old string type values
     public static final String TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-to-type";
@@ -63,8 +64,8 @@ public class AmqpDestinationHelper {
      */
     public JmsDestination getJmsDestination(AmqpJmsMessageFacade message, JmsDestination consumerDestination) {
         String to = message.getToAddress();
-        Byte typeByte = getTypeByte(message, JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
-        if (typeByte == null) {
+        byte typeByte = getTypeByte(message, JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        if (typeByte == UNKNOWN_TYPE) {
             // Try the legacy string type annotation
             typeByte = getTypeByte(message, TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         }
@@ -76,8 +77,8 @@ public class AmqpDestinationHelper {
 
     public JmsDestination getJmsReplyTo(AmqpJmsMessageFacade message, JmsDestination consumerDestination) {
         String replyTo = message.getReplyToAddress();
-        Byte typeByte = getTypeByte(message, JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
-        if (typeByte == null) {
+        byte typeByte = getTypeByte(message, JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        if (typeByte == UNKNOWN_TYPE) {
             // Try the legacy string type annotation
             typeByte = getTypeByte(message, REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         }
@@ -87,12 +88,12 @@ public class AmqpDestinationHelper {
         return createDestination(name, typeByte, consumerDestination, true);
     }
 
-    private String stripPrefixIfNecessary(String address, AmqpConnection conn, Byte typeByte, JmsDestination consumerDestination) {
+    private String stripPrefixIfNecessary(String address, AmqpConnection conn, byte typeByte, JmsDestination consumerDestination) {
         if (address == null) {
             return null;
         }
 
-        if (typeByte == null) {
+        if (typeByte == UNKNOWN_TYPE) {
             String queuePrefix = conn.getQueuePrefix();
             if (queuePrefix != null && address.startsWith(queuePrefix)) {
                 return address.substring(queuePrefix.length());
@@ -117,12 +118,12 @@ public class AmqpDestinationHelper {
         return address;
     }
 
-    private JmsDestination createDestination(String address, Byte typeByte, JmsDestination consumerDestination, boolean useConsumerDestForTypeOnly) {
+    private JmsDestination createDestination(String address, byte typeByte, JmsDestination consumerDestination, boolean useConsumerDestForTypeOnly) {
         if (address == null) {
             return useConsumerDestForTypeOnly ? null : consumerDestination;
         }
 
-        if (typeByte != null) {
+        if (typeByte != UNKNOWN_TYPE) {
             switch (typeByte) {
             case QUEUE_TYPE:
                 return new JmsQueue(address);
@@ -155,11 +156,12 @@ public class AmqpDestinationHelper {
 
     public void setToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
         String address = getDestinationAddress(destination, message.getConnection());
-        Object typeValue = toTypeAnnotation(destination);
+        byte typeValue = toTypeAnnotation(destination);
 
         message.setToAddress(address);
 
-        if (address == null || typeValue == null) {
+        // Set or clear the new byte type annotation as appropriate
+        if (address == null || typeValue == UNKNOWN_TYPE) {
             message.removeMessageAnnotation(JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         } else {
             message.setMessageAnnotation(JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME, typeValue);
@@ -171,11 +173,12 @@ public class AmqpDestinationHelper {
 
     public void setReplyToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
         String replyToAddress = getDestinationAddress(destination, message.getConnection());
-        Object typeValue = toTypeAnnotation(destination);
+        byte typeValue = toTypeAnnotation(destination);
 
         message.setReplyToAddress(replyToAddress);
 
-        if (replyToAddress == null || typeValue == null) {
+        // Set or clear the new byte type annotation as appropriate
+        if (replyToAddress == null || typeValue == UNKNOWN_TYPE) {
             message.removeMessageAnnotation(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         } else {
             message.setMessageAnnotation(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, typeValue);
@@ -213,12 +216,12 @@ public class AmqpDestinationHelper {
     }
 
     /**
-     * @return the annotation type value, or null if the supplied destination
-     *         is null or can't be classified
+     * @return the annotation type value, or {@value AmqpDestinationHelper#UNKNOWN_TYPE} if the
+     *         supplied destination null or can't be classified
      */
-    private Object toTypeAnnotation(JmsDestination destination) {
+    private byte toTypeAnnotation(JmsDestination destination) {
         if (destination == null) {
-            return null;
+            return UNKNOWN_TYPE;
         }
 
         if (destination.isQueue()) {
@@ -235,7 +238,7 @@ public class AmqpDestinationHelper {
             }
         }
 
-        return null;
+        return UNKNOWN_TYPE;
     }
 
     Set<String> splitAttributesString(String typeString) {
@@ -256,12 +259,12 @@ public class AmqpDestinationHelper {
         return typeSet;
     }
 
-    private Byte getTypeByte(AmqpJmsMessageFacade message, String annotationName) {
+    private byte getTypeByte(AmqpJmsMessageFacade message, String annotationName) {
         Object typeAnnotation = message.getMessageAnnotation(annotationName);
 
         if (typeAnnotation == null) {
             // Doesn't exist, or null.
-            return null;
+            return UNKNOWN_TYPE;
         } else if (typeAnnotation instanceof Byte) {
             // Return the value found.
             return (Byte) typeAnnotation;
@@ -290,7 +293,7 @@ public class AmqpDestinationHelper {
                 }
             }
 
-            return null;
+            return UNKNOWN_TYPE;
         }
     }
 

@@ -213,6 +213,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     //==== Destination Handling ====
     //==============================
 
+    // --- missing to/reply-to field values --- //
+
     /**
      * Tests that the lack of a 'to' in the Properties section of the incoming message (e.g
      * one sent by a non-JMS client) is handled by making the JMSDestination method simply
@@ -278,6 +280,41 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             }
         }
     }
+
+    /**
+     * Tests that lack of the reply-to set on a message results in it returning null for JMSReplyTo
+     * and not the consumer destination as happens for JMSDestination.
+     */
+    @Test(timeout = 2000)
+    public void testReceivedMessageFromQueueWithNoReplyToReturnsNull() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin(true);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            PropertiesDescribedType props = new PropertiesDescribedType();
+            props.setMessageId("myMessageIDString");
+
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, props, null, amqpValueNullContent);
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+            Message receivedMessage = messageConsumer.receive(1000);
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            assertNotNull(receivedMessage);
+            assertNull(receivedMessage.getJMSReplyTo());
+        }
+    }
+
+    // --- destination prefix handling --- //
 
     /**
      * Tests that the a connection with a 'topic prefix' set on it strips the
@@ -877,7 +914,51 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         }
     }
 
-    // --- byte type annotation values --- //
+    // --- missing destination type annotation values --- //
+
+    /**
+     * Tests that lack of any destination type annotation value (via either
+     * {@link AmqpDestinationHelper#JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME}
+     * or {@link AmqpDestinationHelper#REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME}) set
+     * on a message to indicate type of its 'reply-to' address results in it
+     * being classed as the same type as the consumer destination.
+     */
+    @Test(timeout = 2000)
+    public void testReceivedMessageFromTopicWithReplyToWithoutTypeAnnotationResultsInUseOfConsumerDestinationType() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin(true);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Topic topic = session.createTopic("myTopic");
+
+            String myReplyTopicAddress = "myReplyTopicAddress";
+            PropertiesDescribedType props = new PropertiesDescribedType();
+            props.setReplyTo(myReplyTopicAddress);
+            props.setMessageId("myMessageIDString");
+
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, props, null, amqpValueNullContent);
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(topic);
+            Message receivedMessage = messageConsumer.receive(1000);
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            assertNotNull(receivedMessage);
+
+            Destination dest = receivedMessage.getJMSReplyTo();
+            assertNotNull("JMSReplyTo should not be null", dest);
+            assertTrue("Destination not of expected type: " + dest.getClass(), dest instanceof Topic);
+            assertEquals(myReplyTopicAddress, ((Topic)dest).getTopicName());
+        }
+    }
+
+    // --- byte destination type annotation values --- //
 
     /**
      * Tests that the {@link AmqpDestinationHelper#JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME} is set as a byte on
@@ -958,7 +1039,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         }
     }
 
-    // --- old string type annotation values --- //
+    // --- old string destination type annotation values --- //
 
     /**
      * Tests that the {@link AmqpDestinationHelper#TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME} set on a message to
@@ -1040,78 +1121,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Destination dest = receivedMessage.getJMSReplyTo();
             assertTrue(dest instanceof Topic);
             assertEquals(myTopicAddress, ((Topic)dest).getTopicName());
-        }
-    }
-
-    /**
-     * Tests that lack of the {@link AmqpMessageSupport#AMQP_REPLY_TO_ANNOTATION} set on a
-     * message to indicate type of its 'reply-to' address results in it being classed as the same
-     * type as the destination used to create the consumer.
-     */
-    @Test(timeout = 2000)
-    public void testReceivedMessageFromQueueWithReplyToWithoutTypeAnnotationResultsInUseOfConsumerDestinationType() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
-            Connection connection = testFixture.establishConnecton(testPeer);
-            connection.start();
-
-            testPeer.expectBegin(true);
-
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Queue queue = session.createQueue("myQueue");
-
-            String myOtherQueueAddress = "myOtherQueueAddress";
-            PropertiesDescribedType props = new PropertiesDescribedType();
-            props.setReplyTo(myOtherQueueAddress);
-            props.setMessageId("myMessageIDString");
-
-            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
-
-            testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlowRespondWithTransfer(null, null, props, null, amqpValueNullContent);
-            testPeer.expectDispositionThatIsAcceptedAndSettled();
-
-            MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
-            testPeer.waitForAllHandlersToComplete(3000);
-
-            assertNotNull(receivedMessage);
-
-            Destination dest = receivedMessage.getJMSReplyTo();
-            assertTrue(dest instanceof Queue);
-            assertEquals(myOtherQueueAddress, ((Queue)dest).getQueueName());
-        }
-    }
-
-    /**
-     * Tests that lack of the reply-to set on a message results in it returning null for JMSReplyTo
-     * and not the consumer destination as happens for JMSDestination.
-     */
-    @Test(timeout = 2000)
-    public void testReceivedMessageFromQueueWithNoReplyToReturnsNull() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
-            Connection connection = testFixture.establishConnecton(testPeer);
-            connection.start();
-
-            testPeer.expectBegin(true);
-
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Queue queue = session.createQueue("myQueue");
-
-            PropertiesDescribedType props = new PropertiesDescribedType();
-            props.setMessageId("myMessageIDString");
-
-            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
-
-            testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlowRespondWithTransfer(null, null, props, null, amqpValueNullContent);
-            testPeer.expectDispositionThatIsAcceptedAndSettled();
-
-            MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
-            testPeer.waitForAllHandlersToComplete(3000);
-
-            assertNotNull(receivedMessage);
-            assertNull(receivedMessage.getJMSReplyTo());
         }
     }
 

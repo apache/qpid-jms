@@ -1047,7 +1047,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Topic. Ensure the consumers destination is not used by consuming from a Queue.
      */
     @Test(timeout = 2000)
-    public void testReceivedMessageFromQueueWithToTypeAnnotationForTopic() throws Exception {
+    public void testReceivedMessageFromQueueWithToLegacyTypeAnnotationForTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
@@ -1089,7 +1089,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Topic. Ensure the consumers destination is not used by consuming from a Queue.
      */
     @Test(timeout = 2000)
-    public void testReceivedMessageFromQueueWithReplyToTypeAnnotationForTopic() throws Exception {
+    public void testReceivedMessageFromQueueWithLegacyReplyToTypeAnnotationForTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();

@@ -18,15 +18,15 @@ package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.QUEUE_ATTRIBUTE;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.LEGACY_QUEUE_ATTRIBUTE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.QUEUE_TYPE;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TEMPORARY_ATTRIBUTE;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.LEGACY_TEMPORARY_ATTRIBUTE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TEMP_QUEUE_TYPE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TEMP_TOPIC_TYPE;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TOPIC_ATTRIBUTE;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.LEGACY_TOPIC_ATTRIBUTE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TOPIC_TYPE;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -47,8 +47,8 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 public class AmqpDestinationHelperTest {
-    public static final String TEMP_QUEUE_ATTRIBUTES_STRING = QUEUE_ATTRIBUTE + "," + TEMPORARY_ATTRIBUTE;
-    public static final String TEMP_TOPIC_ATTRIBUTES_STRING = TOPIC_ATTRIBUTE + "," + TEMPORARY_ATTRIBUTE;
+    public static final String TEMP_QUEUE_ATTRIBUTES_STRING = LEGACY_QUEUE_ATTRIBUTE + "," + LEGACY_TEMPORARY_ATTRIBUTE;
+    public static final String TEMP_TOPIC_ATTRIBUTES_STRING = LEGACY_TOPIC_ATTRIBUTE + "," + LEGACY_TEMPORARY_ATTRIBUTE;
 
     private final AmqpDestinationHelper helper = AmqpDestinationHelper.INSTANCE;
 
@@ -60,7 +60,7 @@ public class AmqpDestinationHelperTest {
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
         Mockito.when(message.getToAddress()).thenReturn(null);
         Mockito.when(message.getMessageAnnotation(
-            TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTE);
+            LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(LEGACY_QUEUE_ATTRIBUTE);
 
         assertNull(helper.getJmsDestination(message, null));
     }
@@ -70,7 +70,7 @@ public class AmqpDestinationHelperTest {
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
         Mockito.when(message.getToAddress()).thenReturn(null);
         Mockito.when(message.getMessageAnnotation(
-            TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTE);
+            LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(LEGACY_QUEUE_ATTRIBUTE);
 
         JmsDestination consumerDestination = new JmsQueue("ConsumerDestination");
         assertSame(consumerDestination, helper.getJmsDestination(message, consumerDestination));
@@ -86,7 +86,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn("");
+        Mockito.when(message.getMessageAnnotation(LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn("");
         JmsQueue consumerDestination = new JmsQueue("ConsumerDestination");
 
         JmsDestination destination = helper.getJmsDestination(message, consumerDestination);
@@ -103,7 +103,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn("jms.queue");
+        Mockito.when(message.getMessageAnnotation(LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn("jms.queue");
         JmsQueue consumerDestination = new JmsQueue("ConsumerDestination");
 
         JmsDestination destination = helper.getJmsDestination(message, consumerDestination);
@@ -120,7 +120,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
+        Mockito.when(message.getMessageAnnotation(LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
 
         JmsDestination consumerDestination = Mockito.mock(JmsDestination.class);
         Mockito.when(consumerDestination.getName()).thenReturn("ConsumerDestination");
@@ -139,7 +139,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
+        Mockito.when(message.getMessageAnnotation(LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
         JmsQueue consumerDestination = new JmsQueue("ConsumerDestination");
 
         JmsDestination destination = helper.getJmsDestination(message, consumerDestination);
@@ -156,7 +156,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
+        Mockito.when(message.getMessageAnnotation(LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
         JmsDestination consumerDestination = new JmsTopic("ConsumerDestination");
 
         JmsDestination destination = helper.getJmsDestination(message, consumerDestination);
@@ -173,7 +173,7 @@ public class AmqpDestinationHelperTest {
         Mockito.when(message.getToAddress()).thenReturn(testAddress);
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
-        Mockito.when(message.getMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
+        Mockito.when(message.getMessageAnnotation(LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
         JmsDestination consumerDestination = new JmsTemporaryQueue("ConsumerDestination");
 
         JmsDestination destination = helper.getJmsDestination(message, consumerDestination);
@@ -190,7 +190,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
+        Mockito.when(message.getMessageAnnotation(LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
         JmsDestination consumerDestination = new JmsTemporaryTopic("ConsumerDestination");
 
         JmsDestination destination = helper.getJmsDestination(message, consumerDestination);
@@ -207,7 +207,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTE);
+        Mockito.when(message.getMessageAnnotation(LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(LEGACY_QUEUE_ATTRIBUTE);
 
         JmsDestination destination = helper.getJmsDestination(message, null);
         assertNotNull(destination);
@@ -223,7 +223,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TOPIC_ATTRIBUTE);
+        Mockito.when(message.getMessageAnnotation(LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(LEGACY_TOPIC_ATTRIBUTE);
 
         JmsDestination destination = helper.getJmsDestination(message, null);
         assertNotNull(destination);
@@ -237,7 +237,7 @@ public class AmqpDestinationHelperTest {
         String testAddress = "testAddress";
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
         Mockito.when(message.getToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TEMP_QUEUE_ATTRIBUTES_STRING);
+        Mockito.when(message.getMessageAnnotation(LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TEMP_QUEUE_ATTRIBUTES_STRING);
 
         JmsDestination destination = helper.getJmsDestination(message, null);
         assertNotNull(destination);
@@ -251,7 +251,7 @@ public class AmqpDestinationHelperTest {
         String testAddress = "testAddress";
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
         Mockito.when(message.getToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TEMP_TOPIC_ATTRIBUTES_STRING);
+        Mockito.when(message.getMessageAnnotation(LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TEMP_TOPIC_ATTRIBUTES_STRING);
 
         JmsDestination destination = helper.getJmsDestination(message, null);
         assertNotNull(destination);
@@ -268,7 +268,7 @@ public class AmqpDestinationHelperTest {
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
         Mockito.when(message.getReplyToAddress()).thenReturn(null);
         Mockito.when(message.getMessageAnnotation(
-            REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTE);
+            LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(LEGACY_QUEUE_ATTRIBUTE);
 
         assertNull(helper.getJmsDestination(message, null));
     }
@@ -278,7 +278,7 @@ public class AmqpDestinationHelperTest {
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
         Mockito.when(message.getReplyToAddress()).thenReturn(null);
         Mockito.when(message.getMessageAnnotation(
-            REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTE);
+            LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(LEGACY_QUEUE_ATTRIBUTE);
         JmsQueue consumerDestination = new JmsQueue("ConsumerDestination");
 
         assertNull(helper.getJmsReplyTo(message, consumerDestination));
@@ -292,7 +292,7 @@ public class AmqpDestinationHelperTest {
         Mockito.when(message.getConnection()).thenReturn(conn);
 
         Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
+        Mockito.when(message.getMessageAnnotation(LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
         JmsQueue consumerDestination = new JmsQueue("ConsumerDestination");
 
         JmsDestination destination = helper.getJmsReplyTo(message, consumerDestination);
@@ -309,7 +309,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
+        Mockito.when(message.getMessageAnnotation(LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
 
         JmsDestination consumerDestination = Mockito.mock(JmsDestination.class);
         Mockito.when(consumerDestination.getName()).thenReturn("ConsumerDestination");
@@ -328,7 +328,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn("");
+        Mockito.when(message.getMessageAnnotation(LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn("");
         JmsQueue consumerDestination = new JmsQueue("ConsumerDestination");
 
         JmsDestination destination = helper.getJmsReplyTo(message, consumerDestination);
@@ -345,7 +345,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn("jms.queue");
+        Mockito.when(message.getMessageAnnotation(LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn("jms.queue");
         JmsQueue consumerDestination = new JmsQueue("ConsumerDestination");
 
         JmsDestination destination = helper.getJmsReplyTo(message, consumerDestination);
@@ -362,7 +362,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
+        Mockito.when(message.getMessageAnnotation(LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
         JmsTopic consumerDestination = new JmsTopic("ConsumerDestination");
 
         JmsDestination destination = helper.getJmsReplyTo(message, consumerDestination);
@@ -379,7 +379,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
+        Mockito.when(message.getMessageAnnotation(LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
         JmsTemporaryQueue consumerDestination = new JmsTemporaryQueue("ConsumerDestination");
 
         JmsDestination destination = helper.getJmsReplyTo(message, consumerDestination);
@@ -396,7 +396,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
+        Mockito.when(message.getMessageAnnotation(LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(null);
         JmsTemporaryTopic consumerDestination = new JmsTemporaryTopic("ConsumerDestination");
 
         JmsDestination destination = helper.getJmsReplyTo(message, consumerDestination);
@@ -413,7 +413,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(QUEUE_ATTRIBUTE);
+        Mockito.when(message.getMessageAnnotation(LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(LEGACY_QUEUE_ATTRIBUTE);
 
         JmsDestination destination = helper.getJmsReplyTo(message, null);
         assertNotNull(destination);
@@ -429,7 +429,7 @@ public class AmqpDestinationHelperTest {
         AmqpConnection conn = Mockito.mock(AmqpConnection.class);
         Mockito.when(message.getConnection()).thenReturn(conn);
         Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TOPIC_ATTRIBUTE);
+        Mockito.when(message.getMessageAnnotation(LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(LEGACY_TOPIC_ATTRIBUTE);
 
         JmsDestination destination = helper.getJmsReplyTo(message, null);
         assertNotNull(destination);
@@ -443,7 +443,7 @@ public class AmqpDestinationHelperTest {
         String testAddress = "testAddress";
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
         Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TEMP_QUEUE_ATTRIBUTES_STRING);
+        Mockito.when(message.getMessageAnnotation(LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TEMP_QUEUE_ATTRIBUTES_STRING);
 
         JmsDestination destination = helper.getJmsReplyTo(message, null);
         assertNotNull(destination);
@@ -457,7 +457,7 @@ public class AmqpDestinationHelperTest {
         String testAddress = "testAddress";
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
         Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
-        Mockito.when(message.getMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TEMP_TOPIC_ATTRIBUTES_STRING);
+        Mockito.when(message.getMessageAnnotation(LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME)).thenReturn(TEMP_TOPIC_ATTRIBUTES_STRING);
 
         JmsDestination destination = helper.getJmsReplyTo(message, null);
         assertNotNull(destination);
@@ -499,7 +499,7 @@ public class AmqpDestinationHelperTest {
         helper.setToAddressFromDestination(message, destination);
 
         Mockito.verify(message).setToAddress(testAddress);
-        Mockito.verify(message).removeMessageAnnotation(TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        Mockito.verify(message).removeMessageAnnotation(LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
     }
 
     @Test
@@ -614,7 +614,7 @@ public class AmqpDestinationHelperTest {
         helper.setReplyToAddressFromDestination(message, destination);
 
         Mockito.verify(message).setReplyToAddress(testAddress);
-        Mockito.verify(message).removeMessageAnnotation(REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        Mockito.verify(message).removeMessageAnnotation(LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
     }
 
     @Test
@@ -675,34 +675,34 @@ public class AmqpDestinationHelperTest {
     public void testSplitAttributeWithExtraneousCommas() throws Exception {
 
         Set<String> set = new HashSet<String>();
-        set.add(AmqpDestinationHelper.QUEUE_ATTRIBUTE);
-        set.add(AmqpDestinationHelper.TEMPORARY_ATTRIBUTE);
+        set.add(AmqpDestinationHelper.LEGACY_QUEUE_ATTRIBUTE);
+        set.add(AmqpDestinationHelper.LEGACY_TEMPORARY_ATTRIBUTE);
 
         // test for no NPE errors.
         assertNull(helper.splitAttributesString(null));
 
         // test a single comma separator produces expected set
-        assertEquals(set, helper.splitAttributesString(QUEUE_ATTRIBUTE + "," +
-                                                 AmqpDestinationHelper.TEMPORARY_ATTRIBUTE));
+        assertEquals(set, helper.splitAttributesString(LEGACY_QUEUE_ATTRIBUTE + "," +
+                                                 AmqpDestinationHelper.LEGACY_TEMPORARY_ATTRIBUTE));
 
         // test trailing comma doesn't alter produced set
-        assertEquals(set, helper.splitAttributesString(QUEUE_ATTRIBUTE + "," +
-                                                 AmqpDestinationHelper.TEMPORARY_ATTRIBUTE + ","));
+        assertEquals(set, helper.splitAttributesString(LEGACY_QUEUE_ATTRIBUTE + "," +
+                                                 AmqpDestinationHelper.LEGACY_TEMPORARY_ATTRIBUTE + ","));
 
         // test leading comma doesn't alter produced set
-        assertEquals(set, helper.splitAttributesString("," + QUEUE_ATTRIBUTE + ","
-                                                     + AmqpDestinationHelper.TEMPORARY_ATTRIBUTE));
+        assertEquals(set, helper.splitAttributesString("," + LEGACY_QUEUE_ATTRIBUTE + ","
+                                                     + AmqpDestinationHelper.LEGACY_TEMPORARY_ATTRIBUTE));
 
         // test consecutive central commas don't alter produced set
-        assertEquals(set, helper.splitAttributesString(QUEUE_ATTRIBUTE + ",," +
-                                                 AmqpDestinationHelper.TEMPORARY_ATTRIBUTE));
+        assertEquals(set, helper.splitAttributesString(LEGACY_QUEUE_ATTRIBUTE + ",," +
+                                                 AmqpDestinationHelper.LEGACY_TEMPORARY_ATTRIBUTE));
 
         // test consecutive trailing commas don't alter produced set
-        assertEquals(set, helper.splitAttributesString(QUEUE_ATTRIBUTE + "," +
-                                                 AmqpDestinationHelper.TEMPORARY_ATTRIBUTE + ",,"));
+        assertEquals(set, helper.splitAttributesString(LEGACY_QUEUE_ATTRIBUTE + "," +
+                                                 AmqpDestinationHelper.LEGACY_TEMPORARY_ATTRIBUTE + ",,"));
 
         // test consecutive leading commas don't alter produced set
-        assertEquals(set, helper.splitAttributesString("," + QUEUE_ATTRIBUTE + ","
-                                                     + AmqpDestinationHelper.TEMPORARY_ATTRIBUTE));
+        assertEquals(set, helper.splitAttributesString("," + LEGACY_QUEUE_ATTRIBUTE + ","
+                                                     + AmqpDestinationHelper.LEGACY_TEMPORARY_ATTRIBUTE));
     }
 }

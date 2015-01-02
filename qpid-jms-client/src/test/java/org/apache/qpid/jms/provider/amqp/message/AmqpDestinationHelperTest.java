@@ -18,15 +18,15 @@ package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.LEGACY_QUEUE_ATTRIBUTE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.QUEUE_TYPE;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.LEGACY_TEMPORARY_ATTRIBUTE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TEMP_QUEUE_TYPE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TEMP_TOPIC_TYPE;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.LEGACY_TOPIC_ATTRIBUTE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.TOPIC_TYPE;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper.LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.LEGACY_QUEUE_ATTRIBUTE;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.LEGACY_TEMPORARY_ATTRIBUTE;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.LEGACY_TOPIC_ATTRIBUTE;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -47,8 +47,8 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 public class AmqpDestinationHelperTest {
-    public static final String TEMP_QUEUE_ATTRIBUTES_STRING = LEGACY_QUEUE_ATTRIBUTE + "," + LEGACY_TEMPORARY_ATTRIBUTE;
-    public static final String TEMP_TOPIC_ATTRIBUTES_STRING = LEGACY_TOPIC_ATTRIBUTE + "," + LEGACY_TEMPORARY_ATTRIBUTE;
+    private static final String TEMP_QUEUE_ATTRIBUTES_STRING = LEGACY_QUEUE_ATTRIBUTE + "," + LEGACY_TEMPORARY_ATTRIBUTE;
+    private static final String TEMP_TOPIC_ATTRIBUTES_STRING = LEGACY_TOPIC_ATTRIBUTE + "," + LEGACY_TEMPORARY_ATTRIBUTE;
 
     private final AmqpDestinationHelper helper = AmqpDestinationHelper.INSTANCE;
 
@@ -675,34 +675,34 @@ public class AmqpDestinationHelperTest {
     public void testSplitAttributeWithExtraneousCommas() throws Exception {
 
         Set<String> set = new HashSet<String>();
-        set.add(AmqpDestinationHelper.LEGACY_QUEUE_ATTRIBUTE);
-        set.add(AmqpDestinationHelper.LEGACY_TEMPORARY_ATTRIBUTE);
+        set.add(LEGACY_QUEUE_ATTRIBUTE);
+        set.add(LEGACY_TEMPORARY_ATTRIBUTE);
 
         // test for no NPE errors.
         assertNull(helper.splitAttributesString(null));
 
         // test a single comma separator produces expected set
         assertEquals(set, helper.splitAttributesString(LEGACY_QUEUE_ATTRIBUTE + "," +
-                                                 AmqpDestinationHelper.LEGACY_TEMPORARY_ATTRIBUTE));
+                                                 LEGACY_TEMPORARY_ATTRIBUTE));
 
         // test trailing comma doesn't alter produced set
         assertEquals(set, helper.splitAttributesString(LEGACY_QUEUE_ATTRIBUTE + "," +
-                                                 AmqpDestinationHelper.LEGACY_TEMPORARY_ATTRIBUTE + ","));
+                                                 LEGACY_TEMPORARY_ATTRIBUTE + ","));
 
         // test leading comma doesn't alter produced set
         assertEquals(set, helper.splitAttributesString("," + LEGACY_QUEUE_ATTRIBUTE + ","
-                                                     + AmqpDestinationHelper.LEGACY_TEMPORARY_ATTRIBUTE));
+                                                     + LEGACY_TEMPORARY_ATTRIBUTE));
 
         // test consecutive central commas don't alter produced set
         assertEquals(set, helper.splitAttributesString(LEGACY_QUEUE_ATTRIBUTE + ",," +
-                                                 AmqpDestinationHelper.LEGACY_TEMPORARY_ATTRIBUTE));
+                                                 LEGACY_TEMPORARY_ATTRIBUTE));
 
         // test consecutive trailing commas don't alter produced set
         assertEquals(set, helper.splitAttributesString(LEGACY_QUEUE_ATTRIBUTE + "," +
-                                                 AmqpDestinationHelper.LEGACY_TEMPORARY_ATTRIBUTE + ",,"));
+                                                 LEGACY_TEMPORARY_ATTRIBUTE + ",,"));
 
         // test consecutive leading commas don't alter produced set
         assertEquals(set, helper.splitAttributesString("," + LEGACY_QUEUE_ATTRIBUTE + ","
-                                                     + AmqpDestinationHelper.LEGACY_TEMPORARY_ATTRIBUTE));
+                                                     + LEGACY_TEMPORARY_ATTRIBUTE));
     }
 }

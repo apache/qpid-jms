@@ -919,7 +919,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that lack of any destination type annotation value (via either
      * {@link AmqpDestinationHelper#JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME}
-     * or {@link AmqpDestinationHelper#LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME}) set
+     * or {@link AmqpMessageSupport#LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME}) set
      * on a message to indicate type of its 'reply-to' address results in it
      * being classed as the same type as the consumer destination.
      */
@@ -1042,7 +1042,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     // --- old string destination type annotation values --- //
 
     /**
-     * Tests that the {@link AmqpDestinationHelper#LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME} set on a message to
+     * Tests that the {@link AmqpMessageSupport#LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME} set on a message to
      * indicate its 'to' address represents a Topic results in the JMSDestination object being a
      * Topic. Ensure the consumers destination is not used by consuming from a Queue.
      */
@@ -1058,7 +1058,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Queue queue = session.createQueue("myQueue");
 
             MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
-            msgAnnotations.setSymbolKeyedAnnotation(AmqpDestinationHelper.LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, AmqpDestinationHelper.LEGACY_TOPIC_ATTRIBUTE);
+            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, AmqpMessageSupport.LEGACY_TOPIC_ATTRIBUTE);
 
             PropertiesDescribedType props = new PropertiesDescribedType();
             String myTopicAddress = "myTopicAddress";
@@ -1084,7 +1084,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     }
 
     /**
-     * Tests that the {@link AmqpDestinationHelper#LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME} set on a message to
+     * Tests that the {@link AmqpMessageSupport#LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME} set on a message to
      * indicate its 'reply-to' address represents a Topic results in the JMSReplyTo object being a
      * Topic. Ensure the consumers destination is not used by consuming from a Queue.
      */
@@ -1100,7 +1100,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Queue queue = session.createQueue("myQueue");
 
             MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
-            msgAnnotations.setSymbolKeyedAnnotation(AmqpDestinationHelper.LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, AmqpDestinationHelper.LEGACY_TOPIC_ATTRIBUTE);
+            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME, AmqpMessageSupport.LEGACY_TOPIC_ATTRIBUTE);
 
             PropertiesDescribedType props = new PropertiesDescribedType();
             String myTopicAddress = "myTopicAddress";

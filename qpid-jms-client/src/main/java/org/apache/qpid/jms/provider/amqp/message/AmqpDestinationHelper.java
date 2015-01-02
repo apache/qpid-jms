@@ -33,7 +33,6 @@ import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 public class AmqpDestinationHelper {
     public static final AmqpDestinationHelper INSTANCE = new AmqpDestinationHelper();
 
-    // For support of current byte type values
     public static final String JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-jms-dest";
     public static final String JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-jms-reply-to";
     public static final byte QUEUE_TYPE = 0x00;
@@ -41,13 +40,6 @@ public class AmqpDestinationHelper {
     public static final byte TEMP_QUEUE_TYPE = 0x02;
     public static final byte TEMP_TOPIC_TYPE = 0x03;
     private static final byte UNKNOWN_TYPE = -1;
-
-    // For support of old string type values
-    public static final String LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-to-type";
-    public static final String LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-reply-type";
-    public static final String LEGACY_QUEUE_ATTRIBUTE = "queue";
-    public static final String LEGACY_TOPIC_ATTRIBUTE = "topic";
-    public static final String LEGACY_TEMPORARY_ATTRIBUTE = "temporary";
 
     /**
      * Decode the provided To address, type description, and consumer destination
@@ -67,7 +59,7 @@ public class AmqpDestinationHelper {
         byte typeByte = getTypeByte(message, JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         if (typeByte == UNKNOWN_TYPE) {
             // Try the legacy string type annotation
-            typeByte = getTypeByte(message, LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+            typeByte = getTypeByte(message, AmqpMessageSupport.LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         }
 
         String name = stripPrefixIfNecessary(to, message.getConnection(), typeByte, consumerDestination);
@@ -80,7 +72,7 @@ public class AmqpDestinationHelper {
         byte typeByte = getTypeByte(message, JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         if (typeByte == UNKNOWN_TYPE) {
             // Try the legacy string type annotation
-            typeByte = getTypeByte(message, LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+            typeByte = getTypeByte(message, AmqpMessageSupport.LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
         }
 
         String name = stripPrefixIfNecessary(replyTo, message.getConnection(), typeByte, consumerDestination);
@@ -168,7 +160,7 @@ public class AmqpDestinationHelper {
         }
 
         // Always clear the legacy string type annotation
-        message.removeMessageAnnotation(LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        message.removeMessageAnnotation(AmqpMessageSupport.LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
     }
 
     public void setReplyToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
@@ -185,7 +177,7 @@ public class AmqpDestinationHelper {
         }
 
         // Always clear the legacy string type annotation
-        message.removeMessageAnnotation(LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+        message.removeMessageAnnotation(AmqpMessageSupport.LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
     }
 
     public String getDestinationAddress(JmsDestination destination, AmqpConnection conn) {
@@ -278,14 +270,14 @@ public class AmqpDestinationHelper {
             }
 
             if (typeSet != null && !typeSet.isEmpty()) {
-                if (typeSet.contains(LEGACY_QUEUE_ATTRIBUTE)) {
-                    if (typeSet.contains(LEGACY_TEMPORARY_ATTRIBUTE)) {
+                if (typeSet.contains(AmqpMessageSupport.LEGACY_QUEUE_ATTRIBUTE)) {
+                    if (typeSet.contains(AmqpMessageSupport.LEGACY_TEMPORARY_ATTRIBUTE)) {
                         return TEMP_QUEUE_TYPE;
                     } else {
                         return QUEUE_TYPE;
                     }
-                } else if (typeSet.contains(LEGACY_TOPIC_ATTRIBUTE)) {
-                    if (typeSet.contains(LEGACY_TEMPORARY_ATTRIBUTE)) {
+                } else if (typeSet.contains(AmqpMessageSupport.LEGACY_TOPIC_ATTRIBUTE)) {
+                    if (typeSet.contains(AmqpMessageSupport.LEGACY_TEMPORARY_ATTRIBUTE)) {
                         return TEMP_TOPIC_TYPE;
                     } else {
                         return TOPIC_TYPE;

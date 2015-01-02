@@ -100,6 +100,13 @@ public final class AmqpMessageSupport {
      */
     public static final String OCTET_STREAM_CONTENT_TYPE = "application/octet-stream";
 
+    // For support of old string destination type annotations
+    public static final String LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-to-type";
+    public static final String LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-reply-type";
+    public static final String LEGACY_QUEUE_ATTRIBUTE = "queue";
+    public static final String LEGACY_TOPIC_ATTRIBUTE = "topic";
+    public static final String LEGACY_TEMPORARY_ATTRIBUTE = "temporary";
+
     /**
      * Lookup and return the correct Proton Symbol instance based on the given key.
      *

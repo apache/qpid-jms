@@ -55,6 +55,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.Discharge;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Modified;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Rejected;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Released;
+import org.apache.qpid.jms.test.testpeer.describedtypes.TransactionalState;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
@@ -435,7 +436,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Binary txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
             TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
             declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, false, new Declared().setTxnId(txnId), true);
+            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
 
             for (int i = 1; i <= consumeCount; i++) {
                 // Then expect an *settled* TransactionalState disposition for each message once received by the consumer
@@ -462,9 +463,56 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             discharge.setTxnId(txnId);
             TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
             dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
-            testPeer.expectTransfer(dischargeMatcher, false, new Accepted(), true);
+            testPeer.expectTransfer(dischargeMatcher, nullValue(), false, new Accepted(), true);
 
             session.commit();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=5000)
+    public void testProducedMessagesOnTransactedSessionCarryTxnId() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin(true);
+            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
+            testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            Queue queue = session.createQueue("myQueue");
+
+            // Create a producer to use in provoking creation of the AMQP transaction
+            testPeer.expectSenderAttach();
+            MessageProducer producer  = session.createProducer(queue);
+
+            // First expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a Declared disposition state containing the txnId.
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
+            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
+            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+
+            // Expect the message which provoked creating the transaction. Check it carries
+            // TransactionalState with the above txnId but has no outcome. Respond with a
+            // TransactionalState with Accepted outcome.
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(new MessageHeaderSectionMatcher(true));
+            messageMatcher.setMessageAnnotationsMatcher( new MessageAnnotationsSectionMatcher(true));
+
+            TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
+            stateMatcher.withTxnId(equalTo(txnId));
+            stateMatcher.withOutcome(nullValue());
+
+            TransactionalState txState = new TransactionalState();
+            txState.setTxnId(txnId);
+            txState.setOutcome(new Accepted());
+
+            testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+
+            producer.send(session.createMessage());
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
@@ -500,7 +548,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
             TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
             declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, false, new Declared().setTxnId(txnId), true);
+            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
 
             for (int i = 1; i <= consumeCount; i++) {
                 // Then expect a *settled* TransactionalState disposition for each message once received by the consumer
@@ -530,7 +578,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             discharge.setTxnId(txnId);
             TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
             dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
-            testPeer.expectTransfer(dischargeMatcher, false, new Accepted(), true);
+            testPeer.expectTransfer(dischargeMatcher, nullValue(), false, new Accepted(), true);
 
             // Expect the messages that were not consumed to be released
             int unconsumed = transferCount - consumeCount;
@@ -577,13 +625,21 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
             TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
             declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, false, new Declared().setTxnId(txnId), true);
+            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
 
             // Expect the message which provoked creating the transaction
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(new MessageHeaderSectionMatcher(true));
             messageMatcher.setMessageAnnotationsMatcher( new MessageAnnotationsSectionMatcher(true));
-            testPeer.expectTransfer(messageMatcher); //TODO: check it is marked as being in the transaction
+            TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
+            stateMatcher.withTxnId(equalTo(txnId));
+            stateMatcher.withOutcome(nullValue());
+
+            TransactionalState txState = new TransactionalState();
+            txState.setTxnId(txnId);
+            txState.setOutcome(new Accepted());
+
+            testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
 
             producer.send(session.createMessage());
 
@@ -597,7 +653,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             discharge.setTxnId(txnId);
             TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
             dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
-            testPeer.expectTransfer(dischargeMatcher, false, new Accepted(), true);
+            testPeer.expectTransfer(dischargeMatcher, nullValue(), false, new Accepted(), true);
 
             // Expect the messages that were not consumed to be released
             for (int i = 1; i <= messageCount; i++) {
@@ -643,13 +699,22 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
             TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
             declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, false, new Declared().setTxnId(txnId), true);
+            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
 
             // Expect the message which provoked creating the transaction
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(new MessageHeaderSectionMatcher(true));
             messageMatcher.setMessageAnnotationsMatcher( new MessageAnnotationsSectionMatcher(true));
-            testPeer.expectTransfer(messageMatcher); //TODO: check it is marked as being in the transaction
+
+            TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
+            stateMatcher.withTxnId(equalTo(txnId));
+            stateMatcher.withOutcome(nullValue());
+
+            TransactionalState txState = new TransactionalState();
+            txState.setTxnId(txnId);
+            txState.setOutcome(new Accepted());
+
+            testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
 
             producer.send(session.createMessage());
 
@@ -667,7 +732,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             discharge.setTxnId(txnId);
             TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
             dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
-            testPeer.expectTransfer(dischargeMatcher, false, new Accepted(), true);
+            testPeer.expectTransfer(dischargeMatcher, nullValue(), false, new Accepted(), true);
 
             // Expect the messages that were not consumed to be released
             for (int i = 1; i <= messageCount; i++) {

@@ -21,7 +21,6 @@ import java.util.Map;
 
 import javax.jms.IllegalStateException;
 
-import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.meta.JmsProducerId;

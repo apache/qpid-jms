@@ -97,8 +97,6 @@ public class PropertyUtil {
      *
      * @param uri
      *        The source URI whose existing query is replaced with the newly supplied one.
-     * @param query
-     *        The new URI query string that should be appended to the given URI.
      *
      * @return a new URI that is a combination of the original URI and the given query string.
      * @throws URISyntaxException
@@ -215,7 +213,7 @@ public class PropertyUtil {
      * Given a map of properties, filter out only those prefixed with the given value, the
      * values filtered are returned in a new Map instance.
      *
-     * @param properties
+     * @param props
      *        The map of properties to filter.
      * @param optionPrefix
      *        The prefix value to use when filtering.

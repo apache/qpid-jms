@@ -102,7 +102,7 @@ public class JmsObjectMessageTest {
 
     /**
      * Test that calling {@link ObjectMessage#clearBody()} of a received message
-     * causes the body of the underlying {@link AmqpObjectMessage} to be emptied.
+     * causes the body of the underlying message facade to be emptied.
      */
     @Test
     public void testClearBodyOnReceivedObjectMessageClearsUnderlyingMessageBody() throws Exception {

@@ -37,7 +37,7 @@ public class SslTransport extends TcpTransport {
      *        The TransportListener that will handle events from this Transport instance.
      * @param remoteLocation
      *        The location that is being connected to.
-     * @param JmsSslContext
+     * @param context
      *        The JMS Framework SslContext to use for this SSL connection.
      */
     public SslTransport(TransportListener listener, URI remoteLocation, JmsSslContext context) {

@@ -1606,8 +1606,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     }
 
     /**
-     * Test that {@link MessageImpl#getJMSType()} returns the expected value for a message
-     * received with the {@link ClientProperties#X_OPT_JMS_TYPE} message annotation set.
+     * Test that {@link AmqpJmsMessageFacade#getType()} returns the expected value for a message
+     * received with the {@link AmqpMessageSupport#JMS_TYPE} message annotation set.
      */
     @Test
     public void testGetJMSTypeWithReceivedMessage() throws Exception {

@@ -20,7 +20,7 @@ package org.apache.qpid.jms.test.testpeer;
 
 import org.apache.qpid.proton.amqp.Binary;
 
-class FrameSender implements AmqpPeerRunnable
+public class FrameSender implements AmqpPeerRunnable
 {
     private final TestAmqpPeer _testAmqpPeer;
     private final FrameType _type;

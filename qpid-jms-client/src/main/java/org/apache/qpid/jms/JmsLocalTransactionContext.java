@@ -48,7 +48,7 @@ public class JmsLocalTransactionContext {
     /**
      * Adds the given Transaction synchronization to the current list.
      *
-     * @param synchronization
+     * @param s
      *        the transaction synchronization to add.
      */
     public void addSynchronization(JmsTxSynchronization s) {

@@ -248,7 +248,7 @@ public class JmsBytesMessageTest {
     }
 
     /**
-     * Verify that when {@link BytesMessage#readBytes(byte[], int))} is called
+     * Verify that when {@link BytesMessage#readBytes(byte[], int)} is called
      * with a negative length that an {@link IndexOutOfBoundsException} is thrown.
      */
     @Test(expected=IndexOutOfBoundsException.class)
@@ -260,7 +260,7 @@ public class JmsBytesMessageTest {
     }
 
     /**
-     * Verify that when {@link BytesMessage#readBytes(byte[], int))} is called
+     * Verify that when {@link BytesMessage#readBytes(byte[], int)} is called
      * with a length that is greater than the size of the provided array,
      * an {@link IndexOutOfBoundsException} is thrown.
      */

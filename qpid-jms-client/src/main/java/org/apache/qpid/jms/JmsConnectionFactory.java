@@ -152,7 +152,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     }
 
     /**
-     * @param userName
+     * @param username
      * @param password
      * @return a TopicConnection
      * @throws JMSException
@@ -182,7 +182,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     }
 
     /**
-     * @param userName
+     * @param username
      * @param password
      * @return Connection
      * @throws JMSException
@@ -211,7 +211,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     }
 
     /**
-     * @param userName
+     * @param username
      * @param password
      * @return a QueueConnection
      * @throws JMSException

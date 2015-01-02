@@ -145,7 +145,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     }
 
     /**
-     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(String)} returns null if given null
+     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(Object)} returns null if given null
      */
     @Test
     public void testToBaseMessageIdStringWithNull() {
@@ -154,7 +154,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     }
 
     /**
-     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(String)} throws an IAE if given an unexpected object type.
+     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(Object)} throws an IAE if given an unexpected object type.
      */
     @Test
     public void testToBaseMessageIdStringThrowsIAEWithUnexpectedType() {
@@ -167,7 +167,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     }
 
     /**
-     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(String)} returns the given
+     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(Object)} returns the given
      * basic string unchanged
      */
     @Test
@@ -180,7 +180,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     }
 
     /**
-     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(String)} returns a string
+     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(Object)} returns a string
      * indicating an AMQP encoded string, when the given string happens to already begin with
      * the {@link AmqpMessageIdHelper#AMQP_UUID_PREFIX}.
      */
@@ -195,7 +195,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     }
 
     /**
-     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(String)} returns a string
+     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(Object)} returns a string
      * indicating an AMQP encoded string, when the given string happens to already begin with
      * the {@link AmqpMessageIdHelper#AMQP_ULONG_PREFIX}.
      */
@@ -210,7 +210,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     }
 
     /**
-     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(String)} returns a string
+     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(Object)} returns a string
      * indicating an AMQP encoded string, when the given string happens to already begin with
      * the {@link AmqpMessageIdHelper#AMQP_BINARY_PREFIX}.
      */
@@ -225,7 +225,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     }
 
     /**
-     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(String)} returns a string
+     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(Object)} returns a string
      * indicating an AMQP encoded string (effectively twice), when the given string happens to already begin with
      * the {@link AmqpMessageIdHelper#AMQP_STRING_PREFIX}.
      */
@@ -240,7 +240,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     }
 
     /**
-     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(String)} returns a string
+     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(Object)} returns a string
      * indicating an AMQP encoded UUID when given a UUID object.
      */
     @Test
@@ -254,7 +254,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     }
 
     /**
-     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(String)} returns a string
+     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(Object)} returns a string
      * indicating an AMQP encoded ulong when given a UnsignedLong object.
      */
     @Test
@@ -268,7 +268,7 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     }
 
     /**
-     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(String)} returns a string
+     * Test that {@link AmqpMessageIdHelper#toBaseMessageIdString(Object)} returns a string
      * indicating an AMQP encoded binary when given a Binary object.
      */
     @Test

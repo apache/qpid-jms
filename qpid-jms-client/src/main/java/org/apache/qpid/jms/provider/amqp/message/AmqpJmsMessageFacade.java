@@ -748,7 +748,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     /**
      * The AmqpConnection instance that is associated with this Message.
-     * @return
+     * @return the connection
      */
     public AmqpConnection getConnection() {
         return connection;

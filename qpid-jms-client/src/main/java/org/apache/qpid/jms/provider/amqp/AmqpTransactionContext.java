@@ -72,8 +72,6 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
      *
      * @param session
      *        The session that owns this transaction
-     * @param resource
-     *        The JmsTransactionInfo that defines this Transaction.
      */
     public AmqpTransactionContext(AmqpSession session) {
         super(session.getJmsResource());

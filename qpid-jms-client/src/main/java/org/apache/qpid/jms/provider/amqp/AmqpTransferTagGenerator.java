@@ -72,7 +72,7 @@ public final class AmqpTransferTagGenerator {
      * When used as a pooled cache of tags the unused tags should always be returned once
      * the transfer has been settled.
      *
-     * @param tag
+     * @param data
      *        a previously borrowed tag that is no longer in use.
      */
     public void returnTag(byte[] data) {

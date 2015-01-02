@@ -64,8 +64,6 @@ public class ProviderFuture extends WrappedAsyncResult {
      * @param unit
      *        The unit to use for this wait period.
      *
-     * @return the result of this operation or null if the wait timed out.
-     *
      * @throws IOException if an error occurs while waiting for the response.
      */
     public void sync(long amount, TimeUnit unit) throws IOException {
@@ -80,8 +78,6 @@ public class ProviderFuture extends WrappedAsyncResult {
 
     /**
      * Waits for a response to some Provider requested operation.
-     *
-     * @return the response from the Provider for this operation.
      *
      * @throws IOException if an error occurs while waiting for the response.
      */

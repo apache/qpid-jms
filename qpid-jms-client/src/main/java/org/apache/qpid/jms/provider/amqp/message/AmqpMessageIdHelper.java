@@ -81,7 +81,7 @@ public class AmqpMessageIdHelper {
     /**
      * Returns the suffix of the given string after removing the first "ID:" prefix (if present).
      *
-     * @param string the string to process
+     * @param id the string to process
      * @return the suffix, or the original String if the "ID:" prefix is not present
      */
     public String stripMessageIdPrefix(String id) {

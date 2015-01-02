@@ -162,7 +162,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
     /**
      * Test that a message with the {@value AmqpMessageSupport#JMS_MSG_TYPE}
      * annotation set to  {@value AmqpMessageSupport#JMS_OBJECT_MESSAGE} and
-     * content-type set to {@value AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE} is
+     * content-type set to {@value AmqpMessageSupport#OCTET_STREAM_CONTENT_TYPE} is
      * treated as a {@link JmsObjectMessage} with {@link AmqpJmsObjectMessageFacade}
      * containing a {@link AmqpSerializedObjectDelegate}.
      */

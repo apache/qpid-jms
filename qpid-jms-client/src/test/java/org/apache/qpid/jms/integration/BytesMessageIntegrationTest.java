@@ -240,7 +240,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
      * Binary and no content type is returned as a BytesMessage, verify it gives the
      * expected data values when read, and when sent to the test peer it results in an
      * AMQP message containing a data body section and content type of
-     * {@link AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE}
+     * {@link AmqpMessageSupport#OCTET_STREAM_CONTENT_TYPE}
      */
     @Test(timeout = 5000)
     public void testReceiveBytesMessageWithAmqpValueAndResendResultsInData() throws Exception {

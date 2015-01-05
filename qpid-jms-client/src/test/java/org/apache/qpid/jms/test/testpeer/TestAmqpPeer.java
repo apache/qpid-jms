@@ -19,6 +19,7 @@
 package org.apache.qpid.jms.test.testpeer;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.instanceOf;
@@ -448,6 +449,7 @@ public class TestAmqpPeer implements AutoCloseable
         targetMatcher.withDurable(equalTo(TerminusDurability.NONE));
         targetMatcher.withExpiryPolicy(equalTo(TerminusExpiryPolicy.LINK_DETACH));
         targetMatcher.withDynamicNodeProperties(hasEntry(equalTo(AmqpTemporaryDestination.DYNAMIC_NODE_LIFETIME_POLICY), lifetimePolicyMatcher));
+        targetMatcher.withCapabilities(arrayContaining(AmqpTemporaryDestination.TEMP_QUEUE_CAPABILITY));
 
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())

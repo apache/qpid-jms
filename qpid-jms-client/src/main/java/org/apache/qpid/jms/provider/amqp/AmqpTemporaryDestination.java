@@ -48,6 +48,7 @@ import org.slf4j.LoggerFactory;
 public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestination, Sender> {
 
     public static final Symbol DYNAMIC_NODE_LIFETIME_POLICY = Symbol.valueOf("lifetime-policy");
+    public static final Symbol TEMP_QUEUE_CAPABILITY = Symbol.valueOf("temporary-queue");//TODO: decide location of constant
     private static final String TEMP_QUEUE_CREATOR = "temp-queue-creator:";
     private static final String TEMP_TOPIC_CREATOR = "temp-topic-creator:";
 
@@ -115,6 +116,9 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestinatio
         Map<Symbol, Object> dynamicNodeProperties = new HashMap<Symbol, Object>();
         dynamicNodeProperties.put(DYNAMIC_NODE_LIFETIME_POLICY, DeleteOnClose.getInstance());
         target.setDynamicNodeProperties(dynamicNodeProperties);
+
+        // Set the capability to indicate the node type being created
+        target.setCapabilities(TEMP_QUEUE_CAPABILITY);
 
         Sender sender = session.getProtonSession().sender(senderLinkName);
         sender.setSource(source);

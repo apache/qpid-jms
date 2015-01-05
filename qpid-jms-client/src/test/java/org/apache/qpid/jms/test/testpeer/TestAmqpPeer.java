@@ -441,15 +441,23 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectTempQueueCreationAttach(final String dynamicAddress)
     {
-        DeleteOnCloseMatcher lifetimePolicyMatcher = new DeleteOnCloseMatcher();
+        expectTempNodeCreationAttach(dynamicAddress, AmqpTemporaryDestination.TEMP_QUEUE_CAPABILITY);
+    }
 
+    public void expectTempTopicCreationAttach(final String dynamicAddress)
+    {
+        expectTempNodeCreationAttach(dynamicAddress, AmqpTemporaryDestination.TEMP_TOPIC_CAPABILITY);
+    }
+
+    public void expectTempNodeCreationAttach(final String dynamicAddress, final Symbol nodeTypeCapability)
+    {
         TargetMatcher targetMatcher = new TargetMatcher();
         targetMatcher.withAddress(nullValue());
         targetMatcher.withDynamic(equalTo(true));
         targetMatcher.withDurable(equalTo(TerminusDurability.NONE));
         targetMatcher.withExpiryPolicy(equalTo(TerminusExpiryPolicy.LINK_DETACH));
-        targetMatcher.withDynamicNodeProperties(hasEntry(equalTo(AmqpTemporaryDestination.DYNAMIC_NODE_LIFETIME_POLICY), lifetimePolicyMatcher));
-        targetMatcher.withCapabilities(arrayContaining(AmqpTemporaryDestination.TEMP_QUEUE_CAPABILITY));
+        targetMatcher.withDynamicNodeProperties(hasEntry(equalTo(AmqpTemporaryDestination.DYNAMIC_NODE_LIFETIME_POLICY), new DeleteOnCloseMatcher()));
+        targetMatcher.withCapabilities(arrayContaining(nodeTypeCapability));
 
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())

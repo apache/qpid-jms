@@ -49,6 +49,7 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestinatio
 
     public static final Symbol DYNAMIC_NODE_LIFETIME_POLICY = Symbol.valueOf("lifetime-policy");
     public static final Symbol TEMP_QUEUE_CAPABILITY = Symbol.valueOf("temporary-queue");//TODO: decide location of constant
+    public static final Symbol TEMP_TOPIC_CAPABILITY = Symbol.valueOf("temporary-topic");//TODO: decide location of constant
     private static final String TEMP_QUEUE_CREATOR = "temp-queue-creator:";
     private static final String TEMP_TOPIC_CREATOR = "temp-topic-creator:";
 
@@ -118,7 +119,11 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestinatio
         target.setDynamicNodeProperties(dynamicNodeProperties);
 
         // Set the capability to indicate the node type being created
-        target.setCapabilities(TEMP_QUEUE_CAPABILITY);
+        if (resource.isQueue()) {
+            target.setCapabilities(TEMP_QUEUE_CAPABILITY);
+        } else {
+            target.setCapabilities(TEMP_TOPIC_CAPABILITY);
+        }
 
         Sender sender = session.getProtonSession().sender(senderLinkName);
         sender.setSource(source);

@@ -491,8 +491,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             } else if (destType == Queue.class) {
                 dest = session.createQueue(destName);
             } else if (destType == TemporaryTopic.class) {
-                //TODO:add method to expect temp topic creation
-                testPeer.expectTempQueueCreationAttach(destAddress);
+                testPeer.expectTempTopicCreationAttach(destAddress);
                 dest = session.createTemporaryTopic();
             } else if (destType == TemporaryQueue.class) {
                 testPeer.expectTempQueueCreationAttach(destAddress);
@@ -652,8 +651,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             } else if (destType == Queue.class) {
                 dest = session.createQueue(destName);
             } else if (destType == TemporaryTopic.class) {
-                // TODO:add method to expect temp topic creation
-                testPeer.expectTempQueueCreationAttach(destAddress);
+                testPeer.expectTempTopicCreationAttach(destAddress);
                 dest = session.createTemporaryTopic();
             } else if (destType == TemporaryQueue.class) {
                 testPeer.expectTempQueueCreationAttach(destAddress);

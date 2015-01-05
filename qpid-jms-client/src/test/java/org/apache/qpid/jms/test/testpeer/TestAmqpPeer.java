@@ -20,6 +20,7 @@ package org.apache.qpid.jms.test.testpeer;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -31,6 +32,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.qpid.jms.provider.amqp.AmqpTemporaryDestination;
 import org.apache.qpid.jms.test.testpeer.basictypes.ReceiverSettleMode;
 import org.apache.qpid.jms.test.testpeer.basictypes.Role;
 import org.apache.qpid.jms.test.testpeer.basictypes.SenderSettleMode;
@@ -56,6 +58,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescr
 import org.apache.qpid.jms.test.testpeer.matchers.AttachMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.BeginMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.CloseMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.DeleteOnCloseMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.DetachMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.DispositionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.EndMatcher;
@@ -437,11 +440,14 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectTempQueueCreationAttach(final String dynamicAddress)
     {
+        DeleteOnCloseMatcher lifetimePolicyMatcher = new DeleteOnCloseMatcher();
+
         TargetMatcher targetMatcher = new TargetMatcher();
         targetMatcher.withAddress(nullValue());
         targetMatcher.withDynamic(equalTo(true));
         targetMatcher.withDurable(equalTo(TerminusDurability.NONE));
         targetMatcher.withExpiryPolicy(equalTo(TerminusExpiryPolicy.LINK_DETACH));
+        targetMatcher.withDynamicNodeProperties(hasEntry(equalTo(AmqpTemporaryDestination.DYNAMIC_NODE_LIFETIME_POLICY), lifetimePolicyMatcher));
 
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())

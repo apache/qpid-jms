@@ -16,7 +16,12 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.messaging.DeleteOnClose;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
@@ -42,6 +47,7 @@ import org.slf4j.LoggerFactory;
  */
 public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestination, Sender> {
 
+    public static final Symbol DYNAMIC_NODE_LIFETIME_POLICY = Symbol.valueOf("lifetime-policy");
     private static final String TEMP_QUEUE_CREATOR = "temp-queue-creator:";
     private static final String TEMP_TOPIC_CREATOR = "temp-topic-creator:";
 
@@ -105,7 +111,10 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestinatio
         target.setDurable(TerminusDurability.NONE);
         target.setExpiryPolicy(TerminusExpiryPolicy.LINK_DETACH);
 
-        //TODO: set the dynamic node lifetime-policy
+        // Set the dynamic node lifetime-policy
+        Map<Symbol, Object> dynamicNodeProperties = new HashMap<Symbol, Object>();
+        dynamicNodeProperties.put(DYNAMIC_NODE_LIFETIME_POLICY, DeleteOnClose.getInstance());
+        target.setDynamicNodeProperties(dynamicNodeProperties);
 
         Sender sender = session.getProtonSession().sender(senderLinkName);
         sender.setSource(source);

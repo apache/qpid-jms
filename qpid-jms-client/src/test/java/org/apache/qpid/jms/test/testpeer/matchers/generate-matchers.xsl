@@ -46,7 +46,7 @@
           </xsl:call-template>
         </xsl:if>
 
-        <xsl:if test="@provides = 'source' or @provides = 'target' or @name='transactional-state'  or @provides='delivery-state, outcome'">
+        <xsl:if test="@provides = 'source' or @provides = 'target' or @name='transactional-state' or @provides='delivery-state, outcome' or @provides = 'lifetime-policy'">
           <xsl:variable name="typename"><xsl:call-template name="dashToCamel"><xsl:with-param name="input" select="@name"/></xsl:call-template></xsl:variable>
           <xsl:call-template name="fieldClass">
               <xsl:with-param name="license" select="$license"/>
@@ -143,7 +143,7 @@ import java.util.List;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
-import org.apache.qpid.jms.test.testpeer.AbstractFieldAndDescriptorMatcher;<xsl:if test="@name != 'accepted' and @name != 'released'">
+import org.apache.qpid.jms.test.testpeer.AbstractFieldAndDescriptorMatcher;<xsl:if test="@name != 'accepted' and @name != 'released' and @provides != 'lifetime-policy'">
 import org.hamcrest.Matcher;</xsl:if>
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;

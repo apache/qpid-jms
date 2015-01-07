@@ -195,6 +195,11 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             source.setExpiryPolicy(TerminusExpiryPolicy.LINK_DETACH);
         }
 
+        Symbol typeCapability =  AmqpDestinationHelper.INSTANCE.toTypeCapability(resource.getDestination());
+        if(typeCapability != null) {
+            source.setCapabilities(typeCapability);
+        }
+
         source.setOutcomes(outcomes);
 
         Modified modified = new Modified();

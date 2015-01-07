@@ -196,6 +196,67 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 5000)
+    public void testCreateConsumerSourceContainsQueueCapability() throws Exception {
+        doCreateConsumerSourceContainsCapabilityTestImpl(Queue.class);
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateConsumerSourceContainsTopicCapability() throws Exception {
+        doCreateConsumerSourceContainsCapabilityTestImpl(Topic.class);
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateConsumerSourceContainsTempQueueCapability() throws Exception {
+        doCreateConsumerSourceContainsCapabilityTestImpl(TemporaryQueue.class);
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateConsumerSourceContainsTempTopicCapability() throws Exception {
+        doCreateConsumerSourceContainsCapabilityTestImpl(TemporaryTopic.class);
+    }
+
+    private void doCreateConsumerSourceContainsCapabilityTestImpl(Class<? extends Destination> destType) throws JMSException, Exception, IOException {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin(true);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String destName = "myDest";
+            Symbol nodeTypeCapability = null;
+
+            Destination dest = null;
+            if (destType == Queue.class) {
+                dest = session.createQueue(destName);
+                nodeTypeCapability = AmqpDestinationHelper.QUEUE_CAPABILITY;
+            } else if (destType == Topic.class) {
+                dest = session.createTopic(destName);
+                nodeTypeCapability = AmqpDestinationHelper.TOPIC_CAPABILITY;
+            } else if (destType == TemporaryQueue.class) {
+                testPeer.expectTempQueueCreationAttach(destName);
+                dest = session.createTemporaryQueue();
+                nodeTypeCapability = AmqpDestinationHelper.TEMP_QUEUE_CAPABILITY;
+            } else if (destType == TemporaryTopic.class) {
+                testPeer.expectTempTopicCreationAttach(destName);
+                dest = session.createTemporaryTopic();
+                nodeTypeCapability = AmqpDestinationHelper.TEMP_TOPIC_CAPABILITY;
+            } else {
+                fail("unexpected type");
+            }
+
+            SourceMatcher sourceMatcher = new SourceMatcher();
+            sourceMatcher.withCapabilities(arrayContaining(nodeTypeCapability));
+
+            testPeer.expectReceiverAttach(notNullValue(), sourceMatcher);
+            testPeer.expectLinkFlow();
+
+            session.createConsumer(dest);
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 5000)
     public void testCreateProducerTargetContainsQueueCapability() throws Exception {
         doCreateProducerTargetContainsCapabilityTestImpl(Queue.class);
     }

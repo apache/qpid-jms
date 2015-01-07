@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.transports;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -42,7 +43,6 @@ import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.jms.util.InetAddressUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.vertx.java.core.buffer.Buffer;
 
 /**
  *
@@ -302,8 +302,7 @@ public class RawTcpTransport implements Transport, Runnable {
 
         byte[] buffer = new byte[size];
         dataIn.readFully(buffer);
-        Buffer incoming = new Buffer(buffer);
-        listener.onData(incoming);
+        listener.onData(Unpooled.wrappedBuffer(buffer));
     }
 
     /**

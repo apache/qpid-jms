@@ -35,7 +35,6 @@ import org.apache.qpid.jms.transports.TransportListener;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.vertx.java.core.buffer.Buffer;
 
 /**
  * Test basic functionality of the Netty based TCP transport.
@@ -46,7 +45,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
     private boolean transportClosed;
     private final List<Throwable> exceptions = new ArrayList<Throwable>();
-    private final List<Buffer> data = new ArrayList<Buffer>();
+    private final List<ByteBuf> data = new ArrayList<ByteBuf>();
 
     private final TransportListener testListener = new NettyTransportListener();
     private final TcpTransportOptions testOptions = new TcpTransportOptions();
@@ -153,7 +152,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 }
             }));
 
-            assertEquals(SEND_BYTE_COUNT, data.get(0).length());
+            assertEquals(SEND_BYTE_COUNT, data.get(0).readableBytes());
 
             transport.close();
         }
@@ -165,8 +164,8 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
     private class NettyTransportListener implements TransportListener {
 
         @Override
-        public void onData(Buffer incoming) {
-            LOG.info("Client has new incoming data of size: {}", incoming.length());
+        public void onData(ByteBuf incoming) {
+            LOG.info("Client has new incoming data of size: {}", incoming.readableBytes());
             data.add(incoming);
         }
 

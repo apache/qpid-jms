@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -59,7 +61,6 @@ import org.apache.qpid.proton.engine.impl.TransportImpl;
 import org.apache.qpid.proton.framing.TransportFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.vertx.java.core.buffer.Buffer;
 
 /**
  * An AMQP v1.0 Provider.
@@ -622,16 +623,15 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
     }
 
     @Override
-    public void onData(Buffer input) {
-
-        // Create our own copy since we will process later.
-        final ByteBuffer source = ByteBuffer.wrap(input.getBytes());
+    public void onData(final ByteBuf input) {
 
         serializer.execute(new Runnable() {
 
             @Override
             public void run() {
-                LOG.trace("Received from Broker {} bytes:", source.remaining());
+                LOG.trace("Received from Broker {} bytes:", input.readableBytes());
+
+                ByteBuffer source = input.nioBuffer();
 
                 do {
                     ByteBuffer buffer = protonTransport.getInputBuffer();

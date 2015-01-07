@@ -38,7 +38,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.net.impl.PartialPooledByteBufAllocator;
 
 /**
@@ -192,7 +191,7 @@ public class NettyTcpTransport implements Transport {
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, ByteBuf buffer) throws Exception {
             LOG.info("New data read: {} bytes incoming", buffer.readableBytes());
-            listener.onData(new Buffer(buffer));
+            listener.onData(buffer);
         }
     }
 }

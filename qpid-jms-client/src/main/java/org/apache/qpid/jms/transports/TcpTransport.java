@@ -102,7 +102,7 @@ public class TcpTransport implements Transport {
                         socket.dataHandler(new Handler<Buffer>() {
                             @Override
                             public void handle(Buffer event) {
-                                listener.onData(event);
+                                listener.onData(event.getByteBuf());
                             }
                         });
 

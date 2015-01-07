@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.transports;
 
-import org.vertx.java.core.buffer.Buffer;
+import io.netty.buffer.ByteBuf;
 
 /**
  * Listener interface that should be implemented by users of the various
@@ -30,7 +30,7 @@ public interface TransportListener {
      * @param incoming
      *        the next incoming packet of data.
      */
-    void onData(Buffer incoming);
+    void onData(ByteBuf incoming);
 
     /**
      * Called if the connection state becomes closed.

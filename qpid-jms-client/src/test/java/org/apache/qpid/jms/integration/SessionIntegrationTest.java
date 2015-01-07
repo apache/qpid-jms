@@ -254,6 +254,121 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 5000)
+    public void testCreateAnonymousProducerTargetContainsNoTypeCapabilityWhenAnonymousRelayNodeIsSupported() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+
+            //Add capability to indicate support for ANONYMOUS-RELAY
+            Symbol[] serverCapabilities = new Symbol[]{AmqpConnectionProperties.ANONYMOUS_RELAY};
+
+            Connection connection = testFixture.establishConnecton(testPeer, serverCapabilities);
+            connection.start();
+
+            testPeer.expectBegin(true);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            //Expect and accept a link to the anonymous relay node, check it has no type capability
+            TargetMatcher targetMatcher = new TargetMatcher();
+            targetMatcher.withAddress(nullValue());
+            targetMatcher.withDynamic(nullValue());//default = false
+            targetMatcher.withDurable(nullValue());//default = none/0
+            targetMatcher.withCapabilities(nullValue());
+
+            testPeer.expectSenderAttach(targetMatcher, false, false);
+
+            //Create an anonymous producer
+            MessageProducer producer = session.createProducer(null);
+            assertNotNull("Producer object was null", producer);
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateAnonymousProducerTargetContainsQueueCapabilityWhenAnonymousRelayNodeIsNotSupported() throws Exception {
+        doCreateAnonymousProducerTargetContainsCapabilityWhenAnonymousRelayNodeIsNotSupportedTestImpl(Queue.class);
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateAnonymousProducerTargetContainsTopicCapabilityWhenAnonymousRelayNodeIsNotSupported() throws Exception {
+        doCreateAnonymousProducerTargetContainsCapabilityWhenAnonymousRelayNodeIsNotSupportedTestImpl(Topic.class);
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateAnonymousProducerTargetContainsTempQueueCapabilityWhenAnonymousRelayNodeIsNotSupported() throws Exception {
+        doCreateAnonymousProducerTargetContainsCapabilityWhenAnonymousRelayNodeIsNotSupportedTestImpl(TemporaryQueue.class);
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateAnonymousProducerTargetContainsTempTopicCapabilityWhenAnonymousRelayNodeIsNotSupported() throws Exception {
+        doCreateAnonymousProducerTargetContainsCapabilityWhenAnonymousRelayNodeIsNotSupportedTestImpl(TemporaryQueue.class);
+    }
+
+    private void doCreateAnonymousProducerTargetContainsCapabilityWhenAnonymousRelayNodeIsNotSupportedTestImpl(Class<? extends Destination> destType) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+
+            //DO NOT add capability to indicate server support for ANONYMOUS-RELAY
+
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin(true);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String destName = "myDest";
+            Symbol nodeTypeCapability = null;
+
+            Destination dest = null;
+            if (destType == Queue.class) {
+                dest = session.createQueue(destName);
+                nodeTypeCapability = Symbol.valueOf("queue");// TODO: constant
+            } else if (destType == Topic.class) {
+                dest = session.createTopic(destName);
+                nodeTypeCapability = Symbol.valueOf("topic");// TODO: constant
+            } else if (destType == TemporaryQueue.class) {
+                testPeer.expectTempQueueCreationAttach(destName);
+                dest = session.createTemporaryQueue();
+                nodeTypeCapability = AmqpTemporaryDestination.TEMP_QUEUE_CAPABILITY;
+            } else if (destType == TemporaryTopic.class) {
+                testPeer.expectTempTopicCreationAttach(destName);
+                dest = session.createTemporaryTopic();
+                nodeTypeCapability = AmqpTemporaryDestination.TEMP_TOPIC_CAPABILITY;
+            } else {
+                fail("unexpected type");
+            }
+
+            // Expect no AMQP traffic when we create the anonymous producer, as it will wait
+            // for an actual send to occur on the producer before anything occurs on the wire
+
+            //Create an anonymous producer
+            MessageProducer producer = session.createProducer(null);
+            assertNotNull("Producer object was null", producer);
+
+            //Expect a new message sent by the above producer to cause creation of a new
+            //sender link to the given destination, then closing the link after the message is sent.
+            TargetMatcher targetMatcher = new TargetMatcher();
+            targetMatcher.withAddress(equalTo(destName));
+            targetMatcher.withDynamic(equalTo(false));
+            targetMatcher.withDurable(equalTo(TerminusDurability.NONE));
+            targetMatcher.withCapabilities(arrayContaining(nodeTypeCapability));
+
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+
+            testPeer.expectSenderAttach(targetMatcher, false, false);
+            testPeer.expectTransfer(messageMatcher);
+            testPeer.expectDetach(true, true, true);
+
+            Message message = session.createMessage();
+            producer.send(dest, message);
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 5000)
     public void testCreateDurableTopicSubscriber() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);

@@ -51,6 +51,7 @@ import org.apache.qpid.jms.provider.amqp.AmqpConnectionProperties;
 import org.apache.qpid.jms.provider.amqp.AmqpTemporaryDestination;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
+import org.apache.qpid.jms.test.testpeer.basictypes.TerminusDurability;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Declare;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Declared;
@@ -416,8 +417,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             //Expect a link to a topic node, which we will then refuse
             TargetMatcher targetMatcher = new TargetMatcher();
             targetMatcher.withAddress(equalTo(topicName));
-            targetMatcher.withDynamic(nullValue());//default = false
-            targetMatcher.withDurable(nullValue());//default = none/0
+            targetMatcher.withDynamic(equalTo(false));
+            targetMatcher.withDurable(equalTo(TerminusDurability.NONE));
 
             testPeer.expectSenderAttach(targetMatcher, true, deferAttachResponseWrite);
             //Expect the detach response to the test peer closing the producer link after refusal.
@@ -461,8 +462,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             //sender link to the given destination, then closing the link after the message is sent.
             TargetMatcher targetMatcher = new TargetMatcher();
             targetMatcher.withAddress(equalTo(topicName));
-            targetMatcher.withDynamic(nullValue());//default = false
-            targetMatcher.withDurable(nullValue());//default = none/0
+            targetMatcher.withDynamic(equalTo(false));
+            targetMatcher.withDurable(equalTo(TerminusDurability.NONE));
 
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);

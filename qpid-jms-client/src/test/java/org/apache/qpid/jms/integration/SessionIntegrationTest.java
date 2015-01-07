@@ -216,7 +216,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     private void doCreateConsumerSourceContainsCapabilityTestImpl(Class<? extends Destination> destType) throws JMSException, Exception, IOException {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
 
@@ -277,7 +277,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     private void doCreateProducerTargetContainsCapabilityTestImpl(Class<? extends Destination> destType) throws JMSException, Exception, IOException {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
 
@@ -316,7 +316,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testCreateAnonymousProducerTargetContainsNoTypeCapabilityWhenAnonymousRelayNodeIsSupported() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
 
             //Add capability to indicate support for ANONYMOUS-RELAY
             Symbol[] serverCapabilities = new Symbol[]{AmqpConnectionProperties.ANONYMOUS_RELAY};
@@ -365,7 +365,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     private void doCreateAnonymousProducerTargetContainsCapabilityWhenAnonymousRelayNodeIsNotSupportedTestImpl(Class<? extends Destination> destType) throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
 
             //DO NOT add capability to indicate server support for ANONYMOUS-RELAY
 

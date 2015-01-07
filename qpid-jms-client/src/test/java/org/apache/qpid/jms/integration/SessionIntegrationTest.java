@@ -79,7 +79,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testCloseSession() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -91,7 +91,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testCreateProducer() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
 
@@ -106,7 +106,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testCreateProducerLinkSupportsAcceptedAndRejectedOutcomes() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
 
@@ -132,7 +132,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testCreateConsumer() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
@@ -152,7 +152,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testCreateTemporaryQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
@@ -173,7 +173,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testCreateTemporaryTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
@@ -194,7 +194,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testCreateDurableTopicSubscriber() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
@@ -219,7 +219,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testCloseDurableTopicSubscriberDetachesWithCloseFalse() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
@@ -244,7 +244,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testCreateAnonymousProducerWhenAnonymousRelayNodeIsSupported() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             //Add capability to indicate support for ANONYMOUS-RELAY
             Symbol[] serverCapabilities = new Symbol[]{AmqpConnectionProperties.ANONYMOUS_RELAY};
 
@@ -301,7 +301,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     private void doCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedTestImpl(boolean deferAttachFrameWrite) throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             //Add capability to indicate support for ANONYMOUS-RELAY
             Symbol[] serverCapabilities = new Symbol[]{AmqpConnectionProperties.ANONYMOUS_RELAY};
 
@@ -343,7 +343,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     private void doCreateProducerFailsWhenLinkRefusedTestImpl(boolean deferAttachResponseWrite) throws JMSException, InterruptedException, Exception, IOException {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
@@ -377,7 +377,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testCreateAnonymousProducerWhenAnonymousRelayNodeIsNotSupported() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
 
             //DO NOT add capability to indicate server support for ANONYMOUS-RELAY
 
@@ -439,7 +439,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     private void doCommitTransactedSessionWithConsumerTestImpl(int transferCount, int consumeCount) throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
@@ -495,7 +495,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout=5000)
     public void testProducedMessagesOnTransactedSessionCarryTxnId() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
@@ -551,7 +551,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     private void doRollbackTransactedSessionWithConsumerTestImpl(int transferCount, int consumeCount) throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
@@ -619,7 +619,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout=5000)
     public void testRollbackTransactedSessionWithPrefetchFullBeforeStoppingConsumer() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             int messageCount = 5;
             ((JmsConnection) connection).getPrefetchPolicy().setAll(messageCount);
@@ -693,7 +693,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout=5000)
     public void testRollbackTransactedSessionWithPrefetchFullyUtilisedByDrainWhenStoppingConsumer() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             int messageCount = 5;
             ((JmsConnection) connection).getPrefetchPolicy().setAll(messageCount);
@@ -772,7 +772,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout=5000)
     public void testDefaultOutcomeIsModifiedForConsumerSourceOnTransactedSession() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
@@ -802,7 +802,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout=5000)
     public void testPrefetchPolicyInfluencesCreditFlow() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             int newPrefetch = 263;
             ((JmsConnection) connection).getPrefetchPolicy().setAll(newPrefetch);

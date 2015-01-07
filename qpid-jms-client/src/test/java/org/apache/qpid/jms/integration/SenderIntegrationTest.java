@@ -56,7 +56,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 10000)
     public void testCloseSender() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
@@ -74,7 +74,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 10000)
     public void testDefaultDeliveryModeProducesDurableMessages() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
@@ -103,7 +103,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 10000)
     public void testProducerOverridesMessageDeliveryMode() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
@@ -141,7 +141,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
      */
     @Test(timeout = 5000)
     public void testSendingMessageSetsJMSDestination() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
@@ -176,7 +176,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 10000)
     public void testSendingMessageSetsJMSTimestamp() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
@@ -220,7 +220,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
      */
     @Test(timeout = 5000)
     public void testSendingMessageWithDisableMessageTimestampHint() throws Exception {
-        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
@@ -257,7 +257,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 10000)
     public void testSendingMessageSetsJMSExpirationRelatedAbsoluteExpiryAndTtlFields() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
@@ -310,7 +310,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
     }
 
     public void sendingMessageWithJMS_AMQP_TTLSetTestImpl(long jmsTtl, long amqpTtl) throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
@@ -362,7 +362,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
      */
     @Test(timeout = 10000)
     public void testDefaultPriorityProducesMessagesWithoutPriorityField() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
@@ -398,7 +398,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
      */
     @Test(timeout = 10000)
     public void testNonDefaultPriorityProducesMessagesWithPriorityFieldAndSetsJMSPriority() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
@@ -436,7 +436,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
      */
     @Test(timeout = 10000)
     public void testSendingMessageSetsJMSMessageID() throws Exception {
-        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
@@ -482,7 +482,7 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
      */
     @Test(timeout = 5000)
     public void testSendingMessageWithDisableMessageIDHint() throws Exception {
-        try(TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();

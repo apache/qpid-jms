@@ -20,18 +20,24 @@ package org.apache.qpid.jms.integration;
 
 import static org.junit.Assert.assertNull;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.Map;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
+import javax.net.ServerSocketFactory;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.proton.amqp.Symbol;
 
 public class IntegrationTestFixture {
-    static final int PORT = 25672;
+
+    private static final int PORT = 25672;
+
+    protected int availablePort = 0;
 
     Connection establishConnecton(TestAmqpPeer testPeer) throws JMSException {
         return establishConnecton(testPeer, null, null, null);
@@ -55,7 +61,7 @@ public class IntegrationTestFixture {
         // Each connection creates a session for managing temporary destinations etc
         testPeer.expectBegin(true);
 
-        final String baseURI = "amqp://localhost:" + PORT;
+        final String baseURI = "amqp://localhost:" + getAvailablePort();
         String brokerURI = baseURI;
         if (optionsString != null) {
             brokerURI = baseURI + optionsString;
@@ -69,5 +75,25 @@ public class IntegrationTestFixture {
 
         assertNull(testPeer.getThrowable());
         return connection;
+    }
+
+    protected int getAvailablePort() {
+        if (availablePort == 0) {
+            ServerSocket ss = null;
+            try {
+                ss = ServerSocketFactory.getDefault().createServerSocket(0);
+                availablePort = ss.getLocalPort();
+            } catch (IOException e) { // revert back to default
+                availablePort = PORT;
+            } finally {
+                try {
+                    if (ss != null ) {
+                        ss.close();
+                    }
+                } catch (IOException e) { // ignore
+                }
+            }
+        }
+        return availablePort;
     }
 }

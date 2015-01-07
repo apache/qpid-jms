@@ -60,7 +60,7 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
      */
     @Test(timeout = 5000)
     public void testReceiveBasicMapMessage() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
@@ -149,7 +149,7 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
      */
     @Test(timeout = 5000)
     public void testSendBasicMapMessage() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();

@@ -62,7 +62,7 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
 
     @Test(timeout = 5000)
     public void testSendBasicObjectMessageWithSerializedContent() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
@@ -104,7 +104,7 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
 
     @Test(timeout = 5000)
     public void testReceiveBasicObjectMessageWithSerializedContent() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
@@ -150,7 +150,7 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
 
     @Test(timeout = 5000)
     public void testReceiveAndThenResendBasicObjectMessageWithSerializedContent() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
@@ -212,7 +212,7 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
 
     @Test(timeout = 5000)
     public void testSendBasicObjectMessageWithAmqpTypedContent() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
@@ -249,7 +249,7 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
 
     @Test(timeout = 5000)
     public void testRecieveBasicObjectMessageWithAmqpTypedContentAndJMSMessageTypeAnnotation() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 

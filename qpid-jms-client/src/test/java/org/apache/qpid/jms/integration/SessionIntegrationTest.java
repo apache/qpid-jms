@@ -48,7 +48,7 @@ import javax.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConnectionProperties;
-import org.apache.qpid.jms.provider.amqp.AmqpTemporaryDestination;
+import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.TerminusDurability;
@@ -228,18 +228,18 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Destination dest = null;
             if (destType == Queue.class) {
                 dest = session.createQueue(destName);
-                nodeTypeCapability = Symbol.valueOf("queue");// TODO: constant
+                nodeTypeCapability = AmqpDestinationHelper.QUEUE_CAPABILITY;
             } else if (destType == Topic.class) {
                 dest = session.createTopic(destName);
-                nodeTypeCapability = Symbol.valueOf("topic");// TODO: constant
+                nodeTypeCapability = AmqpDestinationHelper.TOPIC_CAPABILITY;
             } else if (destType == TemporaryQueue.class) {
                 testPeer.expectTempQueueCreationAttach(destName);
                 dest = session.createTemporaryQueue();
-                nodeTypeCapability = AmqpTemporaryDestination.TEMP_QUEUE_CAPABILITY;
+                nodeTypeCapability = AmqpDestinationHelper.TEMP_QUEUE_CAPABILITY;
             } else if (destType == TemporaryTopic.class) {
                 testPeer.expectTempTopicCreationAttach(destName);
                 dest = session.createTemporaryTopic();
-                nodeTypeCapability = AmqpTemporaryDestination.TEMP_TOPIC_CAPABILITY;
+                nodeTypeCapability = AmqpDestinationHelper.TEMP_TOPIC_CAPABILITY;
             } else {
                 fail("unexpected type");
             }
@@ -320,18 +320,18 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Destination dest = null;
             if (destType == Queue.class) {
                 dest = session.createQueue(destName);
-                nodeTypeCapability = Symbol.valueOf("queue");// TODO: constant
+                nodeTypeCapability = AmqpDestinationHelper.QUEUE_CAPABILITY;
             } else if (destType == Topic.class) {
                 dest = session.createTopic(destName);
-                nodeTypeCapability = Symbol.valueOf("topic");// TODO: constant
+                nodeTypeCapability = AmqpDestinationHelper.TOPIC_CAPABILITY;
             } else if (destType == TemporaryQueue.class) {
                 testPeer.expectTempQueueCreationAttach(destName);
                 dest = session.createTemporaryQueue();
-                nodeTypeCapability = AmqpTemporaryDestination.TEMP_QUEUE_CAPABILITY;
+                nodeTypeCapability = AmqpDestinationHelper.TEMP_QUEUE_CAPABILITY;
             } else if (destType == TemporaryTopic.class) {
                 testPeer.expectTempTopicCreationAttach(destName);
                 dest = session.createTemporaryTopic();
-                nodeTypeCapability = AmqpTemporaryDestination.TEMP_TOPIC_CAPABILITY;
+                nodeTypeCapability = AmqpDestinationHelper.TEMP_TOPIC_CAPABILITY;
             } else {
                 fail("unexpected type");
             }

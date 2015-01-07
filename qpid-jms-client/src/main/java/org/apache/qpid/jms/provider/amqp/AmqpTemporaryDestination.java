@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.DeleteOnClose;
 import org.apache.qpid.proton.amqp.messaging.Source;
@@ -48,8 +49,6 @@ import org.slf4j.LoggerFactory;
 public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestination, Sender> {
 
     public static final Symbol DYNAMIC_NODE_LIFETIME_POLICY = Symbol.valueOf("lifetime-policy");
-    public static final Symbol TEMP_QUEUE_CAPABILITY = Symbol.valueOf("temporary-queue");//TODO: decide location of constant
-    public static final Symbol TEMP_TOPIC_CAPABILITY = Symbol.valueOf("temporary-topic");//TODO: decide location of constant
     private static final String TEMP_QUEUE_CREATOR = "temp-queue-creator:";
     private static final String TEMP_TOPIC_CREATOR = "temp-topic-creator:";
 
@@ -120,9 +119,9 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestinatio
 
         // Set the capability to indicate the node type being created
         if (resource.isQueue()) {
-            target.setCapabilities(TEMP_QUEUE_CAPABILITY);
+            target.setCapabilities(AmqpDestinationHelper.TEMP_QUEUE_CAPABILITY);
         } else {
-            target.setCapabilities(TEMP_TOPIC_CAPABILITY);
+            target.setCapabilities(AmqpDestinationHelper.TEMP_TOPIC_CAPABILITY);
         }
 
         Sender sender = session.getProtonSession().sender(senderLinkName);

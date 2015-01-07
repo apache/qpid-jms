@@ -25,7 +25,6 @@ import org.apache.qpid.jms.JmsTemporaryQueue;
 import org.apache.qpid.jms.JmsTemporaryTopic;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
-import org.apache.qpid.jms.provider.amqp.AmqpTemporaryDestination;
 import org.apache.qpid.proton.amqp.Symbol;
 
 /**
@@ -41,6 +40,10 @@ public class AmqpDestinationHelper {
     public static final byte TOPIC_TYPE = 0x01;
     public static final byte TEMP_QUEUE_TYPE = 0x02;
     public static final byte TEMP_TOPIC_TYPE = 0x03;
+    public static final Symbol QUEUE_CAPABILITY = Symbol.valueOf("queue");
+    public static final Symbol TOPIC_CAPABILITY = Symbol.valueOf("topic");
+    public static final Symbol TEMP_QUEUE_CAPABILITY = Symbol.valueOf("temporary-queue");
+    public static final Symbol TEMP_TOPIC_CAPABILITY = Symbol.valueOf("temporary-topic");
     private static final byte UNKNOWN_TYPE = -1;
 
     /**
@@ -301,15 +304,15 @@ public class AmqpDestinationHelper {
 
         if (destination.isQueue()) {
             if (destination.isTemporary()) {
-                return AmqpTemporaryDestination.TEMP_QUEUE_CAPABILITY;
+                return TEMP_QUEUE_CAPABILITY;
             } else {
-                return Symbol.valueOf("queue");// TODO: constant;
+                return QUEUE_CAPABILITY;
             }
         } else if (destination.isTopic()) {
             if (destination.isTemporary()) {
-                return AmqpTemporaryDestination.TEMP_TOPIC_CAPABILITY;
+                return TEMP_TOPIC_CAPABILITY;
             } else {
-                return Symbol.valueOf("topic");// TODO: constant;
+                return TOPIC_CAPABILITY;
             }
         }
 

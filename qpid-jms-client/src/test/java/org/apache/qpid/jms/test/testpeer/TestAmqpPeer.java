@@ -34,6 +34,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.qpid.jms.provider.amqp.AmqpTemporaryDestination;
+import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.test.testpeer.basictypes.ReceiverSettleMode;
 import org.apache.qpid.jms.test.testpeer.basictypes.Role;
 import org.apache.qpid.jms.test.testpeer.basictypes.SenderSettleMode;
@@ -441,12 +442,12 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectTempQueueCreationAttach(final String dynamicAddress)
     {
-        expectTempNodeCreationAttach(dynamicAddress, AmqpTemporaryDestination.TEMP_QUEUE_CAPABILITY);
+        expectTempNodeCreationAttach(dynamicAddress, AmqpDestinationHelper.TEMP_QUEUE_CAPABILITY);
     }
 
     public void expectTempTopicCreationAttach(final String dynamicAddress)
     {
-        expectTempNodeCreationAttach(dynamicAddress, AmqpTemporaryDestination.TEMP_TOPIC_CAPABILITY);
+        expectTempNodeCreationAttach(dynamicAddress, AmqpDestinationHelper.TEMP_TOPIC_CAPABILITY);
     }
 
     private void expectTempNodeCreationAttach(final String dynamicAddress, final Symbol nodeTypeCapability)

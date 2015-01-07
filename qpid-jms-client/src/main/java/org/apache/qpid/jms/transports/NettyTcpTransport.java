@@ -22,14 +22,13 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.FixedRecvByteBufAllocator;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.util.ReferenceCountUtil;
 
 import java.io.IOException;
 import java.net.URI;
@@ -165,22 +164,11 @@ public class NettyTcpTransport implements Transport {
 
     //----- Handle connection events -----------------------------------------//
 
-    private class NettyTcpTransportHandler extends ChannelInboundHandlerAdapter {
+    private class NettyTcpTransportHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
         @Override
         public void channelActive(ChannelHandlerContext context) throws Exception {
             LOG.info("Channel has become active! Channel is {}", context.channel());
-        }
-
-        @Override
-        public void channelRead(ChannelHandlerContext context, Object inbound) throws Exception {
-            ByteBuf buffer = (ByteBuf) inbound;
-            LOG.info("New data read: {} bytes incoming", buffer.readableBytes());
-            try {
-                listener.onData(new Buffer(buffer));
-            } finally {
-                ReferenceCountUtil.release(inbound);
-            }
         }
 
         @Override
@@ -199,6 +187,12 @@ public class NettyTcpTransport implements Transport {
                 connected.set(false);
                 listener.onTransportError(cause);
             }
+        }
+
+        @Override
+        protected void channelRead0(ChannelHandlerContext ctx, ByteBuf buffer) throws Exception {
+            LOG.info("New data read: {} bytes incoming", buffer.readableBytes());
+            listener.onData(new Buffer(buffer));
         }
     }
 }

@@ -449,7 +449,7 @@ public class TestAmqpPeer implements AutoCloseable
         expectTempNodeCreationAttach(dynamicAddress, AmqpTemporaryDestination.TEMP_TOPIC_CAPABILITY);
     }
 
-    public void expectTempNodeCreationAttach(final String dynamicAddress, final Symbol nodeTypeCapability)
+    private void expectTempNodeCreationAttach(final String dynamicAddress, final Symbol nodeTypeCapability)
     {
         TargetMatcher targetMatcher = new TargetMatcher();
         targetMatcher.withAddress(nullValue());

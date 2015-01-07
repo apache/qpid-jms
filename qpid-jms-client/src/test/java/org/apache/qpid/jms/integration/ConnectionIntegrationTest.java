@@ -40,7 +40,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout=10000)
     public void testCreateAndCloseConnection() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectClose();
             connection.close();
@@ -49,7 +49,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout=10000)
     public void testCreateAutoAckSession() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -59,7 +59,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout=5000)
     public void testCreateTransactedSession() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
 
             testPeer.expectBegin(true);
@@ -76,7 +76,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout=5000)
     public void testConnectionMetaDataVersion() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
 
             ConnectionMetaData meta = connection.getMetaData();

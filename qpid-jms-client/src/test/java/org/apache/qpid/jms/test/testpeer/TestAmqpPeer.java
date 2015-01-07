@@ -111,6 +111,13 @@ public class TestAmqpPeer implements AutoCloseable
 
     private byte[] _deferredBytes;
 
+    public TestAmqpPeer() throws IOException
+    {
+        _driverRunnable = new TestAmqpPeerRunner(this);
+        _driverThread = new Thread(_driverRunnable, "MockAmqpPeerThread");
+        _driverThread.start();
+    }
+
     public TestAmqpPeer(int port) throws IOException
     {
         _driverRunnable = new TestAmqpPeerRunner(port, this);
@@ -157,6 +164,11 @@ public class TestAmqpPeer implements AutoCloseable
     public Throwable getThrowable()
     {
         return _driverRunnable.getException();
+    }
+
+    public int getServerPort()
+    {
+        return _driverRunnable.getServerPort();
     }
 
     public void receiveHeader(byte[] header)

@@ -57,7 +57,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testSendBasicBytesMessageWithContent() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
@@ -90,7 +90,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testReceiveBasicBytesMessageWithContentUsingDataSection() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
@@ -136,7 +136,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
      */
     @Test(timeout = 5000)
     public void testReceiveBytesMessageAndResendAfterResetAndPartialRead() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
@@ -244,7 +244,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
      */
     @Test(timeout = 5000)
     public void testReceiveBytesMessageWithAmqpValueAndResendResultsInData() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 

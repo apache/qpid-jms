@@ -33,7 +33,10 @@ class TestAmqpPeerRunner implements Runnable
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(TestAmqpPeerRunner.class);
 
+    private static final int PORT = 25672;
+
     private final ServerSocket _serverSocket;
+    private final boolean useFixedPort = Boolean.getBoolean("testPeerUsesFixedPort");
 
     /** TODO handle multiple connections */
     private Socket _clientSocket;
@@ -43,6 +46,12 @@ class TestAmqpPeerRunner implements Runnable
     private final TestFrameParser _testFrameParser;
 
     private volatile Throwable _throwable;
+
+    public TestAmqpPeerRunner(TestAmqpPeer peer) throws IOException
+    {
+        _serverSocket = new ServerSocket(useFixedPort ? PORT : 0);
+        _testFrameParser = new TestFrameParser(peer);
+    }
 
     public TestAmqpPeerRunner(int port, TestAmqpPeer peer) throws IOException
     {
@@ -157,5 +166,15 @@ class TestAmqpPeerRunner implements Runnable
     public Throwable getException()
     {
         return _throwable;
+    }
+
+    public int getServerPort()
+    {
+        if (_serverSocket != null)
+        {
+            return _serverSocket.getLocalPort();
+        }
+
+        return -1;
     }
 }

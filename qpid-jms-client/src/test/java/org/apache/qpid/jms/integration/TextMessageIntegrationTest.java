@@ -48,7 +48,7 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testSendTextMessage() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
@@ -77,7 +77,7 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testReceiveTextMessageWithContentAmqpValue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
@@ -105,7 +105,7 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testSendTextMessageWithoutContent() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
             testPeer.expectSenderAttach();
@@ -133,7 +133,7 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testReceiveTextMessageWithAmqpValueNullBodyAndNoMsgTypeAnnotation() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer(testFixture.getAvailablePort());) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 

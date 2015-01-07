@@ -235,12 +235,8 @@ public class AmqpFixedProducer extends AmqpProducer {
 
     @Override
     protected void doOpen() {
-        String targetAddress = null;
-
-        if (resource.getDestination() != null) {
-            JmsDestination destination = resource.getDestination();
-            targetAddress = AmqpDestinationHelper.INSTANCE.getDestinationAddress(destination, session.getConnection());
-        }
+        JmsDestination destination = resource.getDestination();
+        String targetAddress = AmqpDestinationHelper.INSTANCE.getDestinationAddress(destination, session.getConnection());
 
         Symbol[] outcomes = new Symbol[]{Accepted.DESCRIPTOR_SYMBOL, Rejected.DESCRIPTOR_SYMBOL};
         String sourceAddress = getProducerId().toString();
@@ -251,6 +247,10 @@ public class AmqpFixedProducer extends AmqpProducer {
 
         Target target = new Target();
         target.setAddress(targetAddress);
+        Symbol typeCapability =  AmqpDestinationHelper.INSTANCE.toTypeCapability(destination);
+        if(typeCapability != null) {
+            target.setCapabilities(typeCapability);
+        }
 
         String senderName = sourceAddress + ":" + targetAddress;
 

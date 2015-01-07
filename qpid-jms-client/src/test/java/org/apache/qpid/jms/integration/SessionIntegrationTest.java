@@ -33,6 +33,7 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 
 import javax.jms.Connection;
+import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -47,6 +48,7 @@ import javax.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConnectionProperties;
+import org.apache.qpid.jms.provider.amqp.AmqpTemporaryDestination;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
@@ -189,6 +191,64 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             assertEquals("TemporaryTopic name not as expected", dynamicAddress, tempTopic.getTopicName());
 
             testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateProducerTargetContainsQueueCapability() throws Exception {
+        doCreateProducerTargetContainsCapabilityTestImpl(Queue.class);
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateProducerTargetContainsTopicCapability() throws Exception {
+        doCreateProducerTargetContainsCapabilityTestImpl(Topic.class);
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateProducerTargetContainsTempQueueCapability() throws Exception {
+        doCreateProducerTargetContainsCapabilityTestImpl(TemporaryQueue.class);
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateProducerTargetContainsTempTopicCapability() throws Exception {
+        doCreateProducerTargetContainsCapabilityTestImpl(TemporaryTopic.class);
+    }
+
+    private void doCreateProducerTargetContainsCapabilityTestImpl(Class<? extends Destination> destType) throws JMSException, Exception, IOException {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(IntegrationTestFixture.PORT);) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin(true);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String destName = "myDest";
+            Symbol nodeTypeCapability = null;
+
+            Destination dest = null;
+            if (destType == Queue.class) {
+                dest = session.createQueue(destName);
+                nodeTypeCapability = Symbol.valueOf("queue");// TODO: constant
+            } else if (destType == Topic.class) {
+                dest = session.createTopic(destName);
+                nodeTypeCapability = Symbol.valueOf("topic");// TODO: constant
+            } else if (destType == TemporaryQueue.class) {
+                testPeer.expectTempQueueCreationAttach(destName);
+                dest = session.createTemporaryQueue();
+                nodeTypeCapability = AmqpTemporaryDestination.TEMP_QUEUE_CAPABILITY;
+            } else if (destType == TemporaryTopic.class) {
+                testPeer.expectTempTopicCreationAttach(destName);
+                dest = session.createTemporaryTopic();
+                nodeTypeCapability = AmqpTemporaryDestination.TEMP_TOPIC_CAPABILITY;
+            } else {
+                fail("unexpected type");
+            }
+
+            TargetMatcher targetMatcher = new TargetMatcher();
+            targetMatcher.withCapabilities(arrayContaining(nodeTypeCapability));
+
+            testPeer.expectSenderAttach(targetMatcher, false, false);
+
+            session.createProducer(dest);
         }
     }
 

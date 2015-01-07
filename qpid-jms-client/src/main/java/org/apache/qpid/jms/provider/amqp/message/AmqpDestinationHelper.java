@@ -25,6 +25,8 @@ import org.apache.qpid.jms.JmsTemporaryQueue;
 import org.apache.qpid.jms.JmsTemporaryTopic;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
+import org.apache.qpid.jms.provider.amqp.AmqpTemporaryDestination;
+import org.apache.qpid.proton.amqp.Symbol;
 
 /**
  * A set of static utility method useful when mapping JmsDestination types to / from the AMQP
@@ -289,4 +291,28 @@ public class AmqpDestinationHelper {
         }
     }
 
+    /**
+     * @return the type capability, or null if the supplied destination is null or can't be classified
+     */
+    public Symbol toTypeCapability(JmsDestination destination) {
+        if (destination == null) {
+            return null;
+        }
+
+        if (destination.isQueue()) {
+            if (destination.isTemporary()) {
+                return AmqpTemporaryDestination.TEMP_QUEUE_CAPABILITY;
+            } else {
+                return Symbol.valueOf("queue");// TODO: constant;
+            }
+        } else if (destination.isTopic()) {
+            if (destination.isTemporary()) {
+                return AmqpTemporaryDestination.TEMP_TOPIC_CAPABILITY;
+            } else {
+                return Symbol.valueOf("topic");// TODO: constant;
+            }
+        }
+
+        return null;
+    }
 }

@@ -35,9 +35,9 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
+import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -138,11 +138,28 @@ public class NettyTcpTransport implements Transport {
 
     @Override
     public void send(ByteBuffer output) throws IOException {
-        send(Unpooled.wrappedBuffer(output));
+        checkConnected();
+        int length = output.remaining();
+        if (length == 0) {
+            return;
+        }
+
+        byte[] copy = new byte[length];
+        output.get(copy);
+
+        send(Unpooled.wrappedBuffer(copy));
     }
 
     @Override
     public void send(ByteBuf output) throws IOException {
+        checkConnected();
+        int length = output.readableBytes();
+        if (length == 0) {
+            return;
+        }
+
+        LOG.info("Attempted write of: {} bytes", length);
+
         channel.write(output);
         channel.flush();
     }
@@ -188,6 +205,12 @@ public class NettyTcpTransport implements Transport {
         }
     }
 
+    private void checkConnected() throws IOException {
+        if (!connected.get()) {
+            throw new IOException("Cannot send to a non-connected transport.");
+        }
+    }
+
     //----- Handle connection events -----------------------------------------//
 
     private class NettyTcpTransportHandler extends SimpleChannelInboundHandler<ByteBuf> {
@@ -222,3 +245,4 @@ public class NettyTcpTransport implements Transport {
         }
     }
 }
+

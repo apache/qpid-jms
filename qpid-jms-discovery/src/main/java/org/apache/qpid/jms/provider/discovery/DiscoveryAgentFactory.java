@@ -94,8 +94,8 @@ public abstract class DiscoveryAgentFactory {
      */
     protected static DiscoveryAgentFactory findAgentFactory(URI location) throws IOException {
         String scheme = location.getScheme();
-        if (scheme == null) {
-            throw new IOException("No Discovery Agent scheme specified: [" + location + "]");
+        if (scheme == null || scheme.isEmpty()) {
+            throw new IOException("No Discovery Agent scheme specified.");
         }
 
         DiscoveryAgentFactory factory = null;

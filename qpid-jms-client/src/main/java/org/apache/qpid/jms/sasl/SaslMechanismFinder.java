@@ -93,7 +93,7 @@ public class SaslMechanismFinder {
      */
     protected static MechanismFactory findMechanismFactory(String name) throws IOException {
         if (name == null || name.isEmpty()) {
-            throw new IOException("No Mechanism name specified: [" + name + "]");
+            throw new IOException("No Mechanism name specified.");
         }
 
         MechanismFactory factory = null;

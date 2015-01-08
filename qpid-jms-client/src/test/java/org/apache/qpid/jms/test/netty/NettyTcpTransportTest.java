@@ -29,9 +29,9 @@ import java.util.List;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
-import org.apache.qpid.jms.transports.NettyTcpTransport;
-import org.apache.qpid.jms.transports.TcpTransportOptions;
+import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportListener;
+import org.apache.qpid.jms.transports.netty.NettyTcpTransport;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +48,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
     private final List<ByteBuf> data = new ArrayList<ByteBuf>();
 
     private final TransportListener testListener = new NettyTransportListener();
-    private final TcpTransportOptions testOptions = new TcpTransportOptions();
+    private final TransportOptions testOptions = new TransportOptions();
 
     @Test(timeout = 60 * 1000)
     public void testConnectToServer() throws Exception {

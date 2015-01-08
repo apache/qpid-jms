@@ -19,7 +19,7 @@ package org.apache.qpid.jms.transports;
 /**
  * Encapsulates all the TCP Transport options in one configuration object.
  */
-public class TcpTransportOptions {
+public class TransportOptions {
 
     public static final int DEFAULT_SEND_BUFFER_SIZE = 64 * 1024;
     public static final int DEFAULT_RECEIVE_BUFFER_SIZE = DEFAULT_SEND_BUFFER_SIZE;
@@ -29,6 +29,8 @@ public class TcpTransportOptions {
     public static final int DEFAULT_SO_LINGER = Integer.MIN_VALUE;
     public static final int DEFAULT_SO_TIMEOUT = -1;
     public static final int DEFAULT_CONNECT_TIMEOUT = 60000;
+
+    public static final TransportOptions DEFAULT_OPTIONS = new TransportOptions();
 
     private int sendBufferSize = DEFAULT_SEND_BUFFER_SIZE;
     private int receiveBufferSize = DEFAULT_RECEIVE_BUFFER_SIZE;

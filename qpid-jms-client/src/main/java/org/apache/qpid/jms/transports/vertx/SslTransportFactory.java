@@ -14,34 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.provider.amqp;
+package org.apache.qpid.jms.transports.vertx;
 
 import java.net.URI;
-import java.util.Map;
 
 import org.apache.qpid.jms.JmsSslContext;
-import org.apache.qpid.jms.transports.SslTransport;
-import org.apache.qpid.jms.transports.Transport;
+import org.apache.qpid.jms.transports.TransportOptions;
 
 /**
- * AmqpProvider extension that enables SSL based transports.
+ * Create an SslTransport instance.
  */
-public class AmqpSslProvider extends AmqpProvider {
+public class SslTransportFactory extends TcpTransportFactory {
 
-    private final JmsSslContext sslContext;
+    @Override
+    protected TcpTransport doCreateTransport(URI remoteURI, TransportOptions transportOptions) throws Exception {
+        SslTransport transport = new SslTransport(remoteURI, transportOptions);
 
-    public AmqpSslProvider(URI remoteURI) {
-        super(remoteURI);
-        this.sslContext = JmsSslContext.getCurrentSslContext();
-    }
+        transport.setContext(JmsSslContext.getCurrentSslContext());
 
-    public AmqpSslProvider(URI remoteURI, Map<String, String> extraOptions) {
-        super(remoteURI, extraOptions);
-        this.sslContext = JmsSslContext.getCurrentSslContext();
+        return transport;
     }
 
     @Override
-    protected Transport createTransport(URI remoteLocation) {
-        return new SslTransport(this, remoteLocation, sslContext);
+    public String getName() {
+        return "SSL";
     }
 }

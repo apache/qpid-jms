@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.transports;
+package org.apache.qpid.jms.transports.plain;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -39,6 +39,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.net.SocketFactory;
 
+import org.apache.qpid.jms.transports.TransportOptions;
+import org.apache.qpid.jms.transports.Transport;
+import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.jms.util.InetAddressUtil;
 import org.slf4j.Logger;
@@ -47,9 +50,9 @@ import org.slf4j.LoggerFactory;
 /**
  *
  */
-public class RawTcpTransport implements Transport, Runnable {
+public class PlainTcpTransport implements Transport, Runnable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RawTcpTransport.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PlainTcpTransport.class);
 
     private TransportListener listener;
     private final URI remoteLocation;
@@ -62,24 +65,36 @@ public class RawTcpTransport implements Transport, Runnable {
     private DataInputStream dataIn;
     private Thread runner;
 
+    private TransportOptions options;
+
     private boolean closeAsync = true;
-    private int socketBufferSize = 64 * 1024;
-    private int soTimeout = 0;
-    private int soLinger = Integer.MIN_VALUE;
-    private Boolean keepAlive;
-    private Boolean tcpNoDelay = true;
     private boolean useLocalHost = false;
     private int ioBufferSize = 8 * 1024;
 
     /**
-     * Create a new instance of the transport.
+     * Create a new transport instance
+     *
+     * @param remoteLocation
+     *        the URI that defines the remote resource to connect to.
+     * @param options
+     *        the transport options used to configure the socket connection.
+     */
+    public PlainTcpTransport(URI remoteLocation, TransportOptions options) {
+        this(null, remoteLocation, options);
+    }
+
+    /**
+     * Create a new transport instance
      *
      * @param listener
-     *        The TransportListener that will receive data from this Transport instance.
+     *        the TransportListener that will receive events from this Transport.
      * @param remoteLocation
-     *        The remote location where this transport should connection to.
+     *        the URI that defines the remote resource to connect to.
+     * @param options
+     *        the transport options used to configure the socket connection.
      */
-    public RawTcpTransport(TransportListener listener, URI remoteLocation) {
+    public PlainTcpTransport(TransportListener listener, URI remoteLocation, TransportOptions options) {
+        this.options = options;
         this.listener = listener;
         this.remoteLocation = remoteLocation;
 
@@ -117,7 +132,7 @@ public class RawTcpTransport implements Transport, Runnable {
         initialiseSocket(socket);
         initializeStreams();
 
-        runner = new Thread(null, this, "QpidJMS RawTcpTransport: " + toString());
+        runner = new Thread(null, this, "QpidJMS " + getClass().getSimpleName() + ": " + toString());
         runner.setDaemon(false);
         runner.start();
     }
@@ -206,44 +221,12 @@ public class RawTcpTransport implements Transport, Runnable {
         this.listener = listener;
     }
 
-    public int getSocketBufferSize() {
-        return socketBufferSize;
-    }
+    public TransportOptions getTransportOptions() {
+        if (options == null) {
+            options = TransportOptions.DEFAULT_OPTIONS;
+        }
 
-    public void setSocketBufferSize(int socketBufferSize) {
-        this.socketBufferSize = socketBufferSize;
-    }
-
-    public int getSoTimeout() {
-        return soTimeout;
-    }
-
-    public void setSoTimeout(int soTimeout) {
-        this.soTimeout = soTimeout;
-    }
-
-    public boolean isTcpNoDelay() {
-        return tcpNoDelay;
-    }
-
-    public void setTcpNoDelay(Boolean tcpNoDelay) {
-        this.tcpNoDelay = tcpNoDelay;
-    }
-
-    public int getSoLinger() {
-        return soLinger;
-    }
-
-    public void setSoLinger(int soLinger) {
-        this.soLinger = soLinger;
-    }
-
-    public boolean isKeepAlive() {
-        return keepAlive;
-    }
-
-    public void setKeepAlive(Boolean keepAlive) {
-        this.keepAlive = keepAlive;
+        return options;
     }
 
     public boolean isUseLocalHost() {
@@ -323,28 +306,30 @@ public class RawTcpTransport implements Transport, Runnable {
     }
 
     protected void initialiseSocket(Socket sock) throws SocketException, IllegalArgumentException {
+        TransportOptions options = getTransportOptions();
+
         try {
-            sock.setReceiveBufferSize(socketBufferSize);
-            sock.setSendBufferSize(socketBufferSize);
+            sock.setReceiveBufferSize(options.getReceiveBufferSize());
         } catch (SocketException se) {
-            LOG.warn("Cannot set socket buffer size = {}", socketBufferSize);
-            LOG.debug("Cannot set socket buffer size. Reason: {}. This exception is ignored.", se.getMessage(), se);
+            LOG.warn("Cannot set socket receive buffer size = {}", options.getReceiveBufferSize());
+            LOG.debug("Cannot set socket receive buffer size. Reason: {}. This exception is ignored.", se.getMessage(), se);
         }
 
-        sock.setSoTimeout(soTimeout);
-
-        if (keepAlive != null) {
-            sock.setKeepAlive(keepAlive.booleanValue());
+        try {
+            sock.setSendBufferSize(options.getSendBufferSize());
+        } catch (SocketException se) {
+            LOG.warn("Cannot set socket send buffer size = {}", options.getSendBufferSize());
+            LOG.debug("Cannot set socket send buffer size. Reason: {}. This exception is ignored.", se.getMessage(), se);
         }
 
-        if (soLinger > -1) {
-            sock.setSoLinger(true, soLinger);
-        } else if (soLinger == -1) {
+        sock.setSoTimeout(options.getSoTimeout());
+        sock.setKeepAlive(options.isTcpKeepAlive());
+        sock.setTcpNoDelay(options.isTcpNoDelay());
+
+        if (options.getSoLinger() > 0) {
+            sock.setSoLinger(true, options.getSoLinger());
+        } else {
             sock.setSoLinger(false, 0);
-        }
-
-        if (tcpNoDelay != null) {
-            sock.setTcpNoDelay(tcpNoDelay.booleanValue());
         }
     }
 

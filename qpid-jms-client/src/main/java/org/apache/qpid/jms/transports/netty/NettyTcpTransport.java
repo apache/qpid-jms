@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.transports;
+package org.apache.qpid.jms.transports.netty;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -35,6 +35,9 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.qpid.jms.transports.TransportOptions;
+import org.apache.qpid.jms.transports.Transport;
+import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +54,7 @@ public class NettyTcpTransport implements Transport {
     private EventLoopGroup group;
     private Channel channel;
     private TransportListener listener;
-    private final TcpTransportOptions options;
+    private TransportOptions options;
     private final URI remote;
 
     private final AtomicBoolean connected = new AtomicBoolean();
@@ -60,10 +63,26 @@ public class NettyTcpTransport implements Transport {
     /**
      * Create a new transport instance
      *
+     * @param remoteLocation
+     *        the URI that defines the remote resource to connect to.
      * @param options
      *        the transport options used to configure the socket connection.
      */
-    public NettyTcpTransport(TransportListener listener, URI remoteLocation, TcpTransportOptions options) {
+    public NettyTcpTransport(URI remoteLocation, TransportOptions options) {
+        this(null, remoteLocation, options);
+    }
+
+    /**
+     * Create a new transport instance
+     *
+     * @param listener
+     *        the TransportListener that will receive events from this Transport.
+     * @param remoteLocation
+     *        the URI that defines the remote resource to connect to.
+     * @param options
+     *        the transport options used to configure the socket connection.
+     */
+    public NettyTcpTransport(TransportListener listener, URI remoteLocation, TransportOptions options) {
         this.options = options;
         this.listener = listener;
         this.remote = remoteLocation;
@@ -90,7 +109,7 @@ public class NettyTcpTransport implements Transport {
             }
         });
 
-        configureNetty(bootstrap, options);
+        configureNetty(bootstrap, getTransportOptions());
 
         ChannelFuture future = bootstrap.connect(remote.getHost(), remote.getPort());
         future.awaitUninterruptibly();
@@ -138,9 +157,17 @@ public class NettyTcpTransport implements Transport {
         this.listener = listener;
     }
 
+    public TransportOptions getTransportOptions() {
+        if (options == null) {
+            options = TransportOptions.DEFAULT_OPTIONS;
+        }
+
+        return options;
+    }
+
     //----- Internal implementation details ----------------------------------//
 
-    protected void configureNetty(Bootstrap bootstrap, TcpTransportOptions options) {
+    protected void configureNetty(Bootstrap bootstrap, TransportOptions options) {
         bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
         bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
         bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());

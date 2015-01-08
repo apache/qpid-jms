@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.transports;
+package org.apache.qpid.jms.transports.vertx;
 
 import io.netty.buffer.ByteBuf;
 
@@ -25,6 +25,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.qpid.jms.transports.TransportOptions;
+import org.apache.qpid.jms.transports.Transport;
+import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,24 +55,33 @@ public class TcpTransport implements Transport {
     private final AtomicReference<Throwable> connectionError = new AtomicReference<Throwable>();
 
     private NetSocket socket;
-
     private TransportListener listener;
-    private int socketBufferSize = 64 * 1024;
-    private int soTimeout = -1;
-    private int connectTimeout = -1;
-    private int soLinger = Integer.MIN_VALUE;
-    private boolean keepAlive;
-    private boolean tcpNoDelay = true;
+    private TransportOptions options;
 
     /**
-     * Create a new instance of the transport.
+     * Create a new transport instance
+     *
+     * @param remoteLocation
+     *        the URI that defines the remote resource to connect to.
+     * @param options
+     *        the transport options used to configure the socket connection.
+     */
+    public TcpTransport(URI remoteLocation, TransportOptions options) {
+        this(null, remoteLocation, options);
+    }
+
+    /**
+     * Create a new transport instance
      *
      * @param listener
-     *        The TransportListener that will receive data from this Transport instance.
+     *        the TransportListener that will receive events from this Transport.
      * @param remoteLocation
-     *        The remote location where this transport should connection to.
+     *        the URI that defines the remote resource to connect to.
+     * @param options
+     *        the transport options used to configure the socket connection.
      */
-    public TcpTransport(TransportListener listener, URI remoteLocation) {
+    public TcpTransport(TransportListener listener, URI remoteLocation, TransportOptions options) {
+        this.options = options;
         this.listener = listener;
         this.remoteLocation = remoteLocation;
 
@@ -86,7 +98,7 @@ public class TcpTransport implements Transport {
             throw new IllegalStateException("A transport listener must be set before connection attempts.");
         }
 
-        configureNetClient(client);
+        configureNetClient(client, getTransportOptions());
 
         try {
             client.connect(remoteLocation.getPort(), remoteLocation.getHost(), new AsyncResultHandler<NetSocket>() {
@@ -193,14 +205,14 @@ public class TcpTransport implements Transport {
      *
      * @throws IOException if an error occurs.
      */
-    protected void configureNetClient(NetClient client) throws IOException {
-        client.setSendBufferSize(getSocketBufferSize());
-        client.setReceiveBufferSize(getSocketBufferSize());
-        client.setSoLinger(soLinger);
-        client.setTCPKeepAlive(keepAlive);
-        client.setTCPNoDelay(tcpNoDelay);
-        if (connectTimeout >= 0) {
-            client.setConnectTimeout(connectTimeout);
+    protected void configureNetClient(NetClient client, TransportOptions options) throws IOException {
+        client.setSendBufferSize(options.getSendBufferSize());
+        client.setReceiveBufferSize(options.getReceiveBufferSize());
+        client.setSoLinger(options.getSoLinger());
+        client.setTCPKeepAlive(options.isTcpKeepAlive());
+        client.setTCPNoDelay(options.isTcpNoDelay());
+        if (options.getConnectTimeout() >= 0) {
+            client.setConnectTimeout(options.getConnectTimeout());
         }
     }
 
@@ -229,51 +241,14 @@ public class TcpTransport implements Transport {
         this.listener = listener;
     }
 
-    public int getSocketBufferSize() {
-        return socketBufferSize;
-    }
+    /**
+     * @return the options used to configure the TCP socket.
+     */
+    public TransportOptions getTransportOptions() {
+        if (options == null) {
+            options = TransportOptions.DEFAULT_OPTIONS;
+        }
 
-    public void setSocketBufferSize(int socketBufferSize) {
-        this.socketBufferSize = socketBufferSize;
-    }
-
-    public int getSoTimeout() {
-        return soTimeout;
-    }
-
-    public void setSoTimeout(int soTimeout) {
-        this.soTimeout = soTimeout;
-    }
-
-    public boolean isTcpNoDelay() {
-        return tcpNoDelay;
-    }
-
-    public void setTcpNoDelay(boolean tcpNoDelay) {
-        this.tcpNoDelay = tcpNoDelay;
-    }
-
-    public int getSoLinger() {
-        return soLinger;
-    }
-
-    public void setSoLinger(int soLinger) {
-        this.soLinger = soLinger;
-    }
-
-    public boolean isKeepAlive() {
-        return keepAlive;
-    }
-
-    public void setKeepAlive(boolean keepAlive) {
-        this.keepAlive = keepAlive;
-    }
-
-    public int getConnectTimeout() {
-        return connectTimeout;
-    }
-
-    public void setConnectTimeout(int connectTimeout) {
-        this.connectTimeout = connectTimeout;
+        return options;
     }
 }

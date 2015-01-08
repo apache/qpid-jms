@@ -27,6 +27,11 @@ public class AmqpSslProviderFactory extends AmqpProviderFactory {
 
     @Override
     public Provider createProvider(URI remoteURI) throws Exception {
-        return new AmqpSslProvider(remoteURI);
+        AmqpProvider provider = new AmqpProvider(remoteURI);
+        // TODO - Would be better if we could do away with this and define
+        //        the transport key in the properties file used to find the
+        //        AmqpProcvider instance.
+        provider.setTransportKey("ssl");
+        return provider;
     }
 }

@@ -45,10 +45,9 @@ import org.apache.qpid.jms.provider.AbstractProvider;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
-import org.apache.qpid.jms.transports.TcpTransport;
+import org.apache.qpid.jms.transports.TransportFactory;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.util.IOExceptionSupport;
-import org.apache.qpid.jms.util.PropertyUtil;
 import org.apache.qpid.proton.engine.Collector;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.Event;
@@ -84,9 +83,11 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
     // NOTE: Limit default channel max to signed short range to deal with
     //       brokers that don't currently handle the unsigned range well.
     private static final int DEFAULT_CHANNEL_MAX = 32767;
+    private static final String DEFAULT_TRANSPORT_KEY = "tcp";
 
     private AmqpConnection connection;
     private org.apache.qpid.jms.transports.Transport transport;
+    private String transportKey = DEFAULT_TRANSPORT_KEY;
     private boolean traceFrames;
     private boolean traceBytes;
     private boolean presettleConsumers;
@@ -125,25 +126,12 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
     public void connect() throws IOException {
         checkClosed();
 
-        transport = createTransport(getRemoteURI());
-
-        Map<String, String> map = null;
         try {
-            map = PropertyUtil.parseQuery(remoteURI.getQuery());
+            transport = TransportFactory.create(getTransportKey(), getRemoteURI());
         } catch (Exception e) {
             throw IOExceptionSupport.create(e);
         }
-        Map<String, String> providerOptions = PropertyUtil.filterProperties(map, "transport.");
-
-        if (!PropertyUtil.setProperties(transport, providerOptions)) {
-            String msg = ""
-                + " Not all transport options could be set on the AMQP Provider transport."
-                + " Check the options are spelled correctly."
-                + " Given parameters=[" + providerOptions + "]."
-                + " This provider instance cannot be started.";
-            throw new IOException(msg);
-        }
-
+        transport.setTransportListener(this);
         transport.connect();
     }
 
@@ -593,19 +581,6 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
         });
     }
 
-    /**
-     * Provides an extension point for subclasses to insert other types of transports such
-     * as SSL etc.
-     *
-     * @param remoteLocation
-     *        The remote location where the transport should attempt to connect.
-     *
-     * @return the newly created transport instance.
-     */
-    protected org.apache.qpid.jms.transports.Transport createTransport(URI remoteLocation) {
-        return new TcpTransport(this, remoteLocation);
-    }
-
     private void updateTracer() {
         if (isTraceFrames()) {
             ((TransportImpl) protonTransport).setProtocolTracer(new ProtocolTracer() {
@@ -880,5 +855,23 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
 
     public void setChannelMax(int channelMax) {
         this.channelMax = channelMax;
+    }
+
+    /**
+     * @return the transportKey that will be used to create the network level connection.
+     */
+    public String getTransportKey() {
+        return transportKey;
+    }
+
+    /**
+     * Sets the transport key used to lookup a Transport instance when an attempt
+     * is made to connect to a remote peer.
+     *
+     * @param transportKey
+     *        the tansportKey to used when looking up a Transport to use.
+     */
+    void setTransportKey(String transportKey) {
+        this.transportKey = transportKey;
     }
 }

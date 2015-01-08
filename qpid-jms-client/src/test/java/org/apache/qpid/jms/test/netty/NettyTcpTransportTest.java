@@ -23,6 +23,7 @@ import static org.junit.Assert.fail;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -206,6 +207,37 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
         assertTrue(!transportClosed);  // Normal shutdown does not trigger the event.
         assertTrue(exceptions.isEmpty());
+    }
+
+    @Test(timeout = 60 * 1000)
+    public void testSendToClosedTransportFails() throws Exception {
+        NettyTcpTransport transport = null;
+
+        try (NettyEchoServer server = new NettyEchoServer()) {
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            transport = new NettyTcpTransport(testListener, serverLocation, testOptions);
+            try {
+                transport.connect();
+                LOG.info("Connected to test server.");
+            } catch (Exception e) {
+                fail("Should have connected to the server");
+            }
+
+            assertTrue(transport.isConnected());
+
+            transport.close();
+
+            ByteBuf sendBuffer = Unpooled.buffer(10);
+            try {
+                transport.send(sendBuffer);
+                fail("Should throw on send of closed transport");
+            } catch (IOException ex) {
+            }
+        }
     }
 
     private class NettyTransportListener implements TransportListener {

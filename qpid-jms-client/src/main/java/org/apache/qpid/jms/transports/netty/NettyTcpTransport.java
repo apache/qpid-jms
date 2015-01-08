@@ -131,8 +131,13 @@ public class NettyTcpTransport implements Transport {
     @Override
     public void close() throws IOException {
         if (closed.compareAndSet(false, true)) {
-            channel.close();
-            group.shutdownGracefully();
+            connected.set(false);
+            if (channel != null) {
+                channel.close();
+            }
+            if (group != null) {
+                group.shutdownGracefully();
+            }
         }
     }
 

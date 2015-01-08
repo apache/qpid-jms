@@ -58,12 +58,6 @@
       <artifactId>vertx-platform</artifactId>
     </dependency>
 
-    <!-- would be nice if we could make this dependency optional -->
-    <dependency>
-      <groupId>org.apache.geronimo.specs</groupId>
-      <artifactId>geronimo-j2ee-management_1.1_spec</artifactId>
-    </dependency>
-
     <!-- =================================== -->
     <!-- Testing Dependencies                -->
     <!-- =================================== -->

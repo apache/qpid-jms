@@ -38,30 +38,42 @@ public class JoramJmsTest extends TestCase {
     public static Test suite() {
         TestSuite suite = new TestSuite();
 
-        // TODO: Fix these tests..
-        // Fails due to
-        // https://issues.apache.org/jira/browse/PROTON-154
-        // suite.addTestSuite(TopicSessionTest.class);
+        // TODO: Fix failing tests..
 
-//        suite.addTestSuite(MessageTypeTest.class);
-//        suite.addTestSuite(UnifiedSessionTest.class);
-//        suite.addTestSuite(JMSXPropertyTest.class);
-//        suite.addTestSuite(SessionTest.class);
-
-//        suite.addTestSuite(QueueBrowserTest.class);
-        suite.addTestSuite(QueueSessionTest.class);
-        suite.addTestSuite(SelectorSyntaxTest.class);
-        suite.addTestSuite(SelectorTest.class);
-        suite.addTestSuite(MessageHeaderTest.class);
-        suite.addTestSuite(TemporaryTopicTest.class);
-        suite.addTestSuite(TemporaryQueueTest.class);
-        suite.addTestSuite(TopicConnectionTest.class);
+        // Connection
         suite.addTestSuite(ConnectionTest.class);
+        suite.addTestSuite(TopicConnectionTest.class);
+
+        //Message
         suite.addTestSuite(MessageBodyTest.class);
         suite.addTestSuite(MessageDefaultTest.class);
+        // suite.addTestSuite(MessageTypeTest.class);
+
+        //Message Headers
+        suite.addTestSuite(MessageHeaderTest.class);
+
+        //Message Properties
+        // suite.addTestSuite(JMSXPropertyTest.class);
         suite.addTestSuite(MessagePropertyConversionTest.class);
         suite.addTestSuite(MessagePropertyTest.class);
 
+        //Queue
+        // suite.addTestSuite(QueueBrowserTest.class);
+        suite.addTestSuite(TemporaryQueueTest.class);
+
+        //Selector
+        suite.addTestSuite(SelectorSyntaxTest.class);
+        suite.addTestSuite(SelectorTest.class);
+
+        //Session
+        suite.addTestSuite(QueueSessionTest.class);
+        // suite.addTestSuite(SessionTest.class);
+        // Next test fails due to: https://issues.apache.org/jira/browse/PROTON-154
+        // suite.addTestSuite(TopicSessionTest.class);
+        // suite.addTestSuite(UnifiedSessionTest.class);
+
+        //Topic
+        suite.addTestSuite(TemporaryTopicTest.class);
         return suite;
     }
 

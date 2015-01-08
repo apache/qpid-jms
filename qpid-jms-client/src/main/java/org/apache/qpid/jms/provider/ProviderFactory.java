@@ -95,7 +95,7 @@ public abstract class ProviderFactory {
     public static ProviderFactory findProviderFactory(URI location) throws IOException {
         String scheme = location.getScheme();
         if (scheme == null) {
-            throw new IOException("No Provider scheme specified: [" + location + "]");
+            throw new IOException("No Provider scheme specified.");
         }
 
         ProviderFactory factory = null;

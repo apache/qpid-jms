@@ -26,11 +26,12 @@ import io.netty.buffer.Unpooled;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
-import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportListener;
+import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.netty.NettyTcpTransport;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -46,6 +47,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
     private boolean transportClosed;
     private final List<Throwable> exceptions = new ArrayList<Throwable>();
     private final List<ByteBuf> data = new ArrayList<ByteBuf>();
+    private final AtomicInteger bytesRead = new AtomicInteger();
 
     private final TransportListener testListener = new NettyTransportListener();
     private final TransportOptions testOptions = new TransportOptions();
@@ -161,12 +163,58 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         assertTrue(exceptions.isEmpty());
     }
 
+    @Test(timeout = 60 * 1000)
+    public void testMultipleDataPacketsSentAreReceived() throws Exception {
+        final int SEND_BYTE_COUNT = 1024;
+        final int SEND_PACKETS_COUNT = 3;
+
+        try (NettyEchoServer server = new NettyEchoServer()) {
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            NettyTcpTransport transport = new NettyTcpTransport(testListener, serverLocation, testOptions);
+            try {
+                transport.connect();
+                LOG.info("Connected to test server.");
+            } catch (Exception e) {
+                fail("Should have connected to the server");
+            }
+
+            assertTrue(transport.isConnected());
+
+            ByteBuf sendBuffer = Unpooled.buffer(SEND_BYTE_COUNT);
+            for (int i = 0; i < SEND_BYTE_COUNT; ++i) {
+                sendBuffer.writeByte('A');
+            }
+
+            for (int i = 0; i < SEND_PACKETS_COUNT; ++i) {
+                transport.send(sendBuffer.copy());
+            }
+
+            assertTrue(Wait.waitFor(new Wait.Condition() {
+
+                @Override
+                public boolean isSatisified() throws Exception {
+                    return bytesRead.get() != SEND_BYTE_COUNT * SEND_PACKETS_COUNT;
+                }
+            }));
+
+            transport.close();
+        }
+
+        assertTrue(!transportClosed);  // Normal shutdown does not trigger the event.
+        assertTrue(exceptions.isEmpty());
+    }
+
     private class NettyTransportListener implements TransportListener {
 
         @Override
         public void onData(ByteBuf incoming) {
             LOG.info("Client has new incoming data of size: {}", incoming.readableBytes());
             data.add(incoming);
+            bytesRead.addAndGet(incoming.readableBytes());
         }
 
         @Override

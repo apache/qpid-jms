@@ -38,7 +38,6 @@ class TestAmqpPeerRunner implements Runnable
     private final ServerSocket _serverSocket;
     private final boolean useFixedPort = Boolean.getBoolean("testPeerUsesFixedPort");
 
-    /** TODO handle multiple connections */
     private Socket _clientSocket;
     private OutputStream _networkOutputStream;
 
@@ -50,12 +49,6 @@ class TestAmqpPeerRunner implements Runnable
     public TestAmqpPeerRunner(TestAmqpPeer peer) throws IOException
     {
         _serverSocket = new ServerSocket(useFixedPort ? PORT : 0);
-        _testFrameParser = new TestFrameParser(peer);
-    }
-
-    public TestAmqpPeerRunner(int port, TestAmqpPeer peer) throws IOException
-    {
-        _serverSocket = new ServerSocket(port);
         _testFrameParser = new TestFrameParser(peer);
     }
 

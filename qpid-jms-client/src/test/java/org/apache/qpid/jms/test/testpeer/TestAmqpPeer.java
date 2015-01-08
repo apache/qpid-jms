@@ -118,13 +118,6 @@ public class TestAmqpPeer implements AutoCloseable
         _driverThread.start();
     }
 
-    public TestAmqpPeer(int port) throws IOException
-    {
-        _driverRunnable = new TestAmqpPeerRunner(port, this);
-        _driverThread = new Thread(_driverRunnable, "MockAmqpPeerThread");
-        _driverThread.start();
-    }
-
     /**
      * Shuts down the test peer, throwing any Throwable
      * that occurred on the peer, or validating that no

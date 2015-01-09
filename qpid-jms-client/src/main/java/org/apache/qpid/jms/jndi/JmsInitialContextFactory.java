@@ -52,8 +52,8 @@ public class JmsInitialContextFactory implements InitialContextFactory {
 
     private String connectionPrefix = "";
 
-    String queuePrefix = "/queue/";
-    String topicPrefix = "/topic/";
+    String queuePrefix = "queue.";
+    String topicPrefix = "topic.";
 
     @Override
     public Context getInitialContext(Hashtable environment) throws NamingException {
@@ -77,6 +77,9 @@ public class JmsInitialContextFactory implements InitialContextFactory {
 
             data.put(name, factory);
         }
+
+        createQueues(data, environment);
+        createTopics(data, environment);
 
         data.put("queue", new LazyCreateContext() {
             private static final long serialVersionUID = 6503881346214855588L;
@@ -146,6 +149,28 @@ public class JmsInitialContextFactory implements InitialContextFactory {
             }
         }
         return DEFAULT_CONNECTION_FACTORY_NAMES;
+    }
+
+    protected void createQueues(Map<String, Object> data, Hashtable environment) {
+        for (Iterator iter = environment.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            String key = entry.getKey().toString();
+            if (key.startsWith(queuePrefix)) {
+                String jndiName = key.substring(queuePrefix.length());
+                data.put(jndiName, createQueue(entry.getValue().toString()));
+            }
+        }
+    }
+
+    protected void createTopics(Map<String, Object> data, Hashtable environment) {
+        for (Iterator iter = environment.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            String key = entry.getKey().toString();
+            if (key.startsWith(topicPrefix)) {
+                String jndiName = key.substring(topicPrefix.length());
+                data.put(jndiName, createTopic(entry.getValue().toString()));
+            }
+        }
     }
 
     /**

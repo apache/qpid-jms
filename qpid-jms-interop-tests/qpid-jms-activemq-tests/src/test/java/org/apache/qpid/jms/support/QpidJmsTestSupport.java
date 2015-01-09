@@ -91,14 +91,35 @@ public class QpidJmsTestSupport {
     @After
     public void tearDown() throws Exception {
         LOG.info("========== tearDown " + getTestName() + " ==========");
+        Exception firstError = null;
+
         if (connection != null) {
-            connection.close();
+            try {
+                connection.close();
+            } catch (Exception e) {
+                LOG.warn("Error detected on connection close in tearDown: {}", e.getMessage());
+                firstError = e;
+            }
         }
-        stopPrimaryBroker();
+
+        try {
+            stopPrimaryBroker();
+        } catch (Exception e) {
+            LOG.warn("Error detected on close of broker in tearDown: {}", e.getMessage());
+            firstError = e;
+        }
+
         for (BrokerService broker : brokers) {
             try {
                 stopBroker(broker);
-            } catch (Exception ex) {}
+            } catch (Exception ex) {
+                LOG.warn("Error detected on close of broker in tearDown: {}", ex.getMessage());
+                firstError = ex;
+            }
+        }
+
+        if (firstError != null) {
+            throw firstError;
         }
     }
 

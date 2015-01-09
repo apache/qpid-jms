@@ -48,8 +48,16 @@ public class JmsDiscoveryProviderTest {
     @Before
     public void setup() throws Exception {
         broker = createBroker();
-        broker.start();
-        broker.waitUntilStarted();
+        try {
+            broker.start();
+            broker.waitUntilStarted();
+        } catch (Exception e) {
+            try {
+                broker.stop();
+            } catch (Exception ignore) {}
+
+            throw e;
+        }
     }
 
     @After

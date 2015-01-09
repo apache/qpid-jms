@@ -19,6 +19,7 @@ package org.apache.qpid.jms.failover;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
@@ -68,22 +69,38 @@ public class JmsFailoverTest extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test(timeout=60000, expected=JMSException.class)
+    @Test(timeout=60000)
     public void testStartupReconnectAttempts() throws Exception {
         URI brokerURI = new URI("failover://(amqp://localhost:61616)" +
                                 "?maxReconnectDelay=1000&startupMaxReconnectAttempts=5");
         JmsConnectionFactory factory = new JmsConnectionFactory(brokerURI);
         Connection connection = factory.createConnection();
-        connection.start();
+        try {
+            connection.start();
+            fail("Should have thrown an exception of type JMSException");
+        } catch (JMSException jmsEx) {
+        } catch (Exception unexpected) {
+            fail("Should have thrown a JMSException but threw: " + unexpected.getClass().getSimpleName());
+        } finally {
+            connection.close();
+        }
     }
 
-    @Test(timeout=60000, expected=JMSException.class)
+    @Test(timeout=60000)
     public void testStartupReconnectAttemptsMultipleHosts() throws Exception {
         URI brokerURI = new URI("failover://(amqp://localhost:61616,amqp://localhost:61617)" +
                                 "?maxReconnectDelay=1000&startupMaxReconnectAttempts=5");
         JmsConnectionFactory factory = new JmsConnectionFactory(brokerURI);
         Connection connection = factory.createConnection();
-        connection.start();
+        try {
+            connection.start();
+            fail("Should have thrown an exception of type JMSException");
+        } catch (JMSException jmsEx) {
+        } catch (Exception unexpected) {
+            fail("Should have thrown a JMSException but threw: " + unexpected.getClass().getSimpleName());
+        } finally {
+            connection.close();
+        }
     }
 
     @Test(timeout=60000)
@@ -100,7 +117,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
                 failed.countDown();
             }
         });
-        Connection connection = factory.createConnection();
+        connection = factory.createConnection();
         connection.start();
 
         stopPrimaryBroker();
@@ -113,7 +130,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
     public void testBasicStateRestoration() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI() + "?maxReconnectDelay=1000");
 
-        Connection connection = createAmqpConnection(brokerURI);
+        connection = createAmqpConnection(brokerURI);
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -136,8 +153,6 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
         assertEquals(1, brokerService.getAdminView().getQueueSubscribers().length);
         assertEquals(1, brokerService.getAdminView().getQueueProducers().length);
-
-        connection.close();
     }
 
     @SuppressWarnings("unused")
@@ -145,7 +160,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
     public void testDurableSubscriberRestores() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI() + "?maxReconnectDelay=1000");
 
-        Connection connection = createAmqpConnection(brokerURI);
+        connection = createAmqpConnection(brokerURI);
         connection.setClientID(name.getMethodName());
         connection.start();
 
@@ -180,8 +195,6 @@ public class JmsFailoverTest extends AmqpTestSupport {
                 return brokerService.getAdminView().getDurableTopicSubscribers().length == 1;
             }
         }));
-
-        connection.close();
     }
 
     @Test(timeout=90000)
@@ -189,7 +202,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         URI brokerURI = new URI("failover://(amqp://localhost:61616," +
                                              getBrokerAmqpConnectionURI() + ")?maxReconnectDelay=1000");
 
-        Connection connection = createAmqpConnection(brokerURI);
+        connection = createAmqpConnection(brokerURI);
         connection.start();
 
         final int MSG_COUNT = 10;
@@ -216,7 +229,6 @@ public class JmsFailoverTest extends AmqpTestSupport {
         }));
 
         assertFalse(failed.getCount() == 0);
-        connection.close();
     }
 
     // TODO - FIXME

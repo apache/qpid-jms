@@ -219,4 +219,11 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
 
         return result;
     }
+
+    @Override
+    public void onSend(boolean disableMsgId, boolean disableTimestamp, long producerTtl) throws JMSException {
+        super.onSend(disableMsgId, disableTimestamp, producerTtl);
+
+        reset();
+    }
 }

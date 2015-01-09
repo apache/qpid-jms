@@ -169,16 +169,16 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     protected JmsConnectionFactory createConnectionFactory(Hashtable environment) throws URISyntaxException {
         JmsConnectionFactory answer = new JmsConnectionFactory();
         Properties properties = new Properties();
-        environment.remove("java.naming.factory.initial");
-        Object o = environment.remove("java.naming.provider.url");
+        environment.remove(Context.INITIAL_CONTEXT_FACTORY);
+        Object o = environment.remove(Context.PROVIDER_URL);
         if (o != null) {
             answer.setBrokerURI(o.toString());
         }
-        o = environment.remove("java.naming.security.principal");
+        o = environment.remove(Context.SECURITY_PRINCIPAL);
         if (o != null) {
             answer.setUsername(o.toString());
         }
-        o = environment.remove("java.naming.security.credentials");
+        o = environment.remove(Context.SECURITY_CREDENTIALS);
         if (o != null) {
             answer.setPassword(o.toString());
         }

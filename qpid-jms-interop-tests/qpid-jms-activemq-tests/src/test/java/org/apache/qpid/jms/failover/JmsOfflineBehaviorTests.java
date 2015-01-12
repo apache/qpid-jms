@@ -153,7 +153,12 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
 
             @Override
             public boolean isSatisified() throws Exception {
-                return provider.getRemoteURI().equals(brokers.get(1));
+                URI current = provider.getRemoteURI();
+                if (current != null && current.equals(brokers.get(1))) {
+                    return true;
+                }
+
+                return false;
             }
         }));
 

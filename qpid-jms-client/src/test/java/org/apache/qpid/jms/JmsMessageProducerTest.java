@@ -18,15 +18,12 @@ package org.apache.qpid.jms;
 
 import static org.junit.Assert.fail;
 
-import javax.jms.Destination;
 import javax.jms.InvalidDestinationException;
 import javax.jms.Message;
 
 import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.meta.JmsResource;
-import org.apache.qpid.jms.provider.Provider;
-import org.apache.qpid.jms.provider.ProviderFuture;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -42,7 +39,6 @@ public class JmsMessageProducerTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsMessageProducerTest.class);
 
-    private Provider provider;
     private JmsConnection connection;
     private  JmsSession session;
     private JmsProducerId producerId;

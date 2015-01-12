@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms.session;
 
-import javax.jms.JMSException;
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
 import javax.jms.QueueReceiver;

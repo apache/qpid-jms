@@ -508,11 +508,16 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
     /**
      * Called when the Provider was either first created or when a connection failure has
-     * been connected.  A reconnection attempt is immediately executed on the connection
+     * been reported.  A reconnection attempt is immediately executed on the connection
      * thread.  If a new Provider is able to be created and connected then a recovery task
      * is scheduled on the main serializer thread.  If the connect attempt fails another
      * attempt is scheduled based on the configured delay settings until a max attempts
      * limit is hit, if one is set.
+     *
+     * Since the initialize is put on the serializer thread this thread stops and does
+     * not queue another connect task.  This allows for the reconnect delay to be reset
+     * and a failure to initialize a new connection restarts the connect process from the
+     * point of view that connection was lost and an immediate attempt cycle should start.
      */
     private void triggerReconnectionAttempt() {
         if (closed.get() || failed.get()) {
@@ -564,6 +569,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 }
 
                 long delay = nextReconnectDelay();
+                LOG.trace("Next reconnect attempt will be in {} milliseconds", delay);
                 connectionHub.schedule(this, delay, TimeUnit.MILLISECONDS);
             }
         });

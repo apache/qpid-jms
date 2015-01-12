@@ -174,18 +174,6 @@ public class JmsMessageProducer implements MessageProducer {
     }
 
     /**
-     * @param destination
-     * @param message
-     * @throws JMSException
-     * @see javax.jms.MessageProducer#send(javax.jms.Destination,
-     *      javax.jms.Message)
-     */
-    @Override
-    public void send(Destination destination, Message message) throws JMSException {
-        send(destination, message, this.deliveryMode, this.priority, this.timeToLive);
-    }
-
-    /**
      * @param message
      * @param deliveryMode
      * @param priority
@@ -202,6 +190,18 @@ public class JmsMessageProducer implements MessageProducer {
         }
 
         sendMessage(producerInfo.getDestination(), message, deliveryMode, priority, timeToLive);
+    }
+
+    /**
+     * @param destination
+     * @param message
+     * @throws JMSException
+     * @see javax.jms.MessageProducer#send(javax.jms.Destination,
+     *      javax.jms.Message)
+     */
+    @Override
+    public void send(Destination destination, Message message) throws JMSException {
+        send(destination, message, this.deliveryMode, this.priority, this.timeToLive);
     }
 
     /**

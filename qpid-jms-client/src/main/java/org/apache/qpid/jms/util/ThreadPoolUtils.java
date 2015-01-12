@@ -59,10 +59,8 @@ public final class ThreadPoolUtils {
         if (!executorService.isShutdown()) {
             LOG.debug("Forcing shutdown of ExecutorService: {}", executorService);
             answer = executorService.shutdownNow();
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Shutdown of ExecutorService: {} is shutdown: {} and terminated: {}.",
-                    new Object[] { executorService, executorService.isShutdown(), executorService.isTerminated() });
-            }
+            LOG.trace("Shutdown of ExecutorService: {} is shutdown: {} and terminated: {}.",
+                new Object[] { executorService, executorService.isShutdown(), executorService.isTerminated() });
         }
 
         return answer;
@@ -179,7 +177,7 @@ public final class ThreadPoolUtils {
             if (executorService.awaitTermination(interval, TimeUnit.MILLISECONDS)) {
                 done = true;
             } else {
-                LOG.info("Waited {} for ExecutorService: {} to terminate...", TimeUtils.printDuration(watch.taken()), executorService);
+                LOG.debug("Waited {} for ExecutorService: {} to terminate...", TimeUtils.printDuration(watch.taken()), executorService);
                 // recalculate interval
                 interval = Math.min(2000, shutdownAwaitTermination - watch.taken());
             }

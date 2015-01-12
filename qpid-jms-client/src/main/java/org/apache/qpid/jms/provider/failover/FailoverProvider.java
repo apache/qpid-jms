@@ -49,6 +49,7 @@ import org.apache.qpid.jms.provider.ProviderFactory;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.util.IOExceptionSupport;
+import org.apache.qpid.jms.util.ThreadPoolUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -141,7 +142,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     @Override
     public void connect() throws IOException {
         checkClosed();
-        LOG.debug("Performing initial connection attempt");
+        LOG.debug("Initiating initial connection attempt task");
         triggerReconnectionAttempt();
     }
 
@@ -175,15 +176,8 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     } catch (Exception e) {
                         LOG.debug("Caught exception while closing connection");
                     } finally {
-
-                        if (connectionHub != null) {
-                            connectionHub.shutdown();
-                        }
-
-                        if (serializer != null) {
-                            serializer.shutdown();
-                        }
-
+                        ThreadPoolUtils.shutdownGraceful(connectionHub);
+                        ThreadPoolUtils.shutdownGraceful(serializer);
                         request.onSuccess();
                     }
                 }
@@ -270,7 +264,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
             @Override
             public boolean succeedsWhenOffline() {
-                // Allow this to succeed, acks would be stale.
+                // Allow this to succeed, resource won't get recreated on reconnect.
                 return true;
             }
         };
@@ -542,13 +536,13 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 URI target = uris.getNext();
                 if (target != null) {
                     try {
-                        LOG.debug("Attempting connection to: {}", target);
+                        LOG.debug("Connection attempt:[{}] to: {} in-progress", reconnectAttempts, target);
                         JmsSslContext.setCurrentSslContext(sslContext);
                         Provider provider = ProviderFactory.create(target);
                         initializeNewConnection(provider);
                         return;
                     } catch (Throwable e) {
-                        LOG.info("Connection attempt to: {} failed.", target);
+                        LOG.info("Connection attempt:[{}] to: {} failed", reconnectAttempts, target);
                         failure = e;
                     }
                 }

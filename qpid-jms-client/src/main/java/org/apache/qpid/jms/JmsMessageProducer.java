@@ -170,7 +170,7 @@ public class JmsMessageProducer implements MessageProducer {
      */
     @Override
     public void send(Message message) throws JMSException {
-        send(producerInfo.getDestination(), message, this.deliveryMode, this.priority, this.timeToLive);
+        send(message, this.deliveryMode, this.priority, this.timeToLive);
     }
 
     /**
@@ -195,7 +195,13 @@ public class JmsMessageProducer implements MessageProducer {
      */
     @Override
     public void send(Message message, int deliveryMode, int priority, long timeToLive) throws JMSException {
-        send(producerInfo.getDestination(), message, deliveryMode, priority, timeToLive);
+        checkClosed();
+
+        if (flexibleDestination) {
+            throw new UnsupportedOperationException("Using this method is not supported on producers created without an explicit Destination");
+        }
+
+        sendMessage(producerInfo.getDestination(), message, deliveryMode, priority, timeToLive);
     }
 
     /**
@@ -212,11 +218,16 @@ public class JmsMessageProducer implements MessageProducer {
     public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive) throws JMSException {
         checkClosed();
 
+        if (!flexibleDestination) {
+            throw new UnsupportedOperationException("Using this method is not supported on producers created with an explicit Destination.");
+        }
+
+        sendMessage(destination, message, deliveryMode, priority, timeToLive);
+    }
+
+    private void sendMessage(Destination destination, Message message, int deliveryMode, int priority, long timeToLive) throws JMSException {
         if (destination == null) {
             throw new InvalidDestinationException("Don't understand null destinations");
-        }
-        if (!this.flexibleDestination && !destination.equals(producerInfo.getDestination())) {
-            throw new UnsupportedOperationException("This producer can only send messages to: " + producerInfo.getDestination().getName());
         }
 
         this.session.send(this, destination, message, deliveryMode, priority, timeToLive, disableMessageId, disableTimestamp);

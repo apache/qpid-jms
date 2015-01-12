@@ -532,8 +532,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     return;
                 }
 
-                // TODO: if this is already at/past the limit when we arrive, we should
-                // stop here rather than initialise the provider and only fail (again) after.
+                int reconnectLimit = reconnectAttemptLimit();
+                if (reconnectLimit != UNLIMITED && reconnectAttempts >= reconnectLimit) {
+                    return;
+                }
+
                 reconnectAttempts++;
                 Throwable failure = null;
                 URI target = uris.getNext();
@@ -549,8 +552,6 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                         failure = e;
                     }
                 }
-
-                int reconnectLimit = reconnectAttemptLimit();
 
                 if (reconnectLimit != UNLIMITED && reconnectAttempts >= reconnectLimit) {
                     LOG.error("Failed to connect after: " + reconnectAttempts + " attempt(s)");

@@ -190,7 +190,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             });
 
             try {
-                if (this.closeTimeout >= 0) {
+                if (this.closeTimeout < 0) {
                     request.sync();
                 } else {
                     request.sync(closeTimeout, TimeUnit.MILLISECONDS);

@@ -177,7 +177,9 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                         LOG.debug("Caught exception while closing connection");
                     } finally {
                         ThreadPoolUtils.shutdownGraceful(connectionHub);
-                        ThreadPoolUtils.shutdownGraceful(serializer);
+                        if (serializer != null) {
+                            serializer.shutdown();
+                        }
                         request.onSuccess();
                     }
                 }
@@ -239,7 +241,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         serializer.execute(pending);
     }
 
-    //TODO: decide if this handling is sufficient
+    // TODO: decide if this handling is sufficient
     @Override
     public void stop(final JmsResource resource, final AsyncResult request) throws IOException, JMSException {
         checkClosed();

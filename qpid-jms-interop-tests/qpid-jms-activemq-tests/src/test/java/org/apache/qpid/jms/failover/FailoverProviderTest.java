@@ -45,6 +45,7 @@ public class FailoverProviderTest extends AmqpTestSupport {
         assertNotNull(asyncProvider);
         FailoverProvider provider = (FailoverProvider) asyncProvider;
         assertNotNull(provider);
+        provider.close();
     }
 
     @Test(timeout=60000)
@@ -61,6 +62,7 @@ public class FailoverProviderTest extends AmqpTestSupport {
         assertFalse(provider.isUseExponentialBackOff());
         assertEquals(10, provider.getMaxReconnectAttempts());
         assertEquals(20, provider.getStartupMaxReconnectAttempts());
+        provider.close();
     }
 
     @Test(timeout=60000)
@@ -88,5 +90,6 @@ public class FailoverProviderTest extends AmqpTestSupport {
         provider.connect();
 
         assertTrue("Did not trip latch within expected time", failed.await(2, TimeUnit.SECONDS));
+        provider.close();
     }
 }

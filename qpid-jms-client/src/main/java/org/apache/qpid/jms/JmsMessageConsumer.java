@@ -481,7 +481,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         return this.messageQueue.size();
     }
 
-    public boolean getNoLocal() throws IllegalStateException {
+    protected boolean isNoLocal() {
         return this.consumerInfo.isNoLocal();
     }
 

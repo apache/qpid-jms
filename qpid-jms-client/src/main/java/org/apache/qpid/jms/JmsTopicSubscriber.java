@@ -67,4 +67,10 @@ public class JmsTopicSubscriber extends JmsMessageConsumer implements TopicSubsc
         checkClosed();
         return (Topic) this.getDestination();
     }
+
+    @Override
+    public boolean getNoLocal() throws JMSException {
+        checkClosed();
+        return isNoLocal();
+    }
 }

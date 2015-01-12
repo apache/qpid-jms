@@ -22,14 +22,11 @@ import static org.junit.Assert.assertTrue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import javax.jms.Connection;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
 import javax.jms.Session;
 
-import org.apache.qpid.jms.JmsConnection;
-import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.junit.Test;
 
@@ -41,7 +38,7 @@ public class JmsConnectionTest extends AmqpTestSupport {
     @Test(timeout=30000)
     public void testCreateConnection() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
+        connection = factory.createConnection();
         assertNotNull(connection);
         connection.close();
     }
@@ -49,7 +46,7 @@ public class JmsConnectionTest extends AmqpTestSupport {
     @Test(timeout=30000)
     public void testCreateConnectionAndStart() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
+        connection = factory.createConnection();
         assertNotNull(connection);
         connection.start();
         connection.close();
@@ -73,7 +70,7 @@ public class JmsConnectionTest extends AmqpTestSupport {
     @Test(expected = JMSException.class)
     public void testSetClientIdAfterStartedFails() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection();
+        connection = factory.createConnection();
         connection.setClientID("Test");
         connection.start();
         connection.setClientID("NewTest");
@@ -85,7 +82,7 @@ public class JmsConnectionTest extends AmqpTestSupport {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
         factory.setUsername("system");
         factory.setPassword("manager");
-        JmsConnection connection = (JmsConnection) factory.createConnection();
+        connection = factory.createConnection();
         assertNotNull(connection);
         connection.start();
         connection.close();
@@ -94,7 +91,7 @@ public class JmsConnectionTest extends AmqpTestSupport {
     @Test(timeout=30000)
     public void testCreateConnectionCallSystemAdmin() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection("system", "manager");
+        connection = factory.createConnection("system", "manager");
         assertNotNull(connection);
         connection.start();
         connection.close();
@@ -105,7 +102,7 @@ public class JmsConnectionTest extends AmqpTestSupport {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
         factory.setUsername("unknown");
         factory.setPassword("unknown");
-        JmsConnection connection = (JmsConnection) factory.createConnection();
+        connection = factory.createConnection();
         assertNotNull(connection);
         connection.start();
         connection.close();
@@ -114,7 +111,7 @@ public class JmsConnectionTest extends AmqpTestSupport {
     @Test(timeout=30000, expected = JMSSecurityException.class)
     public void testCreateConnectionCallUnknwonUser() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        JmsConnection connection = (JmsConnection) factory.createConnection("unknown", "unknown");
+        connection = factory.createConnection("unknown", "unknown");
         assertNotNull(connection);
         connection.start();
         connection.close();
@@ -123,7 +120,7 @@ public class JmsConnectionTest extends AmqpTestSupport {
     @Test(timeout=60000)
     public void testConnectionExceptionBrokerStop() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
-        Connection connection = createAmqpConnection();
+        connection = createAmqpConnection();
         connection.setExceptionListener(new ExceptionListener() {
 
             @Override

@@ -21,7 +21,6 @@ import static org.junit.Assert.assertNotNull;
 
 import java.util.concurrent.TimeUnit;
 
-import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -39,8 +38,6 @@ import org.junit.Test;
  * Test for Message priority ordering.
  */
 public class JmsConsumerPriorityDispatchTest extends AmqpTestSupport {
-
-    private Connection connection;
 
     @Override
     @Before

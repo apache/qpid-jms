@@ -99,7 +99,15 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     @Override
     public void close(AsyncResult request) {
         // If already closed signal success or else the caller might never get notified.
-        if (getEndpoint().getLocalState() == EndpointState.CLOSED) {
+        if (getEndpoint().getLocalState() == EndpointState.CLOSED ||
+            getEndpoint().getRemoteState() == EndpointState.CLOSED) {
+
+            // Remote already closed this resource, close locally and free.
+            if (getEndpoint().getLocalState() != EndpointState.CLOSED) {
+                doClose();
+                getEndpoint().free();
+            }
+
             request.onSuccess();
             return;
         }
@@ -137,9 +145,9 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     @Override
     public void failed(Exception cause) {
         if (openRequest != null) {
-            if(endpoint != null) {
-                //TODO: if this is a producer/consumer link then we may only be detached,
-                //rather than fully closed, and should respond appropriately.
+            if (endpoint != null) {
+                // TODO: if this is a producer/consumer link then we may only be detached,
+                // rather than fully closed, and should respond appropriately.
                 endpoint.close();
             }
             openRequest.onFailure(cause);
@@ -160,9 +168,9 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
                 error = new IOException("Remote has closed without error information");
             }
 
-            if(endpoint != null) {
-                //TODO: if this is a producer/consumer link then we may only be detached,
-                //rather than fully closed, and should respond appropriately.
+            if (endpoint != null) {
+                // TODO: if this is a producer/consumer link then we may only be detached,
+                // rather than fully closed, and should respond appropriately.
                 endpoint.close();
             }
 
@@ -171,6 +179,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
         }
 
         // TODO - We need a way to signal that the remote closed unexpectedly.
+        LOG.info("Resource was remotely closed");
     }
 
     public E getEndpoint() {

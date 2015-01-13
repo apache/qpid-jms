@@ -153,8 +153,10 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
                 LOG.info("Error condition detected on Connection open {}.", getEndpoint().getRemoteCondition().getCondition());
                 Exception remoteError = getRemoteError();
                 if (isAwaitingOpen()) {
+                    doClose();
                     openRequest.onFailure(remoteError);
                 } else {
+                    doClose();
                     provider.fireProviderException(remoteError);
                 }
             }

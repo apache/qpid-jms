@@ -37,6 +37,7 @@ import javax.jms.ConnectionMetaData;
 import javax.jms.Destination;
 import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
+import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
@@ -544,6 +545,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         JmsTemporaryQueue queue = new JmsTemporaryQueue(destinationName);
         queue = createResource(queue);
         tempDestinations.put(queue, queue);
+        queue.setConnection(this);
         return queue;
     }
 
@@ -555,6 +557,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         JmsTemporaryTopic topic = new JmsTemporaryTopic(destinationName);
         topic = createResource(topic);
         tempDestinations.put(topic, topic);
+        topic.setConnection(this);
         return topic;
     }
 
@@ -584,6 +587,12 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         checkClosed();
         if (failed.get()) {
             throw new JmsConnectionFailedException(firstFailureError);
+        }
+    }
+
+    protected void checkConsumeFromTemporaryDestination(JmsTemporaryDestination destination) throws JMSException {
+        if (!this.equals(destination.getConnection())) {
+            throw new InvalidDestinationException("Can't consume from a temporary destination created using another connection");
         }
     }
 

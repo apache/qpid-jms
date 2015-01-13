@@ -91,6 +91,10 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         this.connection = session.getConnection();
         this.acknowledgementMode = session.acknowledgementMode();
 
+        if(destination.isTemporary()) {
+            connection.checkConsumeFromTemporaryDestination((JmsTemporaryDestination) destination);
+        }
+
         if (connection.isMessagePrioritySupported()) {
             this.messageQueue = new PriorityMessageQueue();
         } else {

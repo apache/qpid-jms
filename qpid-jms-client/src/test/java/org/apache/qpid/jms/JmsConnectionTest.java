@@ -130,10 +130,24 @@ public class JmsConnectionTest {
             }
         }).when(provider).create(Mockito.any(JmsResource.class), Mockito.any(ProviderFuture.class));
 
+        Mockito.doAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                Object[] args = invocation.getArguments();
+                LOG.debug("Handling provider destroy call");
+                if (args[0] instanceof JmsConnectionInfo) {
+                    ProviderFuture request = (ProviderFuture) args[1];
+                    request.onSuccess();
+                }
+                return null;
+            }
+        }).when(provider).destroy(Mockito.any(JmsResource.class), Mockito.any(ProviderFuture.class));
+
         JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
         assertFalse(connection.isConnected());
         connection.start();
         assertTrue(connection.isConnected());
+        connection.close();
     }
 
     //---------- Test methods fail after connection closed -------------------//

@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.discovery;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.URI;
@@ -81,13 +82,19 @@ public class JmsDiscoveryProviderTest {
         provider.close();
     }
 
-    @Test(timeout=30000, expected=IllegalStateException.class)
+    @Test(timeout=30000)
     public void testStartFailsWithNoListener() throws Exception {
         URI discoveryUri = new URI("discovery:multicast://default");
         Provider provider =
             DiscoveryProviderFactory.create(discoveryUri);
         assertNotNull(provider);
-        provider.start();
+        try {
+            provider.start();
+            fail("Should have thrown IllegalStateException");
+        } catch (IllegalStateException expected) {
+        } catch (Exception unexpected) {
+            fail("Should have thrown IllegalStateException");
+        }
         provider.close();
     }
 

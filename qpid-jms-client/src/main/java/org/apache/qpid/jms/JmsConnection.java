@@ -569,7 +569,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
             for (JmsSession session : this.sessions) {
                 if (session.isDestinationInUse(destination)) {
-                    throw new JMSException("A consumer is consuming from the temporary destination");
+                    throw new IllegalStateException("A consumer is consuming from the temporary destination");
                 }
             }
 

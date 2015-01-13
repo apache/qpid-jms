@@ -43,12 +43,8 @@ public class JmsTemporaryTopic extends JmsTemporaryDestination implements Tempor
      * @see javax.jms.TemporaryTopic#delete()
      */
     @Override
-    public void delete() {
-        try {
-            tryDelete();
-        } catch (JMSException e) {
-            throw new RuntimeException(e);
-        }
+    public void delete() throws JMSException {
+        tryDelete();
     }
 
     /**

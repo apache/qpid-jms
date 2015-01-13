@@ -596,6 +596,10 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         }
     }
 
+    protected boolean isTemporaryDestinationDeleted(JmsDestination destination) {
+        return !tempDestinations.containsKey(destination);
+    }
+
     protected void checkClosed() throws IllegalStateException {
         if (this.closed.get()) {
             throw new IllegalStateException("The Connection is closed");

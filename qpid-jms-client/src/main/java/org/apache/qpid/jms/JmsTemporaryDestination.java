@@ -26,6 +26,8 @@ import org.apache.qpid.jms.meta.JmsResourceVistor;
  */
 public abstract class JmsTemporaryDestination extends JmsDestination implements JmsResource {
 
+    private boolean deleted;
+
     public JmsTemporaryDestination() {
         this(null, false);
     }
@@ -52,6 +54,18 @@ public abstract class JmsTemporaryDestination extends JmsDestination implements 
         if (connection != null) {
             connection.deleteDestination(this);
         }
+
+        deleted = true;
+    }
+
+    protected boolean isDeleted() throws JMSException {
+        boolean result = deleted;
+
+        if (!result && connection != null) {
+            result = connection.isTemporaryDestinationDeleted(this);
+        }
+
+        return result;
     }
 
     @Override

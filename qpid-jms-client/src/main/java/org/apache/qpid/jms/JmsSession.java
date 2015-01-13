@@ -622,6 +622,11 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     protected void send(JmsMessageProducer producer, Destination dest, Message msg, int deliveryMode, int priority, long timeToLive, boolean disableMsgId, boolean disableTimestamp) throws JMSException {
         JmsDestination destination = JmsMessageTransformation.transformDestination(connection, dest);
+
+        if(destination.isTemporary() && ((JmsTemporaryDestination) destination).isDeleted()) {
+            throw new IllegalStateException("Temporary destination has been deleted");
+        }
+
         send(producer, destination, msg, deliveryMode, priority, timeToLive, disableMsgId, disableTimestamp);
     }
 

@@ -18,7 +18,14 @@ package org.apache.qpid.jms.destinations;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
+import javax.jms.Connection;
+import javax.jms.IllegalStateException;
+import javax.jms.InvalidDestinationException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TemporaryQueue;
 
@@ -45,5 +52,78 @@ public class JmsTemporaryQueueTest extends AmqpTestSupport {
         session.createConsumer(queue);
 
         assertEquals(1, brokerService.getAdminView().getTemporaryQueues().length);
+    }
+
+    @Test(timeout = 60000)
+    public void testConsumeFromTemporaryQueueCreatedOnAnotherConnection() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        TemporaryQueue tempQueue = session.createTemporaryQueue();
+        session.createConsumer(tempQueue);
+
+        Connection connection2 = createAmqpConnection();
+        try {
+            Session session2 = connection2.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            try {
+                session2.createConsumer(tempQueue);
+                fail("should not be able to consumer from temporary queue from another connection");
+            } catch (InvalidDestinationException ide) {
+                // expected
+            }
+        } finally {
+            connection2.close();
+        }
+    }
+
+    @Test(timeout = 60000)
+    public void testCantSendToTemporaryQueueFromClosedConnection() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        TemporaryQueue tempQueue = session.createTemporaryQueue();
+
+        Connection connection2 = createAmqpConnection();
+        try {
+            Session session2 = connection2.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Message msg = session2.createMessage();
+            MessageProducer producer = session2.createProducer(tempQueue);
+
+            // Close the original connection
+            connection.close();
+
+            try {
+                producer.send(msg);
+                fail("should not be able to send to temporary queue from closed connection");
+            } catch (IllegalStateException ide) {
+                // expected
+            }
+        } finally {
+            connection2.close();
+        }
+    }
+
+    @Test(timeout = 60000)
+    public void testCantDeleteTemporaryQueueWithConsumers() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        TemporaryQueue tempQueue = session.createTemporaryQueue();
+        MessageConsumer consumer = session.createConsumer(tempQueue);
+
+        try {
+            tempQueue.delete();
+            fail("should not be able to delete temporary queue with active consumers");
+        } catch (IllegalStateException ide) {
+            // expected
+        }
+
+        consumer.close();
+
+        // Now it should be allowed
+        tempQueue.delete();
     }
 }

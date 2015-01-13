@@ -375,6 +375,7 @@ public class QpidJmsTestSupport {
         Session amqSession = activemqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue amqTestQueue = amqSession.createQueue(name.getMethodName());
         sendMessages(activemqConnection, amqTestQueue, count);
+        activemqConnection.close();
     }
 
     protected void sendToAmqTopic(int count) throws Exception {
@@ -382,6 +383,7 @@ public class QpidJmsTestSupport {
         Session amqSession = activemqConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Topic amqTestTopic = amqSession.createTopic(name.getMethodName());
         sendMessages(activemqConnection, amqTestTopic, count);
+        activemqConnection.close();
     }
 
     protected BrokerPlugin configureAuthentication() throws Exception {

@@ -341,6 +341,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
             LOG.debug(">>>> Sent [{}]", messageText);
             p.send(message);
         }
+        connection.close();
 
         // After the first restart we should get all messages sent above
         restartPrimaryBroker();

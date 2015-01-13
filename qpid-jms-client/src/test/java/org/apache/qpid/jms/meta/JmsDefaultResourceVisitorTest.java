@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.meta;
 
-import org.apache.qpid.jms.JmsTopic;
+import org.apache.qpid.jms.JmsTemporaryTopic;
 import org.apache.qpid.jms.util.IdGenerator;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,7 +50,7 @@ public class JmsDefaultResourceVisitorTest {
         visitor.processSessionInfo(new JmsSessionInfo(sessionId));
         visitor.processConsumerInfo(new JmsConsumerInfo(consumerId));
         visitor.processProducerInfo(new JmsProducerInfo(producerId));
-        visitor.processDestination(new JmsTopic("Test"));
+        visitor.processDestination(new JmsTemporaryTopic("Test"));
         visitor.processTransactionInfo(new JmsTransactionInfo(sessionId, transactionId));
     }
 }

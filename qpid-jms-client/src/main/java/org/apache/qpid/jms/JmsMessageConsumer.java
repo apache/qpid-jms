@@ -70,7 +70,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
      * @throws JMSException
      */
     protected JmsMessageConsumer(JmsConsumerId consumerId, JmsSession session, JmsDestination destination,
-        String selector, boolean noLocal) throws JMSException {
+                                 String selector, boolean noLocal) throws JMSException {
         this(consumerId, session, destination, null, selector, noLocal);
     }
 

@@ -22,16 +22,12 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Map;
 
-import javax.jms.JMSException;
-
 import org.apache.qpid.jms.jndi.JNDIStorable;
-import org.apache.qpid.jms.meta.JmsResource;
-import org.apache.qpid.jms.meta.JmsResourceVistor;
 
 /**
  * Jms Destination
  */
-public abstract class JmsDestination extends JNDIStorable implements JmsResource, Externalizable, javax.jms.Destination, Comparable<JmsDestination> {
+public abstract class JmsDestination extends JNDIStorable implements Externalizable, javax.jms.Destination, Comparable<JmsDestination> {
 
     protected transient String name;
     protected transient boolean topic;
@@ -177,30 +173,5 @@ public abstract class JmsDestination extends JNDIStorable implements JmsResource
         setName(in.readUTF());
         this.topic = in.readBoolean();
         this.temporary = in.readBoolean();
-    }
-
-    void setConnection(JmsConnection connection) {
-        this.connection = connection;
-    }
-
-    JmsConnection getConnection() {
-        return this.connection;
-    }
-
-    /**
-     * Attempts to delete the destination if there is an assigned Connection object.
-     *
-     * @throws JMSException if an error occurs or the provider doesn't support
-     *         delete of destinations from the client.
-     */
-    protected void tryDelete() throws JMSException {
-        if (connection != null) {
-            connection.deleteDestination(this);
-        }
-    }
-
-    @Override
-    public void visit(JmsResourceVistor visitor) throws Exception {
-        visitor.processDestination(this);
     }
 }

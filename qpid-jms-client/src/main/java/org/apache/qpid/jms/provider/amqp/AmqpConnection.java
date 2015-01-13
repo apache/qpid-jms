@@ -25,6 +25,7 @@ import javax.jms.JMSSecurityException;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.JmsTemporaryDestination;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
@@ -92,7 +93,7 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
         return session;
     }
 
-    public AmqpTemporaryDestination createTemporaryDestination(JmsDestination destination) {
+    public AmqpTemporaryDestination createTemporaryDestination(JmsTemporaryDestination destination) {
         AmqpTemporaryDestination temporary = new AmqpTemporaryDestination(connectionSession, destination);
         return temporary;
     }

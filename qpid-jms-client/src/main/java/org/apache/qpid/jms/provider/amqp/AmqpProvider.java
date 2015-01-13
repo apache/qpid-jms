@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.jms.JMSException;
 
-import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.JmsTemporaryDestination;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessageFactory;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
@@ -255,7 +255,7 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
                         }
 
                         @Override
-                        public void processDestination(JmsDestination destination) throws Exception {
+                        public void processDestination(JmsTemporaryDestination destination) throws Exception {
                             if (destination.isTemporary()) {
                                 AmqpTemporaryDestination temporary = connection.createTemporaryDestination(destination);
                                 temporary.open(request);
@@ -375,7 +375,7 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
                         }
 
                         @Override
-                        public void processDestination(JmsDestination destination) throws Exception {
+                        public void processDestination(JmsTemporaryDestination destination) throws Exception {
                             // TODO - Delete remote temporary Topic or Queue
                             request.onSuccess();
                         }

@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.JmsTemporaryDestination;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.DeleteOnClose;
@@ -46,7 +47,7 @@ import org.slf4j.LoggerFactory;
  * the broker in the case where the user does not have authorization to access temporary
  * destinations.
  */
-public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestination, Sender> {
+public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsTemporaryDestination, Sender> {
 
     public static final Symbol DYNAMIC_NODE_LIFETIME_POLICY = Symbol.valueOf("lifetime-policy");
     private static final String TEMP_QUEUE_CREATOR = "temp-queue-creator:";
@@ -57,7 +58,7 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsDestinatio
     private final AmqpConnection connection;
     private final AmqpSession session;
 
-    public AmqpTemporaryDestination(AmqpSession session, JmsDestination destination) {
+    public AmqpTemporaryDestination(AmqpSession session, JmsTemporaryDestination destination) {
         super(destination);
         this.session = session;
         this.connection = session.getConnection();

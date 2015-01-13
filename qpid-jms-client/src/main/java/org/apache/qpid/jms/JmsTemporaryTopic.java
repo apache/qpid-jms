@@ -22,14 +22,14 @@ import javax.jms.TemporaryTopic;
 /**
  * Temporary Topic Object
  */
-public class JmsTemporaryTopic extends JmsDestination implements TemporaryTopic {
+public class JmsTemporaryTopic extends JmsTemporaryDestination implements TemporaryTopic {
 
     public JmsTemporaryTopic() {
-        super(null, true, true);
+        this(null);
     }
 
     public JmsTemporaryTopic(String name) {
-        super(name, true, true);
+        super(name, true);
     }
 
     @Override

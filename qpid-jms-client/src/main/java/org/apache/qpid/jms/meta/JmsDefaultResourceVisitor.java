@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.meta;
 
-import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.JmsTemporaryDestination;
 
 /**
  * Default Visitor implementation that does nothing in each method to
@@ -42,7 +42,7 @@ public class JmsDefaultResourceVisitor implements JmsResourceVistor{
     }
 
     @Override
-    public void processDestination(JmsDestination destination) throws Exception {
+    public void processDestination(JmsTemporaryDestination destination) throws Exception {
     }
 
     @Override

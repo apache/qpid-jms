@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.meta;
 
-import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.JmsTemporaryDestination;
 
 /**
  * Visitor interface to make processing JmsResources simpler.
@@ -33,6 +33,6 @@ public interface JmsResourceVistor {
 
     void processTransactionInfo(JmsTransactionInfo transactionInfo) throws Exception;
 
-    void processDestination(JmsDestination destination) throws Exception;
+    void processDestination(JmsTemporaryDestination destination) throws Exception;
 
 }

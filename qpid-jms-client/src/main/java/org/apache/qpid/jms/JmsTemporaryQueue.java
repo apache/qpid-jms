@@ -22,14 +22,14 @@ import javax.jms.TemporaryQueue;
 /**
  * Temporary Queue Object
  */
-public class JmsTemporaryQueue extends JmsDestination implements TemporaryQueue {
+public class JmsTemporaryQueue extends JmsTemporaryDestination implements TemporaryQueue {
 
     public JmsTemporaryQueue() {
         this(null);
     }
 
     public JmsTemporaryQueue(String name) {
-        super(name, false, true);
+        super(name, false);
     }
 
     @Override

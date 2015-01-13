@@ -106,8 +106,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private Provider provider;
     private final Set<JmsConnectionListener> connectionListeners =
         new CopyOnWriteArraySet<JmsConnectionListener>();
-    private final Map<JmsDestination, JmsDestination> tempDestinations =
-        new ConcurrentHashMap<JmsDestination, JmsDestination>();
+    private final Map<JmsTemporaryDestination, JmsTemporaryDestination> tempDestinations =
+        new ConcurrentHashMap<JmsTemporaryDestination, JmsTemporaryDestination>();
     private final AtomicLong sessionIdGenerator = new AtomicLong();
     private final AtomicLong tempDestIdGenerator = new AtomicLong();
     private final AtomicLong transactionIdGenerator = new AtomicLong();
@@ -558,7 +558,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         return topic;
     }
 
-    protected void deleteDestination(JmsDestination destination) throws JMSException {
+    protected void deleteDestination(JmsTemporaryDestination destination) throws JMSException {
         checkClosedOrFailed();
         connect();
 
@@ -1030,7 +1030,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         provider.create(connectionInfo, request);
         request.sync();
 
-        for (JmsDestination tempDestination : tempDestinations.values()) {
+        for (JmsTemporaryDestination tempDestination : tempDestinations.values()) {
             createResource(tempDestination);
         }
 

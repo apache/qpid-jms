@@ -55,7 +55,7 @@ public class JmsTemporaryQueueTest extends AmqpTestSupport {
     }
 
     @Test(timeout = 60000)
-    public void testConsumeFromTemporaryQueueCreatedOnAnotherConnection() throws Exception {
+    public void testCantConsumeFromTemporaryQueueCreatedOnAnotherConnection() throws Exception {
         connection = createAmqpConnection();
         connection.start();
 

@@ -18,7 +18,14 @@ package org.apache.qpid.jms.destinations;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
+import javax.jms.Connection;
+import javax.jms.IllegalStateException;
+import javax.jms.InvalidDestinationException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TemporaryTopic;
 
@@ -35,8 +42,7 @@ public class JmsTemporaryTopicTest extends AmqpTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsTemporaryTopicTest.class);
 
-    // Temp Topics not yet supported on the Broker.
-    @Ignore
+    @Ignore //TODO: enable and remove "testCreateTemporaryTopicWithoutBrokerCheck"
     @Test(timeout = 60000)
     public void testCreateTemporaryTopic() throws Exception {
         connection = createAmqpConnection();
@@ -47,6 +53,91 @@ public class JmsTemporaryTopicTest extends AmqpTestSupport {
         TemporaryTopic topic = session.createTemporaryTopic();
         session.createConsumer(topic);
 
+        //TODO: TempTopics not yet supported on the Broker, it is faking it, this check fails.
         assertEquals(1, brokerService.getAdminView().getTemporaryTopics().length);
+    }
+
+    @Test(timeout = 60000)
+    public void testCreateTemporaryTopicWithoutBrokerCheck() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+        TemporaryTopic topic = session.createTemporaryTopic();
+        session.createConsumer(topic);
+    }
+
+    @Test(timeout = 60000)
+    public void testCantConsumeFromTemporaryTopicCreatedOnAnotherConnection() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        TemporaryTopic tempTopic = session.createTemporaryTopic();
+        session.createConsumer(tempTopic);
+
+        Connection connection2 = createAmqpConnection();
+        try {
+            Session session2 = connection2.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            try {
+                session2.createConsumer(tempTopic);
+                fail("should not be able to consumer from temporary topic from another connection");
+            } catch (InvalidDestinationException ide) {
+                // expected
+            }
+        } finally {
+            connection2.close();
+        }
+    }
+
+    @Test(timeout = 60000)
+    public void testCantSendToTemporaryTopicFromClosedConnection() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        TemporaryTopic tempTopic = session.createTemporaryTopic();
+
+        Connection connection2 = createAmqpConnection();
+        try {
+            Session session2 = connection2.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Message msg = session2.createMessage();
+            MessageProducer producer = session2.createProducer(tempTopic);
+
+            // Close the original connection
+            connection.close();
+
+            try {
+                producer.send(msg);
+                fail("should not be able to send to temporary topic from closed connection");
+            } catch (IllegalStateException ide) {
+                // expected
+            }
+        } finally {
+            connection2.close();
+        }
+    }
+
+    @Test(timeout = 60000)
+    public void testCantDeleteTemporaryTopicWithConsumers() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        TemporaryTopic tempTopic = session.createTemporaryTopic();
+        MessageConsumer consumer = session.createConsumer(tempTopic);
+
+        try {
+            tempTopic.delete();
+            fail("should not be able to delete temporary topic with active consumers");
+        } catch (IllegalStateException ide) {
+            // expected
+        }
+
+        consumer.close();
+
+        // Now it should be allowed
+        tempTopic.delete();
     }
 }

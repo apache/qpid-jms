@@ -18,9 +18,8 @@ package org.apache.qpid.jms;
 
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
-import javax.jms.QueueSession;
-import javax.jms.ServerSessionPool;
 import javax.jms.Session;
+import javax.jms.TopicSession;
 
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.provider.Provider;
@@ -36,18 +35,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Test various contract aspects of the QueueConnection implementation
+ * Test various contract aspects of the TopicConnection implementation
  */
-public class JmsQueueConnectionTest {
+public class JmsTopicConnectionTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JmsQueueConnectionTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JmsTopicConnectionTest.class);
 
     private final Provider provider = Mockito.mock(Provider.class);
     private final IdGenerator clientIdGenerator = new IdGenerator();
 
-    private JmsQueueConnection queueConnection;
-    private QueueSession queueSession;
-    private final JmsTopic topic = new JmsTopic();
+    private JmsTopicConnection topicConnection;
+    private TopicSession topicSession;
+    private final JmsQueue queue = new JmsQueue();
 
     @Before
     public void setUp() throws Exception {
@@ -74,79 +73,53 @@ public class JmsQueueConnectionTest {
             }
         }).when(provider).destroy(Mockito.any(JmsResource.class), Mockito.any(ProviderFuture.class));
 
-        queueConnection = new JmsQueueConnection("ID:TEST:1", provider, clientIdGenerator);
-        queueConnection.start();
+        topicConnection = new JmsTopicConnection("ID:TEST:1", provider, clientIdGenerator);
+        topicConnection.start();
 
-        queueSession = queueConnection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+        topicSession = topicConnection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
     }
 
     @After
     public void tearDown() throws Exception {
-        queueConnection.close();
+        topicConnection.close();
     }
 
     /**
-     * Test that a call to <code>createDurableConnectionConsumer()</code> method
-     * on a <code>QueueConnection</code> throws a
+     * Test that a call to <code>createBrowser()</code> method
+     * on a <code>TopicSession</code> throws a
      * <code>javax.jms.IllegalStateException</code>.
      * (see JMS 1.1 specs, table 4-1).
      *
      * @since JMS 1.1
      */
     @Test(timeout = 30000, expected=IllegalStateException.class)
-    public void testCreateDurableConnectionConsumerOnQueueConnection() throws JMSException{
-        queueConnection.createDurableConnectionConsumer(topic, "subscriptionName", "", (ServerSessionPool)null, 1);
+    public void testCreateBrowserOnTopicSession() throws JMSException {
+        topicSession.createBrowser(queue);
     }
 
     /**
-     * Test that a call to <code>createDurableSubscriber()</code> method
-     * on a <code>QueueSession</code> throws a
+     * Test that a call to <code>createQueue()</code> method
+     * on a <code>TopicSession</code> throws a
      * <code>javax.jms.IllegalStateException</code>.
      * (see JMS 1.1 specs, table 4-1).
      *
      * @since JMS 1.1
      */
     @Test(timeout = 30000, expected=IllegalStateException.class)
-    public void testCreateDurableSubscriberOnQueueSession() throws JMSException {
-        queueSession.createDurableSubscriber(topic, "subscriptionName");
+    public void testCreateQueueOnTopicSession() throws JMSException {
+        topicSession.createQueue("test-queue");
     }
 
     /**
-     * Test that a call to <code>createTemporaryTopic()</code> method
-     * on a <code>QueueSession</code> throws a
+     * Test that a call to <code>createTemporaryQueue()</code> method
+     * on a <code>TopicSession</code> throws a
      * <code>javax.jms.IllegalStateException</code>.
      * (see JMS 1.1 specs, table 4-1).
      *
      * @since JMS 1.1
      */
     @Test(timeout = 30000, expected=IllegalStateException.class)
-    public void testCreateTemporaryTopicOnQueueSession() throws JMSException {
-        queueSession.createTemporaryTopic();
-    }
-
-    /**
-     * Test that a call to <code>createTopic()</code> method
-     * on a <code>QueueSession</code> throws a
-     * <code>javax.jms.IllegalStateException</code>.
-     * (see JMS 1.1 specs, table 4-1).
-     *
-     * @since JMS 1.1
-     */
-    @Test(timeout = 30000, expected=IllegalStateException.class)
-    public void testCreateTopicOnQueueSession() throws JMSException {
-        queueSession.createTopic("test-topic");
-    }
-
-    /**
-     * Test that a call to <code>unsubscribe()</code> method
-     * on a <code>QueueSession</code> throws a
-     * <code>javax.jms.IllegalStateException</code>.
-     * (see JMS 1.1 specs, table 4-1).
-     *
-     * @since JMS 1.1
-     */
-    @Test(timeout = 30000, expected=IllegalStateException.class)
-    public void testUnsubscribeOnQueueSession() throws JMSException  {
-        queueSession.unsubscribe("subscriptionName");
+    public void testCreateTemporaryQueueOnTopicSession() throws JMSException {
+        topicSession.createTemporaryQueue();
     }
 }

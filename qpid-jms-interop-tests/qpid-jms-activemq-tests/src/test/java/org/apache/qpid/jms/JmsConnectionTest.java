@@ -18,6 +18,7 @@ package org.apache.qpid.jms;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -52,7 +53,7 @@ public class JmsConnectionTest extends AmqpTestSupport {
         connection.close();
     }
 
-    @Test(expected = JMSException.class)
+    @Test(timeout=30000)
     public void testCreateWithDuplicateClientIdFails() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
         JmsConnection connection1 = (JmsConnection) factory.createConnection();
@@ -60,8 +61,13 @@ public class JmsConnectionTest extends AmqpTestSupport {
         assertNotNull(connection1);
         connection1.start();
         JmsConnection connection2 = (JmsConnection) factory.createConnection();
-        connection2.setClientID("Test");
-        connection2.start();
+        try {
+            connection2.setClientID("Test");
+            fail("should have thrown a JMSException");
+        } catch (JMSException ex) {
+        } catch (Exception unexpected) {
+            fail("Wrong exception type thrown: " + unexpected);
+        }
 
         connection1.close();
         connection2.close();
@@ -114,7 +120,6 @@ public class JmsConnectionTest extends AmqpTestSupport {
         connection = factory.createConnection("unknown", "unknown");
         assertNotNull(connection);
         connection.start();
-        connection.close();
     }
 
     @Test(timeout=60000)

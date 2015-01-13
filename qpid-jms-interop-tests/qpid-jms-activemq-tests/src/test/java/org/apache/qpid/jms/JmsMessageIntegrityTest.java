@@ -28,7 +28,6 @@ import java.util.UUID;
 import java.util.Vector;
 
 import javax.jms.BytesMessage;
-import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MapMessage;
@@ -48,8 +47,6 @@ import org.junit.Test;
  * JMS Message property values.
  */
 public class JmsMessageIntegrityTest extends AmqpTestSupport {
-
-    private Connection connection;
 
     @Override
     public void setUp() throws Exception {

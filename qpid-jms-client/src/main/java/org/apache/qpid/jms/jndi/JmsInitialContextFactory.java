@@ -50,17 +50,12 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     private static final String[] DEFAULT_CONNECTION_FACTORY_NAMES = {
         "ConnectionFactory", "QueueConnectionFactory", "TopicConnectionFactory" };
 
-    private String connectionPrefix = "";
-
-    String queuePrefix = "queue.";
-    String topicPrefix = "topic.";
+    private String connectionFactoryPrefix = "connectionfactory.";
+    private String queuePrefix = "queue.";
+    private String topicPrefix = "topic.";
 
     @Override
     public Context getInitialContext(Hashtable environment) throws NamingException {
-
-        queuePrefix = getValue(environment, "queuePrefix", queuePrefix);
-        topicPrefix = getValue(environment, "topicPrefix", topicPrefix);
-
         // lets create a factory
         Map<String, Object> data = new ConcurrentHashMap<String, Object>();
         String[] names = getConnectionFactoryNames(environment);
@@ -120,7 +115,7 @@ public class JmsInitialContextFactory implements InitialContextFactory {
 
     protected JmsConnectionFactory createConnectionFactory(String name, Hashtable environment) throws URISyntaxException {
         Hashtable temp = new Hashtable(environment);
-        String prefix = connectionPrefix + name + ".";
+        String prefix = connectionFactoryPrefix + name + ".";
         for (Iterator iter = environment.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             String key = (String) entry.getKey();
@@ -210,13 +205,5 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         properties.putAll(environment);
         answer.setProperties(properties);
         return answer;
-    }
-
-    public String getConnectionPrefix() {
-        return connectionPrefix;
-    }
-
-    public void setConnectionPrefix(String connectionPrefix) {
-        this.connectionPrefix = connectionPrefix;
     }
 }

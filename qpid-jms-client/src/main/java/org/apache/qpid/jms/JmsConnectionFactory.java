@@ -49,11 +49,13 @@ import org.slf4j.LoggerFactory;
 public class JmsConnectionFactory extends JNDIStorable implements ConnectionFactory, QueueConnectionFactory, TopicConnectionFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsConnectionFactory.class);
+    private static final String CLIENT_ID_PROP = "clientID";
 
     private URI brokerURI;
     private URI localURI;
     private String username;
     private String password;
+    private String clientID;
     private boolean forceAsyncSend;
     private boolean alwaysSyncSend;
     private boolean sendAcksAsync;
@@ -232,11 +234,25 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     protected <T extends JmsConnection> T configureConnection(T connection, String username, String password) throws JMSException {
         try {
-            PropertyUtil.setProperties(connection, PropertyUtil.getProperties(this));
+
+            Map<String, String> properties = PropertyUtil.getProperties(this);
+            // We must ensure that we apply the clientID last, since setting it on
+            // the Connection object provokes establishing the underlying connection.
+            boolean setClientID = false;
+            if(properties.containsKey(CLIENT_ID_PROP)) {
+                setClientID = true;
+                properties.remove(CLIENT_ID_PROP);
+            }
+
+            PropertyUtil.setProperties(connection, properties);
             connection.setExceptionListener(exceptionListener);
             connection.setUsername(username);
             connection.setPassword(password);
             connection.setBrokerURI(brokerURI);
+            if(setClientID){
+                connection.setClientID(clientID);
+            }
+
             return connection;
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);
@@ -540,6 +556,23 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     protected synchronized void setClientIdGenerator(IdGenerator clientIdGenerator) {
         this.clientIdGenerator = clientIdGenerator;
+    }
+
+    public String getClientID() {
+        return clientID;
+    }
+
+    /**
+     * Sets the JMS clientID to use for connections created by this factory.
+     *
+     * NOTE: A clientID can only be used by one Connection at a time, so setting it here
+     * will restrict the ConnectionFactory to creating a single open Connection at a time.
+     * It is possible to set the clientID on the Connection itself immediately after
+     * creation if no value has been set via the factory that created it, which will
+     * allow the factory to create multiple open connections at a time.
+     */
+    public void setClientID(String clientID) {
+        this.clientID = clientID;
     }
 
     /**

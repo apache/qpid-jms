@@ -977,10 +977,11 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         return this.connectionInfo.getConnectionId();
     }
 
+    //TODO: unused? remove?
     public boolean isWatchRemoteDestinations() {
         return this.connectionInfo.isWatchRemoteDestinations();
     }
-
+    //TODO: unused? remove?
     public void setWatchRemoteDestinations(boolean watchRemoteDestinations) {
         this.connectionInfo.setWatchRemoteDestinations(watchRemoteDestinations);
     }

@@ -103,11 +103,11 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     public void setClientId(String clientId) {
         this.clientId = clientId;
     }
-
+    //TODO: unused? remove?
     public String getClientIp() {
         return clientIp;
     }
-
+    //TODO: unused? remove?
     public void setClientIp(String clientIp) {
         this.clientIp = clientIp;
     }
@@ -184,10 +184,12 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         this.requestTimeout = requestTimeout;
     }
 
+    //TODO: unused? remove?
     public boolean isWatchRemoteDestinations() {
         return watchRemoteDestinations;
     }
 
+    //TODO: unused? remove?
     public void setWatchRemoteDestinations(boolean watchRemoteDestinations) {
         this.watchRemoteDestinations = watchRemoteDestinations;
     }

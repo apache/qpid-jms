@@ -18,6 +18,7 @@ package org.apache.qpid.jms.provider.amqp;
 
 import java.io.IOException;
 
+import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
 
@@ -221,6 +222,8 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
         if (error != null) {
             if (error.equals(AmqpError.UNAUTHORIZED_ACCESS)) {
                 remoteError = new JMSSecurityException(message);
+            } else if (error.equals(AmqpError.NOT_FOUND)) {
+                remoteError = new InvalidDestinationException(message);
             } else {
                 remoteError = new JMSException(message);
             }

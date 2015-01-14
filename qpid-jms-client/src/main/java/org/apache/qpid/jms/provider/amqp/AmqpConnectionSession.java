@@ -19,6 +19,7 @@ package org.apache.qpid.jms.provider.amqp;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.meta.JmsSessionInfo;
@@ -110,7 +111,7 @@ public class AmqpConnectionSession extends AmqpSession {
                 subscriber.close(getWrappedRequest());
             } else {
                 subscriber.close(NoOpAsyncResult.INSTANCE);
-                getWrappedRequest().onFailure(new JMSException("Cannot remove a subscription that does not exist"));
+                getWrappedRequest().onFailure(new InvalidDestinationException("Cannot remove a subscription that does not exist"));
             }
         }
 

@@ -177,7 +177,7 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
                     try {
                         transport.close();
                     } catch (Exception e) {
-                        LOG.debug("Cuaght exception while closing down Transport: {}", e.getMessage());
+                        LOG.debug("Caught exception while closing down Transport: {}", e.getMessage());
                     }
                 }
 

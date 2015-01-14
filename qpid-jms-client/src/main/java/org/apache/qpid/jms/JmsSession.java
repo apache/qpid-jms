@@ -417,11 +417,18 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     public TopicSubscriber createDurableSubscriber(Topic topic, String name, String messageSelector, boolean noLocal) throws JMSException {
         checkClosed();
         checkDestination(topic);
+        checkClientIDWasSetExplicitly();
         messageSelector = checkSelector(messageSelector);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
         JmsTopicSubscriber result = new JmsDurableTopicSubscriber(getNextConsumerId(), this, dest, name, false, messageSelector);
         result.init();
         return result;
+    }
+
+    protected void checkClientIDWasSetExplicitly() throws IllegalStateException {
+        if (!connection.isExplicitClientID()) {
+            throw new IllegalStateException("You must specify a unique clientID for the Connection to use a DurableSubscriber");
+        }
     }
 
     /**

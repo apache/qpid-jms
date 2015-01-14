@@ -231,13 +231,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
             destroyResource(connectionInfo);
         }
 
-        synchronized (this) {
-            if (clientIdSet) {
-                connectionInfo.setClientId(null);
-                clientIdSet = false;
-            }
-        }
-
         tempDestinations.clear();
         started.set(false);
         connected.set(false);
@@ -612,6 +605,10 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     protected JmsTransactionId getNextTransactionId() {
         return new JmsTransactionId(connectionInfo.getConnectionId(), transactionIdGenerator.incrementAndGet());
+    }
+
+    protected synchronized boolean isExplicitClientID() {
+        return clientIdSet;
     }
 
     ////////////////////////////////////////////////////////////////////////////

@@ -49,6 +49,10 @@ public class IntegrationTestFixture {
     }
 
     Connection establishConnecton(TestAmqpPeer testPeer, String optionsString, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties) throws JMSException {
+        return establishConnecton(testPeer, null, serverCapabilities, serverProperties, true);
+    }
+
+    Connection establishConnecton(TestAmqpPeer testPeer, String optionsString, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties, boolean setClientId) throws JMSException {
         testPeer.expectPlainConnect("guest", "guest", serverCapabilities, serverProperties);
 
         // Each connection creates a session for managing temporary destinations etc
@@ -63,8 +67,10 @@ public class IntegrationTestFixture {
         ConnectionFactory factory = new JmsConnectionFactory(brokerURI);
         Connection connection = factory.createConnection("guest", "guest");
 
-        // Set a clientId to provoke the actual AMQP connection process to occur.
-        connection.setClientID("clientName");
+        if(setClientId) {
+            // Set a clientId to provoke the actual AMQP connection process to occur.
+            connection.setClientID("clientName");
+        }
 
         assertNull(testPeer.getThrowable());
         return connection;

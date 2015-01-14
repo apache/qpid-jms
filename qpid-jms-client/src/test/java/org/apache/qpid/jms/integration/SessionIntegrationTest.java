@@ -34,6 +34,7 @@ import java.io.IOException;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
+import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -449,6 +450,32 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             assertNotNull("TopicSubscriber object was null", subscriber);
             assertFalse("TopicSubscriber should not be no-local", subscriber.getNoLocal());
             assertNull("TopicSubscriber should not have a selector", subscriber.getMessageSelector());
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateDurableTopicSubscriberFailsIfConnectionDoesntHaveExplicitClientID() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Create a connection without an explicit clientId
+            Connection connection = testFixture.establishConnecton(testPeer, null, null, null, false);
+            connection.start();
+
+            testPeer.expectBegin(true);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String topicName = "myTopic";
+            Topic dest = session.createTopic(topicName);
+            String subscriptionName = "mySubscription";
+
+            try {
+                // Verify this fails, a clientID is required and only one chosen by the application makes sense
+                session.createDurableSubscriber(dest, subscriptionName);
+                fail("expected exception to be thrown due to lack of explicit clientID");
+            } catch(IllegalStateException ise) {
+                // Expected
+            }
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

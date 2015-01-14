@@ -72,4 +72,9 @@ public abstract class AbstractMechanism implements Mechanism {
     public Map<String, Object> getProperties() {
         return this.properties;
     }
+
+    @Override
+    public String toString() {
+        return "SASL-" + getName();
+    }
 }

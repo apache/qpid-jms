@@ -420,7 +420,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         checkClientIDWasSetExplicitly();
         messageSelector = checkSelector(messageSelector);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
-        JmsTopicSubscriber result = new JmsDurableTopicSubscriber(getNextConsumerId(), this, dest, name, false, messageSelector);
+        JmsTopicSubscriber result = new JmsDurableTopicSubscriber(getNextConsumerId(), this, dest, name, noLocal, messageSelector);
         result.init();
         return result;
     }

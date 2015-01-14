@@ -32,13 +32,11 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     private final JmsConnectionId connectionId;
     private String clientId;
-    private String clientIp;
     private String username;
     private String password;
     private boolean forceAsyncSend;
     private boolean alwaysSyncSend;
     private boolean omitHost;
-    private boolean watchRemoteDestinations;
     public long sendTimeout = DEFAULT_SEND_TIMEOUT;
     public long requestTimeout = DEFAULT_REQUEST_TIMEOUT;
     public long connectTimeout = DEFAULT_CONNECT_TIMEOUT;
@@ -64,7 +62,6 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         copy.clientId = clientId;
         copy.username = username;
         copy.password = password;
-        copy.clientIp = clientIp;
         copy.forceAsyncSend = forceAsyncSend;
         copy.alwaysSyncSend = alwaysSyncSend;
         copy.omitHost = omitHost;
@@ -102,14 +99,6 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     public void setClientId(String clientId) {
         this.clientId = clientId;
-    }
-    //TODO: unused? remove?
-    public String getClientIp() {
-        return clientIp;
-    }
-    //TODO: unused? remove?
-    public void setClientIp(String clientIp) {
-        this.clientIp = clientIp;
     }
 
     public String getUsername() {
@@ -182,16 +171,6 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     public void setRequestTimeout(long requestTimeout) {
         this.requestTimeout = requestTimeout;
-    }
-
-    //TODO: unused? remove?
-    public boolean isWatchRemoteDestinations() {
-        return watchRemoteDestinations;
-    }
-
-    //TODO: unused? remove?
-    public void setWatchRemoteDestinations(boolean watchRemoteDestinations) {
-        this.watchRemoteDestinations = watchRemoteDestinations;
     }
 
     @Override

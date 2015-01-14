@@ -490,6 +490,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         if (transacted) {
             result = Session.SESSION_TRANSACTED;
         }
+
         return result;
     }
 
@@ -521,12 +522,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
             this.connectionInfo = createResource(connectionInfo);
             this.connected.set(true);
-
-            // TODO - Advisory Support.
-            //
-            // Providers should have an interface for adding a listener for temporary
-            // destination advisory messages for create / destroy so we can track them
-            // and throw exceptions when producers try to send to deleted destinations.
         }
     }
 
@@ -977,15 +972,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         return this.connectionInfo.getConnectionId();
     }
 
-    //TODO: unused? remove?
-    public boolean isWatchRemoteDestinations() {
-        return this.connectionInfo.isWatchRemoteDestinations();
-    }
-    //TODO: unused? remove?
-    public void setWatchRemoteDestinations(boolean watchRemoteDestinations) {
-        this.connectionInfo.setWatchRemoteDestinations(watchRemoteDestinations);
-    }
-
     public JmsMessageFactory getMessageFactory() {
         if (messageFactory == null) {
             throw new RuntimeException("Message factory should never be null");
@@ -1033,8 +1019,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     @Override
     public void onConnectionRecovery(Provider provider) throws Exception {
-        // TODO - Recover Advisory Consumer once we can support it.
-
         LOG.debug("Connection {} is starting recovery.", connectionInfo.getConnectionId());
 
         ProviderFuture request = new ProviderFuture();

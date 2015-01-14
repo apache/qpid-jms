@@ -62,7 +62,6 @@ public class JmsConnectionInfoTest {
 
         info.setAlwaysSyncSend(true);
         info.setClientId("test");
-        info.setClientIp("127.0.0.1");
         info.setCloseTimeout(100);
         info.setConnectTimeout(200);
         info.setForceAsyncSends(true);
@@ -73,13 +72,11 @@ public class JmsConnectionInfoTest {
         info.setSendTimeout(150);
         info.setTopicPrefix("topic");
         info.setUsername("user");
-        info.setWatchRemoteDestinations(false);
 
         JmsConnectionInfo copy = info.copy();
 
         assertEquals(true, copy.isAlwaysSyncSend());
         assertEquals("test", copy.getClientId());
-        assertEquals("127.0.0.1", copy.getClientIp());
         assertEquals(100, copy.getCloseTimeout());
         assertEquals(200, copy.getConnectTimeout());
         assertEquals(true, copy.isForceAsyncSend());
@@ -90,7 +87,6 @@ public class JmsConnectionInfoTest {
         assertEquals(150, copy.getSendTimeout());
         assertEquals("topic", copy.getTopicPrefix());
         assertEquals("user", copy.getUsername());
-        assertEquals(false, copy.isWatchRemoteDestinations());
 
         assertEquals(info, copy);
 }

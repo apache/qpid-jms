@@ -54,17 +54,17 @@ public class JmsConnectionInRandomBatchesTest extends AmqpTestSupport  {
         super.tearDown();
     }
 
-    @Test
+    @Test(timeout = 60 * 1000)
     public void testSingleBatch() throws Exception {
         doCreateConnectionBatch(MAX_BATCH_SIZE);
     }
 
-    @Test
+    @Test(timeout = 60 * 1000)
     public void testCreateManyBatches() throws Exception {
         doCreateConnectionInBatches(MAX_BATCH_ITERATIONS, MAX_BATCH_SIZE);
     }
 
-    @Test
+    @Test(timeout = 60 * 1000)
     public void testCreateRandomSizedBatches() throws Exception {
         doCreateConnectionInBatches(MAX_BATCH_ITERATIONS, RANDOM_SIZE_MARKER);
     }

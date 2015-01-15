@@ -27,7 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Tests behaviour after a QueueSession is closed.
+ * Tests behaviour after a Session is closed.
  */
 public class JmsSessionClosedTest extends AmqpTestSupport {
 
@@ -37,7 +37,7 @@ public class JmsSessionClosedTest extends AmqpTestSupport {
 
     protected void createAndCloseSession() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        connection = factory.createQueueConnection();
+        connection = factory.createConnection();
 
         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue destination = session.createQueue(name.getMethodName());

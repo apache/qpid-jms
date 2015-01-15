@@ -103,7 +103,7 @@ public class JmsAutoAckTest extends AmqpTestSupport {
         }));
     }
 
-    @Test(timeout = 600000)
+    @Test(timeout = 60000)
     public void testRecoverInOnMessage() throws Exception {
         connection = createAmqpConnection();
 
@@ -120,7 +120,7 @@ public class JmsAutoAckTest extends AmqpTestSupport {
 
         connection.start();
 
-        assertTrue("Timed out waiting for async listener", latch.await(500, TimeUnit.SECONDS));
+        assertTrue("Timed out waiting for async listener", latch.await(10, TimeUnit.SECONDS));
         assertFalse("Test failed in listener, consult logs", listener.getFailed());
     }
 

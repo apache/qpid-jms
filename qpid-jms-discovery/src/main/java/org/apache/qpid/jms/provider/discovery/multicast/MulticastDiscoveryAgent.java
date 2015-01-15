@@ -20,13 +20,19 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.InterfaceAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -144,6 +150,8 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
             }
             if (mcNetworkInterface != null) {
                 mcast.setNetworkInterface(NetworkInterface.getByName(mcNetworkInterface));
+            } else {
+                trySetNetworkInterface(mcast);
             }
             runner = new Thread(this);
             runner.setName(this.toString() + ":" + runner.getName());
@@ -364,6 +372,47 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
      */
     public void setParser(PacketParser parser) {
         this.parser = parser;
+    }
+
+    private void trySetNetworkInterface(MulticastSocket mcastSock) throws SocketException {
+        List<NetworkInterface> interfaces = findNetworkInterface();
+        SocketException lastError = null;
+
+        for (NetworkInterface networkInterface : interfaces) {
+            try {
+                mcastSock.setNetworkInterface(networkInterface);
+                break;
+            } catch (SocketException error) {
+                lastError = error;
+            }
+        }
+
+        if (mcastSock.getNetworkInterface() == null) {
+            if (lastError != null) {
+                throw lastError;
+            } else {
+                throw new SocketException("No NetworkInterface available for this socket.");
+            }
+        }
+    }
+
+    private List<NetworkInterface> findNetworkInterface() throws SocketException {
+        Enumeration<NetworkInterface> ifcs = NetworkInterface.getNetworkInterfaces();
+        List<NetworkInterface> interfaces = new ArrayList<NetworkInterface>();
+        while (ifcs.hasMoreElements()) {
+            NetworkInterface ni = ifcs.nextElement();
+            if (ni.supportsMulticast() && ni.isUp()) {
+                for (InterfaceAddress ia : ni.getInterfaceAddresses()) {
+                    if (ia.getAddress() instanceof java.net.Inet4Address &&
+                        !ia.getAddress().isLoopbackAddress() &&
+                        !ni.getDisplayName().startsWith("vnic")) {
+                        interfaces.add(ni);
+                    }
+                }
+            }
+        }
+
+        return interfaces.isEmpty() ? Collections.<NetworkInterface>emptyList() : interfaces;
     }
 
     // ---------- Discovered Peer Bookkeeping Class ---------------------------//

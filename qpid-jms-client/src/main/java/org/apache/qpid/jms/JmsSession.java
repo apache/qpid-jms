@@ -96,6 +96,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private final AtomicLong consumerIdGenerator = new AtomicLong();
     private final AtomicLong producerIdGenerator = new AtomicLong();
     private JmsLocalTransactionContext transactionContext;
+    private boolean sessionRecovered;
 
     protected JmsSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) throws JMSException {
         this.connection = connection;
@@ -151,6 +152,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         }
 
         this.connection.recover(getSessionId());
+        sessionRecovered = true;
     }
 
     @Override
@@ -1011,5 +1013,13 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      */
     public JmsLocalTransactionContext getTransactionContext() {
         return transactionContext;
+    }
+
+    boolean isSessionRecovered() {
+        return sessionRecovered;
+    }
+
+    void clearSessionRecovered() {
+        sessionRecovered = false;
     }
 }

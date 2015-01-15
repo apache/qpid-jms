@@ -271,8 +271,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             }
             sendFlowIfNeeded();
         } else if (ackType.equals(ACK_TYPE.CONSUMED)) {
-            // A Consumer may not always send a delivered ACK so we need to check to
-            // ensure we don't add to much credit to the link.
+            // A Consumer may not always send a DELIVERED ack so we need to
+            // check to ensure we don't add too much credit to the link.
             if (isPresettle() || delivered.remove(envelope) == null) {
                 sendFlowIfNeeded();
             }

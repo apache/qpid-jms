@@ -196,7 +196,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         sendPullCommand(0);
 
         try {
-            return copy(ack(this.messageQueue.dequeue(-1)));
+            return copy(ackFromReceive(this.messageQueue.dequeue(-1)));
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);
         }
@@ -216,7 +216,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
 
         if (timeout > 0) {
             try {
-                return copy(ack(this.messageQueue.dequeue(timeout)));
+                return copy(ackFromReceive(this.messageQueue.dequeue(timeout)));
             } catch (InterruptedException e) {
                 throw JmsExceptionSupport.create(e);
             }
@@ -236,7 +236,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         checkMessageListener();
         sendPullCommand(-1);
 
-        return copy(ack(this.messageQueue.dequeueNoWait()));
+        return copy(ackFromReceive(this.messageQueue.dequeueNoWait()));
     }
 
     protected void checkClosed() throws IllegalStateException {
@@ -252,7 +252,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         return envelope.getMessage().copy();
     }
 
-    JmsInboundMessageDispatch ack(final JmsInboundMessageDispatch envelope) throws JMSException {
+    JmsInboundMessageDispatch ackFromReceive(final JmsInboundMessageDispatch envelope) throws JMSException {
         if (envelope != null && envelope.getMessage() != null) {
             JmsMessage message = envelope.getMessage();
             if (message.getAcknowledgeCallback() != null) {
@@ -268,7 +268,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         return envelope;
     }
 
-    private void doAckConsumed(final JmsInboundMessageDispatch envelope) throws JMSException {
+    private JmsInboundMessageDispatch doAckConsumed(final JmsInboundMessageDispatch envelope) throws JMSException {
         checkClosed();
         try {
             session.acknowledge(envelope, ACK_TYPE.CONSUMED, true);
@@ -276,15 +276,17 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
             session.onException(ex);
             throw ex;
         }
+        return envelope;
     }
 
-    private void doAckDelivered(final JmsInboundMessageDispatch envelope) throws JMSException {
+    private JmsInboundMessageDispatch doAckDelivered(final JmsInboundMessageDispatch envelope) throws JMSException {
         try {
             session.acknowledge(envelope, ACK_TYPE.DELIVERED, true);
         } catch (JMSException ex) {
             session.onException(ex);
             throw ex;
         }
+        return envelope;
     }
 
     private void doAckReleased(final JmsInboundMessageDispatch envelope) throws JMSException {
@@ -325,29 +327,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         }
 
         if (this.messageListener != null && this.started) {
-            session.getExecutor().execute(new Runnable() {
-                @Override
-                public void run() {
-                    JmsInboundMessageDispatch envelope;
-                    while (session.isStarted() && (envelope = messageQueue.dequeueNoWait()) != null) {
-                        try {
-                            // TODO - We are currently acking early.  We need to ack after onMessage
-                            //        with either a delivered or a consumed ack based on the session
-                            //        ack mode.  We also need to check for the message having been
-                            //        acked by message.acknowledge() in onMessage so we don't do a
-                            //        delivered ack following a real ack in the case of client ack
-                            //        mode or a future individual ack mode.
-                            messageListener.onMessage(copy(ack(envelope)));
-                        } catch (Exception e) {
-                            // TODO - We need to handle exception of on message with some other
-                            //        ack such as rejected and consider adding a redlivery policy
-                            //        to control when we might just poison the message with an ack
-                            //        of modified set to not deliverable here.
-                            session.getConnection().onException(e);
-                        }
-                    }
-                }
-            });
+            session.getExecutor().execute(new MessageDeliverTask());
         } else {
             if (availableListener != null) {
                 availableListener.onMessageAvailable(this);
@@ -360,7 +340,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         try {
             this.started = true;
             this.messageQueue.start();
-            drainMessageQueueToListener(); //TODO: this should be handed off to the executor.
+            drainMessageQueueToListener();
         } finally {
             lock.unlock();
         }
@@ -385,8 +365,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     }
 
     public void suspendForRollback() throws JMSException {
-        // TODO: this isnt really sufficient if we are in onMessage and there
-        // are previously-scheduled delivery tasks remaining after the currently executing one
         stop();
 
         session.getConnection().stopResource(consumerInfo);
@@ -407,19 +385,8 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     }
 
     void drainMessageQueueToListener() {
-        MessageListener listener = this.messageListener;
-        if (listener != null) {
-            if (!this.messageQueue.isEmpty()) {
-                List<JmsInboundMessageDispatch> drain = this.messageQueue.removeAll();
-                for (JmsInboundMessageDispatch envelope : drain) {
-                    try {
-                        listener.onMessage(copy(ack(envelope)));
-                    } catch (Exception e) {
-                        session.getConnection().onException(e);
-                    }
-                }
-                drain.clear();
-            }
+        if (this.messageListener != null && this.started) {
+            session.getExecutor().execute(new MessageDeliverTask());
         }
     }
 
@@ -573,4 +540,35 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
 
         return prefetch;
     }
+
+    private final class MessageDeliverTask implements Runnable {
+        @Override
+        public void run() {
+            JmsInboundMessageDispatch envelope;
+            while (session.isStarted() && (envelope = messageQueue.dequeueNoWait()) != null) {
+                try {
+                    JmsMessage copy = null;
+                    if(acknowledgementMode == Session.AUTO_ACKNOWLEDGE) {
+                        copy = copy(doAckDelivered(envelope));
+                    } else {
+                        copy = copy(ackFromReceive(envelope));
+                    }
+                    session.clearSessionRecovered();
+
+                    messageListener.onMessage(copy);
+
+                    if(acknowledgementMode == Session.AUTO_ACKNOWLEDGE && !session.isSessionRecovered()) {
+                        doAckConsumed(envelope);
+                    }
+                } catch (Exception e) {
+                    // TODO - We need to handle exception of on message with some other
+                    //        ack such as rejected and consider adding a redlivery policy
+                    //        to control when we might just poison the message with an ack
+                    //        of modified set to not deliverable here.
+                    session.getConnection().onException(e);
+                }
+            }
+        }
+    }
+
 }

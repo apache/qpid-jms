@@ -17,9 +17,14 @@
 package org.apache.qpid.jms.consumer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
@@ -96,5 +101,95 @@ public class JmsAutoAckTest extends AmqpTestSupport {
                 return proxy.getQueueSize() == 0;
             }
         }));
+    }
+
+    @Test(timeout = 600000)
+    public void testRecoverInOnMessage() throws Exception {
+        connection = createAmqpConnection();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageConsumer consumer = session.createConsumer(queue);
+
+        sendMessages(connection, queue, 2);
+
+        CountDownLatch latch = new CountDownLatch(1);
+        AutoAckRecoverMsgListener listener = new AutoAckRecoverMsgListener(latch, session);
+        consumer.setMessageListener(listener);
+
+        connection.start();
+
+        assertTrue("Timed out waiting for async listener", latch.await(500, TimeUnit.SECONDS));
+        assertFalse("Test failed in listener, consult logs", listener.getFailed());
+    }
+
+    private static class AutoAckRecoverMsgListener implements MessageListener {
+        final Session session;
+        final CountDownLatch latch;
+        private boolean seenFirstMessage = false;
+        private boolean seenSecondMessage = false;
+        private boolean complete = false;
+        private boolean failed = false;
+
+        public AutoAckRecoverMsgListener(CountDownLatch latch, Session session) {
+            this.latch = latch;
+            this.session = session;
+        }
+
+        @Override
+        public void onMessage(Message message) {
+            try {
+                int msgNumProperty = message.getIntProperty(MESSAGE_NUMBER);
+
+                if(complete ){
+                    LOG.info("Test already complete, ignoring delivered message: " + msgNumProperty);
+                }
+
+                if (msgNumProperty == 1) {
+                    if (!seenFirstMessage) {
+                        LOG.info("Received first message.");
+                        seenFirstMessage = true;
+                    } else {
+                        LOG.error("Received first message again.");
+                        complete(true);
+                    }
+                } else {
+                    if (msgNumProperty != 2) {
+                        LOG.error("Received unexpected message: " + msgNumProperty);
+                        complete(true);
+                        return;
+                    }
+
+                    if(!seenSecondMessage){
+                        seenSecondMessage = true;
+                        LOG.info("Received second message. Now calling recover()");
+                        session.recover();
+                    } else {
+                        LOG.info("Received second message again as expected.");
+                        if(message.getJMSRedelivered()) {
+                            LOG.info("Message was marked redelivered.");
+                            complete(false);
+                        } else {
+                            LOG.error("Message was not marked redelivered.");
+                            complete(true);
+                        }
+                    }
+                }
+            } catch (JMSException e) {
+                LOG.error("Exception caught in listener", e);
+                complete(true);
+            }
+        }
+
+        public boolean getFailed() {
+            return failed;
+        }
+
+        private void complete(boolean fail) {
+            failed = fail;
+            complete = true;
+            latch.countDown();
+        }
     }
 }

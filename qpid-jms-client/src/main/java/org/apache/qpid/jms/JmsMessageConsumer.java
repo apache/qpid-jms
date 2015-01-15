@@ -262,6 +262,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
             } else {
                 doAckConsumed(envelope);
             }
+
             // Tags that we have delivered and can't close if in a TX Session.
             delivered.set(true);
         }
@@ -317,6 +318,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                             throw new javax.jms.IllegalStateException("Session closed.");
                         }
                         session.acknowledge();
+                        envelope.getMessage().setAcknowledgeCallback(null);
                         return null;
                     }
                 });
@@ -548,7 +550,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
             while (session.isStarted() && (envelope = messageQueue.dequeueNoWait()) != null) {
                 try {
                     JmsMessage copy = null;
-                    if(acknowledgementMode == Session.AUTO_ACKNOWLEDGE) {
+                    if (acknowledgementMode == Session.AUTO_ACKNOWLEDGE) {
                         copy = copy(doAckDelivered(envelope));
                     } else {
                         copy = copy(ackFromReceive(envelope));
@@ -557,7 +559,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
 
                     messageListener.onMessage(copy);
 
-                    if(acknowledgementMode == Session.AUTO_ACKNOWLEDGE && !session.isSessionRecovered()) {
+                    if (acknowledgementMode == Session.AUTO_ACKNOWLEDGE && !session.isSessionRecovered()) {
                         doAckConsumed(envelope);
                     }
                 } catch (Exception e) {
@@ -570,5 +572,4 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
             }
         }
     }
-
 }

@@ -133,7 +133,7 @@ public class NettyTcpTransport implements Transport {
         if (closed.compareAndSet(false, true)) {
             connected.set(false);
             if (channel != null) {
-                channel.close();
+                channel.close().syncUninterruptibly();
             }
             if (group != null) {
                 group.shutdownGracefully();

@@ -142,17 +142,22 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
             if (mcJoinNetworkInterface != null) {
                 mcast.joinGroup(sockAddress, NetworkInterface.getByName(mcJoinNetworkInterface));
             } else {
+                if (mcNetworkInterface != null) {
+                    mcast.setNetworkInterface(NetworkInterface.getByName(mcNetworkInterface));
+                } else {
+                    trySetNetworkInterface(mcast);
+                }
                 mcast.joinGroup(inetAddress);
             }
             mcast.setSoTimeout((int) keepAliveInterval);
             if (mcInterface != null) {
                 mcast.setInterface(InetAddress.getByName(mcInterface));
             }
+
             if (mcNetworkInterface != null) {
                 mcast.setNetworkInterface(NetworkInterface.getByName(mcNetworkInterface));
-            } else {
-                trySetNetworkInterface(mcast);
             }
+
             runner = new Thread(this);
             runner.setName(this.toString() + ":" + runner.getName());
             runner.setDaemon(true);
@@ -377,17 +382,19 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
     private void trySetNetworkInterface(MulticastSocket mcastSock) throws SocketException {
         List<NetworkInterface> interfaces = findNetworkInterface();
         SocketException lastError = null;
+        boolean found = false;
 
         for (NetworkInterface networkInterface : interfaces) {
             try {
                 mcastSock.setNetworkInterface(networkInterface);
+                found = true;
                 break;
             } catch (SocketException error) {
                 lastError = error;
             }
         }
 
-        if (mcastSock.getNetworkInterface() == null) {
+        if (!found) {
             if (lastError != null) {
                 throw lastError;
             } else {

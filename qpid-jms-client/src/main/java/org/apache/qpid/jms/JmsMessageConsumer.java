@@ -180,6 +180,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     protected void shutdown() throws JMSException {
         if (closed.compareAndSet(false, true)) {
             this.session.remove(this);
+            stop(true);
         }
     }
 
@@ -366,10 +367,18 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     }
 
     public void stop() {
+        stop(false);
+    }
+
+    private void stop(boolean closeMessageQueue) {
         lock.lock();
         try {
             this.started = false;
-            this.messageQueue.stop();
+            if (closeMessageQueue) {
+                this.messageQueue.close();
+            } else {
+                this.messageQueue.stop();
+            }
         } finally {
             lock.unlock();
         }

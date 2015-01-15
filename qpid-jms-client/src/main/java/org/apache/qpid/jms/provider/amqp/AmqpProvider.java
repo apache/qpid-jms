@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.provider.amqp;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.util.ReferenceCountUtil;
 
 import java.io.IOException;
 import java.net.URI;
@@ -600,11 +601,14 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
     @Override
     public void onData(final ByteBuf input) {
 
+        // We need to retain until the serializer gets around to processing it.
+        ReferenceCountUtil.retain(input);
+
         serializer.execute(new Runnable() {
 
             @Override
             public void run() {
-                LOG.trace("Received from Broker {} bytes:", input.readableBytes());
+                LOG.trace("Received from Broker {} bytes: {}", input.readableBytes(), input);
 
                 ByteBuffer source = input.nioBuffer();
 
@@ -617,6 +621,8 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
                     protonTransport.processInput();
                     source.position(source.position() + limit);
                 } while (source.hasRemaining());
+
+                ReferenceCountUtil.release(input);
 
                 // Process the state changes from the latest data and then answer back
                 // any pending updates to the Broker.
@@ -659,8 +665,6 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
      */
     @Override
     public void onTransportClosed() {
-        // TODO: improve or delete this logging
-        LOG.debug("onTransportClosed listener called");
         if (!serializer.isShutdown()) {
             serializer.execute(new Runnable() {
                 @Override

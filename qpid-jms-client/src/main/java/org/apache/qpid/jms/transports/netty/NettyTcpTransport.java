@@ -163,7 +163,7 @@ public class NettyTcpTransport implements Transport {
             return;
         }
 
-        LOG.info("Attempted write of: {} bytes", length);
+        LOG.trace("Attempted write of: {} bytes", length);
 
         channel.write(output);
         channel.flush();
@@ -222,12 +222,12 @@ public class NettyTcpTransport implements Transport {
 
         @Override
         public void channelActive(ChannelHandlerContext context) throws Exception {
-            LOG.info("Channel has become active! Channel is {}", context.channel());
+            LOG.trace("Channel has become active! Channel is {}", context.channel());
         }
 
         @Override
         public void channelInactive(ChannelHandlerContext context) throws Exception {
-            LOG.info("Channel has gone inactive! Channel is {}", context.channel());
+            LOG.trace("Channel has gone inactive! Channel is {}", context.channel());
             if (!closed.get()) {
                 connected.set(false);
                 listener.onTransportClosed();
@@ -236,7 +236,7 @@ public class NettyTcpTransport implements Transport {
 
         @Override
         public void exceptionCaught(ChannelHandlerContext context, Throwable cause) throws Exception {
-            LOG.info("Exception on channel! Channel is {}", context.channel());
+            LOG.trace("Exception on channel! Channel is {}", context.channel());
             if (!closed.get()) {
                 connected.set(false);
                 listener.onTransportError(cause);
@@ -245,7 +245,7 @@ public class NettyTcpTransport implements Transport {
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, ByteBuf buffer) throws Exception {
-            LOG.info("New data read: {} bytes incoming", buffer.readableBytes());
+            LOG.trace("New data read: {} bytes incoming: {}", buffer.readableBytes(), buffer);
             listener.onData(buffer);
         }
     }

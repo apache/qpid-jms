@@ -59,6 +59,13 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
     private static final int DEFAULT_IDLE_TIME = 500;
     private static final int HEARTBEAT_MISS_BEFORE_DEATH = 10;
 
+    private static final List<String> DEFAULT_EXCLUSIONS = new ArrayList<String>();
+
+    static {
+        DEFAULT_EXCLUSIONS.add("vnic");
+        DEFAULT_EXCLUSIONS.add("tun0");
+    }
+
     private DiscoveryListener listener;
     private URI discoveryURI;
     private int timeToLive = 1;
@@ -387,6 +394,7 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
         for (NetworkInterface networkInterface : interfaces) {
             try {
                 mcastSock.setNetworkInterface(networkInterface);
+                LOG.debug("Configured mcast socket {} to network interface {}", mcast, networkInterface);
                 found = true;
                 break;
             } catch (SocketException error) {
@@ -412,7 +420,7 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
                 for (InterfaceAddress ia : ni.getInterfaceAddresses()) {
                     if (ia.getAddress() instanceof java.net.Inet4Address &&
                         !ia.getAddress().isLoopbackAddress() &&
-                        !ni.getDisplayName().startsWith("vnic")) {
+                        !DEFAULT_EXCLUSIONS.contains(ni.getName())) {
                         interfaces.add(ni);
                     }
                 }

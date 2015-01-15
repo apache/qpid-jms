@@ -23,7 +23,6 @@ import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -49,38 +48,36 @@ public class JmsSessionClosedTest extends AmqpTestSupport {
         session.close();
     }
 
-    @Before
-    @Override
-    public void setUp() throws Exception {
-        super.setUp();
-        createAndCloseSession();
-    }
-
     @Test(timeout=30000)
     public void testSessionCloseAgain() throws Exception {
+        createAndCloseSession();
         // Close it again
         session.close();
     }
 
     @Test(timeout=30000)
     public void testConsumerCloseAgain() throws Exception {
+        createAndCloseSession();
         // Close it again (closing the session should have closed it already).
         receiver.close();
     }
 
     @Test(timeout=30000)
     public void testProducerCloseAgain() throws Exception {
+        createAndCloseSession();
         // Close it again (closing the session should have closed it already).
         sender.close();
     }
 
     @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
     public void testConsumerGetMessageListenerFails() throws Exception {
+        createAndCloseSession();
         receiver.getMessageListener();
     }
 
     @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
     public void testProducerGetDestinationFails() throws Exception {
+        createAndCloseSession();
         sender.getDestination();
     }
 }

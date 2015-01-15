@@ -41,34 +41,33 @@ public class JmsConnectionClosedTest extends AmqpTestSupport {
         return connection;
     }
 
-    @Override
-    public void setUp() throws Exception {
-        super.setUp();
-        createConnection();
-    }
-
     @Test(timeout=30000, expected=JMSException.class)
-    public void testGetClientIdFails() throws JMSException {
+    public void testGetClientIdFails() throws Exception {
+        createConnection();
         connection.getClientID();
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testSetClientIdFails() throws JMSException {
+    public void testSetClientIdFails() throws Exception {
+        createConnection();
         connection.setClientID("test");
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testGetMetaData() throws JMSException {
+    public void testGetMetaData() throws Exception {
+        createConnection();
         connection.getMetaData();
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testGetExceptionListener() throws JMSException {
+    public void testGetExceptionListener() throws Exception {
+        createConnection();
         connection.getExceptionListener();
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testSetExceptionListener() throws JMSException {
+    public void testSetExceptionListener() throws Exception {
+        createConnection();
         connection.setExceptionListener(new ExceptionListener() {
             @Override
             public void onException(JMSException exception) {
@@ -77,27 +76,32 @@ public class JmsConnectionClosedTest extends AmqpTestSupport {
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testStartFails() throws JMSException {
+    public void testStartFails() throws Exception {
+        createConnection();
         connection.start();
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testStopFails() throws JMSException {
+    public void testStopFails() throws Exception {
+        createConnection();
         connection.stop();
     }
 
     @Test(timeout=30000)
-    public void testClose() throws JMSException {
+    public void testClose() throws Exception {
+        createConnection();
         connection.close();
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testCreateConnectionConsumerFails() throws JMSException {
+    public void testCreateConnectionConsumerFails() throws Exception {
+        createConnection();
         connection.createConnectionConsumer(destination, "", null, 1);
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testCreateDurableConnectionConsumerFails() throws JMSException {
+    public void testCreateDurableConnectionConsumerFails() throws Exception {
+        createConnection();
         connection.createDurableConnectionConsumer((Topic) destination, "id", "", null, 1);
     }
 }

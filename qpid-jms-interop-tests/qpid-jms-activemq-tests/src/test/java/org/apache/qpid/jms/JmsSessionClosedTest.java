@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -33,19 +32,11 @@ import org.junit.Test;
  */
 public class JmsSessionClosedTest extends AmqpTestSupport {
 
-    protected Connection connection;
-
     protected Session createSession() throws Exception {
         connection = createAmqpConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         session.close();
         return session;
-    }
-
-    @Override
-    public void tearDown() throws Exception {
-        connection.close();
-        super.tearDown();
     }
 
     @Test(timeout=30000, expected=JMSException.class)

@@ -89,7 +89,7 @@ public class JmsConnectionTest {
         JmsConnectionListener listener = new JmsConnectionListener() {
 
             @Override
-            public void onMessage(JmsInboundMessageDispatch envelope) {
+            public void onInboundMessage(JmsInboundMessageDispatch envelope) {
             }
 
             @Override

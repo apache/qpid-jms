@@ -168,6 +168,6 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
     }
 
     @Override
-    public void onMessage(JmsInboundMessageDispatch envelope) {
+    public void onInboundMessage(JmsInboundMessageDispatch envelope) {
     }
 }

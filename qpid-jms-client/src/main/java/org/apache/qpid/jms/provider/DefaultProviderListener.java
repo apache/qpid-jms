@@ -27,7 +27,7 @@ import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 public class DefaultProviderListener implements ProviderListener {
 
     @Override
-    public void onMessage(JmsInboundMessageDispatch envelope) {
+    public void onInboundMessage(JmsInboundMessageDispatch envelope) {
     }
 
     @Override

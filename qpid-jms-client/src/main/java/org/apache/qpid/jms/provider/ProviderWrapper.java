@@ -146,8 +146,8 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
     }
 
     @Override
-    public void onMessage(JmsInboundMessageDispatch envelope) {
-        this.listener.onMessage(envelope);
+    public void onInboundMessage(JmsInboundMessageDispatch envelope) {
+        this.listener.onInboundMessage(envelope);
     }
 
     @Override

@@ -610,7 +610,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     //--------------- DefaultProviderListener overrides ----------------------//
 
     @Override
-    public void onMessage(final JmsInboundMessageDispatch envelope) {
+    public void onInboundMessage(final JmsInboundMessageDispatch envelope) {
         if (closed.get() || failed.get()) {
             return;
         }
@@ -618,7 +618,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             @Override
             public void run() {
                 if (!closed.get()) {
-                    listener.onMessage(envelope);
+                    listener.onInboundMessage(envelope);
                 }
             }
         });

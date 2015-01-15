@@ -32,7 +32,7 @@ public interface ProviderListener {
      * @param envelope
      *        The dispatch object containing the message and delivery information.
      */
-    void onMessage(JmsInboundMessageDispatch envelope);
+    void onInboundMessage(JmsInboundMessageDispatch envelope);
 
     /**
      * Called from a fault tolerant Provider instance to signal that the underlying

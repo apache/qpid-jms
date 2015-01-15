@@ -68,6 +68,6 @@ public interface JmsConnectionListener {
      * @param envelope
      *        The envelope that contains the incoming message and it's delivery information.
      */
-    void onMessage(JmsInboundMessageDispatch envelope);
+    void onInboundMessage(JmsInboundMessageDispatch envelope);
 
 }

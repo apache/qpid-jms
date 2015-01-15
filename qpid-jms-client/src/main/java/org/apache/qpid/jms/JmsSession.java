@@ -918,7 +918,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     @Override
-    public void onMessage(JmsInboundMessageDispatch envelope) {
+    public void onInboundMessage(JmsInboundMessageDispatch envelope) {
         if (started.get()) {
             deliver(envelope);
         } else {
@@ -988,7 +988,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         } else {
             JmsMessageConsumer consumer = this.consumers.get(id);
             if (consumer != null) {
-                consumer.onMessage(envelope);
+                consumer.onInboundMessage(envelope);
             }
         }
     }

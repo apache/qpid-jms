@@ -26,6 +26,6 @@ public interface JmsMessageDispatcher {
      * @param envelope
      *        the incoming message dispatch information.
      */
-    void onMessage(JmsInboundMessageDispatch envelope);
+    void onInboundMessage(JmsInboundMessageDispatch envelope);
 
 }

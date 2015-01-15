@@ -988,7 +988,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     @Override
-    public void onMessage(JmsInboundMessageDispatch envelope) {
+    public void onInboundMessage(JmsInboundMessageDispatch envelope) {
 
         JmsMessage incoming = envelope.getMessage();
         // Ensure incoming Messages are in readonly mode.
@@ -999,10 +999,10 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         JmsMessageDispatcher dispatcher = dispatchers.get(envelope.getConsumerId());
         if (dispatcher != null) {
-            dispatcher.onMessage(envelope);
+            dispatcher.onInboundMessage(envelope);
         }
         for (JmsConnectionListener listener : connectionListeners) {
-            listener.onMessage(envelope);
+            listener.onInboundMessage(envelope);
         }
     }
 

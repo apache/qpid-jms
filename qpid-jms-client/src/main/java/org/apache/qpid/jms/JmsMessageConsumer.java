@@ -304,7 +304,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
      *        the newly arrived message.
      */
     @Override
-    public void onMessage(final JmsInboundMessageDispatch envelope) {
+    public void onInboundMessage(final JmsInboundMessageDispatch envelope) {
         lock.lock();
         try {
             if (acknowledgementMode == Session.CLIENT_ACKNOWLEDGE) {

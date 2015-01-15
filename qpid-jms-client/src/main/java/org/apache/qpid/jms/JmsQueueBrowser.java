@@ -249,11 +249,11 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
             }
 
             @Override
-            public void onMessage(JmsInboundMessageDispatch envelope) {
+            public void onInboundMessage(JmsInboundMessageDispatch envelope) {
                 if (envelope.getMessage() == null) {
                     browseDone.set(true);
                 } else {
-                    super.onMessage(envelope);
+                    super.onInboundMessage(envelope);
                 }
                 notifyMessageAvailable();
             }

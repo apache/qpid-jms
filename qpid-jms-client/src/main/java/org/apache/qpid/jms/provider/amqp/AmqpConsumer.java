@@ -486,7 +486,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             } else {
                 LOG.debug("Dispatching end of browse to: {}", envelope.getConsumerId());
             }
-            listener.onMessage(envelope);
+            listener.onInboundMessage(envelope);
         } else {
             LOG.error("Provider listener is not set, message will be dropped: {}", envelope);
         }

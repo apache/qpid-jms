@@ -31,7 +31,6 @@ import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -39,15 +38,9 @@ import org.junit.Test;
  */
 public class JmsConsumerPriorityDispatchTest extends AmqpTestSupport {
 
-    @Override
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
-        connection = createAmqpConnection();
-    }
-
     @Test(timeout = 60000)
     public void testPrefetchedMessageArePriorityOrdered() throws Exception {
+        connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
@@ -85,6 +78,7 @@ public class JmsConsumerPriorityDispatchTest extends AmqpTestSupport {
         // We are assuming that Broker side priority support is not enabled in the create
         // broker method in AmqpTestSupport.  If that changes then this test will sometimes
         // fail.
+        connection = createAmqpConnection();
         ((JmsConnection) connection).setMessagePrioritySupported(false);
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

@@ -24,7 +24,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.jms.Connection;
 import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -38,7 +37,6 @@ import javax.jms.TextMessage;
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
-import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -50,15 +48,6 @@ import org.slf4j.LoggerFactory;
 public class JmsClientAckTest extends AmqpTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsClientAckTest.class);
-
-    private Connection connection;
-
-    @Override
-    @After
-    public void tearDown() throws Exception {
-        connection.close();
-        super.tearDown();
-    }
 
     @Test(timeout = 60000)
     public void testAckedMessageAreConsumed() throws Exception {

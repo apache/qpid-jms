@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms.consumer;
 
-import javax.jms.JMSException;
 import javax.jms.Session;
 import javax.jms.Topic;
 import javax.jms.TopicConnection;
@@ -25,7 +24,6 @@ import javax.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -46,20 +44,15 @@ public class JmsTopicSubscriberClosedTest extends AmqpTestSupport {
         return subscriber;
     }
 
-    @Before
-    @Override
-    public void setUp() throws Exception {
-        super.setUp();
-        subscriber = createAndCloseSubscriber();
-    }
-
     @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
-    public void testGetNoLocalFails() throws JMSException {
+    public void testGetNoLocalFails() throws Exception {
+        subscriber = createAndCloseSubscriber();
         subscriber.getNoLocal();
     }
 
     @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
-    public void testGetTopicFails() throws JMSException {
+    public void testGetTopicFails() throws Exception {
+        subscriber = createAndCloseSubscriber();
         subscriber.getTopic();
     }
 }

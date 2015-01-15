@@ -44,89 +44,99 @@ public class JmsMessageProducerClosedTest extends AmqpTestSupport {
         return producer;
     }
 
-    @Override
-    public void setUp() throws Exception {
-        super.setUp();
-        producer = createProducer();
-    }
-
     @Test(timeout=30000)
-    public void testClose() throws JMSException {
+    public void testClose() throws Exception {
+        producer = createProducer();
         producer.close();
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testSetDisableMessageIDFails() throws JMSException {
+    public void testSetDisableMessageIDFails() throws Exception {
+        producer = createProducer();
         producer.setDisableMessageID(true);
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testGetDisableMessageIDFails() throws JMSException {
+    public void testGetDisableMessageIDFails() throws Exception {
+        producer = createProducer();
         producer.getDisableMessageID();
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testSetDisableMessageTimestampFails() throws JMSException {
+    public void testSetDisableMessageTimestampFails() throws Exception {
+        producer = createProducer();
         producer.setDisableMessageTimestamp(false);
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testGetDisableMessageTimestampFails() throws JMSException {
+    public void testGetDisableMessageTimestampFails() throws Exception {
+        producer = createProducer();
         producer.getDisableMessageTimestamp();
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testSetDeliveryModeFails() throws JMSException {
+    public void testSetDeliveryModeFails() throws Exception {
+        producer = createProducer();
         producer.setDeliveryMode(1);
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testGetDeliveryModeFails() throws JMSException {
+    public void testGetDeliveryModeFails() throws Exception {
+        producer = createProducer();
         producer.getDeliveryMode();
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testSetPriorityFails() throws JMSException {
+    public void testSetPriorityFails() throws Exception {
+        producer = createProducer();
         producer.setPriority(1);
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testGetPriorityFails() throws JMSException {
+    public void testGetPriorityFails() throws Exception {
+        producer = createProducer();
         producer.getPriority();
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testSetTimeToLiveFails() throws JMSException {
+    public void testSetTimeToLiveFails() throws Exception {
+        producer = createProducer();
         producer.setTimeToLive(1);
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testGetTimeToLiveFails() throws JMSException {
+    public void testGetTimeToLiveFails() throws Exception {
+        producer = createProducer();
         producer.getTimeToLive();
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testGetDestinationFails() throws JMSException {
+    public void testGetDestinationFails() throws Exception {
+        producer = createProducer();
         producer.getDestination();
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testSendFails() throws JMSException {
+    public void testSendFails() throws Exception {
+        producer = createProducer();
         producer.send(message);
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testSendWithDestinationFails() throws JMSException {
+    public void testSendWithDestinationFails() throws Exception {
+        producer = createProducer();
         producer.send(destination, message);
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testSendWithModePriorityTTLFails() throws JMSException {
+    public void testSendWithModePriorityTTLFails() throws Exception {
+        producer = createProducer();
         producer.send(message, 1, 3, 111);
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testSendWithDestinationModePriorityTTLFails() throws JMSException {
+    public void testSendWithDestinationModePriorityTTLFails() throws Exception {
+        producer = createProducer();
         producer.send(destination, message, 1, 3, 111);
     }
 }

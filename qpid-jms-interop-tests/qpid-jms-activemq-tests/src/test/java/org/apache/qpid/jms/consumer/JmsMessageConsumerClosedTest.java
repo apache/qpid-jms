@@ -42,24 +42,21 @@ public class JmsMessageConsumerClosedTest extends AmqpTestSupport {
         return consumer;
     }
 
-    @Override
-    public void setUp() throws Exception {
-        super.setUp();
-        consumer = createConsumer();
-    }
-
     @Test(timeout=30000, expected=JMSException.class)
-    public void testGetMessageSelectorFails() throws JMSException {
+    public void testGetMessageSelectorFails() throws Exception {
+        consumer = createConsumer();
         consumer.getMessageSelector();
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testGetMessageListenerFails() throws JMSException {
+    public void testGetMessageListenerFails() throws Exception {
+        consumer = createConsumer();
         consumer.getMessageListener();
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testSetMessageListenerFails() throws JMSException {
+    public void testSetMessageListenerFails() throws Exception {
+        consumer = createConsumer();
         consumer.setMessageListener(new MessageListener() {
             @Override
             public void onMessage(Message message) {
@@ -68,22 +65,26 @@ public class JmsMessageConsumerClosedTest extends AmqpTestSupport {
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testRreceiveFails() throws JMSException {
+    public void testRreceiveFails() throws Exception {
+        consumer = createConsumer();
         consumer.receive();
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testRreceiveTimedFails() throws JMSException {
+    public void testRreceiveTimedFails() throws Exception {
+        consumer = createConsumer();
         consumer.receive(11);
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testRreceiveNoWaitFails() throws JMSException {
+    public void testRreceiveNoWaitFails() throws Exception {
+        consumer = createConsumer();
         consumer.receiveNoWait();
     }
 
     @Test(timeout=30000)
-    public void testClose() throws JMSException {
+    public void testClose() throws Exception {
+        consumer = createConsumer();
         consumer.close();
     }
 }

@@ -25,7 +25,6 @@ import javax.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -51,38 +50,36 @@ public class JmsTopicSessionClosedTest extends AmqpTestSupport {
         session.close();
     }
 
-    @Before
-    @Override
-    public void setUp() throws Exception {
-        super.setUp();
-        createAndCloseSession();
-    }
-
     @Test(timeout=30000)
     public void testSessionCloseAgain() throws Exception {
+        createAndCloseSession();
         // Close it again
         session.close();
     }
 
     @Test(timeout=30000)
     public void testSubscriberCloseAgain() throws Exception {
+        createAndCloseSession();
         // Close it again (closing the session should have closed it already).
         subscriber.close();
     }
 
     @Test(timeout=30000)
     public void testPublisherCloseAgain() throws Exception {
+        createAndCloseSession();
         // Close it again (closing the session should have closed it already).
         publisher.close();
     }
 
     @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
     public void testSubscriberGetTopicFails() throws Exception {
+        createAndCloseSession();
         subscriber.getTopic();
     }
 
     @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
     public void testPublisherGetTopicFails() throws Exception {
+        createAndCloseSession();
         publisher.getTopic();
     }
 }

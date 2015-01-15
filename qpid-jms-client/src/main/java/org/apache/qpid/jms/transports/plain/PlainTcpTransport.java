@@ -39,9 +39,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.net.SocketFactory;
 
-import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
+import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.jms.util.InetAddressUtil;
 import org.slf4j.Logger;
@@ -132,7 +132,7 @@ public class PlainTcpTransport implements Transport, Runnable {
         initialiseSocket(socket);
         initializeStreams();
 
-        runner = new Thread(null, this, "QpidJMS " + getClass().getSimpleName() + ": " + toString());
+        runner = new Thread(null, this, "QpidJMS-" + getClass().getSimpleName() + ":" + toString());
         runner.setDaemon(false);
         runner.start();
     }
@@ -190,7 +190,7 @@ public class PlainTcpTransport implements Transport, Runnable {
     @Override
     public void send(ByteBuffer output) throws IOException {
         checkConnected();
-        LOG.info("RawTcpTransport sending packet of size: {}", output.remaining());
+        LOG.trace("Transport sending packet of size: {}", output.remaining());
         WritableByteChannel channel = Channels.newChannel(dataOut);
         channel.write(output);
         dataOut.flush();
@@ -322,7 +322,9 @@ public class PlainTcpTransport implements Transport, Runnable {
             LOG.debug("Cannot set socket send buffer size. Reason: {}. This exception is ignored.", se.getMessage(), se);
         }
 
-        sock.setSoTimeout(options.getSoTimeout());
+        if (options.getSoTimeout() > 0) {
+            sock.setSoTimeout(options.getSoTimeout());
+        }
         sock.setKeepAlive(options.isTcpKeepAlive());
         sock.setTcpNoDelay(options.isTcpNoDelay());
 

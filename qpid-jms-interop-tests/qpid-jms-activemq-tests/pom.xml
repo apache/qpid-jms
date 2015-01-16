@@ -115,7 +115,7 @@
   </dependencies>
   <profiles>
     <profile>
-      <id>activemq.tests.hpux.excludes</id>
+      <id>activemq.tests.mac.excludes</id>
       <activation>
         <os>
           <family>mac</family>

@@ -133,6 +133,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         try {
             this.provider.start();
         } catch (Exception e) {
+            executor.shutdown();
             throw JmsExceptionSupport.create(e);
         }
 

@@ -264,6 +264,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
         try {
             result = ProviderFactory.create(brokerURI);
+            result.connect();
         } catch (Exception ex) {
             LOG.error("Failed to create JMS Provider instance for: {}", brokerURI.getScheme());
             LOG.trace("Error: ", ex);

@@ -69,7 +69,6 @@ public abstract class ProviderFactory {
         try {
             ProviderFactory factory = findProviderFactory(remoteURI);
             result = factory.createProvider(remoteURI);
-            result.connect();
         } catch (Exception ex) {
             LOG.error("Failed to create Provider instance for {}, due to: {}", remoteURI.getScheme(), ex);
             LOG.trace("Error: ", ex);

@@ -546,6 +546,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                         LOG.debug("Connection attempt:[{}] to: {} in-progress", reconnectAttempts, target);
                         JmsSslContext.setCurrentSslContext(sslContext);
                         Provider provider = ProviderFactory.create(target);
+                        provider.connect();
                         initializeNewConnection(provider);
                         return;
                     } catch (Throwable e) {

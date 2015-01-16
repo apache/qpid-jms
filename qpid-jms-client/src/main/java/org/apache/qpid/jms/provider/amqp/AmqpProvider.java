@@ -23,7 +23,12 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.JMSException;
 
@@ -42,10 +47,12 @@ import org.apache.qpid.jms.meta.JmsResourceVistor;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.meta.JmsTransactionInfo;
-import org.apache.qpid.jms.provider.AbstractProvider;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.Provider;
+import org.apache.qpid.jms.provider.ProviderClosedException;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
+import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.transports.TransportFactory;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.util.IOExceptionSupport;
@@ -74,7 +81,7 @@ import org.slf4j.LoggerFactory;
  * All work within this Provider is serialized to a single Thread.  Any asynchronous exceptions
  * will be dispatched from that Thread and all in-bound requests are handled there as well.
  */
-public class AmqpProvider extends AbstractProvider implements TransportListener {
+public class AmqpProvider implements Provider, TransportListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpProvider.class);
 
@@ -85,7 +92,9 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
     //       brokers that don't currently handle the unsigned range well.
     private static final int DEFAULT_CHANNEL_MAX = 32767;
     private static final String DEFAULT_TRANSPORT_KEY = "tcp";
+    private static final AtomicInteger PROVIDER_SEQUENCE = new AtomicInteger();
 
+    private ProviderListener listener;
     private AmqpConnection connection;
     private org.apache.qpid.jms.transports.Transport transport;
     private String transportKey = DEFAULT_TRANSPORT_KEY;
@@ -99,6 +108,9 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
     private long sendTimeout = JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
     private int channelMax = DEFAULT_CHANNEL_MAX;
 
+    private final URI remoteURI;
+    private final AtomicBoolean closed = new AtomicBoolean();
+    private final ScheduledExecutorService serializer;
     private final Transport protonTransport = Transport.Factory.create();
     private final Collector protonCollector = new CollectorImpl();
 
@@ -119,7 +131,22 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
      *        The URI of the AMQP broker this Provider instance will connect to.
      */
     public AmqpProvider(URI remoteURI, Map<String, String> extraOptions) {
-        super(remoteURI);
+        this.remoteURI = remoteURI;
+
+        this.serializer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+
+            @Override
+            public Thread newThread(Runnable runner) {
+                Thread serial = new Thread(runner);
+                serial.setDaemon(true);
+                serial.setName(AmqpProvider.this.getClass().getSimpleName() + ":(" +
+                               PROVIDER_SEQUENCE.incrementAndGet() + "):[" +
+                               getRemoteURI() + "]");
+                LOG.info("Provider thread name: {}", serial.getName());
+                return serial;
+            }
+        });
+
         updateTracer();
     }
 
@@ -134,6 +161,15 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
         }
         transport.setTransportListener(this);
         transport.connect();
+    }
+
+    @Override
+    public void start() throws IOException, IllegalStateException {
+        checkClosed();
+
+        if (listener == null) {
+            throw new IllegalStateException("No ProviderListener registered.");
+        }
     }
 
     @Override
@@ -582,6 +618,8 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
         });
     }
 
+    //---------- Event handlers and Utility methods  -------------------------//
+
     private void updateTracer() {
         if (isTraceFrames()) {
             ((TransportImpl) protonTransport).setProtocolTracer(new ProtocolTracer() {
@@ -761,6 +799,26 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
         }
     }
 
+    void fireConnectionEstablished() {
+        ProviderListener listener = this.listener;
+        if (listener != null) {
+            listener.onConnectionEstablished(remoteURI);
+        }
+    }
+
+    void fireProviderException(Throwable ex) {
+        ProviderListener listener = this.listener;
+        if (listener != null) {
+            listener.onConnectionFailure(IOExceptionSupport.create(ex));
+        }
+    }
+
+    private void checkClosed() throws ProviderClosedException {
+        if (closed.get()) {
+            throw new ProviderClosedException("This Provider is already closed");
+        }
+    }
+
     //---------- Property Setters and Getters --------------------------------//
 
     @Override
@@ -877,5 +935,20 @@ public class AmqpProvider extends AbstractProvider implements TransportListener 
      */
     void setTransportKey(String transportKey) {
         this.transportKey = transportKey;
+    }
+
+    @Override
+    public void setProviderListener(ProviderListener listener) {
+        this.listener = listener;
+    }
+
+    @Override
+    public ProviderListener getProviderListener() {
+        return listener;
+    }
+
+    @Override
+    public URI getRemoteURI() {
+        return remoteURI;
     }
 }

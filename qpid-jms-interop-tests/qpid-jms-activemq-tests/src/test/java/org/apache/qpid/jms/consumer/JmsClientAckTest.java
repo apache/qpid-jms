@@ -21,6 +21,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -37,6 +39,7 @@ import javax.jms.TextMessage;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
+import org.apache.qpid.jms.support.QpidJmsTestSupport;
 import org.apache.qpid.jms.support.Wait;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -313,6 +316,54 @@ public class JmsClientAckTest extends AmqpTestSupport {
         assertTrue(rec4.equals(sent4));
         assertTrue(rec4.getJMSRedelivered());
         rec4.acknowledge();
+    }
+
+    @Test(timeout = 60000)
+    public void testReceiveSomeThenRecover() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+
+        int totalCount = 5;
+        int consumeBeforeRecover = 2;
+
+        Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        Queue queue = session.createQueue(name.getMethodName());
+
+        sendMessages(connection, queue, totalCount);
+
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(totalCount, proxy.getQueueSize());
+
+        MessageConsumer consumer = session.createConsumer(queue);
+
+        for(int i = 1; i <= consumeBeforeRecover; i++) {
+            Message message = consumer.receive(1000);
+            assertNotNull(message);
+            assertEquals("Unexpected message number", i, message.getIntProperty(QpidJmsTestSupport.MESSAGE_NUMBER));
+        }
+
+        session.recover();
+
+        assertEquals(totalCount, proxy.getQueueSize());
+
+        // Consume again.. the previously consumed messages should get delivered
+        // again after the recover and then the remainder should follow
+        List<Integer> messageNumbers = new ArrayList<Integer>();
+        for (int i = 1; i <= totalCount; i++) {
+            Message message = consumer.receive(1000);
+            assertNotNull("Failed to receive message: " + i, message);
+            int msgNum = message.getIntProperty(QpidJmsTestSupport.MESSAGE_NUMBER);
+            messageNumbers.add(msgNum);
+
+            if(i == totalCount) {
+                message.acknowledge();
+            }
+        }
+
+        assertEquals("Unexpected size of list", totalCount, messageNumbers.size());
+        for (int i = 0; i < messageNumbers.size(); i++) {
+            assertEquals("Unexpected order of messages: " + messageNumbers, Integer.valueOf(i + 1), messageNumbers.get(i));
+        }
     }
 
     @Test(timeout=60000)

@@ -148,15 +148,24 @@ public class PriorityMessageQueueTest {
     }
 
     @Test
-    public void testEnqueueFirst() {
-        JmsInboundMessageDispatch message1 = createEnvelope();
-        JmsInboundMessageDispatch message2 = createEnvelope();
-        JmsInboundMessageDispatch message3 = createEnvelope();
+    public void testEnqueueFirstOverridesPriority() {
+        // Add a higher priority message
+        JmsInboundMessageDispatch message1 = createEnvelope(7);
 
-        queue.enqueueFirst(message1);
+        queue.enqueue(message1);
+
+        // Add other lower priority messages 'first'.
+        JmsInboundMessageDispatch message2 = createEnvelope(4);
+        JmsInboundMessageDispatch message3 = createEnvelope(3);
+        JmsInboundMessageDispatch message4 = createEnvelope(2);
+
         queue.enqueueFirst(message2);
         queue.enqueueFirst(message3);
+        queue.enqueueFirst(message4);
 
+        // Verify they dequeue in the reverse of the order
+        // they were added, and not priority order.
+        assertSame(message4, queue.dequeueNoWait());
         assertSame(message3, queue.dequeueNoWait());
         assertSame(message2, queue.dequeueNoWait());
         assertSame(message1, queue.dequeueNoWait());

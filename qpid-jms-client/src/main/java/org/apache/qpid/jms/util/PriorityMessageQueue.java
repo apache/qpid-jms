@@ -26,7 +26,8 @@ import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 
 /**
  * Simple Message Priority ordered Queue.  Message envelopes are stored in the
- * Queue based on their priority value.
+ * Queue based on their priority value, except where {@link #enqueueFirst} is
+ * used.
  */
 public final class PriorityMessageQueue extends AbstractMessageQueue {
 
@@ -55,7 +56,7 @@ public final class PriorityMessageQueue extends AbstractMessageQueue {
     @Override
     public void enqueueFirst(JmsInboundMessageDispatch envelope) {
         synchronized (lock) {
-            getList(envelope).addFirst(envelope);
+            getList(MAX_PRIORITY - 1).addFirst(envelope);
             this.size++;
             lock.notify();
         }
@@ -139,6 +140,10 @@ public final class PriorityMessageQueue extends AbstractMessageQueue {
     }
 
     private LinkedList<JmsInboundMessageDispatch> getList(JmsInboundMessageDispatch envelope) {
-        return lists[getPriority(envelope)];
+        return getList(getPriority(envelope));
+    }
+
+    private LinkedList<JmsInboundMessageDispatch> getList(int priority) {
+        return lists[priority];
     }
 }

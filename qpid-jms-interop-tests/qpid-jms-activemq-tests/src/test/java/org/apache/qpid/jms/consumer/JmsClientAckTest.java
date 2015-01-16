@@ -275,7 +275,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
     }
 
     @Test(timeout=60000)
-    public void testUnackedAreRecovered() throws Exception {
+    public void testOnlyUnackedAreRecovered() throws Exception {
         connection = createAmqpConnection();
         connection.start();
         Session consumerSession = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);

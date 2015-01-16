@@ -176,11 +176,6 @@ public class ProducerAndConsumerBench extends AmqpTestSupport  {
     }
 
     @Override
-    protected boolean isMessagePrioritySupported() {
-        return false;
-    }
-
-    @Override
     protected boolean isSendAcksAsync() {
         return true;
     }

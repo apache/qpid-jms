@@ -69,11 +69,6 @@ public class ConsumeFromAMQPTest extends AmqpTestSupport {
     }
 
     @Override
-    protected boolean isMessagePrioritySupported() {
-        return false;
-    }
-
-    @Override
     protected boolean isSendAcksAsync() {
         return true;
     }

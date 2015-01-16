@@ -465,10 +465,6 @@ public class QpidJmsTestSupport {
         return false;
     }
 
-    protected boolean isMessagePrioritySupported() {
-        return true;
-    }
-
     protected boolean isSendAcksAsync() {
         return false;
     }

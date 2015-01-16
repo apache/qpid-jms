@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.jms.Session;
 
-import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.junit.Test;
 
@@ -41,15 +40,16 @@ public class JmsConnectionConcurrentCloseCallsTest extends AmqpTestSupport {
         super.setUp();
 
         executor = Executors.newFixedThreadPool(20);
-        connection = (JmsConnection) createAmqpConnection();
-        connection.start();
     }
 
     @Override
     public void tearDown() throws Exception {
-        if (connection.isStarted()) {
-            connection.stop();
-        }
+        try {
+            if (connection != null) {
+                connection.close();
+            }
+        } catch (Exception ex) {}
+
         if (executor != null) {
             executor.shutdownNow();
         }
@@ -59,6 +59,8 @@ public class JmsConnectionConcurrentCloseCallsTest extends AmqpTestSupport {
 
     @Test(timeout=200000)
     public void testCloseMultipleTimes() throws Exception {
+        connection = (JmsConnection) createAmqpConnection();
+        connection.start();
         connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         assertTrue(connection.isStarted());

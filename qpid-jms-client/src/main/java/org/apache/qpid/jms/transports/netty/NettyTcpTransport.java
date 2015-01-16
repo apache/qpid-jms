@@ -165,8 +165,7 @@ public class NettyTcpTransport implements Transport {
 
         LOG.trace("Attempted write of: {} bytes", length);
 
-        channel.write(output);
-        channel.flush();
+        channel.writeAndFlush(output);
     }
 
     @Override

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms;
+package org.apache.qpid.jms.session;
 
 import static org.junit.Assert.assertTrue;
 
@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
+import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnection;
@@ -35,7 +36,7 @@ import org.apache.qpid.jms.support.Wait;
 public class JmsSessionFailedTest extends JmsSessionClosedTest {
 
     @Override
-    protected Session createSession() throws Exception {
+    protected Session createAndCloseSession() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         connection = createAmqpConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -46,8 +47,14 @@ public class JmsSessionFailedTest extends JmsSessionClosedTest {
                 latch.countDown();
             }
         });
+        Queue destination = session.createQueue(name.getMethodName());
+
+        sender = session.createProducer(destination);
+        receiver = session.createConsumer(destination);
         connection.start();
+
         stopPrimaryBroker();
+
         assertTrue(latch.await(20, TimeUnit.SECONDS));
         final JmsConnection jmsConnection = (JmsConnection) connection;
         assertTrue(Wait.waitFor(new Wait.Condition() {

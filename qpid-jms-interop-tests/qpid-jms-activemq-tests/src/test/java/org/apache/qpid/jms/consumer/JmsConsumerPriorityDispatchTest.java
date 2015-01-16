@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.consumer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.concurrent.TimeUnit;
@@ -41,6 +42,7 @@ public class JmsConsumerPriorityDispatchTest extends AmqpTestSupport {
     @Test(timeout = 60000)
     public void testPrefetchedMessageArePriorityOrdered() throws Exception {
         connection = createAmqpConnection();
+        ((JmsConnection) connection).setMessagePrioritySupported(true);
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
@@ -79,7 +81,8 @@ public class JmsConsumerPriorityDispatchTest extends AmqpTestSupport {
         // broker method in AmqpTestSupport.  If that changes then this test will sometimes
         // fail.
         connection = createAmqpConnection();
-        ((JmsConnection) connection).setMessagePrioritySupported(false);
+        assertFalse("Client side priority ordering expected to be disabled for this test",
+                   ((JmsConnection) connection).isMessagePrioritySupported());
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());

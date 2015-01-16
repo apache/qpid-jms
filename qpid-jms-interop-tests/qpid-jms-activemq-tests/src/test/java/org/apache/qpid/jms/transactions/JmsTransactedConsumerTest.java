@@ -32,6 +32,7 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
+import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.QpidJmsTestSupport;
 import org.junit.Test;
@@ -286,8 +287,9 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
     }
 
     @Test(timeout=30000)
-    public void testSessionTransactedCommitWithPriorityReordering() throws Exception {
+    public void testSessionTransactedCommitWithLocalPriorityReordering() throws Exception {
         connection = createAmqpConnection();
+        ((JmsConnection) connection).setMessagePrioritySupported(true);
         Session session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(getDestinationName());
 

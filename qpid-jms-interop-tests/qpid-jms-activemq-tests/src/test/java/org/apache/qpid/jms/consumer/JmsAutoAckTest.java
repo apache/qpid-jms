@@ -103,6 +103,18 @@ public class JmsAutoAckTest extends AmqpTestSupport {
         }));
     }
 
+    /**
+     * Test use of session recovery while using an auto-ack session and
+     * a message listener. Calling recover should result in delivery of the
+     * current message again, followed by those that would have been received
+     * afterwards.
+     *
+     * Send three messages. Consume the first message, then recover on the second
+     * message and expect to see it again, ensure the third message is not seen
+     * until after this.
+     *
+     * @throws Exception
+     */
     @Test(timeout = 60000)
     public void testRecoverInOnMessage() throws Exception {
         connection = createAmqpConnection();
@@ -112,7 +124,7 @@ public class JmsAutoAckTest extends AmqpTestSupport {
         Queue queue = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(queue);
 
-        sendMessages(connection, queue, 2);
+        sendMessages(connection, queue, 3);
 
         CountDownLatch latch = new CountDownLatch(1);
         AutoAckRecoverMsgListener listener = new AutoAckRecoverMsgListener(latch, session);
@@ -129,6 +141,7 @@ public class JmsAutoAckTest extends AmqpTestSupport {
         final CountDownLatch latch;
         private boolean seenFirstMessage = false;
         private boolean seenSecondMessage = false;
+        private boolean seenSecondMessageTwice = false;
         private boolean complete = false;
         private boolean failed = false;
 
@@ -143,7 +156,8 @@ public class JmsAutoAckTest extends AmqpTestSupport {
                 int msgNumProperty = message.getIntProperty(MESSAGE_NUMBER);
 
                 if(complete ){
-                    LOG.info("Test already complete, ignoring delivered message: " + msgNumProperty);
+                    LOG.info("Test already finished, ignoring delivered message: " + msgNumProperty);
+                    return;
                 }
 
                 if (msgNumProperty == 1) {
@@ -154,26 +168,38 @@ public class JmsAutoAckTest extends AmqpTestSupport {
                         LOG.error("Received first message again.");
                         complete(true);
                     }
-                } else {
-                    if (msgNumProperty != 2) {
-                        LOG.error("Received unexpected message: " + msgNumProperty);
-                        complete(true);
-                        return;
-                    }
-
+                } else if (msgNumProperty == 2) {
                     if(!seenSecondMessage){
                         seenSecondMessage = true;
                         LOG.info("Received second message. Now calling recover()");
                         session.recover();
                     } else {
                         LOG.info("Received second message again as expected.");
+                        seenSecondMessageTwice = true;
                         if(message.getJMSRedelivered()) {
-                            LOG.info("Message was marked redelivered.");
-                            complete(false);
+                            LOG.info("Message was marked redelivered as expected.");
                         } else {
                             LOG.error("Message was not marked redelivered.");
                             complete(true);
                         }
+                    }
+                } else {
+                    if (msgNumProperty != 3) {
+                        LOG.error("Received unexpected message: " + msgNumProperty);
+                        complete(true);
+                    }
+
+                    if (!seenFirstMessage && !seenSecondMessageTwice) {
+                        LOG.error("Third message was not received in expected sequence.");
+                        complete(true);
+                    }
+
+                    if(message.getJMSRedelivered()) {
+                        LOG.error("Message was marked redelivered against expectation.");
+                        complete(true);
+                    } else {
+                        LOG.info("Message was not marked redelivered, as expected.");
+                        complete(false);
                     }
                 }
             } catch (JMSException e) {

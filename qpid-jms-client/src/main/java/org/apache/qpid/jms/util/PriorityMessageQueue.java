@@ -31,15 +31,16 @@ import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
  */
 public final class PriorityMessageQueue extends AbstractMessageQueue {
 
-    private static final Integer MAX_PRIORITY = 10;
+    // There are 10 priorities, values 0-9
+    private static final Integer MAX_PRIORITY = 9;
 
     private final LinkedList<JmsInboundMessageDispatch>[] lists;
     private int size = 0;
 
     @SuppressWarnings("unchecked")
     public PriorityMessageQueue() {
-        this.lists = new LinkedList[MAX_PRIORITY];
-        for (int i = 0; i < MAX_PRIORITY; i++) {
+        this.lists = new LinkedList[MAX_PRIORITY + 1];
+        for (int i = 0; i <= MAX_PRIORITY; i++) {
             lists[i] = new LinkedList<JmsInboundMessageDispatch>();
         }
     }
@@ -56,7 +57,7 @@ public final class PriorityMessageQueue extends AbstractMessageQueue {
     @Override
     public void enqueueFirst(JmsInboundMessageDispatch envelope) {
         synchronized (lock) {
-            getList(MAX_PRIORITY - 1).addFirst(envelope);
+            getList(MAX_PRIORITY).addFirst(envelope);
             this.size++;
             lock.notify();
         }
@@ -79,7 +80,7 @@ public final class PriorityMessageQueue extends AbstractMessageQueue {
     @Override
     public void clear() {
         synchronized (lock) {
-            for (int i = 0; i < MAX_PRIORITY; i++) {
+            for (int i = 0; i <= MAX_PRIORITY; i++) {
                 lists[i].clear();
             }
             this.size = 0;
@@ -90,7 +91,7 @@ public final class PriorityMessageQueue extends AbstractMessageQueue {
     public List<JmsInboundMessageDispatch> removeAll() {
         synchronized (lock) {
             ArrayList<JmsInboundMessageDispatch> result = new ArrayList<JmsInboundMessageDispatch>(size());
-            for (int i = MAX_PRIORITY - 1; i >= 0; i--) {
+            for (int i = MAX_PRIORITY; i >= 0; i--) {
                 List<JmsInboundMessageDispatch> list = lists[i];
                 result.addAll(list);
                 size -= list.size();
@@ -103,7 +104,7 @@ public final class PriorityMessageQueue extends AbstractMessageQueue {
     @Override
     protected JmsInboundMessageDispatch removeFirst() {
         if (this.size > 0) {
-            for (int i = MAX_PRIORITY - 1; i >= 0; i--) {
+            for (int i = MAX_PRIORITY; i >= 0; i--) {
                 LinkedList<JmsInboundMessageDispatch> list = lists[i];
                 if (!list.isEmpty()) {
                     this.size--;
@@ -117,7 +118,7 @@ public final class PriorityMessageQueue extends AbstractMessageQueue {
     @Override
     protected JmsInboundMessageDispatch peekFirst() {
         if (this.size > 0) {
-            for (int i = MAX_PRIORITY - 1; i >= 0; i--) {
+            for (int i = MAX_PRIORITY; i >= 0; i--) {
                 LinkedList<JmsInboundMessageDispatch> list = lists[i];
                 if (!list.isEmpty()) {
                     return list.peekFirst();
@@ -134,7 +135,7 @@ public final class PriorityMessageQueue extends AbstractMessageQueue {
                 priority = Math.max(envelope.getMessage().getJMSPriority(), 0);
             } catch (JMSException e) {
             }
-            priority = Math.min(priority, 9);
+            priority = Math.min(priority, MAX_PRIORITY);
         }
         return priority;
     }

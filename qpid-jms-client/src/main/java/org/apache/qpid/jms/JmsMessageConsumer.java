@@ -366,13 +366,13 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         }
     }
 
-    public void suspendForRollback() throws JMSException {
+    void suspendForRollback() throws JMSException {
         stop();
 
         session.getConnection().stopResource(consumerInfo);
     }
 
-    public void resumeAfterRollback() throws JMSException {
+    void resumeAfterRollback() throws JMSException {
         if (!this.messageQueue.isEmpty()) {
             List<JmsInboundMessageDispatch> drain = this.messageQueue.removeAll();
             for (JmsInboundMessageDispatch envelope : drain) {

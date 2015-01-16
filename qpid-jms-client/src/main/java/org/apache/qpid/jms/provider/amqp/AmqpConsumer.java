@@ -20,8 +20,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -328,14 +331,19 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      */
     public void recover() throws Exception {
         LOG.debug("Session Recover for consumer: {}", resource.getConsumerId());
-        for (Delivery delivery : delivered.values()) {
-            // TODO - increment redelivery counter and apply connection redelivery policy
-            //        to those messages that are past max redlivery.
-            JmsInboundMessageDispatch envelope = (JmsInboundMessageDispatch) delivery.getContext();
+        Collection<JmsInboundMessageDispatch> values = delivered.keySet();
+        ArrayList<JmsInboundMessageDispatch> envelopes = new ArrayList<JmsInboundMessageDispatch>(values);
+        ListIterator<JmsInboundMessageDispatch> reverseIterator = envelopes.listIterator(values.size());
+
+        while (reverseIterator.hasPrevious()) {
+            JmsInboundMessageDispatch envelope = reverseIterator.previous();
+            // TODO: apply connection redelivery policy to those messages that are past max redelivery.
             envelope.getMessage().getFacade().setRedeliveryCount(
                 envelope.getMessage().getFacade().getRedeliveryCount() + 1);
+            envelope.setEnqueueFirst(true);
             deliver(envelope);
         }
+
         delivered.clear();
     }
 

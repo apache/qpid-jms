@@ -323,7 +323,11 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                     }
                 });
             }
-            this.messageQueue.enqueue(envelope);
+            if(envelope.isEnqueueFirst()) {
+                this.messageQueue.enqueueFirst(envelope);
+            } else {
+                this.messageQueue.enqueue(envelope);
+            }
         } finally {
             lock.unlock();
         }

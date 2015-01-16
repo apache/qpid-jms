@@ -28,6 +28,7 @@ public class JmsInboundMessageDispatch extends JmsAbstractResourceId {
     private Object messageId;
     private final long sequence;
     private JmsMessage message;
+    private boolean enqueueFirst;
 
     public JmsInboundMessageDispatch(long sequence) {
         this.sequence = sequence;
@@ -51,6 +52,14 @@ public class JmsInboundMessageDispatch extends JmsAbstractResourceId {
 
     public void setMessageId(Object object) {
         this.messageId = object;
+    }
+
+    public void setEnqueueFirst(boolean insertAtFront) {
+        this.enqueueFirst = insertAtFront;
+    }
+
+    public boolean isEnqueueFirst() {
+        return enqueueFirst;
     }
 
     @Override

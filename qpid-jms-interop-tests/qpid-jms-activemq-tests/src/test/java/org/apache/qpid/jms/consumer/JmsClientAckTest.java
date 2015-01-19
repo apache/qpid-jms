@@ -453,7 +453,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
     public void testRecoverInOnMessage() throws Exception {
         connection = createAmqpConnection();
 
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         assertNotNull(session);
         Queue queue = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(queue);
@@ -515,8 +515,15 @@ public class JmsClientAckTest extends AmqpTestSupport {
                         LOG.info("Received second message. Now calling recover()");
                         session.recover();
                     } else {
+                        if (!seenFirstMessageTwice) {
+                            LOG.error("Received second message again before seeing first message again.");
+                            complete(true);
+                            return;
+                        }
+
                         LOG.info("Received second message again as expected.");
                         seenSecondMessageTwice = true;
+
                         if(message.getJMSRedelivered()) {
                             LOG.info("Message was marked redelivered as expected.");
                         } else {
@@ -528,11 +535,13 @@ public class JmsClientAckTest extends AmqpTestSupport {
                     if (msgNumProperty != 3) {
                         LOG.error("Received unexpected message: " + msgNumProperty);
                         complete(true);
+                        return;
                     }
 
-                    if (!seenFirstMessageTwice && !seenSecondMessageTwice) {
+                    if (!(seenFirstMessageTwice && seenSecondMessageTwice)) {
                         LOG.error("Third message was not received in expected sequence.");
                         complete(true);
+                        return;
                     }
 
                     if(message.getJMSRedelivered()) {

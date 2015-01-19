@@ -68,6 +68,7 @@
 
     <!-- Test properties -->
     <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
+    <surefire.runOrder>filesystem</surefire.runOrder>
     <proton.trace.frames>false</proton.trace.frames>
 
     <!-- surefire forked jvm arguments -->
@@ -184,6 +185,7 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${maven-surefire-plugin-version}</version>
           <configuration>
+            <runOrder>${surefire.runOrder}</runOrder>
             <redirectTestOutputToFile>${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
             <forkCount>1</forkCount>
             <reuseForks>true</reuseForks>

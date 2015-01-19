@@ -27,19 +27,26 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.util.concurrent.Future;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ServerSocketFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Simple Netty Server used to echo all data.
  */
 public class NettyEchoServer implements AutoCloseable {
+    private static final Logger LOG = LoggerFactory.getLogger(NettyEchoServer.class);
 
     static final int PORT = Integer.parseInt(System.getProperty("port", "8007"));
+    static final int TIMEOUT = 5000;
 
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
@@ -73,20 +80,35 @@ public class NettyEchoServer implements AutoCloseable {
         }
     }
 
-    public void stop() {
+    public void stop() throws InterruptedException {
         if (started.compareAndSet(true, false)) {
             try {
+                LOG.info("Syncing channel close");
                 serverChannel.close().sync();
             } catch (InterruptedException e) {
             }
             // Shut down all event loops to terminate all threads.
-            bossGroup.shutdownGracefully();
-            workerGroup.shutdownGracefully();
+            LOG.info("Shutting down boss group");
+            Future<?> bossFuture = bossGroup.shutdownGracefully(10, TIMEOUT, TimeUnit.MILLISECONDS);
+            LOG.info("Awaiting boss group shutdown");
+            boolean bossShutdown = bossFuture.await(TIMEOUT + 500);
+
+            LOG.info("Shutting down worker group");
+            Future<?> workerFuture = workerGroup.shutdownGracefully(10, TIMEOUT, TimeUnit.MILLISECONDS);
+            LOG.info("Awaiting worker group shutdown");
+            boolean workerShutdown = workerFuture.await(TIMEOUT + 500);
+
+            if (!bossShutdown) {
+                throw new RuntimeException("Failed to shut down bossGroup in allotted time");
+            }
+            if (!workerShutdown) {
+                throw new RuntimeException("Failed to shut down workerGroup in allotted time");
+            }
         }
     }
 
     @Override
-    public void close() {
+    public void close() throws InterruptedException {
         stop();
     }
 

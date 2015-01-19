@@ -554,7 +554,9 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
             while (session.isStarted() && (envelope = messageQueue.dequeueNoWait()) != null) {
                 try {
                     JmsMessage copy = null;
-                    if (acknowledgementMode == Session.AUTO_ACKNOWLEDGE) {
+                    boolean autoAckOrDupsOk = acknowledgementMode == Session.AUTO_ACKNOWLEDGE ||
+                                                acknowledgementMode == Session.DUPS_OK_ACKNOWLEDGE;
+                    if (autoAckOrDupsOk) {
                         copy = copy(doAckDelivered(envelope));
                     } else {
                         copy = copy(ackFromReceive(envelope));
@@ -563,7 +565,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
 
                     messageListener.onMessage(copy);
 
-                    if (acknowledgementMode == Session.AUTO_ACKNOWLEDGE && !session.isSessionRecovered()) {
+                    if (autoAckOrDupsOk && !session.isSessionRecovered()) {
                         doAckConsumed(envelope);
                     }
                 } catch (Exception e) {

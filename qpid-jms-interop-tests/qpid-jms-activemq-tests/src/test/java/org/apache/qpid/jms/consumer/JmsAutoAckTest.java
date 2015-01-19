@@ -187,12 +187,16 @@ public class JmsAutoAckTest extends AmqpTestSupport {
                     if (msgNumProperty != 3) {
                         LOG.error("Received unexpected message: " + msgNumProperty);
                         complete(true);
+                        return;
                     }
 
-                    if (!seenFirstMessage && !seenSecondMessageTwice) {
+                    if (!(seenFirstMessage && seenSecondMessageTwice)) {
                         LOG.error("Third message was not received in expected sequence.");
                         complete(true);
+                        return;
                     }
+
+                    LOG.info("Received third message.");
 
                     if(message.getJMSRedelivered()) {
                         LOG.error("Message was marked redelivered against expectation.");

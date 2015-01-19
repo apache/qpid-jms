@@ -90,11 +90,12 @@ public class NettyEchoServer implements AutoCloseable {
             // Shut down all event loops to terminate all threads.
             LOG.info("Shutting down boss group");
             Future<?> bossFuture = bossGroup.shutdownGracefully(10, TIMEOUT, TimeUnit.MILLISECONDS);
+            LOG.info("Shutting down worker group");
+            Future<?> workerFuture = workerGroup.shutdownGracefully(10, TIMEOUT, TimeUnit.MILLISECONDS);
+
             LOG.info("Awaiting boss group shutdown");
             boolean bossShutdown = bossFuture.await(TIMEOUT + 500);
 
-            LOG.info("Shutting down worker group");
-            Future<?> workerFuture = workerGroup.shutdownGracefully(10, TIMEOUT, TimeUnit.MILLISECONDS);
             LOG.info("Awaiting worker group shutdown");
             boolean workerShutdown = workerFuture.await(TIMEOUT + 500);
 

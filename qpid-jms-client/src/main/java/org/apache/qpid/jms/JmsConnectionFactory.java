@@ -48,6 +48,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsConnectionFactory.class);
     private static final String CLIENT_ID_PROP = "clientID";
+    private static final String BROKER_URI_PROP = "brokerURI";
 
     private URI brokerURI;
     private URI localURI;
@@ -112,6 +113,14 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     @Override
     protected void buildFromProperties(Map<String, String> map) {
+        // Apply the broker URI in a consistent order before
+        // any other properties, since as it may contain
+        // some options within it.
+        String brokerURI = map.remove(BROKER_URI_PROP);
+        if (brokerURI != null) {
+            setBrokerURI(brokerURI);
+        }
+
         PropertyUtil.setProperties(this, map);
     }
 

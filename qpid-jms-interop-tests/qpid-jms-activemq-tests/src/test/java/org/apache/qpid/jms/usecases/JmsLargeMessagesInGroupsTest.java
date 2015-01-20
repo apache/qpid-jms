@@ -27,12 +27,10 @@ import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Ignore("Currently fails")
 public class JmsLargeMessagesInGroupsTest extends AmqpTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsLargeMessagesInGroupsTest.class);
@@ -42,9 +40,12 @@ public class JmsLargeMessagesInGroupsTest extends AmqpTestSupport {
     private static final int RECEIVE_TIMEOUT = 5000;
     private static final String JMSX_GROUP_ID = "JmsGroupsTest";
 
+    private int sequenceCount = 0;
+
     @Test
     public void testGroupSeqIsNeverLost() throws Exception {
         connection = createAmqpConnection();
+        connection.start();
 
         sendMessagesToBroker(MESSAGE_COUNT);
         readMessagesOnBroker(MESSAGE_COUNT);
@@ -66,6 +67,8 @@ public class JmsLargeMessagesInGroupsTest extends AmqpTestSupport {
             LOG.info("Message assigned JMSXGroupID := {}", gid);
             LOG.info("Message assigned JMSXGroupSeq := {}", seq);
         }
+
+        consumer.close();
     }
 
     protected void sendMessagesToBroker(int count) throws Exception {
@@ -86,7 +89,7 @@ public class JmsLargeMessagesInGroupsTest extends AmqpTestSupport {
             BytesMessage message = session.createBytesMessage();
             message.setJMSDeliveryMode(DeliveryMode.PERSISTENT);
             message.setStringProperty("JMSXGroupID", JMSX_GROUP_ID);
-            message.setIntProperty("JMSXGroupSeq", i);
+            message.setIntProperty("JMSXGroupSeq", ++sequenceCount);
             message.writeBytes(buffer);
             producer.send(message);
         }

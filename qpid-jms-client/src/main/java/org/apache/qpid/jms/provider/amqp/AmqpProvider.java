@@ -91,13 +91,12 @@ public class AmqpProvider implements Provider, TransportListener {
     // NOTE: Limit default channel max to signed short range to deal with
     //       brokers that don't currently handle the unsigned range well.
     private static final int DEFAULT_CHANNEL_MAX = 32767;
-    private static final String DEFAULT_TRANSPORT_KEY = "tcp";
     private static final AtomicInteger PROVIDER_SEQUENCE = new AtomicInteger();
 
     private ProviderListener listener;
     private AmqpConnection connection;
     private org.apache.qpid.jms.transports.Transport transport;
-    private String transportKey = DEFAULT_TRANSPORT_KEY;
+    private String transportType = AmqpProviderFactory.DEFAULT_TRANSPORT_TYPE;
     private boolean traceFrames;
     private boolean traceBytes;
     private boolean presettleConsumers;
@@ -155,7 +154,7 @@ public class AmqpProvider implements Provider, TransportListener {
         checkClosed();
 
         try {
-            transport = TransportFactory.create(getTransportKey(), getRemoteURI());
+            transport = TransportFactory.create(getTransportType(), getRemoteURI());
         } catch (Exception e) {
             throw IOExceptionSupport.create(e);
         }
@@ -919,22 +918,12 @@ public class AmqpProvider implements Provider, TransportListener {
         this.channelMax = channelMax;
     }
 
-    /**
-     * @return the transportKey that will be used to create the network level connection.
-     */
-    public String getTransportKey() {
-        return transportKey;
+    String getTransportType() {
+        return transportType;
     }
 
-    /**
-     * Sets the transport key used to lookup a Transport instance when an attempt
-     * is made to connect to a remote peer.
-     *
-     * @param transportKey
-     *        the tansportKey to used when looking up a Transport to use.
-     */
-    void setTransportKey(String transportKey) {
-        this.transportKey = transportKey;
+    void setTransportType(String transportType) {
+        this.transportType = transportType;
     }
 
     @Override

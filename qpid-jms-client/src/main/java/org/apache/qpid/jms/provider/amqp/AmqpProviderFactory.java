@@ -28,6 +28,10 @@ import org.apache.qpid.jms.util.PropertyUtil;
  */
 public class AmqpProviderFactory extends ProviderFactory {
 
+    public static final String DEFAULT_TRANSPORT_TYPE = "tcp";
+
+    private String transportType = DEFAULT_TRANSPORT_TYPE;
+
     @Override
     public Provider createProvider(URI remoteURI) throws Exception {
 
@@ -36,7 +40,9 @@ public class AmqpProviderFactory extends ProviderFactory {
 
         remoteURI = PropertyUtil.replaceQuery(remoteURI, map);
 
-        Provider result = new AmqpProvider(remoteURI);
+        AmqpProvider result = new AmqpProvider(remoteURI);
+
+        result.setTransportType(getTransportType());
 
         if (!PropertyUtil.setProperties(result, providerOptions)) {
             String msg = ""
@@ -53,5 +59,20 @@ public class AmqpProviderFactory extends ProviderFactory {
     @Override
     public String getName() {
         return "AMQP";
+    }
+
+    /**
+     * @return the transport type used for this provider factory such as 'tcp' or 'ssl'
+     */
+    public String getTransportType() {
+        return transportType;
+    }
+
+    /**
+     * @param transport
+     *        the transport type name to use when creating a new provider.
+     */
+    public void setTransportType(String transportType) {
+        this.transportType = transportType;
     }
 }

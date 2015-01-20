@@ -15,3 +15,4 @@
 ## limitations under the License.
 ## ---------------------------------------------------------------------------
 class=org.apache.qpid.jms.provider.amqp.AmqpProviderFactory
+transportType=tcp

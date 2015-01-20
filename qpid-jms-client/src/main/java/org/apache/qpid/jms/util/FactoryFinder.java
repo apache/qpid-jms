@@ -147,18 +147,38 @@ public class FactoryFinder<T extends Object> {
      */
     protected static class StandaloneObjectFactory implements ObjectFactory {
         final ConcurrentHashMap<String, Class<?>> classMap = new ConcurrentHashMap<String, Class<?>>();
+        final ConcurrentHashMap<String, Properties> propertiesMap = new ConcurrentHashMap<String, Properties>();
 
         @Override
         public Object create(final String path) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
             Class<?> clazz = classMap.get(path);
+            Properties properties = propertiesMap.get(path);
+
             if (clazz == null) {
-                clazz = loadClass(loadProperties(path));
-                Class<?> previous = classMap.putIfAbsent(path, clazz);
-                if (previous != null) {
-                    clazz = previous;
+                properties = loadProperties(path);
+                clazz = loadClass(properties);
+                Class<?> previousClass = classMap.putIfAbsent(path, clazz);
+                Properties previousProperties = propertiesMap.putIfAbsent(path, properties);
+                if (previousClass != null) {
+                    clazz = previousClass;
+                }
+                if (previousProperties != null) {
+                    properties = previousProperties;
                 }
             }
-            return clazz.newInstance();
+
+            Object factory = clazz.newInstance();
+
+            if (!PropertyUtil.setProperties(factory, properties)) {
+                String msg = ""
+                    + " Not all provider options could be set on the found factory."
+                    + " Check the options are spelled correctly."
+                    + " Given parameters=[" + properties + "]."
+                    + " This provider instance cannot be started.";
+                throw new IllegalArgumentException(msg);
+            }
+
+            return factory;
         }
 
         static public Class<?> loadClass(Properties properties) throws ClassNotFoundException, IOException {
@@ -166,6 +186,8 @@ public class FactoryFinder<T extends Object> {
             String className = properties.getProperty("class");
             if (className == null) {
                 throw new IOException("Expected property is missing: class");
+            } else {
+                properties.remove("class");
             }
             Class<?> clazz = null;
             ClassLoader loader = Thread.currentThread().getContextClassLoader();

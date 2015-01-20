@@ -14,4 +14,5 @@
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
 ## ---------------------------------------------------------------------------
-class=org.apache.qpid.jms.provider.amqp.AmqpSslProviderFactory
+class=org.apache.qpid.jms.provider.amqp.AmqpProviderFactory
+transportType=ssl

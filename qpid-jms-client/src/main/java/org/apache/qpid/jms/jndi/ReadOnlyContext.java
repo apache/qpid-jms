@@ -64,13 +64,12 @@ public class ReadOnlyContext implements Context, Serializable {
 
     public static final String SEPARATOR = "/";
     protected static final NameParser NAME_PARSER = new NameParserImpl();
-    private static final long serialVersionUID = -5754338187296859149L;
+    private static final long serialVersionUID = 8439856618571886566L;
 
     protected final Hashtable<String, Object> environment; // environment for this context
     protected final Map<String, Object> bindings; // bindings at my level
     protected final Map<String, Object> treeBindings; // all bindings under me
 
-    private boolean frozen;
     private String nameInNamespace = "";
 
     public ReadOnlyContext() {
@@ -106,7 +105,6 @@ public class ReadOnlyContext implements Context, Serializable {
                 }
             }
         }
-        frozen = true;
     }
 
     public ReadOnlyContext(Hashtable environment, Map<String, Object> bindings, String nameInNamespace) {
@@ -123,14 +121,6 @@ public class ReadOnlyContext implements Context, Serializable {
     protected ReadOnlyContext(ReadOnlyContext clone, Hashtable<String, Object> env, String nameInNamespace) {
         this(clone, env);
         this.nameInNamespace = nameInNamespace;
-    }
-
-    public void freeze() {
-        frozen = true;
-    }
-
-    boolean isFrozen() {
-        return frozen;
     }
 
     /**
@@ -150,7 +140,6 @@ public class ReadOnlyContext implements Context, Serializable {
      */
     protected Map<String, Object> internalBind(String name, Object value) throws NamingException {
         assert name != null && name.length() > 0;
-        assert !frozen;
 
         Map<String, Object> newBindings = new HashMap<String, Object>();
         int pos = name.indexOf('/');

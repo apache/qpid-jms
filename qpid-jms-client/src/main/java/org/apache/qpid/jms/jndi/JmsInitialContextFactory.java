@@ -54,26 +54,17 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     private String queuePrefix = "queue.";
     private String topicPrefix = "topic.";
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public Context getInitialContext(Hashtable environment) throws NamingException {
-        // lets create a factory
+        // Copy the environment to ensure we don't modify/reference it, it belongs to the caller.
+        Hashtable<Object, Object> environmentCopy = new Hashtable<Object, Object>();
+        environmentCopy.putAll(environment);
+
         Map<String, Object> data = new ConcurrentHashMap<String, Object>();
-        String[] names = getConnectionFactoryNames(environment);
-        for (int i = 0; i < names.length; i++) {
-            JmsConnectionFactory factory = null;
-            String name = names[i];
-
-            try {
-                factory = createConnectionFactory(name, environment);
-            } catch (Exception e) {
-                throw new NamingException("Invalid broker URL");
-            }
-
-            data.put(name, factory);
-        }
-
-        createQueues(data, environment);
-        createTopics(data, environment);
+        createConnectionFactories(environmentCopy, data);
+        createQueues(data, environmentCopy);
+        createTopics(data, environmentCopy);
 
         // Add sub-contexts for dynamic creation on lookup.
         // "dynamicQueues/<queue-name>"
@@ -96,7 +87,23 @@ public class JmsInitialContextFactory implements InitialContextFactory {
             }
         });
 
-        return createContext(environment, data);
+        return createContext(environmentCopy, data);
+    }
+
+    private void createConnectionFactories(Hashtable<Object, Object> environment, Map<String, Object> data) throws NamingException {
+        String[] names = getConnectionFactoryNames(environment);
+        for (int i = 0; i < names.length; i++) {
+            JmsConnectionFactory factory = null;
+            String name = names[i];
+
+            try {
+                factory = createConnectionFactory(name, environment);
+            } catch (Exception e) {
+                throw new NamingException("Invalid broker URL");
+            }
+
+            data.put(name, factory);
+        }
     }
 
     // Implementation methods

@@ -141,7 +141,6 @@ public class AmqpProvider implements Provider, TransportListener {
                 serial.setName(AmqpProvider.this.getClass().getSimpleName() + ":(" +
                                PROVIDER_SEQUENCE.incrementAndGet() + "):[" +
                                getRemoteURI() + "]");
-                LOG.info("Provider thread name: {}", serial.getName());
                 return serial;
             }
         });

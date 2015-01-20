@@ -19,7 +19,6 @@ package org.apache.qpid.jms.transports;
 import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 /**
  * Base class for all QpidJMS Transport instances.
@@ -45,16 +44,6 @@ public interface Transport {
      * @throws IOException if an error occurs while closing the connection.
      */
     void close() throws IOException;
-
-    /**
-     * Sends a chunk of data over the Transport connection.
-     *
-     * @param output
-     *        The buffer of data that is to be transmitted.
-     *
-     * @throws IOException if an error occurs during the send operation.
-     */
-    void send(ByteBuffer output) throws IOException;
 
     /**
      * Sends a chunk of data over the Transport connection.

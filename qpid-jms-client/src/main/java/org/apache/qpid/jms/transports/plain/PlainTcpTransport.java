@@ -188,18 +188,13 @@ public class PlainTcpTransport implements Transport, Runnable {
     }
 
     @Override
-    public void send(ByteBuffer output) throws IOException {
-        checkConnected();
-        LOG.trace("Transport sending packet of size: {}", output.remaining());
-        WritableByteChannel channel = Channels.newChannel(dataOut);
-        channel.write(output);
-        dataOut.flush();
-    }
-
-    @Override
     public void send(ByteBuf output) throws IOException {
         checkConnected();
-        send(output.nioBuffer());
+        ByteBuffer toWrite = output.nioBuffer();
+        LOG.trace("Transport sending packet of size: {}", toWrite.remaining());
+        WritableByteChannel channel = Channels.newChannel(dataOut);
+        channel.write(toWrite);
+        dataOut.flush();
     }
 
     @Override

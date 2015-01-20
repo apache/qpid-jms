@@ -20,14 +20,13 @@ import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
+import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -171,21 +170,6 @@ public class TcpTransport implements Transport {
 
             vertx.stop();
         }
-    }
-
-    @Override
-    public void send(ByteBuffer output) throws IOException {
-        checkConnected();
-        int length = output.remaining();
-        if (length == 0) {
-            return;
-        }
-
-        byte[] copy = new byte[length];
-        output.get(copy);
-        Buffer sendBuffer = new Buffer(copy);
-
-        vertx.eventBus().send(socket.writeHandlerID(), sendBuffer);
     }
 
     @Override

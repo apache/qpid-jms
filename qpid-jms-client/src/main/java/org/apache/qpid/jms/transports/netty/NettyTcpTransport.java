@@ -18,7 +18,6 @@ package org.apache.qpid.jms.transports.netty;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -32,7 +31,6 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.jms.transports.Transport;
@@ -139,20 +137,6 @@ public class NettyTcpTransport implements Transport {
                 group.shutdownGracefully();
             }
         }
-    }
-
-    @Override
-    public void send(ByteBuffer output) throws IOException {
-        checkConnected();
-        int length = output.remaining();
-        if (length == 0) {
-            return;
-        }
-
-        byte[] copy = new byte[length];
-        output.get(copy);
-
-        send(Unpooled.wrappedBuffer(copy));
     }
 
     @Override

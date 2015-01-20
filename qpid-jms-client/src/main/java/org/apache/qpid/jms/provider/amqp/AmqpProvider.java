@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.provider.amqp;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
 
@@ -783,15 +784,15 @@ public class AmqpProvider implements Provider, TransportListener {
             while (!done) {
                 ByteBuffer toWrite = protonTransport.getOutputBuffer();
                 if (toWrite != null && toWrite.hasRemaining()) {
-                    // TODO - Get Bytes in a readable form
+                    byte[] bytes = new byte[toWrite.remaining()];
+                    toWrite.get(bytes);
+                    ByteBuf copy = Unpooled.wrappedBuffer(bytes);
+
                     if (isTraceBytes()) {
-                        TRACE_BYTES.info("Sending: {}", toWrite.toString());
+                        TRACE_BYTES.info("Sending: {}", ByteBufUtil.hexDump(copy));
                     }
 
-                    byte[] copy = new byte[toWrite.remaining()];
-                    toWrite.get(copy);
-
-                    transport.send(Unpooled.wrappedBuffer(copy));
+                    transport.send(copy);
                     protonTransport.outputConsumed();
                 } else {
                     done = true;

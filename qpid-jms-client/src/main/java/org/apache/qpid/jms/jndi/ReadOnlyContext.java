@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.naming.Binding;
 import javax.naming.CompositeName;
@@ -58,7 +59,7 @@ import javax.naming.spi.NamingManager;
  * String envEntry2 = (String) componentContext.lookup("env/myEntry2");
  * </code>
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class ReadOnlyContext implements Context, Serializable {
 
     public static final String SEPARATOR = "/";
@@ -108,7 +109,7 @@ public class ReadOnlyContext implements Context, Serializable {
         frozen = true;
     }
 
-    public ReadOnlyContext(Hashtable environment, Map bindings, String nameInNamespace) {
+    public ReadOnlyContext(Hashtable environment, Map<String, Object> bindings, String nameInNamespace) {
         this(environment, bindings);
         this.nameInNamespace = nameInNamespace;
     }
@@ -175,9 +176,9 @@ public class ReadOnlyContext implements Context, Serializable {
             ReadOnlyContext readOnlyContext = (ReadOnlyContext) o;
             String remainder = name.substring(pos + 1);
             Map<String, Object> subBindings = readOnlyContext.internalBind(remainder, value);
-            for (Iterator iterator = subBindings.entrySet().iterator(); iterator.hasNext();) {
-                Map.Entry entry = (Map.Entry) iterator.next();
-                String subName = segment + "/" + (String) entry.getKey();
+            for (Iterator<Entry<String, Object>> iterator = subBindings.entrySet().iterator(); iterator.hasNext();) {
+                Entry<String, Object> entry = iterator.next();
+                String subName = segment + "/" + entry.getKey();
                 Object bound = entry.getValue();
                 treeBindings.put(subName, bound);
                 newBindings.put(subName, bound);
@@ -410,7 +411,7 @@ public class ReadOnlyContext implements Context, Serializable {
     }
 
     private abstract class LocalNamingEnumeration implements NamingEnumeration {
-        private final Iterator i = bindings.entrySet().iterator();
+        private final Iterator<Entry<String, Object>> i = bindings.entrySet().iterator();
 
         @Override
         public boolean hasMore() throws NamingException {
@@ -422,8 +423,8 @@ public class ReadOnlyContext implements Context, Serializable {
             return i.hasNext();
         }
 
-        protected Map.Entry getNext() {
-            return (Map.Entry) i.next();
+        protected Map.Entry<String, Object> getNext() {
+            return i.next();
         }
 
         @Override
@@ -442,8 +443,8 @@ public class ReadOnlyContext implements Context, Serializable {
 
         @Override
         public Object nextElement() {
-            Map.Entry entry = getNext();
-            return new NameClassPair((String) entry.getKey(), entry.getValue().getClass().getName());
+            Map.Entry<String, Object> entry = getNext();
+            return new NameClassPair(entry.getKey(), entry.getValue().getClass().getName());
         }
     }
 
@@ -458,8 +459,8 @@ public class ReadOnlyContext implements Context, Serializable {
 
         @Override
         public Object nextElement() {
-            Map.Entry entry = getNext();
-            return new Binding((String) entry.getKey(), entry.getValue());
+            Map.Entry<String, Object> entry = getNext();
+            return new Binding(entry.getKey(), entry.getValue());
         }
     }
 }

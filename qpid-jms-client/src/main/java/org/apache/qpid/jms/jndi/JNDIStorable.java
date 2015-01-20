@@ -91,6 +91,7 @@ public abstract class JNDIStorable implements Referenceable, Externalizable {
      * @throws ClassNotFoundException
      * @see java.io.Externalizable#readExternal(java.io.ObjectInput)
      */
+    @SuppressWarnings("unchecked")
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         Map<String, String> props = (Map<String, String>) in.readObject();

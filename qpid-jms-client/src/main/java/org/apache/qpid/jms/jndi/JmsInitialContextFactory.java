@@ -18,11 +18,11 @@ package org.apache.qpid.jms.jndi;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -185,16 +185,23 @@ public class JmsInitialContextFactory implements InitialContextFactory {
      * Factory method to create a new connection factory from the given
      * environment
      */
-    protected JmsConnectionFactory createConnectionFactory(Hashtable environment) throws URISyntaxException {
+    protected JmsConnectionFactory createConnectionFactory(Hashtable<Object,Object> environment) throws URISyntaxException {
         JmsConnectionFactory answer = new JmsConnectionFactory();
-        Properties properties = new Properties();
-        environment.remove(Context.INITIAL_CONTEXT_FACTORY);
-        Object o = environment.remove(Context.PROVIDER_URL);
+        Map<String, String> properties = toMap(environment);
+        properties.remove(Context.INITIAL_CONTEXT_FACTORY);
+        Object o = properties.remove(Context.PROVIDER_URL);
         if (o != null) {
             answer.setBrokerURI(o.toString());
         }
-        properties.putAll(environment);
         answer.setProperties(properties);
         return answer;
+    }
+
+    public Map<String, String> toMap(Hashtable<Object, Object> props) {
+        Map<String, String> map = new HashMap<String, String>();
+        for (Map.Entry<Object, Object> entry : props.entrySet()) {
+            map.put(entry.getKey().toString(), entry.getValue().toString());
+        }
+        return map;
     }
 }

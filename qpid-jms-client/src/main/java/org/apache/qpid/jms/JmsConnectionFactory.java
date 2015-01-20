@@ -18,9 +18,7 @@ package org.apache.qpid.jms;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -102,19 +100,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         setUsername(userName);
         setPassword(password);
         setBrokerURI(brokerURI);
-    }
-
-    /**
-     * Set properties
-     *
-     * @param props
-     */
-    public void setProperties(Properties props) {
-        Map<String, String> map = new HashMap<String, String>();
-        for (Map.Entry<Object, Object> entry : props.entrySet()) {
-            map.put(entry.getKey().toString(), entry.getValue().toString());
-        }
-        setProperties(map);
     }
 
     @Override

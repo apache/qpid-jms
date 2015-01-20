@@ -23,6 +23,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -54,9 +55,9 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     private String queuePrefix = "queue.";
     private String topicPrefix = "topic.";
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings("unchecked")
     @Override
-    public Context getInitialContext(Hashtable environment) throws NamingException {
+    public Context getInitialContext(Hashtable<?, ?> environment) throws NamingException {
         // Copy the environment to ensure we don't modify/reference it, it belongs to the caller.
         Hashtable<Object, Object> environmentCopy = new Hashtable<Object, Object>();
         environmentCopy.putAll(environment);
@@ -109,15 +110,15 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     // Implementation methods
     // -------------------------------------------------------------------------
 
-    protected ReadOnlyContext createContext(Hashtable environment, Map<String, Object> data) {
+    protected ReadOnlyContext createContext(Hashtable<Object, Object> environment, Map<String, Object> data) {
         return new ReadOnlyContext(environment, data);
     }
 
-    protected JmsConnectionFactory createConnectionFactory(String name, Hashtable environment) throws URISyntaxException {
-        Hashtable temp = new Hashtable(environment);
+    protected JmsConnectionFactory createConnectionFactory(String name, Hashtable<Object, Object> environment) throws URISyntaxException {
+        Hashtable<Object, Object> temp = new Hashtable<Object, Object>(environment);
         String prefix = connectionFactoryPrefix + name + ".";
-        for (Iterator iter = environment.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
+        for (Iterator<Entry<Object, Object>> iter = environment.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry<Object, Object> entry = iter.next();
             String key = (String) entry.getKey();
             if (key.startsWith(prefix)) {
                 // Rename the key...
@@ -129,7 +130,7 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         return createConnectionFactory(temp);
     }
 
-    protected String[] getConnectionFactoryNames(Map environment) {
+    protected String[] getConnectionFactoryNames(Map<Object, Object> environment) {
         String factoryNames = (String) environment.get("factories");
         if (factoryNames != null) {
             List<String> list = new ArrayList<String>();
@@ -146,9 +147,9 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         return DEFAULT_CONNECTION_FACTORY_NAMES;
     }
 
-    protected void createQueues(Map<String, Object> data, Hashtable environment) {
-        for (Iterator iter = environment.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
+    protected void createQueues(Map<String, Object> data, Hashtable<Object, Object> environment) {
+        for (Iterator<Entry<Object, Object>> iter = environment.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry<Object, Object> entry = iter.next();
             String key = entry.getKey().toString();
             if (key.startsWith(queuePrefix)) {
                 String jndiName = key.substring(queuePrefix.length());
@@ -157,9 +158,9 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         }
     }
 
-    protected void createTopics(Map<String, Object> data, Hashtable environment) {
-        for (Iterator iter = environment.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
+    protected void createTopics(Map<String, Object> data, Hashtable<Object, Object> environment) {
+        for (Iterator<Entry<Object, Object>> iter = environment.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry<Object, Object> entry = iter.next();
             String key = entry.getKey().toString();
             if (key.startsWith(topicPrefix)) {
                 String jndiName = key.substring(topicPrefix.length());

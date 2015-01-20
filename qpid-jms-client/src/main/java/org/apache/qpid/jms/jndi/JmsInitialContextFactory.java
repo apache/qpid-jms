@@ -67,7 +67,6 @@ public class JmsInitialContextFactory implements InitialContextFactory {
                 factory = createConnectionFactory(name, environment);
             } catch (Exception e) {
                 throw new NamingException("Invalid broker URL");
-
             }
 
             data.put(name, factory);
@@ -193,14 +192,6 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         Object o = environment.remove(Context.PROVIDER_URL);
         if (o != null) {
             answer.setBrokerURI(o.toString());
-        }
-        o = environment.remove(Context.SECURITY_PRINCIPAL);
-        if (o != null) {
-            answer.setUsername(o.toString());
-        }
-        o = environment.remove(Context.SECURITY_CREDENTIALS);
-        if (o != null) {
-            answer.setPassword(o.toString());
         }
         properties.putAll(environment);
         answer.setProperties(properties);

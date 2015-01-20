@@ -28,6 +28,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import javax.net.ssl.SSLContext;
 
@@ -421,10 +422,39 @@ public class PropertyUtilTest {
     }
 
     @Test
+    public void testSetPropertiesUsingPropertiesObject() throws Exception {
+        Options configObject = new Options();
+
+        Properties properties = new Properties();
+        properties.put("firstName", "foo");
+        properties.put("lastName", "bar");
+
+        assertTrue(PropertyUtil.setProperties(configObject, properties));
+
+        assertEquals("foo", configObject.getFirstName());
+        assertEquals("bar", configObject.getLastName());
+    }
+
+    @Test
     public void testSetPropertiesWithUnusedOptions() throws Exception {
         Options configObject = new Options();
 
         Map<String, String> properties = new HashMap<String, String>();
+        properties.put("firstName", "foo");
+        properties.put("lastName", "bar");
+        properties.put("unused", "absent");
+
+        assertFalse(PropertyUtil.setProperties(configObject, properties));
+
+        assertEquals("foo", configObject.getFirstName());
+        assertEquals("bar", configObject.getLastName());
+    }
+
+    @Test
+    public void testSetPropertiesWithUnusedOptionsUsingPropertiesObject() throws Exception {
+        Options configObject = new Options();
+
+        Properties properties = new Properties();
         properties.put("firstName", "foo");
         properties.put("lastName", "bar");
         properties.put("unused", "absent");
@@ -561,7 +591,12 @@ public class PropertyUtilTest {
 
     @Test(expected=IllegalArgumentException.class)
     public void testSetPropertiesWithNullMap() {
-        PropertyUtil.setProperties(new Options(), null);
+        PropertyUtil.setProperties(new Options(), (Map<String, String>) null);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testSetPropertiesWithNullProperties() {
+        PropertyUtil.setProperties(new Options(), (Properties) null);
     }
 
     @Test

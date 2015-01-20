@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 
 import javax.net.ssl.SSLContext;
 
@@ -321,6 +322,36 @@ public class PropertyUtil {
 
         for (Map.Entry<String, String> entry : props.entrySet()) {
             if (setProperty(target, entry.getKey(), entry.getValue())) {
+                setCounter++;
+            }
+        }
+
+        return setCounter == props.size();
+    }
+
+    /**
+     * Set properties on an object using the provided Properties object. The return value
+     * indicates if all properties from the given map were set on the target object.
+     *
+     * @param target
+     *        the object whose properties are to be set from the map options.
+     * @param props
+     *        the properties that should be applied to the given object.
+     *
+     * @return true if all values in the props map were applied to the target object.
+     */
+    public static boolean setProperties(Object target, Properties props) {
+        if (target == null) {
+            throw new IllegalArgumentException("target was null.");
+        }
+        if (props == null) {
+            throw new IllegalArgumentException("props was null.");
+        }
+
+        int setCounter = 0;
+
+        for (Map.Entry<Object, Object> entry : props.entrySet()) {
+            if (setProperty(target, (String) entry.getKey(), entry.getValue())) {
                 setCounter++;
             }
         }

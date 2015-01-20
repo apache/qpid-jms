@@ -99,15 +99,6 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         return createContext(environment, data);
     }
 
-    static private String getValue(Hashtable environment, String key, String defaultValue) {
-        Object o = environment.get(key);
-        if (o != null && o instanceof String) {
-            return (String) o;
-        } else {
-            return defaultValue;
-        }
-    }
-
     // Implementation methods
     // -------------------------------------------------------------------------
 

@@ -75,7 +75,9 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         createQueues(data, environment);
         createTopics(data, environment);
 
-        data.put("queue", new LazyCreateContext() {
+        // Add sub-contexts for dynamic creation on lookup.
+        // "dynamicQueues/<queue-name>"
+        data.put("dynamicQueues", new LazyCreateContext() {
             private static final long serialVersionUID = 6503881346214855588L;
 
             @Override
@@ -84,7 +86,8 @@ public class JmsInitialContextFactory implements InitialContextFactory {
             }
         });
 
-        data.put("topic", new LazyCreateContext() {
+        // "dynamicTopics/<topic-name>"
+        data.put("dynamicTopics", new LazyCreateContext() {
             private static final long serialVersionUID = 2019166796234979615L;
 
             @Override

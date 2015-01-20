@@ -18,6 +18,8 @@ package org.apache.qpid.jms.usecases;
 
 import static org.junit.Assert.assertNotNull;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import javax.jms.BytesMessage;
 import javax.jms.DeliveryMode;
 import javax.jms.Message;
@@ -35,22 +37,25 @@ public class JmsLargeMessagesInGroupsTest extends AmqpTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsLargeMessagesInGroupsTest.class);
 
+    private static final int ITERATIONS = 10;
     private static final int MESSAGE_COUNT = 10;
-    private static final int MESSAGE_SIZE = 100 * 1024;
+    private static final int MESSAGE_SIZE = 200 * 1024;
     private static final int RECEIVE_TIMEOUT = 5000;
     private static final String JMSX_GROUP_ID = "JmsGroupsTest";
 
-    private int sequenceCount = 0;
-
-    @Test
+    @Test(timeout = 60 * 1000)
     public void testGroupSeqIsNeverLost() throws Exception {
-        connection = createAmqpConnection();
-        connection.start();
+        AtomicInteger sequenceCounter = new AtomicInteger();
 
-        sendMessagesToBroker(MESSAGE_COUNT);
-        readMessagesOnBroker(MESSAGE_COUNT);
-        sendMessagesToBroker(MESSAGE_COUNT);
-        readMessagesOnBroker(MESSAGE_COUNT);
+        for (int i = 0; i < ITERATIONS; ++i) {
+            connection = createAmqpConnection();
+            {
+                sendMessagesToBroker(MESSAGE_COUNT, sequenceCounter);
+                connection.start();
+                readMessagesOnBroker(MESSAGE_COUNT);
+            }
+            connection.close();
+        }
     }
 
     protected void readMessagesOnBroker(int count) throws Exception {
@@ -71,7 +76,7 @@ public class JmsLargeMessagesInGroupsTest extends AmqpTestSupport {
         consumer.close();
     }
 
-    protected void sendMessagesToBroker(int count) throws Exception {
+    protected void sendMessagesToBroker(int count, AtomicInteger sequence) throws Exception {
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(getDestinationName());
         MessageProducer producer = session.createProducer(queue);
@@ -84,12 +89,12 @@ public class JmsLargeMessagesInGroupsTest extends AmqpTestSupport {
             buffer[count] = (byte) value;
         }
 
-        LOG.debug("Sending {} messages to destination: {}", MESSAGE_COUNT, queue);
+        LOG.info("Sending {} messages to destination: {}", MESSAGE_COUNT, queue);
         for (int i = 1; i <= MESSAGE_COUNT; i++) {
             BytesMessage message = session.createBytesMessage();
             message.setJMSDeliveryMode(DeliveryMode.PERSISTENT);
             message.setStringProperty("JMSXGroupID", JMSX_GROUP_ID);
-            message.setIntProperty("JMSXGroupSeq", ++sequenceCount);
+            message.setIntProperty("JMSXGroupSeq", sequence.incrementAndGet());
             message.writeBytes(buffer);
             producer.send(message);
         }

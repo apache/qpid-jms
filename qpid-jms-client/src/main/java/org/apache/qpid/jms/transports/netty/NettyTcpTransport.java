@@ -103,7 +103,7 @@ public class NettyTcpTransport implements Transport {
             @Override
             public void initChannel(Channel connectedChannel) throws Exception {
                 channel = connectedChannel;
-                channel.pipeline().addLast(new NettyTcpTransportHandler());
+                configureChannel(channel);
             }
         });
 
@@ -191,6 +191,10 @@ public class NettyTcpTransport implements Transport {
         if (options.getTrafficClass() != -1) {
             bootstrap.option(ChannelOption.IP_TOS, options.getTrafficClass());
         }
+    }
+
+    protected void configureChannel(Channel channel) {
+        channel.pipeline().addLast(new NettyTcpTransportHandler());
     }
 
     private void checkConnected() throws IOException {

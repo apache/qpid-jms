@@ -152,4 +152,22 @@ public class TransportOptions {
     public void setConnectTimeout(int connectTimeout) {
         this.connectTimeout = connectTimeout;
     }
+
+    @Override
+    public TransportOptions clone() {
+        return copyOptions(new TransportOptions());
+    }
+
+    protected TransportOptions copyOptions(TransportOptions copy) {
+        copy.setConnectTimeout(getConnectTimeout());
+        copy.setReceiveBufferSize(getReceiveBufferSize());
+        copy.setSendBufferSize(getSendBufferSize());
+        copy.setSoLinger(getSoLinger());
+        copy.setSoTimeout(getSoTimeout());
+        copy.setTcpKeepAlive(isTcpKeepAlive());
+        copy.setTcpNoDelay(isTcpNoDelay());
+        copy.setTrafficClass(getTrafficClass());
+
+        return copy;
+    }
 }

@@ -53,9 +53,9 @@ public class TcpTransport implements Transport {
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicReference<Throwable> connectionError = new AtomicReference<Throwable>();
 
-    private NetSocket socket;
-    private TransportListener listener;
-    private TransportOptions options;
+    protected NetSocket socket;
+    protected TransportListener listener;
+    protected TransportOptions options;
 
     /**
      * Create a new transport instance

@@ -14,21 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.transports.vertx;
+package org.apache.qpid.jms.transports.netty;
 
-import java.io.IOException;
 import java.net.URI;
 
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
-import org.apache.qpid.jms.transports.TransportSslOptions;
-import org.vertx.java.core.net.NetClient;
 
 /**
- * Provides SSL configuration to the Vert.x NetClient object used by the underling
- * TCP based Transport.
+ * Extends the Netty based TCP transport to add SSL support.
  */
-public class SslTransport extends TcpTransport {
+public class NettySslTransport extends NettyTcpTransport {
 
     /**
      * Create a new transport instance
@@ -38,8 +34,8 @@ public class SslTransport extends TcpTransport {
      * @param options
      *        the transport options used to configure the socket connection.
      */
-    public SslTransport(URI remoteLocation, TransportOptions options) {
-        super(null, remoteLocation, options);
+    public NettySslTransport(URI remoteLocation, TransportOptions options) {
+        this(null, remoteLocation, options);
     }
 
     /**
@@ -52,22 +48,8 @@ public class SslTransport extends TcpTransport {
      * @param options
      *        the transport options used to configure the socket connection.
      */
-    public SslTransport(TransportListener listener, URI remoteLocation, TransportOptions options) {
+    public NettySslTransport(TransportListener listener, URI remoteLocation, TransportOptions options) {
         super(listener, remoteLocation, options);
     }
 
-    @Override
-    protected void configureNetClient(NetClient client, TransportOptions options) throws IOException {
-        super.configureNetClient(client, options);
-
-        client.setSSL(true);
-        client.setKeyStorePath(getSslOptions().getKeyStoreLocation());
-        client.setKeyStorePassword(getSslOptions().getKeyStorePassword());
-        client.setTrustStorePath(getSslOptions().getTrustStoreLocation());
-        client.setTrustStorePassword(getSslOptions().getTrustStorePassword());
-    }
-
-    private TransportSslOptions getSslOptions() {
-        return (TransportSslOptions) options;
-    }
 }

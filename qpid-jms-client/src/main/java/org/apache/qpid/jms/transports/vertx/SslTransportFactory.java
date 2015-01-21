@@ -18,21 +18,23 @@ package org.apache.qpid.jms.transports.vertx;
 
 import java.net.URI;
 
-import org.apache.qpid.jms.JmsSslContext;
+import org.apache.qpid.jms.transports.TransportFactory;
 import org.apache.qpid.jms.transports.TransportOptions;
+import org.apache.qpid.jms.transports.TransportSslOptions;
 
 /**
  * Create an SslTransport instance.
  */
-public class SslTransportFactory extends TcpTransportFactory {
+public class SslTransportFactory extends TransportFactory {
+
+    @Override
+    protected TransportOptions doCreateTransportOptions() {
+        return TransportSslOptions.INSTANCE.clone();
+    }
 
     @Override
     protected TcpTransport doCreateTransport(URI remoteURI, TransportOptions transportOptions) throws Exception {
-        SslTransport transport = new SslTransport(remoteURI, transportOptions);
-
-        transport.setContext(JmsSslContext.getCurrentSslContext());
-
-        return transport;
+        return new SslTransport(remoteURI, transportOptions);
     }
 
     @Override

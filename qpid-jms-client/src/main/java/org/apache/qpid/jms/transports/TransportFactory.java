@@ -18,8 +18,10 @@ package org.apache.qpid.jms.transports;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Map;
 
 import org.apache.qpid.jms.util.FactoryFinder;
+import org.apache.qpid.jms.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,13 +41,57 @@ public abstract class TransportFactory {
      * properties set on the given remote broker URI.
      *
      * @param remoteURI
-     *        The URI used to connect to a remote Broker.
+     *        The URI used to connect to a remote Peer.
      *
      * @return a new Transport instance.
      *
      * @throws Exception if an error occurs while creating the Transport instance.
      */
-    public abstract Transport createTransport(URI remoteURI) throws Exception;
+    public Transport createTransport(URI remoteURI) throws Exception {
+        Map<String, String> map = PropertyUtil.parseQuery(remoteURI.getQuery());
+        Map<String, String> transportURIOptions = PropertyUtil.filterProperties(map, "transport.");
+
+        remoteURI = PropertyUtil.replaceQuery(remoteURI, map);
+
+        TransportOptions transportOptions = doCreateTransportOptions();
+
+        if (!PropertyUtil.setProperties(transportOptions, transportURIOptions)) {
+            String msg = " Not all transport options could be set on the " + getName() +
+                         " Transport. Check the options are spelled correctly." +
+                         " Given parameters=[" + transportURIOptions + "]." +
+                         " This provider instance cannot be started.";
+            throw new IllegalArgumentException(msg);
+        }
+
+        Transport result = doCreateTransport(remoteURI, transportOptions);
+
+        return result;
+    }
+
+    /**
+     * Create and return an instance of TransportOptions appropriate for the Transport
+     * type that this factory will return.
+     *
+     * @return a newly allocated TransportOptions instance appropriate to the factory.
+     */
+    protected TransportOptions doCreateTransportOptions() {
+        return new TransportOptions();
+    }
+
+    /**
+     * Create the actual Transport instance for this factory using the provided URI and
+     * TransportOptions instances.
+     *
+     * @param remoteURI
+     *        The URI used to connect to a remote Peer.
+     * @param transportOptions
+     *        The TransportOptions used to configure the new Transport.
+     *
+     * @return a newly created and configured Transport instance.
+     *
+     * @throws Exception if an error occurs while creating the Transport instance.
+     */
+    protected abstract Transport doCreateTransport(URI remoteURI, TransportOptions transportOptions) throws Exception;
 
     /**
      * @return the name of this Transport.

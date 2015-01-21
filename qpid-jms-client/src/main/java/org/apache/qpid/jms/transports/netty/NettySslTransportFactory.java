@@ -14,25 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.transports.plain;
+package org.apache.qpid.jms.transports.netty;
 
 import java.net.URI;
 
 import org.apache.qpid.jms.transports.TransportFactory;
 import org.apache.qpid.jms.transports.TransportOptions;
+import org.apache.qpid.jms.transports.TransportSslOptions;
 
 /**
- * Factory for creating the Plain TCP transport.
+ * Creates a Netty based SSL transport.
  */
-public class PlainTcpTransportFactory extends TransportFactory {
+public class NettySslTransportFactory extends TransportFactory {
 
     @Override
-    protected PlainTcpTransport doCreateTransport(URI remoteURI, TransportOptions transportOptions) throws Exception {
-        return new PlainTcpTransport(remoteURI, transportOptions);
+    protected TransportOptions doCreateTransportOptions() {
+        return TransportSslOptions.INSTANCE.clone();
+    }
+
+    @Override
+    protected NettyTcpTransport doCreateTransport(URI remoteURI, TransportOptions transportOptions) throws Exception {
+        return new NettySslTransport(remoteURI, transportOptions);
     }
 
     @Override
     public String getName() {
-        return "TCP";
+        return "SSL";
     }
 }

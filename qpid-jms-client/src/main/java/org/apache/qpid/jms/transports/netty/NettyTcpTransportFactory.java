@@ -17,12 +17,9 @@
 package org.apache.qpid.jms.transports.netty;
 
 import java.net.URI;
-import java.util.Map;
 
-import org.apache.qpid.jms.transports.TransportOptions;
-import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportFactory;
-import org.apache.qpid.jms.util.PropertyUtil;
+import org.apache.qpid.jms.transports.TransportOptions;
 
 /**
  * Factory for creating the Netty based TCP Transport.
@@ -30,28 +27,6 @@ import org.apache.qpid.jms.util.PropertyUtil;
 public class NettyTcpTransportFactory extends TransportFactory {
 
     @Override
-    public Transport createTransport(URI remoteURI) throws Exception {
-
-        Map<String, String> map = PropertyUtil.parseQuery(remoteURI.getQuery());
-        Map<String, String> transportURIOptions = PropertyUtil.filterProperties(map, "transport.");
-
-        remoteURI = PropertyUtil.replaceQuery(remoteURI, map);
-
-        TransportOptions transportOptions = new TransportOptions();
-
-        if (!PropertyUtil.setProperties(transportOptions, transportURIOptions)) {
-            String msg = " Not all transport options could be set on the Transport." +
-                         " Check the options are spelled correctly." +
-                         " Given parameters=[" + transportURIOptions + "]." +
-                         " This provider instance cannot be started.";
-            throw new IllegalArgumentException(msg);
-        }
-
-        Transport result = doCreateTransport(remoteURI, transportOptions);
-
-        return result;
-    }
-
     protected NettyTcpTransport doCreateTransport(URI remoteURI, TransportOptions transportOptions) throws Exception {
         return new NettyTcpTransport(remoteURI, transportOptions);
     }

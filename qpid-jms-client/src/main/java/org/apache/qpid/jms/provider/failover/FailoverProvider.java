@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.JMSException;
 
-import org.apache.qpid.jms.JmsSslContext;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessageFactory;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
@@ -76,7 +75,6 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     private final AtomicLong requestId = new AtomicLong();
     private final Map<Long, FailoverRequest> requests = new LinkedHashMap<Long, FailoverRequest>();
     private final DefaultProviderListener closedListener = new DefaultProviderListener();
-    private final JmsSslContext sslContext;
     private final AtomicReference<JmsMessageFactory> messageFactory = new AtomicReference<JmsMessageFactory>();
 
     // Current state of connection / reconnection
@@ -111,7 +109,6 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
     public FailoverProvider(URI[] uris, Map<String, String> nestedOptions) {
         this.uris = new FailoverUriPool(uris, nestedOptions);
-        this.sslContext = JmsSslContext.getCurrentSslContext();
 
         this.serializer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
 
@@ -544,7 +541,6 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 if (target != null) {
                     try {
                         LOG.debug("Connection attempt:[{}] to: {} in-progress", reconnectAttempts, target);
-                        JmsSslContext.setCurrentSslContext(sslContext);
                         Provider provider = ProviderFactory.create(target);
                         provider.connect();
                         initializeNewConnection(provider);

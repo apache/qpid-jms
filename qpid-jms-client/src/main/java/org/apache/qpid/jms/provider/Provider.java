@@ -123,7 +123,31 @@ public interface Provider {
      */
     void start(JmsResource resource, AsyncResult request) throws IOException, JMSException;
 
-    //TODO: javadoc. Possibly call 'pause' instead?
+    /**
+     * Stops (pauses) the Provider version of the given JmsResource, the resource would then
+     * need to be started again via a call to <code>start()</code>
+     *
+     * For some JMS Resources it is necessary or advantageous to have a stopped state that
+     * cam be triggered to stop the resource generating new events or messages.
+     *
+     * An example of this would be a JMS Session which should not receive any incoming messages
+     * for any consumers until the JMS layer is in a state to handle them.  One such time would be
+     * during a transaction rollback.  A JMS Session should normally ensure that messages received
+     * in a transaction are set to be redelivered prior to any new deliveries on a transaction
+     * rollback.
+     *
+     * The provider is required to implement this method and not throw any error other than
+     * an IOException if a communication error occurs.  The stop operation is not required to
+     * have any effect on the provider resource but must not throw UnsupportedOperation etc.
+     *
+     * @param resource
+     *        The JmsResouce instance that indicates what is being stopped.
+     * @param request
+     *        The request object that should be signaled when this operation completes.
+     *
+     * @throws IOException if an error occurs or the Provider is already closed.
+     * @throws JMSException if an error occurs due to JMS violation such as already closed resource.
+     */
     void stop(JmsResource resource, AsyncResult request) throws IOException, JMSException;
 
     /**

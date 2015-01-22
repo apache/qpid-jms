@@ -48,12 +48,12 @@ public class NettyTcpTransport implements Transport {
 
     private static final Logger LOG = LoggerFactory.getLogger(NettyTcpTransport.class);
 
-    private Bootstrap bootstrap;
-    private EventLoopGroup group;
-    private Channel channel;
-    private TransportListener listener;
-    private TransportOptions options;
-    private final URI remote;
+    protected Bootstrap bootstrap;
+    protected EventLoopGroup group;
+    protected Channel channel;
+    protected TransportListener listener;
+    protected TransportOptions options;
+    protected final URI remote;
 
     private final AtomicBoolean connected = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -193,7 +193,7 @@ public class NettyTcpTransport implements Transport {
         }
     }
 
-    protected void configureChannel(Channel channel) {
+    protected void configureChannel(Channel channel) throws Exception {
         channel.pipeline().addLast(new NettyTcpTransportHandler());
     }
 

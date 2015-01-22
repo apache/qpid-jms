@@ -16,6 +16,7 @@
  */
 package org.apache.qpid.jms.transports;
 
+
 /**
  * Holds the defined SSL options for connections that operate over a secure
  * transport.  Options are read from the environment and can be overridden by
@@ -23,8 +24,10 @@ package org.apache.qpid.jms.transports;
  */
 public class TransportSslOptions extends TransportOptions {
 
-    private static final String[] DEFAULT_ENABLED_PROTOCOLS = {"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"};
-    private static final String DEFAULT_STORE_TYPE = "JKS";
+    public static final String[] DEFAULT_ENABLED_PROTOCOLS = {"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"};
+    public static final String DEFAULT_STORE_TYPE = "jks";
+    public static final boolean DEFAULT_TRUST_ALL = false;
+    public static final boolean DEFAULT_VERIFY_HOST = false;
 
     public static final TransportSslOptions INSTANCE = new TransportSslOptions();
 
@@ -35,6 +38,9 @@ public class TransportSslOptions extends TransportOptions {
     private String storeType = DEFAULT_STORE_TYPE;
     private String[] enabledCipherSuites;
     private String[] enabledProtocols = DEFAULT_ENABLED_PROTOCOLS;
+
+    private boolean trustAll = DEFAULT_TRUST_ALL;
+    private boolean verifyHost = DEFAULT_VERIFY_HOST;
 
     static {
         INSTANCE.setKeyStoreLocation(System.getProperty("javax.net.ssl.keyStore"));
@@ -145,6 +151,34 @@ public class TransportSslOptions extends TransportOptions {
         this.enabledProtocols = enabledProtocols;
     }
 
+    /**
+     * @return the trustAll
+     */
+    public boolean isTrustAll() {
+        return trustAll;
+    }
+
+    /**
+     * @param trustAll the trustAll to set
+     */
+    public void setTrustAll(boolean trustAll) {
+        this.trustAll = trustAll;
+    }
+
+    /**
+     * @return the verifyHost
+     */
+    public boolean isVerifyHost() {
+        return verifyHost;
+    }
+
+    /**
+     * @param verifyHost the verifyHost to set
+     */
+    public void setVerifyHost(boolean verifyHost) {
+        this.verifyHost = verifyHost;
+    }
+
     @Override
     public TransportSslOptions clone() {
         return copyOptions(new TransportSslOptions());
@@ -160,6 +194,8 @@ public class TransportSslOptions extends TransportOptions {
         copy.setStoreType(getStoreType());
         copy.setEnabledCipherSuites(getEnabledCipherSuites());
         copy.setEnabledProtocols(getEnabledProtocols());
+        copy.setTrustAll(isTrustAll());
+        copy.setVerifyHost(isVerifyHost());
 
         return copy;
     }

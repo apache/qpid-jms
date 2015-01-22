@@ -16,10 +16,14 @@
  */
 package org.apache.qpid.jms.transports.netty;
 
+import io.netty.channel.Channel;
+
 import java.net.URI;
 
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
+import org.apache.qpid.jms.transports.TransportSslOptions;
+import org.apache.qpid.jms.transports.TransportSupport;
 
 /**
  * Extends the Netty based TCP transport to add SSL support.
@@ -52,4 +56,14 @@ public class NettySslTransport extends NettyTcpTransport {
         super(listener, remoteLocation, options);
     }
 
+    @Override
+    protected void configureChannel(Channel channel) throws Exception {
+        channel.pipeline().addLast(TransportSupport.createSslHandler(getSslOptions()));
+
+        super.configureChannel(channel);
+    }
+
+    private TransportSslOptions getSslOptions() {
+        return (TransportSslOptions) options;
+    }
 }

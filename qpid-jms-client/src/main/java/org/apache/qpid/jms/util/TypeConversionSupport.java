@@ -154,24 +154,56 @@ public final class TypeConversionSupport {
                 return new Double(((Number) value).doubleValue());
             }
         });
-
     }
 
-    private TypeConversionSupport() {
-    }
+    public static Object convert(Object value, Class<?> toClass) {
 
-    public static Object convert(Object value, Class<?> clazz) {
+        assert value != null && toClass != null;
 
-        assert value != null && clazz != null;
-
-        if (value.getClass() == clazz) {
+        if (value.getClass() == toClass) {
             return value;
         }
 
-        Converter c = CONVERSION_MAP.get(new ConversionKey(value.getClass(), clazz));
+        Class<?> fromClass = value.getClass();
+
+        if (fromClass.isPrimitive()) {
+            fromClass = convertPrimitiveTypeToWrapperType(fromClass);
+        }
+
+        if (toClass.isPrimitive()) {
+            toClass = convertPrimitiveTypeToWrapperType(toClass);
+        }
+
+        Converter c = CONVERSION_MAP.get(new ConversionKey(fromClass, toClass));
         if (c == null) {
             return null;
         }
+
         return c.convert(value);
     }
+
+    private static Class<?> convertPrimitiveTypeToWrapperType(Class<?> type) {
+        Class<?> rc = type;
+        if (type.isPrimitive()) {
+            if (type == int.class) {
+                rc = Integer.class;
+            } else if (type == long.class) {
+                rc = Long.class;
+            } else if (type == double.class) {
+                rc = Double.class;
+            } else if (type == float.class) {
+                rc = Float.class;
+            } else if (type == short.class) {
+                rc = Short.class;
+            } else if (type == byte.class) {
+                rc = Byte.class;
+            } else if (type == boolean.class) {
+                rc = Boolean.class;
+            }
+        }
+
+        return rc;
+    }
+
+    private TypeConversionSupport() {}
 }

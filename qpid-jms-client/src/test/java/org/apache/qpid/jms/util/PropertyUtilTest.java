@@ -64,6 +64,7 @@ public class PropertyUtilTest {
         private boolean booleanValue;
         private URL urlValue;
         private URI uriValue;
+        private String[] stringArray;
         private SSLContext context;
 
         private Embedded embedded = new Embedded();
@@ -150,6 +151,14 @@ public class PropertyUtilTest {
 
         public void setNotReadable(String value) {
             this.notReadable = value;
+        }
+
+        public String[] getStringArray() {
+            return stringArray;
+        }
+
+        public void setStringArray(String[] stringArray) {
+            this.stringArray = stringArray;
         }
     }
 
@@ -582,6 +591,32 @@ public class PropertyUtilTest {
     public void testSetPropertyWithThrowOnSet() throws Exception {
         Options configObject = new Options("goo", "bar");
         assertFalse(PropertyUtil.setProperty(configObject, "throwsWhenSet", "foo"));
+    }
+
+    @Test
+    public void testSetPropertyOfStringArray() throws Exception {
+        Options configObject = new Options();
+        assertTrue(PropertyUtil.setProperty(configObject, "stringArray", "foo,bar"));
+        assertNotNull(configObject.getStringArray());
+        assertEquals(2, configObject.getStringArray().length);
+        assertEquals("foo", configObject.getStringArray()[0]);
+        assertEquals("bar", configObject.getStringArray()[1]);
+    }
+
+    @Test
+    public void testSetPropertyOfStringArrayWithNull() throws Exception {
+        Options configObject = new Options();
+        assertTrue(PropertyUtil.setProperty(configObject, "stringArray", null));
+        assertNull(configObject.getStringArray());
+    }
+
+    @Test
+    public void testSetPropertyOfStringArraySingleValue() throws Exception {
+        Options configObject = new Options();
+        assertTrue(PropertyUtil.setProperty(configObject, "stringArray", "foo"));
+        assertNotNull(configObject.getStringArray() != null);
+        assertEquals(1, configObject.getStringArray().length);
+        assertEquals("foo", configObject.getStringArray()[0]);
     }
 
     @Test(expected=IllegalArgumentException.class)

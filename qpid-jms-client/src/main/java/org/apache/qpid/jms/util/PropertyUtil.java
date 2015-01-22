@@ -19,8 +19,6 @@ package org.apache.qpid.jms.util;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
-import java.beans.PropertyEditor;
-import java.beans.PropertyEditorManager;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -534,14 +532,26 @@ public class PropertyUtil {
     }
 
     private static Object convert(Object value, Class<?> type) throws Exception {
-        PropertyEditor editor = PropertyEditorManager.findEditor(type);
-        if (editor != null) {
-            editor.setAsText(value.toString());
-            return editor.getValue();
+        if (value == null) {
+            if (boolean.class.isAssignableFrom(type)) {
+                return Boolean.FALSE;
+            }
+            return null;
         }
+
+        if (type.isAssignableFrom(value.getClass())) {
+            return type.cast(value);
+        }
+
+        // special for String[] as we do not want to use a PropertyEditor for that
+        if (type.isAssignableFrom(String[].class)) {
+            return StringArrayConverter.convertToStringArray(value);
+        }
+
         if (type == URI.class) {
             return new URI(value.toString());
         }
-        return null;
+
+        return TypeConversionSupport.convert(value, type);
     }
 }

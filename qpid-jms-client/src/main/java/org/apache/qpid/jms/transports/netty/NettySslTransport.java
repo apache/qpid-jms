@@ -17,6 +17,9 @@
 package org.apache.qpid.jms.transports.netty;
 
 import io.netty.channel.Channel;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 
 import java.net.URI;
 
@@ -24,6 +27,7 @@ import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportSslOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
+import org.apache.qpid.jms.util.IOExceptionSupport;
 
 /**
  * Extends the Netty based TCP transport to add SSL support.
@@ -61,6 +65,23 @@ public class NettySslTransport extends NettyTcpTransport {
         channel.pipeline().addLast(TransportSupport.createSslHandler(getSslOptions()));
 
         super.configureChannel(channel);
+    }
+
+    @Override
+    protected void handleConnected(final Channel channel) throws Exception {
+        SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
+
+        Future<Channel> channelFuture = sslHandler.handshakeFuture();
+        channelFuture.addListener(new GenericFutureListener<Future<Channel>>() {
+            @Override
+            public void operationComplete(Future<Channel> future) throws Exception {
+                if (future.isSuccess()) {
+                    connectionEstablished(channel);
+                } else {
+                    connectionFailed(IOExceptionSupport.create(future.cause()));
+                }
+            }
+        });
     }
 
     private TransportSslOptions getSslOptions() {

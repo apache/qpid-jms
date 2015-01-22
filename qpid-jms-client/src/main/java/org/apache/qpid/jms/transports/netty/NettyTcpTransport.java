@@ -20,6 +20,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -31,6 +32,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.jms.transports.Transport;
@@ -57,6 +59,8 @@ public class NettyTcpTransport implements Transport {
 
     private final AtomicBoolean connected = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
+    private final CountDownLatch connectLatch = new CountDownLatch(1);
+    private IOException failureCause;
 
     /**
      * Create a new transport instance
@@ -102,22 +106,37 @@ public class NettyTcpTransport implements Transport {
 
             @Override
             public void initChannel(Channel connectedChannel) throws Exception {
-                channel = connectedChannel;
-                configureChannel(channel);
+                configureChannel(connectedChannel);
             }
         });
 
         configureNetty(bootstrap, getTransportOptions());
 
         ChannelFuture future = bootstrap.connect(remote.getHost(), remote.getPort());
-        future.awaitUninterruptibly();
+        future.addListener(new ChannelFutureListener() {
 
-        if (future.isCancelled()) {
-            throw new IOException("Connection attempt was cancelled");
-        } else if (!future.isSuccess()) {
-            throw IOExceptionSupport.create(future.cause());
-        } else {
-            connected.set(true);
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+                if (future.isSuccess()) {
+                    handleConnected(future.channel());
+                } else if (future.isCancelled()) {
+                    connectionFailed(new IOException("Connection attempt was cancelled"));
+                } else {
+                    connectionFailed(IOExceptionSupport.create(future.cause()));
+                }
+            }
+        });
+
+        try {
+            connectLatch.await();
+        } catch (InterruptedException ex) {
+            LOG.debug("Transport connection was interrupted.");
+            Thread.interrupted();
+            throw IOExceptionSupport.create(ex);
+        }
+
+        if (failureCause != null) {
+            throw failureCause;
         }
     }
 
@@ -170,7 +189,7 @@ public class NettyTcpTransport implements Transport {
         return options;
     }
 
-    //----- Internal implementation details ----------------------------------//
+    //----- Internal implementation details, can to be overridden as needed --//
 
     protected void configureNetty(Bootstrap bootstrap, TransportOptions options) {
         bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());
@@ -195,6 +214,31 @@ public class NettyTcpTransport implements Transport {
 
     protected void configureChannel(Channel channel) throws Exception {
         channel.pipeline().addLast(new NettyTcpTransportHandler());
+    }
+
+    protected void handleConnected(Channel channel) throws Exception {
+        connectionEstablished(channel);
+    }
+
+    //----- State change handlers and checks ---------------------------------//
+
+    /**
+     * Called when the transport has successfully connected and is ready for use.
+     */
+    protected void connectionEstablished(Channel connectedChannel) {
+        channel = connectedChannel;
+        connected.set(true);
+        connectLatch.countDown();
+    }
+
+    /**
+     * Called when the transport connection failed and an error should be returned.
+     * @param cause
+     */
+    protected void connectionFailed(IOException cause) {
+        failureCause = IOExceptionSupport.create(cause);
+        connected.set(false);
+        connectLatch.countDown();
     }
 
     private void checkConnected() throws IOException {

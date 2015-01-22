@@ -28,11 +28,15 @@ import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportSslOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
 import org.apache.qpid.jms.util.IOExceptionSupport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Extends the Netty based TCP transport to add SSL support.
  */
 public class NettySslTransport extends NettyTcpTransport {
+
+    private static final Logger LOG = LoggerFactory.getLogger(NettySslTransport.class);
 
     /**
      * Create a new transport instance
@@ -63,7 +67,6 @@ public class NettySslTransport extends NettyTcpTransport {
     @Override
     protected void configureChannel(Channel channel) throws Exception {
         channel.pipeline().addLast(TransportSupport.createSslHandler(getSslOptions()));
-
         super.configureChannel(channel);
     }
 
@@ -76,8 +79,10 @@ public class NettySslTransport extends NettyTcpTransport {
             @Override
             public void operationComplete(Future<Channel> future) throws Exception {
                 if (future.isSuccess()) {
+                    LOG.trace("SSL Handshake has completed: {}", channel);
                     connectionEstablished(channel);
                 } else {
+                    LOG.trace("SSL Handshake has failed: {}", channel);
                     connectionFailed(IOExceptionSupport.create(future.cause()));
                 }
             }

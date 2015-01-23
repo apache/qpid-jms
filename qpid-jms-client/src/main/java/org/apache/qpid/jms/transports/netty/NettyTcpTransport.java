@@ -189,7 +189,7 @@ public class NettyTcpTransport implements Transport {
         return options;
     }
 
-    //----- Internal implementation details, can to be overridden as needed --//
+    //----- Internal implementation details, can be overridden as needed --//
 
     protected void configureNetty(Bootstrap bootstrap, TransportOptions options) {
         bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());

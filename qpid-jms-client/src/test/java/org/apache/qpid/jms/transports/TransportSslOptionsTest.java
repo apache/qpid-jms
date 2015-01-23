@@ -28,8 +28,8 @@ import org.junit.Test;
 public class TransportSslOptionsTest extends QpidJmsTestCase {
 
     public static final String PASSWORD = "password";
-    public static final String CLINET_KEYSTORE = "src/test/resources/client-jks.keystore";
-    public static final String CLINET_TRUSTSTORE = "src/test/resources/client-jks.truststore";
+    public static final String CLIENT_KEYSTORE = "src/test/resources/client-jks.keystore";
+    public static final String CLIENT_TRUSTSTORE = "src/test/resources/client-jks.truststore";
     public static final String KEYSTORE_TYPE = "jks";
     public static final boolean TRUST_ALL = true;
     public static final boolean VERIFY_HOST = true;
@@ -69,9 +69,9 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         assertEquals(TEST_SO_TIMEOUT, options.getSoTimeout());
         assertEquals(TEST_CONNECT_TIMEOUT, options.getConnectTimeout());
 
-        assertEquals(CLINET_KEYSTORE, options.getKeyStoreLocation());
+        assertEquals(CLIENT_KEYSTORE, options.getKeyStoreLocation());
         assertEquals(PASSWORD, options.getKeyStorePassword());
-        assertEquals(CLINET_TRUSTSTORE, options.getTrustStoreLocation());
+        assertEquals(CLIENT_TRUSTSTORE, options.getTrustStoreLocation());
         assertEquals(PASSWORD, options.getTrustStorePassword());
         assertEquals(KEYSTORE_TYPE, options.getStoreType());
     }
@@ -89,9 +89,9 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         assertEquals(TEST_SO_TIMEOUT, options.getSoTimeout());
         assertEquals(TEST_CONNECT_TIMEOUT, options.getConnectTimeout());
 
-        assertEquals(CLINET_KEYSTORE, options.getKeyStoreLocation());
+        assertEquals(CLIENT_KEYSTORE, options.getKeyStoreLocation());
         assertEquals(PASSWORD, options.getKeyStorePassword());
-        assertEquals(CLINET_TRUSTSTORE, options.getTrustStoreLocation());
+        assertEquals(CLIENT_TRUSTSTORE, options.getTrustStoreLocation());
         assertEquals(PASSWORD, options.getTrustStorePassword());
         assertEquals(KEYSTORE_TYPE, options.getStoreType());
     }
@@ -99,8 +99,8 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
     private TransportSslOptions createSslOptions() {
         TransportSslOptions options = new TransportSslOptions();
 
-        options.setKeyStoreLocation(CLINET_KEYSTORE);
-        options.setTrustStoreLocation(CLINET_TRUSTSTORE);
+        options.setKeyStoreLocation(CLIENT_KEYSTORE);
+        options.setTrustStoreLocation(CLIENT_TRUSTSTORE);
         options.setKeyStorePassword(PASSWORD);
         options.setTrustStorePassword(PASSWORD);
         options.setStoreType(KEYSTORE_TYPE);

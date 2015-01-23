@@ -159,14 +159,10 @@ public abstract class JmsDestination extends JNDIStorable implements Externaliza
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
         out.writeUTF(getName());
-        out.writeBoolean(isTopic());
-        out.writeBoolean(isTemporary());
     }
 
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         setName(in.readUTF());
-        this.topic = in.readBoolean();
-        this.temporary = in.readBoolean();
     }
 }

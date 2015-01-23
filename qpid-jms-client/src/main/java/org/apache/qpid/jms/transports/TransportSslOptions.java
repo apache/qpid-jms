@@ -27,7 +27,7 @@ public class TransportSslOptions extends TransportOptions {
     public static final String[] DEFAULT_ENABLED_PROTOCOLS = {"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"};
     public static final String DEFAULT_STORE_TYPE = "jks";
     public static final boolean DEFAULT_TRUST_ALL = false;
-    public static final boolean DEFAULT_VERIFY_HOST = false;
+    public static final boolean DEFAULT_VERIFY_HOST = false; //TODO: enable this by default?
 
     public static final TransportSslOptions INSTANCE = new TransportSslOptions();
 

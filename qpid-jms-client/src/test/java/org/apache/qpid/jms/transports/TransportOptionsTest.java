@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.transports;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.junit.Test;
@@ -68,6 +69,59 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         assertEquals(TEST_SO_LINGER, options.getSoLinger());
         assertEquals(TEST_SO_TIMEOUT, options.getSoTimeout());
         assertEquals(TEST_CONNECT_TIMEOUT, options.getConnectTimeout());
+    }
+
+    @Test
+    public void testSendBufferSizeValidation() {
+        TransportOptions options = createNonDefaultOptions().clone();
+        try {
+            options.setSendBufferSize(0);
+            fail("Should have thrown an IllegalArgumentException");
+        } catch (IllegalArgumentException expected) {
+        }
+        try {
+            options.setSendBufferSize(-1);
+            fail("Should have thrown an IllegalArgumentException");
+        } catch (IllegalArgumentException expected) {
+        }
+
+        options.setSendBufferSize(1);
+    }
+
+    @Test
+    public void testReceiveBufferSizeValidation() {
+        TransportOptions options = createNonDefaultOptions().clone();
+        try {
+            options.setReceiveBufferSize(0);
+            fail("Should have thrown an IllegalArgumentException");
+        } catch (IllegalArgumentException expected) {
+        }
+        try {
+            options.setReceiveBufferSize(-1);
+            fail("Should have thrown an IllegalArgumentException");
+        } catch (IllegalArgumentException expected) {
+        }
+
+        options.setReceiveBufferSize(1);
+    }
+
+    @Test
+    public void testTrafficClassValidation() {
+        TransportOptions options = createNonDefaultOptions().clone();
+        try {
+            options.setTrafficClass(-1);
+            fail("Should have thrown an IllegalArgumentException");
+        } catch (IllegalArgumentException expected) {
+        }
+        try {
+            options.setTrafficClass(256);
+            fail("Should have thrown an IllegalArgumentException");
+        } catch (IllegalArgumentException expected) {
+        }
+
+        options.setTrafficClass(0);
+        options.setTrafficClass(128);
+        options.setTrafficClass(255);
     }
 
     private TransportOptions createNonDefaultOptions() {

@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -36,15 +37,29 @@ import org.junit.Test;
 public class TransportSupportTest extends QpidJmsTestCase {
 
     public static final String PASSWORD = "password";
-    public static final String BROKER_KEYSTORE = "src/test/resources/broker-jks.keystore";
-    public static final String BROKER_TRUSTSTORE = "src/test/resources/broker-jks.truststore";
-    public static final String CLINET_KEYSTORE = "src/test/resources/client-jks.keystore";
-    public static final String CLINET_TRUSTSTORE = "src/test/resources/client-jks.truststore";
-    public static final String KEYSTORE_TYPE = "jks";
+
+    public static final String BROKER_JKS_KEYSTORE = "src/test/resources/broker-jks.keystore";
+    public static final String BROKER_JKS_TRUSTSTORE = "src/test/resources/broker-jks.truststore";
+    public static final String CLINET_JKS_KEYSTORE = "src/test/resources/client-jks.keystore";
+    public static final String CLINET_JKS_TRUSTSTORE = "src/test/resources/client-jks.truststore";
+
+    public static final String BROKER_JCEKS_KEYSTORE = "src/test/resources/broker-jceks.keystore";
+    public static final String BROKER_JCEKS_TRUSTSTORE = "src/test/resources/broker-jceks.truststore";
+    public static final String CLINET_JCEKS_KEYSTORE = "src/test/resources/client-jceks.keystore";
+    public static final String CLINET_JCEKS_TRUSTSTORE = "src/test/resources/client-jceks.truststore";
+
+    public static final String BROKER_PKCS12_KEYSTORE = "src/test/resources/broker-pkcs12.keystore";
+    public static final String BROKER_PKCS12_TRUSTSTORE = "src/test/resources/broker-pkcs12.truststore";
+    public static final String CLINET_PKCS12_KEYSTORE = "src/test/resources/client-pkcs12.keystore";
+    public static final String CLINET_PKCS12_TRUSTSTORE = "src/test/resources/client-pkcs12.truststore";
+
+    public static final String KEYSTORE_JKS_TYPE = "jks";
+    public static final String KEYSTORE_JCEKS_TYPE = "jceks";
+    public static final String KEYSTORE_PKCS12_TYPE = "pkcs12";
 
     @Test
-    public void testCreateSslContext() throws Exception {
-        TransportSslOptions options = createSslOptions();
+    public void testCreateSslContextJksStore() throws Exception {
+        TransportSslOptions options = createJksSslOptions();
 
         SSLContext context = TransportSupport.createSslContext(options);
         assertNotNull(context);
@@ -53,8 +68,35 @@ public class TransportSupportTest extends QpidJmsTestCase {
     }
 
     @Test
-    public void testCreateSslEngine() throws Exception {
-        TransportSslOptions options = createSslOptions();
+    public void testCreateSslContextJceksStore() throws Exception {
+        TransportSslOptions options = createJceksSslOptions();
+
+        SSLContext context = TransportSupport.createSslContext(options);
+        assertNotNull(context);
+
+        assertEquals("TLS", context.getProtocol());
+    }
+
+    @Test
+    public void testCreateSslContextPkcs12Store() throws Exception {
+        TransportSslOptions options = createPkcs12SslOptions();
+
+        SSLContext context = TransportSupport.createSslContext(options);
+        assertNotNull(context);
+
+        assertEquals("TLS", context.getProtocol());
+    }
+
+    @Test(expected = IOException.class)
+    public void testCreateSslContextIncorrectStoreType() throws Exception {
+        TransportSslOptions options = createPkcs12SslOptions();
+        options.setStoreType(KEYSTORE_JKS_TYPE);
+        TransportSupport.createSslContext(options);
+    }
+
+    @Test
+    public void testCreateSslEngineFromJksStore() throws Exception {
+        TransportSslOptions options = createJksSslOptions();
 
         SSLContext context = TransportSupport.createSslContext(options);
         assertNotNull(context);
@@ -68,11 +110,52 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertThat(engineProtocols, containsInAnyOrder(defaultProtocols.toArray()));
     }
 
-    private TransportSslOptions createSslOptions() {
+    @Test
+    public void testCreateSslEngineFromJcsksStore() throws Exception {
+        TransportSslOptions options = createJceksSslOptions();
+
+        SSLContext context = TransportSupport.createSslContext(options);
+        assertNotNull(context);
+
+        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        assertNotNull(engine);
+
+        List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
+        List<String> defaultProtocols = Arrays.asList(TransportSslOptions.DEFAULT_ENABLED_PROTOCOLS);
+
+        assertThat(engineProtocols, containsInAnyOrder(defaultProtocols.toArray()));
+    }
+
+    private TransportSslOptions createJksSslOptions() {
         TransportSslOptions options = new TransportSslOptions();
 
-        options.setKeyStoreLocation(CLINET_KEYSTORE);
-        options.setTrustStoreLocation(CLINET_TRUSTSTORE);
+        options.setKeyStoreLocation(CLINET_JKS_KEYSTORE);
+        options.setTrustStoreLocation(CLINET_JKS_TRUSTSTORE);
+        options.setStoreType(KEYSTORE_JKS_TYPE);
+        options.setKeyStorePassword(PASSWORD);
+        options.setTrustStorePassword(PASSWORD);
+
+        return options;
+    }
+
+    private TransportSslOptions createJceksSslOptions() {
+        TransportSslOptions options = new TransportSslOptions();
+
+        options.setKeyStoreLocation(CLINET_JCEKS_KEYSTORE);
+        options.setTrustStoreLocation(CLINET_JCEKS_TRUSTSTORE);
+        options.setStoreType(KEYSTORE_JCEKS_TYPE);
+        options.setKeyStorePassword(PASSWORD);
+        options.setTrustStorePassword(PASSWORD);
+
+        return options;
+    }
+
+    private TransportSslOptions createPkcs12SslOptions() {
+        TransportSslOptions options = new TransportSslOptions();
+
+        options.setKeyStoreLocation(CLINET_PKCS12_KEYSTORE);
+        options.setTrustStoreLocation(CLINET_PKCS12_TRUSTSTORE);
+        options.setStoreType(KEYSTORE_PKCS12_TYPE);
         options.setKeyStorePassword(PASSWORD);
         options.setTrustStorePassword(PASSWORD);
 

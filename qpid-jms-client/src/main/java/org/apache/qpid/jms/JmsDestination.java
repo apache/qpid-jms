@@ -28,10 +28,7 @@ import org.apache.qpid.jms.jndi.JNDIStorable;
  * Jms Destination
  */
 public abstract class JmsDestination extends JNDIStorable implements Externalizable, javax.jms.Destination, Comparable<JmsDestination> {
-
-    protected static final String TEMPORARY_PROP = "temporary";
-    protected static final String TOPIC_PROP = "topic";
-    protected static final String NAME_PROP = "name";
+    private static final String NAME_PROP = "name";
 
     protected transient String name;
     protected transient boolean topic;
@@ -98,8 +95,6 @@ public abstract class JmsDestination extends JNDIStorable implements Externaliza
     @Override
     protected void populateProperties(Map<String, String> props) {
         props.put(NAME_PROP, getName());
-        props.put(TOPIC_PROP, Boolean.toString(isTopic()));
-        props.put(TEMPORARY_PROP, Boolean.toString(isTemporary()));
     }
 
     /**

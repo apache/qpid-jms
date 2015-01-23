@@ -16,9 +16,6 @@
  */
 package org.apache.qpid.jms;
 
-import static org.apache.qpid.jms.JmsDestination.NAME_PROP;
-import static org.apache.qpid.jms.JmsDestination.TEMPORARY_PROP;
-import static org.apache.qpid.jms.JmsDestination.TOPIC_PROP;
 import static org.apache.qpid.jms.SerializationTestSupport.roundTripSerializeDestination;
 import static org.apache.qpid.jms.SerializationTestSupport.serializeDestination;
 import static org.junit.Assert.assertArrayEquals;
@@ -38,6 +35,8 @@ import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.junit.Test;
 
 public class JmsQueueTest extends QpidJmsTestCase {
+
+    private static final String NAME_PROP = "name";
 
     @Test
     public void testIsQueue() {
@@ -108,13 +107,9 @@ public class JmsQueueTest extends QpidJmsTestCase {
         Map<String, String> props = new HashMap<String, String>();
         queue.populateProperties(props);
 
-        assertTrue("Property not found: " + TEMPORARY_PROP, props.containsKey(TEMPORARY_PROP));
-        assertEquals("Unexpected value for property: " + TEMPORARY_PROP, "false", props.get(TEMPORARY_PROP));
         assertTrue("Property not found: " + NAME_PROP, props.containsKey(NAME_PROP));
         assertEquals("Unexpected value for property: " + NAME_PROP, name, props.get(NAME_PROP));
-        assertTrue("Property not found: " + TOPIC_PROP, props.containsKey(TOPIC_PROP));
-        assertEquals("Unexpected value for property: " + TOPIC_PROP, "false", props.get(TOPIC_PROP));
-        assertEquals("Unexpected number of properties", 3, props.size());
+        assertEquals("Unexpected number of properties", 1, props.size());
     }
 
     @Test

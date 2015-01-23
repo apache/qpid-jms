@@ -34,8 +34,6 @@ import javax.naming.Referenceable;
  */
 public abstract class JNDIStorable implements Referenceable, Externalizable {
 
-    private Map<String, String> properties;
-
     /**
      * Set the properties that will represent the instance in JNDI
      *
@@ -56,7 +54,6 @@ public abstract class JNDIStorable implements Referenceable, Externalizable {
      * @param props
      */
     public synchronized void setProperties(Map<String, String> props) {
-        this.properties = props;
         buildFromProperties(props);
     }
 
@@ -66,11 +63,9 @@ public abstract class JNDIStorable implements Referenceable, Externalizable {
      * @return the properties
      */
     public synchronized Map<String, String> getProperties() {
-        if (this.properties == null) {
-            this.properties = new HashMap<String, String>();
-        }
-        populateProperties(this.properties);
-        return this.properties;
+        HashMap<String, String> properties = new HashMap<String, String>();
+        populateProperties(properties);
+        return properties;
     }
 
     /**

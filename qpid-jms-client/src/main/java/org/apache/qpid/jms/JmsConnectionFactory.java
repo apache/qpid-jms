@@ -103,11 +103,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         setBrokerURI(brokerURI);
     }
 
-    @Override
-    public void setProperties(Map<String, String> map) {
-        buildFromProperties(map);
-    }
-
     /**
      * @param map
      */

@@ -228,6 +228,7 @@ public class TcpTransport implements Transport {
     /**
      * @return the options used to configure the TCP socket.
      */
+    @Override
     public TransportOptions getTransportOptions() {
         if (options == null) {
             options = TransportOptions.DEFAULT_OPTIONS;

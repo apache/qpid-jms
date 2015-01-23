@@ -73,4 +73,9 @@ public interface Transport {
      */
     void setTransportListener(TransportListener listener);
 
+    /**
+     * @returns the TransportOptions instance that holds the configuration for this Transport.
+     */
+    TransportOptions getTransportOptions();
+
 }

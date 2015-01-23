@@ -31,13 +31,6 @@ public class JmsQueue extends JmsDestination implements Queue {
         super(name, false, false);
     }
 
-    @Override
-    public JmsQueue copy() {
-        final JmsQueue copy = new JmsQueue();
-        copy.setProperties(getProperties());
-        return copy;
-    }
-
     /**
      * @return name
      * @see javax.jms.Queue#getQueueName()

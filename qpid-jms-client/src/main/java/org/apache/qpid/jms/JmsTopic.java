@@ -31,13 +31,6 @@ public class JmsTopic extends JmsDestination implements Topic {
         super(name, true, false);
     }
 
-    @Override
-    public JmsTopic copy() {
-        final JmsTopic copy = new JmsTopic();
-        copy.setProperties(getProperties());
-        return copy;
-    }
-
     /**
      * @return the name
      * @see javax.jms.Topic#getTopicName()

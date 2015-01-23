@@ -42,8 +42,6 @@ public abstract class JmsDestination extends JNDIStorable implements Externaliza
         this.temporary = temporary;
     }
 
-    public abstract JmsDestination copy();
-
     @Override
     public String toString() {
         return name;

@@ -32,13 +32,6 @@ public class JmsTemporaryTopic extends JmsTemporaryDestination implements Tempor
         super(name, true);
     }
 
-    @Override
-    public JmsTemporaryTopic copy() {
-        final JmsTemporaryTopic copy = new JmsTemporaryTopic();
-        copy.setProperties(getProperties());
-        return copy;
-    }
-
     /**
      * @see javax.jms.TemporaryTopic#delete()
      */

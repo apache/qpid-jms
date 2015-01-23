@@ -32,13 +32,6 @@ public class JmsTemporaryQueue extends JmsTemporaryDestination implements Tempor
         super(name, false);
     }
 
-    @Override
-    public JmsTemporaryQueue copy() {
-        final JmsTemporaryQueue copy = new JmsTemporaryQueue();
-        copy.setProperties(getProperties());
-        return copy;
-    }
-
     /**
      * @see javax.jms.TemporaryQueue#delete()
      */

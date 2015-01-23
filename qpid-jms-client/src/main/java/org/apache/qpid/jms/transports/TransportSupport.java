@@ -60,6 +60,17 @@ public class TransportSupport {
         return new SslHandler(createSslEngine(createSslContext(options), options));
     }
 
+    /**
+     * Create a new SSLContext using the options specific in the given TransportSslOptions
+     * instance.
+     *
+     * @param options
+     *        the configured options used to create the SSLContext.
+     *
+     * @return a new SSLContext instance.
+     *
+     * @throws Exception if an error occurs while creating the context.
+     */
     public static SSLContext createSslContext(TransportSslOptions options) throws Exception {
         try {
             SSLContext context = SSLContext.getInstance("TLS");
@@ -80,6 +91,19 @@ public class TransportSupport {
         }
     }
 
+    /**
+     * Create a new SSLEngine instance in client mode from the given SSLContext and
+     * TransportSslOptions instances.
+     *
+     * @param context
+     *        the SSLContext to use when creating the engine.
+     * @param options
+     *        the TransportSslOptions to use to configure the new SSLEngine.
+     *
+     * @return a new SSLEngine instance in client mode.
+     *
+     * @throws Exception if an error occurs while creating the new SSLEngine.
+     */
     public static SSLEngine createSslEngine(SSLContext context, TransportSslOptions options) throws Exception {
         SSLEngine engine = context.createSSLEngine();
         engine.setEnabledProtocols(options.getEnabledProtocols());

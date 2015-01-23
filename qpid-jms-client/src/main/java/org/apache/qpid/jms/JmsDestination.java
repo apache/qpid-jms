@@ -90,10 +90,6 @@ public abstract class JmsDestination extends JNDIStorable implements Externaliza
     @Override
     protected void buildFromProperties(Map<String, String> props) {
         setName(getProperty(props, NAME_PROP, ""));
-        Boolean bool = Boolean.valueOf(getProperty(props, TOPIC_PROP, Boolean.TRUE.toString()));
-        this.topic = bool.booleanValue();
-        bool = Boolean.valueOf(getProperty(props, TEMPORARY_PROP, Boolean.FALSE.toString()));
-        this.temporary = bool.booleanValue();
     }
 
     /**

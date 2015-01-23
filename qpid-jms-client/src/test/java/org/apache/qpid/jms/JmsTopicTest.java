@@ -118,6 +118,18 @@ public class JmsTopicTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testBuildFromProperties() throws Exception {
+        String name = "myTopic";
+        JmsTopic topic = new JmsTopic();
+
+        Map<String, String> props = new HashMap<String, String>();
+        props.put(NAME_PROP, name);
+        topic.buildFromProperties(props);
+
+        assertEquals("Unexpected value for name", name, topic.getTopicName());
+    }
+
+    @Test
     public void testSerializeThenDeserialize() throws Exception {
         String name = "myTopic";
         JmsTopic topic = new JmsTopic(name);

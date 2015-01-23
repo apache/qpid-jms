@@ -118,6 +118,18 @@ public class JmsQueueTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testBuildFromProperties() throws Exception {
+        String name = "myQueue";
+        JmsQueue queue = new JmsQueue();
+
+        Map<String, String> props = new HashMap<String, String>();
+        props.put(NAME_PROP, name);
+        queue.buildFromProperties(props);
+
+        assertEquals("Unexpected value for name", name, queue.getQueueName());
+    }
+
+    @Test
     public void testSerializeThenDeserialize() throws Exception {
         String name = "myQueue";
         JmsQueue queue = new JmsQueue(name);

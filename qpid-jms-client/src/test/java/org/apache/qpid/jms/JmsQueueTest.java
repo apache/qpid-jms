@@ -16,9 +16,21 @@
  */
 package org.apache.qpid.jms;
 
-import static org.junit.Assert.*;
+import static org.apache.qpid.jms.JmsDestination.NAME_PROP;
+import static org.apache.qpid.jms.JmsDestination.TEMPORARY_PROP;
+import static org.apache.qpid.jms.JmsDestination.TOPIC_PROP;
 import static org.apache.qpid.jms.SerializationTestSupport.roundTripSerializeDestination;
 import static org.apache.qpid.jms.SerializationTestSupport.serializeDestination;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.jms.Destination;
 
@@ -86,6 +98,23 @@ public class JmsQueueTest extends QpidJmsTestCase {
 
         // Not strictly a requirement, but expected in this case
         assertNotEquals("should not have same hashcode", queue1.hashCode(), queue2.hashCode());
+    }
+
+    @Test
+    public void testPopulateProperties() throws Exception {
+        String name = "myQueue";
+        JmsQueue queue = new JmsQueue(name);
+
+        Map<String, String> props = new HashMap<String, String>();
+        queue.populateProperties(props);
+
+        assertTrue("Property not found: " + TEMPORARY_PROP, props.containsKey(TEMPORARY_PROP));
+        assertEquals("Unexpected value for property: " + TEMPORARY_PROP, "false", props.get(TEMPORARY_PROP));
+        assertTrue("Property not found: " + NAME_PROP, props.containsKey(NAME_PROP));
+        assertEquals("Unexpected value for property: " + NAME_PROP, name, props.get(NAME_PROP));
+        assertTrue("Property not found: " + TOPIC_PROP, props.containsKey(TOPIC_PROP));
+        assertEquals("Unexpected value for property: " + TOPIC_PROP, "false", props.get(TOPIC_PROP));
+        assertEquals("Unexpected number of properties", 3, props.size());
     }
 
     @Test

@@ -29,6 +29,10 @@ import org.apache.qpid.jms.jndi.JNDIStorable;
  */
 public abstract class JmsDestination extends JNDIStorable implements Externalizable, javax.jms.Destination, Comparable<JmsDestination> {
 
+    protected static final String TEMPORARY_PROP = "temporary";
+    protected static final String TOPIC_PROP = "topic";
+    protected static final String NAME_PROP = "name";
+
     protected transient String name;
     protected transient boolean topic;
     protected transient boolean temporary;
@@ -85,10 +89,10 @@ public abstract class JmsDestination extends JNDIStorable implements Externaliza
      */
     @Override
     protected void buildFromProperties(Map<String, String> props) {
-        setName(getProperty(props, "name", ""));
-        Boolean bool = Boolean.valueOf(getProperty(props, "topic", Boolean.TRUE.toString()));
+        setName(getProperty(props, NAME_PROP, ""));
+        Boolean bool = Boolean.valueOf(getProperty(props, TOPIC_PROP, Boolean.TRUE.toString()));
         this.topic = bool.booleanValue();
-        bool = Boolean.valueOf(getProperty(props, "temporary", Boolean.FALSE.toString()));
+        bool = Boolean.valueOf(getProperty(props, TEMPORARY_PROP, Boolean.FALSE.toString()));
         this.temporary = bool.booleanValue();
     }
 
@@ -97,9 +101,9 @@ public abstract class JmsDestination extends JNDIStorable implements Externaliza
      */
     @Override
     protected void populateProperties(Map<String, String> props) {
-        props.put("name", getName());
-        props.put("topic", Boolean.toString(isTopic()));
-        props.put("temporary", Boolean.toString(isTemporary()));
+        props.put(NAME_PROP, getName());
+        props.put(TOPIC_PROP, Boolean.toString(isTopic()));
+        props.put(TEMPORARY_PROP, Boolean.toString(isTemporary()));
     }
 
     /**

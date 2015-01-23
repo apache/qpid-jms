@@ -208,8 +208,8 @@ public class NettyTcpTransport implements Transport {
         }
 
         if (options.getReceiveBufferSize() != -1) {
-            bootstrap.option(ChannelOption.SO_RCVBUF, options.getSendBufferSize());
-            bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getSendBufferSize()));
+            bootstrap.option(ChannelOption.SO_RCVBUF, options.getReceiveBufferSize());
+            bootstrap.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(options.getReceiveBufferSize()));
         }
 
         if (options.getTrafficClass() != -1) {

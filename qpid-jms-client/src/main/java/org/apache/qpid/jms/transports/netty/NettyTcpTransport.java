@@ -33,6 +33,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.jms.transports.Transport;
@@ -49,6 +50,9 @@ import org.vertx.java.core.net.impl.PartialPooledByteBufAllocator;
 public class NettyTcpTransport implements Transport {
 
     private static final Logger LOG = LoggerFactory.getLogger(NettyTcpTransport.class);
+
+    private static final int QUIET_PERIOD = 20;
+    private static final int SHUTDOWN_TIMEOUT = 100;
 
     protected Bootstrap bootstrap;
     protected EventLoopGroup group;
@@ -97,7 +101,7 @@ public class NettyTcpTransport implements Transport {
             throw new IllegalStateException("A transport listener must be set before connection attempts.");
         }
 
-        group = new NioEventLoopGroup();
+        group = new NioEventLoopGroup(1);
 
         bootstrap = new Bootstrap();
         bootstrap.group(group);
@@ -153,7 +157,7 @@ public class NettyTcpTransport implements Transport {
                 channel.close().syncUninterruptibly();
             }
             if (group != null) {
-                group.shutdownGracefully();
+                group.shutdownGracefully(QUIET_PERIOD, SHUTDOWN_TIMEOUT, TimeUnit.MILLISECONDS);
             }
         }
     }

@@ -31,9 +31,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
+import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
-import org.apache.qpid.jms.transports.netty.NettyTcpTransport;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,23 +47,22 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
     private static final int SEND_BYTE_COUNT = 1024;
 
-    private boolean transportClosed;
-    private final List<Throwable> exceptions = new ArrayList<Throwable>();
-    private final List<ByteBuf> data = new ArrayList<ByteBuf>();
-    private final AtomicInteger bytesRead = new AtomicInteger();
+    protected boolean transportClosed;
+    protected final List<Throwable> exceptions = new ArrayList<Throwable>();
+    protected final List<ByteBuf> data = new ArrayList<ByteBuf>();
+    protected final AtomicInteger bytesRead = new AtomicInteger();
 
-    private final TransportListener testListener = new NettyTransportListener();
-    private final TransportOptions testOptions = new TransportOptions();
+    protected final TransportListener testListener = new NettyTransportListener();
 
     @Test(timeout = 60 * 1000)
     public void testConnectToServer() throws Exception {
-        try (NettyEchoServer server = new NettyEchoServer()) {
+        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
             URI serverLocation = new URI("tcp://localhost:" + port);
 
-            NettyTcpTransport transport = new NettyTcpTransport(testListener, serverLocation, testOptions);
+            Transport transport = createTransport(serverLocation, testListener, createClientOptions());
             try {
                 transport.connect();
                 LOG.info("Connected to test server.");
@@ -85,16 +84,16 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
     public void testMultipleConnectionsToServer() throws Exception {
         final int CONNECTION_COUNT = 25;
 
-        try (NettyEchoServer server = new NettyEchoServer()) {
+        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
             URI serverLocation = new URI("tcp://localhost:" + port);
 
-            List<NettyTcpTransport> transports = new ArrayList<NettyTcpTransport>();
+            List<Transport> transports = new ArrayList<Transport>();
 
             for (int i = 0; i < CONNECTION_COUNT; ++i) {
-                NettyTcpTransport transport = new NettyTcpTransport(testListener, serverLocation, testOptions);
+                Transport transport = createTransport(serverLocation, testListener, createClientOptions());
                 try {
                     transport.connect();
                     assertTrue(transport.isConnected());
@@ -105,7 +104,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 }
             }
 
-            for (NettyTcpTransport transport : transports) {
+            for (Transport transport : transports) {
                 transport.close();
             }
         }
@@ -125,16 +124,16 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
             sendBuffer.writeByte('A');
         }
 
-        try (NettyEchoServer server = new NettyEchoServer()) {
+        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
             URI serverLocation = new URI("tcp://localhost:" + port);
 
-            List<NettyTcpTransport> transports = new ArrayList<NettyTcpTransport>();
+            List<Transport> transports = new ArrayList<Transport>();
 
             for (int i = 0; i < CONNECTION_COUNT; ++i) {
-                NettyTcpTransport transport = new NettyTcpTransport(testListener, serverLocation, testOptions);
+                Transport transport = createTransport(serverLocation, testListener, createClientOptions());
                 try {
                     transport.connect();
                     transport.send(sendBuffer.copy());
@@ -153,7 +152,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 }
             }));
 
-            for (NettyTcpTransport transport : transports) {
+            for (Transport transport : transports) {
                 transport.close();
             }
         }
@@ -163,15 +162,15 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
     @Test(timeout = 60 * 1000)
     public void testDetectServerClose() throws Exception {
-        NettyTcpTransport transport = null;
+        Transport transport = null;
 
-        try (NettyEchoServer server = new NettyEchoServer()) {
+        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
             URI serverLocation = new URI("tcp://localhost:" + port);
 
-            transport = new NettyTcpTransport(testListener, serverLocation, testOptions);
+            transport = createTransport(serverLocation, testListener, createClientOptions());
             try {
                 transport.connect();
                 LOG.info("Connected to test server.");
@@ -204,14 +203,13 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
     @Test(timeout = 60 * 1000)
     public void testDataSentIsReceived() throws Exception {
-        try (NettyEchoServer server = new NettyEchoServer()) {
+        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
             URI serverLocation = new URI("tcp://localhost:" + port);
 
-
-            NettyTcpTransport transport = new NettyTcpTransport(testListener, serverLocation, testOptions);
+            Transport transport = createTransport(serverLocation, testListener, createClientOptions());
             try {
                 transport.connect();
                 LOG.info("Connected to test server.");
@@ -258,13 +256,13 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
     public void doMultipleDataPacketsSentAndReceive(final int byteCount, final int iterations) throws Exception {
 
-        try (NettyEchoServer server = new NettyEchoServer()) {
+        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
             URI serverLocation = new URI("tcp://localhost:" + port);
 
-            NettyTcpTransport transport = new NettyTcpTransport(testListener, serverLocation, testOptions);
+            Transport transport = createTransport(serverLocation, testListener, createClientOptions());
             try {
                 transport.connect();
                 LOG.info("Connected to test server.");
@@ -300,15 +298,15 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
     @Test(timeout = 60 * 1000)
     public void testSendToClosedTransportFails() throws Exception {
-        NettyTcpTransport transport = null;
+        Transport transport = null;
 
-        try (NettyEchoServer server = new NettyEchoServer()) {
+        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
             URI serverLocation = new URI("tcp://localhost:" + port);
 
-            transport = new NettyTcpTransport(testListener, serverLocation, testOptions);
+            transport = createTransport(serverLocation, testListener, createClientOptions());
             try {
                 transport.connect();
                 LOG.info("Connected to test server.");
@@ -327,6 +325,18 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
             } catch (IOException ex) {
             }
         }
+    }
+
+    protected Transport createTransport(URI serverLocation, TransportListener listener, TransportOptions options) {
+        return new NettyTcpTransport(listener, serverLocation, options);
+    }
+
+    protected TransportOptions createClientOptions() {
+        return TransportOptions.DEFAULT_OPTIONS.clone();
+    }
+
+    protected TransportOptions createServerOptions() {
+        return TransportOptions.DEFAULT_OPTIONS.clone();
     }
 
     private class NettyTransportListener implements TransportListener {

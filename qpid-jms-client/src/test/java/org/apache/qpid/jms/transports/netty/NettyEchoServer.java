@@ -27,7 +27,9 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.SslHandler;
 import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -35,7 +37,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ServerSocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 
+import org.apache.qpid.jms.transports.TransportOptions;
+import org.apache.qpid.jms.transports.TransportSslOptions;
+import org.apache.qpid.jms.transports.TransportSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,9 +58,18 @@ public class NettyEchoServer implements AutoCloseable {
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
     private Channel serverChannel;
+    private final TransportOptions options;
     private int serverPort;
 
     private final AtomicBoolean started = new AtomicBoolean();
+
+    public NettyEchoServer() {
+        this.options = TransportOptions.DEFAULT_OPTIONS;
+    }
+
+    public NettyEchoServer(TransportOptions options) {
+        this.options = options;
+    }
 
     public void start() throws Exception {
 
@@ -71,6 +87,14 @@ public class NettyEchoServer implements AutoCloseable {
             server.childHandler(new ChannelInitializer<Channel>() {
                 @Override
                 public void initChannel(Channel ch) throws Exception {
+                    if (options instanceof TransportSslOptions) {
+                        TransportSslOptions sslOptions = (TransportSslOptions) options;
+                        SSLContext context = TransportSupport.createSslContext(sslOptions);
+                        SSLEngine engine = TransportSupport.createSslEngine(context, sslOptions);
+                        engine.setUseClientMode(false);
+                        SslHandler sslHandler = new SslHandler(engine);
+                        ch.pipeline().addLast(sslHandler);
+                    }
                     ch.pipeline().addLast(new EchoServerHandler());
                 }
             });
@@ -87,6 +111,7 @@ public class NettyEchoServer implements AutoCloseable {
                 serverChannel.close().sync();
             } catch (InterruptedException e) {
             }
+
             // Shut down all event loops to terminate all threads.
             LOG.info("Shutting down boss group");
             Future<?> bossFuture = bossGroup.shutdownGracefully(10, TIMEOUT, TimeUnit.MILLISECONDS);
@@ -134,6 +159,19 @@ public class NettyEchoServer implements AutoCloseable {
     }
 
     private class EchoServerHandler extends ChannelInboundHandlerAdapter {
+
+        @Override
+        public void channelActive(final ChannelHandlerContext ctx) {
+            SslHandler handler = ctx.pipeline().get(SslHandler.class);
+            if (handler != null) {
+                handler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
+                    @Override
+                    public void operationComplete(Future<Channel> future) throws Exception {
+                        LOG.info("SSL handshake completed successfully");
+                    }
+                });
+            }
+        }
 
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) {

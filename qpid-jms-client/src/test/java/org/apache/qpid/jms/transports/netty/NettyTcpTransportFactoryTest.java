@@ -16,21 +16,15 @@
  */
 package org.apache.qpid.jms.transports.netty;
 
-import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.net.URI;
-import java.util.Arrays;
-import java.util.List;
 
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportOptions;
-import org.apache.qpid.jms.transports.TransportSslOptions;
 import org.junit.Test;
 
 /**
@@ -46,22 +40,17 @@ public class NettyTcpTransportFactoryTest {
     public static final int CUSTOM_SO_LINGER = Short.MIN_VALUE;
     public static final int CUSTOM_SO_TIMEOUT = 10;
     public static final int CUSTOM_CONNECT_TIMEOUT = 90000;
-    public static final String[] CUSTOM_ENABLED_PROTOCOLS = {"TLSv1.1", "TLSv1.2"};
-    public static final String[] CUSTOM_ENABLED_CIPHER_SUITES = {"Suite-1", "Suite-2"};
-    public static final String CUSTOM_STORE_TYPE = "jceks";
-    public static final boolean CUSTOM_TRUST_ALL = true;
-    public static final boolean CUSTOM_VERIFY_HOST = true;
 
     @Test
     public void testCreateWithDefaultOptions() throws Exception {
-        URI BASE_URI = new URI("ssl://localhost:5672");
+        URI BASE_URI = new URI("tcp://localhost:5672");
 
-        NettySslTransportFactory factory = new NettySslTransportFactory();
+        NettyTcpTransportFactory factory = new NettyTcpTransportFactory();
 
         Transport transport = factory.createTransport(BASE_URI);
 
         assertNotNull(transport);
-        assertTrue(transport instanceof NettySslTransport);
+        assertTrue(transport instanceof NettyTcpTransport);
         assertFalse(transport.isConnected());
 
         TransportOptions options = transport.getTransportOptions();
@@ -75,31 +64,19 @@ public class NettyTcpTransportFactoryTest {
         assertEquals(TransportOptions.DEFAULT_TCP_KEEP_ALIVE, options.isTcpKeepAlive());
         assertEquals(TransportOptions.DEFAULT_SO_LINGER, options.getSoLinger());
         assertEquals(TransportOptions.DEFAULT_SO_TIMEOUT, options.getSoTimeout());
-
-        assertTrue(options instanceof TransportSslOptions);
-        TransportSslOptions sslOptions = (TransportSslOptions) options;
-
-        List<String> enabledProtocols = Arrays.asList(sslOptions.getEnabledProtocols());
-        List<String> defaultProtocols = Arrays.asList(TransportSslOptions.DEFAULT_ENABLED_PROTOCOLS);
-        assertThat(enabledProtocols, containsInAnyOrder(defaultProtocols.toArray()));
-
-        assertNull(sslOptions.getEnabledCipherSuites());
-
-        assertEquals(TransportSslOptions.DEFAULT_STORE_TYPE, sslOptions.getStoreType());
-        assertEquals(TransportSslOptions.DEFAULT_VERIFY_HOST, sslOptions.isVerifyHost());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testCreateWithUnknownOption() throws Exception {
-        URI BASE_URI = new URI("ssl://localhost:5672?transport.someOption=true");
-        NettySslTransportFactory factory = new NettySslTransportFactory();
+        URI BASE_URI = new URI("tcp://localhost:5672?transport.someOption=true");
+        NettyTcpTransportFactory factory = new NettyTcpTransportFactory();
         factory.createTransport(BASE_URI);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testCreateWithBadOption() throws Exception {
-        URI BASE_URI = new URI("ssl://localhost:5672?transport.trafficClass=4096");
-        NettySslTransportFactory factory = new NettySslTransportFactory();
+        URI BASE_URI = new URI("tcp://localhost:5672?transport.trafficClass=4096");
+        NettyTcpTransportFactory factory = new NettyTcpTransportFactory();
         factory.createTransport(BASE_URI);
     }
 
@@ -115,19 +92,14 @@ public class NettyTcpTransportFactoryTest {
             "transport.tcpNoDelay=" + CUSTOM_TCP_NO_DELAY + "&" +
             "transport.tcpKeepAlive=" + CUSTOM_TCP_KEEP_ALIVE + "&" +
             "transport.soLinger=" + CUSTOM_SO_LINGER + "&" +
-            "transport.soTimeout=" + CUSTOM_SO_TIMEOUT + "&" +
-            "transport.verifyHost=" + CUSTOM_VERIFY_HOST + "&" +
-            "transport.storeType=" + CUSTOM_STORE_TYPE + "&" +
-            "transport.trustAll=" + CUSTOM_TRUST_ALL + "&" +
-            "transport.enabledProtocols=" + CUSTOM_ENABLED_PROTOCOLS + "&" +
-            "transport.enabledCipherSuites=" + CUSTOM_ENABLED_CIPHER_SUITES);
+            "transport.soTimeout=" + CUSTOM_SO_TIMEOUT);
 
-        NettySslTransportFactory factory = new NettySslTransportFactory();
+        NettyTcpTransportFactory factory = new NettyTcpTransportFactory();
 
         Transport transport = factory.createTransport(configuredURI);
 
         assertNotNull(transport);
-        assertTrue(transport instanceof NettySslTransport);
+        assertTrue(transport instanceof NettyTcpTransport);
         assertFalse(transport.isConnected());
 
         TransportOptions options = transport.getTransportOptions();
@@ -141,19 +113,5 @@ public class NettyTcpTransportFactoryTest {
         assertEquals(CUSTOM_TCP_KEEP_ALIVE, options.isTcpKeepAlive());
         assertEquals(CUSTOM_SO_LINGER, options.getSoLinger());
         assertEquals(CUSTOM_SO_TIMEOUT, options.getSoTimeout());
-
-        assertTrue(options instanceof TransportSslOptions);
-        TransportSslOptions sslOptions = (TransportSslOptions) options;
-
-        List<String> enabledProtocols = Arrays.asList(sslOptions.getEnabledProtocols());
-        List<String> customProtocols = Arrays.asList(CUSTOM_ENABLED_PROTOCOLS);
-        assertThat(enabledProtocols, containsInAnyOrder(customProtocols.toArray()));
-
-        List<String> enabledCipherSuites = Arrays.asList(sslOptions.getEnabledCipherSuites());
-        List<String> customChiperSuites = Arrays.asList(CUSTOM_ENABLED_CIPHER_SUITES);
-        assertThat(enabledCipherSuites, containsInAnyOrder(customChiperSuites.toArray()));
-
-        assertEquals(CUSTOM_STORE_TYPE, sslOptions.getStoreType());
-        assertEquals(CUSTOM_VERIFY_HOST, sslOptions.isVerifyHost());
     }
 }

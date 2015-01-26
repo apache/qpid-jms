@@ -21,6 +21,7 @@ import io.netty.handler.ssl.SslHandler;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.net.URI;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
@@ -56,8 +57,8 @@ public class TransportSupport {
      *
      * @throws Exception if an error occurs while creating the SslHandler instance.
      */
-    public static SslHandler createSslHandler(TransportSslOptions options) throws Exception {
-        return new SslHandler(createSslEngine(createSslContext(options), options));
+    public static SslHandler createSslHandler(URI remote, TransportSslOptions options) throws Exception {
+        return new SslHandler(createSslEngine(remote, createSslContext(options), options));
     }
 
     /**
@@ -106,6 +107,35 @@ public class TransportSupport {
      */
     public static SSLEngine createSslEngine(SSLContext context, TransportSslOptions options) throws Exception {
         SSLEngine engine = context.createSSLEngine();
+        engine.setEnabledProtocols(options.getEnabledProtocols());
+        engine.setUseClientMode(true);
+
+        if (options.isVerifyHost()) {
+            SSLParameters sslParameters = engine.getSSLParameters();
+            sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+            engine.setSSLParameters(sslParameters);
+        }
+
+        return engine;
+    }
+
+    /**
+     * Create a new SSLEngine instance in client mode from the given SSLContext and
+     * TransportSslOptions instances.
+     *
+     * @param remote
+     *        the URI of the remote peer that will be used to initialize the engine.
+     * @param context
+     *        the SSLContext to use when creating the engine.
+     * @param options
+     *        the TransportSslOptions to use to configure the new SSLEngine.
+     *
+     * @return a new SSLEngine instance in client mode.
+     *
+     * @throws Exception if an error occurs while creating the new SSLEngine.
+     */
+    public static SSLEngine createSslEngine(URI remote, SSLContext context, TransportSslOptions options) throws Exception {
+        SSLEngine engine = context.createSSLEngine(remote.getHost(), remote.getPort());
         engine.setEnabledProtocols(options.getEnabledProtocols());
         engine.setUseClientMode(true);
 

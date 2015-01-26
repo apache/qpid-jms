@@ -19,6 +19,7 @@ package org.apache.qpid.jms.transports;
 import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
+import java.net.URI;
 
 /**
  * Base class for all QpidJMS Transport instances.
@@ -77,5 +78,10 @@ public interface Transport {
      * @returns the TransportOptions instance that holds the configuration for this Transport.
      */
     TransportOptions getTransportOptions();
+
+    /**
+     * @returns the URI of the remote peer that this Transport connects to.
+     */
+    URI getRemoteLocation();
 
 }

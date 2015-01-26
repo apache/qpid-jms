@@ -66,7 +66,7 @@ public class NettySslTransport extends NettyTcpTransport {
 
     @Override
     protected void configureChannel(Channel channel) throws Exception {
-        channel.pipeline().addLast(TransportSupport.createSslHandler(getSslOptions()));
+        channel.pipeline().addLast(TransportSupport.createSslHandler(getRemoteLocation(), getSslOptions()));
         super.configureChannel(channel);
     }
 

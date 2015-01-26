@@ -332,11 +332,11 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
     }
 
     protected TransportOptions createClientOptions() {
-        return TransportOptions.DEFAULT_OPTIONS.clone();
+        return TransportOptions.INSTANCE.clone();
     }
 
     protected TransportOptions createServerOptions() {
-        return TransportOptions.DEFAULT_OPTIONS.clone();
+        return TransportOptions.INSTANCE.clone();
     }
 
     private class NettyTransportListener implements TransportListener {
@@ -356,7 +356,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
         @Override
         public void onTransportError(Throwable cause) {
-            LOG.debug("Transport error caught: {}", cause.getMessage());
+            LOG.debug("Transport error caught: {}", cause.getMessage(), cause);
             exceptions.add(cause);
         }
     }

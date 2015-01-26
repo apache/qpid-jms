@@ -187,10 +187,15 @@ public class NettyTcpTransport implements Transport {
     @Override
     public TransportOptions getTransportOptions() {
         if (options == null) {
-            options = TransportOptions.DEFAULT_OPTIONS;
+            options = TransportOptions.INSTANCE;
         }
 
         return options;
+    }
+
+    @Override
+    public URI getRemoteLocation() {
+        return remote;
     }
 
     //----- Internal implementation details, can be overridden as needed --//

@@ -30,7 +30,7 @@ public class TransportOptions {
     public static final int DEFAULT_SO_TIMEOUT = -1;
     public static final int DEFAULT_CONNECT_TIMEOUT = 60000;
 
-    public static final TransportOptions DEFAULT_OPTIONS = new TransportOptions();
+    public static final TransportOptions INSTANCE = new TransportOptions();
 
     private int sendBufferSize = DEFAULT_SEND_BUFFER_SIZE;
     private int receiveBufferSize = DEFAULT_RECEIVE_BUFFER_SIZE;

@@ -38,10 +38,8 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     private static final Logger LOG = LoggerFactory.getLogger(NettySslTransportTest.class);
 
     public static final String PASSWORD = "password";
-    public static final String SERVER_KEYSTORE = "src/test/resources/broker-jks.keystore";
-    public static final String SERVER_TRUSTSTORE = "src/test/resources/broker-jks.truststore";
-    public static final String CLIENT_KEYSTORE = "src/test/resources/client-jks.keystore";
-    public static final String CLIENT_TRUSTSTORE = "src/test/resources/client-jks.truststore";
+    public static final String SERVER_KEYSTORE = "src/test/resources/example-jks.keystore";
+    public static final String CLIENT_TRUSTSTORE = "src/test/resources/exanple-jks.truststore";
     public static final String KEYSTORE_TYPE = "jks";
 
     @Test(timeout = 60 * 1000)
@@ -52,7 +50,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             int port = server.getServerPort();
             URI serverLocation = new URI("tcp://localhost:" + port);
 
-            Transport transport = createTransport(serverLocation, testListener, createClientOptionsTrustNone());
+            Transport transport = createTransport(serverLocation, testListener, createClientOptionsWithoutTrustStore(false));
             try {
                 transport.connect();
                 fail("Should not have connected to the server");
@@ -76,10 +74,64 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             int port = server.getServerPort();
             URI serverLocation = new URI("tcp://localhost:" + port);
 
-            Transport transport = createTransport(serverLocation, testListener, createClientOptionsTrustAll());
+            Transport transport = createTransport(serverLocation, testListener, createClientOptionsWithoutTrustStore(true));
             try {
                 transport.connect();
                 LOG.info("Connection established to untrusted test server.");
+            } catch (Exception e) {
+                fail("Should have connected to the server");
+            }
+
+            assertTrue(transport.isConnected());
+
+            transport.close();
+        }
+
+        assertTrue(exceptions.isEmpty());
+    }
+
+    @Test(timeout = 60 * 1000)
+    public void testConnectToServerVerifyHost() throws Exception {
+        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            TransportSslOptions options = createClientOptions();
+            options.setVerifyHost(true);
+
+            Transport transport = createTransport(serverLocation, testListener, createClientOptionsIsVerify(true));
+            try {
+                transport.connect();
+                fail("Should not have connected to the server");
+            } catch (Exception e) {
+                LOG.info("Connection failed to test server as expected.");
+            }
+
+            assertFalse(transport.isConnected());
+
+            transport.close();
+        }
+
+        assertTrue(exceptions.isEmpty());
+    }
+
+    @Test(timeout = 60 * 1000)
+    public void testConnectToServerNoVerifyHost() throws Exception {
+        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            TransportSslOptions options = createClientOptions();
+            options.setVerifyHost(true);
+
+            Transport transport = createTransport(serverLocation, testListener, createClientOptionsIsVerify(false));
+            try {
+                transport.connect();
+                LOG.info("Connection established to test server.");
             } catch (Exception e) {
                 fail("Should have connected to the server");
             }
@@ -99,13 +151,18 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
     @Override
     protected TransportSslOptions createClientOptions() {
+        return createClientOptionsIsVerify(false);
+    }
+
+    protected TransportSslOptions createClientOptionsIsVerify(boolean verifyHost) {
         TransportSslOptions options = TransportSslOptions.INSTANCE.clone();
 
-        options.setKeyStoreLocation(CLIENT_KEYSTORE);
-        options.setTrustStoreLocation(CLIENT_TRUSTSTORE);
-        options.setStoreType(KEYSTORE_TYPE);
+        options.setKeyStoreLocation(SERVER_KEYSTORE);
         options.setKeyStorePassword(PASSWORD);
+        options.setTrustStoreLocation(CLIENT_TRUSTSTORE);
         options.setTrustStorePassword(PASSWORD);
+        options.setStoreType(KEYSTORE_TYPE);
+        options.setVerifyHost(verifyHost);
 
         return options;
     }
@@ -115,32 +172,19 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
         TransportSslOptions options = TransportSslOptions.INSTANCE.clone();
 
         options.setKeyStoreLocation(SERVER_KEYSTORE);
-        options.setTrustStoreLocation(SERVER_TRUSTSTORE);
-        options.setStoreType(KEYSTORE_TYPE);
         options.setKeyStorePassword(PASSWORD);
+        options.setTrustStoreLocation(CLIENT_TRUSTSTORE);
         options.setTrustStorePassword(PASSWORD);
+        options.setStoreType(KEYSTORE_TYPE);
 
         return options;
     }
 
-    protected TransportSslOptions createClientOptionsTrustNone() {
+    protected TransportSslOptions createClientOptionsWithoutTrustStore(boolean trustAll) {
         TransportSslOptions options = TransportSslOptions.INSTANCE.clone();
 
-        options.setKeyStoreLocation(CLIENT_KEYSTORE);
-        options.setKeyStorePassword(PASSWORD);
         options.setStoreType(KEYSTORE_TYPE);
-        options.setTrustAll(false);
-
-        return options;
-    }
-
-    protected TransportSslOptions createClientOptionsTrustAll() {
-        TransportSslOptions options = TransportSslOptions.INSTANCE.clone();
-
-        options.setKeyStoreLocation(CLIENT_KEYSTORE);
-        options.setKeyStorePassword(PASSWORD);
-        options.setStoreType(KEYSTORE_TYPE);
-        options.setTrustAll(true);
+        options.setTrustAll(trustAll);
 
         return options;
     }

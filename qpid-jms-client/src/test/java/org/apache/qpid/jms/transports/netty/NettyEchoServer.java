@@ -64,7 +64,7 @@ public class NettyEchoServer implements AutoCloseable {
     private final AtomicBoolean started = new AtomicBoolean();
 
     public NettyEchoServer() {
-        this.options = TransportOptions.DEFAULT_OPTIONS;
+        this.options = TransportOptions.INSTANCE;
     }
 
     public NettyEchoServer(TransportOptions options) {

@@ -108,12 +108,11 @@ public class JmsTemporaryQueueTest extends QpidJmsTestCase {
     }
 
     @Test
-    public void testPopulateProperties() throws Exception {
+    public void testGetProperties() throws Exception {
         String name = "myQueue";
         JmsTemporaryQueue queue = new JmsTemporaryQueue(name);
 
-        Map<String, String> props = new HashMap<String, String>();
-        queue.populateProperties(props);
+        Map<String, String> props = queue.getProperties();
 
         assertTrue("Property not found: " + NAME_PROP, props.containsKey(NAME_PROP));
         assertEquals("Unexpected value for property: " + NAME_PROP, name, props.get(NAME_PROP));
@@ -121,13 +120,13 @@ public class JmsTemporaryQueueTest extends QpidJmsTestCase {
     }
 
     @Test
-    public void testBuildFromProperties() throws Exception {
+    public void testSetProperties() throws Exception {
         String name = "myQueue";
         JmsTemporaryQueue queue = new JmsTemporaryQueue();
 
         Map<String, String> props = new HashMap<String, String>();
         props.put(NAME_PROP, name);
-        queue.buildFromProperties(props);
+        queue.setProperties(props);
 
         assertEquals("Unexpected value for name", name, queue.getQueueName());
     }

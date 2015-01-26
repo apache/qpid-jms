@@ -31,8 +31,8 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     public static final String PASSWORD = "password";
     public static final String SERVER_KEYSTORE = "src/test/resources/broker-jks.keystore";
     public static final String SERVER_TRUSTSTORE = "src/test/resources/broker-jks.truststore";
-    public static final String CLINET_KEYSTORE = "src/test/resources/client-jks.keystore";
-    public static final String CLINET_TRUSTSTORE = "src/test/resources/client-jks.truststore";
+    public static final String CLIENT_KEYSTORE = "src/test/resources/client-jks.keystore";
+    public static final String CLIENT_TRUSTSTORE = "src/test/resources/client-jks.truststore";
     public static final String KEYSTORE_TYPE = "jks";
 
     @Override
@@ -44,8 +44,8 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     protected TransportSslOptions createClientOptions() {
         TransportSslOptions options = TransportSslOptions.INSTANCE.clone();
 
-        options.setKeyStoreLocation(CLINET_KEYSTORE);
-        options.setTrustStoreLocation(CLINET_TRUSTSTORE);
+        options.setKeyStoreLocation(CLIENT_KEYSTORE);
+        options.setTrustStoreLocation(CLIENT_TRUSTSTORE);
         options.setStoreType(KEYSTORE_TYPE);
         options.setKeyStorePassword(PASSWORD);
         options.setTrustStorePassword(PASSWORD);

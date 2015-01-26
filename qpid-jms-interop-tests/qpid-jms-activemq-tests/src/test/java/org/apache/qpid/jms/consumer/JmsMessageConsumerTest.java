@@ -197,7 +197,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
             @Override
             public void run() {
                 try {
-                    TimeUnit.SECONDS.sleep(10);
+                    TimeUnit.SECONDS.sleep(5);
                     MessageProducer producer = session.createProducer(queue);
                     producer.send(session.createTextMessage("Hello"));
                 } catch (Exception e) {
@@ -345,13 +345,15 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
         // After the first restart we should get all messages sent above
         restartPrimaryBroker();
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(messagesSent, proxy.getQueueSize());
         int messagesReceived = readAllMessages();
         assertEquals(messagesSent, messagesReceived);
 
         // This time there should be no messages on this queue
         restartPrimaryBroker();
-        messagesReceived = readAllMessages();
-        assertEquals(0, messagesReceived);
+        proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(0, proxy.getQueueSize());
     }
 
     @Test(timeout = 60000)
@@ -376,13 +378,15 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
         // After the first restart we should get all messages sent above
         restartPrimaryBroker();
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(messagesSent, proxy.getQueueSize());
         int messagesReceived = readAllMessages();
         assertEquals(messagesSent, messagesReceived);
 
         // This time there should be no messages on this queue
         restartPrimaryBroker();
-        messagesReceived = readAllMessages();
-        assertEquals(0, messagesReceived);
+        proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(0, proxy.getQueueSize());
     }
 
     private int readAllMessages() throws Exception {
@@ -404,14 +408,14 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
                 consumer = session.createConsumer(queue, selector);
             }
 
-            Message msg = consumer.receive(5000);
+            Message msg = consumer.receive(2000);
             while (msg != null) {
                 assertNotNull(msg);
                 assertTrue(msg instanceof TextMessage);
                 TextMessage textMessage = (TextMessage) msg;
                 LOG.debug(">>>> Received [{}]", textMessage.getText());
                 messagesReceived++;
-                msg = consumer.receive(5000);
+                msg = consumer.receive(2000);
             }
 
             consumer.close();

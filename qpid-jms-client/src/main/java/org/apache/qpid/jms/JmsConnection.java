@@ -102,7 +102,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private final ThreadPoolExecutor executor;
 
     private URI brokerURI;
-    private SSLContext sslContext;
     private Provider provider;
     private final Set<JmsConnectionListener> connectionListeners =
         new CopyOnWriteArraySet<JmsConnectionListener>();
@@ -914,14 +913,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     public void setBrokerURI(URI brokerURI) {
         this.brokerURI = brokerURI;
-    }
-
-    public SSLContext getSslContext() {
-        return sslContext;
-    }
-
-    public void setSslContext(SSLContext sslContext) {
-        this.sslContext = sslContext;
     }
 
     public String getUsername() {

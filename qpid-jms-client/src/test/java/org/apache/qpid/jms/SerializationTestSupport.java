@@ -22,27 +22,25 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import javax.jms.Destination;
-
 public class SerializationTestSupport {
 
-    public static Destination roundTripSerializeDestination(final JmsDestination dest) throws IOException, ClassNotFoundException {
-        byte[] bytes = serializeDestination(dest);
-        Object deserializedObject = deserializeDestination(bytes);
+    public static Object roundTripSerialize(final Object o) throws IOException, ClassNotFoundException {
+        byte[] bytes = serialize(o);
+        Object deserializedObject = deserialize(bytes);
 
-        return (Destination) deserializedObject;
+        return deserializedObject;
     }
 
-    public static byte[] serializeDestination(final JmsDestination dest) throws IOException {
+    public static byte[] serialize(final Object o) throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(bos);
-        oos.writeObject(dest);
+        oos.writeObject(o);
         oos.close();
         byte[] bytes = bos.toByteArray();
         return bytes;
     }
 
-    public static Object deserializeDestination(byte[] bytes) throws IOException, ClassNotFoundException {
+    public static Object deserialize(byte[] bytes) throws IOException, ClassNotFoundException {
         ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
         ObjectInputStream ois = new ObjectInputStream(bis);
         Object deserializedObject = ois.readObject();

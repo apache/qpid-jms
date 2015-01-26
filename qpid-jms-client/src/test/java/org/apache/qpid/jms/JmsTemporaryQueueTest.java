@@ -16,8 +16,8 @@
  */
 package org.apache.qpid.jms;
 
-import static org.apache.qpid.jms.SerializationTestSupport.roundTripSerializeDestination;
-import static org.apache.qpid.jms.SerializationTestSupport.serializeDestination;
+import static org.apache.qpid.jms.SerializationTestSupport.roundTripSerialize;
+import static org.apache.qpid.jms.SerializationTestSupport.serialize;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -136,7 +136,7 @@ public class JmsTemporaryQueueTest extends QpidJmsTestCase {
         String name = "myQueue";
         JmsTemporaryQueue queue = new JmsTemporaryQueue(name);
 
-        Destination roundTripped = roundTripSerializeDestination(queue);
+        Object roundTripped = roundTripSerialize(queue);
 
         assertNotNull("Null destination returned", roundTripped);
         assertEquals("Unexpected type", JmsTemporaryQueue.class, roundTripped.getClass());
@@ -153,8 +153,8 @@ public class JmsTemporaryQueueTest extends QpidJmsTestCase {
 
         assertEquals("Destinations were not equal", queue1, queue2);
 
-        byte[] bytes1 = serializeDestination(queue1);
-        byte[] bytes2 = serializeDestination(queue2);
+        byte[] bytes1 = serialize(queue1);
+        byte[] bytes2 = serialize(queue2);
 
         assertArrayEquals("Serialized bytes were not equal", bytes1, bytes2);
     }
@@ -166,8 +166,8 @@ public class JmsTemporaryQueueTest extends QpidJmsTestCase {
 
         assertNotEquals("Destinations were not expected to be equal", queue1, queue2);
 
-        byte[] bytes1 = serializeDestination(queue1);
-        byte[] bytes2 = serializeDestination(queue2);
+        byte[] bytes1 = serialize(queue1);
+        byte[] bytes2 = serialize(queue2);
 
         try {
             assertArrayEquals(bytes1, bytes2);

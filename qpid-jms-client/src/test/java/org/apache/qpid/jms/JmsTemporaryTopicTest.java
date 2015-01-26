@@ -142,7 +142,9 @@ public class JmsTemporaryTopicTest extends QpidJmsTestCase {
         assertNotNull("Null destination returned", roundTripped);
         assertEquals("Unexpected type", JmsTemporaryTopic.class, roundTripped.getClass());
         assertEquals("Unexpected name", name, ((JmsTemporaryTopic)roundTripped).getTopicName());
+
         assertEquals("Objects were not equal", topic, roundTripped);
+        assertEquals("Object hashCodes were not equal", topic.hashCode(), roundTripped.hashCode());
     }
 
     @Test

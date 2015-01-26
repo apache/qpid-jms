@@ -42,7 +42,6 @@ import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.vertx.java.core.net.impl.PartialPooledByteBufAllocator;
 
 /**
  * TCP based transport that uses Netty as the underlying IO layer.

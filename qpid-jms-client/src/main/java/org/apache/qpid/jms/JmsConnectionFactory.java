@@ -51,7 +51,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private static final String BROKER_URI_PROP = "brokerURI";
 
     private URI brokerURI;
-    private URI localURI;
     private String username;
     private String password;
     private String clientID;
@@ -342,21 +341,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
         }
-    }
-
-    /**
-     * @return the localURI
-     */
-    public String getLocalURI() {
-        return this.localURI != null ? this.localURI.toString() : "";
-    }
-
-    /**
-     * @param localURI
-     *        the localURI to set
-     */
-    public void setLocalURI(String localURI) {
-        this.localURI = createURI(localURI);
     }
 
     /**

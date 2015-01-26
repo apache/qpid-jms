@@ -102,7 +102,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private final ThreadPoolExecutor executor;
 
     private URI brokerURI;
-    private URI localURI;
     private SSLContext sslContext;
     private Provider provider;
     private final Set<JmsConnectionListener> connectionListeners =
@@ -915,14 +914,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     public void setBrokerURI(URI brokerURI) {
         this.brokerURI = brokerURI;
-    }
-
-    public URI getLocalURI() {
-        return localURI;
-    }
-
-    public void setLocalURI(URI localURI) {
-        this.localURI = localURI;
     }
 
     public SSLContext getSslContext() {

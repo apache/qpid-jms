@@ -40,18 +40,18 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     public static final String BROKER_JKS_KEYSTORE = "src/test/resources/broker-jks.keystore";
     public static final String BROKER_JKS_TRUSTSTORE = "src/test/resources/broker-jks.truststore";
-    public static final String CLINET_JKS_KEYSTORE = "src/test/resources/client-jks.keystore";
-    public static final String CLINET_JKS_TRUSTSTORE = "src/test/resources/client-jks.truststore";
+    public static final String CLIENT_JKS_KEYSTORE = "src/test/resources/client-jks.keystore";
+    public static final String CLIENT_JKS_TRUSTSTORE = "src/test/resources/client-jks.truststore";
 
     public static final String BROKER_JCEKS_KEYSTORE = "src/test/resources/broker-jceks.keystore";
     public static final String BROKER_JCEKS_TRUSTSTORE = "src/test/resources/broker-jceks.truststore";
-    public static final String CLINET_JCEKS_KEYSTORE = "src/test/resources/client-jceks.keystore";
-    public static final String CLINET_JCEKS_TRUSTSTORE = "src/test/resources/client-jceks.truststore";
+    public static final String CLIENT_JCEKS_KEYSTORE = "src/test/resources/client-jceks.keystore";
+    public static final String CLIENT_JCEKS_TRUSTSTORE = "src/test/resources/client-jceks.truststore";
 
     public static final String BROKER_PKCS12_KEYSTORE = "src/test/resources/broker-pkcs12.keystore";
     public static final String BROKER_PKCS12_TRUSTSTORE = "src/test/resources/broker-pkcs12.truststore";
-    public static final String CLINET_PKCS12_KEYSTORE = "src/test/resources/client-pkcs12.keystore";
-    public static final String CLINET_PKCS12_TRUSTSTORE = "src/test/resources/client-pkcs12.truststore";
+    public static final String CLIENT_PKCS12_KEYSTORE = "src/test/resources/client-pkcs12.keystore";
+    public static final String CLIENT_PKCS12_TRUSTSTORE = "src/test/resources/client-pkcs12.truststore";
 
     public static final String KEYSTORE_JKS_TYPE = "jks";
     public static final String KEYSTORE_JCEKS_TYPE = "jceks";
@@ -129,8 +129,8 @@ public class TransportSupportTest extends QpidJmsTestCase {
     private TransportSslOptions createJksSslOptions() {
         TransportSslOptions options = new TransportSslOptions();
 
-        options.setKeyStoreLocation(CLINET_JKS_KEYSTORE);
-        options.setTrustStoreLocation(CLINET_JKS_TRUSTSTORE);
+        options.setKeyStoreLocation(CLIENT_JKS_KEYSTORE);
+        options.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE);
         options.setStoreType(KEYSTORE_JKS_TYPE);
         options.setKeyStorePassword(PASSWORD);
         options.setTrustStorePassword(PASSWORD);
@@ -141,8 +141,8 @@ public class TransportSupportTest extends QpidJmsTestCase {
     private TransportSslOptions createJceksSslOptions() {
         TransportSslOptions options = new TransportSslOptions();
 
-        options.setKeyStoreLocation(CLINET_JCEKS_KEYSTORE);
-        options.setTrustStoreLocation(CLINET_JCEKS_TRUSTSTORE);
+        options.setKeyStoreLocation(CLIENT_JCEKS_KEYSTORE);
+        options.setTrustStoreLocation(CLIENT_JCEKS_TRUSTSTORE);
         options.setStoreType(KEYSTORE_JCEKS_TYPE);
         options.setKeyStorePassword(PASSWORD);
         options.setTrustStorePassword(PASSWORD);
@@ -153,8 +153,8 @@ public class TransportSupportTest extends QpidJmsTestCase {
     private TransportSslOptions createPkcs12SslOptions() {
         TransportSslOptions options = new TransportSslOptions();
 
-        options.setKeyStoreLocation(CLINET_PKCS12_KEYSTORE);
-        options.setTrustStoreLocation(CLINET_PKCS12_TRUSTSTORE);
+        options.setKeyStoreLocation(CLIENT_PKCS12_KEYSTORE);
+        options.setTrustStoreLocation(CLIENT_PKCS12_TRUSTSTORE);
         options.setStoreType(KEYSTORE_PKCS12_TYPE);
         options.setKeyStorePassword(PASSWORD);
         options.setTrustStorePassword(PASSWORD);

@@ -82,7 +82,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
     @Test(timeout = 60 * 1000)
     public void testMultipleConnectionsToServer() throws Exception {
-        final int CONNECTION_COUNT = 25;
+        final int CONNECTION_COUNT = 10;
 
         try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
             server.start();
@@ -116,7 +116,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
     @Test(timeout = 60 * 1000)
     public void testMultipleConnectionsSendReceive() throws Exception {
-        final int CONNECTION_COUNT = 25;
+        final int CONNECTION_COUNT = 10;
         final int FRAME_SIZE = 8;
 
         ByteBuf sendBuffer = Unpooled.buffer(FRAME_SIZE);

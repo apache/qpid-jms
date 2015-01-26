@@ -16,17 +16,13 @@
  */
 package org.apache.qpid.jms;
 
-import java.io.Serializable;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Defines the prefetch message policies for different types of consumers
  */
-public class JmsPrefetchPolicy extends Object implements Serializable {
-
-    private static final long serialVersionUID = 5298685386681646744L;
+public class JmsPrefetchPolicy {
 
     public static final int MAX_PREFETCH_SIZE = Short.MAX_VALUE;
     public static final int DEFAULT_QUEUE_PREFETCH = 1000;

@@ -21,6 +21,7 @@ import static org.apache.qpid.jms.SerializationTestSupport.serialize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Map;
@@ -43,6 +44,30 @@ public class JmsConnectionFactoryTest {
         assertEquals("Unexpected uri", uri, ((JmsConnectionFactory)roundTripped).getBrokerURI());
 
         Map<String, String> props2 = ((JmsConnectionFactory)roundTripped).getProperties();
+        assertEquals("Properties were not equal", props, props2);
+    }
+
+    @Test
+    public void testSerializeThenDeserializeMaintainsPrefetchPolicy() throws Exception {
+        String topicPrefetchValue = "17";
+        String topicPrefetchKey = "prefetchPolicy.topicPrefetch";
+        String uri = "amqp://localhost:1234?jms." + topicPrefetchKey + "=" + topicPrefetchValue;
+
+        JmsConnectionFactory cf = new JmsConnectionFactory(uri);
+        Map<String, String> props = cf.getProperties();
+
+        assertTrue("Props dont contain expected prefetch policy change", props.containsKey(topicPrefetchKey));
+        assertEquals("Unexpected value", topicPrefetchValue, props.get(topicPrefetchKey));
+
+        Object roundTripped = roundTripSerialize(cf);
+
+        assertNotNull("Null object returned", roundTripped);
+        assertEquals("Unexpected type", JmsConnectionFactory.class, roundTripped.getClass());
+
+        Map<String, String> props2 = ((JmsConnectionFactory)roundTripped).getProperties();
+        assertTrue("Props dont contain expected prefetch policy change", props2.containsKey(topicPrefetchKey));
+        assertEquals("Unexpected value", topicPrefetchValue, props2.get(topicPrefetchKey));
+
         assertEquals("Properties were not equal", props, props2);
     }
 

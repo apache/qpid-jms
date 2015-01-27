@@ -272,7 +272,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     private JmsInboundMessageDispatch doAckConsumed(final JmsInboundMessageDispatch envelope) throws JMSException {
         checkClosed();
         try {
-            session.acknowledge(envelope, ACK_TYPE.CONSUMED, true);
+            session.acknowledge(envelope, ACK_TYPE.CONSUMED);
         } catch (JMSException ex) {
             session.onException(ex);
             throw ex;
@@ -282,7 +282,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
 
     private JmsInboundMessageDispatch doAckDelivered(final JmsInboundMessageDispatch envelope) throws JMSException {
         try {
-            session.acknowledge(envelope, ACK_TYPE.DELIVERED, true);
+            session.acknowledge(envelope, ACK_TYPE.DELIVERED);
         } catch (JMSException ex) {
             session.onException(ex);
             throw ex;
@@ -292,7 +292,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
 
     private void doAckReleased(final JmsInboundMessageDispatch envelope) throws JMSException {
         try {
-            session.acknowledge(envelope, ACK_TYPE.RELEASED, false);
+            session.acknowledge(envelope, ACK_TYPE.RELEASED);
         } catch (JMSException ex) {
             session.onException(ex);
             throw ex;
@@ -555,7 +555,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                 try {
                     JmsMessage copy = null;
                     boolean autoAckOrDupsOk = acknowledgementMode == Session.AUTO_ACKNOWLEDGE ||
-                                                acknowledgementMode == Session.DUPS_OK_ACKNOWLEDGE;
+                                              acknowledgementMode == Session.DUPS_OK_ACKNOWLEDGE;
                     if (autoAckOrDupsOk) {
                         copy = copy(doAckDelivered(envelope));
                     } else {

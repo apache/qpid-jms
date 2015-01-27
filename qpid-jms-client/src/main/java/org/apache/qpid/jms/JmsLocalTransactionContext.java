@@ -20,17 +20,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.jms.JMSException;
+import javax.jms.TransactionRolledBackException;
 
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
+import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
+import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.meta.JmsTransactionInfo;
+import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Manages the details of a Session operating inside of a local JMS transaction.
  */
-public class JmsLocalTransactionContext {
+public class JmsLocalTransactionContext implements JmsTransactionContext {
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsLocalTransactionContext.class);
 
@@ -38,6 +42,7 @@ public class JmsLocalTransactionContext {
     private final JmsSession session;
     private final JmsConnection connection;
     private JmsTransactionId transactionId;
+    private boolean failed;
     private JmsTransactionListener listener;
 
     public JmsLocalTransactionContext(JmsSession session) {
@@ -45,12 +50,34 @@ public class JmsLocalTransactionContext {
         this.connection = session.getConnection();
     }
 
-    /**
-     * Adds the given Transaction synchronization to the current list.
-     *
-     * @param s
-     *        the transaction synchronization to add.
-     */
+    @Override
+    public void send(JmsConnection connection, JmsOutboundMessageDispatch envelope) throws JMSException {
+        // TODO - Optional throw an exception here to give early warning that
+        //        the transaction is in a failed state and must be rolled back.
+        if (!isFailed()) {
+            begin();
+            connection.send(envelope);
+        }
+    }
+
+    @Override
+    public void acknowledge(JmsConnection connection, JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws JMSException {
+        // TODO - Should we ACK as delivered if failed just to ensure that prefetch is
+        //        extended and new message arrive until commit or rollback is called.
+        //        A quiet consumer could be misleading and prevent the code from doing
+        //        its normal batched receive / commit.
+        if (!isFailed()) {
+            // Consumed or delivered messages fall into a transaction so we must check
+            // that there is an active one and start one if not.
+            if (ackType == ACK_TYPE.CONSUMED || ackType == ACK_TYPE.DELIVERED) {
+                begin();
+            }
+
+            connection.acknowledge(envelope, ackType);
+        }
+    }
+
+    @Override
     public void addSynchronization(JmsTxSynchronization s) {
         if (synchronizations == null) {
             synchronizations = new ArrayList<JmsTxSynchronization>(10);
@@ -58,24 +85,23 @@ public class JmsLocalTransactionContext {
         synchronizations.add(s);
     }
 
-    /**
-     * Clears the current Transacted state.  This is usually done when the client
-     * detects that a failover has occurred and needs to create a new Transaction
-     * for a Session that was previously enlisted in a transaction.
-     */
-    public void clear() {
-        this.transactionId = null;
-        this.synchronizations = null;
+    @Override
+    public void markAsFailed() {
+        if (isInTransaction()) {
+            failed = true;
+        }
     }
 
-    /**
-     * Start a local transaction.
-     *
-     * @throws javax.jms.JMSException on internal error
-     */
+    @Override
+    public boolean isFailed() {
+        return failed;
+    }
+
+    @Override
     public void begin() throws JMSException {
-        if (transactionId == null) {
+        if (!isInTransaction()) {
             synchronizations = null;
+            failed = false;
 
             transactionId = connection.getNextTransactionId();
             JmsTransactionInfo transaction = new JmsTransactionInfo(session.getSessionId(), transactionId);
@@ -89,18 +115,13 @@ public class JmsLocalTransactionContext {
         }
     }
 
-    /**
-     * Rolls back any work done in this transaction and releases any locks
-     * currently held.
-     *
-     * @throws JMSException
-     *         if the JMS provider fails to roll back the transaction due to some internal error.
-     */
+    @Override
     public void rollback() throws JMSException {
-        if (transactionId != null) {
+        if (isInTransaction()) {
             LOG.debug("Rollback: {} syncCount: {}", transactionId,
                       (synchronizations != null ? synchronizations.size() : 0));
 
+            failed = false;
             transactionId = null;
             connection.rollback(session.getSessionId());
 
@@ -112,15 +133,13 @@ public class JmsLocalTransactionContext {
         afterRollback();
     }
 
-    /**
-     * Commits all work done in this transaction and releases any locks
-     * currently held.
-     *
-     * @throws JMSException
-     *         if the JMS provider fails to roll back the transaction due to some internal error.
-     */
+    @Override
     public void commit() throws JMSException {
-        if (transactionId != null) {
+        if (isFailed()) {
+            throw new TransactionRolledBackException("Transaction failed and must be rolled back.");
+        }
+
+        if (isInTransaction()) {
             LOG.debug("Commit: {} syncCount: {}", transactionId,
                       (synchronizations != null ? synchronizations.size() : 0));
 
@@ -145,25 +164,29 @@ public class JmsLocalTransactionContext {
 
     @Override
     public String toString() {
-        return "JmsLocalTransactionContext{transactionId=" + transactionId + "}";
+        return "JmsLocalTransactionContext{ transactionId=" + transactionId + " }";
     }
 
     //------------- Getters and Setters --------------------------------------//
 
+    @Override
     public JmsTransactionId getTransactionId() {
-        return this.transactionId;
+        return transactionId;
     }
 
+    @Override
     public JmsTransactionListener getListener() {
         return listener;
     }
 
+    @Override
     public void setListener(JmsTransactionListener listener) {
         this.listener = listener;
     }
 
+    @Override
     public boolean isInTransaction() {
-        return this.transactionId != null;
+        return transactionId != null;
     }
 
     //------------- Implementation methods -----------------------------------//

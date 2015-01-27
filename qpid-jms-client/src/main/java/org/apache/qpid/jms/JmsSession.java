@@ -95,7 +95,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     private final AtomicLong consumerIdGenerator = new AtomicLong();
     private final AtomicLong producerIdGenerator = new AtomicLong();
-    private JmsLocalTransactionContext transactionContext;
+    private JmsTransactionContext transactionContext;
     private boolean sessionRecovered;
 
     protected JmsSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) throws JMSException {
@@ -103,7 +103,11 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         this.acknowledgementMode = acknowledgementMode;
         this.prefetchPolicy = new JmsPrefetchPolicy(connection.getPrefetchPolicy());
 
-        setTransactionContext(new JmsLocalTransactionContext(this));
+        if (acknowledgementMode == SESSION_TRANSACTED) {
+            setTransactionContext(new JmsLocalTransactionContext(this));
+        } else {
+            setTransactionContext(new JmsNoTxTransactionContext());
+        }
 
         this.sessionInfo = new JmsSessionInfo(sessionId);
         this.sessionInfo.setAcknowledgementMode(acknowledgementMode);
@@ -158,27 +162,23 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public void commit() throws JMSException {
         checkClosed();
-
-        if (!getTransacted()) {
-           throw new javax.jms.IllegalStateException("Not a transacted session");
-        }
-
-        this.transactionContext.commit();
+        transactionContext.commit();
     }
 
     @Override
     public void rollback() throws JMSException {
         checkClosed();
+
         if (!getTransacted()) {
             throw new javax.jms.IllegalStateException("Not a transacted session");
         }
 
-        //Stop processing any new messages that arrive
+        // Stop processing any new messages that arrive
         for (JmsMessageConsumer c : consumers.values()) {
             c.suspendForRollback();
         }
 
-        this.transactionContext.rollback();
+        transactionContext.rollback();
 
         for (JmsMessageConsumer c : consumers.values()) {
             c.resumeAfterRollback();
@@ -212,8 +212,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     protected void doClose() throws JMSException {
         boolean interrupted = Thread.interrupted();
         shutdown();
-        this.connection.removeSession(this);
-        this.connection.destroyResource(sessionInfo);
+        connection.removeSession(this);
+        connection.destroyResource(sessionInfo);
         if (interrupted) {
             Thread.currentThread().interrupt();
         }
@@ -441,7 +441,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public void unsubscribe(String name) throws JMSException {
         checkClosed();
-        this.connection.unsubscribe(name);
+        connection.unsubscribe(name);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -595,13 +595,11 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         return connection.createTemporaryTopic();
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    // Session Implementation methods
-    //////////////////////////////////////////////////////////////////////////
+    //----- Session Implementation methods -----------------------------------//
 
     protected void add(JmsMessageConsumer consumer) throws JMSException {
-        this.consumers.put(consumer.getConsumerId(), consumer);
-        this.connection.addDispatcher(consumer.getConsumerId(), this);
+        consumers.put(consumer.getConsumerId(), consumer);
+        connection.addDispatcher(consumer.getConsumerId(), this);
 
         if (started.get()) {
             consumer.start();
@@ -609,24 +607,24 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     protected void remove(JmsMessageConsumer consumer) throws JMSException {
-        this.connection.removeDispatcher(consumer.getConsumerId());
-        this.consumers.remove(consumer.getConsumerId());
+        connection.removeDispatcher(consumer.getConsumerId());
+        consumers.remove(consumer.getConsumerId());
     }
 
     protected void add(JmsMessageProducer producer) {
-        this.producers.add(producer);
+        producers.add(producer);
     }
 
     protected void remove(MessageProducer producer) {
-        this.producers.remove(producer);
+        producers.remove(producer);
     }
 
     protected void onException(Exception ex) {
-        this.connection.onException(ex);
+        connection.onException(ex);
     }
 
     protected void onException(JMSException ex) {
-        this.connection.onException(ex);
+        connection.onException(ex);
     }
 
     protected void send(JmsMessageProducer producer, Destination dest, Message msg, int deliveryMode, int priority, long timeToLive, boolean disableMsgId, boolean disableTimestamp) throws JMSException {
@@ -642,8 +640,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private void send(JmsMessageProducer producer, JmsDestination destination, Message original, int deliveryMode, int priority, long timeToLive, boolean disableMsgId, boolean disableTimestamp) throws JMSException {
         sendLock.lock();
         try {
-            startNextTransaction();
-
             original.setJMSDeliveryMode(deliveryMode);
             original.setJMSPriority(priority);
             original.setJMSRedelivered(false);
@@ -698,18 +694,14 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             envelope.setSendAsync(!sync);
             envelope.setDispatchId(msgId);
 
-            this.connection.send(envelope);
+            transactionContext.send(connection, envelope);
         } finally {
             sendLock.unlock();
         }
     }
 
-    void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, boolean startNextTransaction) throws JMSException {
-        if(startNextTransaction) {
-            startNextTransaction();
-        }
-
-        this.connection.acknowledge(envelope, ackType);
+    void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws JMSException {
+        transactionContext.acknowledge(connection, envelope, ackType);
     }
 
     /**
@@ -719,11 +711,15 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      * @throws JMSException if an error occurs while the acknowledge is processed.
      */
     void acknowledge() throws JMSException {
+        if (isTransacted()) {
+            throw new IllegalStateException("Session acknowledge called inside a transacted Session");
+        }
+
         this.connection.acknowledge(sessionInfo.getSessionId());
     }
 
     public boolean isClosed() {
-        return this.closed.get();
+        return closed.get();
     }
 
     /**
@@ -732,7 +728,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      * @return true - if the session uses transactions.
      */
     public boolean isTransacted() {
-        return this.acknowledgementMode == Session.SESSION_TRANSACTED;
+        return acknowledgementMode == Session.SESSION_TRANSACTED;
     }
 
     /**
@@ -741,7 +737,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      * @return true - if the session uses client acknowledgment.
      */
     protected boolean isClientAcknowledge() {
-        return this.acknowledgementMode == Session.CLIENT_ACKNOWLEDGE;
+        return acknowledgementMode == Session.CLIENT_ACKNOWLEDGE;
     }
 
     /**
@@ -763,7 +759,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     protected void checkClosed() throws IllegalStateException {
-        if (this.closed.get()) {
+        if (closed.get()) {
             throw new IllegalStateException("The Session is closed");
         }
     }
@@ -837,11 +833,11 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     protected boolean isStarted() {
-        return this.started.get();
+        return started.get();
     }
 
     public JmsConnection getConnection() {
-        return this.connection;
+        return connection;
     }
 
     Executor getExecutor() {
@@ -861,11 +857,11 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     protected JmsSessionInfo getSessionInfo() {
-        return this.sessionInfo;
+        return sessionInfo;
     }
 
     protected JmsSessionId getSessionId() {
-        return this.sessionInfo.getSessionId();
+        return sessionInfo.getSessionId();
     }
 
     protected JmsConsumerId getNextConsumerId() {
@@ -883,12 +879,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private <T extends JmsMessage> T init(T message) {
         message.setConnection(connection);
         return message;
-    }
-
-    private synchronized void startNextTransaction() throws JMSException {
-        if (getTransacted()) {
-            transactionContext.begin();
-        }
     }
 
     boolean isDestinationInUse(JmsDestination destination) {
@@ -924,11 +914,18 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         if (started.get()) {
             deliver(envelope);
         } else {
-            this.stoppedMessages.add(envelope);
+            stoppedMessages.add(envelope);
         }
     }
 
     protected void onConnectionInterrupted() {
+
+        if (this.acknowledgementMode == SESSION_TRANSACTED) {
+            if (transactionContext.isInTransaction()) {
+                transactionContext.markAsFailed();
+            }
+        }
+
         for (JmsMessageProducer producer : producers) {
             producer.onConnectionInterrupted();
         }
@@ -943,13 +940,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         ProviderFuture request = new ProviderFuture();
         provider.create(sessionInfo, request);
         request.sync();
-
-        if (this.acknowledgementMode == SESSION_TRANSACTED) {
-            if (transactionContext.isInTransaction()) {
-                transactionContext.clear();
-                transactionContext.begin();
-            }
-        }
 
         for (JmsMessageProducer producer : producers) {
             producer.onConnectionRecovery(provider);
@@ -985,10 +975,10 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         if (id == null) {
             this.connection.onException(new JMSException("No ConsumerId set for " + envelope.getMessage()));
         }
-        if (this.messageListener != null) {
-            this.messageListener.onMessage(envelope.getMessage());
+        if (messageListener != null) {
+            messageListener.onMessage(envelope.getMessage());
         } else {
-            JmsMessageConsumer consumer = this.consumers.get(id);
+            JmsMessageConsumer consumer = consumers.get(id);
             if (consumer != null) {
                 consumer.onInboundMessage(envelope);
             }
@@ -1001,7 +991,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      * @param transactionContext
      *        provides the means to control a JMS transaction.
      */
-    public void setTransactionContext(JmsLocalTransactionContext transactionContext) {
+    public void setTransactionContext(JmsTransactionContext transactionContext) {
         this.transactionContext = transactionContext;
     }
 
@@ -1011,7 +1001,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      * @return transactionContext
      *         session's transaction context.
      */
-    public JmsLocalTransactionContext getTransactionContext() {
+    public JmsTransactionContext getTransactionContext() {
         return transactionContext;
     }
 

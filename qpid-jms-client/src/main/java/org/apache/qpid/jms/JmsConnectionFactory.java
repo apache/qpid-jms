@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.ExceptionListener;
+import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
@@ -247,6 +248,10 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     }
 
     protected Provider createProvider(URI remoteURI) throws Exception {
+        if(remoteURI == null) {
+            throw new IllegalStateException("No remoteURI has been provided");
+        }
+
         Provider result = null;
 
         try {

@@ -28,6 +28,8 @@ import static org.junit.Assert.fail;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.jms.IllegalStateException;
+
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.junit.Test;
 
@@ -35,6 +37,17 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
 
     private static String CLIENT_ID_PROP = "clientID";
     private static String QUEUE_PREFIX_PROP = "queuePrefix";
+
+    @Test
+    public void testCreateConnectionWithoutUriThrowsJMSISE() throws Exception {
+        JmsConnectionFactory cf = new JmsConnectionFactory();
+        try {
+            cf.createConnection();
+            fail("Should have thrown exception");
+        } catch (IllegalStateException jmsise){
+            // expected
+        }
+    }
 
     @Test
     public void testSetProperties() throws Exception {

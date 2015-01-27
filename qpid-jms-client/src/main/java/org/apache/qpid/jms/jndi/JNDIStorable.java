@@ -20,7 +20,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.naming.NamingException;
@@ -63,7 +63,7 @@ public abstract class JNDIStorable implements Referenceable, Externalizable {
      * @return the properties
      */
     public synchronized Map<String, String> getProperties() {
-        HashMap<String, String> properties = new HashMap<String, String>();
+        Map<String, String> properties = new LinkedHashMap<String, String>();
         populateProperties(properties);
         return properties;
     }

@@ -39,7 +39,6 @@ import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -231,21 +230,20 @@ public class JmsFailoverTest extends AmqpTestSupport {
         assertFalse(failed.getCount() == 0);
     }
 
-    // TODO - FIXME
-    @Ignore("Test currently not working")
     @Test(timeout=90000)
-    public void testProducerBlocksAndRecovers() throws Exception {
+    public void testNonTxProducerRecoversAfterFailover() throws Exception {
         URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=1000");
 
-        Connection connection = createAmqpConnection(brokerURI);
+        connection = createAmqpConnection(brokerURI);
         connection.start();
 
-        final int MSG_COUNT = 10;
+        final int MSG_COUNT = 20;
         final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
         final MessageProducer producer = session.createProducer(queue);
         producer.setDeliveryMode(DeliveryMode.PERSISTENT);
         final CountDownLatch failed = new CountDownLatch(1);
+        final CountDownLatch sentSome = new CountDownLatch(3);
 
         assertEquals(1, brokerService.getAdminView().getQueueProducers().length);
 
@@ -255,18 +253,22 @@ public class JmsFailoverTest extends AmqpTestSupport {
             public void run() {
                 try {
                     for (int i = 0; i < MSG_COUNT; ++i) {
+                        LOG.debug("Producer sening message #{}", i + 1);
                         producer.send(session.createTextMessage("Message: " + i));
-                        TimeUnit.SECONDS.sleep(1);
+                        sentSome.countDown();
+                        TimeUnit.MILLISECONDS.sleep(50);
                     }
                 } catch (Exception e) {
+                    failed.countDown();
                 }
             }
         });
         producerThread.start();
 
-        TimeUnit.SECONDS.sleep(3);
+        // Wait until a couple messages get sent on first broker run.
+        assertTrue(sentSome.await(3, TimeUnit.SECONDS));
         stopPrimaryBroker();
-        TimeUnit.SECONDS.sleep(3);
+        TimeUnit.SECONDS.sleep(3);  // Gives FailoverProvider some CPU time
         restartPrimaryBroker();
 
         assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
@@ -277,7 +279,13 @@ public class JmsFailoverTest extends AmqpTestSupport {
             }
         }));
 
-        assertEquals(1, brokerService.getAdminView().getQueueProducers().length);
+        assertTrue("Should have a recovered producer.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return brokerService.getAdminView().getQueueProducers().length == 1;
+            }
+        }));
 
         final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
 

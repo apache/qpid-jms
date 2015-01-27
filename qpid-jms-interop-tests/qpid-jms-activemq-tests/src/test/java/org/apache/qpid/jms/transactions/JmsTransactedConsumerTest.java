@@ -289,7 +289,7 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
     @Test(timeout=30000)
     public void testSessionTransactedCommitWithLocalPriorityReordering() throws Exception {
         connection = createAmqpConnection();
-        ((JmsConnection) connection).setMessagePrioritySupported(true);
+        ((JmsConnection) connection).setLocalMessagePriority(true);
         Session session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(getDestinationName());
 

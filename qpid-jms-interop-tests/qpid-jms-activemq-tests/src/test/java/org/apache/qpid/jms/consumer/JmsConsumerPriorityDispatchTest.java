@@ -42,7 +42,7 @@ public class JmsConsumerPriorityDispatchTest extends AmqpTestSupport {
     @Test(timeout = 60000)
     public void testPrefetchedMessageArePriorityOrdered() throws Exception {
         connection = createAmqpConnection();
-        ((JmsConnection) connection).setMessagePrioritySupported(true);
+        ((JmsConnection) connection).setLocalMessagePriority(true);
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
@@ -82,7 +82,7 @@ public class JmsConsumerPriorityDispatchTest extends AmqpTestSupport {
         // fail.
         connection = createAmqpConnection();
         assertFalse("Client side priority ordering expected to be disabled for this test",
-                   ((JmsConnection) connection).isMessagePrioritySupported());
+                   ((JmsConnection) connection).isLocalMessagePriority());
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());

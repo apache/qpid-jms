@@ -95,7 +95,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
             connection.checkConsumeFromTemporaryDestination((JmsTemporaryDestination) destination);
         }
 
-        if (connection.isMessagePrioritySupported()) {
+        if (connection.isLocalMessagePriority()) {
             this.messageQueue = new PriorityMessageQueue();
         } else {
             this.messageQueue = new FifoMessageQueue();

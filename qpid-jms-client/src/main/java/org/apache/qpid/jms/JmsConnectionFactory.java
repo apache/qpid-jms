@@ -59,7 +59,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private boolean alwaysSyncSend;
     private boolean sendAcksAsync;
     private boolean omitHost;
-    private boolean messagePrioritySupported = false;
+    private boolean localMessagePriority;
     private String queuePrefix = null;
     private String topicPrefix = null;
     private long sendTimeout = JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
@@ -394,20 +394,20 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     }
 
     /**
-     * @return the messagePrioritySupported configuration option.
+     * @return the localMessagePriority configuration option.
      */
-    public boolean isMessagePrioritySupported() {
-        return this.messagePrioritySupported;
+    public boolean isLocalMessagePriority() {
+        return this.localMessagePriority;
     }
 
     /**
      * Enables client-side message priority support in MessageConsumer instances.
      * This results in all prefetched messages being dispatched in priority order.
      *
-     * @param messagePrioritySupported the messagePrioritySupported to set
+     * @param localMessagePriority the messagePrioritySupported to set
      */
-    public void setMessagePrioritySupported(boolean messagePrioritySupported) {
-        this.messagePrioritySupported = messagePrioritySupported;
+    public void setLocalMessagePriority(boolean localMessagePriority) {
+        this.localMessagePriority = localMessagePriority;
     }
 
     /**

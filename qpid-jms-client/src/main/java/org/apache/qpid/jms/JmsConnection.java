@@ -96,7 +96,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private final Object connectLock = new Object();
     private IOException firstFailureError;
     private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
-    private boolean messagePrioritySupported;
+    private boolean localMessagePriority;
 
     private final ThreadPoolExecutor executor;
 
@@ -866,12 +866,12 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         this.prefetchPolicy = prefetchPolicy;
     }
 
-    public boolean isMessagePrioritySupported() {
-        return messagePrioritySupported;
+    public boolean isLocalMessagePriority() {
+        return localMessagePriority;
     }
 
-    public void setMessagePrioritySupported(boolean messagePrioritySupported) {
-        this.messagePrioritySupported = messagePrioritySupported;
+    public void setLocalMessagePriority(boolean localMessagePriority) {
+        this.localMessagePriority = localMessagePriority;
     }
 
     public long getCloseTimeout() {

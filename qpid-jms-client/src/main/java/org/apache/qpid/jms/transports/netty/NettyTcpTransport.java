@@ -162,6 +162,12 @@ public class NettyTcpTransport implements Transport {
     }
 
     @Override
+    public ByteBuf allocateSendBuffer(int size) throws IOException {
+        checkConnected();
+        return channel.alloc().ioBuffer(size, size);
+    }
+
+    @Override
     public void send(ByteBuf output) throws IOException {
         checkConnected();
         int length = output.readableBytes();

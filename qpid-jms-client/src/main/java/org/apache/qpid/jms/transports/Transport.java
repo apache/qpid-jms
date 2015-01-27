@@ -47,6 +47,19 @@ public interface Transport {
     void close() throws IOException;
 
     /**
+     * Request that the Transport provide an output buffer sized for the given
+     * value.
+     *
+     * @param size
+     *        the size necessary to hold the outgoing bytes.
+     *
+     * @return a new ByteBuf allocated for sends operations.
+     *
+     * @throws IOException if an error occurs while allocating the send buffer.
+     */
+    ByteBuf allocateSendBuffer(int size) throws IOException;
+
+    /**
      * Sends a chunk of data over the Transport connection.
      *
      * @param output

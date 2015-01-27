@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.failover;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.net.URI;
@@ -29,6 +30,7 @@ import javax.jms.TransactionRolledBackException;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
+import org.apache.qpid.jms.support.Wait;
 import org.junit.Test;
 
 /**
@@ -41,14 +43,118 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
         return true;
     }
 
+    /*
+     * Test that the TX doesn't start until the first send so a failover
+     * before then should allow Commit to work as expected.
+     */
     @Test
-    public void testTxProducerSendWorksButCommitFails() throws Exception {
-        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=1000");
+    public void testTxProducerSendAfterFailoverCommits() throws Exception {
+        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=100");
 
         connection = createAmqpConnection(brokerURI);
         connection.start();
 
-        final int MSG_COUNT = 20;
+        final int MSG_COUNT = 5;
+        final Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        Queue queue = session.createQueue(name.getMethodName());
+        final MessageProducer producer = session.createProducer(queue);
+        producer.setDeliveryMode(DeliveryMode.PERSISTENT);
+
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(0, proxy.getQueueSize());
+
+        stopPrimaryBroker();
+        restartPrimaryBroker();
+
+        assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
+            }
+        }));
+
+        assertTrue("Should have a recovered producer.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return brokerService.getAdminView().getQueueProducers().length == 1;
+            }
+        }));
+
+        for (int i = 0; i < MSG_COUNT; ++i) {
+            LOG.debug("Producer sening message #{}", i + 1);
+            producer.send(session.createTextMessage("Message: " + i));
+        }
+
+        proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(0, proxy.getQueueSize());
+
+        try {
+            session.commit();
+            LOG.info("Transacted commit ok after failover.");
+        } catch (TransactionRolledBackException rb) {
+            fail("Session commit should not have failed with TX rolled back.");
+        }
+
+        assertEquals(MSG_COUNT, proxy.getQueueSize());
+    }
+
+    /*
+     * Tests that even if all sends complete prior to failover the commit that follows
+     * will fail and the message are not present on the broker.
+     */
+    @Test
+    public void testTxProducerSendsThenFailoverCommitFails() throws Exception {
+        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=100");
+
+        connection = createAmqpConnection(brokerURI);
+        connection.start();
+
+        final int MSG_COUNT = 5;
+        final Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        Queue queue = session.createQueue(name.getMethodName());
+        final MessageProducer producer = session.createProducer(queue);
+        producer.setDeliveryMode(DeliveryMode.PERSISTENT);
+
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(0, proxy.getQueueSize());
+
+        for (int i = 0; i < MSG_COUNT; ++i) {
+            LOG.debug("Producer sening message #{}", i + 1);
+            producer.send(session.createTextMessage("Message: " + i));
+        }
+
+        assertEquals(0, proxy.getQueueSize());
+
+        stopPrimaryBroker();
+        restartPrimaryBroker();
+
+        proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(0, proxy.getQueueSize());
+
+        try {
+            session.commit();
+            fail("Session commit should have failed with TX rolled back.");
+        } catch (TransactionRolledBackException rb) {
+            LOG.info("Transacted commit failed after failover: {}", rb.getMessage());
+        }
+
+        assertEquals(0, proxy.getQueueSize());
+    }
+
+    /*
+     * Tests that if some sends happen and then a failover followed by additional
+     * sends the commit will fail and no messages are left on the broker.
+     */
+    @Test
+    public void testTxProducerSendWorksButCommitFails() throws Exception {
+        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=100");
+
+        connection = createAmqpConnection(brokerURI);
+        connection.start();
+
+        final int MSG_COUNT = 10;
         final Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
         Queue queue = session.createQueue(name.getMethodName());
         final MessageProducer producer = session.createProducer(queue);

@@ -33,14 +33,16 @@ import org.junit.Test;
 
 public class JmsConnectionFactoryTest extends QpidJmsTestCase {
 
+    private static String CLIENT_ID_PROP = "clientID";
+    private static String QUEUE_PREFIX_PROP = "queuePrefix";
+
     @Test
     public void testSetProperties() throws Exception {
         String clientID = getTestName();
         String queuePrefix = "q:";
         String jmsOptionPrefix = "jms.";
-        String clientIDprop = "clientID";
         String baseUri = "amqp://localhost:1234";
-        String uri = baseUri + "?" + jmsOptionPrefix + clientIDprop + "=" + clientID;
+        String uri = baseUri + "?" + jmsOptionPrefix + CLIENT_ID_PROP + "=" + clientID;
 
         // Create a connection factory object
         JmsConnectionFactory cf = new JmsConnectionFactory();
@@ -64,6 +66,32 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         assertEquals("direct property not applied as expected", queuePrefix, cf.getQueuePrefix());
         // Verify the URI was filtered to remove the applied options
         assertEquals("URI was filtered to remove options that were applied", baseUri, cf.getBrokerURI());
+    }
+
+    @Test
+    public void testGetProperties() throws Exception {
+        String clientID = getTestName();
+        String queuePrefix = "q:";
+        String jmsOptionPrefix = "jms.";
+        String clientIDprop = "clientID";
+        String baseUri = "amqp://localhost:1234";
+        String uri = baseUri + "?" + jmsOptionPrefix + clientIDprop + "=" + clientID;
+
+        JmsConnectionFactory cf = new JmsConnectionFactory();
+
+        // Set the URI property, itself containing a property option in its query
+        cf.setBrokerURI(uri);
+        // Set another property directly
+        cf.setQueuePrefix(queuePrefix);
+
+        // Get the properties
+        Map<String, String> props = cf.getProperties();
+
+        // Verify the clientID property option from the URI was applied.
+        assertTrue(CLIENT_ID_PROP + " property not found", props.containsKey(CLIENT_ID_PROP));
+        assertEquals("clientID uri property query option not applied as expected", clientID, props.get(CLIENT_ID_PROP));
+        assertTrue(QUEUE_PREFIX_PROP + " property not found", props.containsKey(QUEUE_PREFIX_PROP));
+        assertEquals("queue prefix property not applied as expected", queuePrefix, props.get(QUEUE_PREFIX_PROP));
     }
 
     @Test

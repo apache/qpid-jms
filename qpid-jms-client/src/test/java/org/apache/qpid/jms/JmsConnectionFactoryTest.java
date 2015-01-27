@@ -18,17 +18,53 @@ package org.apache.qpid.jms;
 
 import static org.apache.qpid.jms.SerializationTestSupport.roundTripSerialize;
 import static org.apache.qpid.jms.SerializationTestSupport.serialize;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.junit.Test;
 
-public class JmsConnectionFactoryTest {
+public class JmsConnectionFactoryTest extends QpidJmsTestCase {
+
+    @Test
+    public void testSetProperties() throws Exception {
+        String clientID = getTestName();
+        String queuePrefix = "q:";
+        String jmsOptionPrefix = "jms.";
+        String clientIDprop = "clientID";
+        String baseUri = "amqp://localhost:1234";
+        String uri = baseUri + "?" + jmsOptionPrefix + clientIDprop + "=" + clientID;
+
+        // Create a connection factory object
+        JmsConnectionFactory cf = new JmsConnectionFactory();
+
+        // Verify the outcome conditions have not been met already
+        assertNotEquals("value should not match yet", clientID, cf.getClientID());
+        assertNotEquals("value should not match yet", queuePrefix, cf.getQueuePrefix());
+        assertNotEquals("value should not match yet", baseUri, cf.getBrokerURI());
+
+        // Set the properties
+        Map<String, String> props = new HashMap<String, String>();
+        // Add the URI property, itself containing a property option in its query
+        props.put("brokerURI", uri);
+        // Add another property directly
+        props.put("queuePrefix", queuePrefix);
+        cf.setProperties(props);
+
+        // Verify the clientID property option from the URI was applied.
+        assertEquals("uri property query option not applied as expected", clientID, cf.getClientID());
+        // Verify the direct property was applied
+        assertEquals("direct property not applied as expected", queuePrefix, cf.getQueuePrefix());
+        // Verify the URI was filtered to remove the applied options
+        assertEquals("URI was filtered to remove options that were applied", baseUri, cf.getBrokerURI());
+    }
 
     @Test
     public void testSerializeThenDeserialize() throws Exception {
@@ -47,6 +83,11 @@ public class JmsConnectionFactoryTest {
         assertEquals("Properties were not equal", props, props2);
     }
 
+    /**
+     * The prefetch policy is maintained in a child-object, which we extract the properties from
+     * when serializing the factory. Ensure this functions by doing a round trip on a factory
+     * configured with some new prefetch configuration via the URI.
+     */
     @Test
     public void testSerializeThenDeserializeMaintainsPrefetchPolicy() throws Exception {
         String topicPrefetchValue = "17";

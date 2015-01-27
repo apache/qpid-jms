@@ -23,6 +23,7 @@ import static org.junit.Assert.fail;
 import java.net.URI;
 
 import javax.jms.DeliveryMode;
+import javax.jms.JMSException;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
@@ -138,6 +139,45 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
             fail("Session commit should have failed with TX rolled back.");
         } catch (TransactionRolledBackException rb) {
             LOG.info("Transacted commit failed after failover: {}", rb.getMessage());
+        }
+
+        assertEquals(0, proxy.getQueueSize());
+    }
+
+    @Test
+    public void testTxProducerRollbackAfterFailoverGetsNoErrors() throws Exception {
+        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=100");
+
+        connection = createAmqpConnection(brokerURI);
+        connection.start();
+
+        final int MSG_COUNT = 5;
+        final Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        Queue queue = session.createQueue(name.getMethodName());
+        final MessageProducer producer = session.createProducer(queue);
+        producer.setDeliveryMode(DeliveryMode.PERSISTENT);
+
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(0, proxy.getQueueSize());
+
+        for (int i = 0; i < MSG_COUNT; ++i) {
+            LOG.debug("Producer sening message #{}", i + 1);
+            producer.send(session.createTextMessage("Message: " + i));
+        }
+
+        assertEquals(0, proxy.getQueueSize());
+
+        stopPrimaryBroker();
+        restartPrimaryBroker();
+
+        proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(0, proxy.getQueueSize());
+
+        try {
+            session.rollback();
+            LOG.info("Transacted rollback after failover ok");
+        } catch (JMSException ex) {
+            fail("Session rollback should not have failed.");
         }
 
         assertEquals(0, proxy.getQueueSize());

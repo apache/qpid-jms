@@ -117,6 +117,15 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
 
     @Override
     public void rollback() throws JMSException {
+
+        if (isFailed()) {
+            LOG.debug("Rollback of already failed TX: {} syncCount: {}", transactionId,
+                      (synchronizations != null ? synchronizations.size() : 0));
+
+            failed = false;
+            transactionId = null;
+        }
+
         if (isInTransaction()) {
             LOG.debug("Rollback: {} syncCount: {}", transactionId,
                       (synchronizations != null ? synchronizations.size() : 0));
@@ -136,6 +145,8 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     @Override
     public void commit() throws JMSException {
         if (isFailed()) {
+            failed = false;
+            transactionId = null;
             throw new TransactionRolledBackException("Transaction failed and must be rolled back.");
         }
 

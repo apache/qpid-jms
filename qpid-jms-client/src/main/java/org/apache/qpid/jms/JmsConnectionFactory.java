@@ -567,6 +567,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      * Gets the currently configured JMS ExceptionListener that will be set on all
      * new Connection objects created from this factory.
      *
+     * NOTE: the listener object is not saved when serializing the factory.
+     *
      * @return the currently configured JMS ExceptionListener.
      */
     public ExceptionListener getExceptionListener() {
@@ -578,7 +580,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      * created from this factory.
      *
      * @param exceptionListener
-     *        the JMS ExceptionListenenr to apply to new Connection's or null to clear.
+     *        the JMS ExceptionListener to apply to new Connection's or null to clear.
      */
     public void setExceptionListener(ExceptionListener exceptionListener) {
         this.exceptionListener = exceptionListener;

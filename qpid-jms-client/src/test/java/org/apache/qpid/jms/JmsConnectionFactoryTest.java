@@ -20,6 +20,7 @@ import static org.apache.qpid.jms.SerializationTestSupport.roundTripSerialize;
 import static org.apache.qpid.jms.SerializationTestSupport.serialize;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -28,7 +29,9 @@ import static org.junit.Assert.fail;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
+import javax.jms.JMSException;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.junit.Test;
@@ -180,5 +183,35 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         } catch (AssertionError ae) {
             // Expected, pass
         }
+    }
+
+    /**
+     * Verify that the 'global' exception listener set on the connection factory
+     * is ignored when the factory gets serialized.
+     */
+    @Test
+    public void testSerializeThenDeserializeIgnoresGlobalExceptionListener() throws Exception {
+        String uri = "amqp://localhost:1234";
+
+        JmsConnectionFactory cf = new JmsConnectionFactory(uri);
+        cf.setExceptionListener(new ExceptionListener() {
+            @Override
+            public void onException(JMSException exception) {
+                // Nothing
+            }
+        });
+
+        Map<String, String> props = cf.getProperties();
+
+        Object roundTripped = roundTripSerialize(cf);
+
+        assertNotNull("Null object returned", roundTripped);
+        assertEquals("Unexpected type", JmsConnectionFactory.class, roundTripped.getClass());
+        assertEquals("Unexpected uri", uri, ((JmsConnectionFactory)roundTripped).getRemoteURI());
+
+        Map<String, String> props2 = ((JmsConnectionFactory)roundTripped).getProperties();
+
+        assertFalse("Properties map should not contain ExceptionListener", props.containsKey("exceptionListener"));
+        assertEquals("Properties were not equal", props, props2);
     }
 }

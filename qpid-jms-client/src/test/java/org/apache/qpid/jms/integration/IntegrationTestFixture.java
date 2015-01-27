@@ -59,12 +59,12 @@ public class IntegrationTestFixture {
         testPeer.expectBegin(true);
 
         final String baseURI = "amqp://localhost:" + testPeer.getServerPort();
-        String brokerURI = baseURI;
+        String remoteURI = baseURI;
         if (optionsString != null) {
-            brokerURI = baseURI + optionsString;
+            remoteURI = baseURI + optionsString;
         }
 
-        ConnectionFactory factory = new JmsConnectionFactory(brokerURI);
+        ConnectionFactory factory = new JmsConnectionFactory(remoteURI);
         Connection connection = factory.createConnection("guest", "guest");
 
         if(setClientId) {

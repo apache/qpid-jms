@@ -50,12 +50,12 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         // Verify the outcome conditions have not been met already
         assertNotEquals("value should not match yet", clientID, cf.getClientID());
         assertNotEquals("value should not match yet", queuePrefix, cf.getQueuePrefix());
-        assertNotEquals("value should not match yet", baseUri, cf.getBrokerURI());
+        assertNotEquals("value should not match yet", baseUri, cf.getRemoteURI());
 
         // Set the properties
         Map<String, String> props = new HashMap<String, String>();
         // Add the URI property, itself containing a property option in its query
-        props.put("brokerURI", uri);
+        props.put("remoteURI", uri);
         // Add another property directly
         props.put("queuePrefix", queuePrefix);
         cf.setProperties(props);
@@ -65,7 +65,7 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         // Verify the direct property was applied
         assertEquals("direct property not applied as expected", queuePrefix, cf.getQueuePrefix());
         // Verify the URI was filtered to remove the applied options
-        assertEquals("URI was filtered to remove options that were applied", baseUri, cf.getBrokerURI());
+        assertEquals("URI was filtered to remove options that were applied", baseUri, cf.getRemoteURI());
     }
 
     @Test
@@ -80,7 +80,7 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JmsConnectionFactory cf = new JmsConnectionFactory();
 
         // Set the URI property, itself containing a property option in its query
-        cf.setBrokerURI(uri);
+        cf.setRemoteURI(uri);
         // Set another property directly
         cf.setQueuePrefix(queuePrefix);
 
@@ -105,7 +105,7 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
 
         assertNotNull("Null object returned", roundTripped);
         assertEquals("Unexpected type", JmsConnectionFactory.class, roundTripped.getClass());
-        assertEquals("Unexpected uri", uri, ((JmsConnectionFactory)roundTripped).getBrokerURI());
+        assertEquals("Unexpected uri", uri, ((JmsConnectionFactory)roundTripped).getRemoteURI());
 
         Map<String, String> props2 = ((JmsConnectionFactory)roundTripped).getProperties();
         assertEquals("Properties were not equal", props, props2);

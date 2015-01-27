@@ -100,7 +100,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     private final ThreadPoolExecutor executor;
 
-    private URI brokerURI;
+    private URI remoteURI;
     private Provider provider;
     private final Set<JmsConnectionListener> connectionListeners =
         new CopyOnWriteArraySet<JmsConnectionListener>();
@@ -906,12 +906,12 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         connectionInfo.setRequestTimeout(requestTimeout);
     }
 
-    public URI getBrokerURI() {
-        return brokerURI;
+    public URI getRemoteURI() {
+        return remoteURI;
     }
 
-    public void setBrokerURI(URI brokerURI) {
-        this.brokerURI = brokerURI;
+    public void setRemoteURI(URI remoteURI) {
+        this.remoteURI = remoteURI;
     }
 
     public String getUsername() {

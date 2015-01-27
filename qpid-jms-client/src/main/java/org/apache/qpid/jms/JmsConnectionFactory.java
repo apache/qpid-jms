@@ -48,9 +48,9 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsConnectionFactory.class);
     private static final String CLIENT_ID_PROP = "clientID";
-    private static final String BROKER_URI_PROP = "brokerURI";
+    private static final String REMOTE_URI_PROP = "remoteURI";
 
-    private URI brokerURI;
+    private URI remoteURI;
     private String username;
     private String password;
     private String clientID;
@@ -81,24 +81,24 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         setPassword(password);
     }
 
-    public JmsConnectionFactory(String brokerURI) {
-        this(createURI(brokerURI));
+    public JmsConnectionFactory(String remoteURI) {
+        this(createURI(remoteURI));
     }
 
-    public JmsConnectionFactory(URI brokerURI) {
-        setBrokerURI(brokerURI.toString());
+    public JmsConnectionFactory(URI remoteURI) {
+        setRemoteURI(remoteURI.toString());
     }
 
-    public JmsConnectionFactory(String userName, String password, URI brokerURI) {
+    public JmsConnectionFactory(String userName, String password, URI remoteURI) {
         setUsername(userName);
         setPassword(password);
-        setBrokerURI(brokerURI.toString());
+        setRemoteURI(remoteURI.toString());
     }
 
-    public JmsConnectionFactory(String userName, String password, String brokerURI) {
+    public JmsConnectionFactory(String userName, String password, String remoteURI) {
         setUsername(userName);
         setPassword(password);
-        setBrokerURI(brokerURI);
+        setRemoteURI(remoteURI);
     }
 
     /**
@@ -106,12 +106,12 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     @Override
     protected void buildFromProperties(Map<String, String> map) {
-        // Apply the broker URI in a consistent order before
+        // Apply the remoteURI in a consistent order before
         // any other properties, since as it may contain
         // some options within it.
-        String brokerURI = map.remove(BROKER_URI_PROP);
-        if (brokerURI != null) {
-            setBrokerURI(brokerURI);
+        String remoteURI = map.remove(REMOTE_URI_PROP);
+        if (remoteURI != null) {
+            setRemoteURI(remoteURI);
         }
 
         PropertyUtil.setProperties(this, map);
@@ -152,7 +152,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     public TopicConnection createTopicConnection(String username, String password) throws JMSException {
         try {
             String connectionId = getConnectionIdGenerator().generateId();
-            Provider provider = createProvider(brokerURI);
+            Provider provider = createProvider(remoteURI);
             JmsTopicConnection result = new JmsTopicConnection(connectionId, provider, getClientIdGenerator());
             return configureConnection(result, username, password);
         } catch (Exception e) {
@@ -181,7 +181,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     public Connection createConnection(String username, String password) throws JMSException {
         try {
             String connectionId = getConnectionIdGenerator().generateId();
-            Provider provider = createProvider(brokerURI);
+            Provider provider = createProvider(remoteURI);
             JmsConnection result = new JmsConnection(connectionId, provider, getClientIdGenerator());
             return configureConnection(result, username, password);
         } catch (Exception e) {
@@ -211,7 +211,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     public QueueConnection createQueueConnection(String username, String password) throws JMSException {
         try {
             String connectionId = getConnectionIdGenerator().generateId();
-            Provider provider = createProvider(brokerURI);
+            Provider provider = createProvider(remoteURI);
             JmsQueueConnection result = new JmsQueueConnection(connectionId, provider, getClientIdGenerator());
             return configureConnection(result, username, password);
         } catch (Exception e) {
@@ -235,7 +235,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             connection.setExceptionListener(exceptionListener);
             connection.setUsername(username);
             connection.setPassword(password);
-            connection.setBrokerURI(brokerURI);
+            connection.setRemoteURI(remoteURI);
             if(setClientID){
                 connection.setClientID(clientID);
             }
@@ -246,14 +246,14 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         }
     }
 
-    protected Provider createProvider(URI brokerURI) throws Exception {
+    protected Provider createProvider(URI remoteURI) throws Exception {
         Provider result = null;
 
         try {
-            result = ProviderFactory.create(brokerURI);
+            result = ProviderFactory.create(remoteURI);
             result.connect();
         } catch (Exception ex) {
-            LOG.error("Failed to create JMS Provider instance for: {}", brokerURI.getScheme());
+            LOG.error("Failed to create JMS Provider instance for: {}", remoteURI.getScheme());
             LOG.trace("Error: ", ex);
             throw ex;
         }
@@ -266,7 +266,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             try {
                 return new URI(name);
             } catch (URISyntaxException e) {
-                throw (IllegalArgumentException) new IllegalArgumentException("Invalid broker URI: " + name).initCause(e);
+                throw (IllegalArgumentException) new IllegalArgumentException("Invalid remote URI: " + name).initCause(e);
             }
         }
         return null;
@@ -292,25 +292,25 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     //////////////////////////////////////////////////////////////////////////
 
     /**
-     * @return the brokerURI
+     * @return the remoteURI
      */
-    public String getBrokerURI() {
-        return this.brokerURI != null ? this.brokerURI.toString() : "";
+    public String getRemoteURI() {
+        return this.remoteURI != null ? this.remoteURI.toString() : "";
     }
 
     /**
-     * @param brokerURI
-     *        the brokerURI to set
+     * @param remoteURI
+     *        the remoteURI to set
      */
-    public void setBrokerURI(String brokerURI) {
-        if (brokerURI == null) {
-            throw new IllegalArgumentException("brokerURI cannot be null");
+    public void setRemoteURI(String remoteURI) {
+        if (remoteURI == null) {
+            throw new IllegalArgumentException("remoteURI cannot be null");
         }
-        this.brokerURI = createURI(brokerURI);
+        this.remoteURI = createURI(remoteURI);
 
         try {
-            if (this.brokerURI.getQuery() != null) {
-                Map<String, String> map = PropertyUtil.parseQuery(this.brokerURI.getQuery());
+            if (this.remoteURI.getQuery() != null) {
+                Map<String, String> map = PropertyUtil.parseQuery(this.remoteURI.getQuery());
                 Map<String, String> jmsOptionsMap = PropertyUtil.filterProperties(map, "jms.");
 
                 if (!PropertyUtil.setProperties(this, jmsOptionsMap)) {
@@ -321,10 +321,10 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
                         + " This connection factory cannot be started.";
                     throw new IllegalArgumentException(msg);
                 } else {
-                    this.brokerURI = PropertyUtil.replaceQuery(this.brokerURI, map);
+                    this.remoteURI = PropertyUtil.replaceQuery(this.remoteURI, map);
                 }
-            } else if (URISupport.isCompositeURI(this.brokerURI)) {
-                CompositeData data = URISupport.parseComposite(this.brokerURI);
+            } else if (URISupport.isCompositeURI(this.remoteURI)) {
+                CompositeData data = URISupport.parseComposite(this.remoteURI);
                 Map<String, String> jmsOptionsMap = PropertyUtil.filterProperties(data.getParameters(), "jms.");
                 if (!PropertyUtil.setProperties(this, jmsOptionsMap)) {
                     String msg = ""
@@ -334,7 +334,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
                         + " This connection factory cannot be started.";
                     throw new IllegalArgumentException(msg);
                 } else {
-                    this.brokerURI = data.toURI();
+                    this.remoteURI = data.toURI();
                 }
             }
         } catch (Exception e) {

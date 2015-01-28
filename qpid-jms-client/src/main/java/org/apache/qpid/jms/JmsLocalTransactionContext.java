@@ -54,6 +54,8 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     public void send(JmsConnection connection, JmsOutboundMessageDispatch envelope) throws JMSException {
         // TODO - Optional throw an exception here to give early warning that
         //        the transaction is in a failed state and must be rolled back.
+
+        //TODO: Is it worth holding the producer here (or earlier) while recovery is known to be in progress?
         if (!isFailed()) {
             begin();
             connection.send(envelope);
@@ -66,6 +68,13 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
         //        extended and new message arrive until commit or rollback is called.
         //        A quiet consumer could be misleading and prevent the code from doing
         //        its normal batched receive / commit.
+        //
+        //        Reply: I think at least we would want a way to replenish the credit,
+        //        even if we didn't call the ack method (avoiding using the provider or
+        //        pumping the proton transport), especially if it was a low-prefetch
+        //        consumer to begin with. I think we always 'consumed ack' transacted
+        //        messages currently, never 'delivered ack' since we don't need to do
+        //        session recover for them.
         if (!isFailed()) {
             // Consumed or delivered messages fall into a transaction so we must check
             // that there is an active one and start one if not.
@@ -87,6 +96,9 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
 
     @Override
     public void markAsFailed() {
+        //TODO: do we need to adjust this (or perhaps when we start the transaction?)
+        //      to handle an ack for a stale message delivery via onMessage starting
+        //      a transaction after this method was originally called?
         if (isInTransaction()) {
             failed = true;
         }
@@ -147,7 +159,8 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
         if (isFailed()) {
             failed = false;
             transactionId = null;
-            throw new TransactionRolledBackException("Transaction failed and must be rolled back.");
+            //TODO: we need to actually roll back if we have let any acks etc occur after the recovery.
+            throw new TransactionRolledBackException("Transaction failed and has been rolled back.");
         }
 
         if (isInTransaction()) {

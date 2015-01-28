@@ -21,6 +21,7 @@ import javax.jms.JMSException;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsTransactionId;
+import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 
 /**
@@ -41,10 +42,6 @@ public class JmsNoTxTransactionContext implements JmsTransactionContext {
 
     @Override
     public void addSynchronization(JmsTxSynchronization sync) {
-    }
-
-    @Override
-    public void markAsFailed() {
     }
 
     @Override
@@ -83,5 +80,13 @@ public class JmsNoTxTransactionContext implements JmsTransactionContext {
     @Override
     public boolean isInTransaction() {
         return false;
+    }
+
+    @Override
+    public void onConnectionInterrupted() {
+    }
+
+    @Override
+    public void onConnectionRecovery(Provider provider) throws Exception {
     }
 }

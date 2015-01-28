@@ -27,7 +27,9 @@ import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.meta.JmsTransactionInfo;
+import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.ProviderFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,10 +54,6 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
 
     @Override
     public void send(JmsConnection connection, JmsOutboundMessageDispatch envelope) throws JMSException {
-        // TODO - Optional throw an exception here to give early warning that
-        //        the transaction is in a failed state and must be rolled back.
-
-        //TODO: Is it worth holding the producer here (or earlier) while recovery is known to be in progress?
         if (!isFailed()) {
             begin();
             connection.send(envelope);
@@ -64,26 +62,13 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
 
     @Override
     public void acknowledge(JmsConnection connection, JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws JMSException {
-        // TODO - Should we ACK as delivered if failed just to ensure that prefetch is
-        //        extended and new message arrive until commit or rollback is called.
-        //        A quiet consumer could be misleading and prevent the code from doing
-        //        its normal batched receive / commit.
-        //
-        //        Reply: I think at least we would want a way to replenish the credit,
-        //        even if we didn't call the ack method (avoiding using the provider or
-        //        pumping the proton transport), especially if it was a low-prefetch
-        //        consumer to begin with. I think we always 'consumed ack' transacted
-        //        messages currently, never 'delivered ack' since we don't need to do
-        //        session recover for them.
-        if (!isFailed()) {
-            // Consumed or delivered messages fall into a transaction so we must check
-            // that there is an active one and start one if not.
-            if (ackType == ACK_TYPE.CONSUMED || ackType == ACK_TYPE.DELIVERED) {
-                begin();
-            }
-
-            connection.acknowledge(envelope, ackType);
+        // Consumed or delivered messages fall into a transaction so we must check
+        // that there is an active one and start one if not.
+        if (ackType == ACK_TYPE.CONSUMED || ackType == ACK_TYPE.DELIVERED) {
+            begin();
         }
+
+        connection.acknowledge(envelope, ackType);
     }
 
     @Override
@@ -92,16 +77,6 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
             synchronizations = new ArrayList<JmsTxSynchronization>(10);
         }
         synchronizations.add(s);
-    }
-
-    @Override
-    public void markAsFailed() {
-        //TODO: do we need to adjust this (or perhaps when we start the transaction?)
-        //      to handle an ack for a stale message delivery via onMessage starting
-        //      a transaction after this method was originally called?
-        if (isInTransaction()) {
-            failed = true;
-        }
     }
 
     @Override
@@ -159,7 +134,10 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
         if (isFailed()) {
             failed = false;
             transactionId = null;
-            //TODO: we need to actually roll back if we have let any acks etc occur after the recovery.
+            try {
+                rollback();
+            } catch (Exception e) {
+            }
             throw new TransactionRolledBackException("Transaction failed and has been rolled back.");
         }
 
@@ -184,6 +162,22 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                 throw cause;
             }
         }
+    }
+
+    @Override
+    public void onConnectionInterrupted() {
+        if (isInTransaction()) {
+            failed = true;
+        }
+    }
+
+    @Override
+    public void onConnectionRecovery(Provider provider) throws Exception {
+        transactionId = connection.getNextTransactionId();
+        JmsTransactionInfo transaction = new JmsTransactionInfo(session.getSessionId(), transactionId);
+        ProviderFuture request = new ProviderFuture();
+        provider.create(transaction, request);
+        request.sync();
     }
 
     @Override

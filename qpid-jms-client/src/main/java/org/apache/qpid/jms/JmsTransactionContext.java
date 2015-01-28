@@ -21,6 +21,7 @@ import javax.jms.JMSException;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsTransactionId;
+import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 
 /**
@@ -68,13 +69,6 @@ public interface JmsTransactionContext {
      *        the transaction synchronization to add.
      */
     void addSynchronization(JmsTxSynchronization sync);
-
-    /**
-     * Marks an currently active Transaction as being failed, usually due to a
-     * connection failure.  Once failed all the transaction must be rolled back
-     * before new work can be done.
-     */
-    void markAsFailed();
 
     /**
      * @returns if the currently transaction has been marked as being failed.
@@ -133,5 +127,14 @@ public interface JmsTransactionContext {
      * @return true if there is a transaction in progress even if the current is failed.
      */
     boolean isInTransaction();
+
+    void onConnectionInterrupted();
+
+    /**
+     * Called when the connection to the remote peer has been lost and then a new
+     * connection established.  The context should perform any necessary processing
+     * recover and reset its internal state.
+     */
+    void onConnectionRecovery(Provider provider) throws Exception;
 
 }

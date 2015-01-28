@@ -920,11 +920,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     protected void onConnectionInterrupted() {
 
-        if (this.acknowledgementMode == SESSION_TRANSACTED) {
-            if (transactionContext.isInTransaction()) {
-                transactionContext.markAsFailed();
-            }
-        }
+        transactionContext.onConnectionInterrupted();
 
         for (JmsMessageProducer producer : producers) {
             producer.onConnectionInterrupted();
@@ -940,6 +936,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         ProviderFuture request = new ProviderFuture();
         provider.create(sessionInfo, request);
         request.sync();
+
+        transactionContext.onConnectionRecovery(provider);
 
         for (JmsMessageProducer producer : producers) {
             producer.onConnectionRecovery(provider);

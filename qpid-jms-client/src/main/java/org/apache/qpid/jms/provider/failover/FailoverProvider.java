@@ -814,7 +814,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     requests.remove(id);
                     getWrappedRequest().onFailure(e);
                 } catch (JMSException jmsEx) {
-                    onFailure(jmsEx);
+                    getWrappedRequest().onFailure(e);
                 } catch (Throwable e) {
                     LOG.debug("Caught exception while executing task: {}", e.getMessage());
                     triggerReconnectionAttempt();

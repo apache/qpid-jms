@@ -813,8 +813,9 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 } catch (UnsupportedOperationException e) {
                     requests.remove(id);
                     getWrappedRequest().onFailure(e);
-                } catch (Exception e) {
-                    // TODO Should we let JMSException through?
+                } catch (JMSException jmsEx) {
+                    onFailure(jmsEx);
+                } catch (Throwable e) {
                     LOG.debug("Caught exception while executing task: {}", e.getMessage());
                     triggerReconnectionAttempt();
                 }

@@ -163,7 +163,7 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
 
     public void commit(AsyncResult request) throws Exception {
         if (current == null) {
-            throw new IllegalStateException("Rollback called with no active Transaction.");
+            throw new IllegalStateException("Commit called with no active Transaction.");
         }
 
         preCommit();

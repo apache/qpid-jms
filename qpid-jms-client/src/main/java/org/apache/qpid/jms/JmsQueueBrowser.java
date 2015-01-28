@@ -140,8 +140,6 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
                     next = consumer.receiveNoWait();
                 } catch (JMSException e) {
                     LOG.warn("Error while receive the next message: {}", e.getMessage());
-                    // TODO - Add client internal error listener.
-                    // this.session.connection.onClientInternalException(e);
                 }
 
                 if (next != null) {

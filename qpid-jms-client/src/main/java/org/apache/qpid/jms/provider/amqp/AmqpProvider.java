@@ -371,17 +371,12 @@ public class AmqpProvider implements Provider, TransportListener {
 
     @Override
     public void destroy(final JmsResource resource, final AsyncResult request) throws IOException {
-        //TODO: improve or delete this logging
-        LOG.debug("Destroy called");
-
         checkClosed();
         serializer.execute(new Runnable() {
 
             @Override
             public void run() {
                 try {
-                    //TODO: improve or delete this logging
-                    LOG.debug("Processing resource destroy request");
                     checkClosed();
                     resource.visit(new JmsDefaultResourceVisitor() {
 
@@ -412,7 +407,8 @@ public class AmqpProvider implements Provider, TransportListener {
 
                         @Override
                         public void processDestination(JmsTemporaryDestination destination) throws Exception {
-                            // TODO - Delete remote temporary Topic or Queue
+                            // No current way to request a destination gets deleted, would need
+                            // some management mechanism to invoke this sort of operation.
                             request.onSuccess();
                         }
                     });

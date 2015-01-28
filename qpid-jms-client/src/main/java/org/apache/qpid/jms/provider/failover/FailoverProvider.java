@@ -238,7 +238,6 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         serializer.execute(pending);
     }
 
-    // TODO: decide if this handling is sufficient
     @Override
     public void stop(final JmsResource resource, final AsyncResult request) throws IOException, JMSException {
         checkClosed();

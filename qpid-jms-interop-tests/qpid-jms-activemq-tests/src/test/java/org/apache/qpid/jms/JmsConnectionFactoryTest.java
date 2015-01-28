@@ -99,13 +99,13 @@ public class JmsConnectionFactoryTest extends AmqpTestSupport {
 
     @Test(timeout=60000)
     public void testUriOptionsApplied() throws Exception {
-        String uri = getGoodProviderAddress() + "?jms.omitHost=true&jms.forceAsyncSend=true";
+        String uri = getGoodProviderAddress() + "?jms.localMessagePriority=true&jms.forceAsyncSend=true";
         JmsConnectionFactory factory = new JmsConnectionFactory(uri);
-        assertTrue(factory.isOmitHost());
+        assertTrue(factory.isLocalMessagePriority());
         assertTrue(factory.isForceAsyncSend());
         JmsConnection connection = (JmsConnection) factory.createConnection();
         assertNotNull(connection);
-        assertTrue(connection.isOmitHost());
+        assertTrue(connection.isLocalMessagePriority());
         assertTrue(connection.isForceAsyncSend());
         connection.close();
     }

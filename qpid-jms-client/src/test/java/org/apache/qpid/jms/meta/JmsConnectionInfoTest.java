@@ -65,7 +65,6 @@ public class JmsConnectionInfoTest {
         info.setCloseTimeout(100);
         info.setConnectTimeout(200);
         info.setForceAsyncSends(true);
-        info.setOmitHost(true);
         info.setPassword("pass");
         info.setQueuePrefix("queue");
         info.setRequestTimeout(50);
@@ -80,7 +79,6 @@ public class JmsConnectionInfoTest {
         assertEquals(100, copy.getCloseTimeout());
         assertEquals(200, copy.getConnectTimeout());
         assertEquals(true, copy.isForceAsyncSend());
-        assertEquals(true, copy.isOmitHost());
         assertEquals("pass", copy.getPassword());
         assertEquals("queue", copy.getQueuePrefix());
         assertEquals(50, copy.getRequestTimeout());

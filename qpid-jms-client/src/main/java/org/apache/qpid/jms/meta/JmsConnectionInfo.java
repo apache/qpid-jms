@@ -36,7 +36,6 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private String password;
     private boolean forceAsyncSend;
     private boolean alwaysSyncSend;
-    private boolean omitHost;
     public long sendTimeout = DEFAULT_SEND_TIMEOUT;
     public long requestTimeout = DEFAULT_REQUEST_TIMEOUT;
     public long connectTimeout = DEFAULT_CONNECT_TIMEOUT;
@@ -64,7 +63,6 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         copy.password = password;
         copy.forceAsyncSend = forceAsyncSend;
         copy.alwaysSyncSend = alwaysSyncSend;
-        copy.omitHost = omitHost;
         copy.sendTimeout = sendTimeout;
         copy.requestTimeout = requestTimeout;
         copy.closeTimeout = closeTimeout;
@@ -115,14 +113,6 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public boolean isOmitHost() {
-        return omitHost;
-    }
-
-    public void setOmitHost(boolean omitHost) {
-        this.omitHost = omitHost;
     }
 
     public String getQueuePrefix() {

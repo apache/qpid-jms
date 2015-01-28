@@ -58,7 +58,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private boolean forceAsyncSend;
     private boolean alwaysSyncSend;
     private boolean sendAcksAsync;
-    private boolean omitHost;
     private boolean localMessagePriority;
     private String queuePrefix = null;
     private String topicPrefix = null;
@@ -383,14 +382,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     public void setForceAsyncSend(boolean forceAsyncSend) {
         this.forceAsyncSend = forceAsyncSend;
-    }
-
-    public boolean isOmitHost() {
-        return omitHost;
-    }
-
-    public void setOmitHost(boolean omitHost) {
-        this.omitHost = omitHost;
     }
 
     /**

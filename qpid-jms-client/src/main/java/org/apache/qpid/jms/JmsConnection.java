@@ -854,14 +854,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         connectionInfo.setQueuePrefix(queuePrefix);
     }
 
-    public boolean isOmitHost() {
-        return connectionInfo.isOmitHost();
-    }
-
-    public void setOmitHost(boolean omitHost) {
-        connectionInfo.setOmitHost(omitHost);
-    }
-
     public JmsPrefetchPolicy getPrefetchPolicy() {
         return prefetchPolicy;
     }

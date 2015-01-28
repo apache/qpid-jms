@@ -18,6 +18,8 @@ package org.apache.qpid.jms.transports.netty;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import io.netty.buffer.ByteBuf;
@@ -55,6 +57,104 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
     protected final TransportListener testListener = new NettyTransportListener();
 
     @Test(timeout = 60 * 1000)
+    public void testCloseOnNeverConnectedTransport() throws Exception {
+        URI serverLocation = new URI("tcp://localhost:5762");
+
+        Transport transport = createTransport(serverLocation, testListener, createClientOptions());
+        assertFalse(transport.isConnected());
+
+        transport.close();
+
+        assertTrue(!transportClosed);
+        assertTrue(exceptions.isEmpty());
+        assertTrue(data.isEmpty());
+    }
+
+    @Test(timeout = 60 * 1000)
+    public void testCreateWithNullOptionsUsesDefaults() throws Exception {
+        URI serverLocation = new URI("tcp://localhost:5762");
+
+        Transport transport = createTransport(serverLocation, testListener, null);
+        assertEquals(TransportOptions.INSTANCE, transport.getTransportOptions());
+    }
+
+    @Test(timeout = 60 * 1000)
+    public void testConnectWithoutRunningServer() throws Exception {
+        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            server.close();
+
+            Transport transport = createTransport(serverLocation, testListener, createClientOptions());
+            try {
+                transport.connect();
+                fail("Should have failed to connect to the server");
+            } catch (Exception e) {
+                LOG.info("Connected to some server when not expected.");
+            }
+
+            assertFalse(transport.isConnected());
+
+            transport.close();
+        }
+
+        assertTrue(!transportClosed);  // Normal shutdown does not trigger the event.
+        assertTrue(exceptions.isEmpty());
+        assertTrue(data.isEmpty());
+    }
+
+    @Test(timeout = 60 * 1000)
+    public void testConnectWithoutListenerFails() throws Exception {
+        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            Transport transport = createTransport(serverLocation, null, createClientOptions());
+            try {
+                transport.connect();
+                fail("Should have failed to connect to the server");
+            } catch (Exception e) {
+                LOG.info("Connected to some server when not expected.");
+            }
+
+            assertFalse(transport.isConnected());
+
+            transport.close();
+        }
+    }
+
+    @Test(timeout = 60 * 1000)
+    public void testConnectAfterListenerSetWorks() throws Exception {
+        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            Transport transport = createTransport(serverLocation, null, createClientOptions());
+            assertNull(transport.getTransportListener());
+            transport.setTransportListener(testListener);
+            assertNotNull(transport.getTransportListener());
+
+            try {
+                transport.connect();
+                LOG.info("Connected to server as expected.");
+            } catch (Exception e) {
+                fail("Should not have failed to connect to the server");
+            }
+
+            assertTrue(transport.isConnected());
+
+            transport.close();
+        }
+    }
+
+    @Test(timeout = 60 * 1000)
     public void testConnectToServer() throws Exception {
         try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
             server.start();
@@ -71,7 +171,11 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
             }
 
             assertTrue(transport.isConnected());
+            assertEquals(serverLocation, transport.getRemoteLocation());
 
+            transport.close();
+
+            // Additional close should not fail or cause other problems.
             transport.close();
         }
 
@@ -202,6 +306,34 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 60 * 1000)
+    public void testZeroSizedSentNoErrors() throws Exception {
+        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            Transport transport = createTransport(serverLocation, testListener, createClientOptions());
+            try {
+                transport.connect();
+                LOG.info("Connected to test server.");
+            } catch (Exception e) {
+                fail("Should have connected to the server");
+            }
+
+            assertTrue(transport.isConnected());
+
+            transport.send(Unpooled.buffer(0));
+
+            transport.close();
+        }
+
+        assertTrue(!transportClosed);  // Normal shutdown does not trigger the event.
+        assertTrue(exceptions.isEmpty());
+        assertTrue(data.isEmpty());
+    }
+
+    @Test(timeout = 60 * 1000)
     public void testDataSentIsReceived() throws Exception {
         try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
             server.start();
@@ -219,7 +351,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
             assertTrue(transport.isConnected());
 
-            ByteBuf sendBuffer = Unpooled.buffer(SEND_BYTE_COUNT);
+            ByteBuf sendBuffer = transport.allocateSendBuffer(SEND_BYTE_COUNT);
             for (int i = 0; i < SEND_BYTE_COUNT; ++i) {
                 sendBuffer.writeByte('A');
             }
@@ -242,7 +374,6 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         assertTrue(!transportClosed);  // Normal shutdown does not trigger the event.
         assertTrue(exceptions.isEmpty());
     }
-
 
     @Test(timeout = 60 * 1000)
     public void testMultipleDataPacketsSentAreReceived() throws Exception {
@@ -328,7 +459,11 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
     }
 
     protected Transport createTransport(URI serverLocation, TransportListener listener, TransportOptions options) {
-        return new NettyTcpTransport(listener, serverLocation, options);
+        if (listener == null) {
+            return new NettyTcpTransport(serverLocation, options);
+        } else {
+            return new NettyTcpTransport(listener, serverLocation, options);
+        }
     }
 
     protected TransportOptions createClientOptions() {

@@ -16,6 +16,7 @@
  */
 package org.apache.qpid.jms.transports.netty;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -41,6 +42,15 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     public static final String SERVER_KEYSTORE = "src/test/resources/example-jks.keystore";
     public static final String CLIENT_TRUSTSTORE = "src/test/resources/exanple-jks.truststore";
     public static final String KEYSTORE_TYPE = "jks";
+
+    @Override
+    @Test(timeout = 60 * 1000)
+    public void testCreateWithNullOptionsUsesDefaults() throws Exception {
+        URI serverLocation = new URI("tcp://localhost:5762");
+
+        Transport transport = createTransport(serverLocation, testListener, null);
+        assertEquals(TransportSslOptions.INSTANCE, transport.getTransportOptions());
+    }
 
     @Test(timeout = 60 * 1000)
     public void testConnectToServerWithoutTrustStoreFails() throws Exception {

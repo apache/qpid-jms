@@ -89,7 +89,16 @@ public class NettySslTransport extends NettyTcpTransport {
         });
     }
 
+    @Override
+    public TransportOptions getTransportOptions() {
+        if (options == null) {
+            options = TransportSslOptions.INSTANCE;
+        }
+
+        return options;
+    }
+
     private TransportSslOptions getSslOptions() {
-        return (TransportSslOptions) options;
+        return (TransportSslOptions) getTransportOptions();
     }
 }

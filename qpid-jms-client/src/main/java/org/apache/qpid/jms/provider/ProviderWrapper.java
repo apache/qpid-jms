@@ -177,6 +177,7 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
 
     @Override
     public void onConnectionFailure(IOException ex) {
+        //TODO: should this be passing through to onConnectionFailure() instead?
         this.listener.onConnectionInterrupted(this.next.getRemoteURI());
     }
 

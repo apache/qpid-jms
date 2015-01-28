@@ -697,7 +697,7 @@ public class AmqpProvider implements Provider, TransportListener {
     /**
      * Callback method for the Transport to report that the underlying connection
      * has closed.  When called this method will queue a new task that will check for
-     * the closed state on this transport and if not closed then an exception is raied
+     * the closed state on this transport and if not closed then an exception is raised
      * to the registered ProviderListener to indicate connection loss.
      */
     @Override

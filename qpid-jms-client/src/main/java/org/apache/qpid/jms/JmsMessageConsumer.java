@@ -491,7 +491,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
 
     protected void onConnectionInterrupted() {
         messageQueue.clear();
-        //TODO: perhaps stop the queue here and clear+start it again once recovered?
     }
 
     protected void onConnectionRecovery(Provider provider) throws Exception {

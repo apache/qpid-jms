@@ -813,7 +813,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     requests.remove(id);
                     getWrappedRequest().onFailure(e);
                 } catch (JMSException jmsEx) {
-                    //TODO: should we remove the request as above?
+                    requests.remove(id);
                     getWrappedRequest().onFailure(jmsEx);
                 } catch (Throwable e) {
                     LOG.debug("Caught exception while executing task: {}", e.getMessage());

@@ -129,8 +129,7 @@ public class QpidJmsTestSupport {
 
     public URI getBrokerActiveMQClientConnectionURI() {
         try {
-            return new URI("tcp://127.0.0.1:" +
-                brokerService.getTransportConnectorByName("openwire").getPublishableConnectURI().getPort());
+            return new URI("vm://localhost");
         } catch (Exception e) {
             throw new RuntimeException();
         }
@@ -184,22 +183,9 @@ public class QpidJmsTestSupport {
             brokerService.setPlugins(plugins.toArray(array));
         }
 
-        addOpenWireConnector(brokerService, portMap);
         addAdditionalConnectors(brokerService, portMap);
 
         return brokerService;
-    }
-
-    protected int addOpenWireConnector(BrokerService brokerService, Map<String, Integer> portMap) throws Exception {
-        int port = 0;
-        if (portMap.containsKey("openwire")) {
-            port = portMap.get("openwire");
-        }
-        TransportConnector connector = brokerService.addConnector("tcp://0.0.0.0:" + port + "?trace=true");
-        connector.setName("openwire");
-        int openwirePort = connector.getPublishableConnectURI().getPort();
-        LOG.debug("Using openwire port: {}", openwirePort);
-        return openwirePort;
     }
 
     protected void addAdditionalConnectors(BrokerService brokerService, Map<String, Integer> portMap) throws Exception {

@@ -53,7 +53,6 @@ public class NettyEchoServer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(NettyEchoServer.class);
 
     static final int PORT = Integer.parseInt(System.getProperty("port", "8007"));
-    static final int TIMEOUT = 5000;
 
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
@@ -114,22 +113,9 @@ public class NettyEchoServer implements AutoCloseable {
 
             // Shut down all event loops to terminate all threads.
             LOG.info("Shutting down boss group");
-            Future<?> bossFuture = bossGroup.shutdownGracefully(10, TIMEOUT, TimeUnit.MILLISECONDS);
+            bossGroup.shutdownGracefully(10, 100, TimeUnit.MILLISECONDS);
             LOG.info("Shutting down worker group");
-            Future<?> workerFuture = workerGroup.shutdownGracefully(10, TIMEOUT, TimeUnit.MILLISECONDS);
-
-            LOG.info("Awaiting boss group shutdown");
-            boolean bossShutdown = bossFuture.await(TIMEOUT + 500);
-
-            LOG.info("Awaiting worker group shutdown");
-            boolean workerShutdown = workerFuture.await(TIMEOUT + 500);
-
-            if (!bossShutdown) {
-                throw new RuntimeException("Failed to shut down bossGroup in allotted time");
-            }
-            if (!workerShutdown) {
-                throw new RuntimeException("Failed to shut down workerGroup in allotted time");
-            }
+            workerGroup.shutdownGracefully(10, 100, TimeUnit.MILLISECONDS);
         }
     }
 

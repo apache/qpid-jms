@@ -52,7 +52,7 @@ public abstract class JmsTemporaryDestination extends JmsDestination implements 
      */
     protected void tryDelete() throws JMSException {
         if (connection != null) {
-            connection.deleteDestination(this);
+            connection.deleteTemporaryDestination(this);
         }
 
         deleted = true;

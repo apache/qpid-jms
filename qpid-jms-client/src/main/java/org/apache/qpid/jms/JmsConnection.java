@@ -551,21 +551,18 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         return topic;
     }
 
-    protected void deleteDestination(JmsTemporaryDestination destination) throws JMSException {
+    protected void deleteTemporaryDestination(JmsTemporaryDestination destination) throws JMSException {
         checkClosedOrFailed();
         connect();
 
         try {
-
             for (JmsSession session : this.sessions) {
                 if (session.isDestinationInUse(destination)) {
                     throw new IllegalStateException("A consumer is consuming from the temporary destination");
                 }
             }
 
-            if (destination.isTemporary()) {
-                tempDestinations.remove(destination);
-            }
+            tempDestinations.remove(destination);
 
             destroyResource(destination);
         } catch (Exception e) {

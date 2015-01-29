@@ -406,8 +406,12 @@ public class AmqpProvider implements Provider, TransportListener {
 
                         @Override
                         public void processDestination(JmsTemporaryDestination destination) throws Exception {
-                            // No current way to request a destination gets deleted, would need
-                            // some management mechanism to invoke this sort of operation.
+                            // AmqpTemporaryDestination td = connection.getTemporaryDestination(destination);
+                            // if(td != null) {
+                            //     td.close(request);
+                            // } else {
+                            // TODO: complete and test above. Signals deletion to peer by closing the creating link if present.
+
                             request.onSuccess();
                         }
                     });

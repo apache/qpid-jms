@@ -98,6 +98,10 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
         return temporary;
     }
 
+    public AmqpTemporaryDestination getTemporaryDestination(JmsTemporaryDestination destination) {
+        return tempDests.get(destination);
+    }
+
     public void unsubscribe(String subscriptionName, AsyncResult request) {
 
         for (AmqpSession session : sessions.values()) {

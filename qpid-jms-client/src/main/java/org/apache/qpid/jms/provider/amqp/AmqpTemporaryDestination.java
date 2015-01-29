@@ -90,6 +90,8 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsTemporaryD
 
         LOG.trace("Updated temp destination to: {} from: {}", resource, oldDestinationName);
 
+        this.connection.addTemporaryDestination(this);
+
         super.opened();
     }
 
@@ -132,8 +134,6 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsTemporaryD
         sender.setReceiverSettleMode(ReceiverSettleMode.FIRST);
 
         setEndpoint(sender);
-
-        this.connection.addTemporaryDestination(this);
 
         super.doOpen();
     }

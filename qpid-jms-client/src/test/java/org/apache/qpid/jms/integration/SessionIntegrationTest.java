@@ -76,6 +76,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class SessionIntegrationTest extends QpidJmsTestCase {
@@ -175,6 +176,28 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Ignore // Need to complete implementation and update test peer link handle behaviour
+    @Test(timeout = 5000)
+    public void testCreateAndDeleteTemporaryQueue() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin(true);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String dynamicAddress = "myTempQueueAddress";
+            testPeer.expectTempQueueCreationAttach(dynamicAddress);
+            TemporaryQueue tempQueue = session.createTemporaryQueue();
+
+            // Deleting the TemporaryQueue will be achieved by closing its creating link.
+            testPeer.expectDetach(true, true, true);
+            tempQueue.delete();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
     @Test(timeout = 5000)
     public void testCreateTemporaryTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
@@ -191,6 +214,28 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             assertNotNull("TemporaryTopic object was null", tempTopic);
             assertNotNull("TemporaryTopic name was null", tempTopic.getTopicName());
             assertEquals("TemporaryTopic name not as expected", dynamicAddress, tempTopic.getTopicName());
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Ignore // Need to complete implementation and update test peer link handle behaviour
+    @Test(timeout = 5000)
+    public void testCreateAndDeleteTemporaryTopic() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin(true);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String dynamicAddress = "myTempTopicAddress";
+            testPeer.expectTempTopicCreationAttach(dynamicAddress);
+            TemporaryTopic tempTopic = session.createTemporaryTopic();
+
+            // Deleting the TemporaryTopic will be achieved by closing its creating link.
+            testPeer.expectDetach(true, true, true);
+            tempTopic.delete();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

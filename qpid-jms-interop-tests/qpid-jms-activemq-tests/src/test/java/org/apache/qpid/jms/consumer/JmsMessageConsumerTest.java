@@ -115,7 +115,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         sendToAmqTopic(1);
 
         final TopicViewMBean proxy = getProxyToTopic(name.getMethodName());
-        //assertEquals(1, proxy.getQueueSize());
+        assertEquals(1, proxy.getEnqueueCount());
 
         assertNotNull("Failed to receive any message.", consumer.receive(2000));
 

@@ -62,14 +62,14 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         Hashtable<Object, Object> environmentCopy = new Hashtable<Object, Object>();
         environmentCopy.putAll(environment);
 
-        Map<String, Object> data = new ConcurrentHashMap<String, Object>();
-        createConnectionFactories(environmentCopy, data);
-        createQueues(data, environmentCopy);
-        createTopics(data, environmentCopy);
+        Map<String, Object> bindings = new ConcurrentHashMap<String, Object>();
+        createConnectionFactories(environmentCopy, bindings);
+        createQueues(environmentCopy, bindings);
+        createTopics(environmentCopy, bindings);
 
         // Add sub-contexts for dynamic creation on lookup.
         // "dynamicQueues/<queue-name>"
-        data.put("dynamicQueues", new LazyCreateContext() {
+        bindings.put("dynamicQueues", new LazyCreateContext() {
             private static final long serialVersionUID = 6503881346214855588L;
 
             @Override
@@ -79,7 +79,7 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         });
 
         // "dynamicTopics/<topic-name>"
-        data.put("dynamicTopics", new LazyCreateContext() {
+        bindings.put("dynamicTopics", new LazyCreateContext() {
             private static final long serialVersionUID = 2019166796234979615L;
 
             @Override
@@ -88,10 +88,10 @@ public class JmsInitialContextFactory implements InitialContextFactory {
             }
         });
 
-        return createContext(environmentCopy, data);
+        return createContext(environmentCopy, bindings);
     }
 
-    private void createConnectionFactories(Hashtable<Object, Object> environment, Map<String, Object> data) throws NamingException {
+    private void createConnectionFactories(Hashtable<Object, Object> environment, Map<String, Object> bindings) throws NamingException {
         String[] names = getConnectionFactoryNames(environment);
         for (int i = 0; i < names.length; i++) {
             JmsConnectionFactory factory = null;
@@ -103,15 +103,15 @@ public class JmsInitialContextFactory implements InitialContextFactory {
                 throw new NamingException("Invalid broker URL");
             }
 
-            data.put(name, factory);
+            bindings.put(name, factory);
         }
     }
 
     // Implementation methods
     // -------------------------------------------------------------------------
 
-    protected ReadOnlyContext createContext(Hashtable<Object, Object> environment, Map<String, Object> data) {
-        return new ReadOnlyContext(environment, data);
+    protected ReadOnlyContext createContext(Hashtable<Object, Object> environment, Map<String, Object> bindings) {
+        return new ReadOnlyContext(environment, bindings);
     }
 
     protected JmsConnectionFactory createConnectionFactory(String name, Hashtable<Object, Object> environment) throws URISyntaxException {
@@ -147,24 +147,24 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         return DEFAULT_CONNECTION_FACTORY_NAMES;
     }
 
-    protected void createQueues(Map<String, Object> data, Hashtable<Object, Object> environment) {
+    protected void createQueues(Hashtable<Object, Object> environment, Map<String, Object> bindings) {
         for (Iterator<Entry<Object, Object>> iter = environment.entrySet().iterator(); iter.hasNext();) {
             Map.Entry<Object, Object> entry = iter.next();
             String key = entry.getKey().toString();
             if (key.startsWith(queuePrefix)) {
                 String jndiName = key.substring(queuePrefix.length());
-                data.put(jndiName, createQueue(entry.getValue().toString()));
+                bindings.put(jndiName, createQueue(entry.getValue().toString()));
             }
         }
     }
 
-    protected void createTopics(Map<String, Object> data, Hashtable<Object, Object> environment) {
+    protected void createTopics(Hashtable<Object, Object> environment, Map<String, Object> bindings) {
         for (Iterator<Entry<Object, Object>> iter = environment.entrySet().iterator(); iter.hasNext();) {
             Map.Entry<Object, Object> entry = iter.next();
             String key = entry.getKey().toString();
             if (key.startsWith(topicPrefix)) {
                 String jndiName = key.substring(topicPrefix.length());
-                data.put(jndiName, createTopic(entry.getValue().toString()));
+                bindings.put(jndiName, createTopic(entry.getValue().toString()));
             }
         }
     }

@@ -169,7 +169,7 @@ public class FactoryFinder<T extends Object> {
 
             Object factory = clazz.newInstance();
 
-            if (!PropertyUtil.setProperties(factory, properties)) {
+            if (!PropertyUtil.setProperties(factory, properties).isEmpty()) {
                 String msg = ""
                     + " Not all provider options could be set on the found factory."
                     + " Check the options are spelled correctly."

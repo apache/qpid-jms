@@ -310,10 +310,10 @@ public class PropertyUtil {
      */
     public static boolean setProperties(Object target, Map<String, String> props) {
         if (target == null) {
-            throw new IllegalArgumentException("target was null.");
+            throw new IllegalArgumentException("target object cannot be null");
         }
         if (props == null) {
-            throw new IllegalArgumentException("props was null.");
+            throw new IllegalArgumentException("Given Properties object cannot be null");
         }
 
         int setCounter = 0;
@@ -338,23 +338,23 @@ public class PropertyUtil {
      *
      * @return true if all values in the props map were applied to the target object.
      */
-    public static boolean setProperties(Object target, Properties props) {
+    public static Map<String, Object> setProperties(Object target, Properties props) {
         if (target == null) {
-            throw new IllegalArgumentException("target was null.");
+            throw new IllegalArgumentException("target object cannot be null");
         }
         if (props == null) {
-            throw new IllegalArgumentException("props was null.");
+            throw new IllegalArgumentException("Given Properties object cannot be null");
         }
 
-        int setCounter = 0;
+        Map<String, Object> unmatched = new HashMap<String, Object>();
 
         for (Map.Entry<Object, Object> entry : props.entrySet()) {
-            if (setProperty(target, (String) entry.getKey(), entry.getValue())) {
-                setCounter++;
+            if (!setProperty(target, (String) entry.getKey(), entry.getValue())) {
+                unmatched.put((String) entry.getKey(), entry.getValue());
             }
         }
 
-        return setCounter == props.size();
+        return Collections.<String, Object>unmodifiableMap(unmatched);
     }
 
     /**
@@ -427,12 +427,20 @@ public class PropertyUtil {
     }
 
     /**
-     * Set a property
+     * Set a property named property on a given Object.
+     * <p>
+     * The object is searched for an set method that would match the given named
+     * property and if one is found.  If necessary an attempt will be made to convert
+     * the new value to an acceptable type.
      *
      * @param target
+     *        The object whose property is to be set.
      * @param name
+     *        The name of the property to set.
      * @param value
-     * @return true if set
+     *        The new value to set for the named property.
+     *
+     * @return true if the property was able to be set on the target object.
      */
     public static boolean setProperty(Object target, String name, Object value) {
         try {
@@ -454,7 +462,6 @@ public class PropertyUtil {
             if (value == null || value.getClass() == setter.getParameterTypes()[0]) {
                 setter.invoke(target, new Object[] { value });
             } else {
-                // We need to convert it
                 setter.invoke(target, new Object[] { convert(value, setter.getParameterTypes()[0]) });
             }
             return true;
@@ -482,11 +489,15 @@ public class PropertyUtil {
     }
 
     /**
-     * Return a String from to a character
+     * Return a portion of a String value by looking beyond the given
+     * character.
      *
      * @param value
+     *        The string value to split
      * @param c
-     * @return stripped
+     *        The character that marks the split point.
+     *
+     * @return the sub-string value starting beyond the given character.
      */
     public static String stripUpto(String value, char c) {
         String result = null;
@@ -503,8 +514,11 @@ public class PropertyUtil {
      * Return a String up to and including character
      *
      * @param value
+     *        The string value to split
      * @param c
-     * @return stripped
+     *        The character that marks the start of split point.
+     *
+     * @return the sub-string value starting from the given character.
      */
     public static String stripBefore(String value, char c) {
         String result = value;

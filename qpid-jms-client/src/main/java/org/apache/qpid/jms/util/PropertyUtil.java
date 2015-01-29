@@ -45,8 +45,7 @@ public class PropertyUtil {
      * Creates a URI from the original URI and the given parameters.
      *
      * @param originalURI
-     *        The URI whose current parameters are remove and replaced with the given remainder
-     *        value.
+     *        The URI whose current parameters are removed and replaced with the given remainder value.
      * @param params
      *        The URI params that should be used to replace the current ones in the target.
      *
@@ -212,21 +211,21 @@ public class PropertyUtil {
      * Given a map of properties, filter out only those prefixed with the given value, the
      * values filtered are returned in a new Map instance.
      *
-     * @param props
+     * @param properties
      *        The map of properties to filter.
      * @param optionPrefix
      *        The prefix value to use when filtering.
      *
      * @return a filter map with only values that match the given prefix.
      */
-    public static Map<String, String> filterProperties(Map<String, String> props, String optionPrefix) {
-        if (props == null) {
-            throw new IllegalArgumentException("props was null.");
+    public static Map<String, String> filterProperties(Map<String, String> properties, String optionPrefix) {
+        if (properties == null) {
+            throw new IllegalArgumentException("The given properties object was null.");
         }
 
-        HashMap<String, String> rc = new HashMap<String, String>(props.size());
+        HashMap<String, String> rc = new HashMap<String, String>(properties.size());
 
-        for (Iterator<Entry<String, String>> iter = props.entrySet().iterator(); iter.hasNext();) {
+        for (Iterator<Entry<String, String>> iter = properties.entrySet().iterator(); iter.hasNext();) {
             Entry<String, String> entry = iter.next();
             if (entry.getKey().startsWith(optionPrefix)) {
                 String name = entry.getKey().substring(optionPrefix.length());
@@ -239,47 +238,61 @@ public class PropertyUtil {
     }
 
     /**
-     * Add bean properties to a URI
+     * Enumerate the properties of the target object and add them as additional entries
+     * to the query string of the given string URI.
      *
      * @param uri
+     *        The string URI value to append the object properties to.
      * @param bean
-     * @return <Code>Map</Code> of properties
-     * @throws Exception
+     *        The Object whose properties will be added to the target URI.
+     *
+     * @return a new String value that is the original URI with the added bean properties.
+     *
+     * @throws Exception if an error occurs while enumerating the bean properties.
      */
     public static String addPropertiesToURIFromBean(String uri, Object bean) throws Exception {
-        Map<String, String> props = PropertyUtil.getProperties(bean);
-        return PropertyUtil.addPropertiesToURI(uri, props);
+        Map<String, String> properties = PropertyUtil.getProperties(bean);
+        return PropertyUtil.addPropertiesToURI(uri, properties);
     }
 
     /**
-     * Add properties to a URI
+     * Enumerate the properties of the target object and add them as additional entries
+     * to the query string of the given URI.
      *
      * @param uri
-     * @param props
-     * @return uri with properties on
-     * @throws Exception
+     *        The URI value to append the object properties to.
+     * @param bean
+     *        The Object whose properties will be added to the target URI.
+     *
+     * @return a new String value that is the original URI with the added bean properties.
+     *
+     * @throws Exception if an error occurs while enumerating the bean properties.
      */
-    public static String addPropertiesToURI(URI uri, Map<String, String> props) throws Exception {
-        return addPropertiesToURI(uri.toString(), props);
+    public static String addPropertiesToURI(URI uri, Map<String, String> properties) throws Exception {
+        return addPropertiesToURI(uri.toString(), properties);
     }
 
     /**
-     * Add properties to a URI
+     * Append the given properties to the query portion of the given URI.
      *
      * @param uri
-     * @param props
-     * @return uri with properties on
-     * @throws Exception
+     *        The string URI value to append the object properties to.
+     * @param bean
+     *        The properties that will be added to the target URI.
+     *
+     * @return a new String value that is the original URI with the added properties.
+     *
+     * @throws Exception if an error occurs while building the new URI string.
      */
-    public static String addPropertiesToURI(String uri, Map<String, String> props) throws Exception {
+    public static String addPropertiesToURI(String uri, Map<String, String> properties) throws Exception {
         String result = uri;
-        if (uri != null && props != null) {
+        if (uri != null && properties != null) {
             StringBuilder base = new StringBuilder(stripBefore(uri, '?'));
             Map<String, String> map = parseParameters(uri);
             if (!map.isEmpty()) {
-                map.putAll(props);
+                map.putAll(properties);
             } else {
-                map = props;
+                map = properties;
             }
             if (!map.isEmpty()) {
                 base.append('?');
@@ -303,28 +316,28 @@ public class PropertyUtil {
      *
      * @param target
      *        the object whose properties are to be set from the map options.
-     * @param props
+     * @param properties
      *        the properties that should be applied to the given object.
      *
-     * @return true if all values in the props map were applied to the target object.
+     * @return true if all values in the properties map were applied to the target object.
      */
-    public static boolean setProperties(Object target, Map<String, String> props) {
+    public static boolean setProperties(Object target, Map<String, String> properties) {
         if (target == null) {
             throw new IllegalArgumentException("target object cannot be null");
         }
-        if (props == null) {
+        if (properties == null) {
             throw new IllegalArgumentException("Given Properties object cannot be null");
         }
 
         int setCounter = 0;
 
-        for (Map.Entry<String, String> entry : props.entrySet()) {
+        for (Map.Entry<String, String> entry : properties.entrySet()) {
             if (setProperty(target, entry.getKey(), entry.getValue())) {
                 setCounter++;
             }
         }
 
-        return setCounter == props.size();
+        return setCounter == properties.size();
     }
 
     /**
@@ -336,19 +349,19 @@ public class PropertyUtil {
      * @param props
      *        the properties that should be applied to the given object.
      *
-     * @return true if all values in the props map were applied to the target object.
+     * @return an unmodifiable map with any values that could not be applied to the target.
      */
-    public static Map<String, Object> setProperties(Object target, Properties props) {
+    public static Map<String, Object> setProperties(Object target, Properties properties) {
         if (target == null) {
             throw new IllegalArgumentException("target object cannot be null");
         }
-        if (props == null) {
+        if (properties == null) {
             throw new IllegalArgumentException("Given Properties object cannot be null");
         }
 
         Map<String, Object> unmatched = new HashMap<String, Object>();
 
-        for (Map.Entry<Object, Object> entry : props.entrySet()) {
+        for (Map.Entry<Object, Object> entry : properties.entrySet()) {
             if (!setProperty(target, (String) entry.getKey(), entry.getValue())) {
                 unmatched.put((String) entry.getKey(), entry.getValue());
             }
@@ -373,7 +386,7 @@ public class PropertyUtil {
             return Collections.emptyMap();
         }
 
-        Map<String, String> props = new LinkedHashMap<String, String>();
+        Map<String, String> properties = new LinkedHashMap<String, String>();
         BeanInfo beanInfo = Introspector.getBeanInfo(object.getClass());
         Object[] NULL_ARG = {};
         PropertyDescriptor[] propertyDescriptors = beanInfo.getPropertyDescriptors();
@@ -384,20 +397,21 @@ public class PropertyUtil {
                     Object value = pd.getReadMethod().invoke(object, NULL_ARG);
                     if (value != null) {
                         if (value instanceof Boolean || value instanceof Number || value instanceof String || value instanceof URI || value instanceof URL) {
-                            props.put(pd.getName(), ("" + value));
+                            properties.put(pd.getName(), ("" + value));
                         } else if (value instanceof SSLContext) {
                             // ignore this one..
                         } else {
                             Map<String, String> inner = getProperties(value);
                             for (Map.Entry<String, String> entry : inner.entrySet()) {
-                                props.put(pd.getName() + "." + entry.getKey(), entry.getValue());
+                                properties.put(pd.getName() + "." + entry.getKey(), entry.getValue());
                             }
                         }
                     }
                 }
             }
         }
-        return props;
+
+        return properties;
     }
 
     /**

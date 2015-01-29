@@ -66,7 +66,6 @@ class TestFrameParser
 
     private TestAmqpPeer _peer;
 
-    /** PHTOD remove args? */
     public TestFrameParser(TestAmqpPeer peer)
     {
         _peer = peer;

@@ -48,7 +48,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
      * Test that the TX doesn't start until the first send so a failover
      * before then should allow Commit to work as expected.
      */
-    @Test
+    @Test(timeout=60000)
     public void testTxProducerSendAfterFailoverCommits() throws Exception {
         URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=100");
 
@@ -105,7 +105,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
      * Tests that even if all sends complete prior to failover the commit that follows
      * will fail and the message are not present on the broker.
      */
-    @Test
+    @Test(timeout=60000)
     public void testTxProducerSendsThenFailoverCommitFails() throws Exception {
         URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=100");
 
@@ -144,7 +144,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testTxProducerRollbackAfterFailoverGetsNoErrors() throws Exception {
         URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=100");
 
@@ -187,7 +187,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
      * Tests that if some sends happen and then a failover followed by additional
      * sends the commit will fail and no messages are left on the broker.
      */
-    @Test
+    @Test(timeout=60000)
     public void testTxProducerSendWorksButCommitFails() throws Exception {
         URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=100");
 

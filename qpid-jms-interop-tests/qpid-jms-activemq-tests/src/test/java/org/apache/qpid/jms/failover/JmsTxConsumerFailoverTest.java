@@ -49,7 +49,7 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
      * Test that the TX doesn't start until the first ack so a failover
      * before that should allow Commit to work as expected.
      */
-    @Test
+    @Test(timeout=60000)
     public void testTxConsumerReceiveAfterFailoverCommits() throws Exception {
         URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=100");
 
@@ -99,7 +99,7 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testTxConsumerReceiveThenFailoverCommitFails() throws Exception {
         URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=100");
 
@@ -136,7 +136,7 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
         assertEquals(MSG_COUNT, proxy.getQueueSize());
     }
 
-    @Test
+    @Test(timeout=60000)
     public void testTxConsumerRollbackAfterFailoverGetsNoErrors() throws Exception {
         URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=100");
 
@@ -180,7 +180,7 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
      * Tests that if some receives happen and then a failover followed by additional
      * receives the commit will fail and no messages are left on the broker.
      */
-    @Test
+    @Test(timeout=60000)
     public void testTxConsumerReceiveWorksAfterFailoverButCommitFails() throws Exception {
         URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=100");
 

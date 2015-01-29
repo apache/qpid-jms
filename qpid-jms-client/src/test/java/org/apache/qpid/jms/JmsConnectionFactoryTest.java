@@ -23,9 +23,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,8 +40,55 @@ import org.junit.Test;
 
 public class JmsConnectionFactoryTest extends QpidJmsTestCase {
 
-    private static String CLIENT_ID_PROP = "clientID";
-    private static String QUEUE_PREFIX_PROP = "queuePrefix";
+    private static final String CLIENT_ID_PROP = "clientID";
+    private static final String QUEUE_PREFIX_PROP = "queuePrefix";
+    private static final String USER = "USER";
+    private static final String PASSWORD = "PASSWORD";
+
+    @Test
+    public void testConnectionFactoryCreate() {
+        JmsConnectionFactory factory = new JmsConnectionFactory();
+        assertNull(factory.getUsername());
+        assertNull(factory.getPassword());
+    }
+
+    @Test
+    public void testConnectionFactoryCreateUsernameAndPassword() {
+        JmsConnectionFactory factory = new JmsConnectionFactory(USER, PASSWORD);
+        assertNotNull(factory.getUsername());
+        assertNotNull(factory.getPassword());
+        assertEquals(USER, factory.getUsername());
+        assertEquals(PASSWORD, factory.getPassword());
+    }
+
+    @Test
+    public void testCreateConnectionBadProviderURI() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(new URI("bad://127.0.0.1:5763"));
+
+        try {
+            factory.createConnection();
+            fail("Should have thrown exception");
+        } catch (JMSException jmse) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testCreateConnectionBadProviderString() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory("bad://127.0.0.1:5763");
+
+        try {
+            factory.createConnection();
+            fail("Should have thrown exception");
+        } catch (JMSException jmse) {
+            // expected
+        }
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testBadUriOptionCausesFail() throws Exception {
+        new JmsConnectionFactory("amqp://localhost:1234?jms.badOption=true");
+    }
 
     @Test
     public void testCreateConnectionWithoutUriThrowsJMSISE() throws Exception {

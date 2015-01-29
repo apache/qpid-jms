@@ -16,26 +16,18 @@
  */
 package org.apache.qpid.jms;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 
 import javax.jms.Connection;
-import javax.jms.JMSException;
 
-import org.apache.qpid.jms.JmsConnection;
-import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.junit.Test;
 
 public class JmsConnectionFactoryTest extends AmqpTestSupport {
-
-    private final String username = "USER";
-    private final String password = "PASSWORD";
 
     protected String getGoodProviderAddress() {
         return getBrokerAmqpConnectionURI().toString();
@@ -43,42 +35,6 @@ public class JmsConnectionFactoryTest extends AmqpTestSupport {
 
     protected URI getGoodProviderAddressURI() throws URISyntaxException {
         return new URI(getGoodProviderAddress());
-    }
-
-    protected String getBadProviderAddress() {
-        return "bad://127.0.0.1:" + 5763;
-    }
-
-    protected URI getBadProviderAddressURI() throws URISyntaxException {
-        return new URI(getBadProviderAddress());
-    }
-
-    @Test(timeout=60000)
-    public void testConnectionFactoryCreate() {
-        JmsConnectionFactory factory = new JmsConnectionFactory();
-        assertNull(factory.getUsername());
-        assertNull(factory.getPassword());
-    }
-
-    @Test(timeout=60000)
-    public void testConnectionFactoryCreateUsernameAndPassword() {
-        JmsConnectionFactory factory = new JmsConnectionFactory(username, password);
-        assertNotNull(factory.getUsername());
-        assertNotNull(factory.getPassword());
-        assertEquals(username, factory.getUsername());
-        assertEquals(password, factory.getPassword());
-    }
-
-    @Test(expected = JMSException.class)
-    public void testCreateConnectionBadProviderURI() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBadProviderAddressURI());
-        factory.createConnection();
-    }
-
-    @Test(expected = JMSException.class)
-    public void testCreateConnectionBadProviderString() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBadProviderAddress());
-        factory.createConnection();
     }
 
     @Test(timeout=60000)
@@ -108,11 +64,5 @@ public class JmsConnectionFactoryTest extends AmqpTestSupport {
         assertTrue(connection.isLocalMessagePriority());
         assertTrue(connection.isForceAsyncSend());
         connection.close();
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void testBadUriOptionCausesFail() throws Exception {
-        String uri = getGoodProviderAddress() + "?jms.omitHost=true&jms.badOption=true";
-        new JmsConnectionFactory(uri);
     }
 }

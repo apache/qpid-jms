@@ -29,8 +29,6 @@ import static org.junit.Assert.fail;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.jms.Destination;
-
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.junit.Test;
 

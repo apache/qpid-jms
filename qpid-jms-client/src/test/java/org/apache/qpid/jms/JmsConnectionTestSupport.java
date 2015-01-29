@@ -27,6 +27,7 @@ import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.util.IdGenerator;
 import org.junit.After;
+import org.junit.Before;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -47,8 +48,7 @@ public class JmsConnectionTestSupport extends QpidJmsTestCase {
     protected JmsConnection connection;
     protected ProviderListener providerListener;
 
-    protected JmsConnection createConnectionToMockProvider() throws Exception {
-
+    private void createMockProvider() throws Exception {
         Mockito.doAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
@@ -102,10 +102,25 @@ public class JmsConnectionTestSupport extends QpidJmsTestCase {
 
         Mockito.when(provider.getProviderListener()).thenReturn(providerListener);
         Mockito.when(provider.getMessageFactory()).thenReturn(new JmsDefaultMessageFactory());
+    }
 
-        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+    protected JmsConnection createConnectionToMockProvider() throws Exception {
+        return new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+    }
 
-        return connection;
+    protected JmsQueueConnection createQueueConnectionToMockProvider() throws Exception {
+        return new JmsQueueConnection("ID:TEST:1", provider, clientIdGenerator);
+    }
+
+    protected JmsTopicConnection createTopicConnectionToMockProvider() throws Exception {
+        return new JmsTopicConnection("ID:TEST:1", provider, clientIdGenerator);
+    }
+
+    @Override
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+        createMockProvider();
     }
 
     @Override

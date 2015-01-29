@@ -16,70 +16,71 @@
  */
 package org.apache.qpid.jms.session;
 
-import javax.jms.Queue;
-import javax.jms.QueueConnection;
-import javax.jms.QueueReceiver;
-import javax.jms.QueueSender;
-import javax.jms.QueueSession;
 import javax.jms.Session;
+import javax.jms.Topic;
+import javax.jms.TopicConnection;
+import javax.jms.TopicPublisher;
+import javax.jms.TopicSession;
+import javax.jms.TopicSubscriber;
 
-import org.apache.qpid.jms.JmsConnectionFactory;
-import org.apache.qpid.jms.support.AmqpTestSupport;
+import org.apache.qpid.jms.JmsConnectionTestSupport;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Tests behaviour after a QueueSession is closed.
+ * Tests behaviour after a TopicSession is closed.
  */
-public class JmsQueueSessionClosedTest extends AmqpTestSupport {
+public class JmsTopicSessionClosedTest extends JmsConnectionTestSupport {
 
-    private QueueSession session;
-    private QueueSender sender;
-    private QueueReceiver receiver;
+    private TopicSession session;
+    private TopicPublisher publisher;
+    private TopicSubscriber subscriber;
 
-    protected void createAndCloseSession() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        connection = factory.createQueueConnection();
+    protected void createTestResources() throws Exception {
+        connection = createTopicConnectionToMockProvider();
 
-        session = ((QueueConnection) connection).createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue destination = session.createQueue(name.getMethodName());
+        session = ((TopicConnection) connection).createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+        Topic destination = session.createTopic(_testName.getMethodName());
 
-        sender = session.createSender(destination);
-        receiver = session.createReceiver(destination);
+        publisher = session.createPublisher(destination);
+        subscriber = session.createSubscriber(destination);
 
         // Close the session explicitly, without closing the above.
         session.close();
     }
 
+    @Override
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+        createTestResources();
+    }
+
     @Test(timeout=30000)
     public void testSessionCloseAgain() throws Exception {
-        createAndCloseSession();
         // Close it again
         session.close();
     }
 
     @Test(timeout=30000)
-    public void testReceiverCloseAgain() throws Exception {
-        createAndCloseSession();
+    public void testSubscriberCloseAgain() throws Exception {
         // Close it again (closing the session should have closed it already).
-        receiver.close();
+        subscriber.close();
     }
 
     @Test(timeout=30000)
-    public void testSenderCloseAgain() throws Exception {
-        createAndCloseSession();
+    public void testPublisherCloseAgain() throws Exception {
         // Close it again (closing the session should have closed it already).
-        sender.close();
+        publisher.close();
     }
 
     @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
-    public void testReceiverGetQueueFails() throws Exception {
-        createAndCloseSession();
-        receiver.getQueue();
+    public void testSubscriberGetTopicFails() throws Exception {
+        subscriber.getTopic();
     }
 
     @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
-    public void testSenderGetQueueFails() throws Exception {
-        createAndCloseSession();
-        sender.getQueue();
+    public void testPublisherGetTopicFails() throws Exception {
+        publisher.getTopic();
     }
 }

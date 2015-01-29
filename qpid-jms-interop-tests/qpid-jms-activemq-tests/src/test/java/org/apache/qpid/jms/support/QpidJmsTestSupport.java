@@ -161,6 +161,7 @@ public class QpidJmsTestSupport {
         brokerService.setAdvisorySupport(isAdvisorySupport());
         brokerService.setDeleteAllMessagesOnStartup(deleteAllMessages);
         brokerService.setUseJmx(true);
+        brokerService.getManagementContext().setCreateConnector(false);
         brokerService.setDataDirectory("target/" + name);
         brokerService.setPersistenceAdapter(kaha);
         brokerService.setStoreOpenWireVersion(10);

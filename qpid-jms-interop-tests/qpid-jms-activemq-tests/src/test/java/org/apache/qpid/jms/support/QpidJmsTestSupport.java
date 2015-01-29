@@ -152,8 +152,6 @@ public class QpidJmsTestSupport {
     }
 
     protected BrokerService createBroker(String name, boolean deleteAllMessages, Map<String, Integer> portMap) throws Exception {
-        KahaDBStore kaha = new KahaDBStore();
-        kaha.setDirectory(new File(KAHADB_DIRECTORY + "/" + name));
 
         BrokerService brokerService = new BrokerService();
         brokerService.setBrokerName(name);
@@ -163,7 +161,11 @@ public class QpidJmsTestSupport {
         brokerService.setUseJmx(true);
         brokerService.getManagementContext().setCreateConnector(false);
         brokerService.setDataDirectory("target/" + name);
-        brokerService.setPersistenceAdapter(kaha);
+        if (isPersistent()) {
+            KahaDBStore kaha = new KahaDBStore();
+            kaha.setDirectory(new File(KAHADB_DIRECTORY + "/" + name));
+            brokerService.setPersistenceAdapter(kaha);
+        }
         brokerService.setStoreOpenWireVersion(10);
 
         configureBrokerPolicies(brokerService);

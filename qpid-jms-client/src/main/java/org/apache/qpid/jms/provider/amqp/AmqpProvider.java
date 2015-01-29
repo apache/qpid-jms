@@ -189,11 +189,10 @@ public class AmqpProvider implements Provider, TransportListener {
 
                         if (connection != null) {
                             connection.close(request);
+                            pumpToProtonTransport();
                         } else {
                             request.onSuccess();
                         }
-
-                        pumpToProtonTransport();
                     } catch (Exception e) {
                         LOG.debug("Caught exception while closing proton connection");
                     }

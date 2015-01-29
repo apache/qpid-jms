@@ -18,7 +18,7 @@ package org.apache.qpid.jms.producer;
 
 import static org.junit.Assert.assertTrue;
 
-import java.util.concurrent.CountDownLatch;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import javax.jms.ExceptionListener;
@@ -27,7 +27,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnection;
-import org.apache.qpid.jms.support.Wait;
+import org.apache.qpid.jms.test.Wait;
 
 /**
  * Tests the MessageProducer method contract when it's connection has failed.
@@ -36,8 +36,7 @@ public class JmsMessageProducerFailedTest extends JmsMessageProducerClosedTest {
 
     @Override
     protected MessageProducer createProducer() throws Exception {
-        final CountDownLatch latch = new CountDownLatch(1);
-        connection = createAmqpConnection();
+        connection = createConnectionToMockProvider();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         message = session.createMessage();
         destination = session.createQueue("test");
@@ -46,20 +45,20 @@ public class JmsMessageProducerFailedTest extends JmsMessageProducerClosedTest {
 
             @Override
             public void onException(JMSException exception) {
-                latch.countDown();
             }
         });
         connection.start();
-        stopPrimaryBroker();
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
-        final JmsConnection jmsConnection = (JmsConnection) connection;
+        providerListener.onConnectionFailure(new IOException());
+
+        final JmsConnection jmsConnection = connection;
         assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisified() throws Exception {
                 return !jmsConnection.isConnected();
             }
-        }));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(2)));
+
         return producer;
     }
 }

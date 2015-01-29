@@ -23,40 +23,45 @@ import javax.jms.MessageListener;
 import javax.jms.Queue;
 import javax.jms.Session;
 
-import org.apache.qpid.jms.support.AmqpTestSupport;
+import org.apache.qpid.jms.JmsConnectionTestSupport;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
  * Tests MessageConsumer method contracts after the MessageConsumer is closed.
  */
-public class JmsMessageConsumerClosedTest extends AmqpTestSupport {
+public class JmsMessageConsumerClosedTest extends JmsConnectionTestSupport {
 
     protected MessageConsumer consumer;
 
     protected MessageConsumer createConsumer() throws Exception {
-        connection = createAmqpConnection();
+        connection = createConnectionToMockProvider();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue destination = session.createQueue(name.getMethodName());
+        Queue destination = session.createQueue(_testName.getMethodName());
         MessageConsumer consumer = session.createConsumer(destination);
         consumer.close();
         return consumer;
     }
 
+    @Override
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+        consumer = createConsumer();
+    }
+
     @Test(timeout=30000, expected=JMSException.class)
     public void testGetMessageSelectorFails() throws Exception {
-        consumer = createConsumer();
         consumer.getMessageSelector();
     }
 
     @Test(timeout=30000, expected=JMSException.class)
     public void testGetMessageListenerFails() throws Exception {
-        consumer = createConsumer();
         consumer.getMessageListener();
     }
 
     @Test(timeout=30000, expected=JMSException.class)
     public void testSetMessageListenerFails() throws Exception {
-        consumer = createConsumer();
         consumer.setMessageListener(new MessageListener() {
             @Override
             public void onMessage(Message message) {
@@ -66,25 +71,21 @@ public class JmsMessageConsumerClosedTest extends AmqpTestSupport {
 
     @Test(timeout=30000, expected=JMSException.class)
     public void testRreceiveFails() throws Exception {
-        consumer = createConsumer();
         consumer.receive();
     }
 
     @Test(timeout=30000, expected=JMSException.class)
     public void testRreceiveTimedFails() throws Exception {
-        consumer = createConsumer();
         consumer.receive(11);
     }
 
     @Test(timeout=30000, expected=JMSException.class)
     public void testRreceiveNoWaitFails() throws Exception {
-        consumer = createConsumer();
         consumer.receiveNoWait();
     }
 
     @Test(timeout=30000)
     public void testClose() throws Exception {
-        consumer = createConsumer();
         consumer.close();
     }
 }

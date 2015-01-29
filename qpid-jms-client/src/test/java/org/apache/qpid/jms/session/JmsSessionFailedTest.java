@@ -14,52 +14,51 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.consumer;
+package org.apache.qpid.jms.session;
 
 import static org.junit.Assert.assertTrue;
 
-import java.util.concurrent.CountDownLatch;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
-import javax.jms.MessageConsumer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnection;
-import org.apache.qpid.jms.support.Wait;
+import org.apache.qpid.jms.test.Wait;
+
 
 /**
- * Tests MessageConsumer method contracts after the MessageConsumer connection fails.
+ * Tests the Session method contracts when the underlying connection is lost.
  */
-public class JmsMessageConsumerFailedTest extends JmsMessageConsumerClosedTest {
+public class JmsSessionFailedTest extends JmsSessionClosedTest {
 
     @Override
-    protected MessageConsumer createConsumer() throws Exception {
-        final CountDownLatch latch = new CountDownLatch(1);
-        connection = createAmqpConnection();
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue destination = session.createQueue(name.getMethodName());
-        MessageConsumer consumer = session.createConsumer(destination);
+    protected void createTestResources() throws Exception {
+        connection = createConnectionToMockProvider();
+        session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         connection.setExceptionListener(new ExceptionListener() {
 
             @Override
             public void onException(JMSException exception) {
-                latch.countDown();
             }
         });
+        Queue destination = session.createQueue(_testName.getMethodName());
+
+        sender = session.createProducer(destination);
+        receiver = session.createConsumer(destination);
         connection.start();
-        stopPrimaryBroker();
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
-        final JmsConnection jmsConnection = (JmsConnection) connection;
+        providerListener.onConnectionFailure(new IOException());
+
+        final JmsConnection jmsConnection = connection;
         assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisified() throws Exception {
                 return !jmsConnection.isConnected();
             }
-        }));
-        return consumer;
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(2)));
     }
 }

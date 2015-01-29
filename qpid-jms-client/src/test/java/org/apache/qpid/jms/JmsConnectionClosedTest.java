@@ -22,78 +22,15 @@ import javax.jms.JMSException;
 import javax.jms.Session;
 import javax.jms.Topic;
 
-import org.apache.qpid.jms.meta.JmsResource;
-import org.apache.qpid.jms.provider.Provider;
-import org.apache.qpid.jms.provider.ProviderFuture;
-import org.apache.qpid.jms.provider.ProviderListener;
-import org.apache.qpid.jms.test.QpidJmsTestCase;
-import org.apache.qpid.jms.util.IdGenerator;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test Connection methods contracts when state is closed.
  */
-public class JmsConnectionClosedTest extends QpidJmsTestCase {
-
-    private static final Logger LOG = LoggerFactory.getLogger(JmsConnectionClosedTest.class);
+public class JmsConnectionClosedTest extends JmsConnectionTestSupport {
 
     protected Destination destination;
-
-    private final Provider provider = Mockito.mock(Provider.class);
-    private final IdGenerator clientIdGenerator = new IdGenerator();
-
-    protected JmsConnection connection;
-    protected ProviderListener providerListener;
-
-    protected JmsConnection createConnectionToMockProvider() throws Exception {
-
-        Mockito.doAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                if (args[0] instanceof JmsResource) {
-                    LOG.debug("Handling provider create resource: {}", args[0]);
-                    ProviderFuture request = (ProviderFuture) args[1];
-                    request.onSuccess();
-                }
-                return null;
-            }
-        }).when(provider).create(Mockito.any(JmsResource.class), Mockito.any(ProviderFuture.class));
-
-        Mockito.doAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                if (args[0] instanceof JmsResource) {
-                    LOG.debug("Handling provider destroy resource: {}", args[0]);
-                    ProviderFuture request = (ProviderFuture) args[1];
-                    request.onSuccess();
-                }
-                return null;
-            }
-        }).when(provider).destroy(Mockito.any(JmsResource.class), Mockito.any(ProviderFuture.class));
-
-        Mockito.doAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                if (args[0] instanceof ProviderListener) {
-                    providerListener = (ProviderListener) args[0];
-                }
-                return null;
-            }
-        }).when(provider).setProviderListener(Mockito.any(ProviderListener.class));
-
-        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
-        return connection;
-    }
 
     protected JmsConnection createConnection() throws Exception {
         connection = createConnectionToMockProvider();
@@ -108,15 +45,6 @@ public class JmsConnectionClosedTest extends QpidJmsTestCase {
     public void setUp() throws Exception {
         super.setUp();
         connection = createConnection();
-    }
-
-    @Override
-    @After
-    public void tearDown() throws Exception {
-        super.tearDown();
-        if (connection != null) {
-            connection.close();
-        }
     }
 
     @Test(timeout=30000, expected=JMSException.class)

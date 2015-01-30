@@ -21,6 +21,7 @@ import static org.junit.Assert.*;
 import java.util.Hashtable;
 
 import javax.naming.Context;
+import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 import javax.naming.OperationNotSupportedException;
 
@@ -71,6 +72,22 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
             assertNotNull("No object returned", o);
             assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
             assertEquals("Unexpected URI for returned factory", ((JmsConnectionFactory) o).getRemoteURI(), updatedDefaultURI);
+        }
+    }
+
+    @Test
+    public void testDefaultConnectionFactoriesNotPresentWhenOneIsExplicitlyDefined() throws Exception {
+        Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+        env.put("connectionfactory.myNewFactory", "amqp://example.com:1234");
+        Context ctx = createInitialContext(env);
+
+        for (String factoryName : JmsInitialContextFactory.DEFAULT_CONNECTION_FACTORY_NAMES) {
+            try {
+                ctx.lookup(factoryName);
+                fail("should have thrown exception due to name not being found");
+            } catch (NameNotFoundException nnfe) {
+                // //expected
+            }
         }
     }
 

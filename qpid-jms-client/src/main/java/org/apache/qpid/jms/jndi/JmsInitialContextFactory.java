@@ -54,9 +54,9 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     static final String DEFAULT_REMOTE_URI_PROP = "defaultRemoteURI";
     static final String DEFAULT_REMOTE_URI = "amqp://localhost:5672";
 
-    private String connectionFactoryPrefix = "connectionfactory.";
-    private String queuePrefix = "queue.";
-    private String topicPrefix = "topic.";
+    static final String CONNECTION_FACTORY_KEY_PREFIX = "connectionfactory.";
+    static final String QUEUE_KEY_PREFIX = "queue.";
+    static final String TOPIC_KEY_PREFIX = "topic.";
 
     @SuppressWarnings("unchecked")
     @Override
@@ -122,7 +122,7 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     }
 
     protected JmsConnectionFactory createConnectionFactory(String name, String defaultRemoteURI, Hashtable<Object, Object> environment) throws URISyntaxException {
-        String cfNameKey = connectionFactoryPrefix + name;
+        String cfNameKey = CONNECTION_FACTORY_KEY_PREFIX + name;
         Map<String, String> props = new LinkedHashMap<String, String>();
 
         // Use the default URI if none is defined for this factory in the environment
@@ -143,8 +143,8 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         for (Iterator<Entry<Object, Object>> iter = environment.entrySet().iterator(); iter.hasNext();) {
             Map.Entry<Object, Object> entry = iter.next();
             String key = String.valueOf(entry.getKey());
-            if (key.startsWith(connectionFactoryPrefix)) {
-                String jndiName = key.substring(connectionFactoryPrefix.length());
+            if (key.startsWith(CONNECTION_FACTORY_KEY_PREFIX)) {
+                String jndiName = key.substring(CONNECTION_FACTORY_KEY_PREFIX.length());
                 list.add(jndiName);
             }
         }
@@ -161,8 +161,8 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         for (Iterator<Entry<Object, Object>> iter = environment.entrySet().iterator(); iter.hasNext();) {
             Map.Entry<Object, Object> entry = iter.next();
             String key = entry.getKey().toString();
-            if (key.startsWith(queuePrefix)) {
-                String jndiName = key.substring(queuePrefix.length());
+            if (key.startsWith(QUEUE_KEY_PREFIX)) {
+                String jndiName = key.substring(QUEUE_KEY_PREFIX.length());
                 bindings.put(jndiName, createQueue(entry.getValue().toString()));
             }
         }
@@ -172,8 +172,8 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         for (Iterator<Entry<Object, Object>> iter = environment.entrySet().iterator(); iter.hasNext();) {
             Map.Entry<Object, Object> entry = iter.next();
             String key = entry.getKey().toString();
-            if (key.startsWith(topicPrefix)) {
-                String jndiName = key.substring(topicPrefix.length());
+            if (key.startsWith(TOPIC_KEY_PREFIX)) {
+                String jndiName = key.substring(TOPIC_KEY_PREFIX.length());
                 bindings.put(jndiName, createTopic(entry.getValue().toString()));
             }
         }

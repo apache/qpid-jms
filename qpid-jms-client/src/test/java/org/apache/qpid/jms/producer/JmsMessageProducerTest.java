@@ -14,59 +14,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms;
+package org.apache.qpid.jms.producer;
 
 import static org.junit.Assert.fail;
 
 import javax.jms.InvalidDestinationException;
 import javax.jms.Message;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
 
-import org.apache.qpid.jms.meta.JmsProducerId;
-import org.apache.qpid.jms.meta.JmsProducerInfo;
-import org.apache.qpid.jms.meta.JmsResource;
+import org.apache.qpid.jms.JmsConnectionTestSupport;
+import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.JmsQueue;
+import org.apache.qpid.jms.JmsSession;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test basic functionality around JmsConnection
  */
-public class JmsMessageProducerTest {
+public class JmsMessageProducerTest extends JmsConnectionTestSupport {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JmsMessageProducerTest.class);
+    private JmsSession session;
 
-    private JmsConnection connection;
-    private  JmsSession session;
-    private JmsProducerId producerId;
-
+    @Override
     @Before
     public void setUp() throws Exception {
-        connection = Mockito.mock(JmsConnection.class);
-        session = Mockito.mock(JmsSession.class);
-        producerId = new JmsProducerId("key");
-
-        Mockito.when(session.getConnection()).thenReturn(connection);
-        Mockito.doAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                LOG.debug("Handling connection createResource call");
-                if (args[0] instanceof JmsProducerInfo) {
-                    return args[0];
-                }
-
-                throw new IllegalArgumentException("Not implemented");
-            }
-        }).when(connection).createResource(Mockito.any(JmsResource.class));
+        super.setUp();
+        connection = createConnectionToMockProvider();
+        session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
     }
 
     @Test
     public void testAnonymousProducerThrowsUOEWhenExplictDestinationNotProvided() throws Exception {
-        JmsMessageProducer producer = new JmsMessageProducer(producerId, session, null);
+        MessageProducer producer = session.createProducer(null);
 
         Message message = Mockito.mock(Message.class);
         try {
@@ -87,7 +69,7 @@ public class JmsMessageProducerTest {
     @Test
     public void testExplicitProducerThrowsUOEWhenExplictDestinationIsProvided() throws Exception {
         JmsDestination dest = new JmsQueue("explicitDestination");
-        JmsMessageProducer producer = new JmsMessageProducer(producerId, session, dest);
+        MessageProducer producer = session.createProducer(new JmsQueue());
 
         Message message = Mockito.mock(Message.class);
         try {
@@ -107,7 +89,7 @@ public class JmsMessageProducerTest {
 
     @Test
     public void testAnonymousDestinationProducerThrowsIDEWhenNullDestinationIsProvided() throws Exception {
-        JmsMessageProducer producer = new JmsMessageProducer(producerId, session, null);
+        MessageProducer producer = session.createProducer(null);
 
         Message message = Mockito.mock(Message.class);
         try {

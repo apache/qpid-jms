@@ -44,11 +44,12 @@ public class AmqpProviderFactory extends ProviderFactory {
 
         result.setTransportType(getTransportType());
 
-        if (!PropertyUtil.setProperties(result, providerOptions)) {
+        Map<String, String> unused = PropertyUtil.setProperties(result, providerOptions);
+        if (!unused.isEmpty()) {
             String msg = ""
                 + " Not all provider options could be set on the AMQP Provider."
                 + " Check the options are spelled correctly."
-                + " Given parameters=[" + providerOptions + "]."
+                + " Unused parameters=[" + unused + "]."
                 + " This provider instance cannot be started.";
             throw new IllegalArgumentException(msg);
         }

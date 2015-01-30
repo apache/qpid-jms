@@ -37,11 +37,12 @@ public class FailoverProviderFactory extends ProviderFactory {
         Map<String, String> nested = PropertyUtil.filterProperties(options, "nested.");
 
         FailoverProvider provider = new FailoverProvider(composite.getComponents(), nested);
-        if (!PropertyUtil.setProperties(provider, options)) {
+        Map<String, String> unused = PropertyUtil.setProperties(provider, options);
+        if (!unused.isEmpty()) {
             String msg = ""
                 + " Not all options could be set on the Failover provider."
                 + " Check the options are spelled correctly."
-                + " Given parameters=[" + options + "]."
+                + " Unused parameters=[" + unused + "]."
                 + " This Provider cannot be started.";
             throw new IllegalArgumentException(msg);
         }

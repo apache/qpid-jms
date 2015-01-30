@@ -55,10 +55,11 @@ public abstract class TransportFactory {
 
         TransportOptions transportOptions = doCreateTransportOptions();
 
-        if (!PropertyUtil.setProperties(transportOptions, transportURIOptions)) {
+        Map<String, String> unused = PropertyUtil.setProperties(transportOptions, transportURIOptions);
+        if (!unused.isEmpty()) {
             String msg = " Not all transport options could be set on the " + getName() +
                          " Transport. Check the options are spelled correctly." +
-                         " Given parameters=[" + transportURIOptions + "]." +
+                         " Unused parameters=[" + unused + "]." +
                          " This provider instance cannot be started.";
             throw new IllegalArgumentException(msg);
         }

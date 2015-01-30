@@ -318,11 +318,12 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
                 Map<String, String> map = PropertyUtil.parseQuery(this.remoteURI.getQuery());
                 Map<String, String> jmsOptionsMap = PropertyUtil.filterProperties(map, "jms.");
 
-                if (!PropertyUtil.setProperties(this, jmsOptionsMap)) {
+                Map<String, String> unused = PropertyUtil.setProperties(this, jmsOptionsMap);
+                if (!unused.isEmpty()) {
                     String msg = ""
                         + " Not all jms options could be set on the ConnectionFactory."
                         + " Check the options are spelled correctly."
-                        + " Given parameters=[" + jmsOptionsMap + "]."
+                        + " Unused parameters=[" + unused + "]."
                         + " This connection factory cannot be started.";
                     throw new IllegalArgumentException(msg);
                 } else {
@@ -331,11 +332,12 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             } else if (URISupport.isCompositeURI(this.remoteURI)) {
                 CompositeData data = URISupport.parseComposite(this.remoteURI);
                 Map<String, String> jmsOptionsMap = PropertyUtil.filterProperties(data.getParameters(), "jms.");
-                if (!PropertyUtil.setProperties(this, jmsOptionsMap)) {
+                Map<String, String> unused = PropertyUtil.setProperties(this, jmsOptionsMap);
+                if (!unused.isEmpty()) {
                     String msg = ""
                         + " Not all jms options could be set on the ConnectionFactory."
                         + " Check the options are spelled correctly."
-                        + " Given parameters=[" + jmsOptionsMap + "]."
+                        + " Unused parameters=[" + unused + "]."
                         + " This connection factory cannot be started.";
                     throw new IllegalArgumentException(msg);
                 } else {

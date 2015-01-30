@@ -24,6 +24,7 @@ import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.OperationNotSupportedException;
 
+import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -40,6 +41,22 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         assertNotNull("No context created", context);
 
         return context;
+    }
+
+    @Test
+    public void testConnectionFactoryBinding() throws Exception {
+        String factoryName = "myNewFactory";
+        String uri = "amqp://example.com:1234";
+
+        Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+        env.put("connectionfactory." + factoryName, uri);
+        Context ctx = createInitialContext(env);
+
+        Object o = ctx.lookup(factoryName);
+
+        assertNotNull("No object returned", o);
+        assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
+        assertEquals("Unexpected URI for returned factory", ((JmsConnectionFactory) o).getRemoteURI(), uri);
     }
 
     @Test

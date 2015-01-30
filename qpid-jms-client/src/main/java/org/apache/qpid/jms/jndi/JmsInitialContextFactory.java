@@ -18,13 +18,13 @@ package org.apache.qpid.jms.jndi;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.jms.Queue;
@@ -92,15 +92,14 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     }
 
     private void createConnectionFactories(Hashtable<Object, Object> environment, Map<String, Object> bindings) throws NamingException {
-        String[] names = getConnectionFactoryNames(environment);
-        for (int i = 0; i < names.length; i++) {
+        List<String> names = getConnectionFactoryNames(environment);
+        for (String name : names) {
             JmsConnectionFactory factory = null;
-            String name = names[i];
 
             try {
                 factory = createConnectionFactory(name, environment);
             } catch (Exception e) {
-                throw new NamingException("Invalid broker URL");
+                throw new NamingException("Invalid ConnectionFactory definition");
             }
 
             bindings.put(name, factory);
@@ -115,36 +114,33 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     }
 
     protected JmsConnectionFactory createConnectionFactory(String name, Hashtable<Object, Object> environment) throws URISyntaxException {
-        Hashtable<Object, Object> temp = new Hashtable<Object, Object>(environment);
-        String prefix = connectionFactoryPrefix + name + ".";
-        for (Iterator<Entry<Object, Object>> iter = environment.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry<Object, Object> entry = iter.next();
-            String key = (String) entry.getKey();
-            if (key.startsWith(prefix)) {
-                // Rename the key...
-                temp.remove(key);
-                key = key.substring(prefix.length());
-                temp.put(key, entry.getValue());
-            }
-        }
-        return createConnectionFactory(temp);
+        String cfNameKey = connectionFactoryPrefix + name;
+        Map<String, String> props = new LinkedHashMap<String, String>();
+
+        props.put(JmsConnectionFactory.REMOTE_URI_PROP, String.valueOf(environment.get(cfNameKey)));
+
+        //TODO: support gathering up any other per-factory properties from the environment
+
+        return createConnectionFactory(props);
     }
 
-    protected String[] getConnectionFactoryNames(Map<Object, Object> environment) {
-        String factoryNames = (String) environment.get("factories");
-        if (factoryNames != null) {
-            List<String> list = new ArrayList<String>();
-            for (StringTokenizer enumeration = new StringTokenizer(factoryNames, ","); enumeration.hasMoreTokens();) {
-                list.add(enumeration.nextToken().trim());
-            }
-            int size = list.size();
-            if (size > 0) {
-                String[] answer = new String[size];
-                list.toArray(answer);
-                return answer;
+    protected List<String> getConnectionFactoryNames(Map<Object, Object> environment) {
+        List<String> list = new ArrayList<String>();
+        for (Iterator<Entry<Object, Object>> iter = environment.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry<Object, Object> entry = iter.next();
+            String key = String.valueOf(entry.getKey());
+            if (key.startsWith(connectionFactoryPrefix)) {
+                String jndiName = key.substring(connectionFactoryPrefix.length());
+                list.add(jndiName);
             }
         }
-        return DEFAULT_CONNECTION_FACTORY_NAMES;
+
+        if(list.isEmpty())
+        {
+            list.addAll(Arrays.asList(DEFAULT_CONNECTION_FACTORY_NAMES));
+        }
+
+        return list;
     }
 
     protected void createQueues(Hashtable<Object, Object> environment, Map<String, Object> bindings) {
@@ -184,27 +180,11 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     }
 
     /**
-     * Factory method to create a new connection factory from the given
-     * environment
+     * Factory method to create a new connection factory using the given properties
      */
-    protected JmsConnectionFactory createConnectionFactory(Hashtable<Object,Object> environment) throws URISyntaxException {
-        Map<String, String> properties = toMap(environment);
-
-        // Remove naming-related properties which relate to the
-        // InitialContextFactory implementation itself
-        properties.remove(Context.INITIAL_CONTEXT_FACTORY);
-        properties.remove(Context.PROVIDER_URL);
-
+    protected JmsConnectionFactory createConnectionFactory(Map<String, String> properties) throws URISyntaxException {
         JmsConnectionFactory factory = new JmsConnectionFactory();
         factory.setProperties(properties);
         return factory;
-    }
-
-    public Map<String, String> toMap(Hashtable<Object, Object> props) {
-        Map<String, String> map = new HashMap<String, String>();
-        for (Map.Entry<Object, Object> entry : props.entrySet()) {
-            map.put(entry.getKey().toString(), entry.getValue().toString());
-        }
-        return map;
     }
 }

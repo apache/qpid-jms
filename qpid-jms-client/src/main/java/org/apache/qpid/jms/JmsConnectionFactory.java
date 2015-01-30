@@ -49,7 +49,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsConnectionFactory.class);
     private static final String CLIENT_ID_PROP = "clientID";
-    private static final String REMOTE_URI_PROP = "remoteURI";
+
+    public static final String REMOTE_URI_PROP = "remoteURI";
 
     private URI remoteURI;
     private String username;

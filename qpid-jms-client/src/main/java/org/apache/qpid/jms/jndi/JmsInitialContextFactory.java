@@ -58,6 +58,7 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     static final String QUEUE_KEY_PREFIX = "queue.";
     static final String TOPIC_KEY_PREFIX = "topic.";
     static final String CONNECTION_FACTORY_DEFAULT_KEY_PREFIX = "default." + CONNECTION_FACTORY_KEY_PREFIX;
+    static final String CONNECTION_FACTORY_PROPERTY_KEY_PREFIX = "property." + CONNECTION_FACTORY_KEY_PREFIX;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -134,7 +135,8 @@ public class JmsInitialContextFactory implements InitialContextFactory {
             }
         }
 
-        //TODO: support gathering up any other per-factory properties from the environment
+        // Add any factory-specific additional properties
+        props.putAll(getConnectionFactoryProperties(name, environment));
 
         return createConnectionFactory(props);
     }
@@ -172,6 +174,23 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         }
 
         return Collections.unmodifiableMap(map);
+    }
+
+    protected Map<String, String> getConnectionFactoryProperties(String factoryName, Map<Object, Object> environment) {
+        Map<String, String> map = new LinkedHashMap<String, String>();
+
+        String factoryPropertiesPrefix = CONNECTION_FACTORY_PROPERTY_KEY_PREFIX + factoryName + ".";
+
+        for (Iterator<Entry<Object, Object>> iter = environment.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry<Object, Object> entry = iter.next();
+            String key = String.valueOf(entry.getKey());
+            if (key.startsWith(factoryPropertiesPrefix)) {
+                String propertyName = key.substring(factoryPropertiesPrefix.length());
+                map.put(propertyName, String.valueOf(entry.getValue()));
+            }
+        }
+
+        return map;
     }
 
     protected void createQueues(Hashtable<Object, Object> environment, Map<String, Object> bindings) {

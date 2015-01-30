@@ -76,6 +76,24 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testDefaultConnectionFactorySeesFactorySpecificProperty() throws Exception {
+        String updatedClientID = _testName.getMethodName();
+
+        String factoryName = JmsInitialContextFactory.DEFAULT_CONNECTION_FACTORY_NAMES[0];
+        String propertyPrefix = JmsInitialContextFactory.CONNECTION_FACTORY_PROPERTY_KEY_PREFIX;
+
+        Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+        env.put(propertyPrefix + factoryName + "." + "clientID", updatedClientID);
+        Context ctx = createInitialContext(env);
+
+        Object o = ctx.lookup(factoryName);
+
+        assertNotNull("No object returned", o);
+        assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
+        assertEquals("Unexpected URI for returned factory", updatedClientID, ((JmsConnectionFactory) o).getClientID());
+    }
+
+    @Test
     public void testDefaultConnectionFactoriesNotPresentWhenOneIsExplicitlyDefined() throws Exception {
         Hashtable<Object, Object> env = new Hashtable<Object, Object>();
         env.put(JmsInitialContextFactory.CONNECTION_FACTORY_KEY_PREFIX + "myNewFactory", "amqp://example.com:1234");

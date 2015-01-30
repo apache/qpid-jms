@@ -78,7 +78,7 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
     @Test
     public void testDefaultConnectionFactoriesNotPresentWhenOneIsExplicitlyDefined() throws Exception {
         Hashtable<Object, Object> env = new Hashtable<Object, Object>();
-        env.put("connectionfactory.myNewFactory", "amqp://example.com:1234");
+        env.put(JmsInitialContextFactory.CONNECTION_FACTORY_KEY_PREFIX + "myNewFactory", "amqp://example.com:1234");
         Context ctx = createInitialContext(env);
 
         for (String factoryName : JmsInitialContextFactory.DEFAULT_CONNECTION_FACTORY_NAMES) {
@@ -97,7 +97,7 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         String uri = "amqp://example.com:1234";
 
         Hashtable<Object, Object> env = new Hashtable<Object, Object>();
-        env.put("connectionfactory." + factoryName, uri);
+        env.put(JmsInitialContextFactory.CONNECTION_FACTORY_KEY_PREFIX + factoryName, uri);
         Context ctx = createInitialContext(env);
 
         Object o = ctx.lookup(factoryName);
@@ -113,7 +113,7 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         String actualName = "myQueueName";
 
         Hashtable<Object, Object> env = new Hashtable<Object, Object>();
-        env.put("queue." + lookupName, actualName);
+        env.put(JmsInitialContextFactory.QUEUE_KEY_PREFIX + lookupName, actualName);
 
         Context ctx = createInitialContext(env);
         Object o = ctx.lookup(lookupName);
@@ -142,7 +142,7 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         String actualName = "myTopicName";
 
         Hashtable<Object, Object> env = new Hashtable<Object, Object>();
-        env.put("topic." + lookupName, actualName);
+        env.put(JmsInitialContextFactory.TOPIC_KEY_PREFIX + lookupName, actualName);
 
         Context ctx = createInitialContext(env);
         Object o = ctx.lookup(lookupName);
@@ -171,7 +171,7 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         String actualName = "myQueueName";
 
         Hashtable<Object, Object> env = new Hashtable<Object, Object>();
-        env.put("queue." + lookupName, actualName);
+        env.put(JmsInitialContextFactory.QUEUE_KEY_PREFIX + lookupName, actualName);
 
         Context ctx = createInitialContext(env);
         Object o = ctx.lookup(lookupName);
@@ -187,7 +187,7 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         String actualName = "myTopicName";
 
         Hashtable<Object, Object> env = new Hashtable<Object, Object>();
-        env.put("topic." + lookupName, actualName);
+        env.put(JmsInitialContextFactory.TOPIC_KEY_PREFIX + lookupName, actualName);
 
         Context ctx = createInitialContext(env);
         Object o = ctx.lookup(lookupName);

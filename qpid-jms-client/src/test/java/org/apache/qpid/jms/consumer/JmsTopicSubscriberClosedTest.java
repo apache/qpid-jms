@@ -22,37 +22,49 @@ import javax.jms.TopicConnection;
 import javax.jms.TopicSession;
 import javax.jms.TopicSubscriber;
 
-import org.apache.qpid.jms.JmsConnectionFactory;
-import org.apache.qpid.jms.support.AmqpTestSupport;
+import org.apache.qpid.jms.JmsConnectionTestSupport;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
  * Tests TopicSubscriber method contracts after the TopicSubscriber is closed.
  */
-public class JmsTopicSubscriberClosedTest extends AmqpTestSupport {
+public class JmsTopicSubscriberClosedTest extends JmsConnectionTestSupport {
 
     protected TopicSubscriber subscriber;
 
-    protected TopicSubscriber createAndCloseSubscriber() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getBrokerAmqpConnectionURI());
-        connection = factory.createTopicConnection();
-
+    protected void createTestResources() throws Exception {
+        connection = createTopicConnectionToMockProvider();
         TopicSession session = ((TopicConnection) connection).createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-        Topic destination = session.createTopic(name.getMethodName());
-        TopicSubscriber subscriber = session.createSubscriber(destination);
+        Topic destination = session.createTopic(_testName.getMethodName());
+        subscriber = session.createSubscriber(destination);
         subscriber.close();
-        return subscriber;
+    }
+
+    @Override
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+        createTestResources();
     }
 
     @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
     public void testGetNoLocalFails() throws Exception {
-        subscriber = createAndCloseSubscriber();
         subscriber.getNoLocal();
     }
 
     @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    public void testGetMessageListenerFails() throws Exception {
+        subscriber.getMessageListener();
+    }
+
+    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    public void testGetMessageSelectorFails() throws Exception {
+        subscriber.getMessageSelector();
+    }
+
+    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
     public void testGetTopicFails() throws Exception {
-        subscriber = createAndCloseSubscriber();
         subscriber.getTopic();
     }
 }

@@ -108,6 +108,30 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testConnectionFactoryBindingUsesDefaultURIWhenEmpty() throws Exception {
+        doConnectionFactoryBindingUsesDefaultURITestImpl("");
+    }
+
+    @Test
+    public void testConnectionFactoryBindingUsesDefaultURIWhenNull() throws Exception {
+        doConnectionFactoryBindingUsesDefaultURITestImpl("");
+    }
+
+    private void doConnectionFactoryBindingUsesDefaultURITestImpl(String uriPropertyValue) throws NamingException {
+        String factoryName = "myNewFactory";
+
+        Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+        env.put(JmsInitialContextFactory.CONNECTION_FACTORY_KEY_PREFIX + factoryName, uriPropertyValue);
+        Context ctx = createInitialContext(env);
+
+        Object o = ctx.lookup(factoryName);
+
+        assertNotNull("No object returned", o);
+        assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
+        assertEquals("Unexpected URI for returned factory", ((JmsConnectionFactory) o).getRemoteURI(), JmsInitialContextFactory.DEFAULT_REMOTE_URI);
+    }
+
+    @Test
     public void testQueueBinding() throws Exception {
         String lookupName = "myLookupName";
         String actualName = "myQueueName";

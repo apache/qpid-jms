@@ -127,8 +127,12 @@ public class JmsInitialContextFactory implements InitialContextFactory {
 
         // Use the default URI if none is defined for this factory in the environment
         String uri = defaultRemoteURI;
-        if (environment.containsKey(cfNameKey)) {
-            uri = String.valueOf(environment.get(cfNameKey));
+        Object o = environment.get(cfNameKey);
+        if (o != null) {
+            String value = String.valueOf(o);
+            if (value.trim().length() != 0) {
+                uri = value;
+            }
         }
 
         props.put(JmsConnectionFactory.REMOTE_URI_PROP, uri);

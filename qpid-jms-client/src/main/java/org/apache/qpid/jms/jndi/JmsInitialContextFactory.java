@@ -19,6 +19,7 @@ package org.apache.qpid.jms.jndi;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -51,12 +52,12 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     static final String[] DEFAULT_CONNECTION_FACTORY_NAMES = {
         "ConnectionFactory", "QueueConnectionFactory", "TopicConnectionFactory" };
 
-    static final String DEFAULT_REMOTE_URI_PROP = "defaultRemoteURI";
     static final String DEFAULT_REMOTE_URI = "amqp://localhost:5672";
 
     static final String CONNECTION_FACTORY_KEY_PREFIX = "connectionfactory.";
     static final String QUEUE_KEY_PREFIX = "queue.";
     static final String TOPIC_KEY_PREFIX = "topic.";
+    static final String CONNECTION_FACTORY_DEFAULT_KEY_PREFIX = "default." + CONNECTION_FACTORY_KEY_PREFIX;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -65,13 +66,8 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         Hashtable<Object, Object> environmentCopy = new Hashtable<Object, Object>();
         environmentCopy.putAll(environment);
 
-        String defaultRemoteURI = DEFAULT_REMOTE_URI;
-        if (environment.containsKey(DEFAULT_REMOTE_URI_PROP)) {
-            defaultRemoteURI = String.valueOf(environment.get(DEFAULT_REMOTE_URI_PROP));
-        }
-
         Map<String, Object> bindings = new ConcurrentHashMap<String, Object>();
-        createConnectionFactories(environmentCopy, defaultRemoteURI, bindings);
+        createConnectionFactories(environmentCopy, bindings);
         createQueues(environmentCopy, bindings);
         createTopics(environmentCopy, bindings);
 
@@ -99,13 +95,14 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         return createContext(environmentCopy, bindings);
     }
 
-    private void createConnectionFactories(Hashtable<Object, Object> environment, String defaultRemoteURI, Map<String, Object> bindings) throws NamingException {
+    private void createConnectionFactories(Hashtable<Object, Object> environment, Map<String, Object> bindings) throws NamingException {
         List<String> names = getConnectionFactoryNames(environment);
+        Map<String, String> defaults = getConnectionFactoryDefaults(environment);
         for (String name : names) {
             JmsConnectionFactory factory = null;
 
             try {
-                factory = createConnectionFactory(name, defaultRemoteURI, environment);
+                factory = createConnectionFactory(name, defaults, environment);
             } catch (Exception e) {
                 throw new NamingException("Invalid ConnectionFactory definition");
             }
@@ -121,21 +118,21 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         return new ReadOnlyContext(environment, bindings);
     }
 
-    protected JmsConnectionFactory createConnectionFactory(String name, String defaultRemoteURI, Hashtable<Object, Object> environment) throws URISyntaxException {
+    protected JmsConnectionFactory createConnectionFactory(String name, Map<String, String> defaults, Hashtable<Object, Object> environment) throws URISyntaxException {
         String cfNameKey = CONNECTION_FACTORY_KEY_PREFIX + name;
         Map<String, String> props = new LinkedHashMap<String, String>();
 
-        // Use the default URI if none is defined for this factory in the environment
-        String uri = defaultRemoteURI;
+        // Add the defaults which apply to all connection factories
+        props.putAll(defaults);
+
+        // Add any URI entry for this specific factory name
         Object o = environment.get(cfNameKey);
         if (o != null) {
             String value = String.valueOf(o);
             if (value.trim().length() != 0) {
-                uri = value;
+                props.put(JmsConnectionFactory.REMOTE_URI_PROP, value);
             }
         }
-
-        props.put(JmsConnectionFactory.REMOTE_URI_PROP, uri);
 
         //TODO: support gathering up any other per-factory properties from the environment
 
@@ -159,6 +156,22 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         }
 
         return list;
+    }
+
+    protected Map<String, String> getConnectionFactoryDefaults(Map<Object, Object> environment) {
+        Map<String, String> map = new LinkedHashMap<String, String>();
+        map.put(JmsConnectionFactory.REMOTE_URI_PROP, DEFAULT_REMOTE_URI);
+
+        for (Iterator<Entry<Object, Object>> iter = environment.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry<Object, Object> entry = iter.next();
+            String key = String.valueOf(entry.getKey());
+            if (key.startsWith(CONNECTION_FACTORY_DEFAULT_KEY_PREFIX)) {
+                String jndiName = key.substring(CONNECTION_FACTORY_DEFAULT_KEY_PREFIX.length());
+                map.put(jndiName, String.valueOf(entry.getValue()));
+            }
+        }
+
+        return Collections.unmodifiableMap(map);
     }
 
     protected void createQueues(Hashtable<Object, Object> environment, Map<String, Object> bindings) {

@@ -63,7 +63,7 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         String updatedDefaultURI = "amqp://example.com:1234";
 
         Hashtable<Object, Object> env = new Hashtable<Object, Object>();
-        env.put(JmsInitialContextFactory.DEFAULT_REMOTE_URI_PROP, updatedDefaultURI);
+        env.put(JmsInitialContextFactory.CONNECTION_FACTORY_DEFAULT_KEY_PREFIX + JmsConnectionFactory.REMOTE_URI_PROP, updatedDefaultURI);
         Context ctx = createInitialContext(env);
 
         for (String factoryName : JmsInitialContextFactory.DEFAULT_CONNECTION_FACTORY_NAMES) {

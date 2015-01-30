@@ -134,6 +134,21 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testSetPropertiesWithBadUriOptionCausesFail() throws Exception {
+        JmsConnectionFactory cf = new JmsConnectionFactory();
+
+        Map<String, String> props = new HashMap<String, String>();
+        props.put("remoteURI", "amqp://localhost:1234?jms.badOption=true");
+
+        try {
+            cf.setProperties(props);
+            fail("Should have thrown exception");
+        } catch (IllegalArgumentException iae) {
+            // expected
+        }
+    }
+
+    @Test
     public void testGetProperties() throws Exception {
         String clientID = getTestName();
         String queuePrefix = "q:";

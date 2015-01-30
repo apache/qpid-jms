@@ -93,6 +93,23 @@ public class JmsTopicSession extends JmsSession {
 
     /**
      * @param destination
+     * @param messageSelector
+     * @param noLocal
+     * @return
+     * @throws JMSException
+     * @see javax.jms.Session#createConsumer(javax.jms.Destination,
+     *      java.lang.String)
+     */
+    @Override
+    public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean noLocal) throws JMSException {
+        if (destination instanceof Queue) {
+            throw new IllegalStateException("Operation not supported by a TopicSession");
+        }
+        return super.createConsumer(destination, messageSelector, noLocal);
+    }
+
+    /**
+     * @param destination
      * @return
      * @throws JMSException
      * @see javax.jms.Session#createProducer(javax.jms.Destination)

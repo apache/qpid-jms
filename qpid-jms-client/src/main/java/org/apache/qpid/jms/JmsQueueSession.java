@@ -64,15 +64,18 @@ public class JmsQueueSession extends JmsSession {
     /**
      * @param destination
      * @param messageSelector
-     * @param NoLocal
+     * @param noLocal
      * @return
      * @throws JMSException
      * @see javax.jms.Session#createConsumer(javax.jms.Destination,
      *      java.lang.String, boolean)
      */
     @Override
-    public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean NoLocal) throws JMSException {
-        throw new IllegalStateException("Operation not supported by a QueueSession");
+    public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean noLocal) throws JMSException {
+        if (destination instanceof Topic) {
+            throw new IllegalStateException("Operation not supported by a QueueSession");
+        }
+        return super.createConsumer(destination, messageSelector, noLocal);
     }
 
     /**

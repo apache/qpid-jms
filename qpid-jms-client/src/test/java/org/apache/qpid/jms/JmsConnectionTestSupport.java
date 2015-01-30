@@ -47,6 +47,8 @@ public class JmsConnectionTestSupport extends QpidJmsTestCase {
     private final IdGenerator clientIdGenerator = new IdGenerator();
 
     protected JmsConnection connection;
+    protected JmsTopicConnection topicConnection;
+    protected JmsQueueConnection queueConnection;
     protected ProviderListener providerListener;
 
     private void createMockProvider() throws Exception {
@@ -152,6 +154,12 @@ public class JmsConnectionTestSupport extends QpidJmsTestCase {
         super.tearDown();
         if (connection != null) {
             connection.close();
+        }
+        if (topicConnection != null) {
+            topicConnection.close();
+        }
+        if (queueConnection != null) {
+            queueConnection.close();
         }
     }
 }

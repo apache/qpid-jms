@@ -261,7 +261,7 @@ public class PropertyUtil {
      *
      * @param uri
      *        The URI value to append the object properties to.
-     * @param bean
+     * @param properties
      *        The Object whose properties will be added to the target URI.
      *
      * @return a new String value that is the original URI with the added bean properties.
@@ -277,7 +277,7 @@ public class PropertyUtil {
      *
      * @param uri
      *        The string URI value to append the object properties to.
-     * @param bean
+     * @param properties
      *        The properties that will be added to the target URI.
      *
      * @return a new String value that is the original URI with the added properties.
@@ -311,8 +311,8 @@ public class PropertyUtil {
     }
 
     /**
-     * Set properties on an object using the provided map. The return value indicates if all
-     * properties from the given map were set on the target object.
+     * Set properties on an object using the provided map. The return value
+     * indicates if all properties from the given map were set on the target object.
      *
      * @param target
      *        the object whose properties are to be set from the map options.
@@ -321,7 +321,7 @@ public class PropertyUtil {
      *
      * @return true if all values in the properties map were applied to the target object.
      */
-    public static boolean setProperties(Object target, Map<String, String> properties) {
+    public static Map<String, String> setProperties(Object target, Map<String, String> properties) {
         if (target == null) {
             throw new IllegalArgumentException("target object cannot be null");
         }
@@ -329,16 +329,18 @@ public class PropertyUtil {
             throw new IllegalArgumentException("Given Properties object cannot be null");
         }
 
-        int setCounter = 0;
+        Map<String, String> unmatched = new HashMap<String, String>();
 
         for (Map.Entry<String, String> entry : properties.entrySet()) {
-            if (setProperty(target, entry.getKey(), entry.getValue())) {
-                setCounter++;
+            if (!setProperty(target, entry.getKey(), entry.getValue())) {
+                unmatched.put((String) entry.getKey(), entry.getValue());
             }
         }
 
-        return setCounter == properties.size();
+        return Collections.unmodifiableMap(unmatched);
     }
+
+    //TODO: common impl for above and below methods.
 
     /**
      * Set properties on an object using the provided Properties object. The return value
@@ -346,7 +348,7 @@ public class PropertyUtil {
      *
      * @param target
      *        the object whose properties are to be set from the map options.
-     * @param props
+     * @param properties
      *        the properties that should be applied to the given object.
      *
      * @return an unmodifiable map with any values that could not be applied to the target.

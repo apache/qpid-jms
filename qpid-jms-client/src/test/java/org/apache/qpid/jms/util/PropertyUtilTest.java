@@ -424,7 +424,7 @@ public class PropertyUtilTest {
         properties.put("firstName", "foo");
         properties.put("lastName", "bar");
 
-        assertTrue(PropertyUtil.setProperties(configObject, properties));
+        assertTrue(PropertyUtil.setProperties(configObject, properties).isEmpty());
 
         assertEquals("foo", configObject.getFirstName());
         assertEquals("bar", configObject.getLastName());
@@ -453,7 +453,10 @@ public class PropertyUtilTest {
         properties.put("lastName", "bar");
         properties.put("unused", "absent");
 
-        assertFalse(PropertyUtil.setProperties(configObject, properties));
+        Map<String, String> result = PropertyUtil.setProperties(configObject, properties);
+
+        assertFalse(result.isEmpty());
+        assertTrue(result.containsKey("unused"));
 
         assertEquals("foo", configObject.getFirstName());
         assertEquals("bar", configObject.getLastName());

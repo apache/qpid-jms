@@ -474,6 +474,14 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         return TransportOptions.INSTANCE.clone();
     }
 
+    protected void logTransportErrors() {
+        if (!exceptions.isEmpty()) {
+            for(Throwable ex : exceptions) {
+                LOG.info("Transport sent exception: {}", ex, ex);
+            }
+        }
+    }
+
     private class NettyTransportListener implements TransportListener {
 
         @Override
@@ -491,7 +499,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
         @Override
         public void onTransportError(Throwable cause) {
-            LOG.debug("Transport error caught: {}", cause.getMessage(), cause);
+            LOG.info("Transport error caught: {}", cause.getMessage(), cause);
             exceptions.add(cause);
         }
     }

@@ -73,6 +73,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             transport.close();
         }
 
+        logTransportErrors();
         assertTrue(exceptions.isEmpty());
     }
 
@@ -97,6 +98,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             transport.close();
         }
 
+        logTransportErrors();
         assertTrue(exceptions.isEmpty());
     }
 
@@ -124,6 +126,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             transport.close();
         }
 
+        logTransportErrors();
         assertTrue(exceptions.isEmpty());
     }
 
@@ -151,6 +154,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             transport.close();
         }
 
+        logTransportErrors();
         assertTrue(exceptions.isEmpty());
     }
 

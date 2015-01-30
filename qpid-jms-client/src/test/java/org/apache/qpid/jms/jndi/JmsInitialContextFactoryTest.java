@@ -58,6 +58,23 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testDefaultConnectionFactoriesSeeDefaultURIUpdate() throws Exception {
+        String updatedDefaultURI = "amqp://example.com:1234";
+
+        Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+        env.put(JmsInitialContextFactory.DEFAULT_REMOTE_URI_PROP, updatedDefaultURI);
+        Context ctx = createInitialContext(env);
+
+        for (String factoryName : JmsInitialContextFactory.DEFAULT_CONNECTION_FACTORY_NAMES) {
+            Object o = ctx.lookup(factoryName);
+
+            assertNotNull("No object returned", o);
+            assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
+            assertEquals("Unexpected URI for returned factory", ((JmsConnectionFactory) o).getRemoteURI(), updatedDefaultURI);
+        }
+    }
+
+    @Test
     public void testConnectionFactoryBinding() throws Exception {
         String factoryName = "myNewFactory";
         String uri = "amqp://example.com:1234";

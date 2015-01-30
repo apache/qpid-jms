@@ -51,6 +51,7 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     static final String[] DEFAULT_CONNECTION_FACTORY_NAMES = {
         "ConnectionFactory", "QueueConnectionFactory", "TopicConnectionFactory" };
 
+    static final String DEFAULT_REMOTE_URI_PROP = "defaultRemoteURI";
     static final String DEFAULT_REMOTE_URI = "amqp://localhost:5672";
 
     private String connectionFactoryPrefix = "connectionfactory.";
@@ -64,8 +65,13 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         Hashtable<Object, Object> environmentCopy = new Hashtable<Object, Object>();
         environmentCopy.putAll(environment);
 
+        String defaultRemoteURI = DEFAULT_REMOTE_URI;
+        if (environment.containsKey(DEFAULT_REMOTE_URI_PROP)) {
+            defaultRemoteURI = String.valueOf(environment.get(DEFAULT_REMOTE_URI_PROP));
+        }
+
         Map<String, Object> bindings = new ConcurrentHashMap<String, Object>();
-        createConnectionFactories(environmentCopy, DEFAULT_REMOTE_URI, bindings);
+        createConnectionFactories(environmentCopy, defaultRemoteURI, bindings);
         createQueues(environmentCopy, bindings);
         createTopics(environmentCopy, bindings);
 

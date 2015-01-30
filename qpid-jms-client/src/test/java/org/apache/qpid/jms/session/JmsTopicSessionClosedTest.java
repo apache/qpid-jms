@@ -35,12 +35,13 @@ public class JmsTopicSessionClosedTest extends JmsConnectionTestSupport {
     private TopicSession session;
     private TopicPublisher publisher;
     private TopicSubscriber subscriber;
+    private Topic destination;
 
     protected void createTestResources() throws Exception {
         connection = createTopicConnectionToMockProvider();
 
         session = ((TopicConnection) connection).createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-        Topic destination = session.createTopic(_testName.getMethodName());
+        destination = session.createTopic(_testName.getMethodName());
 
         publisher = session.createPublisher(destination);
         subscriber = session.createSubscriber(destination);
@@ -58,8 +59,32 @@ public class JmsTopicSessionClosedTest extends JmsConnectionTestSupport {
 
     @Test(timeout=30000)
     public void testSessionCloseAgain() throws Exception {
-        // Close it again
         session.close();
+    }
+
+    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    public void testCreatePublisher() throws Exception {
+        session.createPublisher(destination);
+    }
+
+    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    public void testCreateSubscriber() throws Exception {
+        session.createSubscriber(destination);
+    }
+
+    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    public void testCreateSubscriberWithSelector() throws Exception {
+        session.createSubscriber(destination, "color = blue", false);
+    }
+
+    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    public void testCreateDurableSubscriber() throws Exception {
+        session.createDurableSubscriber(destination, "foo");
+    }
+
+    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    public void testCreateDurableSubscriberWithSelector() throws Exception {
+        session.createDurableSubscriber(destination, "foo", "color = blue", false);
     }
 
     @Test(timeout=30000)

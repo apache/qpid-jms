@@ -31,7 +31,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Tests behaviour after a Session is closed.
+ * Tests behavior after a Session is closed.
  */
 public class JmsSessionClosedTest extends JmsConnectionTestSupport {
 

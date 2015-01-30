@@ -21,6 +21,7 @@ import java.net.URI;
 import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsResource;
+import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
@@ -75,6 +76,28 @@ public class JmsConnectionTestSupport extends QpidJmsTestCase {
                 return null;
             }
         }).when(provider).start(Mockito.any(JmsResource.class), Mockito.any(ProviderFuture.class));
+
+        Mockito.doAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                Object[] args = invocation.getArguments();
+                LOG.trace("Handling provider recover: {}", args[0]);
+                ProviderFuture request = (ProviderFuture) args[1];
+                request.onSuccess();
+                return null;
+            }
+        }).when(provider).recover(Mockito.any(JmsSessionId.class), Mockito.any(ProviderFuture.class));
+
+        Mockito.doAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                Object[] args = invocation.getArguments();
+                LOG.trace("Handling provider session acknowledge: {}", args[0]);
+                ProviderFuture request = (ProviderFuture) args[1];
+                request.onSuccess();
+                return null;
+            }
+        }).when(provider).acknowledge(Mockito.any(JmsSessionId.class), Mockito.any(ProviderFuture.class));
 
         Mockito.doAnswer(new Answer<Object>() {
             @Override

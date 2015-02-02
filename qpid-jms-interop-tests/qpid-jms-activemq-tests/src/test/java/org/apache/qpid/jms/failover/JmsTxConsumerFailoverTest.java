@@ -51,7 +51,7 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
      */
     @Test(timeout=60000)
     public void testTxConsumerReceiveAfterFailoverCommits() throws Exception {
-        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=100");
+        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?failover.maxReconnectDelay=100");
 
         connection = createAmqpConnection(brokerURI);
         connection.start();
@@ -101,7 +101,7 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
 
     @Test(timeout=60000)
     public void testTxConsumerReceiveThenFailoverCommitFails() throws Exception {
-        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=100");
+        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?failover.maxReconnectDelay=100");
 
         connection = createAmqpConnection(brokerURI);
         connection.start();
@@ -138,7 +138,7 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
 
     @Test(timeout=60000)
     public void testTxConsumerRollbackAfterFailoverGetsNoErrors() throws Exception {
-        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=100");
+        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?failover.maxReconnectDelay=100");
 
         connection = createAmqpConnection(brokerURI);
         connection.start();
@@ -182,7 +182,7 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
      */
     @Test(timeout=60000)
     public void testTxConsumerReceiveWorksAfterFailoverButCommitFails() throws Exception {
-        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=100");
+        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?failover.maxReconnectDelay=100");
 
         connection = createAmqpConnection(brokerURI);
         connection.start();

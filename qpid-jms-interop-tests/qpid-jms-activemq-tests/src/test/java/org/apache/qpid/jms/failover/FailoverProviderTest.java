@@ -51,8 +51,10 @@ public class FailoverProviderTest extends AmqpTestSupport {
     @Test(timeout=60000)
     public void testFailoverURIConfiguration() throws Exception {
         URI brokerURI = new URI("failover://(" + getBrokerAmqpConnectionURI() + ")" +
-                                "?maxReconnectDelay=1000&useExponentialBackOff=false" +
-                                "&maxReconnectAttempts=10&startupMaxReconnectAttempts=20");
+                                "?failover.maxReconnectDelay=1000" +
+                                "&failover.useExponentialBackOff=false" +
+                                "&failover.maxReconnectAttempts=10" +
+                                "&failover.startupMaxReconnectAttempts=20");
         Provider asyncProvider = FailoverProviderFactory.create(brokerURI);
         assertNotNull(asyncProvider);
         FailoverProvider provider = (FailoverProvider) asyncProvider;
@@ -68,7 +70,7 @@ public class FailoverProviderTest extends AmqpTestSupport {
     @Test(timeout=60000)
     public void testStartupReconnectAttempts() throws Exception {
         URI brokerURI = new URI("failover://(amqp://localhost:61616)" +
-                                "?maxReconnectDelay=100&startupMaxReconnectAttempts=5");
+                                "?failover.maxReconnectDelay=100&failover.startupMaxReconnectAttempts=5");
         Provider asyncProvider = FailoverProviderFactory.create(brokerURI);
         assertNotNull(asyncProvider);
         FailoverProvider provider = (FailoverProvider) asyncProvider;

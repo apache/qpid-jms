@@ -36,7 +36,7 @@ public class AmqpProviderFactory extends ProviderFactory {
     public Provider createProvider(URI remoteURI) throws Exception {
 
         Map<String, String> map = PropertyUtil.parseQuery(remoteURI.getQuery());
-        Map<String, String> providerOptions = PropertyUtil.filterProperties(map, "provider.");
+        Map<String, String> providerOptions = PropertyUtil.filterProperties(map, "amqp.");
 
         remoteURI = PropertyUtil.replaceQuery(remoteURI, map);
 

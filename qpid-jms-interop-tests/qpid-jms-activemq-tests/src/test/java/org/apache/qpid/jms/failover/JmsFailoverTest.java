@@ -62,7 +62,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
     @Test(timeout=60000)
     public void testFailoverConnectsWithMultipleURIs() throws Exception {
         URI brokerURI = new URI("failover://(amqp://127.0.0.1:61616,amqp://localhost:5777," +
-                                getBrokerAmqpConnectionURI() + ")?maxReconnectDelay=500");
+                                getBrokerAmqpConnectionURI() + ")?failover.maxReconnectDelay=500");
         Connection connection = createAmqpConnection(brokerURI);
         connection.start();
         connection.close();
@@ -71,7 +71,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
     @Test(timeout=60000)
     public void testStartupReconnectAttempts() throws Exception {
         URI brokerURI = new URI("failover://(amqp://localhost:61616)" +
-                                "?maxReconnectDelay=100&startupMaxReconnectAttempts=5");
+                                "?failover.maxReconnectDelay=50&failover.startupMaxReconnectAttempts=5");
         JmsConnectionFactory factory = new JmsConnectionFactory(brokerURI);
         Connection connection = factory.createConnection();
         try {
@@ -88,7 +88,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
     @Test(timeout=60000)
     public void testStartupReconnectAttemptsMultipleHosts() throws Exception {
         URI brokerURI = new URI("failover://(amqp://localhost:61616,amqp://localhost:61617)" +
-                                "?maxReconnectDelay=100&startupMaxReconnectAttempts=5");
+                                "?failover.maxReconnectDelay=100&failover.startupMaxReconnectAttempts=5");
         JmsConnectionFactory factory = new JmsConnectionFactory(brokerURI);
         Connection connection = factory.createConnection();
         try {
@@ -104,7 +104,8 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
     @Test(timeout=60000)
     public void testStartFailureWithAsyncExceptionListener() throws Exception {
-        URI brokerURI = new URI(getAmqpFailoverURI() + "?maxReconnectDelay=100&maxReconnectAttempts=5");
+        URI brokerURI = new URI(getAmqpFailoverURI() +
+            "?failover.maxReconnectDelay=100&failover.maxReconnectAttempts=5");
 
         final CountDownLatch failed = new CountDownLatch(1);
         JmsConnectionFactory factory = new JmsConnectionFactory(brokerURI);
@@ -127,7 +128,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
     @SuppressWarnings("unused")
     @Test(timeout=60000)
     public void testBasicStateRestoration() throws Exception {
-        URI brokerURI = new URI(getAmqpFailoverURI() + "?maxReconnectDelay=1000");
+        URI brokerURI = new URI(getAmqpFailoverURI() + "?failover.maxReconnectDelay=1000");
 
         connection = createAmqpConnection(brokerURI);
         connection.start();
@@ -157,7 +158,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
     @SuppressWarnings("unused")
     @Test(timeout=60000)
     public void testDurableSubscriberRestores() throws Exception {
-        URI brokerURI = new URI(getAmqpFailoverURI() + "?maxReconnectDelay=200");
+        URI brokerURI = new URI(getAmqpFailoverURI() + "?failover.maxReconnectDelay=200");
 
         connection = createAmqpConnection(brokerURI);
         connection.setClientID(name.getMethodName());
@@ -199,7 +200,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
     @Test(timeout=90000)
     public void testBadFirstURIConnectsAndProducerWorks() throws Exception {
         URI brokerURI = new URI("failover://(amqp://localhost:61616," +
-                                             getBrokerAmqpConnectionURI() + ")?maxReconnectDelay=100");
+            getBrokerAmqpConnectionURI() + ")?failover.maxReconnectDelay=100");
 
         connection = createAmqpConnection(brokerURI);
         connection.start();
@@ -232,7 +233,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
     @Test(timeout=90000)
     public void testNonTxProducerRecoversAfterFailover() throws Exception {
-        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?maxReconnectDelay=1000");
+        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?failover.maxReconnectDelay=1000");
 
         connection = createAmqpConnection(brokerURI);
         connection.start();

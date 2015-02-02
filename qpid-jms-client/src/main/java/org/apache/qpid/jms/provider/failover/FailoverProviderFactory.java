@@ -34,10 +34,12 @@ public class FailoverProviderFactory extends ProviderFactory {
     public Provider createProvider(URI remoteURI) throws Exception {
         CompositeData composite = URISupport.parseComposite(remoteURI);
         Map<String, String> options = composite.getParameters();
+
+        Map<String, String> filtered = PropertyUtil.filterProperties(options, "failover.");
         Map<String, String> nested = PropertyUtil.filterProperties(options, "nested.");
 
         FailoverProvider provider = new FailoverProvider(composite.getComponents(), nested);
-        Map<String, String> unused = PropertyUtil.setProperties(provider, options);
+        Map<String, String> unused = PropertyUtil.setProperties(provider, filtered);
         if (!unused.isEmpty()) {
             String msg = ""
                 + " Not all options could be set on the Failover provider."

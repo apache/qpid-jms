@@ -134,7 +134,7 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
 
         startNewBroker();
 
-        URI brokerURI = new URI(getAmqpFailoverURI() + "randomize=false");
+        URI brokerURI = new URI(getAmqpFailoverURI() + "failover.randomize=false");
         Connection connection = createAmqpConnection(brokerURI);
         connection.start();
 
@@ -168,7 +168,7 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
     @SuppressWarnings("unused")
     @Test(timeout=60000)
     public void testClosedReourcesAreNotRestored() throws Exception {
-        URI brokerURI = new URI(getAmqpFailoverURI() + "?maxReconnectDelay=500");
+        URI brokerURI = new URI(getAmqpFailoverURI() + "?failover.maxReconnectDelay=500");
         Connection connection = createAmqpConnection(brokerURI);
         connection.start();
 

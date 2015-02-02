@@ -736,7 +736,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      *
      * @return true - if the session uses client acknowledgment.
      */
-    protected boolean isClientAcknowledge() {
+    public boolean isClientAcknowledge() {
         return acknowledgementMode == Session.CLIENT_ACKNOWLEDGE;
     }
 

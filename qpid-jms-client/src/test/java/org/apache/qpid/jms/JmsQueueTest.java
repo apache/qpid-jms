@@ -122,6 +122,28 @@ public class JmsQueueTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testSetPropertiesWithUnusedOptions() throws Exception {
+        String name = "myQueue";
+        String unusedKey = "unusedKey";
+        String unusedValue = "unusedValue";
+        JmsQueue queue = new JmsQueue();
+
+
+        Map<String, String> props = new HashMap<String, String>();
+        props.put(NAME_PROP, name);
+        props.put(unusedKey, unusedValue);
+        Map<String, String> unusedProps = queue.setProperties(props);
+
+        // Verify the name property was applied.
+        assertEquals("Unexpected value for name", name, queue.getQueueName());
+
+        //Verify that the unused property was returned
+        assertEquals("Unexpected size of return map", 1, unusedProps.size());
+        assertTrue("Expected property not found in map: " + unusedProps, unusedProps.containsKey(unusedKey));
+        assertEquals("Unexpected property value", unusedValue, unusedProps.get(unusedKey));
+    }
+
+    @Test
     public void testSerializeThenDeserialize() throws Exception {
         String name = "myQueue";
         JmsQueue queue = new JmsQueue(name);

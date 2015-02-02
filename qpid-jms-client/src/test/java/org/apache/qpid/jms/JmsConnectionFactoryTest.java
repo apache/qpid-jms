@@ -134,6 +134,35 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testSetPropertiesWithUnusedOptions() throws Exception {
+        String uri = "amqp://localhost:1234";
+        String unusedKey = "unusedKey";
+        String unusedValue = "unusedValue";
+
+        // Create a connection factory object
+        JmsConnectionFactory cf = new JmsConnectionFactory();
+
+        // Verify the outcome conditions have not been met already
+        assertNotEquals("value should not match yet", uri, cf.getRemoteURI());
+
+        // Set the properties
+        Map<String, String> props = new HashMap<String, String>();
+        // Add a property that will get used
+        props.put("remoteURI", uri);
+        // Add a property that wont get used
+        props.put(unusedKey, unusedValue);
+        Map<String, String> unusedProps = cf.setProperties(props);
+
+        // Verify the URI property was applied.
+        assertEquals("uri property option not applied as expected", uri, cf.getRemoteURI());
+
+        //Verify that the unused property was returned
+        assertEquals("Unexpected size of return map", 1, unusedProps.size());
+        assertTrue("Expected property not found in map: " + unusedProps, unusedProps.containsKey(unusedKey));
+        assertEquals("Unexpected property value", unusedValue, unusedProps.get(unusedKey));
+    }
+
+    @Test
     public void testSetPropertiesWithBadUriOptionCausesFail() throws Exception {
         JmsConnectionFactory cf = new JmsConnectionFactory();
 

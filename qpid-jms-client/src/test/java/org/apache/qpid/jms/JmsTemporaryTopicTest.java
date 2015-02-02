@@ -130,6 +130,28 @@ public class JmsTemporaryTopicTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testSetPropertiesWithUnusedOptions() throws Exception {
+        String name = "myTopic";
+        String unusedKey = "unusedKey";
+        String unusedValue = "unusedValue";
+        JmsTopic topic = new JmsTopic();
+
+
+        Map<String, String> props = new HashMap<String, String>();
+        props.put(NAME_PROP, name);
+        props.put(unusedKey, unusedValue);
+        Map<String, String> unusedProps = topic.setProperties(props);
+
+        // Verify the name property was applied.
+        assertEquals("Unexpected value for name", name, topic.getTopicName());
+
+        //Verify that the unused property was returned
+        assertEquals("Unexpected size of return map", 1, unusedProps.size());
+        assertTrue("Expected property not found in map: " + unusedProps, unusedProps.containsKey(unusedKey));
+        assertEquals("Unexpected property value", unusedValue, unusedProps.get(unusedKey));
+    }
+
+    @Test
     public void testSerializeThenDeserialize() throws Exception {
         String name = "myTopic";
         JmsTemporaryTopic topic = new JmsTemporaryTopic(name);

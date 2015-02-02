@@ -138,7 +138,7 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         // Add any factory-specific additional properties
         props.putAll(getConnectionFactoryProperties(name, environment));
 
-        return createConnectionFactory(props);
+        return createConnectionFactory(name, props);
     }
 
     protected List<String> getConnectionFactoryNames(Map<Object, Object> environment) {
@@ -232,9 +232,17 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     /**
      * Factory method to create a new connection factory using the given properties
      */
-    protected JmsConnectionFactory createConnectionFactory(Map<String, String> properties) throws URISyntaxException {
+    protected JmsConnectionFactory createConnectionFactory(String name, Map<String, String> properties) throws URISyntaxException {
         JmsConnectionFactory factory = new JmsConnectionFactory();
-        factory.setProperties(properties);
+        Map<String, String> unused = factory.setProperties(properties);
+        if (!unused.isEmpty()) {
+            String msg =
+                  " Not all properties could be set on ConnectionFactory '" + name + "'."
+                + " Check the properties are spelled correctly."
+                + " Unused properties=[" + unused + "].";
+            throw new IllegalArgumentException(msg);
+        }
+
         return factory;
     }
 }

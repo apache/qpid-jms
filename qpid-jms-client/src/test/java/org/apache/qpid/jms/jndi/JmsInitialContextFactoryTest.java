@@ -126,6 +126,44 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testConnectionFactoryBindingWithInvalidFactorySpecificProperty() throws Exception {
+        String factoryName = "myNewFactory";
+        String uri = "amqp://example.com:1234";
+
+        String propertyPrefix = JmsInitialContextFactory.CONNECTION_FACTORY_PROPERTY_KEY_PREFIX;
+
+        Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+        env.put(JmsInitialContextFactory.CONNECTION_FACTORY_KEY_PREFIX + factoryName, uri);
+        env.put(propertyPrefix + factoryName + "." + "invalidProperty", "value");
+
+        try {
+            createInitialContext(env);
+            fail("Should have thrown exception");
+        } catch (NamingException ne) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void testConnectionFactoryBindingWithInvalidDefaultProperty() throws Exception {
+        String factoryName = "myNewFactory";
+        String uri = "amqp://example.com:1234";
+
+        String defaultPrefix = JmsInitialContextFactory.CONNECTION_FACTORY_DEFAULT_KEY_PREFIX;
+
+        Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+        env.put(JmsInitialContextFactory.CONNECTION_FACTORY_KEY_PREFIX + factoryName, uri);
+        env.put(defaultPrefix + "invalidDefaultProperty", "value");
+
+        try {
+            createInitialContext(env);
+            fail("Should have thrown exception");
+        } catch (NamingException ne) {
+            // Expected
+        }
+    }
+
+    @Test
     public void testConnectionFactoryBindingUsesDefaultURIWhenEmpty() throws Exception {
         doConnectionFactoryBindingUsesDefaultURITestImpl("");
     }

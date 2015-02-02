@@ -311,6 +311,20 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testContextFromProviderUrlNotFoundThrowsNamingException() throws Exception {
+        Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+
+        env.put(Context.PROVIDER_URL, "/does/not/exist/1234");
+        try {
+            createInitialContext(env);
+            fail("Should have thrown exception");
+        } catch (NamingException ne) {
+            // Expected
+            assertTrue("Should have had a cause", ne.getCause() != null);
+        }
+    }
+
+    @Test
     public void testContextFromProviderUrlInEnvironmentMap() throws Exception {
         doContextFromProviderUrlInEnvironmentMapTestImpl(false);
     }

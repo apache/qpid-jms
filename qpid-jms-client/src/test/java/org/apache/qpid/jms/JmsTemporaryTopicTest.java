@@ -124,9 +124,12 @@ public class JmsTemporaryTopicTest extends QpidJmsTestCase {
 
         Map<String, String> props = new HashMap<String, String>();
         props.put(NAME_PROP, name);
-        topic.setProperties(props);
+        Map<String, String> unusedProps = topic.setProperties(props);
 
         assertEquals("Unexpected value for name", name, topic.getTopicName());
+
+        // Verify the returned map was empty
+        assertTrue("Map should be empty: " + unusedProps, unusedProps.isEmpty());
     }
 
     @Test

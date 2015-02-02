@@ -124,9 +124,12 @@ public class JmsTemporaryQueueTest extends QpidJmsTestCase {
 
         Map<String, String> props = new HashMap<String, String>();
         props.put(NAME_PROP, name);
-        queue.setProperties(props);
+        Map<String, String> unusedProps = queue.setProperties(props);
 
         assertEquals("Unexpected value for name", name, queue.getQueueName());
+
+        // Verify the returned map was empty
+        assertTrue("Map should be empty: " + unusedProps, unusedProps.isEmpty());
     }
 
     @Test

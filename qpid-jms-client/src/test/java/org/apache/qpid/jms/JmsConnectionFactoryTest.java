@@ -123,7 +123,7 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         props.put("remoteURI", uri);
         // Add another property directly
         props.put("queuePrefix", queuePrefix);
-        cf.setProperties(props);
+        Map<String, String> unusedProps = cf.setProperties(props);
 
         // Verify the clientID property option from the URI was applied.
         assertEquals("uri property query option not applied as expected", clientID, cf.getClientID());
@@ -131,6 +131,9 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         assertEquals("direct property not applied as expected", queuePrefix, cf.getQueuePrefix());
         // Verify the URI was filtered to remove the applied options
         assertEquals("URI was filtered to remove options that were applied", baseUri, cf.getRemoteURI());
+
+        // Verify the returned map was empty
+        assertTrue("Map should be empty: " + unusedProps, unusedProps.isEmpty());
     }
 
     @Test

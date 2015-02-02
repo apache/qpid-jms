@@ -125,9 +125,6 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
             transport.close();
         }
-
-        logTransportErrors();
-        assertTrue(exceptions.isEmpty());
     }
 
     @Test(timeout = 60 * 1000)

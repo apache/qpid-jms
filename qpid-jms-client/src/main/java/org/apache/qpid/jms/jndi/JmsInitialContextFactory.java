@@ -16,7 +16,12 @@
  */
 package org.apache.qpid.jms.jndi;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.jms.Queue;
@@ -67,6 +73,45 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         Hashtable<Object, Object> environmentCopy = new Hashtable<Object, Object>();
         environmentCopy.putAll(environment);
 
+        // Check for an *optional* properties file use to augment the environment
+        String location = null;
+        if (environmentCopy.containsKey(Context.PROVIDER_URL)) {
+            location = (String) environment.get(Context.PROVIDER_URL);
+        } else {
+            location = System.getProperty(Context.PROVIDER_URL);
+        }
+
+        try {
+            if (location != null) {
+                BufferedInputStream inputStream;
+
+                try {
+                    URL fileURL = new URL(location);
+                    inputStream = new BufferedInputStream(fileURL.openStream());
+                } catch (MalformedURLException e) {
+                    inputStream = new BufferedInputStream(new FileInputStream(location));
+                }
+
+                Properties p = new Properties();
+                try {
+                    p.load(inputStream);
+                } finally {
+                    inputStream.close();
+                }
+
+                for (Map.Entry<Object, Object> entry : p.entrySet()) {
+                    String key = String.valueOf(entry.getKey());
+                    String value = String.valueOf(entry.getValue());
+                    environmentCopy.put(key, value);
+                }
+            }
+        } catch (IOException ioe) {
+            NamingException ne = new NamingException("Unable to load property file: " + location + ".");
+            ne.initCause(ioe);
+            throw ne;
+        }
+
+        // Now inspect the environment and create the bindings for the context
         Map<String, Object> bindings = new ConcurrentHashMap<String, Object>();
         createConnectionFactories(environmentCopy, bindings);
         createQueues(environmentCopy, bindings);

@@ -23,6 +23,8 @@ import javax.jms.TopicSession;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.apache.qpid.jms.JmsQueue;
+import org.apache.qpid.jms.JmsTopic;
+import org.apache.qpid.jms.JmsTopicSession;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,6 +35,7 @@ public class JmsTopicSessionTest extends JmsConnectionTestSupport {
 
     private TopicSession topicSession;
     private final JmsQueue queue = new JmsQueue();
+    private final JmsTopic topic = new JmsTopic();
 
     @Override
     @Before
@@ -64,23 +67,43 @@ public class JmsTopicSessionTest extends JmsConnectionTestSupport {
     }
 
     @Test(timeout = 30000, expected=IllegalStateException.class)
-    public void testCreateConsumerTopicSession() throws JMSException {
+    public void testCreateConsumerToQueue() throws JMSException {
         topicSession.createConsumer(queue);
     }
 
+    @Test(timeout = 30000)
+    public void testCreateConsumerToTopic() throws JMSException {
+        topicSession.createConsumer(topic);
+    }
+
     @Test(timeout = 30000, expected=IllegalStateException.class)
-    public void testCreateConsumerWithSelectorTopicSession() throws JMSException {
+    public void testCreateConsumerWithSelectorToQueue() throws JMSException {
         topicSession.createConsumer(queue, "color = red");
     }
 
-    @Test(timeout = 30000, expected=IllegalStateException.class)
-    public void testCreateConsumerWithSelectorNoLocalTopicSession() throws JMSException {
-        topicSession.createConsumer(queue, "color = red", false);
+    @Test(timeout = 30000)
+    public void testCreateConsumerWithSelectorToTopic() throws JMSException {
+        topicSession.createConsumer(topic, "color = red");
     }
 
     @Test(timeout = 30000, expected=IllegalStateException.class)
-    public void testCreateProducerTopicSession() throws JMSException {
+    public void testCreateConsumerWithSelectorNoLocalToQueue() throws JMSException {
+        topicSession.createConsumer(queue, "color = red", false);
+    }
+
+    @Test(timeout = 30000)
+    public void testCreateConsumerWithSelectorNoLocalToTopic() throws JMSException {
+        topicSession.createConsumer(topic, "color = red", false);
+    }
+
+    @Test(timeout = 30000, expected=IllegalStateException.class)
+    public void testCreateProducerToQueue() throws JMSException {
         topicSession.createProducer(queue);
+    }
+
+    @Test(timeout = 30000)
+    public void testCreateProducerToTopic() throws JMSException {
+        topicSession.createProducer(topic);
     }
 
     /**
@@ -107,5 +130,20 @@ public class JmsTopicSessionTest extends JmsConnectionTestSupport {
     @Test(timeout = 30000, expected=IllegalStateException.class)
     public void testCreateTemporaryQueueOnTopicSession() throws JMSException {
         topicSession.createTemporaryQueue();
+    }
+
+    @Test(timeout = 30000, expected=IllegalStateException.class)
+    public void testCreateQueueReceiver() throws JMSException {
+        ((JmsTopicSession) topicSession).createReceiver(queue);
+    }
+
+    @Test(timeout = 30000, expected=IllegalStateException.class)
+    public void testCreateQueueReceiverWithSelector() throws JMSException {
+        ((JmsTopicSession) topicSession).createReceiver(queue, "color = read");
+    }
+
+    @Test(timeout = 30000, expected=IllegalStateException.class)
+    public void testCreateQueueSender() throws JMSException {
+        ((JmsTopicSession) topicSession).createSender(queue);
     }
 }

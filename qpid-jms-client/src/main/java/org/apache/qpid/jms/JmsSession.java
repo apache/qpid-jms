@@ -309,7 +309,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         checkClosed();
         checkDestination(queue);
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, queue);
-        JmsQueueReceiver result = new JmsQueueReceiver(getNextConsumerId(), this, dest, "");
+        JmsQueueReceiver result = new JmsQueueReceiver(getNextConsumerId(), this, dest, null);
         result.init();
         return result;
     }

@@ -132,8 +132,14 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         // Verify the URI was filtered to remove the applied options
         assertEquals("URI was filtered to remove options that were applied", baseUri, cf.getRemoteURI());
 
-        // Verify the returned map was empty
+        // Verify the returned map was empty and unmodifiable
         assertTrue("Map should be empty: " + unusedProps, unusedProps.isEmpty());
+        try {
+            unusedProps.put("a", "b");
+            fail("Map should be unmodifiable");
+        } catch (UnsupportedOperationException uoe) {
+            // expected
+        }
     }
 
     @Test
@@ -163,6 +169,14 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         assertEquals("Unexpected size of return map", 1, unusedProps.size());
         assertTrue("Expected property not found in map: " + unusedProps, unusedProps.containsKey(unusedKey));
         assertEquals("Unexpected property value", unusedValue, unusedProps.get(unusedKey));
+
+        // Verify the returned map was unmodifiable
+        try {
+            unusedProps.put("a", "b");
+            fail("Map should be unmodifiable");
+        } catch (UnsupportedOperationException uoe) {
+            // expected
+        }
     }
 
     @Test

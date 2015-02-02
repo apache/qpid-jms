@@ -20,6 +20,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -80,9 +81,6 @@ public abstract class JmsDestination extends JNDIStorable implements Externaliza
         return !this.topic;
     }
 
-    /**
-     * @param props
-     */
     @Override
     protected Map<String, String> buildFromProperties(Map<String, String> props) {
         setName(getProperty(props, NAME_PROP, ""));
@@ -90,12 +88,9 @@ public abstract class JmsDestination extends JNDIStorable implements Externaliza
         Map<String, String> unused = new HashMap<String,String>(props);
         unused.remove(NAME_PROP);
 
-        return unused;
+        return Collections.unmodifiableMap(unused);
     }
 
-    /**
-     * @param props
-     */
     @Override
     protected void populateProperties(Map<String, String> props) {
         props.put(NAME_PROP, getName());

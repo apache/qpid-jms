@@ -125,6 +125,17 @@ public class JmsConnectionTestSupport extends QpidJmsTestCase {
             }
         }).when(provider).setProviderListener(Mockito.any(ProviderListener.class));
 
+        Mockito.doAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                Object[] args = invocation.getArguments();
+                LOG.trace("Handling provider destroy resource: {}", args[0]);
+                ProviderFuture request = (ProviderFuture) args[1];
+                request.onSuccess();
+                return null;
+            }
+        }).when(provider).unsubscribe(Mockito.anyString(), Mockito.any(ProviderFuture.class));
+
         Mockito.when(provider.getProviderListener()).thenReturn(providerListener);
         Mockito.when(provider.getMessageFactory()).thenReturn(new JmsDefaultMessageFactory());
     }

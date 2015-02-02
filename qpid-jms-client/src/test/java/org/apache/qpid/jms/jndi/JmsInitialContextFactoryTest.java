@@ -18,9 +18,16 @@ package org.apache.qpid.jms.jndi;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Hashtable;
+import java.util.Properties;
 
+import javax.jms.ConnectionFactory;
 import javax.naming.Context;
+import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 import javax.naming.OperationNotSupportedException;
@@ -301,5 +308,84 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         Context ctx = createInitialContext(env);
 
         ctx.rename("lookupName", "");
+    }
+
+    @Test
+    public void testContextFromProviderUrlInEnvironmentMap() throws Exception {
+        doContextFromProviderUrlInEnvironmentMapTestImpl(false);
+    }
+
+    @Test
+    public void testContextFromProviderUrlInEnvironmentMapWithBareFilePath() throws Exception {
+        doContextFromProviderUrlInEnvironmentMapTestImpl(true);
+    }
+
+    private void doContextFromProviderUrlInEnvironmentMapTestImpl(boolean useBareFilePath) throws IOException, FileNotFoundException, NamingException {
+        String myFactory = "myFactory";
+        String myURI = "amqp://example.com:2765";
+
+        Properties properties = new Properties();
+        properties.put("connectionfactory." + myFactory, myURI);
+
+        File f = File.createTempFile(getTestName(), ".properties");
+        try {
+            FileOutputStream fos = new FileOutputStream(f);
+            try {
+                properties.store(fos, null);
+            } finally {
+                fos.close();
+            }
+
+            Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+            env.put(Context.INITIAL_CONTEXT_FACTORY, JmsInitialContextFactory.class.getName());
+            if (useBareFilePath) {
+                env.put(Context.PROVIDER_URL, f.getAbsolutePath());
+            } else {
+                env.put(Context.PROVIDER_URL, "file://" + f.getAbsolutePath());
+            }
+
+            InitialContext context = new InitialContext(env);
+
+            ConnectionFactory factory = (ConnectionFactory) context.lookup(myFactory);
+            assertEquals("Unexpected type of object", JmsConnectionFactory.class, factory.getClass());
+            assertEquals("Unexpected URI value", myURI, ((JmsConnectionFactory) factory).getRemoteURI());
+
+            context.close();
+        } finally {
+            f.delete();
+        }
+    }
+
+    @Test
+    public void testContextFromProviderUrlInSystemProperty() throws Exception
+    {
+        String myFactory = "myFactory";
+        String myURI = "amqp://example.com:2765";
+
+        Properties properties = new Properties();
+        properties.put("connectionfactory." + myFactory, myURI);
+
+        File f = File.createTempFile(getTestName(), ".properties");
+        try {
+            FileOutputStream fos = new FileOutputStream(f);
+            try {
+                properties.store(fos, null);
+            } finally {
+                fos.close();
+            }
+
+            setTestSystemProperty(Context.INITIAL_CONTEXT_FACTORY, JmsInitialContextFactory.class.getName());
+            setTestSystemProperty(Context.PROVIDER_URL, "file://" + f.getAbsolutePath());
+
+            InitialContext context = new InitialContext();
+
+            ConnectionFactory factory = (ConnectionFactory) context.lookup(myFactory);
+            assertEquals("Unexpected type of object", JmsConnectionFactory.class, factory.getClass());
+            assertEquals("Unexpected URI value", myURI, ((JmsConnectionFactory) factory).getRemoteURI());
+
+            context.close();
+        } finally {
+            f.delete();
+        }
     }
 }

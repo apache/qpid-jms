@@ -81,7 +81,7 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         producer.setDestination(topic);
     }
 
-    @Test(timeout = 10000, expected = UnsupportedOperationException.class)
+    @Test(timeout = 10000)
     public void testSetDesinationOnAnonymousProducer() throws Exception {
         JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(null);
         producer.setDestination(topic);

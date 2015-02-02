@@ -23,7 +23,6 @@ import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -121,18 +120,7 @@ public class AmqpProvider implements Provider, TransportListener {
      *        The URI of the AMQP broker this Provider instance will connect to.
      */
     public AmqpProvider(URI remoteURI) {
-        this(remoteURI, null);
-    }
-
-    /**
-     * Create a new instance of an AmqpProvider bonded to the given remote URI.
-     *
-     * @param remoteURI
-     *        The URI of the AMQP broker this Provider instance will connect to.
-     */
-    public AmqpProvider(URI remoteURI, Map<String, String> extraOptions) {
         this.remoteURI = remoteURI;
-
         this.serializer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
 
             @Override

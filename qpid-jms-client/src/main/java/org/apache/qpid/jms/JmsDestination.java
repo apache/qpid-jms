@@ -20,6 +20,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.jms.jndi.JNDIStorable;
@@ -83,8 +84,13 @@ public abstract class JmsDestination extends JNDIStorable implements Externaliza
      * @param props
      */
     @Override
-    protected void buildFromProperties(Map<String, String> props) {
+    protected Map<String, String> buildFromProperties(Map<String, String> props) {
         setName(getProperty(props, NAME_PROP, ""));
+
+        Map<String, String> unused = new HashMap<String,String>(props);
+        unused.remove(NAME_PROP);
+
+        return unused;
     }
 
     /**

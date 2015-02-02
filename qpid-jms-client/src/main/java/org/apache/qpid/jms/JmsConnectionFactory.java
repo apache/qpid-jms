@@ -106,7 +106,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      * @param map
      */
     @Override
-    protected void buildFromProperties(Map<String, String> map) {
+    protected Map<String, String> buildFromProperties(Map<String, String> map) {
         // Apply the remoteURI in a consistent order before
         // any other properties, since as it may contain
         // some options within it.
@@ -115,7 +115,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             setRemoteURI(remoteURI);
         }
 
-        PropertyUtil.setProperties(this, map);
+        return PropertyUtil.setProperties(this, map);
     }
 
     /**

@@ -141,6 +141,7 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
             fail("Should have thrown exception");
         } catch (NamingException ne) {
             // Expected
+            assertTrue("Should have had a cause", ne.getCause() != null);
         }
     }
 
@@ -160,6 +161,7 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
             fail("Should have thrown exception");
         } catch (NamingException ne) {
             // Expected
+            assertTrue("Should have had a cause", ne.getCause() != null);
         }
     }
 

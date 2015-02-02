@@ -105,7 +105,9 @@ public class JmsInitialContextFactory implements InitialContextFactory {
             try {
                 factory = createConnectionFactory(name, defaults, environment);
             } catch (Exception e) {
-                throw new NamingException("Invalid ConnectionFactory definition");
+                NamingException ne = new NamingException("Exception while creating ConnectionFactory '" + name + "'.");
+                ne.initCause(e);
+                throw ne;
             }
 
             bindings.put(name, factory);
@@ -138,7 +140,7 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         // Add any factory-specific additional properties
         props.putAll(getConnectionFactoryProperties(name, environment));
 
-        return createConnectionFactory(name, props);
+        return createConnectionFactory(props);
     }
 
     protected List<String> getConnectionFactoryNames(Map<Object, Object> environment) {
@@ -232,12 +234,12 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     /**
      * Factory method to create a new connection factory using the given properties
      */
-    protected JmsConnectionFactory createConnectionFactory(String name, Map<String, String> properties) throws URISyntaxException {
+    protected JmsConnectionFactory createConnectionFactory(Map<String, String> properties) {
         JmsConnectionFactory factory = new JmsConnectionFactory();
         Map<String, String> unused = factory.setProperties(properties);
         if (!unused.isEmpty()) {
             String msg =
-                  " Not all properties could be set on ConnectionFactory '" + name + "'."
+                  " Not all properties could be set on the ConnectionFactory."
                 + " Check the properties are spelled correctly."
                 + " Unused properties=[" + unused + "].";
             throw new IllegalArgumentException(msg);

@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
+import java.security.UnrecoverableKeyException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -66,6 +67,20 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertNotNull(context);
 
         assertEquals("TLS", context.getProtocol());
+    }
+
+    @Test(expected = UnrecoverableKeyException.class)
+    public void testCreateSslContextNoKeyStorePassword() throws Exception {
+        TransportSslOptions options = createJksSslOptions();
+        options.setKeyStorePassword(null);
+        TransportSupport.createSslContext(options);
+    }
+
+    @Test(expected = IOException.class)
+    public void testCreateSslContextWrongKeyStorePassword() throws Exception {
+        TransportSslOptions options = createJksSslOptions();
+        options.setKeyStorePassword("wrong");
+        TransportSupport.createSslContext(options);
     }
 
     @Test

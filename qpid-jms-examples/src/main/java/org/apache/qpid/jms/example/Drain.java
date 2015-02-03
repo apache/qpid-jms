@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.jms.example;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 
 import javax.jms.Connection;
@@ -37,23 +35,22 @@ public class Drain
 {
     private static final String USER = "guest";
     private static final String PASSWORD = "guest";
-    private static final int DEFAULT_PORT = 5672;
-    private static final String DEFAULT_HOST = "localhost";
-    private static final int DEFAULT_COUNT = 10000;
+    private static final int DEFAULT_COUNT = 10;
 
-    private String _hostname;
-    private int _port;
-    private int _count;
-
-    public Drain(int count, String hostname, int port)
+    public static void main(String[] args) throws Exception
     {
-        _count = count;
-        _hostname = hostname;
-        _port = port;
-    }
+        int count = DEFAULT_COUNT;
+        if( args.length == 0 )
+        {
+            System.out.println("Consuming up to " + count + " messages.");
+            System.out.println("Specify a message count as the program argument if you wish to consume a different amount.");
+        }
+        else
+        {
+            count = Integer.parseInt(args[0]);
+            System.out.println("Consuming up to " + count + " messages.");
+        }
 
-    public void runExample()
-    {
         try
         {
             // JNDI information can be configured by including an file named jndi.properties
@@ -81,12 +78,12 @@ public class Drain
             int actualCount = 0;
             boolean deductTimeout = false;
             int timeout = 1000;
-            for(int i = 1; i <= _count; i++, actualCount++)
+            for(int i = 1; i <= count; i++, actualCount++)
             {
                 TextMessage message = (TextMessage)messageConsumer.receive(timeout);
                 if(message == null)
                 {
-                    System.out.println("Message not received, stopping");
+                    System.out.println("Message " + i + " not received within timeout, stopping.");
                     deductTimeout = true;
                     break;
                 }
@@ -108,31 +105,9 @@ public class Drain
         }
         catch (Exception exp)
         {
-            exp.printStackTrace();
+            System.out.println("Caught exception, exiting.");
+            exp.printStackTrace(System.out);
             System.exit(1);
         }
-    }
-
-    public static void main(String[] argv) throws Exception
-    {
-        List<String> switches = new ArrayList<String>();
-        List<String> args = new ArrayList<String>();
-        for (String s : argv)
-        {
-            if (s.startsWith("-"))
-            {
-                switches.add(s);
-            }
-            else
-            {
-                args.add(s);
-            }
-        }
-
-        int count = args.isEmpty() ? DEFAULT_COUNT : Integer.parseInt(args.remove(0));
-        String hostname = args.isEmpty() ? DEFAULT_HOST : args.remove(0);
-        int port = args.isEmpty() ? DEFAULT_PORT : Integer.parseInt(args.remove(0));
-
-        new Drain(count, hostname, port).runExample();
     }
 }

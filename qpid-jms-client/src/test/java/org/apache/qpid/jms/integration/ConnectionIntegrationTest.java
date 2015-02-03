@@ -78,9 +78,9 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
     public void testConnectionMetaDataVersion() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
-
             ConnectionMetaData meta = connection.getMetaData();
-            assertTrue("Expected non-zero provider major version", meta.getProviderMajorVersion() != 0);
+            int result = meta.getProviderMajorVersion() + meta.getProviderMinorVersion();
+            assertTrue("Expected non-zero provider major / minor version", result != 0);
         }
     }
 }

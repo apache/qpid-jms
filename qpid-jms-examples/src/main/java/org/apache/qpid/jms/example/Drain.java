@@ -31,28 +31,22 @@ import javax.jms.TextMessage;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 
-public class Drain
-{
+public class Drain {
     private static final String USER = "guest";
     private static final String PASSWORD = "guest";
     private static final int DEFAULT_COUNT = 10;
 
-    public static void main(String[] args) throws Exception
-    {
+    public static void main(String[] args) throws Exception {
         int count = DEFAULT_COUNT;
-        if( args.length == 0 )
-        {
+        if (args.length == 0) {
             System.out.println("Consuming up to " + count + " messages.");
             System.out.println("Specify a message count as the program argument if you wish to consume a different amount.");
-        }
-        else
-        {
+        } else {
             count = Integer.parseInt(args[0]);
             System.out.println("Consuming up to " + count + " messages.");
         }
 
-        try
-        {
+        try {
             // JNDI information can be configured by including an file named jndi.properties
             // on the classpath, containing the "java.naming.factory.initial" configuration
             // and properties configuring required ConnectionFactory and Destination objects.
@@ -78,33 +72,27 @@ public class Drain
             int actualCount = 0;
             boolean deductTimeout = false;
             int timeout = 1000;
-            for(int i = 1; i <= count; i++, actualCount++)
-            {
-                TextMessage message = (TextMessage)messageConsumer.receive(timeout);
-                if(message == null)
-                {
+            for (int i = 1; i <= count; i++, actualCount++) {
+                TextMessage message = (TextMessage) messageConsumer.receive(timeout);
+                if (message == null) {
                     System.out.println("Message " + i + " not received within timeout, stopping.");
                     deductTimeout = true;
                     break;
                 }
-                if(i % 100 == 0)
-                {
+                if (i % 100 == 0) {
                     System.out.println("Got message " + i + ":" + message.getText());
                 }
             }
 
             long finish = System.currentTimeMillis();
             long taken = finish - start;
-            if(deductTimeout)
-            {
+            if (deductTimeout) {
                 taken -= timeout;
             }
-            System.out.println("Received " + actualCount +" messages in " + taken + "ms");
+            System.out.println("Received " + actualCount + " messages in " + taken + "ms");
 
             connection.close();
-        }
-        catch (Exception exp)
-        {
+        } catch (Exception exp) {
             System.out.println("Caught exception, exiting.");
             exp.printStackTrace(System.out);
             System.exit(1);

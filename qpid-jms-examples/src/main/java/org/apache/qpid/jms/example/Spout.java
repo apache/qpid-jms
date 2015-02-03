@@ -20,113 +20,87 @@
  */
 package org.apache.qpid.jms.example;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Properties;
 
 import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import javax.naming.Context;
+import javax.naming.InitialContext;
 
-import org.apache.qpid.jms.JmsConnectionFactory;
+public class Spout {
+    private static final String USER = "guest";
+    private static final String PASSWORD = "guest";
+    private static final int DEFAULT_COUNT = 10;
+    private static final int DELIVERY_MODE = DeliveryMode.NON_PERSISTENT;
 
-public class Spout
-{
-    private static final String DEFAULT_USER = "guest";
-    private static final String DEFAULT_PASSWORD = "guest";
-    private static final int DEFAULT_PORT = 5672;
-    private static final String DEFAULT_HOST = "localhost";
-    private static final int DEFAULT_COUNT = 10000;
+    public static void main(String[] args) throws Exception {
+        int count = DEFAULT_COUNT;
+        if (args.length == 0) {
+            System.out.println("Sending up to " + count + " messages.");
+            System.out.println("Specify a message count as the program argument if you wish to send a different amount.");
+        } else {
+            count = Integer.parseInt(args[0]);
+            System.out.println("Sending up to " + count + " messages.");
+        }
 
-    private String _hostname;
-    private int _port;
-    private int _count;
-    private String _username;
-    private String _password;
-    private String _queuePrefix;
-    private boolean _persistent;
+        try {
+            // JNDI information can be configured by including an file named jndi.properties
+            // on the classpath, containing the "java.naming.factory.initial" configuration
+            // and properties configuring required ConnectionFactory and Destination objects.
+            // The below is an alternative approach being used only for the examples.
+            Properties env = new Properties();
+            env.put(Context.INITIAL_CONTEXT_FACTORY, "org.apache.qpid.jms.jndi.JmsInitialContextFactory");
+            env.put(Context.PROVIDER_URL, ClassLoader.getSystemResource("org/apache/qpid/jms/example/example-jndi.properties").toExternalForm());
 
-    public Spout(int count, String hostname, int port, String queuePrefix, boolean persistent)
-    {
-        _count = count;
-        _hostname = hostname;
-        _port = port;
-        _persistent = persistent;
-        _username = DEFAULT_USER;
-        _password = DEFAULT_PASSWORD;
-        _queuePrefix = queuePrefix;
-    }
+            Context context = new InitialContext(env);
 
-    public void runExample()
-    {
-        try
-        {
-            //TODO: use JNDI lookup rather than direct instantiation
-            JmsConnectionFactory factory = new JmsConnectionFactory("amqp://" + _hostname + ":" + _port);
-            if(_queuePrefix != null)
-            {
-                //TODO: use URL options?
-                factory.setQueuePrefix(_queuePrefix);
-            }
+            ConnectionFactory factory = (ConnectionFactory) context.lookup("myFactoryLookup");
+            Destination queue = (Destination) context.lookup("myQueueLookup");
 
-            Connection connection = factory.createConnection(_username,_password);
+            Connection connection = factory.createConnection(USER, PASSWORD);
+            connection.setExceptionListener(new MyExceptionListener());
+            connection.start();
+
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            Destination queue = session.createQueue("myQueue");
             MessageProducer messageProducer = session.createProducer(queue);
 
-            int dekiveryMode = _persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT;
-
             long start = System.currentTimeMillis();
-            for(int i = 1; i <= _count; i++)
-            {
+            for (int i = 1; i <= count; i++) {
                 TextMessage message = session.createTextMessage("Hello world!");
-                messageProducer.send(message, dekiveryMode, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+                messageProducer.send(message, DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
 
-                if(i % 100 == 0)
-                {
+                if (i % 100 == 0) {
                     System.out.println("Sent message " + i + ":" + message.getText());
                 }
             }
 
             long finish = System.currentTimeMillis();
             long taken = finish - start;
-            System.out.println("Sent " + _count +" messages in " + taken + "ms");
+            System.out.println("Sent " + count + " messages in " + taken + "ms");
 
             connection.close();
-        }
-        catch (Exception exp)
-        {
-            exp.printStackTrace();
+        } catch (Exception exp) {
+            System.out.println("Caught exception, exiting.");
+            exp.printStackTrace(System.out);
             System.exit(1);
         }
     }
 
-    public static void main(String[] argv) throws Exception
-    {
-        List<String> switches = new ArrayList<String>();
-        List<String> args = new ArrayList<String>();
-        for (String s : argv)
-        {
-            if (s.startsWith("-"))
-            {
-                switches.add(s);
-            }
-            else
-            {
-                args.add(s);
-            }
+    private static class MyExceptionListener implements ExceptionListener {
+        @Override
+        public void onException(JMSException exception) {
+            System.out.println("Connection ExceptionListener fired, exiting.");
+            exception.printStackTrace(System.out);
+            System.exit(1);
         }
-
-        int count = args.isEmpty() ? DEFAULT_COUNT : Integer.parseInt(args.remove(0));
-        String hostname = args.isEmpty() ? DEFAULT_HOST : args.remove(0);
-        int port = args.isEmpty() ? DEFAULT_PORT : Integer.parseInt(args.remove(0));
-        String queuePrefix = args.isEmpty() ? null : args.remove(0);
-        boolean persistent = switches.contains("-p");
-
-        new Spout(count, hostname, port, queuePrefix, persistent).runExample();
     }
 }

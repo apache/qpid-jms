@@ -44,16 +44,14 @@ public class Drain
     private int _count;
     private String _username;
     private String _password;
-    private String _queuePrefix;
 
-    public Drain(int count, String hostname, int port, String queuePrefix)
+    public Drain(int count, String hostname, int port)
     {
         _count = count;
         _hostname = hostname;
         _port = port;
         _username = DEFAULT_USER;
         _password = DEFAULT_PASSWORD;
-        _queuePrefix = queuePrefix;
     }
 
     public void runExample()
@@ -62,11 +60,6 @@ public class Drain
         {
             //TODO: use JNDI lookup rather than direct instantiation
             JmsConnectionFactory factory = new JmsConnectionFactory("amqp://" + _hostname + ":" + _port);
-            if(_queuePrefix != null)
-            {
-                //TODO: use URL options?
-                factory.setQueuePrefix(_queuePrefix);
-            }
 
             Connection connection = factory.createConnection(_username,_password);
             connection.start();
@@ -132,8 +125,7 @@ public class Drain
         int count = args.isEmpty() ? DEFAULT_COUNT : Integer.parseInt(args.remove(0));
         String hostname = args.isEmpty() ? DEFAULT_HOST : args.remove(0);
         int port = args.isEmpty() ? DEFAULT_PORT : Integer.parseInt(args.remove(0));
-        String queuePrefix = args.isEmpty() ? null : args.remove(0);
 
-        new Drain(count, hostname, port, queuePrefix).runExample();
+        new Drain(count, hostname, port).runExample();
     }
 }

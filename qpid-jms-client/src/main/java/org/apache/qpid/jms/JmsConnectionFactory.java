@@ -495,15 +495,19 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         this.prefetchPolicy = prefetchPolicy;
     }
 
+    /**
+     * @return the currently configured client ID prefix for auto-generated client IDs.
+     */
     public synchronized String getClientIDPrefix() {
         return clientIDPrefix;
     }
 
     /**
      * Sets the prefix used by auto-generated JMS Client ID values which are used if the JMS
-     * client does not explicitly specify on.
+     * client does not explicitly specify one.
      *
      * @param clientIDPrefix
+     *        the value to use as a prefix on auto-generated client IDs.
      */
     public synchronized void setClientIDPrefix(String clientIDPrefix) {
         this.clientIDPrefix = clientIDPrefix;

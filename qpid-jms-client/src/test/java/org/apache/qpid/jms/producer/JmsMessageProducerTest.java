@@ -30,10 +30,8 @@ import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.apache.qpid.jms.JmsDestination;
-import org.apache.qpid.jms.JmsMessageProducer;
 import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsSession;
-import org.apache.qpid.jms.JmsTopic;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -44,9 +42,6 @@ import org.mockito.Mockito;
 public class JmsMessageProducerTest extends JmsConnectionTestSupport {
 
     private JmsSession session;
-
-    private final JmsTopic topic = new JmsTopic("topic");
-    private final JmsQueue queue = new JmsQueue("topic");
 
     @Override
     @Before

@@ -63,30 +63,6 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         producer.close();
     }
 
-    @Test(timeout = 10000, expected = InvalidDestinationException.class)
-    public void testSetDestinationToNull() throws Exception {
-        JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(null);
-        producer.setDestination(null);
-    }
-
-    @Test(timeout = 10000)
-    public void testSetDestinationToCurrentValue() throws Exception {
-        JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
-        producer.setDestination(queue);
-    }
-
-    @Test(timeout = 10000, expected = UnsupportedOperationException.class)
-    public void testSetDesinationOnNonAnonymousProducer() throws Exception {
-        JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
-        producer.setDestination(topic);
-    }
-
-    @Test(timeout = 10000)
-    public void testSetDesinationOnAnonymousProducer() throws Exception {
-        JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(null);
-        producer.setDestination(topic);
-    }
-
     @Test(timeout = 10000)
     public void testCreateProducerWithNullDestination() throws Exception {
         MessageProducer producer = session.createProducer(null);

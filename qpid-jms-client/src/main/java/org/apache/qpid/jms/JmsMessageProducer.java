@@ -27,7 +27,6 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 
-import org.apache.qpid.jms.message.JmsMessageTransformation;
 import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.provider.Provider;
@@ -286,22 +285,6 @@ public class JmsMessageProducer implements MessageProducer {
     public void setTimeToLive(long timeToLive) throws JMSException {
         checkClosed();
         this.timeToLive = timeToLive;
-    }
-
-    /**
-     * @param destination
-     *        the destination to set
-     * @throws JMSException
-     * @throws InvalidDestinationException
-     */
-    public void setDestination(Destination destination) throws JMSException {
-        if (destination == null) {
-            throw new InvalidDestinationException("Don't understand null destinations");
-        }
-        if (!this.flexibleDestination && !destination.equals(producerInfo.getDestination())) {
-            throw new UnsupportedOperationException("This producer can only send messages to: " + producerInfo.getDestination().getName());
-        }
-        producerInfo.setDestination(JmsMessageTransformation.transformDestination(session.getConnection(), destination));
     }
 
     /**

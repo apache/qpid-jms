@@ -33,8 +33,8 @@ import org.apache.qpid.jms.JmsConnectionFactory;
 
 public class Drain
 {
-    private static final String DEFAULT_USER = "guest";
-    private static final String DEFAULT_PASSWORD = "guest";
+    private static final String USER = "guest";
+    private static final String PASSWORD = "guest";
     private static final int DEFAULT_PORT = 5672;
     private static final String DEFAULT_HOST = "localhost";
     private static final int DEFAULT_COUNT = 10000;
@@ -42,16 +42,12 @@ public class Drain
     private String _hostname;
     private int _port;
     private int _count;
-    private String _username;
-    private String _password;
 
     public Drain(int count, String hostname, int port)
     {
         _count = count;
         _hostname = hostname;
         _port = port;
-        _username = DEFAULT_USER;
-        _password = DEFAULT_PASSWORD;
     }
 
     public void runExample()
@@ -61,7 +57,7 @@ public class Drain
             //TODO: use JNDI lookup rather than direct instantiation
             JmsConnectionFactory factory = new JmsConnectionFactory("amqp://" + _hostname + ":" + _port);
 
-            Connection connection = factory.createConnection(_username,_password);
+            Connection connection = factory.createConnection(USER, PASSWORD);
             connection.start();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

@@ -19,6 +19,7 @@ package org.apache.qpid.jms.transports;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
@@ -119,6 +120,44 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
         SSLEngine engine = TransportSupport.createSslEngine(context, options);
         assertNotNull(engine);
+
+        List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
+        List<String> defaultProtocols = Arrays.asList(TransportSslOptions.DEFAULT_ENABLED_PROTOCOLS);
+
+        assertThat(engineProtocols, containsInAnyOrder(defaultProtocols.toArray()));
+    }
+
+    @Test
+    public void testCreateSslEngineWithVerifyHost() throws Exception {
+        TransportSslOptions options = createJksSslOptions();
+        options.setVerifyHost(true);
+
+        SSLContext context = TransportSupport.createSslContext(options);
+        assertNotNull(context);
+
+        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        assertNotNull(engine);
+
+        assertEquals("HTTPS", engine.getSSLParameters().getEndpointIdentificationAlgorithm());
+
+        List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
+        List<String> defaultProtocols = Arrays.asList(TransportSslOptions.DEFAULT_ENABLED_PROTOCOLS);
+
+        assertThat(engineProtocols, containsInAnyOrder(defaultProtocols.toArray()));
+    }
+
+    @Test
+    public void testCreateSslEngineWithoutVerifyHost() throws Exception {
+        TransportSslOptions options = createJksSslOptions();
+        options.setVerifyHost(false);
+
+        SSLContext context = TransportSupport.createSslContext(options);
+        assertNotNull(context);
+
+        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        assertNotNull(engine);
+
+        assertNull(engine.getSSLParameters().getEndpointIdentificationAlgorithm());
 
         List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
         List<String> defaultProtocols = Arrays.asList(TransportSslOptions.DEFAULT_ENABLED_PROTOCOLS);

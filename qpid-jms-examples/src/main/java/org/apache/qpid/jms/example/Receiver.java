@@ -83,7 +83,7 @@ public class Receiver {
                     break;
                 }
                 if (i % 100 == 0) {
-                    System.out.println("Got message " + i + ":" + message.getText());
+                    System.out.println("Got message " + i);
                 }
             }
 

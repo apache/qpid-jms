@@ -75,11 +75,11 @@ public class Sender {
 
             long start = System.currentTimeMillis();
             for (int i = 1; i <= count; i++) {
-                TextMessage message = session.createTextMessage("Hello world!");
+                TextMessage message = session.createTextMessage("Text!");
                 messageProducer.send(message, DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
 
                 if (i % 100 == 0) {
-                    System.out.println("Sent message " + i + ":" + message.getText());
+                    System.out.println("Sent message " + i);
                 }
             }
 

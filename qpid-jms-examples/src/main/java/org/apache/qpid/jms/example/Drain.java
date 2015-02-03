@@ -25,6 +25,8 @@ import java.util.Properties;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
@@ -61,6 +63,7 @@ public class Drain {
             Destination queue = (Destination) context.lookup("myQueueLookup");
 
             Connection connection = factory.createConnection(USER, PASSWORD);
+            connection.setExceptionListener(new MyExceptionListener());
             connection.start();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -95,6 +98,15 @@ public class Drain {
         } catch (Exception exp) {
             System.out.println("Caught exception, exiting.");
             exp.printStackTrace(System.out);
+            System.exit(1);
+        }
+    }
+
+    private static class MyExceptionListener implements ExceptionListener {
+        @Override
+        public void onException(JMSException exception) {
+            System.out.println("Connection ExceptionListener fired, exiting.");
+            exception.printStackTrace(System.out);
             System.exit(1);
         }
     }

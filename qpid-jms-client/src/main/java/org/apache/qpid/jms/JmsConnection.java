@@ -952,7 +952,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     //----- Async event handlers ---------------------------------------------//
 
     @Override
-    public void onInboundMessage(JmsInboundMessageDispatch envelope) {
+    public void onInboundMessage(final JmsInboundMessageDispatch envelope) {
 
         JmsMessage incoming = envelope.getMessage();
         // Ensure incoming Messages are in readonly mode.
@@ -965,19 +965,36 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         if (dispatcher != null) {
             dispatcher.onInboundMessage(envelope);
         }
-        for (JmsConnectionListener listener : connectionListeners) {
-            listener.onInboundMessage(envelope);
+
+        // Run the application callbacks on the connection executor to allow the provider to
+        // return to its normal processing without waiting for client level processing to finish.
+        for (final JmsConnectionListener listener : connectionListeners) {
+            executor.submit(new Runnable() {
+
+                @Override
+                public void run() {
+                    listener.onInboundMessage(envelope);
+                }
+            });
         }
     }
 
     @Override
-    public void onConnectionInterrupted(URI remoteURI) {
+    public void onConnectionInterrupted(final URI remoteURI) {
         for (JmsSession session : sessions) {
             session.onConnectionInterrupted();
         }
 
-        for (JmsConnectionListener listener : connectionListeners) {
-            listener.onConnectionInterrupted(remoteURI);
+        // Run the application callbacks on the connection executor to allow the provider to
+        // return to its normal processing without waiting for client level processing to finish.
+        for (final JmsConnectionListener listener : connectionListeners) {
+            executor.submit(new Runnable() {
+
+                @Override
+                public void run() {
+                    listener.onConnectionInterrupted(remoteURI);
+                }
+            });
         }
     }
 
@@ -1011,13 +1028,21 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     @Override
-    public void onConnectionRestored(URI remoteURI) {
+    public void onConnectionRestored(final URI remoteURI) {
         for (JmsSession session : sessions) {
             session.onConnectionRestored();
         }
 
-        for (JmsConnectionListener listener : connectionListeners) {
-            listener.onConnectionRestored(remoteURI);
+        // Run the application callbacks on the connection executor to allow the provider to
+        // return to its normal processing without waiting for client level processing to finish.
+        for (final JmsConnectionListener listener : connectionListeners) {
+            executor.submit(new Runnable() {
+
+                @Override
+                public void run() {
+                    listener.onConnectionRestored(remoteURI);
+                }
+            });
         }
     }
 
@@ -1027,8 +1052,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         setMessageFactory(provider.getMessageFactory());
         setConnectedURI(provider.getRemoteURI());
 
-        // Run the callbacks on the connection executor to allow the provider to return
-        // to its normal processing without waiting for client level processing to finish.
+        // Run the application callbacks on the connection executor to allow the provider to
+        // return to its normal processing without waiting for client level processing to finish.
         for (final JmsConnectionListener listener : connectionListeners) {
             executor.submit(new Runnable() {
 

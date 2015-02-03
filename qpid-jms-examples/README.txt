@@ -9,7 +9,7 @@ alongside their output:
 
 Now you can run the examples using commands of the format:
 
-  java -cp "target/classes/:target/dependency/*" org.apache.qpid.jms.example.Sender
+  java -cp "target/classes/:target/dependency/*" org.apache.qpid.jms.example.HelloWorld
 
 
 NOTE: The earlier build command will cause Maven to resolve the client artifact

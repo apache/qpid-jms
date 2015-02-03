@@ -24,31 +24,28 @@ import java.util.Properties;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
-import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageProducer;
+import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 
-public class Spout {
+public class Receiver {
     private static final String USER = "guest";
     private static final String PASSWORD = "guest";
     private static final int DEFAULT_COUNT = 10;
-    private static final int DELIVERY_MODE = DeliveryMode.NON_PERSISTENT;
 
     public static void main(String[] args) throws Exception {
         int count = DEFAULT_COUNT;
         if (args.length == 0) {
-            System.out.println("Sending up to " + count + " messages.");
-            System.out.println("Specify a message count as the program argument if you wish to send a different amount.");
+            System.out.println("Consuming up to " + count + " messages.");
+            System.out.println("Specify a message count as the program argument if you wish to consume a different amount.");
         } else {
             count = Integer.parseInt(args[0]);
-            System.out.println("Sending up to " + count + " messages.");
+            System.out.println("Consuming up to " + count + " messages.");
         }
 
         try {
@@ -71,21 +68,31 @@ public class Spout {
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            MessageProducer messageProducer = session.createProducer(queue);
+            MessageConsumer messageConsumer = session.createConsumer(queue);
 
             long start = System.currentTimeMillis();
-            for (int i = 1; i <= count; i++) {
-                TextMessage message = session.createTextMessage("Hello world!");
-                messageProducer.send(message, DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
 
+            int actualCount = 0;
+            boolean deductTimeout = false;
+            int timeout = 1000;
+            for (int i = 1; i <= count; i++, actualCount++) {
+                TextMessage message = (TextMessage) messageConsumer.receive(timeout);
+                if (message == null) {
+                    System.out.println("Message " + i + " not received within timeout, stopping.");
+                    deductTimeout = true;
+                    break;
+                }
                 if (i % 100 == 0) {
-                    System.out.println("Sent message " + i + ":" + message.getText());
+                    System.out.println("Got message " + i + ":" + message.getText());
                 }
             }
 
             long finish = System.currentTimeMillis();
             long taken = finish - start;
-            System.out.println("Sent " + count + " messages in " + taken + "ms");
+            if (deductTimeout) {
+                taken -= timeout;
+            }
+            System.out.println("Received " + actualCount + " messages in " + taken + "ms");
 
             connection.close();
         } catch (Exception exp) {

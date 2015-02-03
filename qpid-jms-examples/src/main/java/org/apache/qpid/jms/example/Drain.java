@@ -22,14 +22,16 @@ package org.apache.qpid.jms.example;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
-
-import org.apache.qpid.jms.JmsConnectionFactory;
+import javax.naming.Context;
+import javax.naming.InitialContext;
 
 public class Drain
 {
@@ -54,15 +56,24 @@ public class Drain
     {
         try
         {
-            //TODO: use JNDI lookup rather than direct instantiation
-            JmsConnectionFactory factory = new JmsConnectionFactory("amqp://" + _hostname + ":" + _port);
+            // JNDI information can be configured by including an file named jndi.properties
+            // on the classpath, containing the "java.naming.factory.initial" configuration
+            // and properties configuring required ConnectionFactory and Destination objects.
+            // The below is an alternative approach being used only for the examples.
+            Properties env = new Properties();
+            env.put(Context.INITIAL_CONTEXT_FACTORY, "org.apache.qpid.jms.jndi.JmsInitialContextFactory");
+            env.put(Context.PROVIDER_URL, ClassLoader.getSystemResource("org/apache/qpid/jms/example/example-jndi.properties").toExternalForm());
+
+            Context context = new InitialContext(env);
+
+            ConnectionFactory factory = (ConnectionFactory) context.lookup("myFactoryLookup");
+            Destination queue = (Destination) context.lookup("myQueueLookup");
 
             Connection connection = factory.createConnection(USER, PASSWORD);
             connection.start();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            Destination queue = session.createQueue("myQueue");
             MessageConsumer messageConsumer = session.createConsumer(queue);
 
             long start = System.currentTimeMillis();

@@ -44,7 +44,7 @@ public final class JmsConnectionMetaData implements ConnectionMetaData {
         int major = 0;
         int minor = 0;
         try {
-            Package p = Package.getPackage("org.apache.qpid.jms");
+            Package p = Package.getPackage(JmsConnectionMetaData.class.getPackage().getName());
             if (p != null) {
                 version = p.getImplementationVersion();
                 Pattern pattern = Pattern.compile("(\\d+)\\.(\\d+).*");
@@ -56,7 +56,8 @@ public final class JmsConnectionMetaData implements ConnectionMetaData {
             }
         } catch (Throwable e) {
             InputStream in = null;
-            if ((in = JmsConnectionMetaData.class.getResourceAsStream("/org/apache/qpid/jms/version.txt")) != null) {
+            String path = JmsConnectionMetaData.class.getPackage().getName().replace(".", "/");
+            if ((in = JmsConnectionMetaData.class.getResourceAsStream("/" + path + "/version.txt")) != null) {
                 try {
                     BufferedReader reader = new BufferedReader(new InputStreamReader(in, Charset.forName("US-ASCII")));
                     version = reader.readLine();

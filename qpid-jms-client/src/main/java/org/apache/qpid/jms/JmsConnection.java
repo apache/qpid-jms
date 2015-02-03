@@ -79,12 +79,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsConnection.class);
 
-    private JmsConnectionInfo connectionInfo;
-
     private final IdGenerator clientIdGenerator;
-    private boolean clientIdSet;
-    private boolean sendAcksAsync;
-    private ExceptionListener exceptionListener;
     private final List<JmsSession> sessions = new CopyOnWriteArrayList<JmsSession>();
     private final Map<JmsConsumerId, JmsMessageDispatcher> dispatchers =
         new ConcurrentHashMap<JmsConsumerId, JmsMessageDispatcher>();
@@ -95,12 +90,18 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private final AtomicBoolean failed = new AtomicBoolean();
     private final Object connectLock = new Object();
     private IOException firstFailureError;
+
+    private JmsConnectionInfo connectionInfo;
+    private URI configuredURI;
+    private URI connectedURI;
     private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
     private boolean localMessagePriority;
+    private boolean clientIdSet;
+    private boolean sendAcksAsync;
+    private ExceptionListener exceptionListener;
 
     private final ThreadPoolExecutor executor;
 
-    private URI remoteURI;
     private Provider provider;
     private final Set<JmsConnectionListener> connectionListeners =
         new CopyOnWriteArraySet<JmsConnectionListener>();
@@ -166,8 +167,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
                     session.shutdown();
                 }
 
-                this.sessions.clear();
-                this.tempDestinations.clear();
+                sessions.clear();
+                tempDestinations.clear();
 
                 if (isConnected() && !failed.get()) {
                     ProviderFuture request = new ProviderFuture();
@@ -322,7 +323,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     public synchronized void setClientID(String clientID) throws JMSException {
         checkClosedOrFailed();
 
-        if (this.clientIdSet) {
+        if (clientIdSet) {
             throw new IllegalStateException("The clientID has already been set");
         }
         if (clientID == null) {
@@ -351,7 +352,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     public void start() throws JMSException {
         checkClosedOrFailed();
         connect();
-        if (this.started.compareAndSet(false, true)) {
+        if (started.compareAndSet(false, true)) {
             try {
                 for (JmsSession s : this.sessions) {
                     s.start();
@@ -467,16 +468,10 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         return result;
     }
 
-    /**
-     * @param ex
-     */
     public void onException(Exception ex) {
         onException(JmsExceptionSupport.create(ex));
     }
 
-    /**
-     * @param ex
-     */
     public void onException(JMSException ex) {
         ExceptionListener l = this.exceptionListener;
         if (l != null) {
@@ -588,7 +583,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     protected void checkClosed() throws IllegalStateException {
-        if (this.closed.get()) {
+        if (closed.get()) {
             throw new IllegalStateException("The Connection is closed");
         }
     }
@@ -605,9 +600,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         return clientIdSet;
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-    // Provider interface methods
-    ////////////////////////////////////////////////////////////////////////////
+    //----- Provider interface methods ---------------------------------------//
 
     <T extends JmsResource> T createResource(T resource) throws JMSException {
         checkClosedOrFailed();
@@ -772,24 +765,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////
-    // Property setters and getters
-    ////////////////////////////////////////////////////////////////////////////
+    //----- Property setters and getters -------------------------------------//
 
-    /**
-     * @return ExceptionListener
-     * @see javax.jms.Connection#getExceptionListener()
-     */
     @Override
     public ExceptionListener getExceptionListener() throws JMSException {
         checkClosedOrFailed();
         return this.exceptionListener;
     }
 
-    /**
-     * @param listener
-     * @see javax.jms.Connection#setExceptionListener(javax.jms.ExceptionListener)
-     */
     @Override
     public void setExceptionListener(ExceptionListener listener) throws JMSException {
         checkClosedOrFailed();
@@ -798,7 +781,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     /**
      * Adds a JmsConnectionListener so that a client can be notified of events in
-     * the underlying protocol provider.
+     * the underlying connection and its state.
      *
      * @param listener
      *        the new listener to add to the collection.
@@ -899,36 +882,36 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         connectionInfo.setRequestTimeout(requestTimeout);
     }
 
-    public URI getRemoteURI() {
-        return remoteURI;
+    public URI getConfiguredURI() {
+        return configuredURI;
     }
 
-    public void setRemoteURI(URI remoteURI) {
-        this.remoteURI = remoteURI;
+    void setConfiguredURI(URI uri) {
+        this.configuredURI = uri;
+    }
+
+    public URI getConnectedURI() {
+        return connectedURI;
+    }
+
+    void setConnectedURI(URI connectedURI) {
+        this.connectedURI = connectedURI;
     }
 
     public String getUsername() {
-        return this.connectionInfo.getUsername();
+        return connectionInfo.getUsername();
     }
 
-    public void setUsername(String username) {
+    void setUsername(String username) {
         this.connectionInfo.setUsername(username);;
     }
 
     public String getPassword() {
-        return this.connectionInfo.getPassword();
+        return connectionInfo.getPassword();
     }
 
-    public void setPassword(String password) {
+    void setPassword(String password) {
         this.connectionInfo.setPassword(password);
-    }
-
-    public Provider getProvider() {
-        return provider;
-    }
-
-    void setProvider(Provider provider) {
-        this.provider = provider;
     }
 
     public boolean isConnected() {
@@ -940,11 +923,11 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     public boolean isClosed() {
-        return this.closed.get();
+        return closed.get();
     }
 
-    JmsConnectionId getConnectionId() {
-        return this.connectionInfo.getConnectionId();
+    public JmsConnectionId getConnectionId() {
+        return connectionInfo.getConnectionId();
     }
 
     public JmsMessageFactory getMessageFactory() {
@@ -954,6 +937,10 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         return messageFactory;
     }
 
+    void setMessageFactory(JmsMessageFactory factory) {
+        this.messageFactory = factory;
+    }
+
     public boolean isSendAcksAsync() {
         return sendAcksAsync;
     }
@@ -961,6 +948,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     public void setSendAcksAsync(boolean sendAcksAsync) {
         this.sendAcksAsync = sendAcksAsync;
     }
+
+    //----- Async event handlers ---------------------------------------------//
 
     @Override
     public void onInboundMessage(JmsInboundMessageDispatch envelope) {
@@ -1013,7 +1002,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     public void onConnectionRecovered(Provider provider) throws Exception {
         LOG.debug("Connection {} is finalizing recovery.", connectionInfo.getConnectionId());
 
-        this.messageFactory = provider.getMessageFactory();
+        setMessageFactory(provider.getMessageFactory());
+        setConnectedURI(provider.getRemoteURI());
 
         for (JmsSession session : sessions) {
             session.onConnectionRecovered(provider);
@@ -1034,7 +1024,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     @Override
     public void onConnectionEstablished(final URI remoteURI) {
         LOG.info("Connection {} connected to remote Broker: {}", connectionInfo.getConnectionId(), remoteURI);
-        this.messageFactory = provider.getMessageFactory();
+        setMessageFactory(provider.getMessageFactory());
+        setConnectedURI(provider.getRemoteURI());
 
         // Run the callbacks on the connection executor to allow the provider to return
         // to its normal processing without waiting for client level processing to finish.

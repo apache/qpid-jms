@@ -221,7 +221,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             // We must ensure that we apply the clientID last, since setting it on
             // the Connection object provokes establishing the underlying connection.
             boolean setClientID = false;
-            if(properties.containsKey(CLIENT_ID_PROP)) {
+            if (properties.containsKey(CLIENT_ID_PROP)) {
                 setClientID = true;
                 properties.remove(CLIENT_ID_PROP);
             }
@@ -230,8 +230,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             connection.setExceptionListener(exceptionListener);
             connection.setUsername(username);
             connection.setPassword(password);
-            connection.setRemoteURI(remoteURI);
-            if(setClientID){
+            connection.setConfiguredURI(remoteURI);
+            if (setClientID){
                 connection.setClientID(clientID);
             }
 

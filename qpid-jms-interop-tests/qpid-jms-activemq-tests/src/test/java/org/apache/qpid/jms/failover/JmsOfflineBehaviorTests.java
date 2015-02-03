@@ -32,7 +32,6 @@ import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnection;
-import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
 import org.junit.Test;
@@ -138,10 +137,8 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
         Connection connection = createAmqpConnection(brokerURI);
         connection.start();
 
-        JmsConnection jmsConnection = (JmsConnection) connection;
-        final Provider provider = jmsConnection.getProvider();
-
-        URI connectedURI = provider.getRemoteURI();
+        final JmsConnection jmsConnection = (JmsConnection) connection;
+        URI connectedURI = jmsConnection.getConnectedURI();
         assertNotNull(connectedURI);
 
         final List<URI> brokers = getBrokerURIs();
@@ -153,7 +150,7 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
 
             @Override
             public boolean isSatisified() throws Exception {
-                URI current = provider.getRemoteURI();
+                URI current = jmsConnection.getConnectedURI();
                 if (current != null && current.equals(brokers.get(1))) {
                     return true;
                 }

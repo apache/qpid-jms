@@ -18,7 +18,6 @@ package org.apache.qpid.jms;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -63,12 +62,6 @@ public class JmsConnectionTest {
         assertFalse(connection.isStarted());
         assertFalse(connection.isClosed());
         assertFalse(connection.isConnected());
-    }
-
-    @Test
-    public void testGetProvider() throws JMSException {
-        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
-        assertSame(provider, connection.getProvider());
     }
 
     @Test(expected=javax.jms.IllegalStateException.class)

@@ -294,7 +294,6 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 return transportClosed;
             }
         }));
-        assertTrue(exceptions.isEmpty());
         assertTrue(data.isEmpty());
         assertFalse(transport.isConnected());
 

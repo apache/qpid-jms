@@ -701,7 +701,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     }
 
     public long getReconnectDelay() {
-        return initialReconnectDelay;
+        return reconnectDelay;
     }
 
     public void setReconnectDelay(long reconnectDealy) {

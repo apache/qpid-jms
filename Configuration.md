@@ -4,7 +4,7 @@ The client can be configured using the following options applied on the connecti
 
 ## JMS Configuration options
 
-The options apply to the behavior of the JMS objects.
+The options apply to the behavior of the JMS objects such as Connection, Session, MessageConsumer and MessageProducer.
 
 * __jms.username__ User name value used to authenticate the connection
 * __jms.password__ The password value used to authenticate the connection
@@ -19,6 +19,8 @@ The options apply to the behavior of the JMS objects.
 * __jms.connectTimeout__ Timeout value that controls how long the client waits on Connection establishment before returning with an error. (By default the client wait 15 seconds for a connection to be established before failing).
 * __jms.clientIDPrefix__ Optional prefix value that is used for generated Client ID values when a new Connection is created for the JMS ConnectionFactory.  The default prefix is 'ID:'.
 
+These values control how many message the remote can send to the client and held in a prefetch buffer for each consumer instance.
+
 * __jms.prefetchPolicy.queuePrefetch__ defaults to 1000
 * __jms.prefetchPolicy.topicPrefetch__ defaults to 1000
 * __jms.prefetchPolicy.queueBrowserPrefetch__ defaults to 1000
@@ -26,6 +28,12 @@ The options apply to the behavior of the JMS objects.
 * __jms.prefetchPolicy.all__ used to set all values at once.
 
 ## TCP Transport Configuration options
+
+When connected to a remote using plain TCP these options configure the behavior of the underlying socket.  These options are appended to the connection URI along with the other configuration options, for example:
+
+      amqp://localhost:5672?jms.topicPrefix=foo&transport.connectTimeout=30000
+
+The complete set of TCP Transport options is listed below:
 
 * __transport.sendBufferSize__ default is 64k
 * __transport.receiveBufferSize__ default is 64k
@@ -37,6 +45,14 @@ The options apply to the behavior of the JMS objects.
 * __transport.tcpNoDelay__ default is true
 
 ## SSL Transport Configuration options
+
+The SSL Transport extends the TCP Transport and is enabled using the *amqps* URI scheme.  Because the SSL Transport extends the functionality of the TCP based Transport all the TCP Transport options are valid on an SSL Transport URI.
+
+A simple SSL based client URI is shown below:
+
+    amqps://localhost:5673
+
+The complete set of SSL Transport options is listed below:
 
 * __transport.keyStoreLocation__  default is to read from the system property "javax.net.ssl.keyStore"
 * __transport.keyStorePassword__  default is to read from the system property "javax.net.ssl.keyStorePassword"
@@ -56,7 +72,7 @@ The URI for failover looks something like the following:
 
     failover:(amqp://broker1:5672,amqp://broker2:5672)?failover.maxReconnectAttempts=20
 
-The complete set of configuration options for failover is documented below:
+The complete set of configuration options for failover is listed below:
 
 * __failover.initialReconnectDelay__ The amount of time the client will wait before the first attempt to reconnect to a remote peer.  The default value is zero, meaning the first attempt happens immediately.
 * __failover.reconnectDelay__ Controls the delay between successive reconnection attempts, defaults to 10 milliseconds.  If the backoff option is not enabled this value remains constant.

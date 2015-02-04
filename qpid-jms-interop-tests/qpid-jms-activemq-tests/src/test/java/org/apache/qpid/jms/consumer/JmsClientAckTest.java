@@ -195,6 +195,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         MessageProducer producer = session.createProducer(queue);
         producer.send(session.createTextMessage("Hello"));
 
+        final CountDownLatch consumed = new CountDownLatch(1);
         final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(1, proxy.getQueueSize());
 
@@ -204,10 +205,11 @@ public class JmsClientAckTest extends AmqpTestSupport {
 
             @Override
             public void onMessage(Message message) {
-                // Don't ack the message.
+                consumed.countDown();
             }
         });
 
+        assertTrue("Should have read one message", consumed.await(10, TimeUnit.SECONDS));
         session.close();
         assertEquals(1, proxy.getQueueSize());
 
@@ -468,6 +470,65 @@ public class JmsClientAckTest extends AmqpTestSupport {
 
         assertTrue("Timed out waiting for async listener", latch.await(10, TimeUnit.SECONDS));
         assertFalse("Test failed in listener, consult logs", listener.getFailed());
+    }
+
+    @Test(timeout = 60000)
+    public void testUnAckedAsyncMessagesGetRedeliveredMultipleTimes() throws Exception {
+        final int MESSAGE_COUNT = 30;
+        final int ITERATIONS = 20;
+
+        connection = createAmqpConnection();
+        connection.start();
+        Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        Queue queue = session.createQueue(name.getMethodName());
+        session.close();
+
+        sendMessages(connection, queue, MESSAGE_COUNT);
+
+        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertTrue("Queue didn't receive all messages", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return proxy.getQueueSize() == MESSAGE_COUNT;
+            }
+        }));
+
+        for (int i = 0; i < ITERATIONS; ++i) {
+            session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+
+            // Consume the message...
+            MessageConsumer consumer = session.createConsumer(queue);
+            consumer.setMessageListener(new MessageListener() {
+
+                @Override
+                public void onMessage(Message message) {
+                    // Don't ack the message.
+                }
+            });
+
+            TimeUnit.MILLISECONDS.sleep(2);
+            session.close();
+        }
+
+        assertEquals(MESSAGE_COUNT, proxy.getQueueSize());
+
+        // Now we consume and ack the Message.
+        session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        MessageConsumer consumer = session.createConsumer(queue);
+        for (int i = 0; i < MESSAGE_COUNT; ++i) {
+            Message msg = consumer.receive(2000);
+            assertNotNull(msg);
+            msg.acknowledge();
+        }
+
+        assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return proxy.getQueueSize() == 0;
+            }
+        }));
     }
 
     private static class ClientAckRecoverMsgListener implements MessageListener {

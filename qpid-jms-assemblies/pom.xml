@@ -22,7 +22,6 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.apache.qpid</groupId>
   <artifactId>qpid-jms-assemblies</artifactId>
   <packaging>pom</packaging>
   <name>QpidJMS Assemblies</name>

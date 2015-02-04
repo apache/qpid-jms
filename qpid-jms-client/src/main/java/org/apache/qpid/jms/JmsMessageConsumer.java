@@ -323,21 +323,29 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                     }
                 });
             }
-            if(envelope.isEnqueueFirst()) {
+
+            if (envelope.isEnqueueFirst()) {
                 this.messageQueue.enqueueFirst(envelope);
             } else {
                 this.messageQueue.enqueue(envelope);
             }
+
+            if (this.messageListener != null && this.started) {
+                session.getExecutor().execute(new MessageDeliverTask());
+            } else {
+                if (availableListener != null) {
+                    session.getExecutor().execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (session.isStarted()) {
+                                availableListener.onMessageAvailable(JmsMessageConsumer.this);
+                            }
+                        }
+                    });
+                }
+            }
         } finally {
             lock.unlock();
-        }
-
-        if (this.messageListener != null && this.started) {
-            session.getExecutor().execute(new MessageDeliverTask());
-        } else {
-            if (availableListener != null) {
-                availableListener.onMessageAvailable(this);
-            }
         }
     }
 

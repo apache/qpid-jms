@@ -50,11 +50,19 @@ The options apply to the behavior of the JMS objects.
 
 ## Failover Configuration options
 
+With failover enabled the client can reconnect to a different broker automatically when the connection to the current connection is lost for some reason.
+
+The URI for failover looks something like the following:
+
+    failover:(amqp://broker1:5672,amqp://broker2:5672)?failover.maxReconnectAttempts=20
+
+The complete set of configuration options for failover is documented below:
+
 * __failover.initialReconnectDelay__ The amount of time the client will wait before the first attempt to reconnect to a remote peer.  The default value is zero, meaning the first attempt happens immediately.
-* __failover.reconnectDelay__ defaults to 10 milliseconds.
+* __failover.reconnectDelay__ Controls the delay between successive reconnection attempts, defaults to 10 milliseconds.  If the backoff option is not enabled this value remains constant.
 * __failover.maxReconnectDelay__ The maximum time that the client will wait before attempting a reconnect.  This value is only used when the backoff feature is enabled to ensure that the delay doesn't not grow to large.  Defaults to 30 seconds as the max time between connect attempts.
-* __failover.useExponentialBackOff__ defaults to true
-* __failover.backOffMultiplier__ defaults to 2.0d
-* __failover.maxReconnectAttempts__ defaults to Unlimited (-1)
-* __failover.startupMaxReconnectAttempts__ defaults to Unlimited (-1)
-* __failover.warnAfterReconnectAttempts__ defaults to 10
+* __failover.useExponentialBackOff__ Controls whether the time between reconnection attempts should grow based on a configured multiplier.  This option defaults to true.
+* __failover.backOffMultiplier__The multiplier used to grow the reconnection delay value, defaults to 2.0d
+* __failover.maxReconnectAttempts__ The number of reconnection attempts allowed before reporting the connection as failed to the client.  The default is no limit or (-1).
+* __failover.startupMaxReconnectAttempts__ For a client that has never connected to a remote peer before this option control how many attempts are made to connect before reporting the connection as failed.  The default is to default to the value of maxReconnectAttempts.
+* __failover.warnAfterReconnectAttempts__ Controls how often the client will log a message indicating that failover reconnection is being attempted.  The default is to log every 10 connection attempts.

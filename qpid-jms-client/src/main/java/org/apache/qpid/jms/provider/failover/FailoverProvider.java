@@ -62,6 +62,8 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
     private static final Logger LOG = LoggerFactory.getLogger(FailoverProvider.class);
 
+    private static final int DEFAULT_INITIAL_RECONNECT_DELAY = 0;
+    private static final int DEFAULT_RECONNECT_DELAY = 10;
     private static final int UNLIMITED = -1;
 
     private ProviderListener listener;
@@ -80,7 +82,6 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     // Current state of connection / reconnection
     private boolean firstConnection = true;
     private long reconnectAttempts;
-    private long reconnectDelay = TimeUnit.SECONDS.toMillis(5);
     private IOException failureCause;
     private URI connectedURI;
 
@@ -91,7 +92,8 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     private long requestTimeout = JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
 
     // Configuration values.
-    private long initialReconnectDelay = 0L;
+    private long initialReconnectDelay = DEFAULT_INITIAL_RECONNECT_DELAY;
+    private long reconnectDelay = DEFAULT_RECONNECT_DELAY;
     private long maxReconnectDelay = TimeUnit.SECONDS.toMillis(30);
     private boolean useExponentialBackOff = true;
     private double backOffMultiplier = 2d;
@@ -534,6 +536,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     return;
                 }
 
+                if (initialReconnectDelay > 0 && reconnectAttempts == 0) {
+                    LOG.trace("Delayed initial reconnect attempt will be in {} milliseconds", initialReconnectDelay);
+                    connectionHub.schedule(this, initialReconnectDelay, TimeUnit.MILLISECONDS);
+                }
+
                 reconnectAttempts++;
                 Throwable failure = null;
                 URI target = uris.getNext();
@@ -691,6 +698,14 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
     public void setInitialReconnectDealy(long initialReconnectDealy) {
         this.initialReconnectDelay = initialReconnectDealy;
+    }
+
+    public long getReconnectDelay() {
+        return initialReconnectDelay;
+    }
+
+    public void setReconnectDelay(long reconnectDealy) {
+        this.reconnectDelay = reconnectDealy;
     }
 
     public long getMaxReconnectDelay() {
@@ -875,6 +890,9 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
      * that if the connection is successfully established that the connection established event
      * is triggered once before moving on to sending only connection interrupted and restored
      * events.
+     *
+     * The connection state events must all be triggered from the FailoverProvider's serialization
+     * thread, this class ensures that the connection established event follows that pattern.
      */
     protected abstract class CreateConnectionRequest extends FailoverRequest {
 

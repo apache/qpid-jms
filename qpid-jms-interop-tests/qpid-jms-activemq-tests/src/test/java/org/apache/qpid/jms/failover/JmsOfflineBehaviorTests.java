@@ -111,7 +111,6 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
         connection.close();
     }
 
-    @SuppressWarnings("unused")
     @Test(timeout=60000)
     public void testSessionCloseWithOpenResourcesDoesNotBlock() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
@@ -120,8 +119,8 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
-        MessageConsumer consumer = session.createConsumer(queue);
-        MessageProducer producer = session.createProducer(queue);
+        session.createConsumer(queue);
+        session.createProducer(queue);
 
         stopPrimaryBroker();
         session.close();
@@ -157,12 +156,11 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
 
                 return false;
             }
-        }));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
 
         connection.close();
     }
 
-    @SuppressWarnings("unused")
     @Test(timeout=60000)
     public void testClosedReourcesAreNotRestored() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI() + "?failover.maxReconnectDelay=500");
@@ -171,8 +169,8 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
-        MessageConsumer consumer = session.createConsumer(queue);
-        MessageProducer producer = session.createProducer(queue);
+        session.createConsumer(queue);
+        session.createProducer(queue);
 
         assertEquals(1, brokerService.getAdminView().getQueueSubscribers().length);
         assertEquals(1, brokerService.getAdminView().getQueueProducers().length);
@@ -188,7 +186,7 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
             public boolean isSatisified() throws Exception {
                 return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
             }
-        }));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
 
         assertEquals(0, brokerService.getAdminView().getQueueSubscribers().length);
         assertEquals(0, brokerService.getAdminView().getQueueProducers().length);

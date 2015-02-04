@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.net.URI;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
@@ -50,7 +51,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
      */
     @Test(timeout=60000)
     public void testTxProducerSendAfterFailoverCommits() throws Exception {
-        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?failover.maxReconnectDelay=100");
+        URI brokerURI = new URI(getAmqpFailoverURI());
 
         connection = createAmqpConnection(brokerURI);
         connection.start();
@@ -73,7 +74,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
             public boolean isSatisified() throws Exception {
                 return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
             }
-        }));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
 
         assertTrue("Should have a recovered producer.", Wait.waitFor(new Wait.Condition() {
 
@@ -81,7 +82,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
             public boolean isSatisified() throws Exception {
                 return brokerService.getAdminView().getQueueProducers().length == 1;
             }
-        }));
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
 
         for (int i = 0; i < MSG_COUNT; ++i) {
             LOG.debug("Producer sening message #{}", i + 1);
@@ -107,7 +108,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
      */
     @Test(timeout=60000)
     public void testTxProducerSendsThenFailoverCommitFails() throws Exception {
-        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?failover.maxReconnectDelay=100");
+        URI brokerURI = new URI(getAmqpFailoverURI());
 
         connection = createAmqpConnection(brokerURI);
         connection.start();
@@ -146,7 +147,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
 
     @Test(timeout=60000)
     public void testTxProducerRollbackAfterFailoverGetsNoErrors() throws Exception {
-        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?failover.maxReconnectDelay=100");
+        URI brokerURI = new URI(getAmqpFailoverURI());
 
         connection = createAmqpConnection(brokerURI);
         connection.start();
@@ -189,7 +190,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
      */
     @Test(timeout=60000)
     public void testTxProducerSendWorksButCommitFails() throws Exception {
-        URI brokerURI = new URI("failover://("+ getBrokerAmqpConnectionURI() +")?failover.maxReconnectDelay=100");
+        URI brokerURI = new URI(getAmqpFailoverURI());
 
         connection = createAmqpConnection(brokerURI);
         connection.start();

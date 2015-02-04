@@ -52,6 +52,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.FlowFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.OpenFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.SaslMechanismsFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.SaslOutcomeFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Source;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Target;
 import org.apache.qpid.jms.test.testpeer.describedtypes.TransferFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.ApplicationPropertiesDescribedType;
@@ -495,6 +496,7 @@ public class TestAmqpPeer implements AutoCloseable
 
                 Target t = (Target) createTargetObjectFromDescribedType(attachMatcher.getReceivedTarget());
                 t.setAddress(dynamicAddress);
+                trimTargetCapabilities(t);
 
                 attachResponse.setTarget(t);
             }
@@ -565,11 +567,11 @@ public class TestAmqpPeer implements AutoCloseable
             {
                 attachResponseSender.setChannel(attachMatcher.getActualChannel());
                 attachResponse.setName(attachMatcher.getReceivedName());
-                attachResponse.setSource(attachMatcher.getReceivedSource());
+                attachResponse.setSource(trimSourceOutcomesCapabilities(createSourceObjectFromDescribedType(attachMatcher.getReceivedSource())));
                 if(refuseLink) {
                     attachResponse.setTarget(null);
                 } else {
-                    attachResponse.setTarget(attachMatcher.getReceivedTarget());
+                    attachResponse.setTarget(trimTargetCapabilities(createTargetObjectFromDescribedType(attachMatcher.getReceivedTarget())));
                 }
             }
         });
@@ -652,7 +654,7 @@ public class TestAmqpPeer implements AutoCloseable
             {
                 attachResponseSender.setChannel(attachMatcher.getActualChannel());
                 attachResponse.setName(attachMatcher.getReceivedName());
-                attachResponse.setSource(attachMatcher.getReceivedSource());
+                attachResponse.setSource(trimSourceOutcomesCapabilities(createSourceObjectFromDescribedType(attachMatcher.getReceivedSource())));
                 attachResponse.setTarget(attachMatcher.getReceivedTarget());
             }
         });
@@ -1006,5 +1008,37 @@ public class TestAmqpPeer implements AutoCloseable
         } else {
             throw new IllegalArgumentException("Unexpected target descriptor: " + descriptor);
         }
+    }
+
+    private Source createSourceObjectFromDescribedType(Object o) {
+        assertThat(o, instanceOf(DescribedType.class));
+        Object described = ((DescribedType) o).getDescribed();
+        assertThat(described, instanceOf(List.class));
+        @SuppressWarnings("unchecked")
+        List<Object> sourceFields = (List<Object>) described;
+
+        return new Source(sourceFields.toArray());
+    }
+
+    private Source trimSourceOutcomesCapabilities(final Source source) {
+        // TODO: this is a workaround for Proton 0.8 compatibility for the tests.
+        // Remove method and update callers when upgrading to 0.9.
+        source.setOutcomes(null);
+        source.setCapabilities(null);
+        return source;
+    }
+
+    private Object trimTargetCapabilities(final Object target) {
+        // TODO: this is a workaround for Proton 0.8 compatibility for the tests.
+        // Remove method and update callers when upgrading to 0.9.
+        if (target instanceof Target) {
+            ((Target) target).setCapabilities(null);
+        } else if (target instanceof Coordinator) {
+            ((Coordinator) target).setCapabilities(null);
+        } else {
+            throw new IllegalArgumentException("Unexpected object type: " + target.getClass());
+        }
+
+        return target;
     }
 }

@@ -46,7 +46,7 @@
     <junit-version>4.12</junit-version>
     <slf4j-version>1.7.10</slf4j-version>
     <activemq-version>5.11-SNAPSHOT</activemq-version>
-    <proton-version>1.0-SNAPSHOT</proton-version>
+    <proton-version>0.8</proton-version>
     <fuse-joram-tests-version>1.0</fuse-joram-tests-version>
     <jetty-version>8.1.16.v20140903</jetty-version>
     <mockito-version>1.10.16</mockito-version>

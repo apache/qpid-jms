@@ -360,6 +360,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Ignore // The *test* needs Proton 0.9, enable when upgrading.
     @Test(timeout = 5000)
     public void testCreateAnonymousProducerTargetContainsNoTypeCapabilityWhenAnonymousRelayNodeIsSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
@@ -551,6 +552,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Ignore // The *test* needs Proton 0.9, enable when upgrading.
     @Test(timeout = 5000)
     public void testCreateAnonymousProducerWhenAnonymousRelayNodeIsSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
@@ -599,11 +601,13 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Ignore // The *test* needs Proton 0.9, enable when upgrading.
     @Test(timeout = 5000)
     public void testCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedTestImpl(false);
     }
 
+    @Ignore // The *test* needs Proton 0.9, enable when upgrading.
     @Test(timeout = 5000)
     public void testCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
         doCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedTestImpl(true);

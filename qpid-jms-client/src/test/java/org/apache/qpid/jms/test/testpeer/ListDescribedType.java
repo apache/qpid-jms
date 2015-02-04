@@ -19,6 +19,8 @@
 package org.apache.qpid.jms.test.testpeer;
 
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.qpid.proton.amqp.DescribedType;
 
@@ -44,13 +46,14 @@ public abstract class ListDescribedType implements DescribedType
             }
         }
 
-        Object[] usedFields = new Object[numUsedFields];
+        // Create a list with the fields in the correct positions.
+        List<Object> list = new LinkedList<Object>();
         for(int j = 0; j < numUsedFields; j++)
         {
-            usedFields[j] = _fields[j];
+            list.add(_fields[j]);
         }
 
-        return Arrays.asList(usedFields);
+        return list;
     }
 
     protected Object[] getFields()

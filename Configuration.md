@@ -17,13 +17,13 @@ The options apply to the behavior of the JMS objects.
 * __jms.topicPrefix__ Optional prefix value added to the name of any Topic created from a JMS Session.
 * __jms.closeTimeout__ Timeout value that controls how long the client waits on Connection close before returning. (By default the client waits 15 seconds for a normal close completion event).
 * __jms.connectTimeout__ Timeout value that controls how long the client waits on Connection establishment before returning with an error. (By default the client wait 15 seconds for a connection to be established before failing).
-* __jms.connectionIDPrefix__ Optional prefix value that is used for generated Client ID values when a new Connection is created for the JMS ConnectionFactory.  The default prefix is 'ID:'.
+* __jms.clientIDPrefix__ Optional prefix value that is used for generated Client ID values when a new Connection is created for the JMS ConnectionFactory.  The default prefix is 'ID:'.
 
 * __jms.prefetchPolicy.queuePrefetch__ defaults to 1000
 * __jms.prefetchPolicy.topicPrefetch__ defaults to 32767
 * __jms.prefetchPolicy.queueBrowserPrefetch__ defaults to 500
 * __jms.prefetchPolicy.durableTopicPrefetch__ defaults to 100
-* __jms.prefetchPolicy.maxPrefetchSize__ defaults to 32767
+* __jms.prefetchPolicy.all__ used to set all values at once.
 
 ## TCP Transport Configuration options
 

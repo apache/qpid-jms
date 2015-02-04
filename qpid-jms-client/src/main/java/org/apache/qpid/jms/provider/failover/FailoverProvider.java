@@ -539,6 +539,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 if (initialReconnectDelay > 0 && reconnectAttempts == 0) {
                     LOG.trace("Delayed initial reconnect attempt will be in {} milliseconds", initialReconnectDelay);
                     connectionHub.schedule(this, initialReconnectDelay, TimeUnit.MILLISECONDS);
+                    return;
                 }
 
                 reconnectAttempts++;

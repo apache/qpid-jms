@@ -44,6 +44,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
 import org.apache.qpid.jms.test.testpeer.describedtypes.AttachFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.BeginFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.CloseFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Coordinator;
 import org.apache.qpid.jms.test.testpeer.describedtypes.DetachFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.DispositionFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.EndFrame;
@@ -492,7 +493,7 @@ public class TestAmqpPeer implements AutoCloseable
                 attachResponse.setName(attachMatcher.getReceivedName());
                 attachResponse.setSource(attachMatcher.getReceivedSource());
 
-                Target t = createTargetObjectFromDescribedType(attachMatcher.getReceivedTarget());
+                Target t = (Target) createTargetObjectFromDescribedType(attachMatcher.getReceivedTarget());
                 t.setAddress(dynamicAddress);
 
                 attachResponse.setTarget(t);
@@ -991,13 +992,19 @@ public class TestAmqpPeer implements AutoCloseable
             .withState(stateMatcher));
     }
 
-    private Target createTargetObjectFromDescribedType(Object o) {
+    private Object createTargetObjectFromDescribedType(Object o) {
         assertThat(o, instanceOf(DescribedType.class));
-        Object described = ((DescribedType)o).getDescribed();
+        Object described = ((DescribedType) o).getDescribed();
         assertThat(described, instanceOf(List.class));
         @SuppressWarnings("unchecked")
         List<Object> targetFields = (List<Object>) described;
-
-        return new Target(targetFields);
+        Object descriptor = ((DescribedType) o).getDescriptor();
+        if (descriptor == Target.DESCRIPTOR_CODE || descriptor.equals(Target.DESCRIPTOR_SYMBOL)) {
+            return new Target(targetFields.toArray());
+        } else if (descriptor == Coordinator.DESCRIPTOR_CODE || descriptor.equals(Coordinator.DESCRIPTOR_SYMBOL)) {
+            return new Coordinator(targetFields.toArray());
+        } else {
+            throw new IllegalArgumentException("Unexpected target descriptor: " + descriptor);
+        }
     }
 }

@@ -93,6 +93,7 @@
     <module>qpid-jms-interop-tests</module>
     <module>qpid-jms-examples</module>
     <module>qpid-jms-selector</module>
+    <module>qpid-jms-assemblies</module>
   </modules>
 
   <dependencyManagement>

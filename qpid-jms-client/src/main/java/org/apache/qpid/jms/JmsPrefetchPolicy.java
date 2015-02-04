@@ -26,9 +26,9 @@ public class JmsPrefetchPolicy {
 
     public static final int MAX_PREFETCH_SIZE = Short.MAX_VALUE;
     public static final int DEFAULT_QUEUE_PREFETCH = 1000;
-    public static final int DEFAULT_QUEUE_BROWSER_PREFETCH = 500;
-    public static final int DEFAULT_DURABLE_TOPIC_PREFETCH = 100;
-    public static final int DEFAULT_TOPIC_PREFETCH = MAX_PREFETCH_SIZE;
+    public static final int DEFAULT_QUEUE_BROWSER_PREFETCH = DEFAULT_QUEUE_PREFETCH;
+    public static final int DEFAULT_DURABLE_TOPIC_PREFETCH = DEFAULT_QUEUE_PREFETCH;
+    public static final int DEFAULT_TOPIC_PREFETCH = DEFAULT_QUEUE_PREFETCH;
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsPrefetchPolicy.class);
 

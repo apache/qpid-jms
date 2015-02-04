@@ -20,9 +20,9 @@ The options apply to the behavior of the JMS objects.
 * __jms.clientIDPrefix__ Optional prefix value that is used for generated Client ID values when a new Connection is created for the JMS ConnectionFactory.  The default prefix is 'ID:'.
 
 * __jms.prefetchPolicy.queuePrefetch__ defaults to 1000
-* __jms.prefetchPolicy.topicPrefetch__ defaults to 32767
-* __jms.prefetchPolicy.queueBrowserPrefetch__ defaults to 500
-* __jms.prefetchPolicy.durableTopicPrefetch__ defaults to 100
+* __jms.prefetchPolicy.topicPrefetch__ defaults to 1000
+* __jms.prefetchPolicy.queueBrowserPrefetch__ defaults to 1000
+* __jms.prefetchPolicy.durableTopicPrefetch__ defaults to 1000
 * __jms.prefetchPolicy.all__ used to set all values at once.
 
 ## TCP Transport Configuration options

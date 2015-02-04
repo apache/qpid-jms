@@ -50,8 +50,9 @@ The options apply to the behavior of the JMS objects.
 
 ## Failover Configuration options
 
-* __failover.initialReconnectDelay__ defaults to 0
-* __failover.maxReconnectDelay__ defaults to 30 seconds
+* __failover.initialReconnectDelay__ The amount of time the client will wait before the first attempt to reconnect to a remote peer.  The default value is zero, meaning the first attempt happens immediately.
+* __failover.reconnectDelay__ defaults to 10 milliseconds.
+* __failover.maxReconnectDelay__ The maximum time that the client will wait before attempting a reconnect.  This value is only used when the backoff feature is enabled to ensure that the delay doesn't not grow to large.  Defaults to 30 seconds as the max time between connect attempts.
 * __failover.useExponentialBackOff__ defaults to true
 * __failover.backOffMultiplier__ defaults to 2.0d
 * __failover.maxReconnectAttempts__ defaults to Unlimited (-1)

@@ -43,7 +43,7 @@
   <dependencySets>
     <dependencySet>
       <outputDirectory>/lib</outputDirectory>
-      <useProjectArtifact>true</useProjectArtifact>
+      <useProjectArtifact>false</useProjectArtifact>
     </dependencySet>
   </dependencySets>
 </assembly>

@@ -52,7 +52,7 @@ public class FailoverProviderTest extends AmqpTestSupport {
     public void testFailoverURIConfiguration() throws Exception {
         URI brokerURI = new URI("failover://(" + getBrokerAmqpConnectionURI() + ")" +
                                 "?failover.maxReconnectDelay=1000" +
-                                "&failover.useExponentialBackOff=false" +
+                                "&failover.useReconnectBackOff=false" +
                                 "&failover.maxReconnectAttempts=10" +
                                 "&failover.startupMaxReconnectAttempts=20");
         Provider asyncProvider = FailoverProviderFactory.create(brokerURI);

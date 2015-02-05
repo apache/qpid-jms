@@ -1,6 +1,6 @@
-# Client configuration options
+# Client configuration
 
-The client can be configured using the following options applied on the connection URI.
+The client can be configured with a number of different settings using the connection URI.
 
 ## JMS Configuration options
 
@@ -18,6 +18,7 @@ The options apply to the behavior of the JMS objects such as Connection, Session
 * __jms.closeTimeout__ Timeout value that controls how long the client waits on Connection close before returning. (By default the client waits 15 seconds for a normal close completion event).
 * __jms.connectTimeout__ Timeout value that controls how long the client waits on Connection establishment before returning with an error. (By default the client wait 15 seconds for a connection to be established before failing).
 * __jms.clientIDPrefix__ Optional prefix value that is used for generated Client ID values when a new Connection is created for the JMS ConnectionFactory.  The default prefix is 'ID:'.
+* __jms.connectionIDPrefix__ Optional prefix value that is used for generated Connection ID values when a new Connection is created for the JMS ConnectionFactory.  This connection ID is used when logging some information from the JMS Connection object so a configurable prefix can make breadcrumbing the logs easier.  The default prefix is 'ID:'.
 
 These values control how many message the remote can send to the client and held in a prefetch buffer for each consumer instance.
 
@@ -66,7 +67,7 @@ The complete set of SSL Transport options is listed below:
 
 ## Failover Configuration options
 
-With failover enabled the client can reconnect to a different broker automatically when the connection to the current connection is lost for some reason.
+With failover enabled the client can reconnect to a different broker automatically when the connection to the current connection is lost for some reason.  The failover URI is always initiated with the *failover* prefix and a list of URIs for the brokers is contained inside a set of parenthesis.
 
 The URI for failover looks something like the following:
 

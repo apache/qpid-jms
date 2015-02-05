@@ -61,7 +61,7 @@ public class FailoverProviderTest extends AmqpTestSupport {
         assertNotNull(provider);
 
         assertEquals(1000, provider.getMaxReconnectDelay());
-        assertFalse(provider.isUseExponentialBackOff());
+        assertFalse(provider.isUseReconnectBackOff());
         assertEquals(10, provider.getMaxReconnectAttempts());
         assertEquals(20, provider.getStartupMaxReconnectAttempts());
         provider.close();

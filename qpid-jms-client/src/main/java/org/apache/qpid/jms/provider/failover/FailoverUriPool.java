@@ -36,9 +36,11 @@ public class FailoverUriPool {
 
     private static final Logger LOG = LoggerFactory.getLogger(FailoverUriPool.class);
 
+    public static final boolean DEFAULT_RANDOMIZE_ENABLED = false;
+
     private final LinkedList<URI> uris;
     private final Map<String, String> nestedOptions;
-    private boolean randomize;
+    private boolean randomize = DEFAULT_RANDOMIZE_ENABLED;
 
     public FailoverUriPool() {
         this.uris = new LinkedList<URI>();

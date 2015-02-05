@@ -62,9 +62,16 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
     private static final Logger LOG = LoggerFactory.getLogger(FailoverProvider.class);
 
-    private static final int DEFAULT_INITIAL_RECONNECT_DELAY = 0;
-    private static final int DEFAULT_RECONNECT_DELAY = 10;
-    private static final int UNLIMITED = -1;
+    public static final int UNLIMITED = -1;
+
+    public static final int DEFAULT_MAX_RECONNECT_ATTEMPTS = UNLIMITED;
+    public static final int DEFAULT_STARTUP_MAX_RECONNECT_ATTEMPTS = UNLIMITED;
+    public static final long DEFAULT_INITIAL_RECONNECT_DELAY = 0;
+    public static final long DEFAULT_RECONNECT_DELAY = 10;
+    public static final long DEFAULT_MAX_RECONNECT_DELAY = TimeUnit.SECONDS.toMillis(30);
+    public static final boolean DEFAULT_USE_RECONNECT_BACKOFF = true;
+    public static final double DEFAULT_RECONNECT_BACKOFF_MULTIPLIER = 2.0d;
+    public static final int DEFAULT_WARN_AFTER_RECONNECT_ATTEMPTS = 10;
 
     private ProviderListener listener;
     private Provider provider;
@@ -91,15 +98,17 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     private long sendTimeout =  JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
     private long requestTimeout = JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
 
+    // TODO - Need a current reconnect delay that is reset to default on connect
+
     // Configuration values.
     private long initialReconnectDelay = DEFAULT_INITIAL_RECONNECT_DELAY;
     private long reconnectDelay = DEFAULT_RECONNECT_DELAY;
-    private long maxReconnectDelay = TimeUnit.SECONDS.toMillis(30);
-    private boolean useExponentialBackOff = true;
-    private double backOffMultiplier = 2d;
-    private int maxReconnectAttempts = UNLIMITED;
-    private int startupMaxReconnectAttempts = UNLIMITED;
-    private int warnAfterReconnectAttempts = 10;
+    private long maxReconnectDelay = DEFAULT_MAX_RECONNECT_DELAY;
+    private boolean useReconnectBackOff = DEFAULT_USE_RECONNECT_BACKOFF;
+    private double reconnectBackOffMultiplier = DEFAULT_RECONNECT_BACKOFF_MULTIPLIER;
+    private int maxReconnectAttempts = DEFAULT_MAX_RECONNECT_ATTEMPTS;
+    private int startupMaxReconnectAttempts = DEFAULT_STARTUP_MAX_RECONNECT_ATTEMPTS;
+    private int warnAfterReconnectAttempts = DEFAULT_WARN_AFTER_RECONNECT_ATTEMPTS;
 
     public FailoverProvider(Map<String, String> nestedOptions) {
         this(null, nestedOptions);
@@ -594,9 +603,9 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     }
 
     private long nextReconnectDelay() {
-        if (useExponentialBackOff) {
+        if (isUseReconnectBackOff()) {
             // Exponential increment of reconnect delay.
-            reconnectDelay *= backOffMultiplier;
+            reconnectDelay *= getReconnectBackOffMultiplier();
             if (reconnectDelay > maxReconnectDelay) {
                 reconnectDelay = maxReconnectDelay;
             }
@@ -693,12 +702,12 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         this.uris.setRandomize(value);
     }
 
-    public long getInitialReconnectDealy() {
+    public long getInitialReconnectDelay() {
         return initialReconnectDelay;
     }
 
-    public void setInitialReconnectDealy(long initialReconnectDealy) {
-        this.initialReconnectDelay = initialReconnectDealy;
+    public void setInitialReconnectDelay(long initialReconnectDelay) {
+        this.initialReconnectDelay = initialReconnectDelay;
     }
 
     public long getReconnectDelay() {
@@ -758,20 +767,20 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         this.warnAfterReconnectAttempts = warnAfterReconnectAttempts;
     }
 
-    public double getReconnectDelayExponent() {
-        return backOffMultiplier;
+    public double getReconnectBackOffMultiplier() {
+        return reconnectBackOffMultiplier;
     }
 
-    public void setReconnectDelayExponent(double reconnectDelayExponent) {
-        this.backOffMultiplier = reconnectDelayExponent;
+    public void setReconnectBackOffMultiplier(double reconnectBackOffMultiplier) {
+        this.reconnectBackOffMultiplier = reconnectBackOffMultiplier;
     }
 
-    public boolean isUseExponentialBackOff() {
-        return useExponentialBackOff;
+    public boolean isUseReconnectBackOff() {
+        return useReconnectBackOff;
     }
 
-    public void setUseExponentialBackOff(boolean useExponentialBackOff) {
-        this.useExponentialBackOff = useExponentialBackOff;
+    public void setUseReconnectBackOff(boolean useReconnectBackOff) {
+        this.useReconnectBackOff = useReconnectBackOff;
     }
 
     public long getConnectTimeout() {

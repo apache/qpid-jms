@@ -89,6 +89,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     // Current state of connection / reconnection
     private boolean firstConnection = true;
     private long reconnectAttempts;
+    private long nextReconnectDelay = -1;
     private IOException failureCause;
     private URI connectedURI;
 
@@ -97,8 +98,6 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
     private long sendTimeout =  JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
     private long requestTimeout = JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
-
-    // TODO - Need a current reconnect delay that is reset to default on connect
 
     // Configuration values.
     private long initialReconnectDelay = DEFAULT_INITIAL_RECONNECT_DELAY;
@@ -368,7 +367,6 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         serializer.execute(pending);
     }
 
-
     @Override
     public void recover(final JmsSessionId sessionId, final AsyncResult request) throws IOException, UnsupportedOperationException {
         checkClosed();
@@ -503,7 +501,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                             request.run();
                         }
 
-                        reconnectDelay = initialReconnectDelay;
+                        nextReconnectDelay = reconnectDelay;
                         reconnectAttempts = 0;
                         connectedURI = provider.getRemoteURI();
                         uris.connected();
@@ -603,15 +601,20 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     }
 
     private long nextReconnectDelay() {
-        if (isUseReconnectBackOff()) {
+
+        if (nextReconnectDelay == -1) {
+            nextReconnectDelay = reconnectDelay;
+        }
+
+        if (isUseReconnectBackOff() && reconnectAttempts > 1) {
             // Exponential increment of reconnect delay.
-            reconnectDelay *= getReconnectBackOffMultiplier();
-            if (reconnectDelay > maxReconnectDelay) {
-                reconnectDelay = maxReconnectDelay;
+            nextReconnectDelay *= getReconnectBackOffMultiplier();
+            if (nextReconnectDelay > maxReconnectDelay) {
+                nextReconnectDelay = maxReconnectDelay;
             }
         }
 
-        return reconnectDelay;
+        return nextReconnectDelay;
     }
 
     protected void checkClosed() throws IOException {

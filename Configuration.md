@@ -31,6 +31,8 @@ Applications use a JNDI InitialContext, itself obtained from an InitialContextFa
 
 3. Programatically using an environment Hashtable.
 
+  The InitialContext may also be configured directly by passing an environment during creation:
+
       Hashtable<Object, Object> env = new Hashtable<Object, Object>();
       env.put(Context.INITIAL_CONTEXT_FACTORY, "org.apache.qpid.jms.jndi.JmsInitialContextFactory");
       javax.naming.Context context = new javax.naming.InitialContext(env);
@@ -41,15 +43,15 @@ Applications use a JNDI InitialContext, itself obtained from an InitialContextFa
 
 ## Qpid JmsInitialContextFactory properties syntax
 
-* To define a ConnectionFactory: connectionfactory.lookupName = URI
+* To define a ConnectionFactory, use *connectionfactory.lookupName = URI*, e.g:
 
     connectionfactory.myFactoryLookup = amqp://localhost:5672
 
-* To define a Queue: queue.lookupName = queueName
+* To define a Queue, use *queue.lookupName = queueName*, e.g:
 
     queue.myQueueLookup = queueA
 
-* To define a Topic: topic.lookupName = topicName
+* To define a Topic use *topic.lookupName = topicName*, e.g:
 
     topic.myTopicLookup = topicA
 

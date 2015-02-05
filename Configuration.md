@@ -12,7 +12,7 @@ Applications use a JNDI InitialContext, itself obtained from an InitialContextFa
   to value *org.apache.qpid.jms.jndi.JmsInitialContextFactory*, the Qpid InitialContextFactory implementation will
   be discovered when instantiating InitialContext object.
 
-    javax.naming.Context ctx = new javax.naming.InitialContext();
+      javax.naming.Context ctx = new javax.naming.InitialContext();
 
   The particular ConnectionFactory, Queue and Topic objects you wish the context to contain are configured using
   properties (the syntax for which is detailed in the next section) either directly within the jndi.properties file,
@@ -20,30 +20,41 @@ Applications use a JNDI InitialContext, itself obtained from an InitialContextFa
 
 2. Via system properties.
 
-By setting the *java.naming.factory.initial* system property to value *org.apache.qpid.jms.jndi.JmsInitialContextFactory*, the Qpid InitialContextFactory implementation will be discovered when instantiating InitialContext object.
+  By setting the *java.naming.factory.initial* system property to value *org.apache.qpid.jms.jndi.JmsInitialContextFactory*,
+  the Qpid InitialContextFactory implementation will be discovered when instantiating InitialContext object.
 
-    javax.naming.Context ctx = new javax.naming.InitialContext();
+      javax.naming.Context ctx = new javax.naming.InitialContext();
 
-The particular ConnectionFactory, Queue and Topic objects you wish the context to contain are configured as properties in a file, which is passed using the *java.naming.provider.url* system property. The syntax for these properties is detailed in the next section.
+  The particular ConnectionFactory, Queue and Topic objects you wish the context to contain are configured as properties in
+  a file, which is passed using the *java.naming.provider.url* system property. The syntax for these properties is detailed
+  in the next section.
 
 3. Programatically using an environment Hashtable.
 
-    Hashtable<Object, Object> env = new Hashtable<Object, Object>();
-    env.put(Context.INITIAL_CONTEXT_FACTORY, "org.apache.qpid.jms.jndi.JmsInitialContextFactory");
-    javax.naming.Context context = new javax.naming.InitialContext(env);
+      Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+      env.put(Context.INITIAL_CONTEXT_FACTORY, "org.apache.qpid.jms.jndi.JmsInitialContextFactory");
+      javax.naming.Context context = new javax.naming.InitialContext(env);
 
-The particular ConnectionFactory, Queue and Topic objects you wish the context to contain are configured as properties (the syntax for which is detailed in the next section), either directly within the environment Hashtable, or in a separate file which is referenced using the *java.naming.provider.url* property within the environment Hashtable.
+  The particular ConnectionFactory, Queue and Topic objects you wish the context to contain are configured as properties
+  (the syntax for which is detailed in the next section), either directly within the environment Hashtable, or in a
+  separate file which is referenced using the *java.naming.provider.url* property within the environment Hashtable.
 
 ## Qpid JmsInitialContextFactory properties syntax
 
 * To define a ConnectionFactory: connectionfactory.lookupName = URI
+
     connectionfactory.myFactoryLookup = amqp://localhost:5672
+
 * To define a Queue: queue.lookupName = queueName
+
     queue.myQueueLookup = queueA
+
 * To define a Topic: topic.lookupName = topicName
+
     topic.myTopicLookup = topicA
 
 These objects could then be looked up from a Context as follows:
+
     ConnectionFactory factory = (ConnectionFactory) context.lookup("myFactoryLookup");
     Destination queue = (Destination) context.lookup("myQueueLookup");
     Destination topic = (Destination) context.lookup("myTopicLookup");

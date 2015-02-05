@@ -36,7 +36,7 @@ public class FailoverProviderFactory extends ProviderFactory {
         Map<String, String> options = composite.getParameters();
 
         Map<String, String> filtered = PropertyUtil.filterProperties(options, "failover.");
-        Map<String, String> nested = PropertyUtil.filterProperties(options, "nested.");
+        Map<String, String> nested = PropertyUtil.filterProperties(filtered, "nested.");
 
         FailoverProvider provider = new FailoverProvider(composite.getComponents(), nested);
         Map<String, String> unused = PropertyUtil.setProperties(provider, filtered);

@@ -17,11 +17,13 @@
 package org.apache.qpid.jms.provider.failover;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Map;
 
 import org.apache.qpid.jms.provider.Provider;
 import org.junit.Before;
@@ -97,5 +99,25 @@ public class FiloverProviderFactoryTest {
         assertEquals(!FailoverProvider.DEFAULT_USE_RECONNECT_BACKOFF, failover.isUseReconnectBackOff());
         assertEquals(FailoverProvider.DEFAULT_RECONNECT_BACKOFF_MULTIPLIER + 1.0d, failover.getReconnectBackOffMultiplier(), 0.0);
         assertEquals(!FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, failover.isRandomize());
+    }
+
+    @Test(timeout = 60000)
+    public void testNestedOptionsArePassedAlong() throws Exception {
+        URI configured = new URI(baseURI.toString() +
+            "?failover.nested.transport.tcpNoDelay=true&failover.randomize=false");
+
+        Provider provider = factory.createProvider(configured);
+        assertNotNull(provider);
+        assertTrue(provider instanceof FailoverProvider);
+
+        FailoverProvider failover = (FailoverProvider) provider;
+        assertFalse(failover.isRandomize());
+
+        Map<String, String> nested = failover.getNestedOptions();
+        assertNotNull(nested);
+        assertFalse(nested.isEmpty());
+        assertEquals(1, nested.size());
+
+        assertEquals("true", nested.get("transport.tcpNoDelay"));
     }
 }

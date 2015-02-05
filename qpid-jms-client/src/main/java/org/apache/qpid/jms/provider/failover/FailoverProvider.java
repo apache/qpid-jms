@@ -867,6 +867,10 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         return this.requestTimeout;
     }
 
+    public Map<String, String> getNestedOptions() {
+        return uris.getNestedOptions();
+    }
+
     @Override
     public String toString() {
         return "FailoverProvider: " +

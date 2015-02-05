@@ -37,7 +37,7 @@ public class FailoverUriPoolTest {
 
     @Before
     public void setUp() throws Exception {
-        List<URI> uris = new ArrayList<URI>();
+        uris = new ArrayList<URI>();
 
         uris.add(new URI("tcp://192.168.2.1:5672"));
         uris.add(new URI("tcp://192.168.2.2:5672"));
@@ -53,7 +53,7 @@ public class FailoverUriPoolTest {
 
     @Test
     public void testCreateEmptyPoolWithURIs() throws URISyntaxException {
-        FailoverUriPool pool = new FailoverUriPool(uris.toArray(new URI[1]), null);
+        FailoverUriPool pool = new FailoverUriPool(uris.toArray(new URI[0]), null);
         assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, pool.isRandomize());
 
         assertNotNull(pool.getNestedOptions());

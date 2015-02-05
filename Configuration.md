@@ -8,11 +8,15 @@ Applications use a JNDI InitialContext, itself obtained from an InitialContextFa
 
 1. Via jndi.properties file on the Java Classpath.
 
-By including a file named jndi.properties on the Classpath and setting the *java.naming.factory.initial* property to value *org.apache.qpid.jms.jndi.JmsInitialContextFactory*, the Qpid InitialContextFactory implementation will be discovered when instantiating InitialContext object.
+  By including a file named jndi.properties on the Classpath and setting the *java.naming.factory.initial* property
+  to value *org.apache.qpid.jms.jndi.JmsInitialContextFactory*, the Qpid InitialContextFactory implementation will
+  be discovered when instantiating InitialContext object.
 
     javax.naming.Context ctx = new javax.naming.InitialContext();
 
-The particular ConnectionFactory, Queue and Topic objects you wish the context to contain are configured using properties (the syntax for which is detailed in the next section) either directly within the jndi.properties file, or in a separate file which is referenced in jndi.properties using the *java.naming.provider.url* property.
+  The particular ConnectionFactory, Queue and Topic objects you wish the context to contain are configured using
+  properties (the syntax for which is detailed in the next section) either directly within the jndi.properties file,
+  or in a separate file which is referenced in jndi.properties using the *java.naming.provider.url* property.
 
 2. Via system properties.
 

@@ -222,12 +222,22 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
                     provider.create(resource, this);
                 }
+
+                @Override
+                public String toString() {
+                    return "create -> " + resource;
+                }
             };
         } else {
             pending = new FailoverRequest(request) {
                 @Override
                 public void doTask() throws Exception {
                     provider.create(resource, this);
+                }
+
+                @Override
+                public String toString() {
+                    return "create -> " + resource;
                 }
             };
         }
@@ -243,6 +253,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             public void doTask() throws Exception {
                 provider.start(resource, this);
             }
+
+            @Override
+            public String toString() {
+                return "start -> " + resource;
+            }
         };
 
         serializer.execute(pending);
@@ -255,6 +270,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             @Override
             public void doTask() throws Exception {
                 provider.stop(resource, this);
+            }
+
+            @Override
+            public String toString() {
+                return "stop -> " + resource;
             }
         };
 
@@ -275,6 +295,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 // Allow this to succeed, resource won't get recreated on reconnect.
                 return true;
             }
+
+            @Override
+            public String toString() {
+                return "destroy -> " + resourceId;
+            }
         };
 
         serializer.execute(pending);
@@ -287,6 +312,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             @Override
             public void doTask() throws Exception {
                 provider.send(envelope, this);
+            }
+
+            @Override
+            public String toString() {
+                return "send -> " + envelope;
             }
         };
 
@@ -307,6 +337,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 // Allow this to succeed, acks would be stale.
                 return true;
             }
+
+            @Override
+            public String toString() {
+                return "session acknowledge -> " + sessionId;
+            }
         };
 
         serializer.execute(pending);
@@ -326,6 +361,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 // Allow this to succeed, acks would be stale.
                 return true;
             }
+
+            @Override
+            public String toString() {
+                return "message acknowledge -> " + envelope + " ackType: " + ackType;
+            }
         };
 
         serializer.execute(pending);
@@ -343,6 +383,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             @Override
             public boolean failureWhenOffline() {
                 return true;
+            }
+
+            @Override
+            public String toString() {
+                return "TX commit -> " + sessionId;
             }
         };
 
@@ -362,6 +407,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             public boolean failureWhenOffline() {
                 return true;
             }
+
+            @Override
+            public String toString() {
+                return "TX rollback -> " + sessionId;
+            }
         };
 
         serializer.execute(pending);
@@ -380,6 +430,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             public boolean succeedsWhenOffline() {
                 return true;
             }
+
+            @Override
+            public String toString() {
+                return "recover -> " + sessionId;
+            }
         };
 
         serializer.execute(pending);
@@ -393,6 +448,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             public void doTask() throws Exception {
                 provider.unsubscribe(subscription, this);
             }
+
+            @Override
+            public String toString() {
+                return "unsubscribe -> " + subscription;
+            }
         };
 
         serializer.execute(pending);
@@ -405,6 +465,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             @Override
             public void doTask() throws Exception {
                 provider.pull(consumerId, timeout, this);
+            }
+
+            @Override
+            public String toString() {
+                return "message pull -> " + consumerId;
             }
         };
 

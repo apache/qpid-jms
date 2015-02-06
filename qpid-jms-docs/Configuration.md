@@ -15,7 +15,7 @@ Applications use a JNDI InitialContext, itself obtained from an InitialContextFa
         javax.naming.Context ctx = new javax.naming.InitialContext();
 
     The particular ConnectionFactory, Queue and Topic objects you wish the context to contain are configured using
-    properties (the syntax for which is detailed in the next section) either directly within the jndi.properties file,
+    properties (the syntax for which is detailed below) either directly within the jndi.properties file,
     or in a separate file which is referenced in jndi.properties using the *java.naming.provider.url* property.
 
 2.  Via system properties.
@@ -27,7 +27,7 @@ Applications use a JNDI InitialContext, itself obtained from an InitialContextFa
 
     The particular ConnectionFactory, Queue and Topic objects you wish the context to contain are configured as properties in
     a file, which is passed using the *java.naming.provider.url* system property. The syntax for these properties is detailed
-    in the next section.
+    below.
 
 3.  Programatically using an environment Hashtable.
 
@@ -38,10 +38,8 @@ Applications use a JNDI InitialContext, itself obtained from an InitialContextFa
         javax.naming.Context context = new javax.naming.InitialContext(env);
 
     The particular ConnectionFactory, Queue and Topic objects you wish the context to contain are configured as properties
-    (the syntax for which is detailed in the next section), either directly within the environment Hashtable, or in a
+    (the syntax for which is detailed below), either directly within the environment Hashtable, or in a
     separate file which is referenced using the *java.naming.provider.url* property within the environment Hashtable.
-
-### Qpid JmsInitialContextFactory properties syntax
 
 The property syntax used in the properties file or environment Hashtable is as follows:
 
@@ -49,7 +47,9 @@ The property syntax used in the properties file or environment Hashtable is as f
 *   To define a Queue, use format: *queue.lookupName = queueName*
 *   To define a Topic use format: *topic.lookupName = topicName*
 
-For example, consider the following properties to define a ConnectionFactory, Queue, and Topic:
+For more details of the Connection URI, see the next section.
+
+As an example, consider the following properties used to define a ConnectionFactory, Queue, and Topic:
 
     connectionfactory.myFactoryLookup = amqp://localhost:5672
     queue.myQueueLookup = queueA

@@ -37,6 +37,13 @@
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-jms-client</artifactId>
     </dependency>
+
+    <!-- Provide a logging implementating to avoid
+         notice from SLF4J that none was found -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+    </dependency>
   </dependencies>
 
   <build>

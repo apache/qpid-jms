@@ -1,6 +1,6 @@
 # Client configuration
 
-This file details various configuration options for the client, such as how to configure and create a JNDI InitialContext, the sytax for its related property values, and various URI options that can be set when configuring a ConnectionFactory.
+This file details various configuration options for the client, such as how to configure and create a JNDI InitialContext, the syntax for its related configuration, and various URI options that can be set when defining a ConnectionFactory.
 
 ## Configuring a JNDI InitialContext
 
@@ -43,23 +43,23 @@ Applications use a JNDI InitialContext, itself obtained from an InitialContextFa
 
 ## Qpid JmsInitialContextFactory properties syntax
 
-*   To define a ConnectionFactory, use *connectionfactory.lookupName = URI*, e.g:
+The property syntax used in the properties file or environment Hashtable is as follows:
 
-        connectionfactory.myFactoryLookup = amqp://localhost:5672
+*   To define a ConnectionFactory, use format: *connectionfactory.lookupName = URI*
+*   To define a Queue, use format: *queue.lookupName = queueName*
+*   To define a Topic use format: *topic.lookupName = topicName*
 
-*   To define a Queue, use *queue.lookupName = queueName*, e.g:
+For example, consider the following properties to define a ConnectionFactory, Queue, and Topic:
 
-        queue.myQueueLookup = queueA
-
-*   To define a Topic use *topic.lookupName = topicName*, e.g:
-
-        topic.myTopicLookup = topicA
+    connectionfactory.myFactoryLookup = amqp://localhost:5672
+    queue.myQueueLookup = queueA
+    topic.myTopicLookup = topicA
 
 These objects could then be looked up from a Context as follows:
 
     ConnectionFactory factory = (ConnectionFactory) context.lookup("myFactoryLookup");
-    Destination queue = (Destination) context.lookup("myQueueLookup");
-    Destination topic = (Destination) context.lookup("myTopicLookup");
+    Queue queue = (Queue) context.lookup("myQueueLookup");
+    Topic topic = (Topic) context.lookup("myTopicLookup");
 
 # Connection URI options
 
@@ -67,7 +67,7 @@ The client can be configured with a number of different settings using the conne
 
 ## JMS Configuration options
 
-The options apply to the behavior of the JMS objects such as Connection, Session, MessageConsumer and MessageProducer.
+The options apply to the behaviour of the JMS objects such as Connection, Session, MessageConsumer and MessageProducer.
 
 * __jms.username__ User name value used to authenticate the connection
 * __jms.password__ The password value used to authenticate the connection
@@ -93,7 +93,7 @@ These values control how many message the remote can send to the client and held
 
 ## TCP Transport Configuration options
 
-When connected to a remote using plain TCP these options configure the behavior of the underlying socket.  These options are appended to the connection URI along with the other configuration options, for example:
+When connected to a remote using plain TCP these options configure the behaviour of the underlying socket.  These options are appended to the connection URI along with the other configuration options, for example:
 
       amqp://localhost:5672?jms.topicPrefix=foo&transport.connectTimeout=30000
 

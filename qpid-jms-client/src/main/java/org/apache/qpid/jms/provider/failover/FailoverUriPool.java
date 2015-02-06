@@ -137,7 +137,7 @@ public class FailoverUriPool {
         if (uri != null && !contains(uri)) {
             if (!nestedOptions.isEmpty()) {
                 try {
-                    URISupport.applyParameters(uri, nestedOptions);
+                    uri = URISupport.applyParameters(uri, nestedOptions);
                 } catch (URISyntaxException e) {
                     LOG.debug("Failed to add nested options to uri: {}", uri);
                 }

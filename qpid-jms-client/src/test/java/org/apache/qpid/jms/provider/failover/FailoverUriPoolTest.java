@@ -27,8 +27,11 @@ import static org.junit.Assert.fail;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.qpid.jms.util.URISupport;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -298,5 +301,35 @@ public class FailoverUriPoolTest {
         assertEquals(uris.size(), pool.size());
         pool.remove(null);
         assertEquals(uris.size(), pool.size());
+    }
+
+    @Test
+    public void testNestedOptionsAreApplied() throws URISyntaxException {
+        Map<String, String> nested = new HashMap<String, String>();
+
+        nested.put("transport.tcpNoDelay", "true");
+        nested.put("transport.tcpKeepAlive", "false");
+
+        FailoverUriPool pool = new FailoverUriPool(uris, nested);
+        assertNotNull(pool.getNestedOptions());
+        assertFalse(pool.getNestedOptions().isEmpty());
+
+        for (int i = 0; i < uris.size(); ++i) {
+            URI next = pool.getNext();
+            assertNotNull(next);
+
+            String query = next.getQuery();
+            assertNotNull(query);
+            assertFalse(query.isEmpty());
+
+            Map<String, String> options = URISupport.parseParameters(next);
+            assertFalse(options.isEmpty());
+
+            assertTrue(options.containsKey("transport.tcpNoDelay"));
+            assertTrue(options.containsKey("transport.tcpKeepAlive"));
+
+            assertEquals("true", options.get("transport.tcpNoDelay"));
+            assertEquals("false", options.get("transport.tcpKeepAlive"));
+        }
     }
 }

@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.jms.example;
 
-import java.util.Properties;
-
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
@@ -49,15 +47,10 @@ public class Receiver {
         }
 
         try {
-            // JNDI information can be configured by including an file named jndi.properties
-            // on the classpath, containing the "java.naming.factory.initial" configuration
-            // and properties configuring required ConnectionFactory and Destination objects.
-            // The below is an alternative approach being used only for the examples.
-            Properties env = new Properties();
-            env.put(Context.INITIAL_CONTEXT_FACTORY, "org.apache.qpid.jms.jndi.JmsInitialContextFactory");
-            env.put(Context.PROVIDER_URL, ClassLoader.getSystemResource("org/apache/qpid/jms/example/example-jndi.properties").toExternalForm());
-
-            Context context = new InitialContext(env);
+            // The configuration for the Qpid InitialContextFactory has been supplied in
+            // a jndi.properties file in the classpath, which results in it being picked
+            // up automatically by the InitialContext constructor.
+            Context context = new InitialContext();
 
             ConnectionFactory factory = (ConnectionFactory) context.lookup("myFactoryLookup");
             Destination queue = (Destination) context.lookup("myQueueLookup");

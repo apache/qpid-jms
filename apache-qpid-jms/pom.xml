@@ -22,14 +22,42 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>qpid-jms-assemblies</artifactId>
+  <artifactId>apache-qpid-jms</artifactId>
   <packaging>pom</packaging>
-  <name>QpidJMS Assemblies</name>
-  <properties>
-    <jacoco.skip>true</jacoco.skip>
-  </properties>
+  <name>Apache Qpid JMS</name>
 
-  <modules>
-    <module>apache-qpid-jms</module>
-  </modules>
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.qpid</groupId>
+      <artifactId>qpid-jms-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.qpid</groupId>
+      <artifactId>qpid-jms-discovery</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <descriptors>
+            <descriptor>src/main/assembly/apache-qpid-jms-bin.xml</descriptor>
+          </descriptors>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
 </project>

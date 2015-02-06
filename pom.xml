@@ -94,7 +94,7 @@
     <module>qpid-jms-selector</module>
     <module>qpid-jms-examples</module>
     <module>qpid-jms-docs</module>
-    <module>qpid-jms-assemblies</module>
+    <module>apache-qpid-jms</module>
   </modules>
 
   <dependencyManagement>

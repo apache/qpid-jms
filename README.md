@@ -40,4 +40,4 @@ There is some basic documentation in the qpid-jms-docs module.
 
 After building the modules, a distribution assembly can be found at:
 
-    qpid-jms-assemblies/apache-qpid-jms/target
+    apache-qpid-jms/target

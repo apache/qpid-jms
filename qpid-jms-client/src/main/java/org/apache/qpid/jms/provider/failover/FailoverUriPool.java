@@ -63,6 +63,20 @@ public class FailoverUriPool {
     }
 
     /**
+     * @returns the current size of the URI pool.
+     */
+    public int size() {
+        return uris.size();
+    }
+
+    /**
+     * @returns true if the URI pool is empty.
+     */
+    public boolean isEmpty() {
+        return uris.isEmpty();
+    }
+
+    /**
      * Returns the next URI in the pool of URIs.  The URI will be shifted to the
      * end of the list and not be attempted again until the full list has been
      * returned once.
@@ -119,7 +133,7 @@ public class FailoverUriPool {
      *        The new URI to add to the pool.
      */
     public void add(URI uri) {
-        if (!contains(uri)) {
+        if (uri != null && !contains(uri)) {
             if (!nestedOptions.isEmpty()) {
                 try {
                     URISupport.applyParameters(uri, nestedOptions);

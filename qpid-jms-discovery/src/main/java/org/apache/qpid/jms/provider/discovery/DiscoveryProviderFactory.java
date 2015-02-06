@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.provider.discovery;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 
 import org.apache.qpid.jms.provider.Provider;
@@ -38,6 +39,13 @@ public class DiscoveryProviderFactory extends ProviderFactory {
 
         CompositeData composite = URISupport.parseComposite(remoteURI);
         Map<String, String> options = composite.getParameters();
+
+        // We currently only allow for one agent to feed URIs to the embedded FailoverProvider
+        // in the DiscoveryProvider.  We could allow more in the future if we found that to be
+        // a useful feature.
+        if (composite.getComponents().size() > 1) {
+            throw new URISyntaxException(remoteURI.toString(), "Only one discovery agent can be specified");
+        }
 
         // Failover will apply the nested options to each URI while attempting to connect.
         Map<String, String> nested = PropertyUtil.filterProperties(options, DISCOVERED_OPTION_PREFIX);

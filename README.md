@@ -1,5 +1,4 @@
 # QpidJMS
-=========
 
 The QpidJMS project provides a JMS based client that uses the AMQP v1.0 protocol.
 
@@ -23,15 +22,9 @@ installing:
 
     mvn clean verify -Dtest=TestNamePattern*
 
-Execute the tests and then produce the code coverage report
+Execute the tests and produce code coverage report:
 
     mvn clean test jacoco:report
-
-## Distribution assembly
-
-After building the modules, a distribution assembly can be found at:
-
-    qpid-jms-assemblies/apache-qpid-jms/target
 
 ## Examples
 
@@ -42,3 +35,9 @@ consult the README in the qpid-jms-examples module itself.
 ## Documentation
 
 There is some basic documentation in the qpid-jms-docs module.
+
+## Distribution assembly
+
+After building the modules, a distribution assembly can be found at:
+
+    qpid-jms-assemblies/apache-qpid-jms/target

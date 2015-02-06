@@ -41,7 +41,7 @@ Applications use a JNDI InitialContext, itself obtained from an InitialContextFa
     (the syntax for which is detailed in the next section), either directly within the environment Hashtable, or in a
     separate file which is referenced using the *java.naming.provider.url* property within the environment Hashtable.
 
-## Qpid JmsInitialContextFactory properties syntax
+### Qpid JmsInitialContextFactory properties syntax
 
 The property syntax used in the properties file or environment Hashtable is as follows:
 
@@ -61,11 +61,15 @@ These objects could then be looked up from a Context as follows:
     Queue queue = (Queue) context.lookup("myQueueLookup");
     Topic topic = (Topic) context.lookup("myTopicLookup");
 
-# Connection URI options
+## Connection URI
 
-The client can be configured with a number of different settings using the connection URI while defining the ConnectionFactory.
+The basic format of the clients Connection URI is as follows:
 
-## JMS Configuration options
+      amqp://hostname:port[?option=value[&option2=value...]]
+
+The client can be configured with a number of different settings using the URI while defining the ConnectionFactory, these are detailed in the following sections.
+
+### JMS Configuration options
 
 The options apply to the behaviour of the JMS objects such as Connection, Session, MessageConsumer and MessageProducer.
 
@@ -79,19 +83,19 @@ The options apply to the behaviour of the JMS objects such as Connection, Sessio
 * __jms.queuePrefix__ Optional prefix value added to the name of any Queue created from a JMS Session.
 * __jms.topicPrefix__ Optional prefix value added to the name of any Topic created from a JMS Session.
 * __jms.closeTimeout__ Timeout value that controls how long the client waits on Connection close before returning. (By default the client waits 15 seconds for a normal close completion event).
-* __jms.connectTimeout__ Timeout value that controls how long the client waits on Connection establishment before returning with an error. (By default the client wait 15 seconds for a connection to be established before failing).
+* __jms.connectTimeout__ Timeout value that controls how long the client waits on Connection establishment before returning with an error. (By default the client waits 15 seconds for a connection to be established before failing).
 * __jms.clientIDPrefix__ Optional prefix value that is used for generated Client ID values when a new Connection is created for the JMS ConnectionFactory.  The default prefix is 'ID:'.
 * __jms.connectionIDPrefix__ Optional prefix value that is used for generated Connection ID values when a new Connection is created for the JMS ConnectionFactory.  This connection ID is used when logging some information from the JMS Connection object so a configurable prefix can make breadcrumbing the logs easier.  The default prefix is 'ID:'.
 
-These values control how many message the remote can send to the client and held in a prefetch buffer for each consumer instance.
+These values control how many messages the remote peer can send to the client and be held in a prefetch buffer for each consumer instance.
 
 * __jms.prefetchPolicy.queuePrefetch__ defaults to 1000
 * __jms.prefetchPolicy.topicPrefetch__ defaults to 1000
 * __jms.prefetchPolicy.queueBrowserPrefetch__ defaults to 1000
 * __jms.prefetchPolicy.durableTopicPrefetch__ defaults to 1000
-* __jms.prefetchPolicy.all__ used to set all values at once.
+* __jms.prefetchPolicy.all__ used to set all prefetch values at once.
 
-## TCP Transport Configuration options
+### TCP Transport Configuration options
 
 When connected to a remote using plain TCP these options configure the behaviour of the underlying socket.  These options are appended to the connection URI along with the other configuration options, for example:
 
@@ -108,7 +112,7 @@ The complete set of TCP Transport options is listed below:
 * __transport.tcpKeepAlive__ default is false
 * __transport.tcpNoDelay__ default is true
 
-## SSL Transport Configuration options
+### SSL Transport Configuration options
 
 The SSL Transport extends the TCP Transport and is enabled using the *amqps* URI scheme.  Because the SSL Transport extends the functionality of the TCP based Transport all the TCP Transport options are valid on an SSL Transport URI.
 
@@ -128,7 +132,7 @@ The complete set of SSL Transport options is listed below:
 * __transport.trustAll__  defaults to false
 * __transport.verifyHost__  defaults to false
 
-## Failover Configuration options
+### Failover Configuration options
 
 With failover enabled the client can reconnect to a different broker automatically when the connection to the current connection is lost for some reason.  The failover URI is always initiated with the *failover* prefix and a list of URIs for the brokers is contained inside a set of parenthesis.
 

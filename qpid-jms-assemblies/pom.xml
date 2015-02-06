@@ -30,6 +30,6 @@
   </properties>
 
   <modules>
-    <module>qpid-jms</module>
+    <module>apache-qpid-jms</module>
   </modules>
 </project>

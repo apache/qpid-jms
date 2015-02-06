@@ -26,7 +26,7 @@
   <formats>
     <format>tar.gz</format>
   </formats>
-  <baseDirectory>qpid-jms-${project.version}</baseDirectory>
+  <baseDirectory>apache-qpid-jms-${project.version}</baseDirectory>
   <fileSets>
     <fileSet>
       <directory>${basedir}/src/main/assembly/</directory>

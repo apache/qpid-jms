@@ -22,9 +22,9 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>qpid-jms</artifactId>
+  <artifactId>apache-qpid-jms</artifactId>
   <packaging>pom</packaging>
-  <name>QpidJMS Assembly</name>
+  <name>Apache Qpid JMS</name>
 
   <dependencies>
     <dependency>
@@ -44,7 +44,7 @@
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
           <descriptors>
-            <descriptor>src/main/assembly/qpid-jms-bin.xml</descriptor>
+            <descriptor>src/main/assembly/apache-qpid-jms-bin.xml</descriptor>
           </descriptors>
         </configuration>
         <executions>

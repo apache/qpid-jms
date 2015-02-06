@@ -73,6 +73,26 @@
         </fileSets>
       </sources>
     </moduleSet>
+    <moduleSet>
+      <useAllReactorProjects>true</useAllReactorProjects>
+      <includes>
+        <include>org.apache.qpid:qpid-jms-docs</include>
+      </includes>
+      <sources>
+        <includeModuleDirectory>false</includeModuleDirectory>
+        <fileSets>
+          <fileSet>
+            <includes>
+              <include>*.md</include>
+              <include>README.txt</include>
+            </includes>
+            <outputDirectory>docs</outputDirectory>
+            <fileMode>0644</fileMode>
+            <directoryMode>0755</directoryMode>
+          </fileSet>
+        </fileSets>
+      </sources>
+    </moduleSet>
   </moduleSets>
 </assembly>
 

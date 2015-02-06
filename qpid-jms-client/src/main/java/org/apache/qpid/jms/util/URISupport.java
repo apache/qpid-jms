@@ -34,14 +34,15 @@ public class URISupport {
      * the individual URIs that comprise the composite one.
      */
     public static class CompositeData {
+
         private String host;
         private String scheme;
         private String path;
-        private URI components[];
-        private Map<String, String> parameters;
+        private List<URI> components = Collections.emptyList();
+        private Map<String, String> parameters = Collections.emptyMap();
         private String fragment;
 
-        public URI[] getComponents() {
+        public List<URI> getComponents() {
             return components;
         }
 
@@ -76,11 +77,11 @@ public class URISupport {
                 sb.append(host);
             } else {
                 sb.append('(');
-                for (int i = 0; i < components.length; i++) {
+                for (int i = 0; i < components.size(); i++) {
                     if (i != 0) {
                         sb.append(',');
                     }
-                    sb.append(components[i].toString());
+                    sb.append(components.get(i).toString());
                 }
                 sb.append(')');
             }
@@ -173,9 +174,9 @@ public class URISupport {
         }
 
         String components[] = splitComponents(componentString);
-        rc.components = new URI[components.length];
+        rc.components = new ArrayList<URI>(components.length);
         for (int i = 0; i < components.length; i++) {
-            rc.components[i] = new URI(components[i].trim());
+            rc.components.add(new URI(components[i].trim()));
         }
 
         p = params.indexOf("?");

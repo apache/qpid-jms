@@ -22,6 +22,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.jms.util.URISupport;
@@ -47,7 +48,7 @@ public class FailoverUriPool {
         this.nestedOptions = Collections.emptyMap();
     }
 
-    public FailoverUriPool(URI[] uris, Map<String, String> nestedOptions) {
+    public FailoverUriPool(List<URI> uris, Map<String, String> nestedOptions) {
         this.uris = new LinkedList<URI>();
         if (nestedOptions != null) {
             this.nestedOptions = nestedOptions;

@@ -113,11 +113,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         this(null, nestedOptions);
     }
 
-    public FailoverProvider(URI[] uris) {
+    public FailoverProvider(List<URI> uris) {
         this(uris, null);
     }
 
-    public FailoverProvider(URI[] uris, Map<String, String> nestedOptions) {
+    public FailoverProvider(List<URI> uris, Map<String, String> nestedOptions) {
         this.uris = new FailoverUriPool(uris, nestedOptions);
 
         this.serializer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {

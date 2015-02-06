@@ -44,6 +44,7 @@ public class FiloverProviderFactoryTest {
 
     @Test(timeout = 60000)
     public void testCreateProvider() throws Exception {
+        assertNotNull(factory.getName());
         Provider provider = factory.createProvider(baseURI);
         assertNotNull(provider);
         assertTrue(provider instanceof FailoverProvider);

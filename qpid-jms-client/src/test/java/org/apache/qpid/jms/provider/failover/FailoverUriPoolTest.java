@@ -71,7 +71,7 @@ public class FailoverUriPoolTest {
 
     @Test
     public void testCreateEmptyPoolWithURIs() throws URISyntaxException {
-        FailoverUriPool pool = new FailoverUriPool(uris.toArray(new URI[0]), null);
+        FailoverUriPool pool = new FailoverUriPool(uris, null);
         assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, pool.isRandomize());
 
         assertNotNull(pool.getNestedOptions());
@@ -88,7 +88,7 @@ public class FailoverUriPoolTest {
 
     @Test
     public void testGetNextFromSingleValuePool() {
-        FailoverUriPool pool = new FailoverUriPool(new URI[] {uris.get(0) }, null);
+        FailoverUriPool pool = new FailoverUriPool(uris.subList(0, 1), null);
 
         assertEquals(uris.get(0), pool.getNext());
         assertEquals(uris.get(0), pool.getNext());
@@ -106,7 +106,7 @@ public class FailoverUriPoolTest {
 
     @Test
     public void testDuplicatesNotAdded() {
-        FailoverUriPool pool = new FailoverUriPool(uris.toArray(new URI[0]), null);
+        FailoverUriPool pool = new FailoverUriPool(uris, null);
 
         assertEquals(uris.size(), pool.size());
         pool.add(uris.get(0));
@@ -195,7 +195,7 @@ public class FailoverUriPoolTest {
     public void testAddUriToPoolRandomized() throws URISyntaxException {
         URI newUri = new URI("tcp://192.168.2." + (uris.size() + 1) + ":5672");
 
-        FailoverUriPool pool = new FailoverUriPool(uris.toArray(new URI[0]), null);
+        FailoverUriPool pool = new FailoverUriPool(uris, null);
         pool.setRandomize(true);
         pool.add(newUri);
 
@@ -217,7 +217,7 @@ public class FailoverUriPoolTest {
     public void testAddUriToPoolNotRandomized() throws URISyntaxException {
         URI newUri = new URI("tcp://192.168.2." + (uris.size() + 1) + ":5672");
 
-        FailoverUriPool pool = new FailoverUriPool(uris.toArray(new URI[0]), null);
+        FailoverUriPool pool = new FailoverUriPool(uris, null);
         pool.setRandomize(false);
         pool.add(newUri);
 
@@ -230,7 +230,7 @@ public class FailoverUriPoolTest {
 
     @Test
     public void testRemoveURIFromPool() throws URISyntaxException {
-        FailoverUriPool pool = new FailoverUriPool(uris.toArray(new URI[0]), null);
+        FailoverUriPool pool = new FailoverUriPool(uris, null);
         pool.setRandomize(false);
 
         URI removed = uris.get(0);
@@ -256,7 +256,7 @@ public class FailoverUriPoolTest {
 
     private void assertConnectedEffectOnPool(boolean randomize, boolean shouldShuffle) {
 
-        FailoverUriPool pool = new FailoverUriPool(uris.toArray(new URI[0]), null);
+        FailoverUriPool pool = new FailoverUriPool(uris, null);
         pool.setRandomize(randomize);
 
         List<URI> current = new ArrayList<URI>();
@@ -291,7 +291,7 @@ public class FailoverUriPoolTest {
 
     @Test
     public void testAddOrRemoveNullHasNoAffect() throws URISyntaxException {
-        FailoverUriPool pool = new FailoverUriPool(uris.toArray(new URI[0]), null);
+        FailoverUriPool pool = new FailoverUriPool(uris, null);
         assertEquals(uris.size(), pool.size());
 
         pool.add(null);

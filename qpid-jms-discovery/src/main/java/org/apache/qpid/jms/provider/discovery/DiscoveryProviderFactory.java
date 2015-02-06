@@ -52,7 +52,7 @@ public class DiscoveryProviderFactory extends ProviderFactory {
         DiscoveryProvider discovery = new DiscoveryProvider(remoteURI, failover);
         PropertyUtil.setProperties(discovery, options);
 
-        DiscoveryAgent agent = DiscoveryAgentFactory.createAgent(composite.getComponents()[0]);
+        DiscoveryAgent agent = DiscoveryAgentFactory.createAgent(composite.getComponents().get(0));
         discovery.setDiscoveryAgent(agent);
 
         return discovery;

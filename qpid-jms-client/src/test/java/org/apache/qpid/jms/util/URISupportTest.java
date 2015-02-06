@@ -21,17 +21,15 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.jms.util.PropertyUtil;
-import org.apache.qpid.jms.util.URISupport;
-import org.apache.qpid.jms.util.URISupport.CompositeData;
-
 import junit.framework.TestCase;
+
+import org.apache.qpid.jms.util.URISupport.CompositeData;
 
 public class URISupportTest extends TestCase {
 
     public void testEmptyCompositePath() throws Exception {
         CompositeData data = URISupport.parseComposite(new URI("broker:()/localhost?persistent=false"));
-        assertEquals(0, data.getComponents().length);
+        assertEquals(0, data.getComponents().size());
     }
 
     public void testCompositePath() throws Exception {
@@ -43,19 +41,19 @@ public class URISupportTest extends TestCase {
 
     public void testSimpleComposite() throws Exception {
         CompositeData data = URISupport.parseComposite(new URI("test:part1"));
-        assertEquals(1, data.getComponents().length);
+        assertEquals(1, data.getComponents().size());
     }
 
     public void testComposite() throws Exception {
         URI uri = new URI("test:(part1://host,part2://(sub1://part,sube2:part))");
         CompositeData data = URISupport.parseComposite(uri);
-        assertEquals(2, data.getComponents().length);
+        assertEquals(2, data.getComponents().size());
     }
 
     public void testEmptyCompositeWithParenthesisInParam() throws Exception {
         URI uri = new URI("failover://()?updateURIsURL=file:/C:/Dir(1)/a.csv");
         CompositeData data = URISupport.parseComposite(uri);
-        assertEquals(0, data.getComponents().length);
+        assertEquals(0, data.getComponents().size());
         assertEquals(1, data.getParameters().size());
         assertTrue(data.getParameters().containsKey("updateURIsURL"));
         assertEquals("file:/C:/Dir(1)/a.csv", data.getParameters().get("updateURIsURL"));
@@ -64,7 +62,7 @@ public class URISupportTest extends TestCase {
     public void testCompositeWithParenthesisInParam() throws Exception {
         URI uri = new URI("failover://(test)?updateURIsURL=file:/C:/Dir(1)/a.csv");
         CompositeData data = URISupport.parseComposite(uri);
-        assertEquals(1, data.getComponents().length);
+        assertEquals(1, data.getComponents().size());
         assertEquals(1, data.getParameters().size());
         assertTrue(data.getParameters().containsKey("updateURIsURL"));
         assertEquals("file:/C:/Dir(1)/a.csv", data.getParameters().get("updateURIsURL"));
@@ -72,9 +70,9 @@ public class URISupportTest extends TestCase {
 
     public void testCompositeWithComponentParam() throws Exception {
         CompositeData data = URISupport.parseComposite(new URI("test:(part1://host?part1=true)?outside=true"));
-        assertEquals(1, data.getComponents().length);
+        assertEquals(1, data.getComponents().size());
         assertEquals(1, data.getParameters().size());
-        Map<String, String> part1Params = URISupport.parseParameters(data.getComponents()[0]);
+        Map<String, String> part1Params = URISupport.parseParameters(data.getComponents().get(0));
         assertEquals(1, part1Params.size());
         assertTrue(part1Params.containsKey("part1"));
     }
@@ -99,7 +97,7 @@ public class URISupportTest extends TestCase {
 
     public void testParsingCompositeURI() throws URISyntaxException {
         CompositeData data = URISupport.parseComposite(new URI("broker://(tcp://localhost:61616)?name=foo"));
-        assertEquals("one component", 1, data.getComponents().length);
+        assertEquals("one component", 1, data.getComponents().size());
         assertEquals("Size: " + data.getParameters(), 1, data.getParameters().size());
     }
 

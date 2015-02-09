@@ -23,62 +23,64 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.net.URI;
 
+import javax.jms.IllegalStateException;
+import javax.jms.InvalidClientIDException;
 import javax.jms.JMSException;
-import javax.jms.Session;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
-import org.apache.qpid.jms.meta.JmsConnectionInfo;
-import org.apache.qpid.jms.meta.JmsResource;
-import org.apache.qpid.jms.provider.Provider;
-import org.apache.qpid.jms.provider.ProviderFuture;
+import org.apache.qpid.jms.provider.mock.MockProvider;
+import org.apache.qpid.jms.provider.mock.MockProviderFactory;
 import org.apache.qpid.jms.util.IdGenerator;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test basic functionality around JmsConnection
  */
 public class JmsConnectionTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JmsConnectionTest.class);
-
-    private final Provider provider = Mockito.mock(Provider.class);
     private final IdGenerator clientIdGenerator = new IdGenerator();
+
+    private MockProvider provider;
+    private JmsConnection connection;
+
+    @Before
+    public void setUp() throws Exception {
+        provider = (MockProvider) MockProviderFactory.create(new URI("mock://localhost"));
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (connection != null) {
+            connection.close();
+        }
+    }
 
     @Test(expected=JMSException.class)
     public void testJmsConnectionThrowsJMSExceptionProviderStartFails() throws JMSException, IllegalStateException, IOException {
-        Mockito.doThrow(IOException.class).when(provider).start();
+        provider.getConfiguration().setFailOnStart(true);
         new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
     }
 
     @Test
     public void testStateAfterCreate() throws JMSException {
-        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
 
         assertFalse(connection.isStarted());
         assertFalse(connection.isClosed());
         assertFalse(connection.isConnected());
     }
 
-    @Test(expected=javax.jms.IllegalStateException.class)
-    public void testSetClientIdWithNull() throws JMSException {
-        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
-        connection.setClientID(null);
-    }
-
     @Test
     public void testGetConnectionId() throws JMSException {
-        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
         assertEquals("ID:TEST:1", connection.getConnectionId().toString());
     }
 
     @Test
     public void testAddConnectionListener() throws JMSException {
-        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
         JmsConnectionListener listener = new JmsConnectionListener() {
 
             @Override
@@ -109,104 +111,81 @@ public class JmsConnectionTest {
 
     @Test
     public void testConnectionStart() throws JMSException, IOException {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
 
-        Mockito.doAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                LOG.debug("Handling provider create call");
-                if (args[0] instanceof JmsConnectionInfo) {
-                    ProviderFuture request = (ProviderFuture) args[1];
-                    request.onSuccess();
-                }
-                return null;
-            }
-        }).when(provider).create(Mockito.any(JmsResource.class), Mockito.any(ProviderFuture.class));
-
-        Mockito.doAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                LOG.debug("Handling provider destroy call");
-                if (args[0] instanceof JmsConnectionInfo) {
-                    ProviderFuture request = (ProviderFuture) args[1];
-                    request.onSuccess();
-                }
-                return null;
-            }
-        }).when(provider).destroy(Mockito.any(JmsResource.class), Mockito.any(ProviderFuture.class));
-
-        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
         assertFalse(connection.isConnected());
         connection.start();
         assertTrue(connection.isConnected());
-        connection.close();
     }
 
-    //---------- Test methods fail after connection closed -------------------//
+    @Test
+    public void testConnectionStartAndStop() throws JMSException, IOException {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
 
-    @Test(expected=javax.jms.IllegalStateException.class)
-    public void testSetClientIdAfterClose() throws JMSException {
-        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
-        connection.close();
-        connection.setClientID("test-Id");
-    }
-
-    @Test(expected=javax.jms.IllegalStateException.class)
-    public void testStartCalledAfterClose() throws JMSException {
-        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
-        connection.close();
+        assertFalse(connection.isConnected());
         connection.start();
-    }
-
-    @Test(expected=javax.jms.IllegalStateException.class)
-    public void testStopCalledAfterClose() throws JMSException {
-        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
-        connection.close();
+        assertTrue(connection.isConnected());
         connection.stop();
+        assertTrue(connection.isConnected());
     }
 
-    @Test(expected=javax.jms.IllegalStateException.class)
-    public void testSetExceptionListenerAfterClose() throws JMSException {
-        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
-        connection.close();
-        connection.setExceptionListener(null);
+    @Test(timeout=30000, expected=InvalidClientIDException.class)
+    public void testSetClientIDFromNull() throws JMSException, IOException {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        assertFalse(connection.isConnected());
+        connection.setClientID("");
     }
 
-    @Test(expected=javax.jms.IllegalStateException.class)
-    public void testFetExceptionListenerAfterClose() throws JMSException {
-        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
-        connection.close();
-        connection.getExceptionListener();
+    @Test(timeout=30000, expected=InvalidClientIDException.class)
+    public void testSetClientIDFromEmptyString() throws JMSException, IOException {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        assertFalse(connection.isConnected());
+        connection.setClientID(null);
     }
 
-    @Test(expected=javax.jms.IllegalStateException.class)
-    public void testCreateConnectionConsumerForTopicAfterClose() throws JMSException {
-        JmsDestination destination = new JmsTopic("test");
-        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
-        connection.close();
-        connection.createConnectionConsumer(destination, null, null, 0);
+    @Test(timeout=30000, expected=IllegalStateException.class)
+    public void testSetClientIDFailsOnSecondCall() throws JMSException, IOException {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+
+        assertFalse(connection.isConnected());
+        connection.setClientID("TEST-ID");
+        assertTrue(connection.isConnected());
+        connection.setClientID("TEST-ID");
     }
 
-    @Test(expected=javax.jms.IllegalStateException.class)
-    public void testCreateConnectionConsumerForQueueAfterClose() throws JMSException {
-        JmsDestination destination = new JmsQueue("test");
-        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
-        connection.close();
-        connection.createConnectionConsumer(destination, null, null, 0);
+    @Test(timeout=30000, expected=IllegalStateException.class)
+    public void testSetClientIDFailsAfterStart() throws JMSException, IOException {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+
+        assertFalse(connection.isConnected());
+        connection.start();
+        assertTrue(connection.isConnected());
+        connection.setClientID("TEST-ID");
     }
 
-    @Test(expected=javax.jms.IllegalStateException.class)
-    public void testCreateTopicSessionAfterClose() throws JMSException {
-        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
-        connection.close();
-        connection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+    //----- Currently these are unimplemented, these will fail after that ----//
+
+    @Test(timeout=30000, expected=JMSException.class)
+    public void testCreateConnectionConsumer() throws Exception {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.createConnectionConsumer((JmsDestination) new JmsTopic(), "", null, 1);
     }
 
-    @Test(expected=javax.jms.IllegalStateException.class)
-    public void testCreateQueueSessionAfterClose() throws JMSException {
-        JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
-        connection.close();
-        connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+    @Test(timeout=30000, expected=JMSException.class)
+    public void testCreateConnectionTopicConsumer() throws Exception {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.createConnectionConsumer(new JmsTopic(), "", null, 1);
+    }
+
+    @Test(timeout=30000, expected=JMSException.class)
+    public void testCreateConnectionQueueConsumer() throws Exception {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.createConnectionConsumer(new JmsQueue(), "", null, 1);
+    }
+
+    @Test(timeout=30000, expected=JMSException.class)
+    public void testCreateDurableConnectionConsumer() throws Exception {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.createDurableConnectionConsumer(new JmsTopic(), "id", "", null, 1);
     }
 }

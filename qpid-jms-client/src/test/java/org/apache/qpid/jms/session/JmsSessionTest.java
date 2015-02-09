@@ -110,6 +110,12 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         session.recover();
     }
 
+    @Test(timeout = 10000)
+    public void testRecoverWithNoSessionActivity() throws JMSException {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        session.recover();
+    }
+
     @Test(timeout = 10000, expected=JMSException.class)
     public void testRollbackThrowsOnNonTxSession() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

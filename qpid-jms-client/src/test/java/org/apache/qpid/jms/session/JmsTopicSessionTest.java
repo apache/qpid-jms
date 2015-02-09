@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.session;
 
+import static org.junit.Assert.assertNotNull;
+
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 import javax.jms.Session;
@@ -73,7 +75,7 @@ public class JmsTopicSessionTest extends JmsConnectionTestSupport {
 
     @Test(timeout = 30000)
     public void testCreateConsumerToTopic() throws JMSException {
-        topicSession.createConsumer(topic);
+       assertNotNull(topicSession.createConsumer(topic));
     }
 
     @Test(timeout = 30000, expected=IllegalStateException.class)
@@ -83,7 +85,7 @@ public class JmsTopicSessionTest extends JmsConnectionTestSupport {
 
     @Test(timeout = 30000)
     public void testCreateConsumerWithSelectorToTopic() throws JMSException {
-        topicSession.createConsumer(topic, "color = red");
+        assertNotNull(topicSession.createConsumer(topic, "color = red"));
     }
 
     @Test(timeout = 30000, expected=IllegalStateException.class)
@@ -93,7 +95,7 @@ public class JmsTopicSessionTest extends JmsConnectionTestSupport {
 
     @Test(timeout = 30000)
     public void testCreateConsumerWithSelectorNoLocalToTopic() throws JMSException {
-        topicSession.createConsumer(topic, "color = red", false);
+        assertNotNull(topicSession.createConsumer(topic, "color = red", false));
     }
 
     @Test(timeout = 30000, expected=IllegalStateException.class)
@@ -103,7 +105,7 @@ public class JmsTopicSessionTest extends JmsConnectionTestSupport {
 
     @Test(timeout = 30000)
     public void testCreateProducerToTopic() throws JMSException {
-        topicSession.createProducer(topic);
+        assertNotNull(topicSession.createProducer(topic));
     }
 
     /**

@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.session;
 
+import static org.junit.Assert.assertNotNull;
+
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 import javax.jms.QueueSession;
@@ -53,8 +55,18 @@ public class JmsQueueSessionTest extends JmsConnectionTestSupport {
     }
 
     @Test(timeout = 30000)
+    public void testCreateReceiver() throws JMSException {
+        assertNotNull(queueSession.createReceiver(queue));
+    }
+
+    @Test(timeout = 30000)
+    public void testCreateReceiverWithSelector() throws JMSException {
+        assertNotNull(queueSession.createReceiver(queue, "color = red"));
+    }
+
+    @Test(timeout = 30000)
     public void testCreateConsumerToQueue() throws JMSException {
-        queueSession.createConsumer(queue);
+        assertNotNull(queueSession.createConsumer(queue));
     }
 
     @Test(timeout = 30000, expected=IllegalStateException.class)
@@ -64,7 +76,7 @@ public class JmsQueueSessionTest extends JmsConnectionTestSupport {
 
     @Test(timeout = 30000)
     public void testCreateConsumerToQueueWithSelector() throws JMSException {
-        queueSession.createConsumer(queue, "color = red");
+        assertNotNull(queueSession.createConsumer(queue, "color = red"));
     }
 
     @Test(timeout = 30000, expected=IllegalStateException.class)
@@ -74,7 +86,7 @@ public class JmsQueueSessionTest extends JmsConnectionTestSupport {
 
     @Test(timeout = 30000)
     public void testCreateConsumerToQueueWithSelectorNoLocal() throws JMSException {
-        queueSession.createConsumer(queue, "color = red", false);
+        assertNotNull(queueSession.createConsumer(queue, "color = red", false));
     }
 
     @Test(timeout = 30000, expected=IllegalStateException.class)
@@ -94,7 +106,7 @@ public class JmsQueueSessionTest extends JmsConnectionTestSupport {
 
     @Test(timeout = 30000)
     public void testCreateProducerToQueue() throws JMSException {
-        queueSession.createProducer(queue);
+        assertNotNull(queueSession.createProducer(queue));
     }
 
     @Test(timeout = 30000, expected=IllegalStateException.class)

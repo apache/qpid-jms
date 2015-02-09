@@ -19,6 +19,7 @@ package org.apache.qpid.jms;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.URI;
@@ -26,6 +27,7 @@ import java.net.URI;
 import javax.jms.IllegalStateException;
 import javax.jms.InvalidClientIDException;
 import javax.jms.JMSException;
+import javax.jms.Session;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.provider.mock.MockProvider;
@@ -134,6 +136,30 @@ public class JmsConnectionTest {
         connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
         assertFalse(connection.isConnected());
         connection.setClientID("");
+    }
+
+    @Test(timeout=30000)
+    public void testCreateNonTXSessionWithTXAckMode() throws JMSException, IOException {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.start();
+
+        try {
+            connection.createSession(false, Session.SESSION_TRANSACTED);
+            fail("Should not allow non-TX session with mode SESSION_TRANSACTED");
+        } catch (JMSException ex) {
+        }
+    }
+
+    @Test(timeout=30000)
+    public void testCreateNonTXSessionWithUnknownAckMode() throws JMSException, IOException {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.start();
+
+        try {
+            connection.createSession(false, 99);
+            fail("Should not allow unkown Ack modes.");
+        } catch (JMSException ex) {
+        }
     }
 
     @Test(timeout=30000, expected=InvalidClientIDException.class)

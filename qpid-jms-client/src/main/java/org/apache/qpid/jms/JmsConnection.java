@@ -485,8 +485,11 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         if (!transacted && acknowledgeMode == Session.SESSION_TRANSACTED) {
             throw new JMSException("acknowledgeMode SESSION_TRANSACTED cannot be used for an non-transacted Session");
         }
+
         if (transacted) {
             result = Session.SESSION_TRANSACTED;
+        } else if (acknowledgeMode < Session.SESSION_TRANSACTED || acknowledgeMode > Session.DUPS_OK_ACKNOWLEDGE){
+            throw new JMSException("acknowledgeMode " + acknowledgeMode + " cannot be used for an non-transacted Session");
         }
 
         return result;

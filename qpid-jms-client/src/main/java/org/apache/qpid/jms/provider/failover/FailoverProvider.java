@@ -212,13 +212,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             pending = new CreateConnectionRequest(request) {
                 @Override
                 public void doTask() throws Exception {
-                    if (resource instanceof JmsConnectionInfo) {
-                        JmsConnectionInfo connectionInfo = (JmsConnectionInfo) resource;
-                        connectTimeout = connectionInfo.getConnectTimeout();
-                        closeTimeout = connectionInfo.getCloseTimeout();
-                        sendTimeout = connectionInfo.getSendTimeout();
-                        requestTimeout = connectionInfo.getRequestTimeout();
-                    }
+                    JmsConnectionInfo connectionInfo = (JmsConnectionInfo) resource;
+                    connectTimeout = connectionInfo.getConnectTimeout();
+                    closeTimeout = connectionInfo.getCloseTimeout();
+                    sendTimeout = connectionInfo.getSendTimeout();
+                    requestTimeout = connectionInfo.getRequestTimeout();
 
                     provider.create(resource, this);
                 }

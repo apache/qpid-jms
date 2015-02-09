@@ -37,6 +37,7 @@ import javax.jms.ConnectionMetaData;
 import javax.jms.Destination;
 import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
+import javax.jms.InvalidClientIDException;
 import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.Queue;
@@ -237,44 +238,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     /**
-     * @param destination
-     * @param messageSelector
-     * @param sessionPool
-     * @param maxMessages
-     * @return ConnectionConsumer
-     * @throws JMSException
-     * @see javax.jms.Connection#createConnectionConsumer(javax.jms.Destination,
-     *      java.lang.String, javax.jms.ServerSessionPool, int)
-     */
-    @Override
-    public ConnectionConsumer createConnectionConsumer(Destination destination, String messageSelector,
-                                                       ServerSessionPool sessionPool, int maxMessages) throws JMSException {
-        checkClosedOrFailed();
-        connect();
-        throw new JMSException("Not supported");
-    }
-
-    /**
-     * @param topic
-     * @param subscriptionName
-     * @param messageSelector
-     * @param sessionPool
-     * @param maxMessages
-     * @return ConnectionConsumer
-     * @throws JMSException
-     *
-     * @see javax.jms.Connection#createDurableConnectionConsumer(javax.jms.Topic,
-     *      java.lang.String, java.lang.String, javax.jms.ServerSessionPool, int)
-     */
-    @Override
-    public ConnectionConsumer createDurableConnectionConsumer(Topic topic, String subscriptionName,
-                                                              String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
-        checkClosedOrFailed();
-        connect();
-        throw new JMSException("Not supported");
-    }
-
-    /**
      * @param transacted
      * @param acknowledgeMode
      * @return Session
@@ -326,8 +289,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         if (clientIdSet) {
             throw new IllegalStateException("The clientID has already been set");
         }
-        if (clientID == null) {
-            throw new IllegalStateException("Cannot have a null clientID");
+        if (clientID == null || clientID.isEmpty()) {
+            throw new InvalidClientIDException("Cannot have a null or empty clientID");
         }
         if (connected.get()) {
             throw new IllegalStateException("Cannot set the client id once connected.");
@@ -394,6 +357,44 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     /**
      * @param topic
+     * @param subscriptionName
+     * @param messageSelector
+     * @param sessionPool
+     * @param maxMessages
+     * @return ConnectionConsumer
+     * @throws JMSException
+     *
+     * @see javax.jms.Connection#createDurableConnectionConsumer(javax.jms.Topic,
+     *      java.lang.String, java.lang.String, javax.jms.ServerSessionPool, int)
+     */
+    @Override
+    public ConnectionConsumer createDurableConnectionConsumer(Topic topic, String subscriptionName,
+                                                              String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
+        checkClosedOrFailed();
+        connect();
+        throw new JMSException("Not supported");
+    }
+
+    /**
+     * @param destination
+     * @param messageSelector
+     * @param sessionPool
+     * @param maxMessages
+     * @return ConnectionConsumer
+     * @throws JMSException
+     * @see javax.jms.Connection#createConnectionConsumer(javax.jms.Destination,
+     *      java.lang.String, javax.jms.ServerSessionPool, int)
+     */
+    @Override
+    public ConnectionConsumer createConnectionConsumer(Destination destination, String messageSelector,
+                                                       ServerSessionPool sessionPool, int maxMessages) throws JMSException {
+        checkClosedOrFailed();
+        connect();
+        throw new JMSException("Not supported");
+    }
+
+    /**
+     * @param topic
      * @param messageSelector
      * @param sessionPool
      * @param maxMessages
@@ -407,7 +408,25 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
                                                        ServerSessionPool sessionPool, int maxMessages) throws JMSException {
         checkClosedOrFailed();
         connect();
-        return null;
+        throw new JMSException("Not supported");
+    }
+
+    /**
+     * @param queue
+     * @param messageSelector
+     * @param sessionPool
+     * @param maxMessages
+     * @return ConnectionConsumer
+     * @throws JMSException
+     * @see javax.jms.QueueConnection#createConnectionConsumer(javax.jms.Queue,
+     *      java.lang.String, javax.jms.ServerSessionPool, int)
+     */
+    @Override
+    public ConnectionConsumer createConnectionConsumer(Queue queue, String messageSelector,
+                                                       ServerSessionPool sessionPool, int maxMessages) throws JMSException {
+        checkClosedOrFailed();
+        connect();
+        throw new JMSException("Not supported");
     }
 
     /**
@@ -428,24 +447,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
             result.start();
         }
         return result;
-    }
-
-    /**
-     * @param queue
-     * @param messageSelector
-     * @param sessionPool
-     * @param maxMessages
-     * @return ConnectionConsumer
-     * @throws JMSException
-     * @see javax.jms.QueueConnection#createConnectionConsumer(javax.jms.Queue,
-     *      java.lang.String, javax.jms.ServerSessionPool, int)
-     */
-    @Override
-    public ConnectionConsumer createConnectionConsumer(Queue queue, String messageSelector,
-                                                       ServerSessionPool sessionPool, int maxMessages) throws JMSException {
-        checkClosedOrFailed();
-        connect();
-        return null;
     }
 
     /**

@@ -283,7 +283,7 @@ public class PriorityMessageQueueTest {
         assertTrue(queue.isEmpty());
     }
 
-    @Test
+    @Test(timeout = 10000)
     public void testDequeueWaitsUntilMessageArrives() throws InterruptedException {
         final JmsInboundMessageDispatch message = createEnvelope();
         Thread runner = new Thread(new Runnable() {
@@ -291,7 +291,7 @@ public class PriorityMessageQueueTest {
             @Override
             public void run() {
                 try {
-                    TimeUnit.SECONDS.sleep(2);
+                    TimeUnit.MILLISECONDS.sleep(200);
                 } catch (InterruptedException e) {
                 }
                 queue.enqueueFirst(message);
@@ -302,7 +302,7 @@ public class PriorityMessageQueueTest {
         assertSame(message, queue.dequeue(-1));
     }
 
-    @Test
+    @Test(timeout = 10000)
     public void testDequeueTimedWaitsUntilMessageArrives() throws InterruptedException {
         final JmsInboundMessageDispatch message = createEnvelope();
         Thread runner = new Thread(new Runnable() {
@@ -310,7 +310,7 @@ public class PriorityMessageQueueTest {
             @Override
             public void run() {
                 try {
-                    TimeUnit.SECONDS.sleep(2);
+                    TimeUnit.MILLISECONDS.sleep(500);
                 } catch (InterruptedException e) {
                 }
                 queue.enqueueFirst(message);
@@ -318,10 +318,10 @@ public class PriorityMessageQueueTest {
         });
         runner.start();
 
-        assertSame(message, queue.dequeue(10000));
+        assertSame(message, queue.dequeue(5000));
     }
 
-    @Test
+    @Test(timeout = 10000)
     public void testDequeueWaitsUntilMessageArrivesWhenLockNotified() throws InterruptedException {
         final JmsInboundMessageDispatch message = createEnvelope();
         Thread runner = new Thread(new Runnable() {
@@ -329,14 +329,14 @@ public class PriorityMessageQueueTest {
             @Override
             public void run() {
                 try {
-                    TimeUnit.SECONDS.sleep(2);
+                    TimeUnit.MILLISECONDS.sleep(200);
                 } catch (InterruptedException e) {
                 }
                 synchronized (queue.getLock()) {
                     queue.getLock().notify();
                 }
                 try {
-                    TimeUnit.SECONDS.sleep(1);
+                    TimeUnit.MILLISECONDS.sleep(200);
                 } catch (InterruptedException e) {
                 }
                 queue.enqueueFirst(message);

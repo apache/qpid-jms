@@ -258,7 +258,7 @@ public class FifoMessageQueueTest {
         assertTrue(queue.isEmpty());
     }
 
-    @Test
+    @Test(timeout = 10000)
     public void testDequeueWaitsUntilMessageArrives() throws InterruptedException {
         final JmsInboundMessageDispatch message = createEnvelope();
         Thread runner = new Thread(new Runnable() {
@@ -266,7 +266,7 @@ public class FifoMessageQueueTest {
             @Override
             public void run() {
                 try {
-                    TimeUnit.SECONDS.sleep(2);
+                    TimeUnit.MILLISECONDS.sleep(500);
                 } catch (InterruptedException e) {
                 }
                 queue.enqueueFirst(message);

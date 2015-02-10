@@ -65,6 +65,7 @@ public class FiloverProviderFactoryTest {
         assertEquals(FailoverProvider.DEFAULT_MAX_RECONNECT_ATTEMPTS, failover.getMaxReconnectAttempts());
         assertEquals(FailoverProvider.DEFAULT_USE_RECONNECT_BACKOFF, failover.isUseReconnectBackOff());
         assertEquals(FailoverProvider.DEFAULT_RECONNECT_BACKOFF_MULTIPLIER, failover.getReconnectBackOffMultiplier(), 0.0);
+        assertEquals(FailoverProvider.DEFAULT_WARN_AFTER_RECONNECT_ATTEMPTS, failover.getWarnAfterReconnectAttempts());
         assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, failover.isRandomize());
     }
 
@@ -82,6 +83,7 @@ public class FiloverProviderFactoryTest {
             "&failover.maxReconnectDelay=" + (FailoverProvider.DEFAULT_MAX_RECONNECT_DELAY + 3) +
             "&failover.startupMaxReconnectAttempts=" + (FailoverProvider.DEFAULT_STARTUP_MAX_RECONNECT_ATTEMPTS + 4) +
             "&failover.maxReconnectAttempts=" + (FailoverProvider.DEFAULT_MAX_RECONNECT_ATTEMPTS + 5) +
+            "&failover.warnAfterReconnectAttempts=" + (FailoverProvider.DEFAULT_WARN_AFTER_RECONNECT_ATTEMPTS + 6) +
             "&failover.useReconnectBackOff=" + (!FailoverProvider.DEFAULT_USE_RECONNECT_BACKOFF) +
             "&failover.reconnectBackOffMultiplier=" + (FailoverProvider.DEFAULT_RECONNECT_BACKOFF_MULTIPLIER + 1.0d) +
             "&failover.randomize=" + (!FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED));
@@ -97,6 +99,7 @@ public class FiloverProviderFactoryTest {
         assertEquals(FailoverProvider.DEFAULT_MAX_RECONNECT_DELAY + 3, failover.getMaxReconnectDelay());
         assertEquals(FailoverProvider.DEFAULT_STARTUP_MAX_RECONNECT_ATTEMPTS + 4, failover.getStartupMaxReconnectAttempts());
         assertEquals(FailoverProvider.DEFAULT_MAX_RECONNECT_ATTEMPTS + 5, failover.getMaxReconnectAttempts());
+        assertEquals(FailoverProvider.DEFAULT_WARN_AFTER_RECONNECT_ATTEMPTS + 6, failover.getWarnAfterReconnectAttempts());
         assertEquals(!FailoverProvider.DEFAULT_USE_RECONNECT_BACKOFF, failover.isUseReconnectBackOff());
         assertEquals(FailoverProvider.DEFAULT_RECONNECT_BACKOFF_MULTIPLIER + 1.0d, failover.getReconnectBackOffMultiplier(), 0.0);
         assertEquals(!FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, failover.isRandomize());

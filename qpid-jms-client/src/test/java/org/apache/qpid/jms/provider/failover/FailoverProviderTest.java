@@ -74,6 +74,14 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
     }
 
     @Test(timeout = 30000)
+    public void testProviderListener() {
+        FailoverProvider provider = new FailoverProvider(uris, Collections.<String, String>emptyMap());
+        assertNull(provider.getProviderListener());
+        provider.setProviderListener(new DefaultProviderListener());
+        assertNotNull(provider.getProviderListener());
+    }
+
+    @Test(timeout = 30000)
     public void testGetRemoteURI() throws Exception {
         final FailoverProvider provider = new FailoverProvider(uris, Collections.<String, String>emptyMap());
 

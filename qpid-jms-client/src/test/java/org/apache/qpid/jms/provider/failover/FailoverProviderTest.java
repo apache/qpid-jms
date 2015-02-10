@@ -210,6 +210,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
 
         assertEquals(5, MockProviderContext.INSTANCE.getContextStats().getProvidersCreated());
         assertEquals(5, MockProviderContext.INSTANCE.getContextStats().getConnectionAttempts());
+        assertEquals(5, MockProviderContext.INSTANCE.getContextStats().getCloseAttempts());
     }
 
     @Test(timeout = 30000)
@@ -231,6 +232,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
 
         assertEquals(5, MockProviderContext.INSTANCE.getContextStats().getProvidersCreated());
         assertEquals(5, MockProviderContext.INSTANCE.getContextStats().getConnectionAttempts());
+        assertEquals(5, MockProviderContext.INSTANCE.getContextStats().getCloseAttempts());
     }
 
     @Test(timeout = 30000)

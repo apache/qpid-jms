@@ -608,15 +608,19 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 Throwable failure = null;
                 URI target = uris.getNext();
                 if (target != null) {
+                    Provider provider = null;
                     try {
                         LOG.debug("Connection attempt:[{}] to: {} in-progress", reconnectAttempts, target);
-                        Provider provider = ProviderFactory.create(target);
+                        provider = ProviderFactory.create(target);
                         provider.connect();
                         initializeNewConnection(provider);
                         return;
                     } catch (Throwable e) {
                         LOG.info("Connection attempt:[{}] to: {} failed", reconnectAttempts, target);
                         failure = e;
+                        try {
+                            provider.close();
+                        } catch (Throwable ex) {}
                     }
                 }
 

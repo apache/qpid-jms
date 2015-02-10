@@ -77,6 +77,8 @@ public class MockProvider implements Provider {
 
     @Override
     public void close() {
+        stats.recordCloseAttempt();
+
         if (configuration.isFailOnClose()) {
             throw new RuntimeException();
         }

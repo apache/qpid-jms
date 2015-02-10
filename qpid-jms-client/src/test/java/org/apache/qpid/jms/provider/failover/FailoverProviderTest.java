@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.provider.failover;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -25,7 +26,9 @@ import static org.junit.Assert.fail;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -67,10 +70,34 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
     }
 
     @Test(timeout = 30000)
-    public void testCreateProvider() {
+    public void testCreateProviderOnlyUris() {
+        FailoverProvider provider = new FailoverProvider(uris);
+        assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, provider.isRandomize());
+        assertNull(provider.getRemoteURI());
+        assertNotNull(provider.getNestedOptions());
+        assertTrue(provider.getNestedOptions().isEmpty());
+    }
+
+    @Test(timeout = 30000)
+    public void testCreateProviderOnlyNestedOptions() {
+        Map<String, String> options = new HashMap<String, String>();
+        options.put("transport.tcpNoDelay", "true");
+
+        FailoverProvider provider = new FailoverProvider(options);
+        assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, provider.isRandomize());
+        assertNull(provider.getRemoteURI());
+        assertNotNull(provider.getNestedOptions());
+        assertFalse(provider.getNestedOptions().isEmpty());
+        assertTrue(provider.getNestedOptions().containsKey("transport.tcpNoDelay"));
+    }
+
+    @Test(timeout = 30000)
+    public void testCreateProviderWithNestedOptions() {
         FailoverProvider provider = new FailoverProvider(uris, Collections.<String, String>emptyMap());
         assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, provider.isRandomize());
         assertNull(provider.getRemoteURI());
+        assertNotNull(provider.getNestedOptions());
+        assertTrue(provider.getNestedOptions().isEmpty());
     }
 
     @Test(timeout = 30000)
@@ -199,5 +226,19 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
 
         assertEquals(5, MockProviderFactory.AGGRAGATED_PROVIDER_STATS.getProvidersCreated());
         assertEquals(5, MockProviderFactory.AGGRAGATED_PROVIDER_STATS.getConnectionAttempts());
+    }
+
+    @Test(timeout = 30000)
+    public void testFailureOnCloseIsSwallowed() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(
+            "failover:(mock://localhost?mock.failOnClose=true)");
+
+        Connection connection = factory.createConnection();
+        connection.start();
+        connection.close();
+
+        assertEquals(1, MockProviderFactory.AGGRAGATED_PROVIDER_STATS.getProvidersCreated());
+        assertEquals(1, MockProviderFactory.AGGRAGATED_PROVIDER_STATS.getConnectionAttempts());
+        assertEquals(1, MockProviderFactory.AGGRAGATED_PROVIDER_STATS.getCloseAttempts());
     }
 }

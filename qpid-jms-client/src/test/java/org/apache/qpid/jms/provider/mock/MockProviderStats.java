@@ -28,6 +28,7 @@ public class MockProviderStats {
 
     private final AtomicInteger providersCreated = new AtomicInteger();
     private final AtomicInteger connectionAttempts = new AtomicInteger();
+    private final AtomicInteger closeAttempts = new AtomicInteger();
     private final AtomicInteger createResourceCalls = new AtomicInteger();
     private final AtomicInteger startResourceCalls = new AtomicInteger();
     private final AtomicInteger stopResourceCalls = new AtomicInteger();
@@ -71,6 +72,18 @@ public class MockProviderStats {
         }
 
         connectionAttempts.incrementAndGet();
+    }
+
+    public int getCloseAttempts() {
+        return closeAttempts.get();
+    }
+
+    public void recordCloseAttempt() {
+        if (parent != null) {
+            parent.recordCloseAttempt();
+        }
+
+        closeAttempts.incrementAndGet();
     }
 
     public int getCreateResourceCalls() {
@@ -220,6 +233,7 @@ public class MockProviderStats {
     public void reset() {
         providersCreated.set(0);
         connectionAttempts.set(0);
+        closeAttempts.set(0);
         createResourceCalls.set(0);
         startResourceCalls.set(0);
         stopResourceCalls.set(0);

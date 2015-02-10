@@ -83,6 +83,13 @@ public class TransportSupportTest extends QpidJmsTestCase {
         TransportSupport.createSslContext(options);
     }
 
+    @Test(expected = IOException.class)
+    public void testCreateSslContextBadPathToStore() throws Exception {
+        TransportSslOptions options = createJksSslOptions();
+        options.setKeyStoreLocation(CLIENT_JKS_KEYSTORE + ".bad");
+        TransportSupport.createSslContext(options);
+    }
+
     @Test
     public void testCreateSslContextJceksStore() throws Exception {
         TransportSslOptions options = createJceksSslOptions();

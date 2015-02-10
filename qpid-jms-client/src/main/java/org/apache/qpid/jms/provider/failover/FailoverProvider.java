@@ -532,21 +532,13 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             @Override
             public void run() {
                 try {
-                    if (firstConnection) {
-                        FailoverProvider.this.provider = provider;
-                        provider.setProviderListener(FailoverProvider.this);
+                    FailoverProvider.this.provider = provider;
+                    provider.setProviderListener(FailoverProvider.this);
 
-                        // The only pending request here should be a Connection create request.
-                        List<FailoverRequest> pending = new ArrayList<FailoverRequest>(requests.values());
-                        for (FailoverRequest request : pending) {
-                            request.run();
-                        }
-                    } else {
+                    if (!firstConnection) {
                         LOG.debug("Signalling connection recovery: {}", provider);
-                        FailoverProvider.this.provider = provider;
-                        provider.setProviderListener(FailoverProvider.this);
 
-                        // Stage 1: Recovery all JMS Framework resources
+                        // Stage 1: Allow listener to recover its resources
                         listener.onConnectionRecovery(provider);
 
                         // Stage 2: Connection state recovered, get newly configured message factory.
@@ -557,12 +549,12 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
                         // Stage 4: Let the client know that connection has restored.
                         listener.onConnectionRestored(provider.getRemoteURI());
+                    }
 
-                        // Stage 5: Send pending actions.
-                        List<FailoverRequest> pending = new ArrayList<FailoverRequest>(requests.values());
-                        for (FailoverRequest request : pending) {
-                            request.run();
-                        }
+                    // Last step: Send pending actions.
+                    List<FailoverRequest> pending = new ArrayList<FailoverRequest>(requests.values());
+                    for (FailoverRequest request : pending) {
+                        request.run();
                     }
 
                     nextReconnectDelay = reconnectDelay;

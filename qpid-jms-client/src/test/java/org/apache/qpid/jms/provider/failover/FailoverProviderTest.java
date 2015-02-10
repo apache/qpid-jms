@@ -33,9 +33,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
+import javax.jms.Destination;
 import javax.jms.JMSException;
+import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
+import org.apache.qpid.jms.meta.JmsConsumerInfo;
+import org.apache.qpid.jms.meta.JmsProducerInfo;
+import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.DefaultProviderListener;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.mock.MockProviderContext;
@@ -240,5 +245,52 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertEquals(1, MockProviderContext.INSTANCE.getContextStats().getProvidersCreated());
         assertEquals(1, MockProviderContext.INSTANCE.getContextStats().getConnectionAttempts());
         assertEquals(1, MockProviderContext.INSTANCE.getContextStats().getCloseAttempts());
+    }
+
+    @Test(timeout = 30000)
+    public void testSessionLifeCyclePassthrough() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(
+            "failover:(mock://localhost)");
+
+        Connection connection = factory.createConnection();
+        connection.start();
+        connection.createSession(false, Session.AUTO_ACKNOWLEDGE).close();
+        connection.close();
+
+        assertEquals(1, MockProviderContext.INSTANCE.getContextStats().getCreateResourceCalls(JmsSessionInfo.class));
+        assertEquals(1, MockProviderContext.INSTANCE.getContextStats().getDestroyResourceCalls(JmsSessionInfo.class));
+    }
+
+    @Test(timeout = 30000)
+    public void testConsumerLifeCyclePassthrough() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(
+            "failover:(mock://localhost)");
+
+        Connection connection = factory.createConnection();
+        connection.start();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Destination destination = session.createTopic(_testName.getMethodName());
+        session.createConsumer(destination).close();
+        connection.close();
+
+        assertEquals(1, MockProviderContext.INSTANCE.getContextStats().getCreateResourceCalls(JmsConsumerInfo.class));
+        assertEquals(1, MockProviderContext.INSTANCE.getContextStats().getStartResourceCalls(JmsConsumerInfo.class));
+        assertEquals(1, MockProviderContext.INSTANCE.getContextStats().getDestroyResourceCalls(JmsConsumerInfo.class));
+    }
+
+    @Test(timeout = 30000)
+    public void testProducerLifeCyclePassthrough() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(
+            "failover:(mock://localhost)");
+
+        Connection connection = factory.createConnection();
+        connection.start();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Destination destination = session.createTopic(_testName.getMethodName());
+        session.createProducer(destination).close();
+        connection.close();
+
+        assertEquals(1, MockProviderContext.INSTANCE.getContextStats().getCreateResourceCalls(JmsProducerInfo.class));
+        assertEquals(1, MockProviderContext.INSTANCE.getContextStats().getDestroyResourceCalls(JmsProducerInfo.class));
     }
 }

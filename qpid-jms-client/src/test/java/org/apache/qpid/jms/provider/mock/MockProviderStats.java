@@ -16,7 +16,10 @@
  */
 package org.apache.qpid.jms.provider.mock;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.qpid.jms.meta.JmsResource;
 
 /**
  * Statistics gathering class used to track activity in all MockProvider
@@ -41,6 +44,15 @@ public class MockProviderStats {
     private final AtomicInteger recoverCalls = new AtomicInteger();
     private final AtomicInteger unsubscribeCalls = new AtomicInteger();
     private final AtomicInteger pullCalls = new AtomicInteger();
+
+    private final ConcurrentHashMap<Class<? extends JmsResource>, AtomicInteger> resourceCreateCalls =
+        new ConcurrentHashMap<Class<? extends JmsResource>, AtomicInteger>();
+    private final ConcurrentHashMap<Class<? extends JmsResource>, AtomicInteger> resourceStartCalls =
+        new ConcurrentHashMap<Class<? extends JmsResource>, AtomicInteger>();
+    private final ConcurrentHashMap<Class<? extends JmsResource>, AtomicInteger> resourceStopCalls =
+        new ConcurrentHashMap<Class<? extends JmsResource>, AtomicInteger>();
+    private final ConcurrentHashMap<Class<? extends JmsResource>, AtomicInteger> resourceDestroyCalls =
+        new ConcurrentHashMap<Class<? extends JmsResource>, AtomicInteger>();
 
     public MockProviderStats() {
         this(null);
@@ -90,48 +102,108 @@ public class MockProviderStats {
         return createResourceCalls.get();
     }
 
-    public void recordCreateResourceCall() {
+    public int getCreateResourceCalls(Class<? extends JmsResource> resourceType) {
+        AtomicInteger count = resourceCreateCalls.get(resourceType);
+        if (count != null) {
+            return count.get();
+        }
+
+        return 0;
+    }
+
+    public void recordCreateResourceCall(JmsResource resource) {
         if (parent != null) {
-            parent.recordCreateResourceCall();
+            parent.recordCreateResourceCall(resource);
         }
 
         createResourceCalls.incrementAndGet();
+        AtomicInteger count = resourceCreateCalls.get(resource);
+        if (count != null) {
+            count.incrementAndGet();
+        } else {
+            resourceCreateCalls.putIfAbsent(resource.getClass(), new AtomicInteger(1));
+        }
     }
 
     public int getStartResourceCalls() {
         return startResourceCalls.get();
     }
 
-    public void recordStartResourceCall() {
+    public int getStartResourceCalls(Class<? extends JmsResource> resourceType) {
+        AtomicInteger count = resourceStartCalls.get(resourceType);
+        if (count != null) {
+            return count.get();
+        }
+
+        return 0;
+    }
+
+    public void recordStartResourceCall(JmsResource resource) {
         if (parent != null) {
-            parent.recordStartResourceCall();
+            parent.recordStartResourceCall(resource);
         }
 
         startResourceCalls.incrementAndGet();
+        AtomicInteger count = resourceStartCalls.get(resource);
+        if (count != null) {
+            count.incrementAndGet();
+        } else {
+            resourceStartCalls.putIfAbsent(resource.getClass(), new AtomicInteger(1));
+        }
     }
 
     public int getStopResourceCalls() {
         return stopResourceCalls.get();
     }
 
-    public void recordStopResourceCall() {
+    public int getStopResourceCalls(Class<? extends JmsResource> resourceType) {
+        AtomicInteger count = resourceStopCalls.get(resourceType);
+        if (count != null) {
+            return count.get();
+        }
+
+        return 0;
+    }
+
+    public void recordStopResourceCall(JmsResource resource) {
         if (parent != null) {
-            parent.recordStopResourceCall();
+            parent.recordStopResourceCall(resource);
         }
 
         stopResourceCalls.incrementAndGet();
+        AtomicInteger count = resourceStopCalls.get(resource);
+        if (count != null) {
+            count.incrementAndGet();
+        } else {
+            resourceStopCalls.putIfAbsent(resource.getClass(), new AtomicInteger(1));
+        }
     }
 
     public int getDestroyResourceCalls() {
         return destroyResourceCalls.get();
     }
 
-    public void recordDetroyResourceCall() {
+    public int getDestroyResourceCalls(Class<? extends JmsResource> resourceType) {
+        AtomicInteger count = resourceDestroyCalls.get(resourceType);
+        if (count != null) {
+            return count.get();
+        }
+
+        return 0;
+    }
+
+    public void recordDestroyResourceCall(JmsResource resource) {
         if (parent != null) {
-            parent.recordDetroyResourceCall();
+            parent.recordDestroyResourceCall(resource);
         }
 
         destroyResourceCalls.incrementAndGet();
+        AtomicInteger count = resourceDestroyCalls.get(resource);
+        if (count != null) {
+            count.incrementAndGet();
+        } else {
+            resourceDestroyCalls.putIfAbsent(resource.getClass(), new AtomicInteger(1));
+        }
     }
 
     public int getSendCalls() {
@@ -246,5 +318,10 @@ public class MockProviderStats {
         recoverCalls.set(0);
         unsubscribeCalls.set(0);
         pullCalls.set(0);
+
+        resourceCreateCalls.clear();
+        resourceStartCalls.clear();
+        resourceStopCalls.clear();
+        resourceDestroyCalls.clear();
     }
 }

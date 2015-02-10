@@ -97,7 +97,7 @@ public class MockProvider implements Provider {
 
     @Override
     public void create(JmsResource resource, AsyncResult request) throws IOException, JMSException {
-        stats.recordCreateResourceCall();
+        stats.recordCreateResourceCall(resource);
 
         if (resource instanceof JmsConnectionInfo) {
             if (listener != null) {
@@ -110,19 +110,19 @@ public class MockProvider implements Provider {
 
     @Override
     public void start(JmsResource resource, AsyncResult request) throws IOException, JMSException {
-        stats.recordStartResourceCall();
+        stats.recordStartResourceCall(resource);
         request.onSuccess();
     }
 
     @Override
     public void stop(JmsResource resource, AsyncResult request) throws IOException, JMSException {
-        stats.recordStopResourceCall();
+        stats.recordStopResourceCall(resource);
         request.onSuccess();
     }
 
     @Override
-    public void destroy(JmsResource resourceId, AsyncResult request) throws IOException, JMSException {
-        stats.recordDetroyResourceCall();
+    public void destroy(JmsResource resource, AsyncResult request) throws IOException, JMSException {
+        stats.recordDestroyResourceCall(resource);
         request.onSuccess();
     }
 

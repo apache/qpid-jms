@@ -18,6 +18,7 @@ package org.apache.qpid.jms.provider.mock;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.UUID;
 
 import javax.jms.JMSException;
 
@@ -45,6 +46,7 @@ public class MockProvider implements Provider {
     private final URI remoteURI;
     private final MockProviderConfiguration configuration;
 
+    private String providerId = UUID.randomUUID().toString();
     private MockProviderListener eventListener;
     private ProviderListener listener;
 
@@ -61,6 +63,8 @@ public class MockProvider implements Provider {
         if (configuration.isFailOnConnect()) {
             throw new IOException("Failed to connect to: " + remoteURI);
         }
+
+        MockProviderContext.INSTANCE.connect(this);
     }
 
     @Override
@@ -78,6 +82,8 @@ public class MockProvider implements Provider {
     @Override
     public void close() {
         stats.recordCloseAttempt();
+
+        MockProviderContext.INSTANCE.disconnect(this);
 
         if (configuration.isFailOnClose()) {
             throw new RuntimeException();
@@ -162,6 +168,14 @@ public class MockProvider implements Provider {
         request.onSuccess();
     }
 
+    //----- API for generating provider events to a connection ---------------//
+
+    public void signalConnectionFailed() {
+        listener.onConnectionFailure(new IOException("Connection lost"));
+    }
+
+    //----- Property getters and setters -------------------------------------//
+
     @Override
     public void pull(JmsConsumerId consumerId, long timeout, AsyncResult request) throws IOException {
         stats.recordPullCall();
@@ -197,5 +211,13 @@ public class MockProvider implements Provider {
 
     public MockProviderStats getStatistics() {
         return stats;
+    }
+
+    public void setProviderId(String providerId) {
+        this.providerId = providerId;
+    }
+
+    public String getProviderId() {
+        return this.providerId;
     }
 }

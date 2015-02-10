@@ -38,7 +38,7 @@ import javax.jms.JMSException;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.provider.DefaultProviderListener;
 import org.apache.qpid.jms.provider.ProviderFuture;
-import org.apache.qpid.jms.provider.mock.MockProviderFactory;
+import org.apache.qpid.jms.provider.mock.MockProviderContext;
 import org.apache.qpid.jms.test.Wait;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,7 +64,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         uris.add(new URI("mock://192.168.2.3:5672"));
         uris.add(new URI("mock://192.168.2.4:5672"));
 
-        MockProviderFactory.resetStatistics();
+        MockProviderContext.INSTANCE.reset();
 
         super.setUp();
     }
@@ -166,8 +166,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
 
         provider.close();
 
-        assertEquals(1, MockProviderFactory.AGGRAGATED_PROVIDER_STATS.getProvidersCreated());
-        assertEquals(1, MockProviderFactory.AGGRAGATED_PROVIDER_STATS.getConnectionAttempts());
+        assertEquals(1, MockProviderContext.INSTANCE.getContextStats().getProvidersCreated());
+        assertEquals(1, MockProviderContext.INSTANCE.getContextStats().getConnectionAttempts());
     }
 
     @Test(timeout = 30000)
@@ -203,8 +203,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
             connection.close();
         }
 
-        assertEquals(5, MockProviderFactory.AGGRAGATED_PROVIDER_STATS.getProvidersCreated());
-        assertEquals(5, MockProviderFactory.AGGRAGATED_PROVIDER_STATS.getConnectionAttempts());
+        assertEquals(5, MockProviderContext.INSTANCE.getContextStats().getProvidersCreated());
+        assertEquals(5, MockProviderContext.INSTANCE.getContextStats().getConnectionAttempts());
     }
 
     @Test(timeout = 30000)
@@ -224,8 +224,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
             connection.close();
         }
 
-        assertEquals(5, MockProviderFactory.AGGRAGATED_PROVIDER_STATS.getProvidersCreated());
-        assertEquals(5, MockProviderFactory.AGGRAGATED_PROVIDER_STATS.getConnectionAttempts());
+        assertEquals(5, MockProviderContext.INSTANCE.getContextStats().getProvidersCreated());
+        assertEquals(5, MockProviderContext.INSTANCE.getContextStats().getConnectionAttempts());
     }
 
     @Test(timeout = 30000)
@@ -237,8 +237,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         connection.start();
         connection.close();
 
-        assertEquals(1, MockProviderFactory.AGGRAGATED_PROVIDER_STATS.getProvidersCreated());
-        assertEquals(1, MockProviderFactory.AGGRAGATED_PROVIDER_STATS.getConnectionAttempts());
-        assertEquals(1, MockProviderFactory.AGGRAGATED_PROVIDER_STATS.getCloseAttempts());
+        assertEquals(1, MockProviderContext.INSTANCE.getContextStats().getProvidersCreated());
+        assertEquals(1, MockProviderContext.INSTANCE.getContextStats().getConnectionAttempts());
+        assertEquals(1, MockProviderContext.INSTANCE.getContextStats().getCloseAttempts());
     }
 }

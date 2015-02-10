@@ -27,12 +27,8 @@ import org.apache.qpid.jms.util.PropertyUtil;
  */
 public class MockProviderFactory extends ProviderFactory {
 
-    public static final MockProviderStats AGGRAGATED_PROVIDER_STATS = new MockProviderStats();
-
     @Override
     public MockProvider createProvider(URI remoteURI) throws Exception {
-
-        AGGRAGATED_PROVIDER_STATS.recordProviderCreated();
 
         Map<String, String> map = PropertyUtil.parseQuery(remoteURI.getQuery());
         Map<String, String> providerOptions = PropertyUtil.filterProperties(map, "mock.");
@@ -40,6 +36,7 @@ public class MockProviderFactory extends ProviderFactory {
         remoteURI = PropertyUtil.replaceQuery(remoteURI, map);
 
         MockProviderConfiguration configuration = new MockProviderConfiguration();
+        MockProviderContext.INSTANCE.getContextStats().recordProviderCreated();
 
         Map<String, String> unused = PropertyUtil.setProperties(configuration, providerOptions);
         if (!unused.isEmpty()) {
@@ -51,15 +48,11 @@ public class MockProviderFactory extends ProviderFactory {
             throw new IllegalArgumentException(msg);
         }
 
-        return new MockProvider(remoteURI, configuration, AGGRAGATED_PROVIDER_STATS);
+        return new MockProvider(remoteURI, configuration, MockProviderContext.INSTANCE.getContextStats());
     }
 
     @Override
     public String getName() {
         return "Mock";
-    }
-
-    public static void resetStatistics() {
-        AGGRAGATED_PROVIDER_STATS.reset();
     }
 }

@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.provider.failover;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -35,13 +36,18 @@ import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.provider.DefaultProviderListener;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.mock.MockProviderFactory;
+import org.apache.qpid.jms.test.Wait;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test behavior of the FailoverProvider
  */
 public class FailoverProviderTest extends FailoverProviderTestSupport {
+
+    private static final Logger LOG = LoggerFactory.getLogger(FailoverProviderTest.class);
 
     private List<URI> uris;
 
@@ -60,11 +66,42 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         super.setUp();
     }
 
-    @Test
+    @Test(timeout = 30000)
     public void testCreateProvider() {
         FailoverProvider provider = new FailoverProvider(uris, Collections.<String, String>emptyMap());
         assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, provider.isRandomize());
         assertNull(provider.getRemoteURI());
+    }
+
+    @Test(timeout = 30000)
+    public void testGetRemoteURI() throws Exception {
+        final FailoverProvider provider = new FailoverProvider(uris, Collections.<String, String>emptyMap());
+
+        assertNull(provider.getRemoteURI());
+        provider.connect();
+        assertTrue("Should have a remote URI after connect", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return provider.getRemoteURI() != null;
+            }
+        }, TimeUnit.SECONDS.toMillis(20), 10));
+    }
+
+    @Test(timeout = 30000)
+    public void testToString() throws Exception {
+        final FailoverProvider provider = new FailoverProvider(uris, Collections.<String, String>emptyMap());
+
+        assertNotNull(provider.toString());
+        provider.connect();
+        assertTrue("Should have a mock scheme after connect", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                LOG.info("FailoverProvider: toString = {}", provider.toString());
+                return provider.toString().contains("mock://");
+            }
+        }, TimeUnit.SECONDS.toMillis(20), 10));
     }
 
     @Test(timeout = 30000)

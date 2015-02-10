@@ -563,12 +563,12 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                         for (FailoverRequest request : pending) {
                             request.run();
                         }
-
-                        nextReconnectDelay = reconnectDelay;
-                        reconnectAttempts = 0;
-                        connectedURI = provider.getRemoteURI();
-                        uris.connected();
                     }
+
+                    nextReconnectDelay = reconnectDelay;
+                    reconnectAttempts = 0;
+                    connectedURI = provider.getRemoteURI();
+                    uris.connected();
                 } catch (Throwable error) {
                     handleProviderFailure(IOExceptionSupport.create(error));
                 }

@@ -115,4 +115,15 @@ public class FailoverProviderOfflineBehaviorTest extends QpidJmsTestCase {
         session.close();
         connection.close();
     }
+
+    @Test(timeout=60000)
+    public void testSessionRecoverDoesNotBlock() throws Exception {
+        connection = (JmsConnection) factory.createConnection();
+        connection.start();
+
+        Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        MockProviderContext.INSTANCE.shutdown();
+        session.recover();
+        connection.close();
+    }
 }

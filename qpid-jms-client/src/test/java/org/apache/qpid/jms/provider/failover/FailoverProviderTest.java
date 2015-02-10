@@ -295,4 +295,32 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertEquals(1, MockProviderContext.INSTANCE.getContextStats().getCreateResourceCalls(JmsProducerInfo.class));
         assertEquals(1, MockProviderContext.INSTANCE.getContextStats().getDestroyResourceCalls(JmsProducerInfo.class));
     }
+
+    @Test(timeout = 30000)
+    public void testSessionRecoverPassthrough() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(
+            "failover:(mock://localhost)");
+
+        Connection connection = factory.createConnection();
+        connection.start();
+        Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        session.recover();
+        connection.close();
+
+        assertEquals(1, MockProviderContext.INSTANCE.getContextStats().getRecoverCalls());
+    }
+
+    @Test(timeout = 30000)
+    public void testSessionUnsubscribePassthrough() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(
+            "failover:(mock://localhost)");
+
+        Connection connection = factory.createConnection();
+        connection.start();
+        Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        session.unsubscribe("some-subscription");
+        connection.close();
+
+        assertEquals(1, MockProviderContext.INSTANCE.getContextStats().getUnsubscribeCalls());
+    }
 }

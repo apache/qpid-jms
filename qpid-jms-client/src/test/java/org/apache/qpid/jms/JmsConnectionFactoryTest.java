@@ -24,13 +24,16 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+import javax.jms.Connection;
 import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
@@ -42,6 +45,7 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
 
     private static final String CLIENT_ID_PROP = "clientID";
     private static final String QUEUE_PREFIX_PROP = "queuePrefix";
+    private static final String TOPIC_PREFIX_PROP = "topicPrefix";
     private static final String USER = "USER";
     private static final String PASSWORD = "PASSWORD";
 
@@ -59,6 +63,76 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         assertNotNull(factory.getPassword());
         assertEquals(USER, factory.getUsername());
         assertEquals(PASSWORD, factory.getPassword());
+    }
+
+    @Test
+    public void testConnectionFactoryOptionsAreAppliedToConnection() throws JMSException {
+        JmsConnectionFactory factory = new JmsConnectionFactory(USER, PASSWORD, "mock://localhost");
+
+        factory.setTopicPrefix(TOPIC_PREFIX_PROP);
+        factory.setQueuePrefix(QUEUE_PREFIX_PROP);
+        factory.setClientID(CLIENT_ID_PROP);
+
+        factory.setAlwaysSyncSend(!factory.isAlwaysSyncSend());
+        factory.setForceAsyncSend(!factory.isForceAsyncSend());
+        factory.setLocalMessagePriority(!factory.isLocalMessagePriority());
+        factory.setSendAcksAsync(!factory.isSendAcksAsync());
+        factory.setConnectTimeout(TimeUnit.SECONDS.toMillis(30));
+        factory.setCloseTimeout(TimeUnit.SECONDS.toMillis(45));
+
+        factory.getPrefetchPolicy().setAll(1);
+
+        JmsConnection connection = (JmsConnection) factory.createConnection();
+        assertNotNull(connection);
+
+        assertEquals(USER, connection.getUsername());
+        assertEquals(PASSWORD, connection.getPassword());
+        assertEquals(CLIENT_ID_PROP, connection.getClientID());
+        assertEquals(TOPIC_PREFIX_PROP, connection.getTopicPrefix());
+        assertEquals(QUEUE_PREFIX_PROP, connection.getQueuePrefix());
+
+        assertEquals(factory.isAlwaysSyncSend(), connection.isAlwaysSyncSend());
+        assertEquals(factory.isForceAsyncSend(), connection.isForceAsyncSend());
+        assertEquals(factory.isLocalMessagePriority(), connection.isLocalMessagePriority());
+        assertEquals(factory.isSendAcksAsync(), connection.isSendAcksAsync());
+
+        assertEquals(TimeUnit.SECONDS.toMillis(30), connection.getConnectTimeout());
+        assertEquals(TimeUnit.SECONDS.toMillis(45), connection.getCloseTimeout());
+
+        assertEquals(1, connection.getPrefetchPolicy().getTopicPrefetch());
+        assertEquals(1, connection.getPrefetchPolicy().getQueuePrefetch());
+        assertEquals(1, connection.getPrefetchPolicy().getQueueBrowserPrefetch());
+        assertEquals(1, connection.getPrefetchPolicy().getDurableTopicPrefetch());
+    }
+
+    @Test
+    public void testConnectionGetConfiguredURIApplied() throws Exception {
+        URI mock = new URI("mock://localhost");
+
+        JmsConnectionFactory factory = new JmsConnectionFactory(mock);
+
+        JmsConnection connection = (JmsConnection) factory.createConnection();
+        assertEquals(mock, connection.getConfiguredURI());
+        connection.start();
+        assertEquals(mock, connection.getConnectedURI());
+    }
+
+    @Test
+    public void testGlobalExceptionListenerIsAppliedToCreatedConnection() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(new URI("mock://127.0.0.1:5763"));
+
+        ExceptionListener listener = new ExceptionListener() {
+
+            @Override
+            public void onException(JMSException exception) {
+            }
+        };
+
+        factory.setExceptionListener(listener);
+        Connection connection = factory.createConnection();
+        assertNotNull(connection);
+        assertNotNull(connection.getExceptionListener());
+        assertSame(listener, connection.getExceptionListener());
     }
 
     @Test

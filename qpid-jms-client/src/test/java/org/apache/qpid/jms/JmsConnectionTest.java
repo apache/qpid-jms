@@ -18,16 +18,23 @@ package org.apache.qpid.jms;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.URI;
 
+import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
 import javax.jms.InvalidClientIDException;
 import javax.jms.JMSException;
 import javax.jms.Session;
+import javax.jms.TemporaryQueue;
+import javax.jms.TemporaryTopic;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.provider.mock.MockProvider;
@@ -59,13 +66,13 @@ public class JmsConnectionTest {
         }
     }
 
-    @Test(expected=JMSException.class)
+    @Test(timeout=30000, expected=JMSException.class)
     public void testJmsConnectionThrowsJMSExceptionProviderStartFails() throws JMSException, IllegalStateException, IOException {
         provider.getConfiguration().setFailOnStart(true);
         new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
     }
 
-    @Test
+    @Test(timeout=30000)
     public void testStateAfterCreate() throws JMSException {
         connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
 
@@ -74,13 +81,40 @@ public class JmsConnectionTest {
         assertFalse(connection.isConnected());
     }
 
-    @Test
+    @Test(timeout=30000)
+    public void testGetExceptionListener() throws JMSException {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+
+        assertNull(connection.getExceptionListener());
+        connection.setExceptionListener(new ExceptionListener() {
+
+            @Override
+            public void onException(JMSException exception) {
+            }
+        });
+
+        assertNotNull(connection.getExceptionListener());
+    }
+
+    @Test(timeout=30000)
+    public void testReplacePrefetchPolicy() throws JMSException {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+
+        JmsPrefetchPolicy newPolicy = new JmsPrefetchPolicy();
+        newPolicy.setAll(1);
+
+        assertNotSame(newPolicy, connection.getPrefetchPolicy());
+        connection.setPrefetchPolicy(newPolicy);
+        assertSame(newPolicy, connection.getPrefetchPolicy());
+    }
+
+    @Test(timeout=30000)
     public void testGetConnectionId() throws JMSException {
         connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
         assertEquals("ID:TEST:1", connection.getConnectionId().toString());
     }
 
-    @Test
+    @Test(timeout=30000)
     public void testAddConnectionListener() throws JMSException {
         connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
         JmsConnectionListener listener = new JmsConnectionListener() {
@@ -111,7 +145,7 @@ public class JmsConnectionTest {
         assertTrue(connection.removeConnectionListener(listener));
     }
 
-    @Test
+    @Test(timeout=30000)
     public void testConnectionStart() throws JMSException, IOException {
         connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
 
@@ -120,7 +154,18 @@ public class JmsConnectionTest {
         assertTrue(connection.isConnected());
     }
 
-    @Test
+    @Test(timeout=30000)
+    public void testConnectionMulitpleStartCalls() throws JMSException, IOException {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+
+        assertFalse(connection.isConnected());
+        connection.start();
+        assertTrue(connection.isConnected());
+        connection.start();
+        assertTrue(connection.isConnected());
+    }
+
+    @Test(timeout=30000)
     public void testConnectionStartAndStop() throws JMSException, IOException {
         connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
 
@@ -187,6 +232,40 @@ public class JmsConnectionTest {
         connection.start();
         assertTrue(connection.isConnected());
         connection.setClientID("TEST-ID");
+    }
+
+    @Test(timeout=30000)
+    public void testDeleteOfTempQueueOnClosedConnection() throws JMSException, IOException {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        TemporaryQueue tempQueue = session.createTemporaryQueue();
+        assertNotNull(tempQueue);
+
+        connection.close();
+        try {
+            tempQueue.delete();
+            fail("Should have thrown an IllegalStateException");
+        } catch (IllegalStateException ex) {
+        }
+    }
+
+    @Test(timeout=30000)
+    public void testDeleteOfTempTopicOnClosedConnection() throws JMSException, IOException {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        TemporaryTopic tempTopic = session.createTemporaryTopic();
+        assertNotNull(tempTopic);
+
+        connection.close();
+        try {
+            tempTopic.delete();
+            fail("Should have thrown an IllegalStateException");
+        } catch (IllegalStateException ex) {
+        }
     }
 
     //----- Currently these are unimplemented, these will fail after that ----//

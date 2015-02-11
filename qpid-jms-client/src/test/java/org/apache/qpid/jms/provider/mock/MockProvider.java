@@ -452,7 +452,7 @@ public class MockProvider implements Provider {
         this.connectTimeout = connectTimeout;
     }
 
-    //----- Implementation deatils -------------------------------------------//
+    //----- Implementation details -------------------------------------------//
 
     private void checkClosed() throws ProviderClosedException {
         if (closed.get()) {

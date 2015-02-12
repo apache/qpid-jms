@@ -168,7 +168,7 @@ public interface Provider {
      * @throws IOException if an error occurs or the Provider is already closed.
      * @throws JMSException if an error occurs due to JMS violation such as not authorized.
      */
-    void destroy(JmsResource resourceId, AsyncResult request) throws IOException, JMSException;
+    void destroy(JmsResource resource, AsyncResult request) throws IOException, JMSException;
 
     /**
      * Sends the JmsMessage contained in the outbound dispatch envelope.

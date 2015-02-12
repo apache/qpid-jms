@@ -26,6 +26,7 @@ import java.util.Map;
 
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -36,12 +37,22 @@ public class FiloverProviderFactoryTest extends QpidJmsTestCase {
 
     private URI baseURI;
     private final FailoverProviderFactory factory = new FailoverProviderFactory();
+    private FailoverProvider provider;
 
     @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
         baseURI = new URI("failover:(amqp://localhost:5672,amqp://localhost:5674)");
+    }
+
+    @Override
+    @After
+    public void tearDown() throws Exception {
+        if (provider != null) {
+            provider.close();
+        }
+        super.tearDown();
     }
 
     @Test(timeout = 60000)

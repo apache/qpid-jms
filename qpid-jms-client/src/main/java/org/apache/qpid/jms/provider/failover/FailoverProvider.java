@@ -890,12 +890,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         public void run() {
             requests.put(id, this);
             if (provider == null) {
-                if (failureWhenOffline()) {
-                    requests.remove(id);
-                    getWrappedRequest().onFailure(new IOException("Provider disconnected"));
-                } else if (succeedsWhenOffline()) {
-                    onSuccess();
-                }
+                whenOffline(IOExceptionSupport.create(new IOException("Connection failed.")));
             } else {
                 try {
                     LOG.debug("Executing Failover Task: {}", this);
@@ -907,8 +902,9 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     requests.remove(id);
                     getWrappedRequest().onFailure(jmsEx);
                 } catch (Throwable e) {
-                    LOG.debug("Caught exception while executing task: {}", e.getMessage());
-                    triggerReconnectionAttempt();
+                    LOG.debug("Caught exception while executing task: {} - {}", this, e.getMessage());
+                    whenOffline(IOExceptionSupport.create(e));
+                    handleProviderFailure(IOExceptionSupport.create(e));
                 }
             }
         }
@@ -958,6 +954,17 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
          */
         public boolean failureWhenOffline() {
             return false;
+        }
+
+        private void whenOffline(IOException error) {
+            if (failureWhenOffline()) {
+                requests.remove(id);
+                getWrappedRequest().onFailure(IOExceptionSupport.create(error));
+            } else if (succeedsWhenOffline()) {
+                onSuccess();
+            } else {
+                LOG.trace("Task {} held until connection recovered:", this);
+            }
         }
     }
 

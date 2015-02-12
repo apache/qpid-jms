@@ -112,6 +112,13 @@ public class MockRemotePeer {
         MockRemotePeer.INSTANCE = null;
     }
 
+    public void silentlyCloseConnectedProviders() {
+        List<MockProvider> active = new ArrayList<MockProvider>(activeProviders.values());
+        for (MockProvider provider : active) {
+            provider.silentlyClose();
+        }
+    }
+
     public MockProvider getProvider(String providerId) {
         return activeProviders.get(providerId);
     }

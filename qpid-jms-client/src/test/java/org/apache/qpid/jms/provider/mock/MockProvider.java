@@ -421,6 +421,14 @@ public class MockProvider implements Provider {
         });
     }
 
+
+    /**
+     * Switch state to closed without sending any notifications
+     */
+    public void silentlyClose() {
+        close();
+    }
+
     //----- Property getters and setters -------------------------------------//
 
     @Override

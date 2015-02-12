@@ -142,6 +142,19 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
     }
 
     @Test(timeout=10000)
+    public void testSessionCloseWhenProviderSuddenlyClosesDoesNotBlock() throws Exception {
+        connection = (JmsConnection) factory.createConnection();
+        connection.addConnectionListener(new ConnectionInterruptionListener());
+        connection.start();
+
+        Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+
+        mockPeer.silentlyCloseConnectedProviders();
+
+        session.close();
+    }
+
+    @Test(timeout=10000)
     public void testSessionCloseWithOpenResourcesDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());

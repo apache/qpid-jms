@@ -168,8 +168,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
 
         provider.close();
 
-        assertEquals(1, context.getContextStats().getProvidersCreated());
-        assertEquals(1, context.getContextStats().getConnectionAttempts());
+        assertEquals(1, mockPeer.getContextStats().getProvidersCreated());
+        assertEquals(1, mockPeer.getContextStats().getConnectionAttempts());
     }
 
     @Test(timeout = 30000)
@@ -205,9 +205,9 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
             connection.close();
         }
 
-        assertEquals(5, context.getContextStats().getProvidersCreated());
-        assertEquals(5, context.getContextStats().getConnectionAttempts());
-        assertEquals(5, context.getContextStats().getCloseAttempts());
+        assertEquals(5, mockPeer.getContextStats().getProvidersCreated());
+        assertEquals(5, mockPeer.getContextStats().getConnectionAttempts());
+        assertEquals(5, mockPeer.getContextStats().getCloseAttempts());
     }
 
     @Test(timeout = 30000)
@@ -227,9 +227,9 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
             connection.close();
         }
 
-        assertEquals(5, context.getContextStats().getProvidersCreated());
-        assertEquals(5, context.getContextStats().getConnectionAttempts());
-        assertEquals(5, context.getContextStats().getCloseAttempts());
+        assertEquals(5, mockPeer.getContextStats().getProvidersCreated());
+        assertEquals(5, mockPeer.getContextStats().getConnectionAttempts());
+        assertEquals(5, mockPeer.getContextStats().getCloseAttempts());
     }
 
     @Test(timeout = 30000)
@@ -241,9 +241,9 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         connection.start();
         connection.close();
 
-        assertEquals(1, context.getContextStats().getProvidersCreated());
-        assertEquals(1, context.getContextStats().getConnectionAttempts());
-        assertEquals(1, context.getContextStats().getCloseAttempts());
+        assertEquals(1, mockPeer.getContextStats().getProvidersCreated());
+        assertEquals(1, mockPeer.getContextStats().getConnectionAttempts());
+        assertEquals(1, mockPeer.getContextStats().getCloseAttempts());
     }
 
     @Test(timeout = 30000)
@@ -256,8 +256,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         connection.createSession(false, Session.AUTO_ACKNOWLEDGE).close();
         connection.close();
 
-        assertEquals(1, context.getContextStats().getCreateResourceCalls(JmsSessionInfo.class));
-        assertEquals(1, context.getContextStats().getDestroyResourceCalls(JmsSessionInfo.class));
+        assertEquals(1, mockPeer.getContextStats().getCreateResourceCalls(JmsSessionInfo.class));
+        assertEquals(1, mockPeer.getContextStats().getDestroyResourceCalls(JmsSessionInfo.class));
     }
 
     @Test(timeout = 30000)
@@ -272,9 +272,9 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         session.createConsumer(destination).close();
         connection.close();
 
-        assertEquals(1, context.getContextStats().getCreateResourceCalls(JmsConsumerInfo.class));
-        assertEquals(1, context.getContextStats().getStartResourceCalls(JmsConsumerInfo.class));
-        assertEquals(1, context.getContextStats().getDestroyResourceCalls(JmsConsumerInfo.class));
+        assertEquals(1, mockPeer.getContextStats().getCreateResourceCalls(JmsConsumerInfo.class));
+        assertEquals(1, mockPeer.getContextStats().getStartResourceCalls(JmsConsumerInfo.class));
+        assertEquals(1, mockPeer.getContextStats().getDestroyResourceCalls(JmsConsumerInfo.class));
     }
 
     @Test(timeout = 30000)
@@ -289,8 +289,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         session.createProducer(destination).close();
         connection.close();
 
-        assertEquals(1, context.getContextStats().getCreateResourceCalls(JmsProducerInfo.class));
-        assertEquals(1, context.getContextStats().getDestroyResourceCalls(JmsProducerInfo.class));
+        assertEquals(1, mockPeer.getContextStats().getCreateResourceCalls(JmsProducerInfo.class));
+        assertEquals(1, mockPeer.getContextStats().getDestroyResourceCalls(JmsProducerInfo.class));
     }
 
     @Test(timeout = 30000)
@@ -304,7 +304,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         session.recover();
         connection.close();
 
-        assertEquals(1, context.getContextStats().getRecoverCalls());
+        assertEquals(1, mockPeer.getContextStats().getRecoverCalls());
     }
 
     @Test(timeout = 30000)
@@ -318,6 +318,6 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         session.unsubscribe("some-subscription");
         connection.close();
 
-        assertEquals(1, context.getContextStats().getUnsubscribeCalls());
+        assertEquals(1, mockPeer.getContextStats().getUnsubscribeCalls());
     }
 }

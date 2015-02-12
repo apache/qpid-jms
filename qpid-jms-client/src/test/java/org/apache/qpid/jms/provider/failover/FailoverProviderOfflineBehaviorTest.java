@@ -16,6 +16,7 @@
  */
 package org.apache.qpid.jms.provider.failover;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -29,7 +30,9 @@ import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsConnectionListener;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
-import org.apache.qpid.jms.provider.mock.MockProviderContext;
+import org.apache.qpid.jms.meta.JmsResource;
+import org.apache.qpid.jms.meta.JmsSessionInfo;
+import org.apache.qpid.jms.provider.mock.ResourceLifecycleFilter;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,7 +67,7 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());
         connection.start();
-        MockProviderContext.INSTANCE.shutdown();
+        mockPeer.shutdown();
         connectionInterrupted.await(9, TimeUnit.SECONDS);
         connection.close();
     }
@@ -75,7 +78,7 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.addConnectionListener(new ConnectionInterruptionListener());
         connection.start();
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        MockProviderContext.INSTANCE.shutdown();
+        mockPeer.shutdown();
         connectionInterrupted.await(9, TimeUnit.SECONDS);
         session.close();
         connection.close();
@@ -91,7 +94,7 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         Queue queue = session.createQueue(_testName.getMethodName());
         MessageProducer producer = session.createProducer(queue);
 
-        MockProviderContext.INSTANCE.shutdown();
+        mockPeer.shutdown();
         connectionInterrupted.await(9, TimeUnit.SECONDS);
 
         producer.close();
@@ -108,10 +111,33 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         Queue queue = session.createQueue(_testName.getMethodName());
         MessageConsumer consumer = session.createConsumer(queue);
 
-        MockProviderContext.INSTANCE.shutdown();
+        mockPeer.shutdown();
         connectionInterrupted.await(9, TimeUnit.SECONDS);
 
         consumer.close();
+        connection.close();
+    }
+
+    @Test(timeout=10000)
+    public void testSessionCloseWhenDestroyCallFailsDoesNotBlock() throws Exception {
+        mockPeer.setResourceDestroyFilter(new ResourceLifecycleFilter() {
+
+            @Override
+            public void onLifecycleEvent(JmsResource resource) throws Exception {
+                if (resource instanceof JmsSessionInfo) {
+                    mockPeer.shutdownQuietly();
+                    throw new IOException();
+                }
+            }
+        });
+
+        connection = (JmsConnection) factory.createConnection();
+        connection.addConnectionListener(new ConnectionInterruptionListener());
+        connection.start();
+
+        Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        session.close();
+
         connection.close();
     }
 
@@ -126,7 +152,7 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         session.createConsumer(queue);
         session.createProducer(queue);
 
-        MockProviderContext.INSTANCE.shutdown();
+        mockPeer.shutdown();
         connectionInterrupted.await(9, TimeUnit.SECONDS);
 
         session.close();
@@ -140,7 +166,7 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.start();
 
         Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        MockProviderContext.INSTANCE.shutdown();
+        mockPeer.shutdown();
         connectionInterrupted.await(9, TimeUnit.SECONDS);
 
         session.recover();

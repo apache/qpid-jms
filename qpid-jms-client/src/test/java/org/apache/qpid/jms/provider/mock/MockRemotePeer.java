@@ -22,18 +22,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.qpid.jms.meta.JmsResource;
+
 /**
  * Context shared between all MockProvider instances.
  */
-public class MockProviderContext {
+public class MockRemotePeer {
 
-    public static MockProviderContext INSTANCE;
+    public static MockRemotePeer INSTANCE;
 
     private final Map<String, MockProvider> activeProviders = new ConcurrentHashMap<String, MockProvider>();
     private final MockProviderStats contextStats = new MockProviderStats();
 
     private MockProvider lastRegistered;
     private boolean offline;
+
+    private ResourceLifecycleFilter createFilter;
+    private ResourceLifecycleFilter startFilter;
+    private ResourceLifecycleFilter stopFilter;
+    private ResourceLifecycleFilter destroyFilter;
 
     public void connect(MockProvider provider) throws IOException {
         if (offline) {
@@ -52,13 +59,37 @@ public class MockProviderContext {
         }
     }
 
+    public void createResource(JmsResource resource) throws Exception {
+        if (createFilter != null) {
+            createFilter.onLifecycleEvent(resource);
+        }
+    }
+
+    public void startResource(JmsResource resource) throws Exception {
+        if (startFilter != null) {
+            startFilter.onLifecycleEvent(resource);
+        }
+    }
+
+    public void stopResource(JmsResource resource) throws Exception {
+        if (stopFilter != null) {
+            stopFilter.onLifecycleEvent(resource);
+        }
+    }
+
+    public void destroyResource(JmsResource resource) throws Exception {
+        if (destroyFilter != null) {
+            destroyFilter.onLifecycleEvent(resource);
+        }
+    }
+
     public void start() {
         contextStats.reset();
         activeProviders.clear();
         lastRegistered = null;
         offline = false;
 
-        MockProviderContext.INSTANCE = this;
+        MockRemotePeer.INSTANCE = this;
     }
 
     public void shutdown() {
@@ -70,7 +101,15 @@ public class MockProviderContext {
         activeProviders.clear();
         lastRegistered = null;
 
-        MockProviderContext.INSTANCE = null;
+        MockRemotePeer.INSTANCE = null;
+    }
+
+    public void shutdownQuietly() {
+        offline = true;
+        activeProviders.clear();
+        lastRegistered = null;
+
+        MockRemotePeer.INSTANCE = null;
     }
 
     public MockProvider getProvider(String providerId) {
@@ -83,5 +122,21 @@ public class MockProviderContext {
 
     public MockProviderStats getContextStats() {
         return contextStats;
+    }
+
+    public void setResourceCreateFilter(ResourceLifecycleFilter filter) {
+        createFilter = filter;
+    }
+
+    public void setResourceStartFilter(ResourceLifecycleFilter filter) {
+        startFilter = filter;
+    }
+
+    public void setResourceStopFilter(ResourceLifecycleFilter filter) {
+        stopFilter = filter;
+    }
+
+    public void setResourceDestroyFilter(ResourceLifecycleFilter filter) {
+        destroyFilter = filter;
     }
 }

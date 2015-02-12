@@ -24,7 +24,7 @@ import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
-import org.apache.qpid.jms.provider.mock.MockProviderContext;
+import org.apache.qpid.jms.provider.mock.MockRemotePeer;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.util.IdGenerator;
 import org.junit.After;
@@ -39,7 +39,7 @@ public class FailoverProviderTestSupport extends QpidJmsTestCase {
     private final AtomicLong nextSessionId = new AtomicLong();
     private final AtomicLong nextConsumerId = new AtomicLong();
 
-    protected MockProviderContext context;
+    protected MockRemotePeer mockPeer;
 
     @Override
     @Before
@@ -47,8 +47,8 @@ public class FailoverProviderTestSupport extends QpidJmsTestCase {
         nextSessionId.set(0);
         nextConsumerId.set(0);
 
-        context = new MockProviderContext();
-        context.start();
+        mockPeer = new MockRemotePeer();
+        mockPeer.start();
 
         super.setUp();
     }
@@ -56,9 +56,9 @@ public class FailoverProviderTestSupport extends QpidJmsTestCase {
     @Override
     @After
     public void tearDown() throws Exception {
-        if (context != null) {
-            context.shutdown();
-            context = null;
+        if (mockPeer != null) {
+            mockPeer.shutdown();
+            mockPeer = null;
         }
 
         super.tearDown();

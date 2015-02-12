@@ -62,7 +62,7 @@ public class MockProvider implements Provider {
     private final MockProviderConfiguration configuration;
     private final ScheduledExecutorService serializer;
     private final AtomicBoolean closed = new AtomicBoolean();
-    private final MockProviderContext context;
+    private final MockRemotePeer context;
 
     private long connectTimeout = JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT;
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
@@ -70,7 +70,7 @@ public class MockProvider implements Provider {
     private MockProviderListener eventListener;
     private ProviderListener listener;
 
-    public MockProvider(URI remoteURI, MockProviderConfiguration configuration, MockProviderContext context) {
+    public MockProvider(URI remoteURI, MockProviderConfiguration configuration, MockRemotePeer context) {
         this.remoteURI = remoteURI;
         this.configuration = configuration;
         this.context = context;
@@ -176,6 +176,10 @@ public class MockProvider implements Provider {
                     checkClosed();
                     stats.recordCreateResourceCall(resource);
 
+                    if (context != null) {
+                        context.createResource(resource);
+                    }
+
                     if (resource instanceof JmsConnectionInfo) {
                         if (listener != null) {
                             listener.onConnectionEstablished(remoteURI);
@@ -200,6 +204,11 @@ public class MockProvider implements Provider {
                 try {
                     checkClosed();
                     stats.recordStartResourceCall(resource);
+
+                    if (context != null) {
+                        context.startResource(resource);
+                    }
+
                     request.onSuccess();
                 } catch (Exception error) {
                     request.onFailure(error);
@@ -217,6 +226,11 @@ public class MockProvider implements Provider {
             public void run() {
                 try {
                     checkClosed();
+
+                    if (context != null) {
+                        context.stopResource(resource);
+                    }
+
                     stats.recordStopResourceCall(resource);
                     request.onSuccess();
                 } catch (Exception error) {
@@ -236,6 +250,11 @@ public class MockProvider implements Provider {
                 try {
                     checkClosed();
                     stats.recordDestroyResourceCall(resource);
+
+                    if (context != null) {
+                        context.destroyResource(resource);
+                    }
+
                     request.onSuccess();
                 } catch (Exception error) {
                     request.onFailure(error);

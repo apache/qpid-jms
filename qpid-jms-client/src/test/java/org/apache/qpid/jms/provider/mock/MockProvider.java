@@ -62,6 +62,7 @@ public class MockProvider implements Provider {
     private final MockProviderConfiguration configuration;
     private final ScheduledExecutorService serializer;
     private final AtomicBoolean closed = new AtomicBoolean();
+    private final MockProviderContext context;
 
     private long connectTimeout = JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT;
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
@@ -69,10 +70,12 @@ public class MockProvider implements Provider {
     private MockProviderListener eventListener;
     private ProviderListener listener;
 
-    public MockProvider(URI remoteURI, MockProviderConfiguration configuration, MockProviderStats global) {
+    public MockProvider(URI remoteURI, MockProviderConfiguration configuration, MockProviderContext context) {
         this.remoteURI = remoteURI;
         this.configuration = configuration;
-        this.stats = new MockProviderStats(global);
+        this.context = context;
+        this.stats = new MockProviderStats(context != null ? context.getContextStats() : null);
+
         this.serializer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
 
             @Override
@@ -97,7 +100,9 @@ public class MockProvider implements Provider {
             throw new IOException("Failed to connect to: " + remoteURI);
         }
 
-        MockProviderContext.INSTANCE.connect(this);
+        if (context != null) {
+            context.connect(this);
+        }
     }
 
     @Override
@@ -125,7 +130,9 @@ public class MockProvider implements Provider {
                 public void run() {
                     try {
 
-                        MockProviderContext.INSTANCE.disconnect(MockProvider.this);
+                        if (context != null) {
+                            context.disconnect(MockProvider.this);
+                        }
 
                         if (configuration.isFailOnClose()) {
                             request.onFailure(new RuntimeException());

@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MockProviderContext {
 
-    public static final MockProviderContext INSTANCE = new MockProviderContext();
+    public static MockProviderContext INSTANCE;
 
     private final Map<String, MockProvider> activeProviders = new ConcurrentHashMap<String, MockProvider>();
     private final MockProviderStats contextStats = new MockProviderStats();
@@ -52,6 +52,15 @@ public class MockProviderContext {
         }
     }
 
+    public void start() {
+        contextStats.reset();
+        activeProviders.clear();
+        lastRegistered = null;
+        offline = false;
+
+        MockProviderContext.INSTANCE = this;
+    }
+
     public void shutdown() {
         offline = true;
         List<MockProvider> active = new ArrayList<MockProvider>(activeProviders.values());
@@ -60,13 +69,8 @@ public class MockProviderContext {
         }
         activeProviders.clear();
         lastRegistered = null;
-    }
 
-    public void reset() {
-        contextStats.reset();
-        activeProviders.clear();
-        lastRegistered = null;
-        offline = false;
+        MockProviderContext.INSTANCE = null;
     }
 
     public MockProvider getProvider(String providerId) {
@@ -80,6 +84,4 @@ public class MockProviderContext {
     public MockProviderStats getContextStats() {
         return contextStats;
     }
-
-    private MockProviderContext() {}
 }

@@ -39,21 +39,28 @@ public class FailoverProviderTestSupport extends QpidJmsTestCase {
     private final AtomicLong nextSessionId = new AtomicLong();
     private final AtomicLong nextConsumerId = new AtomicLong();
 
+    protected MockProviderContext context;
+
     @Override
     @Before
     public void setUp() throws Exception {
-        super.setUp();
-
         nextSessionId.set(0);
         nextConsumerId.set(0);
 
-        MockProviderContext.INSTANCE.reset();
+        context = new MockProviderContext();
+        context.start();
+
+        super.setUp();
     }
 
     @Override
     @After
     public void tearDown() throws Exception {
-        MockProviderContext.INSTANCE.reset();
+        if (context != null) {
+            context.shutdown();
+            context = null;
+        }
+
         super.tearDown();
     }
 

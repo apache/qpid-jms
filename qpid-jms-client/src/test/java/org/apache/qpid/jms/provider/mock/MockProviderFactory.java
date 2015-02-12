@@ -36,7 +36,10 @@ public class MockProviderFactory extends ProviderFactory {
         remoteURI = PropertyUtil.replaceQuery(remoteURI, map);
 
         MockProviderConfiguration configuration = new MockProviderConfiguration();
-        MockProviderContext.INSTANCE.getContextStats().recordProviderCreated();
+        MockProviderContext context = MockProviderContext.INSTANCE;
+        if (context != null) {
+            context.getContextStats().recordProviderCreated();
+        }
 
         Map<String, String> unused = PropertyUtil.setProperties(configuration, providerOptions);
         if (!unused.isEmpty()) {
@@ -48,7 +51,7 @@ public class MockProviderFactory extends ProviderFactory {
             throw new IllegalArgumentException(msg);
         }
 
-        return new MockProvider(remoteURI, configuration, MockProviderContext.INSTANCE.getContextStats());
+        return new MockProvider(remoteURI, configuration, context);
     }
 
     @Override

@@ -22,23 +22,25 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Map;
 
 import org.apache.qpid.jms.provider.Provider;
+import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
  * Test that the provider factory correctly creates and configures the provider.
  */
-public class FiloverProviderFactoryTest {
+public class FiloverProviderFactoryTest extends QpidJmsTestCase {
 
     private URI baseURI;
     private final FailoverProviderFactory factory = new FailoverProviderFactory();
 
+    @Override
     @Before
-    public void setUp() throws URISyntaxException {
+    public void setUp() throws Exception {
+        super.setUp();
         baseURI = new URI("failover:(amqp://localhost:5672,amqp://localhost:5674)");
     }
 

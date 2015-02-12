@@ -24,8 +24,10 @@ import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
+import org.apache.qpid.jms.provider.mock.MockProviderContext;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.util.IdGenerator;
+import org.junit.After;
 import org.junit.Before;
 
 /**
@@ -44,6 +46,15 @@ public class FailoverProviderTestSupport extends QpidJmsTestCase {
 
         nextSessionId.set(0);
         nextConsumerId.set(0);
+
+        MockProviderContext.INSTANCE.reset();
+    }
+
+    @Override
+    @After
+    public void tearDown() throws Exception {
+        MockProviderContext.INSTANCE.reset();
+        super.tearDown();
     }
 
     protected JmsConnectionInfo createConnectionInfo() {

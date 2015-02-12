@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.util.URISupport;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,12 +39,15 @@ import org.junit.Test;
 /**
  * Test for the behavior of the FailoverUriPool
  */
-public class FailoverUriPoolTest {
+public class FailoverUriPoolTest extends QpidJmsTestCase {
 
     private List<URI> uris;
 
+    @Override
     @Before
     public void setUp() throws Exception {
+        super.setUp();
+
         uris = new ArrayList<URI>();
 
         uris.add(new URI("tcp://192.168.2.1:5672"));

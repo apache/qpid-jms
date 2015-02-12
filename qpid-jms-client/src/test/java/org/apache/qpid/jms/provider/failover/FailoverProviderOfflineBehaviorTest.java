@@ -24,16 +24,14 @@ import javax.jms.Session;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.provider.mock.MockProviderContext;
-import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
  * Test that calls into the FailoverProvider when it is not connected works
  * as expected based on the call and the resource type in question.
  */
-public class FailoverProviderOfflineBehaviorTest extends QpidJmsTestCase {
+public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSupport {
 
     private final JmsConnectionFactory factory = new JmsConnectionFactory("failover:(mock://localhost)");
 
@@ -42,20 +40,13 @@ public class FailoverProviderOfflineBehaviorTest extends QpidJmsTestCase {
     // TODO - Should add a wait for true connection interruption.
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        MockProviderContext.INSTANCE.reset();
-        super.tearDown();
-    }
-
-    @Override
     @After
     public void tearDown() throws Exception {
         connection.close();
         super.tearDown();
     }
 
-    @Test(timeout=60000)
+    @Test(timeout=10000)
     public void testConnectionCloseDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.start();
@@ -63,7 +54,7 @@ public class FailoverProviderOfflineBehaviorTest extends QpidJmsTestCase {
         connection.close();
     }
 
-    @Test(timeout=60000)
+    @Test(timeout=10000)
     public void testSessionCloseDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.start();
@@ -73,7 +64,7 @@ public class FailoverProviderOfflineBehaviorTest extends QpidJmsTestCase {
         connection.close();
     }
 
-    @Test(timeout=60000)
+    @Test(timeout=10000)
     public void testProducerCloseDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.start();
@@ -87,7 +78,7 @@ public class FailoverProviderOfflineBehaviorTest extends QpidJmsTestCase {
         connection.close();
     }
 
-    @Test(timeout=60000)
+    @Test(timeout=10000)
     public void testConsumerCloseDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.start();
@@ -101,7 +92,7 @@ public class FailoverProviderOfflineBehaviorTest extends QpidJmsTestCase {
         connection.close();
     }
 
-    @Test(timeout=60000)
+    @Test(timeout=10000)
     public void testSessionCloseWithOpenResourcesDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.start();
@@ -116,7 +107,7 @@ public class FailoverProviderOfflineBehaviorTest extends QpidJmsTestCase {
         connection.close();
     }
 
-    @Test(timeout=60000)
+    @Test(timeout=10000)
     public void testSessionRecoverDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.start();

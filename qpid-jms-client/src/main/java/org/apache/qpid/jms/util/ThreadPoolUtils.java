@@ -63,6 +63,10 @@ public final class ThreadPoolUtils {
                 new Object[] { executorService, executorService.isShutdown(), executorService.isTerminated() });
         }
 
+        if (answer == null) {
+            answer = Collections.emptyList();
+        }
+
         return answer;
     }
 

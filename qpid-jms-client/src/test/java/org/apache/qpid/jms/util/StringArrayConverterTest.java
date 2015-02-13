@@ -16,13 +16,32 @@
  */
 package org.apache.qpid.jms.util;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
-public class StringArrayConverterTest extends TestCase {
+import org.apache.qpid.jms.test.QpidJmsTestCase;
+import org.junit.Test;
 
+public class StringArrayConverterTest extends QpidJmsTestCase {
+
+    private class NulToStringValue {
+
+        @Override
+        public String toString() {
+            return null;
+        }
+    }
+
+    @Test
+    public void testCreate() {
+        new StringArrayConverter();
+    }
+
+    @Test
     public void testConvertToStringArray() throws Exception {
-        assertEquals(null, StringArrayConverter.convertToStringArray(null));
-        assertEquals(null, StringArrayConverter.convertToStringArray(""));
+        assertNull(StringArrayConverter.convertToStringArray(null));
+        assertNull(StringArrayConverter.convertToStringArray(""));
+        assertNull(StringArrayConverter.convertToStringArray(new NulToStringValue()));
 
         String[] array = StringArrayConverter.convertToStringArray("foo");
         assertEquals(1, array.length);
@@ -40,9 +59,11 @@ public class StringArrayConverterTest extends TestCase {
         assertEquals("baz", array[2]);
     }
 
+    @Test
     public void testConvertToString() throws Exception {
-        assertEquals(null, StringArrayConverter.convertToString(null));
-        assertEquals(null, StringArrayConverter.convertToString(new String[]{}));
+        assertNull(StringArrayConverter.convertToString(null));
+        assertNull(StringArrayConverter.convertToString(new String[]{}));
+
         assertEquals("", StringArrayConverter.convertToString(new String[]{""}));
         assertEquals("foo", StringArrayConverter.convertToString(new String[]{"foo"}));
         assertEquals("foo,bar", StringArrayConverter.convertToString(new String[]{"foo", "bar"}));

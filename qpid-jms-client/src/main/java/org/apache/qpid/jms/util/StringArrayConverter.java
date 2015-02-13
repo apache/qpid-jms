@@ -34,7 +34,7 @@ public class StringArrayConverter {
         }
 
         String text = value.toString();
-        if (text == null || text.length() == 0) {
+        if (text == null || text.isEmpty()) {
             return null;
         }
 

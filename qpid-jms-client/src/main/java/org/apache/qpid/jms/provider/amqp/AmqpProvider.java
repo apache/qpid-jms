@@ -171,7 +171,7 @@ public class AmqpProvider implements Provider, TransportListener {
 
                         // If we are not connected then there is nothing we can do now
                         // just signal success.
-                        if (!transport.isConnected()) {
+                        if (transport == null || !transport.isConnected()) {
                             request.onSuccess();
                         }
 
@@ -182,7 +182,7 @@ public class AmqpProvider implements Provider, TransportListener {
                             request.onSuccess();
                         }
                     } catch (Exception e) {
-                        LOG.debug("Caught exception while closing proton connection");
+                        LOG.debug("Caught exception while closing proton connection: {}", e.getMessage());
                     }
                 }
             });

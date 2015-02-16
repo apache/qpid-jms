@@ -53,7 +53,8 @@ public class ActiveMQAdmin implements Admin {
     }
 
     protected BrokerService createBroker() throws Exception {
-        return BrokerFactory.createBroker(new URI("broker://()/localhost?persistent=false"));
+        return BrokerFactory.createBroker(
+            new URI("broker://()/localhost?persistent=false&useJmx=false&schedulerSupport=false"));
     }
 
     @Override

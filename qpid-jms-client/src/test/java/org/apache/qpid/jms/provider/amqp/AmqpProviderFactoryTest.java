@@ -93,4 +93,17 @@ public class AmqpProviderFactoryTest extends QpidJmsTestCase {
         assertEquals(true, amqpProvider.isTraceFrames());
         assertEquals(32, amqpProvider.getChannelMax());
     }
+
+    @Test(timeout = 10000)
+    public void testCreateProviderAppliesPresettleOption() throws IOException, Exception {
+        URI configuredURI = new URI(peerURI.toString() + "?amqp.presettle=true");
+        Provider provider = AmqpProviderFactory.create(configuredURI);
+        assertNotNull(provider);
+        assertTrue(provider instanceof AmqpProvider);
+
+        AmqpProvider amqpProvider = (AmqpProvider) provider;
+
+        assertEquals(true, amqpProvider.isPresettleConsumers());
+        assertEquals(true, amqpProvider.isPresettleProducers());
+    }
 }

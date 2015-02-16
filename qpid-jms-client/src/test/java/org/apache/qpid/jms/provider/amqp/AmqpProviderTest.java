@@ -150,18 +150,23 @@ public class AmqpProviderTest extends QpidJmsTestCase {
 
     @Test(timeout=10000)
     public void testTimeoutsSetFromConnectionInfo() throws IOException, JMSException {
+        final long CONNECT_TIMEOUT = TimeUnit.SECONDS.toMillis(4);
+        final long CLOSE_TIMEOUT = TimeUnit.SECONDS.toMillis(5);
+        final long SEND_TIMEOUT = TimeUnit.SECONDS.toMillis(6);
+        final long REQUEST_TIMEOUT = TimeUnit.SECONDS.toMillis(7);
+
         provider = new AmqpProvider(peerURI);
         testPeer.expectPlainConnect(TEST_USERNAME, TEST_PASSWORD, null, null);
         testPeer.expectBegin(true);
         provider.connect();
         testPeer.expectClose();
 
-        JmsConnectionInfo connectionInfo = createConnectionInfo();
+        provider.setConnectTimeout(CONNECT_TIMEOUT + 100);
+        provider.setCloseTimeout(CLOSE_TIMEOUT + 100);
+        provider.setSendTimeout(SEND_TIMEOUT + 100);
+        provider.setRequestTimeout(REQUEST_TIMEOUT + 100);
 
-        final long CONNECT_TIMEOUT = TimeUnit.SECONDS.toMillis(4);
-        final long CLOSE_TIMEOUT = TimeUnit.SECONDS.toMillis(5);
-        final long SEND_TIMEOUT = TimeUnit.SECONDS.toMillis(6);
-        final long REQUEST_TIMEOUT = TimeUnit.SECONDS.toMillis(7);
+        JmsConnectionInfo connectionInfo = createConnectionInfo();
 
         connectionInfo.setConnectTimeout(CONNECT_TIMEOUT);
         connectionInfo.setCloseTimeout(CLOSE_TIMEOUT);

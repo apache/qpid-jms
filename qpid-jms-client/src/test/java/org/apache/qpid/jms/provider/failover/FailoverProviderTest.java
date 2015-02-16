@@ -36,6 +36,8 @@ import java.util.concurrent.TimeUnit;
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
@@ -356,6 +358,23 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         connection.close();
 
         assertEquals(1, mockPeer.getContextStats().getUnsubscribeCalls());
+    }
+
+    @Test(timeout = 30000)
+    public void testSendMessagePassthrough() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(
+            "failover:(mock://localhost)");
+
+        Connection connection = factory.createConnection();
+        connection.start();
+        Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        Queue queue = session.createQueue(getTestName());
+        MessageProducer producer = session.createProducer(queue);
+        producer.send(session.createMessage());
+
+        connection.close();
+
+        assertEquals(1, mockPeer.getContextStats().getSendCalls());
     }
 
     @Test(timeout=10000)

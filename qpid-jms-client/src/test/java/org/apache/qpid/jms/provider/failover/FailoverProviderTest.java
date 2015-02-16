@@ -246,6 +246,30 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
     }
 
     @Test(timeout = 30000)
+    public void testMaxReconnectAttemptsWithBackOff() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(
+            "failover:(mock://localhost?mock.failOnConnect=true)" +
+            "?failover.maxReconnectAttempts=5" +
+            "&failover.maxReconnectDelay=60" +
+            "&failover.reconnectDelay=10" +
+            "&failover.useReconnectBackOff=true");
+
+        Connection connection = factory.createConnection();
+
+        try {
+            connection.start();
+            fail("Should have stopped after five retries.");
+        } catch (JMSException ex) {
+        } finally {
+            connection.close();
+        }
+
+        assertEquals(5, mockPeer.getContextStats().getProvidersCreated());
+        assertEquals(5, mockPeer.getContextStats().getConnectionAttempts());
+        assertEquals(5, mockPeer.getContextStats().getCloseAttempts());
+    }
+
+    @Test(timeout = 30000)
     public void testFailureOnCloseIsSwallowed() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(
             "failover:(mock://localhost?mock.failOnClose=true)");

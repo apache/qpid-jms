@@ -839,32 +839,16 @@ public class AmqpProvider implements Provider, TransportListener {
         return this.closeTimeout;
     }
 
-    public void setCloseTimeout(long closeTimeout) {
-        this.closeTimeout = closeTimeout;
-    }
-
     public long getConnectTimeout() {
         return connectTimeout;
-    }
-
-    public void setConnectTimeout(long connectTimeout) {
-        this.connectTimeout = connectTimeout;
     }
 
     public long getRequestTimeout() {
         return requestTimeout;
     }
 
-    public void setRequestTimeout(long requestTimeout) {
-        this.requestTimeout = requestTimeout;
-    }
-
     public long getSendTimeout() {
         return sendTimeout;
-    }
-
-    public void setSendTimeout(long sendTimeout) {
-        this.sendTimeout = sendTimeout;
     }
 
     public void setPresettle(boolean presettle) {

@@ -161,11 +161,6 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         provider.connect();
         testPeer.expectClose();
 
-        provider.setConnectTimeout(CONNECT_TIMEOUT + 100);
-        provider.setCloseTimeout(CLOSE_TIMEOUT + 100);
-        provider.setSendTimeout(SEND_TIMEOUT + 100);
-        provider.setRequestTimeout(REQUEST_TIMEOUT + 100);
-
         JmsConnectionInfo connectionInfo = createConnectionInfo();
 
         connectionInfo.setConnectTimeout(CONNECT_TIMEOUT);

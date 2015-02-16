@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,6 +39,7 @@ import javax.jms.JMSException;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
+import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
@@ -330,5 +332,40 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         connection.close();
 
         assertEquals(1, mockPeer.getContextStats().getUnsubscribeCalls());
+    }
+
+    @Test(timeout=10000)
+    public void testTimeoutsSetFromConnectionInfo() throws IOException, JMSException {
+        final long CONNECT_TIMEOUT = TimeUnit.SECONDS.toMillis(4);
+        final long CLOSE_TIMEOUT = TimeUnit.SECONDS.toMillis(5);
+        final long SEND_TIMEOUT = TimeUnit.SECONDS.toMillis(6);
+        final long REQUEST_TIMEOUT = TimeUnit.SECONDS.toMillis(7);
+
+        provider = new FailoverProvider(uris, Collections.<String, String>emptyMap());
+        provider.setProviderListener(new DefaultProviderListener() {
+
+            @Override
+            public void onConnectionEstablished(URI remoteURI) {
+            }
+        });
+
+        provider.connect();
+        provider.start();
+
+        JmsConnectionInfo connectionInfo = createConnectionInfo();
+
+        connectionInfo.setConnectTimeout(CONNECT_TIMEOUT);
+        connectionInfo.setCloseTimeout(CLOSE_TIMEOUT);
+        connectionInfo.setSendTimeout(SEND_TIMEOUT);
+        connectionInfo.setRequestTimeout(REQUEST_TIMEOUT);
+
+        ProviderFuture request = new ProviderFuture();
+        provider.create(connectionInfo, request);
+        request.sync();
+
+        assertEquals(CONNECT_TIMEOUT, provider.getConnectTimeout());
+        assertEquals(CLOSE_TIMEOUT, provider.getCloseTimeout());
+        assertEquals(SEND_TIMEOUT, provider.getSendTimeout());
+        assertEquals(REQUEST_TIMEOUT, provider.getRequestTimeout());
     }
 }

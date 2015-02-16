@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.provider.failover;
 
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
@@ -25,6 +27,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
+import javax.jms.TransactionRolledBackException;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
@@ -183,6 +186,51 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connectionInterrupted.await(9, TimeUnit.SECONDS);
 
         session.recover();
+        connection.close();
+    }
+
+    @Test(timeout=10000)
+    public void testTransactionCommitFails() throws Exception {
+        connection = (JmsConnection) factory.createConnection();
+        connection.addConnectionListener(new ConnectionInterruptionListener());
+        connection.start();
+
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        Queue queue = session.createQueue(_testName.getMethodName());
+        MessageProducer producer = session.createProducer(queue);
+        producer.send(session.createMessage());
+
+        mockPeer.shutdown();
+        connectionInterrupted.await(9, TimeUnit.SECONDS);
+
+        try {
+            session.commit();
+            fail("Should not allow a commit while offline.");
+        } catch (TransactionRolledBackException ex) {}
+
+        connection.close();
+    }
+
+    @Test(timeout=10000)
+    public void testTransactionRollbackSucceeds() throws Exception {
+        connection = (JmsConnection) factory.createConnection();
+        connection.addConnectionListener(new ConnectionInterruptionListener());
+        connection.start();
+
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        Queue queue = session.createQueue(_testName.getMethodName());
+        MessageProducer producer = session.createProducer(queue);
+        producer.send(session.createMessage());
+
+        mockPeer.shutdown();
+        connectionInterrupted.await(9, TimeUnit.SECONDS);
+
+        try {
+            session.rollback();
+        } catch (TransactionRolledBackException ex) {
+            fail("Should allow a rollback while offline.");
+        }
+
         connection.close();
     }
 

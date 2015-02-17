@@ -25,9 +25,6 @@ import org.apache.qpid.jms.selector.filter.BooleanExpression;
 import org.apache.qpid.jms.selector.filter.FilterException;
 import org.apache.qpid.jms.selector.filter.Filterable;
 
-/**
- * @version $Revision: 1.7 $
- */
 @SuppressWarnings("unchecked")
 public class SelectorTest extends TestCase {
 

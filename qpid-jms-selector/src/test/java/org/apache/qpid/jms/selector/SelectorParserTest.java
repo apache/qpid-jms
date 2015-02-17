@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.activemq.apollo.selector;
+package org.apache.qpid.jms.selector;
 
 import junit.framework.TestCase;
 

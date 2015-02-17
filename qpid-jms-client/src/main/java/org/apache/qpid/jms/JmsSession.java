@@ -117,7 +117,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     int acknowledgementMode() {
-        return this.acknowledgementMode;
+        return acknowledgementMode;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -127,7 +127,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public int getAcknowledgeMode() throws JMSException {
         checkClosed();
-        return this.acknowledgementMode;
+        return acknowledgementMode;
     }
 
     @Override
@@ -139,7 +139,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     @Override
     public MessageListener getMessageListener() throws JMSException {
         checkClosed();
-        return this.messageListener;
+        return messageListener;
     }
 
     @Override
@@ -155,13 +155,18 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             throw new javax.jms.IllegalStateException("Cannot call recover() on a transacted session");
         }
 
-        this.connection.recover(getSessionId());
+        connection.recover(getSessionId());
         sessionRecovered = true;
     }
 
     @Override
     public void commit() throws JMSException {
         checkClosed();
+
+        if (!getTransacted()) {
+            throw new javax.jms.IllegalStateException("Not a transacted session");
+        }
+
         transactionContext.commit();
     }
 
@@ -242,9 +247,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             }
 
             try {
-                if (getTransactionContext().isInTransaction()) {
-                    rollback();
-                }
+                transactionContext.rollback();
             } catch (JMSException e) {
             }
         }

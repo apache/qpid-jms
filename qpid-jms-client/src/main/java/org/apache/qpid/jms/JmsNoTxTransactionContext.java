@@ -55,12 +55,10 @@ public class JmsNoTxTransactionContext implements JmsTransactionContext {
 
     @Override
     public void rollback() throws JMSException {
-        throw new javax.jms.IllegalStateException("Not a transacted session");
     }
 
     @Override
     public void commit() throws JMSException {
-        throw new javax.jms.IllegalStateException("Not a transacted session");
     }
 
     @Override

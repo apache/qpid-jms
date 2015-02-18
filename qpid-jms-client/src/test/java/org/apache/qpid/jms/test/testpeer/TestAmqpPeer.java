@@ -108,7 +108,6 @@ public class TestAmqpPeer implements AutoCloseable
      */
     private CountDownLatch _handlersCompletedLatch;
 
-    private volatile int _nextLinkHandle = LINK_HANDLE_OFFSET;
     private volatile int _tempDestLinkHandle = LINK_HANDLE_OFFSET;
 
     private byte[] _deferredBytes;
@@ -551,9 +550,7 @@ public class TestAmqpPeer implements AutoCloseable
                 .withSource(sourceMatcher)
                 .withTarget(targetMatcher);
 
-        UnsignedInteger linkHandle = UnsignedInteger.valueOf(_nextLinkHandle++);
         final AttachFrame attachResponse = new AttachFrame()
-                            .setHandle(linkHandle)
                             .setRole(Role.RECEIVER)
                             .setSndSettleMode(SenderSettleMode.UNSETTLED)
                             .setRcvSettleMode(ReceiverSettleMode.FIRST);
@@ -566,6 +563,7 @@ public class TestAmqpPeer implements AutoCloseable
             public void setValues()
             {
                 attachResponseSender.setChannel(attachMatcher.getActualChannel());
+                attachResponse.setHandle(attachMatcher.getReceivedHandle());
                 attachResponse.setName(attachMatcher.getReceivedName());
                 attachResponse.setSource(trimSourceOutcomesCapabilities(createSourceObjectFromDescribedType(attachMatcher.getReceivedSource())));
                 if(refuseLink) {
@@ -586,8 +584,7 @@ public class TestAmqpPeer implements AutoCloseable
                 .setIncomingWindow(UnsignedInteger.valueOf(2048))
                 .setNextOutgoingId(UnsignedInteger.ONE) //TODO: shouldnt be hard coded
                 .setOutgoingWindow(UnsignedInteger.valueOf(2048))
-                .setLinkCredit(UnsignedInteger.valueOf(100))
-                .setHandle(linkHandle);
+                .setLinkCredit(UnsignedInteger.valueOf(100));
 
         // The flow frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
         final FrameSender flowFrameSender = new FrameSender(this, FrameType.AMQP, -1, flowFrame, null);
@@ -597,12 +594,12 @@ public class TestAmqpPeer implements AutoCloseable
             public void setValues()
             {
                 flowFrameSender.setChannel(attachMatcher.getActualChannel());
+                flowFrame.setHandle(attachMatcher.getReceivedHandle());
                 flowFrame.setDeliveryCount(attachMatcher.getReceivedInitialDeliveryCount());
             }
         });
 
-        final DetachFrame detachResonse = new DetachFrame().setHandle(
-                 linkHandle).setClosed(true);
+        final DetachFrame detachResonse = new DetachFrame().setClosed(true);
         // The response frame channel will be dynamically set based on the
         // incoming frame. Using the -1 is an illegal placeholder.
         final FrameSender detachResonseSender = new FrameSender(this, FrameType.AMQP, -1, detachResonse, null);
@@ -610,6 +607,7 @@ public class TestAmqpPeer implements AutoCloseable
              @Override
              public void setValues() {
                   detachResonseSender.setChannel(attachMatcher.getActualChannel());
+                  detachResonse.setHandle(attachMatcher.getReceivedHandle());
              }
         });
 
@@ -637,9 +635,7 @@ public class TestAmqpPeer implements AutoCloseable
                 .withSource(sourceMatcher)
                 .withTarget(notNullValue());
 
-        UnsignedInteger linkHandle = UnsignedInteger.valueOf(_nextLinkHandle++);
         final AttachFrame attachResponse = new AttachFrame()
-                            .setHandle(linkHandle)
                             .setRole(Role.SENDER)
                             .setSndSettleMode(SenderSettleMode.UNSETTLED)
                             .setRcvSettleMode(ReceiverSettleMode.FIRST)
@@ -653,6 +649,7 @@ public class TestAmqpPeer implements AutoCloseable
             public void setValues()
             {
                 attachResponseSender.setChannel(attachMatcher.getActualChannel());
+                attachResponse.setHandle(attachMatcher.getReceivedHandle());
                 attachResponse.setName(attachMatcher.getReceivedName());
                 attachResponse.setSource(trimSourceOutcomesCapabilities(createSourceObjectFromDescribedType(attachMatcher.getReceivedSource())));
                 attachResponse.setTarget(attachMatcher.getReceivedTarget());
@@ -698,7 +695,6 @@ public class TestAmqpPeer implements AutoCloseable
         if (sendResponse)
         {
             final DetachFrame detachResponse = new DetachFrame();
-            detachResponse.setHandle(UnsignedInteger.valueOf(_nextLinkHandle - 1)); // TODO: this needs to be the value used in the attach response
             if(replyClosed)
             {
                 detachResponse.setClosed(replyClosed);
@@ -712,6 +708,7 @@ public class TestAmqpPeer implements AutoCloseable
                 public void setValues()
                 {
                     detachResponseSender.setChannel(detachMatcher.getActualChannel());
+                    detachResponse.setHandle(detachMatcher.getReceivedHandle());
                 }
             });
 
@@ -829,7 +826,7 @@ public class TestAmqpPeer implements AutoCloseable
                 @Override
                 public void setValues()
                 {
-                    transferResponse.setHandle(calculateLinkHandle(flowMatcher));
+                    transferResponse.setHandle(flowMatcher.getReceivedHandle());
                     transferResponseSender.setChannel(flowMatcher.getActualChannel());
                 }
             });
@@ -854,7 +851,7 @@ public class TestAmqpPeer implements AutoCloseable
                 public void setValues()
                 {
                     flowResponseSender.setChannel(flowMatcher.getActualChannel());
-                    drainResponse.setHandle(calculateLinkHandle(flowMatcher));
+                    drainResponse.setHandle(flowMatcher.getReceivedHandle());
                     drainResponse.setDeliveryCount(calculateNewDeliveryCount(flowMatcher));
                     drainResponse.setNextOutgoingId(calculateNewOutgoingId(flowMatcher, count));
                     drainResponse.setNextIncomingId(flowMatcher.getReceivedNextOutgoingId());
@@ -870,12 +867,6 @@ public class TestAmqpPeer implements AutoCloseable
         }
 
         addHandler(flowMatcher);
-    }
-
-    private UnsignedInteger calculateLinkHandle(final FlowMatcher flowMatcher) {
-        UnsignedInteger h = (UnsignedInteger) flowMatcher.getReceivedHandle();
-
-        return h.add(UnsignedInteger.valueOf(LINK_HANDLE_OFFSET));
     }
 
     private UnsignedInteger calculateNewDeliveryCount(FlowMatcher flowMatcher) {

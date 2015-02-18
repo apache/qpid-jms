@@ -72,11 +72,18 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     }
 
     @Override
-    public void addSynchronization(JmsTxSynchronization s) {
+    public void addSynchronization(JmsTxSynchronization sync) throws JMSException {
         if (synchronizations == null) {
             synchronizations = new ArrayList<JmsTxSynchronization>(10);
         }
-        synchronizations.add(s);
+
+        try {
+            if (sync.validate(this)) {
+                synchronizations.add(sync);
+            }
+        } catch (Exception e) {
+            throw JmsExceptionSupport.create(e);
+        }
     }
 
     @Override

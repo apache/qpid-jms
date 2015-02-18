@@ -18,6 +18,7 @@ package org.apache.qpid.jms;
 
 import javax.jms.JMSException;
 
+import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsTransactionId;
@@ -41,7 +42,12 @@ public class JmsNoTxTransactionContext implements JmsTransactionContext {
     }
 
     @Override
-    public void addSynchronization(JmsTxSynchronization sync) {
+    public void addSynchronization(JmsTxSynchronization sync) throws JMSException {
+        try {
+            sync.validate(this);
+        } catch (Exception e) {
+            throw JmsExceptionSupport.create(e);
+        }
     }
 
     @Override

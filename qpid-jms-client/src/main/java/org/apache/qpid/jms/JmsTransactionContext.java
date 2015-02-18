@@ -67,8 +67,10 @@ public interface JmsTransactionContext {
      *
      * @param sync
      *        the transaction synchronization to add.
+     *
+     * @throws JMSException if an error occurs during the send.
      */
-    void addSynchronization(JmsTxSynchronization sync);
+    void addSynchronization(JmsTxSynchronization sync) throws JMSException;
 
     /**
      * @returns if the currently transaction has been marked as being failed.

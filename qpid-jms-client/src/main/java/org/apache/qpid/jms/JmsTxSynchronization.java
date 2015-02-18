@@ -29,9 +29,27 @@ package org.apache.qpid.jms;
 public abstract class JmsTxSynchronization {
 
     /**
+     * Called once before the synchronization is added to the set
+     * of synchronizations held for a pending TX.  The caller can
+     * check TX state and react accordingly.  If the resource finds
+     * that is does not need to be added to the TX it can return false
+     * to indicate such.
+     *
+     * @param context
+     *        reference to the transaction context.
+     *
+     * @return true if the synchronization should be added to the TX.
+     *
+     * @throws Exception if an error occurs during the event.
+     */
+    public boolean validate(JmsTransactionContext context) throws Exception {
+        return true;
+    }
+
+    /**
      * Called after a successful commit of the current Transaction.
      *
-     * @throws Exception
+     * @throws Exception if an error occurs during the event.
      */
     public void afterCommit() throws Exception {
     }
@@ -40,7 +58,7 @@ public abstract class JmsTxSynchronization {
      * Called after the current transaction has been rolled back either
      * by a call to rollback or by a failure to complete a commit operation.
      *
-     * @throws Exception
+     * @throws Exception if an error occurs during the event.
      */
     public void afterRollback() throws Exception {
     }

@@ -141,21 +141,28 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     @Override
     public void close() throws JMSException {
         if (!closed.get()) {
-            if (delivered.get() && session.getTransactionContext().isInTransaction()) {
-                session.getTransactionContext().addSynchronization(new JmsTxSynchronization() {
-                    @Override
-                    public void afterCommit() throws Exception {
+            session.getTransactionContext().addSynchronization(new JmsTxSynchronization() {
+
+                @Override
+                public boolean validate(JmsTransactionContext context) throws Exception {
+                    if (!context.isInTransaction() || !delivered.get()) {
                         doClose();
+                        return false;
                     }
 
-                    @Override
-                    public void afterRollback() throws Exception {
-                        doClose();
-                    }
-                });
-            } else {
-                doClose();
-            }
+                    return true;
+                }
+
+                @Override
+                public void afterCommit() throws Exception {
+                    doClose();
+                }
+
+                @Override
+                public void afterRollback() throws Exception {
+                    doClose();
+                }
+            });
         }
     }
 

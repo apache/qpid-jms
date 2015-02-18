@@ -20,7 +20,6 @@ import java.util.HashMap;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.jms.selector.SelectorParser;
 import org.apache.qpid.jms.selector.filter.BooleanExpression;
 import org.apache.qpid.jms.selector.filter.FilterException;
 import org.apache.qpid.jms.selector.filter.Filterable;
@@ -347,12 +346,13 @@ public class SelectorTest extends TestCase {
         assertSelector(message, "Command NOT IN ('MirrorLobbyRequest', 'MirrorLobbyReply')", false);
     }
 
+    @SuppressWarnings("unused")
     public void testFloatComparisons() throws Exception {
         MockMessage message = createMessage();
 
         // JMS 1.1 Section 3.8.1.1 : Approximate literals use the Java
         // floating-point literal syntax.
-        // We will use the java varible x to demo valid floating point syntaxs.
+        // We will use the java variable x to demo valid floating point syntax.
         double x;
 
         // test decimals like x.x

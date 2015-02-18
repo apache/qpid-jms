@@ -16,19 +16,17 @@
  */
 package org.apache.qpid.jms.selector;
 
+import java.io.StringReader;
+
 import org.apache.qpid.jms.selector.filter.BooleanExpression;
 import org.apache.qpid.jms.selector.filter.ComparisonExpression;
 import org.apache.qpid.jms.selector.filter.FilterException;
 import org.apache.qpid.jms.selector.hyphenated.HyphenatedParser;
 import org.apache.qpid.jms.selector.strict.StrictParser;
 
-import java.io.StringReader;
-
-/**
- */
 public class SelectorParser {
 
-    private static final LRUCache cache = new LRUCache(100);
+    private static final LRUCache<Object, Object> cache = new LRUCache<Object, Object>(100);
     private static final String CONVERT_STRING_EXPRESSIONS_PREFIX = "convert_string_expressions:";
     private static final String HYPHENATED_PROPS_PREFIX = "hyphenated_props:";
     private static final String NO_CONVERT_STRING_EXPRESSIONS_PREFIX = "no_convert_string_expressions:";
@@ -43,37 +41,37 @@ public class SelectorParser {
         } else {
             String actual = sql;
             boolean convertStringExpressions = false;
-            boolean hyphenatedProps=false;
-            while(true) {
-              if( actual.startsWith(CONVERT_STRING_EXPRESSIONS_PREFIX)) {
-                  convertStringExpressions = true;
-                  actual = actual.substring(CONVERT_STRING_EXPRESSIONS_PREFIX.length());
-                  continue;
-              }
-              if( actual.startsWith(HYPHENATED_PROPS_PREFIX)) {
-                  hyphenatedProps = true;
-                  actual = actual.substring(HYPHENATED_PROPS_PREFIX.length());
-                  continue;
-              }
-              if( actual.startsWith(NO_CONVERT_STRING_EXPRESSIONS_PREFIX)) {
-                  convertStringExpressions = false;
-                  actual = actual.substring(NO_CONVERT_STRING_EXPRESSIONS_PREFIX.length());
-                  continue;
-              }
-              if( actual.startsWith(NO_HYPHENATED_PROPS_PREFIX)) {
-                  hyphenatedProps = false;
-                  actual = actual.substring(NO_HYPHENATED_PROPS_PREFIX.length());
-                  continue;
-              }
-              break;
+            boolean hyphenatedProps = false;
+            while (true) {
+                if (actual.startsWith(CONVERT_STRING_EXPRESSIONS_PREFIX)) {
+                    convertStringExpressions = true;
+                    actual = actual.substring(CONVERT_STRING_EXPRESSIONS_PREFIX.length());
+                    continue;
+                }
+                if (actual.startsWith(HYPHENATED_PROPS_PREFIX)) {
+                    hyphenatedProps = true;
+                    actual = actual.substring(HYPHENATED_PROPS_PREFIX.length());
+                    continue;
+                }
+                if (actual.startsWith(NO_CONVERT_STRING_EXPRESSIONS_PREFIX)) {
+                    convertStringExpressions = false;
+                    actual = actual.substring(NO_CONVERT_STRING_EXPRESSIONS_PREFIX.length());
+                    continue;
+                }
+                if (actual.startsWith(NO_HYPHENATED_PROPS_PREFIX)) {
+                    hyphenatedProps = false;
+                    actual = actual.substring(NO_HYPHENATED_PROPS_PREFIX.length());
+                    continue;
+                }
+                break;
             }
 
-            if( convertStringExpressions ) {
+            if (convertStringExpressions) {
                 ComparisonExpression.CONVERT_STRING_EXPRESSIONS.set(true);
             }
             try {
                 BooleanExpression e = null;
-                if( hyphenatedProps ) {
+                if (hyphenatedProps) {
                     HyphenatedParser parser = new HyphenatedParser(new StringReader(actual));
                     e = parser.JmsSelector();
                 } else {
@@ -87,7 +85,7 @@ public class SelectorParser {
                 cache.put(sql, fe);
                 throw fe;
             } finally {
-                if( convertStringExpressions ) {
+                if (convertStringExpressions) {
                     ComparisonExpression.CONVERT_STRING_EXPRESSIONS.remove();
                 }
             }

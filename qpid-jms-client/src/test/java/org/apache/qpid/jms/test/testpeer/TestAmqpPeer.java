@@ -90,8 +90,6 @@ import org.slf4j.LoggerFactory;
 // TODO should expectXXXYYYZZZ methods just be expect(matcher)?
 public class TestAmqpPeer implements AutoCloseable
 {
-    private static final int LINK_HANDLE_OFFSET = 100;
-
     private static final Logger LOGGER = LoggerFactory.getLogger(TestAmqpPeer.class.getName());
 
     private final TestAmqpPeerRunner _driverRunnable;
@@ -107,8 +105,6 @@ public class TestAmqpPeer implements AutoCloseable
      * Guarded by {@link #_handlersLock}
      */
     private CountDownLatch _handlersCompletedLatch;
-
-    private volatile int _tempDestLinkHandle = LINK_HANDLE_OFFSET;
 
     private byte[] _deferredBytes;
 
@@ -475,9 +471,7 @@ public class TestAmqpPeer implements AutoCloseable
                 .withSource(notNullValue())
                 .withTarget(targetMatcher);
 
-        UnsignedInteger linkHandle = UnsignedInteger.valueOf(_tempDestLinkHandle++);
         final AttachFrame attachResponse = new AttachFrame()
-                            .setHandle(linkHandle)
                             .setRole(Role.RECEIVER)
                             .setSndSettleMode(SenderSettleMode.UNSETTLED)
                             .setRcvSettleMode(ReceiverSettleMode.FIRST);
@@ -490,6 +484,7 @@ public class TestAmqpPeer implements AutoCloseable
             public void setValues()
             {
                 attachResponseSender.setChannel(attachMatcher.getActualChannel());
+                attachResponse.setHandle(attachMatcher.getReceivedHandle());
                 attachResponse.setName(attachMatcher.getReceivedName());
                 attachResponse.setSource(attachMatcher.getReceivedSource());
 
@@ -505,8 +500,7 @@ public class TestAmqpPeer implements AutoCloseable
                 .setIncomingWindow(UnsignedInteger.valueOf(2048))
                 .setNextOutgoingId(UnsignedInteger.ONE) //TODO: shouldnt be hard coded
                 .setOutgoingWindow(UnsignedInteger.valueOf(2048))
-                .setLinkCredit(UnsignedInteger.valueOf(100))
-                .setHandle(linkHandle);
+                .setLinkCredit(UnsignedInteger.valueOf(100));
 
         // The flow frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
         final FrameSender flowFrameSender = new FrameSender(this, FrameType.AMQP, -1, flowFrame, null);
@@ -516,6 +510,7 @@ public class TestAmqpPeer implements AutoCloseable
             public void setValues()
             {
                 flowFrameSender.setChannel(attachMatcher.getActualChannel());
+                flowFrame.setHandle(attachMatcher.getReceivedHandle());
                 flowFrame.setDeliveryCount(attachMatcher.getReceivedInitialDeliveryCount());
             }
         });

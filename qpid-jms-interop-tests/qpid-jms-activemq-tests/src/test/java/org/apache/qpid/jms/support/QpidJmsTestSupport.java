@@ -143,6 +143,10 @@ public class QpidJmsTestSupport {
         return false;
     }
 
+    protected boolean isSchedulerSupport() {
+        return false;
+    }
+
     protected BrokerService createBroker(String name, boolean deleteAllMessages) throws Exception {
         return createBroker(name, deleteAllMessages, Collections.<String, Integer> emptyMap());
     }
@@ -156,6 +160,7 @@ public class QpidJmsTestSupport {
         BrokerService brokerService = new BrokerService();
         brokerService.setBrokerName(name);
         brokerService.setPersistent(isPersistent());
+        brokerService.setSchedulerSupport(isSchedulerSupport());
         brokerService.setAdvisorySupport(isAdvisorySupport());
         brokerService.setDeleteAllMessagesOnStartup(deleteAllMessages);
         brokerService.setUseJmx(true);

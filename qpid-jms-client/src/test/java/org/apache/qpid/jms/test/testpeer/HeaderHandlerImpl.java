@@ -31,7 +31,7 @@ class HeaderHandlerImpl implements HeaderHandler
 
     private final byte[] _expectedHeader;
     private final byte[] _response;
-    private final Runnable _onSuccess;
+    private Runnable _onSuccess;
     private boolean _isComplete;
 
     HeaderHandlerImpl(byte[] expectedHeader, byte[] response)
@@ -70,5 +70,18 @@ class HeaderHandlerImpl implements HeaderHandler
     public String toString()
     {
         return "HeaderHandlerImpl [_expectedHeader=" + new Binary(_expectedHeader) + "]";
+    }
+
+    @Override
+    public Runnable getOnSuccessAction()
+    {
+        return _onSuccess;
+    }
+
+    @Override
+    public Handler onSuccess(Runnable onSuccessAction)
+    {
+        _onSuccess = onSuccessAction;
+        return this;
     }
 }

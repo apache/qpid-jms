@@ -25,4 +25,8 @@ package org.apache.qpid.jms.test.testpeer;
 interface Handler
 {
     boolean isComplete();
+
+    Runnable getOnSuccessAction();
+
+    Handler onSuccess(Runnable onSuccessAction);
 }

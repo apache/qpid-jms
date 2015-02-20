@@ -91,6 +91,7 @@ import org.slf4j.LoggerFactory;
 public class TestAmqpPeer implements AutoCloseable
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(TestAmqpPeer.class.getName());
+    private static final int CONNECTION_CHANNEL = 0;
 
     private final TestAmqpPeerRunner _driverRunnable;
     private final Thread _driverThread;
@@ -1047,13 +1048,7 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void remotelyEndLastOpenedSession(boolean expectEndResponse) {
         synchronized (_handlersLock) {
-            // Prepare a composite to insert this action at the end of the handler sequence
-            CompositeAmqpPeerRunnable comp = new CompositeAmqpPeerRunnable();
-            Handler h = getLastHandler();
-            AmqpPeerRunnable orig = h.getOnSuccessAction();
-            if (orig != null) {
-                comp.add(orig);
-            }
+            CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
 
             // Now generate the End for the appropriate session
             final EndFrame endFrame = new EndFrame();
@@ -1069,8 +1064,6 @@ public class TestAmqpPeer implements AutoCloseable
             });
             comp.add(frameSender);
 
-            h.onSuccess(comp);
-
             if (expectEndResponse) {
                 // Expect a response to our End.
                 final EndMatcher endMatcher = new EndMatcher();
@@ -1078,5 +1071,37 @@ public class TestAmqpPeer implements AutoCloseable
                 addHandler(endMatcher);
             }
         }
+    }
+
+    public void remotelyEndConnection(boolean expectCloseResponse) {
+        synchronized (_handlersLock) {
+            // Prepare a composite to insert this action at the end of the handler sequence
+            CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
+
+            // Now generate the Close
+            final CloseFrame closeFrame = new CloseFrame();
+            // TODO: add an optional error msg+condition?
+
+            final FrameSender frameSender = new FrameSender(this, FrameType.AMQP, CONNECTION_CHANNEL, closeFrame, null);
+
+            comp.add(frameSender);
+
+            if (expectCloseResponse) {
+                // Expect a response to our Close.
+                final CloseMatcher closeMatcher = new CloseMatcher();
+                addHandler(closeMatcher);
+            }
+        }
+    }
+
+    private CompositeAmqpPeerRunnable insertCompsiteActionForLastHandler() {
+        CompositeAmqpPeerRunnable comp = new CompositeAmqpPeerRunnable();
+        Handler h = getLastHandler();
+        AmqpPeerRunnable orig = h.getOnSuccessAction();
+        if (orig != null) {
+            comp.add(orig);
+        }
+        h.onSuccess(comp);
+        return comp;
     }
 }

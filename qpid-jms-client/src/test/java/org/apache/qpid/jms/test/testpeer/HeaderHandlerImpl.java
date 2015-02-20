@@ -31,7 +31,7 @@ class HeaderHandlerImpl implements HeaderHandler
 
     private final byte[] _expectedHeader;
     private final byte[] _response;
-    private Runnable _onSuccess;
+    private AmqpPeerRunnable _onSuccess;
     private boolean _isComplete;
 
     HeaderHandlerImpl(byte[] expectedHeader, byte[] response)
@@ -39,7 +39,7 @@ class HeaderHandlerImpl implements HeaderHandler
        this(expectedHeader, response, null);
     }
 
-    public HeaderHandlerImpl(byte[] header, byte[] response, Runnable onSuccess)
+    public HeaderHandlerImpl(byte[] header, byte[] response, AmqpPeerRunnable onSuccess)
     {
         _expectedHeader = header;
         _response = response;
@@ -73,13 +73,13 @@ class HeaderHandlerImpl implements HeaderHandler
     }
 
     @Override
-    public Runnable getOnSuccessAction()
+    public AmqpPeerRunnable getOnSuccessAction()
     {
         return _onSuccess;
     }
 
     @Override
-    public Handler onSuccess(Runnable onSuccessAction)
+    public Handler onSuccess(AmqpPeerRunnable onSuccessAction)
     {
         _onSuccess = onSuccessAction;
         return this;

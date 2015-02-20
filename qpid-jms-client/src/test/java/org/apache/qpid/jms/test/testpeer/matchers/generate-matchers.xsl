@@ -70,6 +70,7 @@ package org.apache.qpid.jms.test.testpeer.matchers;
 
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
+import org.apache.qpid.jms.test.testpeer.AmqpPeerRunnable;
 import org.apache.qpid.jms.test.testpeer.FrameType;
 import org.apache.qpid.jms.test.testpeer.<xsl:value-of select="$superclass"/>;
 import org.hamcrest.Matcher;
@@ -96,7 +97,7 @@ public class <xsl:value-of select="$classname"/> extends <xsl:value-of select="$
     }
 
     @Override
-    public <xsl:value-of select="$classname"/> onSuccess(Runnable onSuccessAction)
+    public <xsl:value-of select="$classname"/> onSuccess(AmqpPeerRunnable onSuccessAction)
     {
         super.onSuccess(onSuccessAction);
         return this;

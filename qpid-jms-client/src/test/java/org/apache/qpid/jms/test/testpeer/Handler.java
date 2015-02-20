@@ -26,7 +26,7 @@ interface Handler
 {
     boolean isComplete();
 
-    Runnable getOnSuccessAction();
+    AmqpPeerRunnable getOnSuccessAction();
 
-    Handler onSuccess(Runnable onSuccessAction);
+    Handler onSuccess(AmqpPeerRunnable onSuccessAction);
 }

@@ -34,7 +34,7 @@ public class FrameWithPayloadMatchingHandler extends AbstractFrameFieldAndPayloa
                                                 int channel,
                                                 UnsignedLong numericDescriptor,
                                                 Symbol symbolicDescriptor,
-                                                Runnable onSuccess)
+                                                AmqpPeerRunnable onSuccess)
     {
         super(frameType, channel, numericDescriptor, symbolicDescriptor, onSuccess);
     }

@@ -22,6 +22,7 @@ package org.apache.qpid.jms.test.testpeer.matchers;
 
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedLong;
+import org.apache.qpid.jms.test.testpeer.AmqpPeerRunnable;
 import org.apache.qpid.jms.test.testpeer.FrameType;
 import org.apache.qpid.jms.test.testpeer.FrameWithNoPayloadMatchingHandler;
 import org.hamcrest.Matcher;
@@ -54,7 +55,7 @@ public class BeginMatcher extends FrameWithNoPayloadMatchingHandler
     }
 
     @Override
-    public BeginMatcher onSuccess(Runnable onSuccessAction)
+    public BeginMatcher onSuccess(AmqpPeerRunnable onSuccessAction)
     {
         super.onSuccess(onSuccessAction);
         return this;

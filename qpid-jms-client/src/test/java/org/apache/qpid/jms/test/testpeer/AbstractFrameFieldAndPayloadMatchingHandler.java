@@ -39,14 +39,14 @@ public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends Abstra
     private int _expectedChannel;
     private int _actualChannel;
 
-    private Runnable _onSuccessAction;
+    private AmqpPeerRunnable _onSuccessAction;
     private volatile boolean _isComplete;
 
     protected AbstractFrameFieldAndPayloadMatchingHandler(FrameType frameType,
                                                 int channel,
                                                 UnsignedLong numericDescriptor,
                                                 Symbol symbolicDescriptor,
-                                                Runnable onSuccessAction)
+                                                AmqpPeerRunnable onSuccessAction)
     {
         super(numericDescriptor, symbolicDescriptor);
         _frameType = frameType;
@@ -109,12 +109,12 @@ public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends Abstra
         _isComplete = true;
     }
 
-    public Runnable getOnSuccessAction()
+    public AmqpPeerRunnable getOnSuccessAction()
     {
         return _onSuccessAction;
     }
 
-    public AbstractFrameFieldAndPayloadMatchingHandler onSuccess(Runnable onSuccessAction)
+    public AbstractFrameFieldAndPayloadMatchingHandler onSuccess(AmqpPeerRunnable onSuccessAction)
     {
         _onSuccessAction = onSuccessAction;
         return this;

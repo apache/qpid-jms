@@ -1124,9 +1124,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
                     }
                 });
             } else {
-                LOG.debug("Async exception with no exception listener: " + error, error);
+                LOG.debug("Async exception with no exception listener: {}", error, error);
             }
         }
+    }
+
+    @Override
+    public void onResourceRemotelyClosed(JmsResource resource, Exception cause) {
+        LOG.info("A JMS resource has been remotely closed: {}", resource);
     }
 
     protected void providerFailed(IOException error) {

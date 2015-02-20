@@ -142,48 +142,53 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
 
     @Override
     public ProviderListener getProviderListener() {
-        return this.listener;
+        return listener;
     }
 
     @Override
     public void onInboundMessage(JmsInboundMessageDispatch envelope) {
-        this.listener.onInboundMessage(envelope);
+        listener.onInboundMessage(envelope);
     }
 
     @Override
     public void onConnectionInterrupted(URI remoteURI) {
-        this.listener.onConnectionInterrupted(remoteURI);
+        listener.onConnectionInterrupted(remoteURI);
     }
 
     @Override
     public void onConnectionRecovery(Provider provider) throws Exception {
-        this.listener.onConnectionRecovery(provider);
+        listener.onConnectionRecovery(provider);
     }
 
     @Override
     public void onConnectionRecovered(Provider provider) throws Exception {
-        this.listener.onConnectionRecovered(provider);
+        listener.onConnectionRecovered(provider);
     }
 
     @Override
     public void onConnectionRestored(URI remoteURI) {
-        this.listener.onConnectionRestored(remoteURI);
+        listener.onConnectionRestored(remoteURI);
     }
 
     @Override
     public void onConnectionEstablished(URI remoteURI) {
-        this.listener.onConnectionEstablished(this.next.getRemoteURI());
+        listener.onConnectionEstablished(this.next.getRemoteURI());
     }
 
     @Override
     public void onConnectionFailure(IOException ex) {
-        this.listener.onConnectionFailure(ex);
+        listener.onConnectionFailure(ex);
+    }
+
+    @Override
+    public void onResourceRemotelyClosed(JmsResource resource, Exception cause) {
+        listener.onResourceRemotelyClosed(resource, cause);
     }
 
     /**
      * @return the wrapped AsyncProvider.
      */
     public Provider getNext() {
-        return this.next;
+        return next;
     }
 }

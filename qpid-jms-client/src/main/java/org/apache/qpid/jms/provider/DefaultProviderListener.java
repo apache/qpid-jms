@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
+import org.apache.qpid.jms.meta.JmsResource;
 
 /**
  * Default implementation that does nothing for all callbacks.
@@ -52,5 +53,9 @@ public class DefaultProviderListener implements ProviderListener {
 
     @Override
     public void onConnectionRestored(URI remoteURI) {
+    }
+
+    @Override
+    public void onResourceRemotelyClosed(JmsResource resource, Exception cause) {
     }
 }

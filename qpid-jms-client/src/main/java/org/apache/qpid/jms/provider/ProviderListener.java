@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
+import org.apache.qpid.jms.meta.JmsResource;
 
 /**
  * Events interface used to update the listener with changes in provider state.
@@ -109,5 +110,16 @@ public interface ProviderListener {
      *        The exception that indicates the cause of this Provider failure.
      */
     void onConnectionFailure(IOException ex);
+
+    /**
+     * Called to indicate that a currently active resource has been closed on the
+     * remote end due to management or other action.
+     *
+     * @param resource
+     *        the JmsResource instance that has been remotely closed.
+     * @param cause
+     *        optional exception object that indicates the cause of the close.
+     */
+    void onResourceRemotelyClosed(JmsResource resource, Exception cause);
 
 }

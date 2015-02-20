@@ -176,7 +176,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Ignore // Need to complete implementation and update test peer link handle behaviour
+    @Ignore // TODO: Need to complete implementation and update test peer link handle behaviour
     @Test(timeout = 5000)
     public void testCreateAndDeleteTemporaryQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
@@ -219,7 +219,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Ignore // Need to complete implementation and update test peer link handle behaviour
+    @Ignore // TODO: Need to complete implementation and update test peer link handle behaviour
     @Test(timeout = 5000)
     public void testCreateAndDeleteTemporaryTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
@@ -360,7 +360,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Ignore // The *test* needs Proton 0.9, enable when upgrading.
+    @Ignore // TODO: The *test* needs Proton 0.9, enable when upgrading.
     @Test(timeout = 5000)
     public void testCreateAnonymousProducerTargetContainsNoTypeCapabilityWhenAnonymousRelayNodeIsSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
@@ -552,7 +552,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Ignore // The *test* needs Proton 0.9, enable when upgrading.
+    @Ignore // TODO: The *test* needs Proton 0.9, enable when upgrading.
     @Test(timeout = 5000)
     public void testCreateAnonymousProducerWhenAnonymousRelayNodeIsSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
@@ -601,13 +601,13 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Ignore // The *test* needs Proton 0.9, enable when upgrading.
+    @Ignore // TODO: The *test* needs Proton 0.9, enable when upgrading.
     @Test(timeout = 5000)
     public void testCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedTestImpl(false);
     }
 
-    @Ignore // The *test* needs Proton 0.9, enable when upgrading.
+    @Ignore // TODO: The *test* needs Proton 0.9, enable when upgrading.
     @Test(timeout = 5000)
     public void testCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
         doCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedTestImpl(true);

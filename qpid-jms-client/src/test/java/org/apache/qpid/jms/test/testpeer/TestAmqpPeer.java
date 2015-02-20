@@ -107,6 +107,7 @@ public class TestAmqpPeer implements AutoCloseable
     private CountDownLatch _handlersCompletedLatch;
 
     private byte[] _deferredBytes;
+    private int _lastInitiatedChannel = -1;
 
     public TestAmqpPeer() throws IOException
     {
@@ -226,6 +227,18 @@ public class TestAmqpPeer implements AutoCloseable
                 throw new IllegalStateException("No handlers");
             }
             return _handlers.get(0);
+        }
+    }
+
+    private Handler getLastHandler()
+    {
+        synchronized(_handlersLock)
+        {
+            if(_handlers.isEmpty())
+            {
+                throw new IllegalStateException("No handlers");
+            }
+            return _handlers.get(_handlers.size() - 1);
         }
     }
 
@@ -406,9 +419,13 @@ public class TestAmqpPeer implements AutoCloseable
             @Override
             public void setValues()
             {
-                beginResponseSender.setChannel(beginMatcher.getActualChannel());
+                int actualChannel = beginMatcher.getActualChannel();
+
+                beginResponseSender.setChannel(actualChannel);
                 beginResponse.setRemoteChannel(
-                        UnsignedShort.valueOf((short) beginMatcher.getActualChannel()));
+                        UnsignedShort.valueOf((short) actualChannel));
+
+                _lastInitiatedChannel = actualChannel;
             }
         });
         beginMatcher.onSuccess(beginResponseSender);
@@ -1026,5 +1043,40 @@ public class TestAmqpPeer implements AutoCloseable
         }
 
         return target;
+    }
+
+    public void remotelyEndLastOpenedSession(boolean expectEndResponse) {
+        synchronized (_handlersLock) {
+            // Prepare a composite to insert this action at the end of the handler sequence
+            CompositeAmqpPeerRunnable comp = new CompositeAmqpPeerRunnable();
+            Handler h = getLastHandler();
+            AmqpPeerRunnable orig = h.getOnSuccessAction();
+            if (orig != null) {
+                comp.add(orig);
+            }
+
+            // Now generate the End for the appropriate session
+            final EndFrame endFrame = new EndFrame();
+            // TODO: add an optional error msg+condition?
+
+            int channel = -1;
+            final FrameSender frameSender = new FrameSender(this, FrameType.AMQP, channel, endFrame, null);
+            frameSender.setValueProvider(new ValueProvider() {
+                @Override
+                public void setValues() {
+                    frameSender.setChannel(_lastInitiatedChannel);
+                }
+            });
+            comp.add(frameSender);
+
+            h.onSuccess(comp);
+
+            if (expectEndResponse) {
+                // Expect a response to our End.
+                final EndMatcher endMatcher = new EndMatcher();
+                // TODO: enable matching on the channel number of the response.
+                addHandler(endMatcher);
+            }
+        }
     }
 }

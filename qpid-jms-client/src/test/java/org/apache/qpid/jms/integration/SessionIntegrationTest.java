@@ -1134,4 +1134,36 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
         }
     }
+
+    @Ignore // TODO: resolve related issues and enable
+    @Test(timeout = 5000)
+    public void testRemotelyEndSessionWithProducer() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+
+            testPeer.expectBegin(true);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            // Create a producer, then remotely end the session afterwards.
+            testPeer.expectSenderAttach();
+            testPeer.remotelyEndLastOpenedSession(true);
+
+            Queue queue = session.createQueue("myQueue");
+            MessageProducer producer = session.createProducer(queue);
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            // Verify the producer is now marked closed
+            try {
+                producer.getDestination();
+                fail("Expected ISE to be thrown due to being closed");
+            } catch (IllegalStateException jmsise) {
+                // expected
+            }
+
+            // Try closing it explicitly, should effectively no-op in client.
+            // The test peer will throw during close if it sends anything.
+            producer.close();
+        }
+    }
 }

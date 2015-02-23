@@ -104,25 +104,34 @@ public interface AmqpResource {
      * Called when the Proton Engine signals that the state of the given resource has
      * changed on the remote side.
      *
+     * @param provider
+     *        the AmqpProvider instance for easier access to fire events.
+     *
      * @throws IOException if an error occurs while processing the update.
      */
-    void processStateChange() throws IOException;
+    void processStateChange(AmqpProvider provider) throws IOException;
 
     /**
      * Called when the Proton Engine signals an Delivery related event has been triggered
      * for the given endpoint.
      *
+     * @param provider
+     *        the AmqpProvider instance for easier access to fire events.
+     *
      * @throws IOException if an error occurs while processing the update.
      */
-    void processDeliveryUpdates() throws IOException;
+    void processDeliveryUpdates(AmqpProvider provider) throws IOException;
 
     /**
      * Called when the Proton Engine signals an Flow related event has been triggered
      * for the given endpoint.
      *
+     * @param provider
+     *        the AmqpProvider instance for easier access to fire events.
+     *
      * @throws IOException if an error occurs while processing the update.
      */
-    void processFlowUpdates() throws IOException;
+    void processFlowUpdates(AmqpProvider provider) throws IOException;
 
     /**
      * @returns true if the remote end has sent an error

@@ -718,34 +718,34 @@ public class AmqpProvider implements Provider, TransportListener {
                     case CONNECTION_REMOTE_CLOSE:
                     case CONNECTION_REMOTE_OPEN:
                         AmqpConnection connection = (AmqpConnection) protonEvent.getConnection().getContext();
-                        connection.processStateChange();
+                        connection.processStateChange(this);
                         break;
                     case SESSION_REMOTE_CLOSE:
                     case SESSION_REMOTE_OPEN:
                         AmqpSession session = (AmqpSession) protonEvent.getSession().getContext();
-                        session.processStateChange();
+                        session.processStateChange(this);
                         break;
                     case LINK_REMOTE_CLOSE:
                         LOG.info("Link closed: {}", protonEvent.getLink().getContext());
                         AmqpResource cloedResource = (AmqpResource) protonEvent.getLink().getContext();
-                        cloedResource.processStateChange();
+                        cloedResource.processStateChange(this);
                         break;
                     case LINK_REMOTE_DETACH:
                         LOG.info("Link detach: {}", protonEvent.getLink().getContext());
                         AmqpResource detachedResource = (AmqpResource) protonEvent.getLink().getContext();
-                        detachedResource.processStateChange();
+                        detachedResource.processStateChange(this);
                         break;
                     case LINK_REMOTE_OPEN:
                         AmqpResource resource = (AmqpResource) protonEvent.getLink().getContext();
-                        resource.processStateChange();
+                        resource.processStateChange(this);
                         break;
                     case LINK_FLOW:
                         amqpResource = (AmqpResource) protonEvent.getLink().getContext();
-                        amqpResource.processFlowUpdates();
+                        amqpResource.processFlowUpdates(this);
                         break;
                     case DELIVERY:
                         amqpResource = (AmqpResource) protonEvent.getLink().getContext();
-                        amqpResource.processDeliveryUpdates();
+                        amqpResource.processDeliveryUpdates(this);
                         break;
                     default:
                         break;

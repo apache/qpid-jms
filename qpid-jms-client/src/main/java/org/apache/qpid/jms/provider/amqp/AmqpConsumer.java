@@ -129,7 +129,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     @Override
-    public void processFlowUpdates() throws IOException {
+    public void processFlowUpdates(AmqpProvider provider) throws IOException {
         // Check if we tried to stop and have now run out of credit, and
         // processed all locally queued messages
         if (stopRequest != null) {
@@ -140,7 +140,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             }
         }
 
-        super.processFlowUpdates();
+        super.processFlowUpdates(provider);
     }
 
     @Override
@@ -365,7 +365,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     @Override
-    public void processDeliveryUpdates() throws IOException {
+    public void processDeliveryUpdates(AmqpProvider provider) throws IOException {
         Delivery incoming = null;
         do {
             incoming = getEndpoint().current();
@@ -394,6 +394,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                 }
             }
         } while (incoming != null);
+
+        super.processDeliveryUpdates(provider);
     }
 
     private void processDelivery(Delivery incoming) throws Exception {

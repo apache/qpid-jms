@@ -119,7 +119,7 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
      * side of the Connection.
      */
     @Override
-    public void processStateChange() throws IOException {
+    public void processStateChange(AmqpProvider provider) throws IOException {
 
         if (!connected && isOpen()) {
             connected = true;
@@ -147,7 +147,7 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
             });
         }
 
-        super.processStateChange();
+        super.processStateChange(provider);
     }
 
     public void processSaslAuthentication() {

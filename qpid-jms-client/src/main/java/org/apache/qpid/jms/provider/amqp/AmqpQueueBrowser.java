@@ -63,7 +63,7 @@ public class AmqpQueueBrowser extends AmqpConsumer {
     }
 
     @Override
-    public void processFlowUpdates() throws IOException {
+    public void processFlowUpdates(AmqpProvider provider) throws IOException {
         if (getEndpoint().getDrain() && getEndpoint().getCredit() == getEndpoint().getRemoteCredit()) {
             JmsInboundMessageDispatch browseDone = new JmsInboundMessageDispatch(getNextIncomingSequenceNumber());
             browseDone.setConsumerId(getConsumerId());
@@ -76,17 +76,17 @@ public class AmqpQueueBrowser extends AmqpConsumer {
             getEndpoint().setDrain(false);
         }
 
-        super.processFlowUpdates();
+        super.processFlowUpdates(provider);
     }
 
     @Override
-    public void processDeliveryUpdates() throws IOException {
+    public void processDeliveryUpdates(AmqpProvider provider) throws IOException {
         if (getEndpoint().getDrain() && getEndpoint().current() != null) {
             LOG.trace("{} incoming delivery, cancel drain.", getConsumerId());
             getEndpoint().setDrain(false);
         }
 
-        super.processDeliveryUpdates();
+        super.processDeliveryUpdates(provider);
 
         if (getEndpoint().getDrain() && getEndpoint().getCredit() == getEndpoint().getRemoteCredit()) {
             JmsInboundMessageDispatch browseDone = new JmsInboundMessageDispatch(getNextIncomingSequenceNumber());

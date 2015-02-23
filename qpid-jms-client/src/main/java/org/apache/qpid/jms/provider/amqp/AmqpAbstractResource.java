@@ -246,7 +246,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     }
 
     @Override
-    public void processStateChange() throws IOException {
+    public void processStateChange(AmqpProvider provider) throws IOException {
         EndpointState remoteState = getEndpoint().getRemoteState();
 
         if (remoteState == EndpointState.ACTIVE) {
@@ -276,11 +276,11 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     }
 
     @Override
-    public void processDeliveryUpdates() throws IOException {
+    public void processDeliveryUpdates(AmqpProvider provider) throws IOException {
     }
 
     @Override
-    public void processFlowUpdates() throws IOException {
+    public void processFlowUpdates(AmqpProvider provider) throws IOException {
     }
 
     /**

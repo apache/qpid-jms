@@ -169,7 +169,7 @@ public class AmqpFixedProducer extends AmqpProducer {
     }
 
     @Override
-    public void processFlowUpdates() throws IOException {
+    public void processFlowUpdates(AmqpProvider provider) throws IOException {
         if (!pendingSends.isEmpty() && getEndpoint().getCredit() > 0) {
             while (getEndpoint().getCredit() > 0 && !pendingSends.isEmpty()) {
                 LOG.trace("Dispatching previously held send");
@@ -186,10 +186,12 @@ public class AmqpFixedProducer extends AmqpProducer {
         if (pendingSends.isEmpty() && isAwaitingClose()) {
             super.close(closeRequest);
         }
+
+        super.processFlowUpdates(provider);
     }
 
     @Override
-    public void processDeliveryUpdates() {
+    public void processDeliveryUpdates(AmqpProvider provider) throws IOException {
         List<Delivery> toRemove = new ArrayList<Delivery>();
 
         for (Delivery delivery : pending) {
@@ -234,6 +236,8 @@ public class AmqpFixedProducer extends AmqpProducer {
         }
 
         pending.removeAll(toRemove);
+
+        super.processDeliveryUpdates(provider);
     }
 
     @Override

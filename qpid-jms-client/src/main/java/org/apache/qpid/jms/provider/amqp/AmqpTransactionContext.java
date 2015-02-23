@@ -79,7 +79,7 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
     }
 
     @Override
-    public void processDeliveryUpdates() throws IOException {
+    public void processDeliveryUpdates(AmqpProvider provider) throws IOException {
         try {
             if (pendingDelivery != null && pendingDelivery.remotelySettled()) {
                 DeliveryState state = pendingDelivery.getRemoteState();
@@ -121,6 +121,8 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
                     request.onSuccess();
                 }
             }
+
+            super.processDeliveryUpdates(provider);
         } catch (Exception e) {
             throw IOExceptionSupport.create(e);
         }

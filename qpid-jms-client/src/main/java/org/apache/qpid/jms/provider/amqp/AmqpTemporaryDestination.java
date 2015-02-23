@@ -16,6 +16,7 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,7 +31,6 @@ import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
 import org.apache.qpid.proton.amqp.messaging.TerminusExpiryPolicy;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
-import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Sender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,18 +65,11 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsTemporaryD
     }
 
     @Override
-    public void processStateChange(AmqpProvider provider) {
+    public void processStateChange(AmqpProvider provider) throws IOException {
         // TODO - We might want to check on our producer to see if it becomes closed
         //        which might indicate that the broker purged the temporary destination.
 
-        EndpointState remoteState = getEndpoint().getRemoteState();
-        if (remoteState == EndpointState.ACTIVE) {
-            LOG.trace("Temporary Destination: {} is now open", this.resource);
-            opened();
-        } else if (remoteState == EndpointState.CLOSED) {
-            LOG.trace("Temporary Destination: {} is now closed", this.resource);
-            closed();
-        }
+        super.processStateChange(provider);
     }
 
     @Override

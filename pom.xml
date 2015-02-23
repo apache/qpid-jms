@@ -293,4 +293,27 @@
       </plugin>
     </plugins>
   </reporting>
+
+  <profiles>
+    <!-- Override the apache-release profile from the parent. Skip creating
+         a source release here, we have a release module that does it.  -->
+    <profile>
+      <id>apache-release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>source-release-assembly</id>
+                <configuration>
+                  <skipAssembly>true</skipAssembly>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

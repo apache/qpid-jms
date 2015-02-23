@@ -1099,6 +1099,11 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         }
     }
 
+    @Override
+    public void onResourceRemotelyClosed(JmsResource resource, Exception cause) {
+        LOG.info("A JMS resource has been remotely closed: {}", resource);
+    }
+
     /**
      * Handles any asynchronous errors that occur from the JMS framework classes.
      *
@@ -1127,11 +1132,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
                 LOG.debug("Async exception with no exception listener: {}", error, error);
             }
         }
-    }
-
-    @Override
-    public void onResourceRemotelyClosed(JmsResource resource, Exception cause) {
-        LOG.info("A JMS resource has been remotely closed: {}", resource);
     }
 
     protected void providerFailed(IOException error) {

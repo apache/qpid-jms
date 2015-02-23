@@ -258,11 +258,17 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
             if (isAwaitingClose()) {
                 LOG.debug("{} is now closed: ", this);
                 closed();
-            } else if (isAwaitingOpen() && hasRemoteError()) {
+            } else if (isAwaitingOpen()) {
                 // Error on Open, create exception and signal failure.
                 LOG.warn("Open of {} failed: ", this);
-                Exception remoteError = this.getRemoteError();
-                failed(remoteError);
+                Exception openError;
+                if (hasRemoteError()) {
+                    openError = this.getRemoteError();
+                } else {
+                    openError = new IOException("Open failed unexpectedly.");
+                }
+
+                failed(openError);
             } else {
                 remotelyClosed();
             }

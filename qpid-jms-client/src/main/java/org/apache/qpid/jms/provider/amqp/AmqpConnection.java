@@ -16,6 +16,7 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +34,6 @@ import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageFactory;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.engine.Connection;
-import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Sasl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,7 +119,7 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
      * side of the Connection.
      */
     @Override
-    public void processStateChange() {
+    public void processStateChange() throws IOException {
 
         if (!connected && isOpen()) {
             connected = true;
@@ -147,30 +147,7 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
             });
         }
 
-        EndpointState localState = getEndpoint().getLocalState();
-        EndpointState remoteState = getEndpoint().getRemoteState();
-
-        // We are still active (connected or not) and something on the remote end has
-        // closed us, signal an error if one was sent.
-        if (localState == EndpointState.ACTIVE && remoteState != EndpointState.ACTIVE) {
-            if (getEndpoint().getRemoteCondition().getCondition() != null) {
-                LOG.info("Error condition detected on Connection open {}.", getEndpoint().getRemoteCondition().getCondition());
-                Exception remoteError = getRemoteError();
-                if (isAwaitingOpen()) {
-                    doClose();
-                    openRequest.onFailure(remoteError);
-                } else {
-                    doClose();
-                    provider.fireProviderException(remoteError);
-                }
-            }
-        }
-
-        // Transition cleanly to closed state.
-        if (localState == EndpointState.CLOSED && remoteState == EndpointState.CLOSED) {
-            LOG.debug("{} has been closed successfully.", this);
-            closed();
-        }
+        super.processStateChange();
     }
 
     public void processSaslAuthentication() {

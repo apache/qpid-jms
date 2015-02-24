@@ -53,7 +53,7 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
     }
 
     @Test(timeout = 60000)
-    public void testCreateDuableSubscriber() throws Exception {
+    public void testCreateDurableSubscriber() throws Exception {
         connection = createAmqpConnection();
         connection.setClientID("DURABLE-AMQP");
         connection.start();
@@ -76,7 +76,7 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
     }
 
     @Test(timeout = 60000)
-    public void testDuableSubscriptionUnsubscribe() throws Exception {
+    public void testDurableSubscriptionUnsubscribe() throws Exception {
         connection = createAmqpConnection();
         connection.setClientID("DURABLE-AMQP");
         connection.start();
@@ -96,7 +96,7 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
     }
 
     @Test(timeout = 60000)
-    public void testDuableSubscriptionUnsubscribeNoExistingSubThrowsJMSEx() throws Exception {
+    public void testDurableSubscriptionUnsubscribeNoExistingSubThrowsJMSEx() throws Exception {
         connection = createAmqpConnection();
         connection.setClientID("DURABLE-AMQP");
         connection.start();
@@ -116,7 +116,7 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
     }
 
     @Test(timeout = 60000)
-    public void testDuableSubscriptionUnsubscribeInUseThrowsJMSEx() throws Exception {
+    public void testDurableSubscriptionUnsubscribeInUseThrowsJMSEx() throws Exception {
         connection = createAmqpConnection();
         connection.setClientID("DURABLE-AMQP");
         connection.start();
@@ -142,7 +142,7 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
     }
 
     @Test(timeout = 60000)
-    public void testDuableSubscriptionUnsubscribeInUseThrowsAndRecovers() throws Exception {
+    public void testDurableSubscriptionUnsubscribeInUseThrowsAndRecovers() throws Exception {
         connection = createAmqpConnection();
         connection.setClientID("DURABLE-AMQP");
         connection.start();

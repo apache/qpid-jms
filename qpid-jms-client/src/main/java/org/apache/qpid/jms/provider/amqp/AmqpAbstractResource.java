@@ -161,24 +161,12 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
         }
     }
 
+    /**
+     * Called when remote state becomes closed and there was
+     * no open or close attempt waiting for update.
+     */
     @Override
     public void remotelyClosed() {
-        if (isAwaitingOpen()) {
-            Exception error = getRemoteError();
-            if (error == null) {
-                error = new IOException("Remote has closed without error information");
-            }
-
-            if (endpoint != null) {
-                // TODO: if this is a producer/consumer link then we may only be detached,
-                // rather than fully closed, and should respond appropriately.
-                endpoint.close();
-            }
-
-            openRequest.onFailure(error);
-            openRequest = null;
-        }
-
         // TODO - We need a way to signal that the remote closed unexpectedly.
         LOG.info("Resource was remotely closed");
     }

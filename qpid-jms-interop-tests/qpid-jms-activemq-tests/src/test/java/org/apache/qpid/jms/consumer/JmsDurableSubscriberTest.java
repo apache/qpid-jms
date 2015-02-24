@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -110,8 +111,8 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
 
         try {
             session.unsubscribe(name.getMethodName() + "-subscriber");
-            fail("Should have thrown a JMSException");
-        } catch (JMSException ex) {
+            fail("Should have thrown an InvalidDestinationException");
+        } catch (InvalidDestinationException ide) {
         }
     }
 

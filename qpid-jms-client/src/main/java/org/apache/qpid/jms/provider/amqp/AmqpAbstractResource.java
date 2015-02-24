@@ -252,9 +252,9 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
                 LOG.warn("Open of {} failed: ", this);
                 Exception openError;
                 if (hasRemoteError()) {
-                    openError = this.getRemoteError();
+                    openError = getRemoteError();
                 } else {
-                    openError = new IOException("Open failed unexpectedly.");
+                    openError = getOpenAbortException();
                 }
 
                 failed(openError);
@@ -289,6 +289,15 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     protected void doOpenCompletion() {
         LOG.debug("{} is now open: ", this);
         opened();
+    }
+
+    /**
+     * When aborting the open operation, and there isnt an error condition,
+     * provided by the peer, the returned exception will be used instead.
+     * A subclass may override this method to provide alternative behaviour.
+     */
+    protected Exception getOpenAbortException() {
+        return new IOException("Open failed unexpectedly.");
     }
 
     /**

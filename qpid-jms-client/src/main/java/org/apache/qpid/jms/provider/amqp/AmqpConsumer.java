@@ -28,6 +28,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsDestination;
@@ -174,6 +175,29 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         setEndpoint(receiver);
 
         super.doOpen();
+    }
+
+    @Override
+    protected void doOpenCompletion() {
+        // Verify the attach response contained a non-null Source
+        org.apache.qpid.proton.amqp.transport.Source s = getEndpoint().getRemoteSource();
+        if (s != null) {
+            super.doOpenCompletion();
+        } else {
+            // No link terminus was created, the peer will now detach/close us.
+        }
+    }
+
+    @Override
+    protected Exception getOpenAbortException() {
+        // Verify the attach response contained a non-null Source
+        org.apache.qpid.proton.amqp.transport.Source s = getEndpoint().getRemoteSource();
+        if (s != null) {
+            return super.getOpenAbortException();
+        } else {
+            // No link terminus was created, the peer has detach/closed us, create IDE.
+            return new InvalidDestinationException("Link creation was refused");
+        }
     }
 
     @Override

@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsDestination;
@@ -280,11 +281,22 @@ public class AmqpFixedProducer extends AmqpProducer {
     protected void doOpenCompletion() {
         // Verify the attach response contained a non-null target
         org.apache.qpid.proton.amqp.transport.Target t = getEndpoint().getRemoteTarget();
-        if (t == null) {
-            // No link terminus was created, the peer should now detach us. Producer creation has failed.
-            failed(new RuntimeException("link was refused")); //TODO: proper exception.
-        } else {
+        if (t != null) {
             super.doOpenCompletion();
+        } else {
+            // No link terminus was created, the peer will now detach/close us.
+        }
+    }
+
+    @Override
+    protected Exception getOpenAbortException() {
+        // Verify the attach response contained a non-null target
+        org.apache.qpid.proton.amqp.transport.Target t = getEndpoint().getRemoteTarget();
+        if (t != null) {
+            return super.getOpenAbortException();
+        } else {
+            // No link terminus was created, the peer has detach/closed us, create IDE.
+            return new InvalidDestinationException("Link creation was refused");
         }
     }
 

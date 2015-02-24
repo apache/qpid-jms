@@ -1101,11 +1101,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     @Override
     public void onResourceRemotelyClosed(JmsResource resource, Exception cause) {
-        if (resource.equals(this.connectionInfo)) {
-            onException(cause);
-        } else {
-            LOG.info("A JMS resource has been remotely closed: {}", resource);
-        }
+        LOG.info("A JMS resource has been remotely closed: {}", resource);
     }
 
     /**

@@ -22,7 +22,6 @@ import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
 
-import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.proton.amqp.Symbol;
@@ -163,25 +162,25 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     }
 
     @Override
-    public void remotelyClosed(AmqpProvider provider) {
-        Exception error = getRemoteError();
-        if (error == null) {
-            error = new IOException("Remote has closed without error information");
+    public void remotelyClosed() {
+        if (isAwaitingOpen()) {
+            Exception error = getRemoteError();
+            if (error == null) {
+                error = new IOException("Remote has closed without error information");
+            }
+
+            if (endpoint != null) {
+                // TODO: if this is a producer/consumer link then we may only be detached,
+                // rather than fully closed, and should respond appropriately.
+                endpoint.close();
+            }
+
+            openRequest.onFailure(error);
+            openRequest = null;
         }
 
-        if (endpoint != null) {
-            // TODO: if this is a producer/consumer link then we may only be detached,
-            // rather than fully closed, and should respond appropriately.
-            endpoint.close();
-        }
-
-        LOG.info("Resource {} was remotely closed", getJmsResource());
-
-        if (getJmsResource() instanceof JmsConnectionInfo) {
-            provider.fireProviderException(error);
-        } else {
-            provider.fireResourceRemotelyClosed(getJmsResource(), error);
-        }
+        // TODO - We need a way to signal that the remote closed unexpectedly.
+        LOG.info("Resource was remotely closed");
     }
 
     public E getEndpoint() {
@@ -271,7 +270,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
                 failed(openError);
             } else {
-                remotelyClosed(provider);
+                remotelyClosed();
             }
         }
     }

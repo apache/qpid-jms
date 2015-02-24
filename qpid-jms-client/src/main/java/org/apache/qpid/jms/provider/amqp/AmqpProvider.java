@@ -802,13 +802,6 @@ public class AmqpProvider implements Provider, TransportListener {
         }
     }
 
-    void fireResourceRemotelyClosed(JmsResource resource, Exception ex) {
-        ProviderListener listener = this.listener;
-        if (listener != null) {
-            listener.onResourceRemotelyClosed(resource, ex);
-        }
-    }
-
     private void checkClosed() throws ProviderClosedException {
         if (closed.get()) {
             throw new ProviderClosedException("This Provider is already closed");

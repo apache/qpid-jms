@@ -218,7 +218,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
     @Override
     public String getRemoteErrorMessage() {
-        String message = "Received unkown error from remote peer";
+        String message = "Received unknown error from remote peer";
         if (getEndpoint().getRemoteCondition() != null) {
             ErrorCondition error = getEndpoint().getRemoteCondition();
             if (error.getDescription() != null && !error.getDescription().isEmpty()) {

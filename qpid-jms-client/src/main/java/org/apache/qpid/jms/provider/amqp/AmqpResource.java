@@ -86,10 +86,9 @@ public interface AmqpResource {
 
     /**
      * Called to indicate that the remote end has become closed but the resource
-     * was not awaiting a close.  This could happen during an open request where
-     * the remote does not set an error condition or during normal operation.
+     * was not awaiting an open/close completion.
      */
-    void remotelyClosed();
+    void remotelyClosed(AmqpProvider provider);
 
     /**
      * Sets the failed state for this Resource and triggers a failure signal for

@@ -161,12 +161,8 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
         }
     }
 
-    /**
-     * Called when remote state becomes closed and there was
-     * no open or close attempt waiting for update.
-     */
     @Override
-    public void remotelyClosed() {
+    public void remotelyClosed(AmqpProvider provider) {
         // TODO - We need a way to signal that the remote closed unexpectedly.
         LOG.info("Resource was remotely closed");
     }
@@ -258,7 +254,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
                 failed(openError);
             } else {
-                remotelyClosed();
+                remotelyClosed(provider);
             }
         }
     }

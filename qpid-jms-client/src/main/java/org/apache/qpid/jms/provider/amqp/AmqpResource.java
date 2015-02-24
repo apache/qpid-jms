@@ -87,6 +87,9 @@ public interface AmqpResource {
     /**
      * Called to indicate that the remote end has become closed but the resource
      * was not awaiting an open/close completion.
+     *
+     * @param provider
+     *        a reference to the AMQP provider to use to send the remote close event.
      */
     void remotelyClosed(AmqpProvider provider);
 

@@ -25,9 +25,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import javax.jms.Connection;
 import javax.jms.ConnectionMetaData;
+import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
+import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.Queue;
 import javax.jms.Session;
@@ -88,6 +93,27 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             assertTrue("Expected non-zero provider major / minor version", result != 0);
 
             testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 10000)
+    public void testRemotelyEndConnectionListenerInvoked() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final CountDownLatch done = new CountDownLatch(1);
+
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.setExceptionListener(new ExceptionListener() {
+
+                @Override
+                public void onException(JMSException exception) {
+                    done.countDown();
+                }
+            });
+
+            testPeer.remotelyEndConnection(true);
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            assertTrue("Connection should report failure", done.await(5, TimeUnit.SECONDS));
         }
     }
 

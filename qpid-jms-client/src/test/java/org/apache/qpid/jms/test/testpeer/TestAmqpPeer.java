@@ -639,6 +639,11 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectReceiverAttach(final Matcher<?> linkNameMatcher, final Matcher<?> sourceMatcher)
     {
+        expectReceiverAttach(linkNameMatcher, sourceMatcher, false, false);
+    }
+
+    public void expectReceiverAttach(final Matcher<?> linkNameMatcher, final Matcher<?> sourceMatcher, final boolean refuseLink, boolean deferAttachResponseWrite)
+    {
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(linkNameMatcher)
                 .withHandle(notNullValue())
@@ -664,12 +669,44 @@ public class TestAmqpPeer implements AutoCloseable
                 attachResponseSender.setChannel(attachMatcher.getActualChannel());
                 attachResponse.setHandle(attachMatcher.getReceivedHandle());
                 attachResponse.setName(attachMatcher.getReceivedName());
-                attachResponse.setSource(trimSourceOutcomesCapabilities(createSourceObjectFromDescribedType(attachMatcher.getReceivedSource())));
                 attachResponse.setTarget(attachMatcher.getReceivedTarget());
+                if(refuseLink) {
+                    attachResponse.setSource(null);
+                } else {
+                    attachResponse.setSource(trimSourceOutcomesCapabilities(createSourceObjectFromDescribedType(attachMatcher.getReceivedSource())));
+                }
             }
         });
 
-        attachMatcher.onSuccess(attachResponseSender);
+        if(deferAttachResponseWrite)
+        {
+            // Defer writing the attach frame until the subsequent frame is also ready
+            attachResponseSender.setDeferWrite(true);
+        }
+
+        CompositeAmqpPeerRunnable composite = new CompositeAmqpPeerRunnable();
+        composite.add(attachResponseSender);
+
+        if (refuseLink)
+        {
+            final DetachFrame detachResonse = new DetachFrame().setClosed(true);
+            // The response frame channel will be dynamically set based on the
+            // incoming frame. Using the -1 is an illegal placeholder.
+            final FrameSender detachResonseSender = new FrameSender(this, FrameType.AMQP, -1, detachResonse, null);
+            detachResonseSender.setValueProvider(new ValueProvider()
+            {
+                @Override
+                public void setValues()
+                {
+                    detachResonseSender.setChannel(attachMatcher.getActualChannel());
+                    detachResonse.setHandle(attachMatcher.getReceivedHandle());
+                }
+            });
+
+            composite.add(detachResonseSender);
+        }
+
+        attachMatcher.onSuccess(composite);
 
         addHandler(attachMatcher);
     }

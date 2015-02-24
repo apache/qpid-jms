@@ -200,10 +200,10 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
     @Override
     public Exception getRemoteError() {
-        String message = getRemoteErrorMessage();
         Exception remoteError = null;
         Symbol error = getEndpoint().getRemoteCondition().getCondition();
         if (error != null) {
+            String message = getRemoteErrorMessage();
             if (error.equals(AmqpError.UNAUTHORIZED_ACCESS)) {
                 remoteError = new JMSSecurityException(message);
             } else if (error.equals(AmqpError.NOT_FOUND)) {
@@ -223,6 +223,11 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
             ErrorCondition error = getEndpoint().getRemoteCondition();
             if (error.getDescription() != null && !error.getDescription().isEmpty()) {
                 message = error.getDescription();
+            }
+
+            Symbol condition = getEndpoint().getRemoteCondition().getCondition();
+            if (condition != null) {
+                message = message + " [condition = " + condition + "]";
             }
         }
 

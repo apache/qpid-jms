@@ -41,7 +41,6 @@ import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
 import org.apache.qpid.proton.amqp.transaction.TxnCapability;
-import org.junit.Ignore;
 import org.junit.Test;
 
 // TODO find a way to make the test abort immediately if the TestAmqpPeer throws an exception
@@ -111,13 +110,13 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             });
 
             testPeer.remotelyEndConnection(true);
-            testPeer.waitForAllHandlersToComplete(1000);
 
             assertTrue("Connection should report failure", done.await(5, TimeUnit.SECONDS));
+
+            testPeer.waitForAllHandlersToComplete(5000);
         }
     }
 
-    @Ignore // TODO: resolve related issues and enable
     @Test(timeout = 5000)
     public void testRemotelyEndConnectionWithSessionWithConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {

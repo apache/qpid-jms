@@ -35,6 +35,7 @@ import java.io.IOException;
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.IllegalStateException;
+import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -152,6 +153,49 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             session.createConsumer(queue);
 
             testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateConsumerFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
+        doCreateConsumerFailsWhenLinkRefusedTestImpl(false);
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateConsumerFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
+        doCreateConsumerFailsWhenLinkRefusedTestImpl(true);
+    }
+
+    private void doCreateConsumerFailsWhenLinkRefusedTestImpl(boolean deferAttachResponseWrite) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin(true);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String topicName = "myTopic";
+            Topic dest = session.createTopic(topicName);
+
+            //Expect a link to a topic node, which we will then refuse
+            SourceMatcher targetMatcher = new SourceMatcher();
+            targetMatcher.withAddress(equalTo(topicName));
+            targetMatcher.withDynamic(equalTo(false));
+            targetMatcher.withDurable(equalTo(TerminusDurability.NONE));
+
+            testPeer.expectReceiverAttach(notNullValue(), targetMatcher, true, deferAttachResponseWrite);
+            //Expect the detach response to the test peer closing the consumer link after refusal.
+            testPeer.expectDetach(true, false, false);
+
+            try {
+                //Create a consumer, expect it to throw exception due to the link-refusal
+                session.createConsumer(dest);
+                fail("Producer creation should have failed when link was refused");
+            } catch(InvalidDestinationException ide) {
+                //Expected
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 
@@ -680,7 +724,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 //Create a producer, expect it to throw exception due to the link-refusal
                 session.createProducer(dest);
                 fail("Producer creation should have failed when link was refused");
-            } catch(JMSException jmse) {
+            } catch(InvalidDestinationException ide) {
                 //Expected
             }
 

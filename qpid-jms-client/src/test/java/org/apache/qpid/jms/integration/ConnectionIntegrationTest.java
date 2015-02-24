@@ -86,6 +86,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             ConnectionMetaData meta = connection.getMetaData();
             int result = meta.getProviderMajorVersion() + meta.getProviderMinorVersion();
             assertTrue("Expected non-zero provider major / minor version", result != 0);
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 

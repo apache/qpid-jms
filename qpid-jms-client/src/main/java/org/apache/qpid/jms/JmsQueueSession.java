@@ -48,7 +48,7 @@ public class JmsQueueSession extends JmsSession {
     /**
      * @param destination
      * @param messageSelector
-     * @return
+     * @return the MessageConsumer
      * @throws JMSException
      * @see javax.jms.Session#createConsumer(javax.jms.Destination,
      *      java.lang.String)
@@ -65,7 +65,7 @@ public class JmsQueueSession extends JmsSession {
      * @param destination
      * @param messageSelector
      * @param noLocal
-     * @return
+     * @return the MessageConsumer
      * @throws JMSException
      * @see javax.jms.Session#createConsumer(javax.jms.Destination,
      *      java.lang.String, boolean)
@@ -81,7 +81,7 @@ public class JmsQueueSession extends JmsSession {
     /**
      * @param topic
      * @param name
-     * @return
+     * @return the durable TopicSubscriber
      * @throws JMSException
      * @see javax.jms.Session#createDurableSubscriber(javax.jms.Topic,
      *      java.lang.String)
@@ -96,7 +96,7 @@ public class JmsQueueSession extends JmsSession {
      * @param name
      * @param messageSelector
      * @param noLocal
-     * @return
+     * @return the durable TopicSubscriber
      * @throws IllegalStateException
      * @throws JMSException
      * @see javax.jms.Session#createDurableSubscriber(javax.jms.Topic,
@@ -109,7 +109,7 @@ public class JmsQueueSession extends JmsSession {
 
     /**
      * @param destination
-     * @return
+     * @return the MessageProducer
      * @throws JMSException
      * @see javax.jms.Session#createProducer(javax.jms.Destination)
      */
@@ -122,7 +122,7 @@ public class JmsQueueSession extends JmsSession {
     }
 
     /**
-     * @return
+     * @return the TemporaryTopic object
      * @throws JMSException
      * @see javax.jms.Session#createTemporaryTopic()
      */
@@ -133,7 +133,7 @@ public class JmsQueueSession extends JmsSession {
 
     /**
      * @param topicName
-     * @return
+     * @return the Topic object
      * @throws JMSException
      * @see javax.jms.Session#createTopic(java.lang.String)
      */
@@ -154,7 +154,7 @@ public class JmsQueueSession extends JmsSession {
 
     /**
      * @param topic
-     * @return
+     * @return  the TopicPublisher
      * @throws JMSException
      * @see javax.jms.TopicSession#createPublisher(javax.jms.Topic)
      */
@@ -165,7 +165,7 @@ public class JmsQueueSession extends JmsSession {
 
     /**
      * @param topic
-     * @return
+     * @return the TopicSubscriber
      * @throws JMSException
      * @see javax.jms.TopicSession#createSubscriber(javax.jms.Topic)
      */
@@ -178,7 +178,7 @@ public class JmsQueueSession extends JmsSession {
      * @param topic
      * @param messageSelector
      * @param noLocal
-     * @return
+     * @return the TopicSubscriber
      * @throws JMSException
      * @see javax.jms.TopicSession#createSubscriber(javax.jms.Topic,
      *      java.lang.String, boolean)

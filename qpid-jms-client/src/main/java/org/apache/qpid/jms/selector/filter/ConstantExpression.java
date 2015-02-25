@@ -145,7 +145,7 @@ public class ConstantExpression implements Expression {
      * it was provided in a selector.
      *
      * @param string
-     * @return
+     * @return the encoded String
      */
     public static String encodeString(String s) {
         StringBuffer b = new StringBuffer();

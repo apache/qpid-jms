@@ -73,7 +73,7 @@ public abstract class BinaryExpression implements Expression {
      * Returns the symbol that represents this binary expression.  For example, addition is
      * represented by "+"
      *
-     * @return
+     * @return the symbol String
      */
     public abstract String getExpressionSymbol();
 

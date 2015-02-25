@@ -28,7 +28,7 @@ public interface Filterable {
      *
      * @param <T>
      * @param type
-     * @return
+     * @return the body
      * @throws FilterException
      */
     <T> T getBodyAs(Class<T> type) throws FilterException;
@@ -37,7 +37,7 @@ public interface Filterable {
      * Extracts the named message property
      *
      * @param name
-     * @return
+     * @return the property
      */
     Object getProperty(String name);
 

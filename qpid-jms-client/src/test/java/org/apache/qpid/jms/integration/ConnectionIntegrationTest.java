@@ -100,7 +100,13 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final CountDownLatch done = new CountDownLatch(1);
 
-            Connection connection = testFixture.establishConnecton(testPeer);
+            // Don't set a ClientId, so that the underlying AMQP connection isn't established yet
+            Connection connection = testFixture.establishConnecton(testPeer, null, null, null, false);
+
+            // Tell the test peer to close the connection when executing its last handler
+            testPeer.remotelyEndConnection(true);
+
+            //Add the exception listener
             connection.setExceptionListener(new ExceptionListener() {
 
                 @Override
@@ -109,11 +115,12 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
                 }
             });
 
-            testPeer.remotelyEndConnection(true);
+            // Trigger the underlying AMQP connection
+            connection.start();
 
             assertTrue("Connection should report failure", done.await(5, TimeUnit.SECONDS));
 
-            testPeer.waitForAllHandlersToComplete(5000);
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 

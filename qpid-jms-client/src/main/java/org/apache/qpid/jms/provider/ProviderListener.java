@@ -96,8 +96,8 @@ public interface ProviderListener {
      * for the first time.  For a fault tolerant provider this event should only ever be
      * triggered once with the interruption and recovery events following on for future
      *
-     * @param ex
-     *        The exception that indicates the cause of this Provider failure.
+     * @param remoteURI
+     *        The URI of the Broker that the client has now connected to.
      */
     void onConnectionEstablished(URI remoteURI);
 

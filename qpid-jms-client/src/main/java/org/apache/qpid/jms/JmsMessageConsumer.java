@@ -527,12 +527,12 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
      * Triggers a pull request from the connected Provider.  An attempt is made to set
      * a timeout on the pull request however some providers will not honor this value
      * and the pull will remain active until a message is dispatched.
-     *
+     * <p>
      * The timeout value can be one of:
-     *
-     *  < 0 to indicate that the request should expire immediately if no message.
-     *  = 0 to indicate that the request should never time out.
-     *  > 1 to indicate that the request should expire after the given time in milliseconds.
+     * <br>
+     * {@literal < 0} to indicate that the request should expire immediately if no message.<br>
+     * {@literal = 0} to indicate that the request should never time out.<br>
+     * {@literal > 1} to indicate that the request should expire after the given time in milliseconds.
      *
      * @param timeout
      *        The amount of time the pull request should remain valid.

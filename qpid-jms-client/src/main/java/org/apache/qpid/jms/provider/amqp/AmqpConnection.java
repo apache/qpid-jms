@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
@@ -48,7 +47,6 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     private final Map<JmsSessionId, AmqpSession> sessions = new HashMap<JmsSessionId, AmqpSession>();
     private final Map<JmsDestination, AmqpTemporaryDestination> tempDests = new HashMap<JmsDestination, AmqpTemporaryDestination>();
     private final AmqpProvider provider;
-    private boolean connected;
     private AmqpSaslAuthenticator authenticator;
     private final AmqpConnectionSession connectionSession;
     private final AmqpConnectionProperties properties;
@@ -114,44 +112,32 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
         connectionSession.unsubscribe(subscriptionName, request);
     }
 
-    /**
-     * Called on receiving an event from Proton indicating a state change on the remote
-     * side of the Connection.
-     */
     @Override
-    public void processStateChange(AmqpProvider provider) throws IOException {
+    protected void doOpenCompletion() {
+        properties.initialize(getEndpoint().getRemoteOfferedCapabilities(), getEndpoint().getRemoteProperties());
+        connectionSession.open(new AsyncResult() {
 
-        if (!connected && isOpen()) {
-            connected = true;
+            @Override
+            public boolean isComplete() {
+                return connectionSession.isOpen();
+            }
 
-            properties.initialize(getEndpoint().getRemoteOfferedCapabilities(), getEndpoint().getRemoteProperties());
+            @Override
+            public void onSuccess() {
+                LOG.debug("{} is now open: ", AmqpConnection.this);
+                opened();
+            }
 
-            connectionSession.open(new AsyncResult() {
-
-                @Override
-                public boolean isComplete() {
-                    return connected;
-                }
-
-                @Override
-                public void onSuccess() {
-                    LOG.debug("AMQP Connection Session opened.");
-                    opened();
-                }
-
-                @Override
-                public void onFailure(Throwable result) {
-                    LOG.debug("AMQP Connection Session failed to open.");
-                    failed(IOExceptionSupport.create(result));
-                }
-            });
-        }
-
-        super.processStateChange(provider);
+            @Override
+            public void onFailure(Throwable result) {
+                LOG.debug("AMQP Connection Session failed to open.");
+                failed(IOExceptionSupport.create(result));
+            }
+        });
     }
 
     public void processSaslAuthentication() {
-        if (connected || authenticator == null) {
+        if (authenticator == null) {
             return;
         }
 

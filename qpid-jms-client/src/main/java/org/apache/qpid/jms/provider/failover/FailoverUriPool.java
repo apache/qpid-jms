@@ -64,14 +64,14 @@ public class FailoverUriPool {
     }
 
     /**
-     * @returns the current size of the URI pool.
+     * @return the current size of the URI pool.
      */
     public int size() {
         return uris.size();
     }
 
     /**
-     * @returns true if the URI pool is empty.
+     * @return true if the URI pool is empty.
      */
     public boolean isEmpty() {
         return uris.isEmpty();

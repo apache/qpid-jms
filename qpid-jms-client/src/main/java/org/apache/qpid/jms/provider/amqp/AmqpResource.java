@@ -136,7 +136,7 @@ public interface AmqpResource {
     void processFlowUpdates(AmqpProvider provider) throws IOException;
 
     /**
-     * @returns true if the remote end has sent an error
+     * @return true if the remote end has sent an error
      */
     boolean hasRemoteError();
 

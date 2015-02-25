@@ -28,8 +28,8 @@ import javax.jms.JMSException;
 public interface JmsObjectMessageFacade extends JmsMessageFacade {
 
     /**
-     * @returns a deep copy of this Message Facade including a complete copy
-     * of the byte contents of the wrapped message.
+     * @return a deep copy of this Message Facade including a complete copy
+     *         of the byte contents of the wrapped message.
      *
      * @throws JMSException if an error occurs while copying this message.
      */

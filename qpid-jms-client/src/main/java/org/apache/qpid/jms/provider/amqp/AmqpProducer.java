@@ -52,8 +52,8 @@ public abstract class AmqpProducer extends AmqpAbstractResource<JmsProducerInfo,
      * @param request
      *        The AsyncRequest that will be notified on send success or failure.
      *
-     * @returns true if the producer had credit to send or false if there was no available
-     *          credit and the send needed to be deferred.
+     * @return true if the producer had credit to send or false if there was no available
+     *         credit and the send needed to be deferred.
      *
      * @throws IOException if an error occurs sending the message
      * @throws JMSException if an error occurs while preparing the message for send.

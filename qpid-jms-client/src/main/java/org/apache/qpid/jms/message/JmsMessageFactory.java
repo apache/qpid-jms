@@ -49,7 +49,7 @@ public interface JmsMessageFactory {
      * @param payload
      *        The value to initially assign to the Message body, or null if empty to start.
      *
-     * @returns a newly created and initialized JmsTextMessage instance.
+     * @return a newly created and initialized JmsTextMessage instance.
      *
      * @throws JMSException if the provider cannot create the message for some reason.
      */
@@ -61,7 +61,7 @@ public interface JmsMessageFactory {
      * implementation or create a Provider specific instance that optimizes
      * the access and marshaling of the message.
      *
-     * @returns a newly created and initialized JmsTextMessage instance.
+     * @return a newly created and initialized JmsTextMessage instance.
      *
      * @throws JMSException if the provider cannot create the message for some reason.
      */
@@ -73,7 +73,7 @@ public interface JmsMessageFactory {
      * implementation or create a Provider specific instance that optimizes
      * the access and marshaling of the message.
      *
-     * @returns a newly created and initialized JmsTextMessage instance.
+     * @return a newly created and initialized JmsTextMessage instance.
      *
      * @throws JMSException if the provider cannot create the message for some reason.
      */
@@ -85,7 +85,7 @@ public interface JmsMessageFactory {
      * implementation or create a Provider specific instance that optimizes
      * the access and marshaling of the message.
      *
-     * @returns a newly created and initialized JmsTextMessage instance.
+     * @return a newly created and initialized JmsTextMessage instance.
      *
      * @throws JMSException if the provider cannot create the message for some reason.
      */
@@ -97,7 +97,7 @@ public interface JmsMessageFactory {
      * implementation or create a Provider specific instance that optimizes
      * the access and marshaling of the message.
      *
-     * @returns a newly created and initialized JmsTextMessage instance.
+     * @return a newly created and initialized JmsTextMessage instance.
      *
      * @throws JMSException if the provider cannot create the message for some reason.
      */
@@ -112,7 +112,7 @@ public interface JmsMessageFactory {
      * @param payload
      *        The value to initially assign to the Message body, or null if empty to start.
      *
-     * @returns a newly created and initialized JmsObjectMessage instance.
+     * @return a newly created and initialized JmsObjectMessage instance.
      *
      * @throws JMSException if the provider cannot create the message for some reason.
      */
@@ -124,7 +124,7 @@ public interface JmsMessageFactory {
      * implementation or create a Provider specific instance that optimizes
      * the access and marshaling of the message.
      *
-     * @returns a newly created and initialized JmsObjectMessage instance.
+     * @return a newly created and initialized JmsObjectMessage instance.
      *
      * @throws JMSException if the provider cannot create the message for some reason.
      */

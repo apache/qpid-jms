@@ -28,14 +28,14 @@ import javax.jms.MessageEOFException;
 public interface JmsStreamMessageFacade extends JmsMessageFacade {
 
     /**
-     * @returns a deep copy of this Message Facade including a complete copy
-     * of the byte contents of the wrapped message.
+     * @return a deep copy of this Message Facade including a complete copy
+     *         of the byte contents of the wrapped message.
      */
     @Override
     JmsStreamMessageFacade copy() throws JMSException;
 
     /**
-     * @returns true if the stream contains another element beyond the current.
+     * @return true if the stream contains another element beyond the current.
      */
     boolean hasNext();
 
@@ -44,7 +44,7 @@ public interface JmsStreamMessageFacade extends JmsMessageFacade {
      * then this method should throw a MessageEOFException.  Multiple calls to peek should
      * return the same element.
      *
-     * @returns the next value in the stream without removing it.
+     * @return the next value in the stream without removing it.
      *
      * @throws MessageEOFException if end of message stream has been reached.
      */

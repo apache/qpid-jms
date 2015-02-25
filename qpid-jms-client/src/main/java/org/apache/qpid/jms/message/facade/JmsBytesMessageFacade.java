@@ -33,8 +33,8 @@ public interface JmsBytesMessageFacade extends JmsMessageFacade {
      * results in a call to reset() prior to the message copy meaning any in use streams
      * will be closed on return.
      *
-     * @returns a deep copy of this Message Facade including a complete copy
-     * of the byte contents of the wrapped message.
+     * @return a deep copy of this Message Facade including a complete copy
+     *         of the byte contents of the wrapped message.
      */
     @Override
     JmsBytesMessageFacade copy() throws JMSException;

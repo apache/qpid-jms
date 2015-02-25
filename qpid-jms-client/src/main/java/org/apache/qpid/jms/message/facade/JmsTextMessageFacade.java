@@ -27,7 +27,7 @@ public interface JmsTextMessageFacade extends JmsMessageFacade {
      * Creates a copy of this JmsTextMessageFacade and its underlying
      * provider message instance.
      *
-     * @returns a new JmsTextMessageFacade that wraps a duplicate message.
+     * @return a new JmsTextMessageFacade that wraps a duplicate message.
      */
     @Override
     JmsTextMessageFacade copy() throws JMSException;

@@ -27,8 +27,8 @@ import javax.jms.JMSException;
 public interface JmsMapMessageFacade extends JmsMessageFacade {
 
     /**
-     * @returns a deep copy of this Message Facade including a complete copy
-     * of the byte contents of the wrapped message.
+     * @return a deep copy of this Message Facade including a complete copy
+     *         of the byte contents of the wrapped message.
      *
      * @throws JMSException if an error occurs while copying this message.
      */
@@ -45,7 +45,7 @@ public interface JmsMapMessageFacade extends JmsMessageFacade {
     /**
      * Determines whether an item exists in this Map based message.
      *
-     * @returns true if the item exists in the Map, false otherwise.
+     * @return true if the item exists in the Map, false otherwise.
      */
     boolean itemExists(String key);
 
@@ -55,7 +55,7 @@ public interface JmsMapMessageFacade extends JmsMessageFacade {
      * @param key
      *        the key to use to access a value in the Map.
      *
-     * @returns the item associated with the given key, or null if not present.
+     * @return the item associated with the given key, or null if not present.
      */
     Object get(String key);
 
@@ -83,7 +83,7 @@ public interface JmsMapMessageFacade extends JmsMessageFacade {
      * @param key
      *        the key to be removed from the map if present.
      *
-     * @returns the object previously stored in the Map or null if none present.
+     * @return the object previously stored in the Map or null if none present.
      */
     Object remove(String key);
 

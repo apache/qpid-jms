@@ -111,7 +111,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         }
 
         /**
-         * @see org.apache.activemq.filter.UnaryExpression#getExpressionSymbol()
+         * @see UnaryExpression#getExpressionSymbol()
          */
         @Override
         public String getExpressionSymbol() {
@@ -119,7 +119,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         }
 
         /**
-         * @see org.apache.activemq.filter.Expression#evaluate(Filterable)
+         * @see Expression#evaluate(Filterable)
          */
         @Override
         public Object evaluate(Filterable message) throws FilterException {

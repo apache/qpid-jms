@@ -48,7 +48,7 @@ public interface JmsMessageFacade {
     public Set<String> getPropertyNames() throws JMSException;
 
     /**
-     * @returns true if the given property exists within the message.
+     * @return true if the given property exists within the message.
      *
      * @throws JMSException if an error occurs while accessing the Message properties.
      */
@@ -262,7 +262,7 @@ public interface JmsMessageFacade {
     /**
      * Used to quickly check if a message has been redelivered.
      *
-     * @returns true if the message was redelivered, false otherwise.
+     * @return true if the message was redelivered, false otherwise.
      */
     boolean isRedelivered();
 

@@ -73,7 +73,7 @@ public interface JmsTransactionContext {
     void addSynchronization(JmsTxSynchronization sync) throws JMSException;
 
     /**
-     * @returns if the currently transaction has been marked as being failed.
+     * @return if the currently transaction has been marked as being failed.
      */
     boolean isFailed();
 

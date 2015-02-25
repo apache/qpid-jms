@@ -297,7 +297,7 @@ public interface Provider {
      * is asked to create a Message type.  The Provider should implement it's own internal
      * JmsMessage core to optimize read / write and marshal operations for the connection.
      *
-     * @returns a JmsMessageFactory instance for use by the JMS layer.
+     * @return a JmsMessageFactory instance for use by the JMS layer.
      */
     JmsMessageFactory getMessageFactory();
 

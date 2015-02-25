@@ -72,7 +72,7 @@ public interface Transport {
     /**
      * Gets the currently set TransportListener instance
      *
-     * @returns the current TransportListener or null if none set.
+     * @return the current TransportListener or null if none set.
      */
     TransportListener getTransportListener();
 
@@ -88,12 +88,12 @@ public interface Transport {
     void setTransportListener(TransportListener listener);
 
     /**
-     * @returns the TransportOptions instance that holds the configuration for this Transport.
+     * @return the TransportOptions instance that holds the configuration for this Transport.
      */
     TransportOptions getTransportOptions();
 
     /**
-     * @returns the URI of the remote peer that this Transport connects to.
+     * @return the URI of the remote peer that this Transport connects to.
      */
     URI getRemoteLocation();
 

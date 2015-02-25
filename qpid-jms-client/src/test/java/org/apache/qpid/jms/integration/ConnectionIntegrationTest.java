@@ -37,7 +37,9 @@ import javax.jms.MessageConsumer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
+import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
+import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
 import org.apache.qpid.proton.amqp.transaction.TxnCapability;
@@ -127,7 +129,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 5000)
     public void testRemotelyEndConnectionWithSessionWithConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
+            final Connection connection = testFixture.establishConnecton(testPeer);
 
             testPeer.expectBegin(true);
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -141,6 +143,12 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             MessageConsumer consumer = session.createConsumer(queue);
 
             testPeer.waitForAllHandlersToComplete(1000);
+            assertTrue("connection never closed.", Wait.waitFor(new Wait.Condition() {
+                @Override
+                public boolean isSatisified() throws Exception {
+                    return !((JmsConnection) connection).isConnected();
+                }
+            }, 1000, 10));
 
             // Verify the session is now marked closed
             try {

@@ -18,7 +18,7 @@ package org.apache.qpid.jms.util;
 
 /**
  * A very simple stop watch.
- * <p/>
+ * <p>
  * This implementation is not thread safe and can only time one task at any given time.
  */
 public final class StopWatch {

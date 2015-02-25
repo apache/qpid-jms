@@ -82,7 +82,7 @@ public interface Mechanism extends Comparable<Mechanism> {
      * @param username
      *        The user name given.
      */
-    void setUsername(String value);
+    void setUsername(String username);
 
     /**
      * Returns the configured user name value for this Mechanism.
@@ -98,7 +98,7 @@ public interface Mechanism extends Comparable<Mechanism> {
      * @param username
      *        The user name given.
      */
-    void setPassword(String value);
+    void setPassword(String username);
 
     /**
      * Returns the configured password value for this Mechanism.

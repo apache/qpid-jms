@@ -37,8 +37,8 @@ public class InetAddressUtil {
      *
      * @return The hostname
      * @throws UnknownHostException
-     * @see {@link java.net.InetAddress#getLocalHost()}
-     * @see {@link java.net.InetAddress#getHostName()}
+     * @see java.net.InetAddress#getLocalHost()
+     * @see java.net.InetAddress#getHostName()
      */
     public static String getLocalHostName() throws UnknownHostException {
         try {

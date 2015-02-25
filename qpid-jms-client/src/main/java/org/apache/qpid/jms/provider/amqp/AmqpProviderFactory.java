@@ -70,7 +70,7 @@ public class AmqpProviderFactory extends ProviderFactory {
     }
 
     /**
-     * @param transport
+     * @param transportType
      *        the transport type name to use when creating a new provider.
      */
     public void setTransportType(String transportType) {

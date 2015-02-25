@@ -609,7 +609,7 @@ public class JmsMessagePropertyIntercepter {
      * @param message
      *        the JmsMessageFacade instance to read property names from.
      *
-     * @return a Set<String> containing the names of all intercepted properties.
+     * @return a {@code Set<String>} containing the names of all intercepted properties.
      *
      * @throws JMSException if an error occurs while gathering the message property names.
      */
@@ -631,7 +631,7 @@ public class JmsMessagePropertyIntercepter {
      * @param excludeStandardJMSHeaders
      *        whether the standard JMS header names should be excluded from the returned set
      *
-     * @return a Set<String> containing the names of all intercepted properties with a value.
+     * @return a {@code Set<String>} containing the names of all intercepted properties with a value.
      *
      * @throws JMSException if an error occurs while gathering the message property names.
      */

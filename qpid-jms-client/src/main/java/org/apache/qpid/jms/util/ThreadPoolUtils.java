@@ -73,7 +73,7 @@ public final class ThreadPoolUtils {
     /**
      * Shutdown the given executor service graceful at first, and then aggressively if the await
      * termination timeout was hit.
-     * <p/>
+     * <p>
      * This implementation invokes the
      * {@link #shutdownGraceful(java.util.concurrent.ExecutorService, long)} with a timeout
      * value of {@link #DEFAULT_SHUTDOWN_AWAIT_TERMINATION} millis.
@@ -85,7 +85,7 @@ public final class ThreadPoolUtils {
     /**
      * Shutdown the given executor service graceful at first, and then aggressively if the await
      * termination timeout was hit.
-     * <p/>
+     * <p>
      * Will try to perform an orderly shutdown by giving the running threads time to complete
      * tasks, before going more aggressively by doing a
      * {@link #shutdownNow(java.util.concurrent.ExecutorService)} which forces a shutdown. The
@@ -153,7 +153,7 @@ public final class ThreadPoolUtils {
 
     /**
      * Awaits the termination of the thread pool.
-     * <p/>
+     * <p>
      * This implementation will log every 2nd second at INFO level that we are waiting, so the
      * end user can see we are not hanging in case it takes longer time to terminate the pool.
      *

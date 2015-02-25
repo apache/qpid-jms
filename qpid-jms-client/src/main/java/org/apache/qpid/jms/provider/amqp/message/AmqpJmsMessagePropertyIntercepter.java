@@ -266,7 +266,7 @@ public class AmqpJmsMessagePropertyIntercepter {
      * For each of the currently configured message property intercepter instance a
      * string key value is inserted into an Set and returned.
      *
-     * @return a Set<String> containing the names of all intercepted properties.
+     * @return a {@code Set<String>} containing the names of all intercepted properties.
      */
     public static Set<String> getAllPropertyNames() {
         return PROPERTY_INTERCEPTERS.keySet();
@@ -279,7 +279,7 @@ public class AmqpJmsMessagePropertyIntercepter {
      * manipulated by the receiver without impacting the facade, and an empty set
      * will be returned if there are no matching properties.
      *
-     * @return a Set<String> containing the names of all intercepted properties with a value.
+     * @return a {@code Set<String>} containing the names of all intercepted properties with a value.
      */
     public static Set<String> getPropertyNames(AmqpJmsMessageFacade message) {
         Set<String> names = new HashSet<String>();

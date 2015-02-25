@@ -346,8 +346,8 @@ public class URISupport {
      * Given a URI parse and extract any URI query options and return them as a Key / Value
      * mapping.
      *
-     * This method differs from the {@link parseQuery} method in that it handles composite URI
-     * types and will extract the URI options from the outermost composite URI.
+     * This method handles composite URI types and will extract the URI options
+     * from the outermost composite URI.
      *
      * @param uri
      *        The URI whose query should be extracted and processed.

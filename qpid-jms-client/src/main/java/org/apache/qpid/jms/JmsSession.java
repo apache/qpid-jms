@@ -284,7 +284,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     /**
      * @param destination
      * @param messageSelector
-     * @param NoLocal
+     * @param noLocal
      * @return the MessageConsumer
      * @throws JMSException
      * @see javax.jms.Session#createConsumer(javax.jms.Destination,

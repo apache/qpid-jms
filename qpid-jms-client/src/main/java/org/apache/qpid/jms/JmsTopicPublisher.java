@@ -32,7 +32,7 @@ public class JmsTopicPublisher extends JmsMessageProducer implements TopicPublis
     /**
      * Constructor
      *
-     * @param s
+     * @param session
      * @param destination
      */
     protected JmsTopicPublisher(JmsProducerId id, JmsSession session, JmsDestination destination) throws JMSException {

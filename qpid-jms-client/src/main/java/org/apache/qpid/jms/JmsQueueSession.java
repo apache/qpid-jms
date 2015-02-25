@@ -97,13 +97,12 @@ public class JmsQueueSession extends JmsSession {
      * @param messageSelector
      * @param noLocal
      * @return the durable TopicSubscriber
-     * @throws IllegalStateException
      * @throws JMSException
      * @see javax.jms.Session#createDurableSubscriber(javax.jms.Topic,
      *      java.lang.String, java.lang.String, boolean)
      */
     @Override
-    public TopicSubscriber createDurableSubscriber(Topic topic, String name, String messageSelector, boolean noLocal) throws IllegalStateException {
+    public TopicSubscriber createDurableSubscriber(Topic topic, String name, String messageSelector, boolean noLocal) throws JMSException {
         throw new IllegalStateException("Operation not supported by a QueueSession");
     }
 

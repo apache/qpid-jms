@@ -33,19 +33,19 @@ import org.slf4j.LoggerFactory;
 /**
  * A client uses a <CODE>QueueBrowser</CODE> object to look at messages on a queue without
  * removing them.
- * <p/>
- * <p/>
+ * <p>
+ * <p>
  * The <CODE>getEnumeration</CODE> method returns a <CODE>
  * java.util.Enumeration</CODE> that is used to scan the queue's messages. It may be an
  * enumeration of the entire content of a queue, or it may contain only the messages matching a
  * message selector.
- * <p/>
- * <p/>
+ * <p>
+ * <p>
  * Messages may be arriving and expiring while the scan is done. The JMS API does not require
  * the content of an enumeration to be a static snapshot of queue content. Whether these changes
  * are visible or not depends on the JMS provider.
- * <p/>
- * <p/>
+ * <p>
+ * <p>
  * A <CODE>QueueBrowser</CODE> can be created from either a <CODE>Session
  * </CODE> or a <CODE>QueueSession</CODE>.
  *
@@ -73,7 +73,6 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
      * Constructor for an JmsQueueBrowser - used internally
      *
      * @param session
-     * @param id
      * @param destination
      * @param selector
      * @throws javax.jms.JMSException

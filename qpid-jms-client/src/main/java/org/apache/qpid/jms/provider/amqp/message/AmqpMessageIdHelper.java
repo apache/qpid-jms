@@ -34,12 +34,12 @@ import org.apache.qpid.proton.amqp.UnsignedLong;
  * <p>AMQP messages allow for 4 types of message-id/correlation-id: message-id-string, message-id-binary,
  * message-id-uuid, or message-id-ulong. In order to accept or return a string representation of these
  * for interoperability with other AMQP clients, the following encoding can be used after removing or
- * before adding the "ID:" prefix used for a JMSMessageID value<br/>
+ * before adding the "ID:" prefix used for a JMSMessageID value:<br>
  *
- * "AMQP_BINARY:&lt;hex representation of binary content&gt;"<br/>
- * "AMQP_UUID:&lt;string representation of uuid&gt;"<br/>
- * "AMQP_ULONG:&lt;string representation of ulong&gt;"<br/>
- * "AMQP_STRING:&lt;string&gt;"<br/>
+ * {@literal "AMQP_BINARY:<hex representation of binary content>"}<br>
+ * {@literal "AMQP_UUID:<string representation of uuid>"}<br>
+ * {@literal "AMQP_ULONG:<string representation of ulong>"}<br>
+ * {@literal "AMQP_STRING:<string>"}<br>
  *
  * <p>The AMQP_STRING encoding exists only for escaping message-id-string values that happen to begin
  * with one of the encoding prefixes (including AMQP_STRING itself). It MUST NOT be used otherwise.

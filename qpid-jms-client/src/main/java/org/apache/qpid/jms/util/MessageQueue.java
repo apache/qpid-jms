@@ -57,7 +57,7 @@ public interface MessageQueue {
      * Used to get an enqueued message. The amount of time this method blocks is
      * based on the timeout value. - if timeout==-1 then it blocks until a
      * message is received. - if timeout==0 then it it tries to not block at
-     * all, it returns a message if it is available - if timeout>0 then it
+     * all, it returns a message if it is available - if {@literal timeout > 0} then it
      * blocks up to timeout amount of time. Expired messages will consumed by
      * this method.
      *

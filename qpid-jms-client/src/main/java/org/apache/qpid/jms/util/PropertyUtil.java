@@ -139,7 +139,7 @@ public class PropertyUtil {
     }
 
     /**
-     * Get properties from a URI and return them in a new Map<String, String> instance.
+     * Get properties from a URI and return them in a new {@code Map<String, String>} instance.
      *
      * If the URI is null or the query string of the URI is null an empty Map is returned.
      *
@@ -160,7 +160,7 @@ public class PropertyUtil {
 
     /**
      * Parse properties from a named resource -eg. a URI or a simple name e.g.
-     * foo?name="fred"&size=2
+     * {@literal foo?name="fred"&size=2}
      *
      * @param uri
      *        the URI whose parameters are to be parsed.

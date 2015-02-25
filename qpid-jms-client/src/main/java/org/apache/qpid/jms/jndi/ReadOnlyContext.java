@@ -41,18 +41,16 @@ import javax.naming.spi.NamingManager;
 
 /**
  * A read-only Context
- * <p/>
+ * <p>
  * This version assumes it and all its sub-context are read-only and any attempt
  * to modify (e.g. through bind) will result in an
  * OperationNotSupportedException. Each Context in the tree builds a cache of
  * the entries in all sub-contexts to optimize the performance of lookup.
- * </p>
  * <p>
  * This implementation is intended to optimize the performance of lookup(String)
  * to about the level of a HashMap get. It has been observed that the scheme
  * resolution phase performed by the JVM takes considerably longer, so for
  * optimum performance lookups should be coded like:
- * </p>
  * <code>
  * Context componentContext = (Context)new InitialContext().lookup("java:comp");
  * String envEntry = (String) componentContext.lookup("env/myEntry");

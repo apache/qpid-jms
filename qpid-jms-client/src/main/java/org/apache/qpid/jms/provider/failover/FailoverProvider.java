@@ -806,7 +806,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
     /**
      * Gets the current setting controlling how many Connect / Reconnect attempts must occur
-     * before a warn message is logged.  A value of {@code <= 0} indicates that there will be
+     * before a warn message is logged.  A value of {@literal <= 0} indicates that there will be
      * no warn message logged regardless of how many reconnect attempts occur.
      *
      * @return the current number of connection attempts before warn logging is triggered.
@@ -820,7 +820,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
      * is logged indicating that the transport is not connected.  This can be useful when the
      * client is running inside some container or service as it gives an indication of some
      * problem with the client connection that might not otherwise be visible.  To disable the
-     * log messages this value should be set to a value @{code attempts <= 0}
+     * log messages this value should be set to a value {@literal <= 0}
      *
      * @param warnAfterReconnectAttempts
      *        The number of failed connection attempts that must happen before a warning is logged.

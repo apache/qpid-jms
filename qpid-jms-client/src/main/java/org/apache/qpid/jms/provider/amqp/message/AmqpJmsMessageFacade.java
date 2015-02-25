@@ -618,7 +618,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
      * means to clear the ttl field rather than set it to anything.
      *
      * @param ttl
-     *        the value to use, in range 0 <= x <= 2^32 - 1
+     *        the value to use, in range {@literal 0 <= x <= 2^32 - 1}
      *
      * @throws MessageFormatException
      */

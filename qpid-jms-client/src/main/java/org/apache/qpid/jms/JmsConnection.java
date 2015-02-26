@@ -1098,23 +1098,33 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     @Override
-    public void onResourceRemotelyClosed(JmsResource resource, Exception cause) {
+    public void onResourceRemotelyClosed(final JmsResource resource, final Exception cause) {
         // Closure of the Connection itself is notified via onConnectionFailure
 
-        if (resource instanceof JmsSessionInfo) {
-            JmsSession s = sessions.get(resource);
-            if (s != null) {
-                try {
-                    // TODO: pass the exception?
-                    s.shutdown();
-                } catch (JMSException e) {
-                    LOG.warn("Cause exception while notifying session of remote close: {}", cause, cause);
-                }
+        // Run on the connection executor to free the provider to go do more work and avoid
+        // any chance of a deadlock if the code ever looped back to the provider.
+        if (!closing.get() && !closed.get()) {
+            executor.execute(new Runnable() {
 
-                // TODO: exception listener?
-            }
-        } else {
-            LOG.info("A JMS resource has been remotely closed: {}", resource);
+                @Override
+                public void run() {
+                    if (resource instanceof JmsSessionInfo) {
+                        JmsSession s = sessions.get(resource);
+                        if (s != null) {
+                            try {
+                                // TODO: pass the exception?
+                                s.shutdown();
+                            } catch (JMSException e) {
+                                LOG.warn("Cause exception while notifying session of remote close: {}", cause, cause);
+                            }
+
+                            // TODO: exception listener?
+                        }
+                    } else {
+                        LOG.info("A JMS resource has been remotely closed: {}", resource);
+                    }
+                }
+            });
         }
     }
 

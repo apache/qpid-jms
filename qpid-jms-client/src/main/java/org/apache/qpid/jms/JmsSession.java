@@ -18,10 +18,8 @@ package org.apache.qpid.jms;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -64,7 +62,10 @@ import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.message.JmsMessageTransformation;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsConsumerId;
+import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.meta.JmsProducerId;
+import org.apache.qpid.jms.meta.JmsProducerInfo;
+import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.Provider;
@@ -72,6 +73,8 @@ import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.selector.SelectorParser;
 import org.apache.qpid.jms.selector.filter.FilterException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * JMS Session implementation
@@ -79,9 +82,11 @@ import org.apache.qpid.jms.selector.filter.FilterException;
 @SuppressWarnings("static-access")
 public class JmsSession implements Session, QueueSession, TopicSession, JmsMessageDispatcher {
 
+    private static final Logger LOG = LoggerFactory.getLogger(JmsSession.class);
+
     private final JmsConnection connection;
     private final int acknowledgementMode;
-    private final List<JmsMessageProducer> producers = new CopyOnWriteArrayList<JmsMessageProducer>();
+    private final Map<JmsProducerId, JmsMessageProducer> producers = new ConcurrentHashMap<JmsProducerId, JmsMessageProducer>();
     private final Map<JmsConsumerId, JmsMessageConsumer> consumers = new ConcurrentHashMap<JmsConsumerId, JmsMessageConsumer>();
     private MessageListener messageListener;
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -89,7 +94,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private final LinkedBlockingQueue<JmsInboundMessageDispatch> stoppedMessages =
         new LinkedBlockingQueue<JmsInboundMessageDispatch>(10000);
     private JmsPrefetchPolicy prefetchPolicy;
-    private JmsSessionInfo sessionInfo;
+    private final JmsSessionInfo sessionInfo;
     private ExecutorService executor;
     private final ReentrantLock sendLock = new ReentrantLock();
 
@@ -217,6 +222,10 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     protected void doClose() throws JMSException {
         boolean interrupted = Thread.interrupted();
         shutdown();
+        try {
+            transactionContext.rollback();
+        } catch (JMSException e) {
+        }
         connection.removeSession(sessionInfo);
         connection.destroyResource(sessionInfo);
         if (interrupted) {
@@ -229,11 +238,11 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      * Session.  It is called either from the Session close method or from the Connection
      * when a close request is made and the Connection wants to cleanup all Session resources.
      *
-     * This method should not attempt to send a destroy request to the Provider as that
-     * will either be done by another session method or is not needed when done by the parent
-     * Connection.
+     * This method should not attempt to send any requests to the Provider as the resources
+     * that were associated with this session are either cleaned up by another method in the
+     * session or are already gone due to remote close or some other error.
      *
-     * @throws JMSException
+     * @throws JMSException if an error occurs while shutting down the session resources.
      */
     protected void shutdown() throws JMSException {
         if (closed.compareAndSet(false, true)) {
@@ -242,13 +251,45 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
                 consumer.shutdown();
             }
 
-            for (JmsMessageProducer producer : this.producers) {
+            for (JmsMessageProducer producer : new ArrayList<JmsMessageProducer>(this.producers.values())) {
                 producer.shutdown();
             }
+        }
+    }
 
+    void remotelyClosed(Exception cause) {
+        // TODO - Store cause and use as exception when session methods called ?
+        // failureCause = cause; ?
+        try {
+            shutdown();
+        } catch (Throwable error) {
+            LOG.trace("Ignoring exception thrown during cleanup of remotely closed session", error);
+        }
+    }
+
+    /*
+     * Called to indicate that a session resource was closed by the remote peer.
+     */
+    void resourceRemotelyClosed(JmsResource resource, Exception cause) {
+        LOG.info("A JMS resource has been remotely closed: {}", resource);
+
+        if (resource instanceof JmsConsumerInfo) {
             try {
-                transactionContext.rollback();
-            } catch (JMSException e) {
+                JmsMessageConsumer consumer = consumers.get(((JmsConsumerInfo) resource).getConsumerId());
+                if (consumer != null) {
+                    consumer.shutdown();
+                }
+            } catch (Throwable error) {
+                LOG.trace("Ignoring exception thrown during cleanup of remotely closed consumer", error);
+            }
+        } else if (resource instanceof JmsProducerInfo) {
+            try {
+                JmsMessageProducer producer = producers.get(((JmsProducerInfo) resource).getProducerId());
+                if (producer != null) {
+                    producer.shutdown();
+                }
+            } catch (Throwable error) {
+                LOG.trace("Ignoring exception thrown during cleanup of remotely closed producer", error);
             }
         }
     }
@@ -615,11 +656,11 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     protected void add(JmsMessageProducer producer) {
-        producers.add(producer);
+        producers.put(producer.getProducerId(), producer);
     }
 
-    protected void remove(MessageProducer producer) {
-        producers.remove(producer);
+    protected void remove(JmsMessageProducer producer) {
+        producers.remove(producer.getProducerId());
     }
 
     protected void onException(Exception ex) {
@@ -925,7 +966,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
         transactionContext.onConnectionInterrupted();
 
-        for (JmsMessageProducer producer : producers) {
+        for (JmsMessageProducer producer : producers.values()) {
             producer.onConnectionInterrupted();
         }
 
@@ -942,7 +983,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
         transactionContext.onConnectionRecovery(provider);
 
-        for (JmsMessageProducer producer : producers) {
+        for (JmsMessageProducer producer : producers.values()) {
             producer.onConnectionRecovery(provider);
         }
 
@@ -952,7 +993,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     protected void onConnectionRecovered(Provider provider) throws Exception {
-        for (JmsMessageProducer producer : producers) {
+        for (JmsMessageProducer producer : producers.values()) {
             producer.onConnectionRecovered(provider);
         }
 
@@ -962,7 +1003,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     protected void onConnectionRestored() {
-        for (JmsMessageProducer producer : producers) {
+        for (JmsMessageProducer producer : producers.values()) {
             producer.onConnectionRestored();
         }
 

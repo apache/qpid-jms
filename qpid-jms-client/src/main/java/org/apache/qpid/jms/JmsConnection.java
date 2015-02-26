@@ -58,6 +58,8 @@ import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsConnectionId;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsConsumerId;
+import org.apache.qpid.jms.meta.JmsConsumerInfo;
+import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
@@ -80,7 +82,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private static final Logger LOG = LoggerFactory.getLogger(JmsConnection.class);
 
     private final IdGenerator clientIdGenerator;
-    private final Map<JmsSessionInfo, JmsSession> sessions = new ConcurrentHashMap<JmsSessionInfo, JmsSession>();
+    private final Map<JmsSessionId, JmsSession> sessions = new ConcurrentHashMap<JmsSessionId, JmsSession>();
     private final Map<JmsConsumerId, JmsMessageDispatcher> dispatchers =
         new ConcurrentHashMap<JmsConsumerId, JmsMessageDispatcher>();
     private final AtomicBoolean connected = new AtomicBoolean();
@@ -494,12 +496,12 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         return result;
     }
 
-    protected void removeSession(JmsSessionInfo si) throws JMSException {
-        sessions.remove(si);
+    protected void removeSession(JmsSessionInfo sessionInfo) throws JMSException {
+        sessions.remove(sessionInfo.getSessionId());
     }
 
-    protected void addSession(JmsSessionInfo si, JmsSession s) {
-        sessions.put(si, s);
+    protected void addSession(JmsSessionInfo sessionInfo, JmsSession session) {
+        sessions.put(sessionInfo.getSessionId(), session);
     }
 
     protected void addDispatcher(JmsConsumerId consumerId, JmsMessageDispatcher dispatcher) {
@@ -1109,14 +1111,25 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
                 @Override
                 public void run() {
                     if (resource instanceof JmsSessionInfo) {
-                        JmsSession s = sessions.get(resource);
-                        if (s != null) {
-                            try {
-                                // TODO: pass the exception?
-                                s.shutdown();
-                            } catch (JMSException e) {
-                                LOG.warn("Cause exception while notifying session of remote close: {}", cause, cause);
-                            }
+                        JmsSession session = sessions.get(((JmsSessionInfo) resource).getSessionId());
+                        if (session != null) {
+                            session.remotelyClosed(cause);
+
+                            // TODO: exception listener?
+                        }
+                    } else if (resource instanceof JmsProducerInfo) {
+                        JmsSessionId parentId = ((JmsProducerInfo) resource).getParentId();
+                        JmsSession session = sessions.get(parentId);
+                        if (session != null) {
+                            session.resourceRemotelyClosed(resource, cause);
+
+                            // TODO: exception listener?
+                        }
+                    } else if (resource instanceof JmsConsumerInfo) {
+                        JmsSessionId parentId = ((JmsConsumerInfo) resource).getParentId();
+                        JmsSession session = sessions.get(parentId);
+                        if (session != null) {
+                            session.resourceRemotelyClosed(resource, cause);
 
                             // TODO: exception listener?
                         }

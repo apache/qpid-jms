@@ -1101,6 +1101,18 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     public void onResourceRemotelyClosed(JmsResource resource, Exception cause) {
         if (resource.equals(this.connectionInfo)) {
             onException(cause);
+        } else if (resource instanceof JmsSessionInfo) {
+            JmsSession s = sessions.get(resource);
+            if (s != null) {
+                try {
+                    // TODO: pass the exception?
+                    s.shutdown();
+                } catch (JMSException e) {
+                    LOG.warn("Cause exception while notifying session of remote close: {}", cause, cause);
+                }
+
+                // TODO: exception listener?
+            }
         } else {
             LOG.info("A JMS resource has been remotely closed: {}", resource);
         }

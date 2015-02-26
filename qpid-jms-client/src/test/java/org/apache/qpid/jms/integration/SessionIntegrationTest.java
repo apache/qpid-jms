@@ -1179,7 +1179,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Ignore // TODO: resolve related issues and enable
     @Test(timeout = 5000)
     public void testRemotelyEndSessionWithProducer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
@@ -1211,7 +1210,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Ignore // TODO: resolve related issues and enable
     @Test(timeout = 5000)
     public void testRemotelyEndSessionWithConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {

@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 public class Wait {
 
     public static final long MAX_WAIT_MILLIS = 30 * 1000;
-    public static final long SLEEP_MILLIS = 500;
+    public static final long SLEEP_MILLIS = 200;
 
     public interface Condition {
         boolean isSatisified() throws Exception;

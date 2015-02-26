@@ -1099,9 +1099,9 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     @Override
     public void onResourceRemotelyClosed(JmsResource resource, Exception cause) {
-        if (resource.equals(this.connectionInfo)) {
-            onException(cause);
-        } else if (resource instanceof JmsSessionInfo) {
+        // Closure of the Connection itself is notified via onConnectionFailure
+
+        if (resource instanceof JmsSessionInfo) {
             JmsSession s = sessions.get(resource);
             if (s != null) {
                 try {

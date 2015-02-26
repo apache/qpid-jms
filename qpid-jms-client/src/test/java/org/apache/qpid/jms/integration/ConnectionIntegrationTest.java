@@ -106,7 +106,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer, null, null, null, false);
 
             // Tell the test peer to close the connection when executing its last handler
-            testPeer.remotelyEndConnection(true);
+            testPeer.remotelyCloseConnection(true);
 
             //Add the exception listener
             connection.setExceptionListener(new ExceptionListener() {
@@ -137,7 +137,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             // Create a consumer, then remotely end the connection afterwards.
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlow();
-            testPeer.remotelyEndConnection(true);
+            testPeer.remotelyCloseConnection(true);
 
             Queue queue = session.createQueue("myQueue");
             MessageConsumer consumer = session.createConsumer(queue);

@@ -1110,7 +1110,7 @@ public class TestAmqpPeer implements AutoCloseable
         }
     }
 
-    public void remotelyEndConnection(boolean expectCloseResponse) {
+    public void remotelyCloseConnection(boolean expectCloseResponse) {
         synchronized (_handlersLock) {
             // Prepare a composite to insert this action at the end of the handler sequence
             CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();

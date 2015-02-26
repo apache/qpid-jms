@@ -114,7 +114,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         this.consumerInfo.setPrefetchSize(getConfiguredPrefetch(destination, policy));
 
         try {
-            this.consumerInfo = session.getConnection().createResource(consumerInfo);
+            session.getConnection().createResource(consumerInfo);
         } catch (JMSException ex) {
             throw ex;
         }

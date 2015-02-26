@@ -55,7 +55,7 @@ public class JmsMessageProducer implements MessageProducer {
         this.flexibleDestination = destination == null;
         this.producerInfo = new JmsProducerInfo(producerId);
         this.producerInfo.setDestination(destination);
-        this.producerInfo = session.getConnection().createResource(producerInfo);
+        session.getConnection().createResource(producerInfo);
     }
 
     /**

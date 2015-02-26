@@ -521,7 +521,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
                 connectionInfo.setClientId(clientIdGenerator.generateId());
             }
 
-            this.connectionInfo = createResource(connectionInfo);
+            createResource(connectionInfo);
             this.connected.set(true);
         }
     }
@@ -532,7 +532,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     protected TemporaryQueue createTemporaryQueue() throws JMSException {
         String destinationName = connectionInfo.getConnectionId() + ":" + tempDestIdGenerator.incrementAndGet();
         JmsTemporaryQueue queue = new JmsTemporaryQueue(destinationName);
-        queue = createResource(queue);
+        createResource(queue);
         tempDestinations.put(queue, queue);
         queue.setConnection(this);
         return queue;
@@ -544,7 +544,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     protected TemporaryTopic createTemporaryTopic() throws JMSException {
         String destinationName = connectionInfo.getConnectionId() + ":" + tempDestIdGenerator.incrementAndGet();
         JmsTemporaryTopic topic = new JmsTemporaryTopic(destinationName);
-        topic = createResource(topic);
+        createResource(topic);
         tempDestinations.put(topic, topic);
         topic.setConnection(this);
         return topic;
@@ -606,14 +606,13 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     //----- Provider interface methods ---------------------------------------//
 
-    <T extends JmsResource> T createResource(T resource) throws JMSException {
+    void createResource(JmsResource resource) throws JMSException {
         checkClosedOrFailed();
 
         try {
             ProviderFuture request = new ProviderFuture();
             provider.create(resource, request);
             request.sync();
-            return resource;
         } catch (Exception ex) {
             throw JmsExceptionSupport.create(ex);
         }

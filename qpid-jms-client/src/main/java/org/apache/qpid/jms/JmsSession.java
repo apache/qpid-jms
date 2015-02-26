@@ -217,7 +217,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     protected void doClose() throws JMSException {
         boolean interrupted = Thread.interrupted();
         shutdown();
-        connection.removeSession(this);
+        connection.removeSession(sessionInfo);
         connection.destroyResource(sessionInfo);
         if (interrupted) {
             Thread.currentThread().interrupt();

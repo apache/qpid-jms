@@ -18,11 +18,9 @@ package org.apache.qpid.jms;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
@@ -62,6 +60,7 @@ import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsSessionId;
+import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderClosedException;
@@ -81,7 +80,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private static final Logger LOG = LoggerFactory.getLogger(JmsConnection.class);
 
     private final IdGenerator clientIdGenerator;
-    private final List<JmsSession> sessions = new CopyOnWriteArrayList<JmsSession>();
+    private final Map<JmsSessionInfo, JmsSession> sessions = new ConcurrentHashMap<JmsSessionInfo, JmsSession>();
     private final Map<JmsConsumerId, JmsMessageDispatcher> dispatchers =
         new ConcurrentHashMap<JmsConsumerId, JmsMessageDispatcher>();
     private final AtomicBoolean connected = new AtomicBoolean();
@@ -164,7 +163,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
                 closing.set(true);
 
-                for (JmsSession session : this.sessions) {
+                for (JmsSession session : sessions.values()) {
                     session.shutdown();
                 }
 
@@ -224,7 +223,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         // NOTE - Once ConnectionConsumer is added we must shutdown those as well.
 
-        for (JmsSession session : this.sessions) {
+        for (JmsSession session : sessions.values()) {
             session.shutdown();
         }
 
@@ -250,7 +249,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         connect();
         int ackMode = getSessionAcknowledgeMode(transacted, acknowledgeMode);
         JmsSession result = new JmsSession(this, getNextSessionId(), ackMode);
-        addSession(result);
+        addSession(result.getSessionInfo(), result);
         if (started.get()) {
             result.start();
         }
@@ -317,7 +316,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         connect();
         if (started.compareAndSet(false, true)) {
             try {
-                for (JmsSession s : this.sessions) {
+                for (JmsSession s : sessions.values()) {
                     s.start();
                 }
             } catch (Exception e) {
@@ -348,7 +347,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         }
         if (started.compareAndSet(true, false)) {
             synchronized(sessions) {
-                for (JmsSession s : this.sessions) {
+                for (JmsSession s : sessions.values()) {
                     s.stop();
                 }
             }
@@ -442,7 +441,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         connect();
         int ackMode = getSessionAcknowledgeMode(transacted, acknowledgeMode);
         JmsTopicSession result = new JmsTopicSession(this, getNextSessionId(), ackMode);
-        addSession(result);
+        addSession(result.getSessionInfo(), result);
         if (started.get()) {
             result.start();
         }
@@ -462,7 +461,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         connect();
         int ackMode = getSessionAcknowledgeMode(transacted, acknowledgeMode);
         JmsQueueSession result = new JmsQueueSession(this, getNextSessionId(), ackMode);
-        addSession(result);
+        addSession(result.getSessionInfo(), result);
         if (started.get()) {
             result.start();
         }
@@ -495,12 +494,12 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         return result;
     }
 
-    protected void removeSession(JmsSession session) throws JMSException {
-        this.sessions.remove(session);
+    protected void removeSession(JmsSessionInfo si) throws JMSException {
+        sessions.remove(si);
     }
 
-    protected void addSession(JmsSession s) {
-        this.sessions.add(s);
+    protected void addSession(JmsSessionInfo si, JmsSession s) {
+        sessions.put(si, s);
     }
 
     protected void addDispatcher(JmsConsumerId consumerId, JmsMessageDispatcher dispatcher) {
@@ -555,7 +554,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         connect();
 
         try {
-            for (JmsSession session : this.sessions) {
+            for (JmsSession session : sessions.values()) {
                 if (session.isDestinationInUse(destination)) {
                     throw new IllegalStateException("A consumer is consuming from the temporary destination");
                 }
@@ -984,7 +983,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     @Override
     public void onConnectionInterrupted(final URI remoteURI) {
-        for (JmsSession session : sessions) {
+        for (JmsSession session : sessions.values()) {
             session.onConnectionInterrupted();
         }
 
@@ -1013,7 +1012,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
             createResource(tempDestination);
         }
 
-        for (JmsSession session : sessions) {
+        for (JmsSession session : sessions.values()) {
             session.onConnectionRecovery(provider);
         }
     }
@@ -1025,14 +1024,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         setMessageFactory(provider.getMessageFactory());
         setConnectedURI(provider.getRemoteURI());
 
-        for (JmsSession session : sessions) {
+        for (JmsSession session : sessions.values()) {
             session.onConnectionRecovered(provider);
         }
     }
 
     @Override
     public void onConnectionRestored(final URI remoteURI) {
-        for (JmsSession session : sessions) {
+        for (JmsSession session : sessions.values()) {
             session.onConnectionRestored();
         }
 

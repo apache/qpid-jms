@@ -33,7 +33,7 @@ public class ExternalMechanism extends AbstractMechanism {
 
     @Override
     public int getPriority() {
-        return PRIORITY.HIGHEST.getValue();
+        return PRIORITY.HIGHER.getValue();
     }
 
     @Override

@@ -25,7 +25,7 @@ public class PlainMechanism extends AbstractMechanism {
 
     @Override
     public int getPriority() {
-        return PRIORITY.MEDIUM.getValue();
+        return PRIORITY.LOWER.getValue();
     }
 
     @Override

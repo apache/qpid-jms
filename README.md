@@ -36,8 +36,8 @@ consult the README in the qpid-jms-examples module itself.
 
 There is some basic documentation in the qpid-jms-docs module.
 
-## Distribution assembly
+## Distribution assemblies
 
-After building the modules, a distribution assembly can be found at:
+After building the modules, src and binary distribution assemblies can be found at:
 
     apache-qpid-jms/target

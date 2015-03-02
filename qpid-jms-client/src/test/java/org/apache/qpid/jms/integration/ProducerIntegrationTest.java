@@ -53,7 +53,7 @@ import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.hamcrest.Matcher;
 import org.junit.Test;
 
-public class SenderIntegrationTest extends QpidJmsTestCase {
+public class ProducerIntegrationTest extends QpidJmsTestCase {
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
     @Test(timeout = 10000)

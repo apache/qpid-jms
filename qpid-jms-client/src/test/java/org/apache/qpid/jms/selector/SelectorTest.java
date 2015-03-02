@@ -429,6 +429,14 @@ public class SelectorTest extends TestCase {
         assertInvalidSelector(message, "=TEST 'test'");
     }
 
+    public void testHyphenatedProperty() throws Exception {
+        MockMessage message = createMessage();
+        message.setStringProperty("hyphenated-prop", "val");
+
+        assertSelector(message, "\"hyphenated-prop\" = 'val'", true);
+        assertSelector(message, "\"hyphenated-prop\" = 'other'", false);
+    }
+
     protected MockMessage createMessage() {
         MockMessage message = createMessage("FOO.BAR");
         message.setJMSType("selector-test");

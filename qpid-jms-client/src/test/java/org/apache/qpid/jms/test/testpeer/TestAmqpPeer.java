@@ -338,6 +338,43 @@ public class TestAmqpPeer implements AutoCloseable
                     null)));
     }
 
+    /**
+     * NOTE: this is only testing use of the mechanism, there is no SSL here yet.
+     */
+    public void expectExternalConnect()
+    {
+        SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(Symbol.valueOf("EXTERNAL"));
+        addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
+                                            new FrameSender(
+                                                    this, FrameType.SASL, 0,
+                                                    saslMechanismsFrame, null)));
+
+        addHandler(new SaslInitMatcher()
+            .withMechanism(equalTo(Symbol.valueOf("EXTERNAL")))
+            .onSuccess(new AmqpPeerRunnable()
+            {
+                @Override
+                public void run()
+                {
+                    TestAmqpPeer.this.sendFrame(
+                            FrameType.SASL, 0,
+                            new SaslOutcomeFrame().setCode(UnsignedByte.valueOf((byte)0)),
+                            null,
+                            false);
+                    _driverRunnable.expectHeader();
+                }
+            }));
+
+        addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
+
+        addHandler(new OpenMatcher()
+            .withContainerId(notNullValue(String.class))
+            .onSuccess(new FrameSender(
+                    this, FrameType.AMQP, 0,
+                    new OpenFrame().setContainerId("test-amqp-peer-container-id"),
+                    null)));
+    }
+
     public void expectPlainConnect(String username, String password, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties)
     {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(Symbol.valueOf("PLAIN"));

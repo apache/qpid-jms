@@ -33,6 +33,7 @@ import java.util.Date;
 
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
+import javax.jms.IllegalStateException;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
@@ -40,6 +41,7 @@ import javax.jms.Session;
 
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
+import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
@@ -514,6 +516,41 @@ public class SenderIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
 
             assertNull("JMSMessageID should still not yet be set", message.getJMSMessageID());
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testRemotelyCloseProducer() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+
+            testPeer.expectBegin(true);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            // Create a producer, then remotely end it afterwards.
+            testPeer.expectSenderAttach();
+            testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(true, true);
+
+            Queue queue = session.createQueue("myQueue");
+            final MessageProducer producer = session.createProducer(queue);
+
+            // Verify the producer gets marked closed
+            testPeer.waitForAllHandlersToComplete(1000);
+            assertTrue("producer never closed.", Wait.waitFor(new Wait.Condition() {
+                @Override
+                public boolean isSatisified() throws Exception {
+                    try {
+                        producer.getDestination();
+                    } catch (IllegalStateException jmsise) {
+                        return true;
+                    }
+                    return false;
+                }
+            }, 2000, 10));
+
+            // Try closing it explicitly, should effectively no-op in client.
+            // The test peer will throw during close if it sends anything.
+            producer.close();
         }
     }
 }

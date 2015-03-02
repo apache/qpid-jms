@@ -109,6 +109,7 @@ public class TestAmqpPeer implements AutoCloseable
 
     private byte[] _deferredBytes;
     private int _lastInitiatedChannel = -1;
+    private UnsignedInteger _lastInitiatedLinkHandle = null;
 
     public TestAmqpPeer() throws IOException
     {
@@ -501,8 +502,10 @@ public class TestAmqpPeer implements AutoCloseable
             @Override
             public void setValues()
             {
+                Object receivedHandle = attachMatcher.getReceivedHandle();
+
                 attachResponseSender.setChannel(attachMatcher.getActualChannel());
-                attachResponse.setHandle(attachMatcher.getReceivedHandle());
+                attachResponse.setHandle(receivedHandle);
                 attachResponse.setName(attachMatcher.getReceivedName());
                 attachResponse.setSource(attachMatcher.getReceivedSource());
 
@@ -511,6 +514,8 @@ public class TestAmqpPeer implements AutoCloseable
                 trimTargetCapabilities(t);
 
                 attachResponse.setTarget(t);
+
+                _lastInitiatedLinkHandle = (UnsignedInteger) receivedHandle;
             }
         });
 
@@ -575,8 +580,10 @@ public class TestAmqpPeer implements AutoCloseable
             @Override
             public void setValues()
             {
+                Object receivedHandle = attachMatcher.getReceivedHandle();
+
                 attachResponseSender.setChannel(attachMatcher.getActualChannel());
-                attachResponse.setHandle(attachMatcher.getReceivedHandle());
+                attachResponse.setHandle(receivedHandle);
                 attachResponse.setName(attachMatcher.getReceivedName());
                 attachResponse.setSource(trimSourceOutcomesCapabilities(createSourceObjectFromDescribedType(attachMatcher.getReceivedSource())));
                 if(refuseLink) {
@@ -584,6 +591,8 @@ public class TestAmqpPeer implements AutoCloseable
                 } else {
                     attachResponse.setTarget(trimTargetCapabilities(createTargetObjectFromDescribedType(attachMatcher.getReceivedTarget())));
                 }
+
+                _lastInitiatedLinkHandle = (UnsignedInteger) receivedHandle;
             }
         });
 
@@ -666,8 +675,10 @@ public class TestAmqpPeer implements AutoCloseable
             @Override
             public void setValues()
             {
+                Object receivedHandle = attachMatcher.getReceivedHandle();
+
                 attachResponseSender.setChannel(attachMatcher.getActualChannel());
-                attachResponse.setHandle(attachMatcher.getReceivedHandle());
+                attachResponse.setHandle(receivedHandle);
                 attachResponse.setName(attachMatcher.getReceivedName());
                 attachResponse.setTarget(attachMatcher.getReceivedTarget());
                 if(refuseLink) {
@@ -675,6 +686,8 @@ public class TestAmqpPeer implements AutoCloseable
                 } else {
                     attachResponse.setSource(trimSourceOutcomesCapabilities(createSourceObjectFromDescribedType(attachMatcher.getReceivedSource())));
                 }
+
+                _lastInitiatedLinkHandle = (UnsignedInteger) receivedHandle;
             }
         });
 
@@ -1127,6 +1140,42 @@ public class TestAmqpPeer implements AutoCloseable
                 // Expect a response to our Close.
                 final CloseMatcher closeMatcher = new CloseMatcher();
                 addHandler(closeMatcher);
+            }
+        }
+    }
+
+    public void remotelyDetachLastOpenedLinkOnLastOpenedSession(boolean expectDetachResponse, boolean closed) {
+        synchronized (_handlersLock) {
+            CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
+
+            // Now generate the Detach for the appropriate link on the appropriate session
+            final DetachFrame detachFrame = new DetachFrame();
+            detachFrame.setClosed(closed);
+            // TODO: add an optional error msg+condition?
+
+            // The response frame channel will be dynamically set based on the previous frames. Using the -1 is an illegal placeholder.
+            final FrameSender frameSender = new FrameSender(this, FrameType.AMQP, -1, detachFrame, null);
+            frameSender.setValueProvider(new ValueProvider() {
+                @Override
+                public void setValues() {
+                    frameSender.setChannel(_lastInitiatedChannel);
+                    detachFrame.setHandle(_lastInitiatedLinkHandle);
+                }
+            });
+            comp.add(frameSender);
+
+            if (expectDetachResponse) {
+                Matcher<Boolean> closeMatcher = null;
+                if (closed) {
+                    closeMatcher = equalTo(true);
+                } else {
+                    closeMatcher = Matchers.anyOf(equalTo(false), nullValue());
+                }
+
+                // Expect a response to our Detach.
+                final DetachMatcher detachMatcher = new DetachMatcher().withClosed(closeMatcher);
+                // TODO: enable matching on the channel number of the response.
+                addHandler(detachMatcher);
             }
         }
     }

@@ -18,7 +18,7 @@
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
-    <version>14</version>
+    <version>16</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -57,12 +57,8 @@
 
     <!-- Maven Plugin Versions for this Project -->
     <maven-javacc-plugin-version>2.6</maven-javacc-plugin-version>
-    <maven-surefire-plugin-version>2.16</maven-surefire-plugin-version>
-    <maven-assembly-plugin-version>2.4</maven-assembly-plugin-version>
-    <maven-release-plugin-version>2.4.1</maven-release-plugin-version>
     <maven-eclipse-plugin-version>2.9</maven-eclipse-plugin-version>
     <maven-idea-plugin-version>2.5</maven-idea-plugin-version>
-    <maven-compiler-plugin-version>3.1</maven-compiler-plugin-version>
     <findbugs-maven-plugin-version>3.0.0</findbugs-maven-plugin-version>
     <jacoco-plugin-version>0.7.2.201409121644</jacoco-plugin-version>
 
@@ -165,7 +161,6 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>${maven-surefire-plugin-version}</version>
           <configuration>
             <runOrder>${surefire.runOrder}</runOrder>
             <redirectTestOutputToFile>${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
@@ -197,11 +192,6 @@
             <downloadSources>true</downloadSources>
             <downloadJavadocs>true</downloadJavadocs>
           </configuration>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <version>${maven-compiler-plugin-version}</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>

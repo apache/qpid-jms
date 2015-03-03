@@ -20,7 +20,7 @@ import java.io.StringReader;
 
 import org.apache.qpid.jms.selector.filter.BooleanExpression;
 import org.apache.qpid.jms.selector.filter.FilterException;
-import org.apache.qpid.jms.selector.strict.StrictParser;
+import org.apache.qpid.jms.selector.parser.SelectorParserImpl;
 
 public class SelectorParser {
 
@@ -35,7 +35,7 @@ public class SelectorParser {
         } else {
             try {
                 BooleanExpression e = null;
-                StrictParser parser = new StrictParser(new StringReader(sql));
+                SelectorParserImpl parser = new SelectorParserImpl(new StringReader(sql));
                 e = parser.JmsSelector();
                 cache.put(sql, e);
                 return e;

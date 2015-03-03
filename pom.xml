@@ -62,7 +62,6 @@
     <maven-idea-plugin-version>2.5</maven-idea-plugin-version>
     <maven-compiler-plugin-version>3.1</maven-compiler-plugin-version>
     <findbugs-maven-plugin-version>3.0.0</findbugs-maven-plugin-version>
-    <build-helper-maven-plugin-version>1.8</build-helper-maven-plugin-version>
     <jacoco-plugin-version>0.7.2.201409121644</jacoco-plugin-version>
 
     <!-- Test properties -->
@@ -213,11 +212,6 @@
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>javacc-maven-plugin</artifactId>
           <version>${maven-javacc-plugin-version}</version>
-        </plugin>
-        <plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>build-helper-maven-plugin</artifactId>
-          <version>${build-helper-maven-plugin-version}</version>
         </plugin>
         <plugin>
           <groupId>org.jacoco</groupId>

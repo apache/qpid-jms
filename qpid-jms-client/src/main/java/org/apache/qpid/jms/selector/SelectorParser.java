@@ -21,6 +21,7 @@ import java.io.StringReader;
 import org.apache.qpid.jms.selector.filter.BooleanExpression;
 import org.apache.qpid.jms.selector.filter.FilterException;
 import org.apache.qpid.jms.selector.parser.SelectorParserImpl;
+import org.apache.qpid.jms.util.LRUCache;
 
 public class SelectorParser {
 

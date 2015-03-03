@@ -108,8 +108,6 @@ TOKEN [IGNORE_CASE] :
   | <  TRUE    : "TRUE" >
   | <  FALSE   : "FALSE" >
   | <  NULL    : "NULL" >
-  | <  XPATH   : "XPATH" >
-  | <  XQUERY  : "XQUERY" >
 }
 
 /* Literals */
@@ -417,16 +415,6 @@ Expression unaryExpr() :
         <NOT> left=unaryExpr()
         {
             left = UnaryExpression.createNOT( asBooleanExpression(left) );
-        }
-        |
-        <XPATH> s=stringLitteral()
-        {
-            left = UnaryExpression.createXPath( s );
-        }
-        |
-        <XQUERY> s=stringLitteral()
-        {
-            left = UnaryExpression.createXQuery( s );
         }
         |
         left = primaryExpr()

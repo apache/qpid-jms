@@ -72,15 +72,6 @@
       <artifactId>hamcrest-all</artifactId>
       <scope>test</scope>
     </dependency>
-
-    <!-- =================================== -->
-    <!-- Build Dependencies                  -->
-    <!-- =================================== -->
-    <dependency>
-      <groupId>xalan</groupId>
-      <artifactId>xalan</artifactId>
-      <optional>true</optional>
-    </dependency>
   </dependencies>
 
   <build>

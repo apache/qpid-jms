@@ -151,14 +151,6 @@ public abstract class UnaryExpression implements Expression {
         };
     }
 
-    public static BooleanExpression createXPath(final String xpath) {
-        return new XPathExpression(xpath);
-    }
-
-    public static BooleanExpression createXQuery(final String xpath) {
-        return new XQueryExpression(xpath);
-    }
-
     public static BooleanExpression createBooleanCast(Expression left) {
         return new BooleanUnaryExpression(left) {
             @Override

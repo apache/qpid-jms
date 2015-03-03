@@ -24,18 +24,11 @@ import org.apache.qpid.jms.selector.filter.ComparisonExpression;
 import org.apache.qpid.jms.selector.filter.Expression;
 import org.apache.qpid.jms.selector.filter.LogicExpression;
 import org.apache.qpid.jms.selector.filter.PropertyExpression;
-import org.apache.qpid.jms.selector.filter.XPathExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SelectorParserTest extends TestCase {
     private static final Logger LOG = LoggerFactory.getLogger(SelectorParserTest.class);
-
-    public void testParseXPath() throws Exception {
-        BooleanExpression filter = parse("XPATH '//title[@lang=''eng'']'");
-        assertTrue("Created XPath expression", filter instanceof XPathExpression);
-        LOG.info("Expression: " + filter);
-    }
 
     public void testParseWithParensAround() throws Exception {
         String[] values = {"x = 1 and y = 2", "(x = 1) and (y = 2)", "((x = 1) and (y = 2))"};

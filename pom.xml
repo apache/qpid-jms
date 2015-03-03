@@ -51,7 +51,6 @@
     <jetty-version>8.1.16.v20140903</jetty-version>
     <mockito-version>1.10.19</mockito-version>
     <hamcrest-version>1.3</hamcrest-version>
-    <xalan-version>2.7.2</xalan-version>
     <netty-version>4.0.17.Final</netty-version>
 
     <!-- Maven Plugin Version for this Project -->
@@ -113,11 +112,6 @@
       </dependency>
       <dependency>
         <groupId>org.apache.qpid</groupId>
-        <artifactId>qpid-jms-selector</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.qpid</groupId>
         <artifactId>proton-j</artifactId>
         <version>${proton-version}</version>
       </dependency>
@@ -158,11 +152,6 @@
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-log4j12</artifactId>
         <version>${slf4j-version}</version>
-      </dependency>
-      <dependency>
-        <groupId>xalan</groupId>
-        <artifactId>xalan</artifactId>
-        <version>${xalan-version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

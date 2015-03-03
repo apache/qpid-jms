@@ -99,7 +99,7 @@ public class JmsMapMessage extends JmsMessage implements MapMessage {
         } else if (value instanceof Character) {
             return ((Character) value).charValue();
         } else {
-            throw new MessageFormatException("Cannot read a short from " + value.getClass().getSimpleName());
+            throw new MessageFormatException("Cannot read a char from " + value.getClass().getSimpleName());
         }
     }
 

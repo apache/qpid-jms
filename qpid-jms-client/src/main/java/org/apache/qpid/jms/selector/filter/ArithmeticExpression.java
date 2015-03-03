@@ -24,7 +24,6 @@ public abstract class ArithmeticExpression extends BinaryExpression {
     protected static final int INTEGER = 1;
     protected static final int LONG = 2;
     protected static final int DOUBLE = 3;
-    boolean convertStringExpressions = false;
 
     /**
      * @param left
@@ -32,7 +31,6 @@ public abstract class ArithmeticExpression extends BinaryExpression {
      */
     public ArithmeticExpression(Expression left, Expression right) {
         super(left, right);
-        convertStringExpressions = ComparisonExpression.CONVERT_STRING_EXPRESSIONS.get()!=null;
     }
 
     public static Expression createPlus(Expression left, Expression right) {
@@ -173,18 +171,6 @@ public abstract class ArithmeticExpression extends BinaryExpression {
         if (value instanceof Number) {
             return (Number)value;
         } else {
-            if( convertStringExpressions && value instanceof String) {
-                String v = (String) value;
-                try {
-                    if( v.contains(".") ) {
-                        return new Double(v);
-                    } else {
-                        return Long.valueOf(v);
-                    }
-                } catch (NumberFormatException e) {
-                    throw new RuntimeException("Cannot convert value: " + value + " into a number");
-                }
-            }
             throw new RuntimeException("Cannot convert value: " + value + " into a number");
         }
     }

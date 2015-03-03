@@ -19,15 +19,12 @@ package org.apache.qpid.jms.selector;
 import java.io.StringReader;
 
 import org.apache.qpid.jms.selector.filter.BooleanExpression;
-import org.apache.qpid.jms.selector.filter.ComparisonExpression;
 import org.apache.qpid.jms.selector.filter.FilterException;
 import org.apache.qpid.jms.selector.strict.StrictParser;
 
 public class SelectorParser {
 
     private static final LRUCache<Object, Object> cache = new LRUCache<Object, Object>(100);
-    private static final String CONVERT_STRING_EXPRESSIONS_PREFIX = "convert_string_expressions:";
-    private static final String NO_CONVERT_STRING_EXPRESSIONS_PREFIX = "no_convert_string_expressions:";
 
     public static BooleanExpression parse(String sql) throws FilterException {
         Object result = cache.get(sql);
@@ -36,39 +33,16 @@ public class SelectorParser {
         } else if (result instanceof BooleanExpression) {
             return (BooleanExpression) result;
         } else {
-            String actual = sql;
-            boolean convertStringExpressions = false;
-            while (true) {
-                if (actual.startsWith(CONVERT_STRING_EXPRESSIONS_PREFIX)) {
-                    convertStringExpressions = true;
-                    actual = actual.substring(CONVERT_STRING_EXPRESSIONS_PREFIX.length());
-                    continue;
-                }
-                if (actual.startsWith(NO_CONVERT_STRING_EXPRESSIONS_PREFIX)) {
-                    convertStringExpressions = false;
-                    actual = actual.substring(NO_CONVERT_STRING_EXPRESSIONS_PREFIX.length());
-                    continue;
-                }
-                break;
-            }
-
-            if (convertStringExpressions) {
-                ComparisonExpression.CONVERT_STRING_EXPRESSIONS.set(true);
-            }
             try {
                 BooleanExpression e = null;
-                StrictParser parser = new StrictParser(new StringReader(actual));
+                StrictParser parser = new StrictParser(new StringReader(sql));
                 e = parser.JmsSelector();
                 cache.put(sql, e);
                 return e;
             } catch (Throwable e) {
-                FilterException fe = new FilterException(actual, e);
+                FilterException fe = new FilterException(sql, e);
                 cache.put(sql, fe);
                 throw fe;
-            } finally {
-                if (convertStringExpressions) {
-                    ComparisonExpression.CONVERT_STRING_EXPRESSIONS.remove();
-                }
             }
         }
     }

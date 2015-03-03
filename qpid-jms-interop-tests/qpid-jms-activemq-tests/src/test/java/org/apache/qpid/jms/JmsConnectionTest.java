@@ -23,9 +23,13 @@ import static org.junit.Assert.fail;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import javax.jms.DeliveryMode;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
+import javax.jms.Message;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.support.AmqpTestSupport;
@@ -120,6 +124,29 @@ public class JmsConnectionTest extends AmqpTestSupport {
         connection = factory.createConnection("unknown", "unknown");
         assertNotNull(connection);
         connection.start();
+    }
+
+    @Test(timeout=30000)
+    public void testBrokerStopWontHangConnectionClose() throws Exception {
+        connection = createAmqpConnection();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(getDestinationName());
+        connection.start();
+
+        MessageProducer producer = session.createProducer(queue);
+        producer.setDeliveryMode(DeliveryMode.PERSISTENT);
+
+        Message m = session.createTextMessage("Sample text");
+        producer.send(m);
+
+        stopPrimaryBroker();
+
+        try {
+            connection.close();
+        } catch (Exception ex) {
+            LOG.error("Should not thrown on disconnected connection close(): {}", ex);
+            fail("Should not have thrown an exception.");
+        }
     }
 
     @Test(timeout=60000)

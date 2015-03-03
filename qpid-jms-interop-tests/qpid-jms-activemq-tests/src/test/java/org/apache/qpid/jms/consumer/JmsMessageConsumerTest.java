@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
+import javax.jms.ExceptionListener;
 import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
@@ -468,5 +469,140 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
         session.createConsumer(queue, "3+5");
+    }
+
+    @Test(timeout=30000)
+    public void testConsumerReceiveNoWaitThrowsWhenBrokerStops() throws Exception {
+        final CountDownLatch consumerReady = new CountDownLatch(1);
+        final CountDownLatch connectionFailed = new CountDownLatch(1);
+
+        connection = createAmqpConnection();
+        connection.setExceptionListener(new ExceptionListener() {
+
+            @Override
+            public void onException(JMSException exception) {
+                LOG.info("Connection to Broker stopped");
+                connectionFailed.countDown();
+            }
+        });
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(getDestinationName());
+        connection.start();
+
+        final MessageConsumer consumer=session.createConsumer(queue);
+        Testable test = new Testable() {
+
+            @Override
+            public synchronized void run() {
+                try {
+                    consumerReady.countDown();
+                    assertTrue("Broker connection needs to fail.", connectionFailed.await(20, TimeUnit.SECONDS));
+
+                    // Might not propagate state right away, so check a few times.
+                    for (int i = 0; i < 250; i++) {
+                        consumer.receiveNoWait();
+                        TimeUnit.MILLISECONDS.sleep(3);
+                    }
+
+                    failure = "Should have thrown an IllegalStateException";
+                } catch (Exception ex) {
+                    LOG.info("Caught exception on receiveNoWait: {}", ex);
+                }
+            }
+        };
+
+        new Thread(test).start();
+        assertTrue(consumerReady.await(20, TimeUnit.SECONDS));
+
+        stopPrimaryBroker();
+
+        assertTrue("Consumer did not fail as expected", test.passed());
+    }
+
+    @Test(timeout=30000)
+    public void testConsumerReceiveTimedReturnsIfConnectionLost() throws Exception {
+        final CountDownLatch consumerReady = new CountDownLatch(1);
+
+        connection = createAmqpConnection();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(getDestinationName());
+        connection.start();
+
+        final MessageConsumer consumer=session.createConsumer(queue);
+
+        Testable test = new Testable() {
+            @Override
+            public synchronized void run() {
+                try {
+                    consumer.receive(1);
+                    new Thread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            try {
+                                TimeUnit.MILLISECONDS.sleep(2);
+                            } catch (InterruptedException e) {
+                            }
+                            consumerReady.countDown();
+                        }
+                    }).start();
+                    consumer.receive(TimeUnit.SECONDS.toMillis(30));
+                } catch (Exception ex) {
+                    LOG.info("Caught exception on receive(): {}", ex);
+                    failure = "Should not have thrown: " + ex.getMessage();
+                }
+            }
+        };
+
+        new Thread(test).start();
+        assertTrue(consumerReady.await(20, TimeUnit.SECONDS));
+
+        stopPrimaryBroker();
+
+        assertTrue(test.passed());
+    }
+
+    @Test(timeout=30000)
+    public void testConsumerReceiveReturnsIfConnectionLost() throws Exception {
+        final CountDownLatch consumerReady = new CountDownLatch(1);
+
+        connection = createAmqpConnection();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(getDestinationName());
+        connection.start();
+
+        final MessageConsumer consumer=session.createConsumer(queue);
+
+        Testable test = new Testable() {
+            @Override
+            public synchronized void run() {
+                try {
+                    consumer.receive(1);
+                    new Thread(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            try {
+                                TimeUnit.MILLISECONDS.sleep(2);
+                            } catch (InterruptedException e) {
+                            }
+                            consumerReady.countDown();
+                        }
+                    }).start();
+                    consumer.receive();
+                } catch (Exception ex) {
+                    LOG.info("Caught exception on receive(): {}", ex);
+                    failure = "Should not have thrown: " + ex.getMessage();
+                }
+            }
+        };
+
+        new Thread(test).start();
+        assertTrue(consumerReady.await(20, TimeUnit.SECONDS));
+
+        stopPrimaryBroker();
+
+        assertTrue(test.passed());
     }
 }

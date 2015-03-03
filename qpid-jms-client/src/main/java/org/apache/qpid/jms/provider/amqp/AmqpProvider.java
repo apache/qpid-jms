@@ -48,6 +48,7 @@ import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.meta.JmsTransactionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.NoOpAsyncResult;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderClosedException;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
@@ -92,6 +93,7 @@ public class AmqpProvider implements Provider, TransportListener {
     //       brokers that don't currently handle the unsigned range well.
     private static final int DEFAULT_CHANNEL_MAX = 32767;
     private static final AtomicInteger PROVIDER_SEQUENCE = new AtomicInteger();
+    private static final NoOpAsyncResult NOOP_REQUEST = new NoOpAsyncResult();
 
     private ProviderListener listener;
     private AmqpConnection connection;
@@ -177,7 +179,7 @@ public class AmqpProvider implements Provider, TransportListener {
 
                         if (connection != null) {
                             connection.close(request);
-                            pumpToProtonTransport();
+                            pumpToProtonTransport(request);
                         } else {
                             request.onSuccess();
                         }
@@ -294,7 +296,7 @@ public class AmqpProvider implements Provider, TransportListener {
                         }
                     });
 
-                    pumpToProtonTransport();
+                    pumpToProtonTransport(request);
                 } catch (Exception error) {
                     request.onFailure(error);
                 }
@@ -321,7 +323,7 @@ public class AmqpProvider implements Provider, TransportListener {
                         }
                     });
 
-                    pumpToProtonTransport();
+                    pumpToProtonTransport(request);
                 } catch (Exception error) {
                     request.onFailure(error);
                 }
@@ -348,7 +350,7 @@ public class AmqpProvider implements Provider, TransportListener {
                         }
                     });
 
-                    pumpToProtonTransport();
+                    pumpToProtonTransport(request);
                 } catch (Exception error) {
                     request.onFailure(error);
                 }
@@ -404,7 +406,7 @@ public class AmqpProvider implements Provider, TransportListener {
                         }
                     });
 
-                    pumpToProtonTransport();
+                    pumpToProtonTransport(request);
                 } catch (Exception error) {
                     request.onFailure(error);
                 }
@@ -433,7 +435,7 @@ public class AmqpProvider implements Provider, TransportListener {
                     }
 
                     boolean couldSend = producer.send(envelope, request);
-                    pumpToProtonTransport();
+                    pumpToProtonTransport(request);
                     if (couldSend && envelope.isSendAsync()) {
                         request.onSuccess();
                     }
@@ -455,7 +457,7 @@ public class AmqpProvider implements Provider, TransportListener {
                     checkClosed();
                     AmqpSession amqpSession = connection.getSession(sessionId);
                     amqpSession.acknowledge();
-                    pumpToProtonTransport();
+                    pumpToProtonTransport(request);
                     request.onSuccess();
                 } catch (Exception error) {
                     request.onFailure(error);
@@ -488,9 +490,9 @@ public class AmqpProvider implements Provider, TransportListener {
 
                     if (consumer.getSession().isAsyncAck()) {
                         request.onSuccess();
-                        pumpToProtonTransport();
+                        pumpToProtonTransport(request);
                     } else {
-                        pumpToProtonTransport();
+                        pumpToProtonTransport(request);
                         request.onSuccess();
                     }
                 } catch (Exception error) {
@@ -511,7 +513,7 @@ public class AmqpProvider implements Provider, TransportListener {
                     checkClosed();
                     AmqpSession session = connection.getSession(sessionId);
                     session.commit(request);
-                    pumpToProtonTransport();
+                    pumpToProtonTransport(request);
                 } catch (Exception error) {
                     request.onFailure(error);
                 }
@@ -530,7 +532,7 @@ public class AmqpProvider implements Provider, TransportListener {
                     checkClosed();
                     AmqpSession session = connection.getSession(sessionId);
                     session.rollback(request);
-                    pumpToProtonTransport();
+                    pumpToProtonTransport(request);
                 } catch (Exception error) {
                     request.onFailure(error);
                 }
@@ -549,7 +551,7 @@ public class AmqpProvider implements Provider, TransportListener {
                     checkClosed();
                     AmqpSession session = connection.getSession(sessionId);
                     session.recover();
-                    pumpToProtonTransport();
+                    pumpToProtonTransport(request);
                     request.onSuccess();
                 } catch (Exception error) {
                     request.onFailure(error);
@@ -568,7 +570,7 @@ public class AmqpProvider implements Provider, TransportListener {
                 try {
                     checkClosed();
                     connection.unsubscribe(subscription, request);
-                    pumpToProtonTransport();
+                    pumpToProtonTransport(request);
                 } catch (Exception error) {
                     request.onFailure(error);
                 }
@@ -595,7 +597,7 @@ public class AmqpProvider implements Provider, TransportListener {
                     }
 
                     consumer.pull(timeout);
-                    pumpToProtonTransport();
+                    pumpToProtonTransport(request);
                     request.onSuccess();
                 } catch (Exception error) {
                     request.onFailure(error);
@@ -651,7 +653,7 @@ public class AmqpProvider implements Provider, TransportListener {
                 // Process the state changes from the latest data and then answer back
                 // any pending updates to the Broker.
                 processUpdates();
-                pumpToProtonTransport();
+                pumpToProtonTransport(NOOP_REQUEST);
             }
         });
     }
@@ -764,7 +766,7 @@ public class AmqpProvider implements Provider, TransportListener {
         }
     }
 
-    private void pumpToProtonTransport() {
+    private void pumpToProtonTransport(AsyncResult request) {
         try {
             boolean done = false;
             while (!done) {
@@ -785,6 +787,7 @@ public class AmqpProvider implements Provider, TransportListener {
             }
         } catch (IOException e) {
             fireProviderException(e);
+            request.onFailure(e);
         }
     }
 

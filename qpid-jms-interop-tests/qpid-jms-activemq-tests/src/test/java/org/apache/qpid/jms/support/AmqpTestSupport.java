@@ -141,4 +141,18 @@ public class AmqpTestSupport extends QpidJmsTestSupport {
         }
         return factory;
     }
+
+    public abstract class Testable implements Runnable {
+
+        protected String failure;
+
+        @Override
+        public String toString() {
+            return failure;
+        }
+
+        public synchronized boolean passed() {
+            return failure == null;
+        }
+    }
 }

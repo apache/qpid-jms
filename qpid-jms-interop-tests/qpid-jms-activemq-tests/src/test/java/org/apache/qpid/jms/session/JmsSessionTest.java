@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.session;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -78,5 +79,37 @@ public class JmsSessionTest extends AmqpTestSupport {
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         session.close();
         session.close();
+    }
+
+    @Test(timeout=30000)
+    public void testConsumerCreateThrowsWhenBrokerStops() throws Exception {
+        connection = createAmqpConnection();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(getDestinationName());
+        connection.start();
+
+        stopPrimaryBroker();
+        try {
+            session.createConsumer(queue);
+            fail("Should have thrown an IllegalStateException");
+        } catch (Exception ex) {
+            LOG.info("Caught exception on create consumer: {}", ex);
+        }
+    }
+
+    @Test(timeout=30000)
+    public void testProducerCreateThrowsWhenBrokerStops() throws Exception {
+        connection = createAmqpConnection();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(getDestinationName());
+        connection.start();
+
+        stopPrimaryBroker();
+        try {
+            session.createProducer(queue);
+            fail("Should have thrown an IllegalStateException");
+        } catch (Exception ex) {
+            LOG.info("Caught exception on create producer: {}", ex);
+        }
     }
 }

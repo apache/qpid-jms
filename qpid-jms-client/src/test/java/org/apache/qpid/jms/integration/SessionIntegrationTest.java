@@ -52,6 +52,7 @@ import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConnectionProperties;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
+import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.TerminusDurability;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
@@ -1192,17 +1193,23 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.remotelyEndLastOpenedSession(true);
 
             Queue queue = session.createQueue("myQueue");
-            MessageProducer producer = session.createProducer(queue);
+            final MessageProducer producer = session.createProducer(queue);
 
             testPeer.waitForAllHandlersToComplete(1000);
 
-            // Verify the producer is now marked closed
-            try {
-                producer.getDestination();
-                fail("Expected ISE to be thrown due to being closed");
-            } catch (IllegalStateException jmsise) {
-                // expected
-            }
+            // Verify the producer gets marked closed
+            testPeer.waitForAllHandlersToComplete(1000);
+            assertTrue("producer never closed.", Wait.waitFor(new Wait.Condition() {
+                @Override
+                public boolean isSatisified() throws Exception {
+                    try {
+                        producer.getDestination();
+                    } catch (IllegalStateException jmsise) {
+                        return true;
+                    }
+                    return false;
+                }
+            }, 2000, 10));
 
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.
@@ -1224,17 +1231,21 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.remotelyEndLastOpenedSession(true);
 
             Queue queue = session.createQueue("myQueue");
-            MessageConsumer consumer = session.createConsumer(queue);
+            final MessageConsumer consumer = session.createConsumer(queue);
 
+            // Verify the consumer gets marked closed
             testPeer.waitForAllHandlersToComplete(1000);
-
-            // Verify the consumer is now marked closed
-            try {
-                consumer.getMessageListener();
-                fail("Expected ISE to be thrown due to being closed");
-            } catch (IllegalStateException jmsise) {
-                // expected
-            }
+            assertTrue("consumer never closed.", Wait.waitFor(new Wait.Condition() {
+                @Override
+                public boolean isSatisified() throws Exception {
+                    try {
+                        consumer.getMessageListener();
+                    } catch (IllegalStateException jmsise) {
+                        return true;
+                    }
+                    return false;
+                }
+            }, 2000, 10));
 
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.

@@ -16,15 +16,25 @@
  */
 package org.apache.qpid.jms.session;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
+import javax.jms.TemporaryQueue;
+import javax.jms.TemporaryTopic;
+import javax.jms.Topic;
 
+import org.apache.activemq.broker.jmx.BrokerViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
+import org.apache.qpid.jms.support.Wait;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -111,5 +121,78 @@ public class JmsSessionTest extends AmqpTestSupport {
         } catch (Exception ex) {
             LOG.info("Caught exception on create producer: {}", ex);
         }
+    }
+
+    @Test(timeout=30000)
+    public void testCreateTemporaryQueue() throws Exception {
+        connection = createAmqpConnection();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createTemporaryQueue();
+        assertNotNull(queue);
+        assertTrue(queue instanceof TemporaryQueue);
+
+        final BrokerViewMBean broker = getProxyToBroker();
+        assertEquals(1, broker.getTemporaryQueues().length);
+    }
+
+    @Ignore("Delete of Temporary destinations not yet supported.")
+    @Test(timeout=30000)
+    public void testDeleteTemporaryQueue() throws Exception {
+        connection = createAmqpConnection();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createTemporaryQueue();
+        assertNotNull(queue);
+        assertTrue(queue instanceof TemporaryQueue);
+
+        final BrokerViewMBean broker = getProxyToBroker();
+        assertEquals(1, broker.getTemporaryQueues().length);
+
+        TemporaryQueue tempQueue = (TemporaryQueue) queue;
+        tempQueue.delete();
+
+        assertTrue("Temp Queue should be deleted.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return broker.getTemporaryQueues().length == 0;
+            }
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
+    }
+
+    @Ignore("Temporary Topics not supported in AMQ yet.")
+    @Test(timeout=30000)
+    public void testCreateTemporaryTopic() throws Exception {
+        connection = createAmqpConnection();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Topic topic = session.createTemporaryTopic();
+        assertNotNull(topic);
+        assertTrue(topic instanceof TemporaryTopic);
+
+        final BrokerViewMBean broker = getProxyToBroker();
+        assertEquals(1, broker.getTemporaryTopics().length);
+    }
+
+    @Ignore("Temporary Topics not supported in AMQ yet.")
+    @Test(timeout=30000)
+    public void testDeleteTemporaryTopic() throws Exception {
+        connection = createAmqpConnection();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Topic topic = session.createTemporaryTopic();
+        assertNotNull(topic);
+        assertTrue(topic instanceof TemporaryTopic);
+
+        final BrokerViewMBean broker = getProxyToBroker();
+        assertEquals(1, broker.getTemporaryTopics().length);
+
+        TemporaryTopic tempTopic = (TemporaryTopic) topic;
+        tempTopic.delete();
+
+        assertTrue("Temp Topic should be deleted.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return broker.getTemporaryTopics().length == 0;
+            }
+        }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
     }
 }

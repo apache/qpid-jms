@@ -221,7 +221,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Ignore // TODO: Need to complete implementation and update test peer link handle behaviour
+    //@Ignore // TODO: Need to complete implementation and update test peer link handle behaviour
     @Test(timeout = 5000)
     public void testCreateAndDeleteTemporaryQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
@@ -264,7 +264,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Ignore // TODO: Need to complete implementation and update test peer link handle behaviour
+    //@Ignore // TODO: Need to complete implementation and update test peer link handle behaviour
     @Test(timeout = 5000)
     public void testCreateAndDeleteTemporaryTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {

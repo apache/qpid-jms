@@ -396,13 +396,13 @@ public class AmqpProvider implements Provider, TransportListener {
 
                         @Override
                         public void processDestination(JmsTemporaryDestination destination) throws Exception {
-                            // AmqpTemporaryDestination td = connection.getTemporaryDestination(destination);
-                            // if(td != null) {
-                            //     td.close(request);
-                            // } else {
-                            // TODO: complete and test above. Signals deletion to peer by closing the creating link if present.
-
-                            request.onSuccess();
+                            AmqpTemporaryDestination temporary = connection.getTemporaryDestination(destination);
+                            if (temporary != null) {
+                                temporary.close(request);
+                            } else {
+                                LOG.debug("Could not find temporary destination {} to delete.", destination);
+                                request.onSuccess();
+                            }
                         }
                     });
 

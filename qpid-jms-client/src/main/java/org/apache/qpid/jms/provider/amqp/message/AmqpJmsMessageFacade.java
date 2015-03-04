@@ -19,7 +19,6 @@ package org.apache.qpid.jms.provider.amqp.message;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_AMQP_TTL;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MESSAGE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MSG_TYPE;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_TYPE;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -538,15 +537,17 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public String getType() {
-        return (String) getMessageAnnotation(JMS_TYPE);
+        return message.getSubject();
     }
 
     @Override
     public void setType(String type) {
         if (type != null) {
-            setMessageAnnotation(JMS_TYPE, type);
+            message.setSubject(type);
         } else {
-            removeMessageAnnotation(JMS_TYPE);
+            if (message.getProperties() != null) {
+                message.getProperties().setSubject(null);
+            }
         }
     }
 

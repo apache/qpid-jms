@@ -276,17 +276,17 @@ public interface JmsMessageFacade {
     void setRedelivered(boolean redelivered);
 
     /**
-     * Returns the Type values as defined by the provider or set by the sending client.
+     * Returns the JMSType value as defined by the provider or set by the sending client.
      *
-     * @return a String value that defines the message type.
+     * @return a String value that defines the message JMSType.
      */
     String getType();
 
     /**
-     * Sets the String value used to define the Message type by the client.
+     * Sets the String value used to define the Message JMSType by the client.
      *
      * @param type
-     *        the type value the client assigns to this message.
+     *        the JMSType value the client assigns to this message.
      */
     void setType(String type);
 

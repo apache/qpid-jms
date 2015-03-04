@@ -47,6 +47,7 @@ import org.apache.qpid.jms.JmsMessageAvailableListener;
 import org.apache.qpid.jms.JmsMessageConsumer;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -442,15 +443,49 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         message.setText("hello + 9");
         p.send(message, DeliveryMode.PERSISTENT, 9, 0);
 
+        p.close();
+
         QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(2, proxy.getQueueSize());
 
         MessageConsumer consumer = session.createConsumer(queue, "JMSPriority > 8");
         Message msg = consumer.receive(5000);
-        assertNotNull(msg);
+        assertNotNull("No message was recieved", msg);
         assertTrue(msg instanceof TextMessage);
         assertEquals("hello + 9", ((TextMessage) msg).getText());
         assertNull(consumer.receive(1000));
+    }
+
+    @Ignore //TODO: needs 5.12 snapshot
+    @Test(timeout=30000)
+    public void testSelectorsWithJMSType() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageProducer p = session.createProducer(queue);
+
+        TextMessage message = session.createTextMessage();
+        message.setText("text");
+        p.send(message, DeliveryMode.NON_PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+
+        TextMessage message2 = session.createTextMessage();
+        String type = "myJMSType";
+        message2.setJMSType(type);
+        message2.setText("text + type");
+        p.send(message2, DeliveryMode.NON_PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+
+        p.close();
+
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(2, proxy.getQueueSize());
+
+        MessageConsumer consumer = session.createConsumer(queue, "JMSType = '" + type + "'");
+        Message msg = consumer.receive(5000);
+        assertNotNull("No message was recieved", msg);
+        assertTrue(msg instanceof TextMessage);
+        assertEquals("Unexpected JMSType value", type, msg.getJMSType());
+        assertEquals("Unexpected message content", "text + type", ((TextMessage) msg).getText());
     }
 
     @Test(timeout=90000, expected=JMSSecurityException.class)

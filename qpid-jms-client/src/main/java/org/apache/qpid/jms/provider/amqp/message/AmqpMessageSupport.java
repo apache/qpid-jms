@@ -34,12 +34,6 @@ public final class AmqpMessageSupport {
     public static final String JMS_APP_CORRELATION_ID = "x-opt-app-correlation-id";
 
     /**
-     * Attribute used to mark the JMSType header string value set on the message by
-     * an application.
-     */
-    public static final String JMS_TYPE = "x-opt-jms-type";
-
-    /**
      * Attribute used to mark the class type of JMS message that a particular message
      * instance represents, used internally by the client.
      */

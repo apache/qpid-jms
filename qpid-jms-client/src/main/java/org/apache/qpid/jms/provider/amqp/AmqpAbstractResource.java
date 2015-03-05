@@ -252,32 +252,38 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     }
 
     @Override
-    public void processStateChange(AmqpProvider provider) throws IOException {
-        EndpointState remoteState = getEndpoint().getRemoteState();
+    public void processRemoteOpen(AmqpProvider provider) throws IOException {
+        doOpenCompletion();
+    }
 
-        if (remoteState == EndpointState.ACTIVE) {
-            if (isAwaitingOpen()) {
-                doOpenCompletion();
-            }
-            // Should not receive an ACTIVE event if not awaiting the open state.
-        } else if (remoteState == EndpointState.CLOSED) {
-            if (isAwaitingClose()) {
-                LOG.debug("{} is now closed: ", this);
-                closed();
-            } else if (isAwaitingOpen()) {
-                // Error on Open, create exception and signal failure.
-                LOG.warn("Open of {} failed: ", this);
-                Exception openError;
-                if (hasRemoteError()) {
-                    openError = getRemoteError();
-                } else {
-                    openError = getOpenAbortException();
-                }
+    @Override
+    public void processRemoteDetach(AmqpProvider provider) throws IOException {
+        if (isAwaitingClose()) {
+            LOG.debug("{} is now closed: ", this);
+            closed();
+        } else {
+            remotelyClosed(provider);
+        }
+    }
 
-                failed(openError);
+    @Override
+    public void processRemoteClose(AmqpProvider provider) throws IOException {
+        if (isAwaitingClose()) {
+            LOG.debug("{} is now closed: ", this);
+            closed();
+        } else if (isAwaitingOpen()) {
+            // Error on Open, create exception and signal failure.
+            LOG.warn("Open of {} failed: ", this);
+            Exception openError;
+            if (hasRemoteError()) {
+                openError = getRemoteError();
             } else {
-                remotelyClosed(provider);
+                openError = getOpenAbortException();
             }
+
+            failed(openError);
+        } else {
+            remotelyClosed(provider);
         }
     }
 

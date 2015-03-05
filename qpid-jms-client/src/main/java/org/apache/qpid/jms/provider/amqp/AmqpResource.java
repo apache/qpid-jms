@@ -103,15 +103,34 @@ public interface AmqpResource {
     void failed(Exception cause);
 
     /**
-     * Called when the Proton Engine signals that the state of the given resource has
-     * changed on the remote side.
+     * Event handler for remote peer open of this resource.
      *
      * @param provider
      *        the AmqpProvider instance for easier access to fire events.
      *
      * @throws IOException if an error occurs while processing the update.
      */
-    void processStateChange(AmqpProvider provider) throws IOException;
+    void processRemoteOpen(AmqpProvider provider) throws IOException;
+
+    /**
+     * Event handler for remote peer detach of this resource.
+     *
+     * @param provider
+     *        the AmqpProvider instance for easier access to fire events.
+     *
+     * @throws IOException if an error occurs while processing the update.
+     */
+    void processRemoteDetach(AmqpProvider provider) throws IOException;
+
+    /**
+     * Event handler for remote peer close of this resource.
+     *
+     * @param provider
+     *        the AmqpProvider instance for easier access to fire events.
+     *
+     * @throws IOException if an error occurs while processing the update.
+     */
+    void processRemoteClose(AmqpProvider provider) throws IOException;
 
     /**
      * Called when the Proton Engine signals an Delivery related event has been triggered

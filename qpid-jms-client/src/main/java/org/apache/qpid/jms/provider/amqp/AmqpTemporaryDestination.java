@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -62,14 +61,6 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsTemporaryD
         super(destination);
         this.session = session;
         this.connection = session.getConnection();
-    }
-
-    @Override
-    public void processStateChange(AmqpProvider provider) throws IOException {
-        // TODO - We might want to check on our producer to see if it becomes closed
-        //        which might indicate that the broker purged the temporary destination.
-
-        super.processStateChange(provider);
     }
 
     @Override

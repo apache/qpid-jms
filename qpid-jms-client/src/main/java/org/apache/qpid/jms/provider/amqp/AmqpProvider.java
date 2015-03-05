@@ -718,28 +718,34 @@ public class AmqpProvider implements Provider, TransportListener {
                 AmqpResource amqpResource = null;
                 switch (protonEvent.getType()) {
                     case CONNECTION_REMOTE_CLOSE:
+                        amqpResource = (AmqpResource) protonEvent.getConnection().getContext();
+                        amqpResource.processRemoteClose(this);
+                        break;
                     case CONNECTION_REMOTE_OPEN:
-                        AmqpConnection connection = (AmqpConnection) protonEvent.getConnection().getContext();
-                        connection.processStateChange(this);
+                        amqpResource = (AmqpResource) protonEvent.getConnection().getContext();
+                        amqpResource.processRemoteOpen(this);
                         break;
                     case SESSION_REMOTE_CLOSE:
+                        amqpResource = (AmqpSession) protonEvent.getSession().getContext();
+                        amqpResource.processRemoteClose(this);
+                        break;
                     case SESSION_REMOTE_OPEN:
-                        AmqpSession session = (AmqpSession) protonEvent.getSession().getContext();
-                        session.processStateChange(this);
+                        amqpResource = (AmqpSession) protonEvent.getSession().getContext();
+                        amqpResource.processRemoteOpen(this);
                         break;
                     case LINK_REMOTE_CLOSE:
                         LOG.info("Link closed: {}", protonEvent.getLink().getContext());
-                        AmqpResource cloedResource = (AmqpResource) protonEvent.getLink().getContext();
-                        cloedResource.processStateChange(this);
+                        amqpResource = (AmqpResource) protonEvent.getLink().getContext();
+                        amqpResource.processRemoteClose(this);
                         break;
                     case LINK_REMOTE_DETACH:
                         LOG.info("Link detach: {}", protonEvent.getLink().getContext());
-                        AmqpResource detachedResource = (AmqpResource) protonEvent.getLink().getContext();
-                        detachedResource.processStateChange(this);
+                        amqpResource = (AmqpResource) protonEvent.getLink().getContext();
+                        amqpResource.processRemoteDetach(this);
                         break;
                     case LINK_REMOTE_OPEN:
-                        AmqpResource resource = (AmqpResource) protonEvent.getLink().getContext();
-                        resource.processStateChange(this);
+                        amqpResource = (AmqpResource) protonEvent.getLink().getContext();
+                        amqpResource.processRemoteOpen(this);
                         break;
                     case LINK_FLOW:
                         amqpResource = (AmqpResource) protonEvent.getLink().getContext();

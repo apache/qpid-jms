@@ -23,6 +23,7 @@ import static org.junit.Assert.fail;
 
 import java.util.concurrent.TimeUnit;
 
+import javax.jms.JMSSecurityException;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
@@ -135,6 +136,16 @@ public class JmsSessionTest extends AmqpTestSupport {
         assertEquals(1, broker.getTemporaryQueues().length);
     }
 
+    @Test(timeout=30000)
+    public void testCreateTemporaryQueueNotAuthorized() throws Exception {
+        connection = createAmqpConnection("guest", "password");
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        try {
+            session.createTemporaryQueue();
+            fail("Should have thrown a security exception");
+        } catch (JMSSecurityException jmsse) {}
+    }
+
     @Ignore("Delete of Temporary destinations not yet supported.")
     @Test(timeout=30000)
     public void testDeleteTemporaryQueue() throws Exception {
@@ -170,6 +181,17 @@ public class JmsSessionTest extends AmqpTestSupport {
 
         final BrokerViewMBean broker = getProxyToBroker();
         assertEquals(1, broker.getTemporaryTopics().length);
+    }
+
+    @Ignore("Temporary Topics not supported in AMQ yet.")
+    @Test(timeout=30000)
+    public void testCreateTemporaryTopicNotAuthorized() throws Exception {
+        connection = createAmqpConnection("guest", "password");
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        try {
+            session.createTemporaryTopic();
+            fail("Should have thrown a security exception");
+        } catch (JMSSecurityException jmsse) {}
     }
 
     @Ignore("Temporary Topics not supported in AMQ yet.")

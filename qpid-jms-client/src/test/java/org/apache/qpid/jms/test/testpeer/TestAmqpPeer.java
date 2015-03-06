@@ -479,21 +479,28 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectEnd()
     {
+        expectEnd(true);
+    }
+
+    public void expectEnd(boolean sendResponse)
+    {
         final EndMatcher endMatcher = new EndMatcher();
 
-        final EndFrame endResponse = new EndFrame();
+        if (sendResponse) {
+            final EndFrame endResponse = new EndFrame();
 
-        // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
-        final FrameSender frameSender = new FrameSender(this, FrameType.AMQP, -1, endResponse, null);
-        frameSender.setValueProvider(new ValueProvider()
-        {
-            @Override
-            public void setValues()
+            // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+            final FrameSender frameSender = new FrameSender(this, FrameType.AMQP, -1, endResponse, null);
+            frameSender.setValueProvider(new ValueProvider()
             {
-                frameSender.setChannel(endMatcher.getActualChannel());
-            }
-        });
-        endMatcher.onSuccess(frameSender);
+                @Override
+                public void setValues()
+                {
+                    frameSender.setChannel(endMatcher.getActualChannel());
+                }
+            });
+            endMatcher.onSuccess(frameSender);
+        }
 
         addHandler(endMatcher);
     }

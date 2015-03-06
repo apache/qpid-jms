@@ -1251,7 +1251,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Ignore // TODO: fails due to PROTON-833. Needs workaround or 0.9 to resolve.
     @Test(timeout = 5000)
     public void testCloseSessionWithConsumerThatRemoteDetaches() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
@@ -1278,7 +1277,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Ignore // TODO: fails due to PROTON-833. Needs workaround or 0.9 to resolve.
     @Test(timeout = 5000)
     public void testCloseSessionWithConsumerThatRemoteDetachesWithUnackedMessages() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {

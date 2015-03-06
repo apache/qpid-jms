@@ -56,6 +56,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.SaslOutcomeFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Source;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Target;
 import org.apache.qpid.jms.test.testpeer.describedtypes.TransferFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.ApplicationPropertiesDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.HeaderDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.MessageAnnotationsDescribedType;
@@ -1149,6 +1150,10 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     public void remotelyEndLastOpenedSession(boolean expectEndResponse) {
+        remotelyEndLastOpenedSession(expectEndResponse, 0);
+    }
+
+    public void remotelyEndLastOpenedSession(boolean expectEndResponse, final long delayBeforeSend) {
         synchronized (_handlersLock) {
             CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
 
@@ -1162,6 +1167,15 @@ public class TestAmqpPeer implements AutoCloseable
                 @Override
                 public void setValues() {
                     frameSender.setChannel(_lastInitiatedChannel);
+
+                    //Insert a delay if requested
+                    if (delayBeforeSend > 0) {
+                        try {
+                            Thread.sleep(delayBeforeSend);
+                        } catch (InterruptedException e) {
+                            // Ignore
+                        }
+                    }
                 }
             });
             comp.add(frameSender);
@@ -1295,5 +1309,40 @@ public class TestAmqpPeer implements AutoCloseable
         }
 
         links.add(handle);
+    }
+
+    public void sendTransferToLastOpenedLinkOnLastOpenedSession(boolean deferWrite) {
+        synchronized (_handlersLock) {
+            CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
+
+            final int nextId = 0; //TODO: shouldn't be hard coded
+
+            String tagString = "theDeliveryTag" + nextId;
+            Binary dtag = new Binary(tagString.getBytes());
+
+            final TransferFrame transferResponse = new TransferFrame()
+            .setDeliveryId(UnsignedInteger.valueOf(nextId))
+            .setDeliveryTag(dtag)
+            .setMessageFormat(UnsignedInteger.ZERO)
+            .setSettled(false);
+
+            Binary payload = prepareTransferPayload(null, null, null, null, new AmqpValueDescribedType("myTextMessage"));
+
+            // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+            final FrameSender transferSender = new FrameSender(this, FrameType.AMQP, -1, transferResponse, payload);
+            transferSender.setValueProvider(new ValueProvider()
+            {
+                @Override
+                public void setValues()
+                {
+                    transferResponse.setHandle(_lastInitiatedLinkHandle);
+                    transferSender.setChannel(_lastInitiatedChannel);
+                }
+            });
+
+            transferSender.setDeferWrite(false);
+
+            comp.add(transferSender);
+        }
     }
 }

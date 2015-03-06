@@ -1278,4 +1278,35 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             session.close();
         }
     }
+
+    @Ignore // TODO: fails due to PROTON-833. Needs workaround or 0.9 to resolve.
+    @Test(timeout = 5000)
+    public void testCloseSessionWithConsumerThatRemoteDetachesWithUnackedMessages() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin(true);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            // Create a consumer, don't give it any messages
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlow();
+
+            Queue queue = session.createQueue("myQueue");
+            session.createConsumer(queue);
+
+            //Expect the session close
+            testPeer.expectEnd(false);
+            testPeer.sendTransferToLastOpenedLinkOnLastOpenedSession(false);
+            testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(false, true);
+            testPeer.remotelyEndLastOpenedSession(false, 200);
+
+            session.close();
+
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
 }

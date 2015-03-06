@@ -1249,7 +1249,7 @@ public class TestAmqpPeer implements AutoCloseable
         return comp;
     }
 
-    public void sendTransferToLastOpenedLinkOnLastOpenedSession(boolean deferWrite) {
+    public void sendTransferToLastOpenedLinkOnLastOpenedSession() {
         synchronized (_handlersLock) {
             CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
 
@@ -1277,8 +1277,6 @@ public class TestAmqpPeer implements AutoCloseable
                     transferSender.setChannel(_lastInitiatedChannel);
                 }
             });
-
-            transferSender.setDeferWrite(false);
 
             comp.add(transferSender);
         }

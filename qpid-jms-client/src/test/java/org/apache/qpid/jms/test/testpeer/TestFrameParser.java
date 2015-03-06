@@ -277,7 +277,7 @@ class TestFrameParser
                     // type
 
                     int type = currentInput.get() & 0xFF;
-                    int channel = currentInput.getShort() & 0xFF;
+                    int channel = currentInput.getShort() & 0xFFFF;
 
                     // note that this skips over the extended header if it's present
                     if(dataOffset!=8)

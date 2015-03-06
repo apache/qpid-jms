@@ -76,6 +76,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionM
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.junit.Ignore;
@@ -1248,6 +1249,33 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.
             consumer.close();
+        }
+    }
+
+    @Ignore // TODO: fails due to PROTON-833. Needs workaround or 0.9 to resolve.
+    @Test(timeout = 5000)
+    public void testCloseSessionWithConsumerThatRemoteDetaches() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+
+            testPeer.expectBegin(true);
+            Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+
+            // Create a consumer
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlow();
+
+            // Then locally close the session, provoke a remote-detach when the end reaches the
+            // test peer, followed by the session end 'response'. The test peer should not
+            // expect a reply to the detach, as the session was already ended at the client.
+            testPeer.expectEnd(false);
+            testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(false, true);
+            testPeer.remotelyEndLastOpenedSession(false);
+
+            Queue queue = session.createQueue("myQueue");
+            session.createConsumer(queue);
+
+            session.close();
         }
     }
 }

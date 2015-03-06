@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -112,7 +111,6 @@ public class TestAmqpPeer implements AutoCloseable
     private byte[] _deferredBytes;
     private int _lastInitiatedChannel = -1;
     private UnsignedInteger _lastInitiatedLinkHandle = null;
-    private Map<Integer, List<UnsignedInteger>> _channelToLinkMap = new ConcurrentHashMap<Integer, List<UnsignedInteger>>();
 
     public TestAmqpPeer() throws IOException
     {
@@ -550,9 +548,8 @@ public class TestAmqpPeer implements AutoCloseable
             public void setValues()
             {
                 Object receivedHandle = attachMatcher.getReceivedHandle();
-                int receivedChannel = attachMatcher.getActualChannel();
 
-                attachResponseSender.setChannel(receivedChannel);
+                attachResponseSender.setChannel(attachMatcher.getActualChannel());
                 attachResponse.setHandle(receivedHandle);
                 attachResponse.setName(attachMatcher.getReceivedName());
                 attachResponse.setSource(attachMatcher.getReceivedSource());
@@ -564,7 +561,6 @@ public class TestAmqpPeer implements AutoCloseable
                 attachResponse.setTarget(t);
 
                 _lastInitiatedLinkHandle = (UnsignedInteger) receivedHandle;
-                recordLinkCreation(receivedChannel, (UnsignedInteger) receivedHandle);
             }
         });
 
@@ -630,9 +626,8 @@ public class TestAmqpPeer implements AutoCloseable
             public void setValues()
             {
                 Object receivedHandle = attachMatcher.getReceivedHandle();
-                int receivedChannel = attachMatcher.getActualChannel();
 
-                attachResponseSender.setChannel(receivedChannel);
+                attachResponseSender.setChannel(attachMatcher.getActualChannel());
                 attachResponse.setHandle(receivedHandle);
                 attachResponse.setName(attachMatcher.getReceivedName());
                 attachResponse.setSource(trimSourceOutcomesCapabilities(createSourceObjectFromDescribedType(attachMatcher.getReceivedSource())));
@@ -643,7 +638,6 @@ public class TestAmqpPeer implements AutoCloseable
                 }
 
                 _lastInitiatedLinkHandle = (UnsignedInteger) receivedHandle;
-                recordLinkCreation(receivedChannel, (UnsignedInteger) receivedHandle);
             }
         });
 
@@ -727,9 +721,8 @@ public class TestAmqpPeer implements AutoCloseable
             public void setValues()
             {
                 Object receivedHandle = attachMatcher.getReceivedHandle();
-                int receivedChannel = attachMatcher.getActualChannel();
 
-                attachResponseSender.setChannel(receivedChannel);
+                attachResponseSender.setChannel(attachMatcher.getActualChannel());
                 attachResponse.setHandle(receivedHandle);
                 attachResponse.setName(attachMatcher.getReceivedName());
                 attachResponse.setTarget(attachMatcher.getReceivedTarget());
@@ -740,7 +733,6 @@ public class TestAmqpPeer implements AutoCloseable
                 }
 
                 _lastInitiatedLinkHandle = (UnsignedInteger) receivedHandle;
-                recordLinkCreation(receivedChannel, (UnsignedInteger) receivedHandle);
             }
         });
 
@@ -1246,50 +1238,6 @@ public class TestAmqpPeer implements AutoCloseable
         }
     }
 
-    /**
-     * All links and sessions must have been created before calling this method, unlike
-     * {@link #remotelyDetachLastOpenedLinkOnLastOpenedSession(boolean, boolean)}
-     */
-    public void remotelyDetachLinksOnLastOpenedSession(boolean expectDetachResponse, boolean closed) {
-        synchronized (_handlersLock) {
-            CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
-
-            int channel = _lastInitiatedChannel;
-            List<UnsignedInteger> links = _channelToLinkMap.get(channel);
-            if(links == null || links.isEmpty())
-            {
-                throw new IllegalStateException("No links found for channel: " + channel);
-            }
-
-            for (UnsignedInteger linkHandle : links)
-            {
-                // Now generate the Detach for the appropriate link on the appropriate session
-                final DetachFrame detachFrame = new DetachFrame();
-                detachFrame.setClosed(closed);
-                detachFrame.setHandle(linkHandle);
-                // TODO: add an optional error msg+condition?
-
-                final FrameSender frameSender = new FrameSender(this, FrameType.AMQP, channel, detachFrame, null);
-                comp.add(frameSender);
-
-                if (expectDetachResponse) {
-                    Matcher<Boolean> closeMatcher = null;
-                    if (closed) {
-                        closeMatcher = equalTo(true);
-                    } else {
-                        closeMatcher = Matchers.anyOf(equalTo(false), nullValue());
-                    }
-
-                    // Expect a response to our Detach.
-                    final DetachMatcher detachMatcher = new DetachMatcher().withClosed(closeMatcher);
-                    detachMatcher.withHandle(equalTo(linkHandle));
-                    // TODO: enable matching on the channel number of the response.
-                    addHandler(detachMatcher);
-                }
-            }
-        }
-    }
-
     private CompositeAmqpPeerRunnable insertCompsiteActionForLastHandler() {
         CompositeAmqpPeerRunnable comp = new CompositeAmqpPeerRunnable();
         Handler h = getLastHandler();
@@ -1299,16 +1247,6 @@ public class TestAmqpPeer implements AutoCloseable
         }
         h.onSuccess(comp);
         return comp;
-    }
-
-    private void recordLinkCreation(int channel, UnsignedInteger handle) {
-        List<UnsignedInteger> links = _channelToLinkMap.get(channel);
-        if(links == null) {
-            links = new ArrayList<UnsignedInteger>();
-            _channelToLinkMap.put(channel, links);
-        }
-
-        links.add(handle);
     }
 
     public void sendTransferToLastOpenedLinkOnLastOpenedSession(boolean deferWrite) {

@@ -60,7 +60,12 @@ public class HelloWorld {
             TextMessage message = session.createTextMessage("Hello world!");
             messageProducer.send(message, DeliveryMode.NON_PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
             TextMessage receivedMessage = (TextMessage) messageConsumer.receive(2000L);
-            System.out.println(receivedMessage.getText());
+
+            if (receivedMessage != null) {
+                System.out.println(receivedMessage.getText());
+            } else {
+                System.out.println("No message received within the given timeout!");
+            }
 
             connection.close();
         } catch (Exception exp) {

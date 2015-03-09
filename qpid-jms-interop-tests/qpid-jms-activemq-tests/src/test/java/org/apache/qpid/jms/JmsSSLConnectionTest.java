@@ -17,8 +17,11 @@
 package org.apache.qpid.jms;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import java.net.URI;
+
+import javax.jms.JMSException;
 
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.broker.TransportConnector;
@@ -69,13 +72,18 @@ public class JmsSSLConnectionTest {
         brokerService.waitUntilStopped();
     }
 
-    public String getConnectionURI() throws Exception {
-        return "amqps://" + connectionURI.getHost() + ":" + connectionURI.getPort();
+    public String getConnectionURI(boolean verifyHost) throws Exception {
+        String baseURI = "amqps://" + connectionURI.getHost() + ":" + connectionURI.getPort();
+        if (verifyHost) {
+            return baseURI;
+        } else {
+            return baseURI + "?transport.verifyHost=false";
+        }
     }
 
     @Test(timeout=30000)
     public void testCreateConnection() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getConnectionURI());
+        JmsConnectionFactory factory = new JmsConnectionFactory(getConnectionURI(false));
         JmsConnection connection = (JmsConnection) factory.createConnection();
         assertNotNull(connection);
         connection.close();
@@ -83,10 +91,24 @@ public class JmsSSLConnectionTest {
 
     @Test(timeout=30000)
     public void testCreateConnectionAndStart() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getConnectionURI());
+        JmsConnectionFactory factory = new JmsConnectionFactory(getConnectionURI(false));
         JmsConnection connection = (JmsConnection) factory.createConnection();
         assertNotNull(connection);
         connection.start();
         connection.close();
+    }
+
+    @Test(timeout=30000)
+    public void testCreateConnectionAndStartWithVerifyHostFailure() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(getConnectionURI(true));
+        try {
+            JmsConnection connection = (JmsConnection) factory.createConnection();
+            assertNotNull(connection);
+            connection.start();
+            connection.close();
+            fail("Expected connection to fail");
+        } catch (JMSException jmse) {
+            // expected due to certificate host verification failure.
+        }
     }
 }

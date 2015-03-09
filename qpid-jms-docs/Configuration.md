@@ -130,7 +130,7 @@ The complete set of SSL Transport options is listed below:
 * __transport.enabledCipherSuites__  defaults to Java defaults
 * __transport.enabledProtocols__  defaults to Java defaults
 * __transport.trustAll__  defaults to false
-* __transport.verifyHost__  defaults to false
+* __transport.verifyHost__  defaults to true
 
 ### Failover Configuration options
 

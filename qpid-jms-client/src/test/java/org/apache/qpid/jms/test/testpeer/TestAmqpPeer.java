@@ -508,15 +508,25 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectTempQueueCreationAttach(final String dynamicAddress)
     {
-        expectTempNodeCreationAttach(dynamicAddress, AmqpDestinationHelper.TEMP_QUEUE_CAPABILITY);
+        expectTempNodeCreationAttach(dynamicAddress, AmqpDestinationHelper.TEMP_QUEUE_CAPABILITY, false, false, null, null);
     }
 
     public void expectTempTopicCreationAttach(final String dynamicAddress)
     {
-        expectTempNodeCreationAttach(dynamicAddress, AmqpDestinationHelper.TEMP_TOPIC_CAPABILITY);
+        expectTempNodeCreationAttach(dynamicAddress, AmqpDestinationHelper.TEMP_TOPIC_CAPABILITY, false, false, null, null);
     }
 
-    private void expectTempNodeCreationAttach(final String dynamicAddress, final Symbol nodeTypeCapability)
+    public void expectAndRefuseTempQueueCreationAttach(Symbol errorType, String errorMessage, boolean deferAttachResponseWrite)
+    {
+        expectTempNodeCreationAttach(null, AmqpDestinationHelper.TEMP_QUEUE_CAPABILITY, true, deferAttachResponseWrite, errorType, errorMessage);
+    }
+
+    public void expectAndRefuseTempTopicCreationAttach(Symbol errorType, String errorMessage, boolean deferAttachResponseWrite)
+    {
+        expectTempNodeCreationAttach(null, AmqpDestinationHelper.TEMP_TOPIC_CAPABILITY, true, deferAttachResponseWrite, errorType, errorMessage);
+    }
+
+    private void expectTempNodeCreationAttach(final String dynamicAddress, final Symbol nodeTypeCapability, final boolean refuseLink, boolean deferAttachResponseWrite, Symbol errorType, String errorMessage)
     {
         TargetMatcher targetMatcher = new TargetMatcher();
         targetMatcher.withAddress(nullValue());
@@ -554,38 +564,74 @@ public class TestAmqpPeer implements AutoCloseable
                 attachResponse.setName(attachMatcher.getReceivedName());
                 attachResponse.setSource(attachMatcher.getReceivedSource());
 
-                Target t = (Target) createTargetObjectFromDescribedType(attachMatcher.getReceivedTarget());
-                t.setAddress(dynamicAddress);
-                trimTargetCapabilities(t);
-
-                attachResponse.setTarget(t);
+                if (!refuseLink) {
+                    Target t = (Target) createTargetObjectFromDescribedType(attachMatcher.getReceivedTarget());
+                    t.setAddress(dynamicAddress);
+                    trimTargetCapabilities(t);
+                    attachResponse.setTarget(t);
+                } else {
+                    attachResponse.setTarget(null);
+                }
 
                 _lastInitiatedLinkHandle = (UnsignedInteger) receivedHandle;
             }
         });
 
-        final FlowFrame flowFrame = new FlowFrame().setNextIncomingId(UnsignedInteger.ONE)  //TODO: shouldnt be hard coded
-                .setIncomingWindow(UnsignedInteger.valueOf(2048))
-                .setNextOutgoingId(UnsignedInteger.ONE) //TODO: shouldnt be hard coded
-                .setOutgoingWindow(UnsignedInteger.valueOf(2048))
-                .setLinkCredit(UnsignedInteger.valueOf(100));
-
-        // The flow frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
-        final FrameSender flowFrameSender = new FrameSender(this, FrameType.AMQP, -1, flowFrame, null);
-        flowFrameSender.setValueProvider(new ValueProvider()
+        if (deferAttachResponseWrite)
         {
-            @Override
-            public void setValues()
-            {
-                flowFrameSender.setChannel(attachMatcher.getActualChannel());
-                flowFrame.setHandle(attachMatcher.getReceivedHandle());
-                flowFrame.setDeliveryCount(attachMatcher.getReceivedInitialDeliveryCount());
-            }
-        });
+            // Defer writing the attach frame until the subsequent frame is also ready
+            attachResponseSender.setDeferWrite(true);
+        }
 
         CompositeAmqpPeerRunnable composite = new CompositeAmqpPeerRunnable();
         composite.add(attachResponseSender);
-        composite.add(flowFrameSender);
+
+        if (!refuseLink) {
+            final FlowFrame flowFrame = new FlowFrame().setNextIncomingId(UnsignedInteger.ONE)  //TODO: shouldnt be hard coded
+                    .setIncomingWindow(UnsignedInteger.valueOf(2048))
+                    .setNextOutgoingId(UnsignedInteger.ONE) //TODO: shouldn't be hard coded
+                    .setOutgoingWindow(UnsignedInteger.valueOf(2048))
+                    .setLinkCredit(UnsignedInteger.valueOf(100));
+
+            // The flow frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+            final FrameSender flowFrameSender = new FrameSender(this, FrameType.AMQP, -1, flowFrame, null);
+            flowFrameSender.setValueProvider(new ValueProvider()
+            {
+                @Override
+                public void setValues()
+                {
+                    flowFrameSender.setChannel(attachMatcher.getActualChannel());
+                    flowFrame.setHandle(attachMatcher.getReceivedHandle());
+                    flowFrame.setDeliveryCount(attachMatcher.getReceivedInitialDeliveryCount());
+                }
+            });
+
+            composite.add(flowFrameSender);
+        } else {
+            final DetachFrame detachResponse = new DetachFrame().setClosed(true);
+            if (errorType != null)
+            {
+                org.apache.qpid.jms.test.testpeer.describedtypes.Error detachError = new org.apache.qpid.jms.test.testpeer.describedtypes.Error();
+
+                detachError.setCondition(errorType);
+                detachError.setDescription(errorMessage);
+
+                detachResponse.setError(detachError);
+            }
+
+            // The response frame channel will be dynamically set based on the
+            // incoming frame. Using the -1 is an illegal placeholder.
+            final FrameSender detachResonseSender = new FrameSender(this, FrameType.AMQP, -1, detachResponse, null);
+            detachResonseSender.setValueProvider(new ValueProvider() {
+                 @Override
+                 public void setValues() {
+                      detachResonseSender.setChannel(attachMatcher.getActualChannel());
+                      detachResponse.setHandle(attachMatcher.getReceivedHandle());
+                 }
+            });
+
+            composite.add(detachResonseSender);
+        }
 
         attachMatcher.onSuccess(composite);
 
@@ -603,6 +649,11 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     public void expectSenderAttach(final Matcher<?> sourceMatcher, final Matcher<?> targetMatcher, final boolean refuseLink, boolean deferAttachResponseWrite)
+    {
+        expectSenderAttach(notNullValue(), targetMatcher, refuseLink, deferAttachResponseWrite, null, null);
+    }
+
+    public void expectSenderAttach(final Matcher<?> sourceMatcher, final Matcher<?> targetMatcher, final boolean refuseLink, boolean deferAttachResponseWrite, Symbol errorType, String errorMessage)
     {
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())
@@ -666,15 +717,25 @@ public class TestAmqpPeer implements AutoCloseable
             }
         });
 
-        final DetachFrame detachResonse = new DetachFrame().setClosed(true);
+        final DetachFrame detachResponse = new DetachFrame().setClosed(true);
+        if (errorType != null)
+        {
+            org.apache.qpid.jms.test.testpeer.describedtypes.Error detachError = new org.apache.qpid.jms.test.testpeer.describedtypes.Error();
+
+            detachError.setCondition(errorType);
+            detachError.setDescription(errorMessage);
+
+            detachResponse.setError(detachError);
+        }
+
         // The response frame channel will be dynamically set based on the
         // incoming frame. Using the -1 is an illegal placeholder.
-        final FrameSender detachResonseSender = new FrameSender(this, FrameType.AMQP, -1, detachResonse, null);
+        final FrameSender detachResonseSender = new FrameSender(this, FrameType.AMQP, -1, detachResponse, null);
         detachResonseSender.setValueProvider(new ValueProvider() {
              @Override
              public void setValues() {
                   detachResonseSender.setChannel(attachMatcher.getActualChannel());
-                  detachResonse.setHandle(attachMatcher.getReceivedHandle());
+                  detachResponse.setHandle(attachMatcher.getReceivedHandle());
              }
         });
 
@@ -693,10 +754,15 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectReceiverAttach(final Matcher<?> linkNameMatcher, final Matcher<?> sourceMatcher)
     {
-        expectReceiverAttach(linkNameMatcher, sourceMatcher, false, false);
+        expectReceiverAttach(linkNameMatcher, sourceMatcher, false, false, null, null);
     }
 
     public void expectReceiverAttach(final Matcher<?> linkNameMatcher, final Matcher<?> sourceMatcher, final boolean refuseLink, boolean deferAttachResponseWrite)
+    {
+        expectReceiverAttach(linkNameMatcher, sourceMatcher, refuseLink, deferAttachResponseWrite, null, null);
+    }
+
+    public void expectReceiverAttach(final Matcher<?> linkNameMatcher, final Matcher<?> sourceMatcher, final boolean refuseLink, boolean deferAttachResponseWrite, Symbol errorType, String errorMessage)
     {
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(linkNameMatcher)
@@ -747,17 +813,27 @@ public class TestAmqpPeer implements AutoCloseable
 
         if (refuseLink)
         {
-            final DetachFrame detachResonse = new DetachFrame().setClosed(true);
+            final DetachFrame detachResponse = new DetachFrame().setClosed(true);
+            if (errorType != null)
+            {
+                org.apache.qpid.jms.test.testpeer.describedtypes.Error detachError = new org.apache.qpid.jms.test.testpeer.describedtypes.Error();
+
+                detachError.setCondition(errorType);
+                detachError.setDescription(errorMessage);
+
+                detachResponse.setError(detachError);
+            }
+
             // The response frame channel will be dynamically set based on the
             // incoming frame. Using the -1 is an illegal placeholder.
-            final FrameSender detachResonseSender = new FrameSender(this, FrameType.AMQP, -1, detachResonse, null);
+            final FrameSender detachResonseSender = new FrameSender(this, FrameType.AMQP, -1, detachResponse, null);
             detachResonseSender.setValueProvider(new ValueProvider()
             {
                 @Override
                 public void setValues()
                 {
                     detachResonseSender.setChannel(attachMatcher.getActualChannel());
-                    detachResonse.setHandle(attachMatcher.getReceivedHandle());
+                    detachResponse.setHandle(attachMatcher.getReceivedHandle());
                 }
             });
 

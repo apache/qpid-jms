@@ -37,6 +37,7 @@ import javax.jms.Destination;
 import javax.jms.IllegalStateException;
 import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
+import javax.jms.JMSSecurityException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -54,6 +55,7 @@ import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
+import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.basictypes.TerminusDurability;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Declare;
@@ -194,6 +196,51 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 fail("Producer creation should have failed when link was refused");
             } catch(InvalidDestinationException ide) {
                 //Expected
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateTemporaryQueueFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
+        doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(false, false);
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateTemporaryQueueFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
+        doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(false, true);
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateTemporaryTopicFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
+        doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(false, false);
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateTemporaryTopicFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
+        doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(false, true);
+    }
+
+    private void doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(boolean topic, boolean deferAttachResponseWrite) throws Exception {
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin(true);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            testPeer.expectAndRefuseTempQueueCreationAttach(AmqpError.UNAUTHORIZED_ACCESS, "Not Authorized to create temp queues.", false);
+
+            try {
+                if (topic) {
+                    session.createTemporaryTopic();
+                } else {
+                    session.createTemporaryQueue();
+                }
+                fail("Should have thrown security exception");
+            } catch (JMSSecurityException jmsse) {
             }
 
             testPeer.waitForAllHandlersToComplete(1000);

@@ -37,10 +37,12 @@ public class AmqpConnectionProperties {
     public static final Symbol ANONYMOUS_RELAY = Symbol.valueOf("ANONYMOUS-RELAY");
     public static final Symbol QUEUE_PREFIX = Symbol.valueOf("queue-prefix");
     public static final Symbol TOPIC_PREFIX = Symbol.valueOf("topic-prefix");
+    public static final Symbol CONNECTION_OPEN_FAILED = Symbol.valueOf("amqp:connection-establishment-failed");
 
     private final JmsConnectionInfo connectionInfo;
 
     private boolean anonymousRelaySupported = false;
+    private boolean connectionOpenFailed = false;
 
     /**
      * Creates a new instance of this class with default values read from the
@@ -97,6 +99,11 @@ public class AmqpConnectionProperties {
             }
         }
 
+        if (properties.containsKey(CONNECTION_OPEN_FAILED)) {
+            LOG.trace("Remote sent Connection Establishment Failed marker.");
+            connectionOpenFailed = true;
+        }
+
         // TODO - Inspect properties for any other configuration options
     }
 
@@ -149,5 +156,26 @@ public class AmqpConnectionProperties {
      */
     public void setTopicPrefix(String topicPrefix) {
         connectionInfo.setTopicPrefix(topicPrefix);
+    }
+
+    /**
+     * Returns true if the remote connection marked the open response as being in
+     * a failed state which implies that a close follows.
+     *
+     * @return the connectionOpenFailed value.
+     */
+    public boolean isConnectionOpenFailed() {
+        return connectionOpenFailed;
+    }
+
+    /**
+     * Sets the state of the connection open failed flag.  When this flag is set
+     * true it implies that the open response will have a close response to follow.
+     *
+     * @param connectionOpenFailed
+     *        the connectionOpenFailed value to use for these properties.
+     */
+    public void setConnectionOpenFailed(boolean connectionOpenFailed) {
+        this.connectionOpenFailed = connectionOpenFailed;
     }
 }

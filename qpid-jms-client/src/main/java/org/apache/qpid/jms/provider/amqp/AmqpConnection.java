@@ -115,25 +115,31 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     @Override
     protected void doOpenCompletion() {
         properties.initialize(getEndpoint().getRemoteOfferedCapabilities(), getEndpoint().getRemoteProperties());
-        connectionSession.open(new AsyncResult() {
 
-            @Override
-            public boolean isComplete() {
-                return connectionSession.isOpen();
-            }
+        // If the remote reports that the connection attempt failed then we can assume a
+        // close follows so do nothing and wait so a proper error can be constructed from
+        // the information in the remote close.
+        if (!properties.isConnectionOpenFailed()) {
+            connectionSession.open(new AsyncResult() {
 
-            @Override
-            public void onSuccess() {
-                LOG.debug("{} is now open: ", AmqpConnection.this);
-                opened();
-            }
+                @Override
+                public boolean isComplete() {
+                    return connectionSession.isOpen();
+                }
 
-            @Override
-            public void onFailure(Throwable result) {
-                LOG.debug("AMQP Connection Session failed to open.");
-                failed(IOExceptionSupport.create(result));
-            }
-        });
+                @Override
+                public void onSuccess() {
+                    LOG.debug("{} is now open: ", AmqpConnection.this);
+                    opened();
+                }
+
+                @Override
+                public void onFailure(Throwable result) {
+                    LOG.debug("AMQP Connection Session failed to open.");
+                    failed(IOExceptionSupport.create(result));
+                }
+            });
+        }
     }
 
     public void processSaslAuthentication() {

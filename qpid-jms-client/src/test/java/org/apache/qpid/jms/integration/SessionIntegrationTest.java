@@ -234,9 +234,15 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             try {
                 if (topic) {
                     testPeer.expectAndRefuseTempTopicCreationAttach(AmqpError.UNAUTHORIZED_ACCESS, "Not Authorized to create temp topics.", false);
+                    //Expect the detach response to the test peer after refusal.
+                    testPeer.expectDetach(true, false, false);
+
                     session.createTemporaryTopic();
                 } else {
                     testPeer.expectAndRefuseTempQueueCreationAttach(AmqpError.UNAUTHORIZED_ACCESS, "Not Authorized to create temp queues.", false);
+                    //Expect the detach response to the test peer after refusal.
+                    testPeer.expectDetach(true, false, false);
+
                     session.createTemporaryQueue();
                 }
                 fail("Should have thrown security exception");

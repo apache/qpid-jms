@@ -269,10 +269,6 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
     @Override
     public void processRemoteOpen(AmqpProvider provider) throws IOException {
-        // TODO: We need a way to tell that the remote end is going to close
-        //       the resource immediately after this due to some error that
-        //       prevents the connection from opening.  (duplicate client ID etc)
-
         doOpenCompletion();
     }
 

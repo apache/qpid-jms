@@ -214,12 +214,12 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testCreateTemporaryTopicFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
-        doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(false, false);
+        doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(true, false);
     }
 
     @Test(timeout = 5000)
     public void testCreateTemporaryTopicFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
-        doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(false, true);
+        doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(true, true);
     }
 
     private void doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(boolean topic, boolean deferAttachResponseWrite) throws Exception {
@@ -231,12 +231,12 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin(true);
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            testPeer.expectAndRefuseTempQueueCreationAttach(AmqpError.UNAUTHORIZED_ACCESS, "Not Authorized to create temp queues.", false);
-
             try {
                 if (topic) {
+                    testPeer.expectAndRefuseTempTopicCreationAttach(AmqpError.UNAUTHORIZED_ACCESS, "Not Authorized to create temp topics.", false);
                     session.createTemporaryTopic();
                 } else {
+                    testPeer.expectAndRefuseTempQueueCreationAttach(AmqpError.UNAUTHORIZED_ACCESS, "Not Authorized to create temp queues.", false);
                     session.createTemporaryQueue();
                 }
                 fail("Should have thrown security exception");

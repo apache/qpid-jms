@@ -40,7 +40,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
     public static final String PASSWORD = "password";
     public static final String SERVER_KEYSTORE = "src/test/resources/example-jks.keystore";
-    public static final String CLIENT_TRUSTSTORE = "src/test/resources/exanple-jks.truststore";
+    public static final String CLIENT_TRUSTSTORE = "src/test/resources/example-jks.truststore";
     public static final String KEYSTORE_TYPE = "jks";
 
     @Override

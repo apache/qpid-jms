@@ -155,11 +155,11 @@ public class TransportSupport {
 
         TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
 
-        String storeLocation = options.getKeyStoreLocation();
-        String storePassword = options.getKeyStorePassword();
+        String storeLocation = options.getTrustStoreLocation();
+        String storePassword = options.getTrustStorePassword();
         String storeType = options.getStoreType();
 
-        LOG.trace("Attempt to load KeyStore from location {} of type {}", storeLocation, storeType);
+        LOG.trace("Attempt to load TrustStore from location {} of type {}", storeLocation, storeType);
 
         KeyStore trustStore = loadStore(storeLocation, storePassword, storeType);
         fact.init(trustStore);

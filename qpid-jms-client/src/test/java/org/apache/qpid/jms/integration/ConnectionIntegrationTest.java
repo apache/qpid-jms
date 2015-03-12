@@ -59,6 +59,15 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 5000)
+    public void testCreateConnectionWithClientId() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer, null, null, null, true);
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
+
+    @Test(timeout = 5000)
     public void testCreateAutoAckSession() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);

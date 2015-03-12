@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpTemporaryDestination;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.test.testpeer.basictypes.ReceiverSettleMode;
@@ -378,6 +379,11 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectPlainConnect(String username, String password, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties)
     {
+        expectPlainConnect(username, password, new Symbol[] { AmqpConnection.SOLE_CONNECTION_CAPABILITY }, serverCapabilities, serverProperties);
+    }
+
+    public void expectPlainConnect(String username, String password, Symbol[] desiredCapabilities, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties)
+    {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(Symbol.valueOf("PLAIN"));
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
                                             new FrameSender(
@@ -421,12 +427,20 @@ public class TestAmqpPeer implements AutoCloseable
             open.setProperties(serverProperties);
         }
 
-        addHandler(new OpenMatcher()
+        OpenMatcher openMatcher = new OpenMatcher()
             .withContainerId(notNullValue(String.class))
             .onSuccess(new FrameSender(
                     this, FrameType.AMQP, 0,
                     open,
-                    null)));
+                    null));
+
+        if (desiredCapabilities != null) {
+            openMatcher.withDesiredCapabilities(arrayContaining(desiredCapabilities));
+        } else {
+            openMatcher.withDesiredCapabilities(nullValue());
+        }
+
+        addHandler(openMatcher);
     }
 
     public void expectClose()

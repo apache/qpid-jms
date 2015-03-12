@@ -32,6 +32,7 @@ import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageFactory;
 import org.apache.qpid.jms.util.IOExceptionSupport;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.Sasl;
 import org.slf4j.Logger;
@@ -40,6 +41,8 @@ import org.slf4j.LoggerFactory;
 public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Connection> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
+
+    public static final Symbol SOLE_CONNECTION_CAPABILITY = Symbol.valueOf("sole-connection-for-container");
 
     private final AmqpJmsMessageFactory amqpMessageFactory;
 
@@ -83,6 +86,7 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     protected void doOpen() {
         getEndpoint().setContainer(resource.getClientId());
         getEndpoint().setHostname(remoteURI.getHost());
+        getEndpoint().setDesiredCapabilities(new Symbol[] { SOLE_CONNECTION_CAPABILITY });
         super.doOpen();
     }
 

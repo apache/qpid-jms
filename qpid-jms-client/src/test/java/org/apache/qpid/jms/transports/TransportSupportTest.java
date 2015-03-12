@@ -90,13 +90,6 @@ public class TransportSupportTest extends QpidJmsTestCase {
         TransportSupport.createSslContext(options);
     }
 
-    @Test(expected = UnrecoverableKeyException.class)
-    public void testCreateSslContextNoTrustStorePassword() throws Exception {
-        TransportSslOptions options = createJksSslOptions();
-        options.setTrustStorePassword(null);
-        TransportSupport.createSslContext(options);
-    }
-
     @Test(expected = IOException.class)
     public void testCreateSslContextWrongTrustStorePassword() throws Exception {
         TransportSslOptions options = createJksSslOptions();

@@ -34,7 +34,7 @@ import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.junit.Test;
 
 /**
- * Tests for the TransmportSupport class.
+ * Tests for the TransportSupport class.
  */
 public class TransportSupportTest extends QpidJmsTestCase {
 
@@ -84,9 +84,30 @@ public class TransportSupportTest extends QpidJmsTestCase {
     }
 
     @Test(expected = IOException.class)
-    public void testCreateSslContextBadPathToStore() throws Exception {
+    public void testCreateSslContextBadPathToKeyStore() throws Exception {
         TransportSslOptions options = createJksSslOptions();
         options.setKeyStoreLocation(CLIENT_JKS_KEYSTORE + ".bad");
+        TransportSupport.createSslContext(options);
+    }
+
+    @Test(expected = UnrecoverableKeyException.class)
+    public void testCreateSslContextNoTrustStorePassword() throws Exception {
+        TransportSslOptions options = createJksSslOptions();
+        options.setTrustStorePassword(null);
+        TransportSupport.createSslContext(options);
+    }
+
+    @Test(expected = IOException.class)
+    public void testCreateSslContextWrongTrustStorePassword() throws Exception {
+        TransportSslOptions options = createJksSslOptions();
+        options.setTrustStorePassword("wrong");
+        TransportSupport.createSslContext(options);
+    }
+
+    @Test(expected = IOException.class)
+    public void testCreateSslContextBadPathToTrustStore() throws Exception {
+        TransportSslOptions options = createJksSslOptions();
+        options.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE + ".bad");
         TransportSupport.createSslContext(options);
     }
 

@@ -17,16 +17,11 @@
 package org.apache.qpid.jms;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 import java.net.URI;
 
-import javax.jms.JMSException;
-
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.broker.TransportConnector;
-import org.apache.qpid.jms.JmsConnection;
-import org.apache.qpid.jms.JmsConnectionFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,8 +34,10 @@ public class JmsSSLConnectionTest {
     private BrokerService brokerService;
 
     public static final String PASSWORD = "password";
-    public static final String KEYSTORE = "src/test/resources/keystore";
+    public static final String KEYSTORE = "src/test/resources/broker-jks.keystore";
     public static final String KEYSTORE_TYPE = "jks";
+    public static final String TRUSTSTORE = "src/test/resources/client-jks.truststore";
+    public static final String TRUSTSTORE_TYPE = "jks";
 
     private URI connectionURI;
 
@@ -96,19 +93,5 @@ public class JmsSSLConnectionTest {
         assertNotNull(connection);
         connection.start();
         connection.close();
-    }
-
-    @Test(timeout=30000)
-    public void testCreateConnectionAndStartWithVerifyHostFailure() throws Exception {
-        JmsConnectionFactory factory = new JmsConnectionFactory(getConnectionURI(true));
-        try {
-            JmsConnection connection = (JmsConnection) factory.createConnection();
-            assertNotNull(connection);
-            connection.start();
-            connection.close();
-            fail("Expected connection to fail");
-        } catch (JMSException jmse) {
-            // expected due to certificate host verification failure.
-        }
     }
 }

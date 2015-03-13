@@ -63,7 +63,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             int port = server.getServerPort();
             URI serverLocation = new URI("tcp://localhost:" + port);
 
-            Transport transport = createTransport(serverLocation, testListener, createClientOptionsWithoutTrustStore(false, false));
+            Transport transport = createTransport(serverLocation, testListener, createClientOptionsWithoutTrustStore(false));
             try {
                 transport.connect();
                 fail("Should not have connected to the server");
@@ -115,7 +115,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             int port = server.getServerPort();
             URI serverLocation = new URI("tcp://localhost:" + port);
 
-            Transport transport = createTransport(serverLocation, testListener, createClientOptionsWithoutTrustStore(true, false));
+            Transport transport = createTransport(serverLocation, testListener, createClientOptionsWithoutTrustStore(true));
             try {
                 transport.connect();
                 LOG.info("Connection established to untrusted test server.");
@@ -222,12 +222,11 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
         return options;
     }
 
-    protected TransportSslOptions createClientOptionsWithoutTrustStore(boolean trustAll, boolean verifyHost) {
+    protected TransportSslOptions createClientOptionsWithoutTrustStore(boolean trustAll) {
         TransportSslOptions options = TransportSslOptions.INSTANCE.clone();
 
         options.setStoreType(KEYSTORE_TYPE);
         options.setTrustAll(trustAll);
-        options.setVerifyHost(verifyHost);
 
         return options;
     }

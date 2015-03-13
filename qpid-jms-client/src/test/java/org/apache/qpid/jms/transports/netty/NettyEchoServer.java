@@ -153,7 +153,7 @@ public class NettyEchoServer implements AutoCloseable {
                 handler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
                     @Override
                     public void operationComplete(Future<Channel> future) throws Exception {
-                        LOG.info("SSL handshake completed successfully");
+                        LOG.info("SSL handshake completed. Succeeded: " + future.isSuccess());
                     }
                 });
             }

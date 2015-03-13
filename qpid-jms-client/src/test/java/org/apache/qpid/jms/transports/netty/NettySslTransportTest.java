@@ -42,6 +42,8 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     public static final String SERVER_KEYSTORE = "src/test/resources/broker-jks.keystore";
     public static final String SERVER_WRONG_HOST_KEYSTORE = "src/test/resources/broker-wrong-host-jks.keystore";
     public static final String CLIENT_TRUSTSTORE = "src/test/resources/client-jks.truststore";
+    public static final String OTHER_CA_TRUSTSTORE = "src/test/resources/other-ca-jks.truststore";
+
     public static final String KEYSTORE_TYPE = "jks";
 
     @Override
@@ -76,6 +78,35 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
         logTransportErrors();
         assertTrue(exceptions.isEmpty());
+    }
+
+    @Test(timeout = 60 * 1000)
+    public void testConnectToServerUsingUntrustedKeyFails() throws Exception {
+        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            TransportSslOptions options = TransportSslOptions.INSTANCE.clone();
+
+            options.setTrustStoreLocation(OTHER_CA_TRUSTSTORE);
+            options.setTrustStorePassword(PASSWORD);
+            options.setStoreType(KEYSTORE_TYPE);
+            options.setVerifyHost(false);
+
+            Transport transport = createTransport(serverLocation, testListener, options);
+            try {
+                transport.connect();
+                fail("Should not have connected to the server");
+            } catch (Exception e) {
+                LOG.info("Connection failed to untrusted test server.");
+            }
+
+            assertFalse(transport.isConnected());
+
+            transport.close();
+        }
     }
 
     @Test(timeout = 60 * 1000)

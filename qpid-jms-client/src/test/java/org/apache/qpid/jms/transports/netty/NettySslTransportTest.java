@@ -92,8 +92,6 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
             options.setTrustStoreLocation(OTHER_CA_TRUSTSTORE);
             options.setTrustStorePassword(PASSWORD);
-            options.setStoreType(KEYSTORE_TYPE);
-            options.setVerifyHost(false);
 
             Transport transport = createTransport(serverLocation, testListener, options);
             try {

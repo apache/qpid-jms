@@ -43,9 +43,9 @@ Applications use a JNDI InitialContext, itself obtained from an InitialContextFa
 
 The property syntax used in the properties file or environment Hashtable is as follows:
 
-*   To define a ConnectionFactory, use format: *connectionfactory.lookupName = URI*
-*   To define a Queue, use format: *queue.lookupName = queueName*
-*   To define a Topic use format: *topic.lookupName = topicName*
++   To define a ConnectionFactory, use format: *connectionfactory.lookupName = URI*
++   To define a Queue, use format: *queue.lookupName = queueName*
++   To define a Topic use format: *topic.lookupName = topicName*
 
 For more details of the Connection URI, see the next section.
 
@@ -74,26 +74,26 @@ The client can be configured with a number of different settings using the URI w
 The options apply to the behaviour of the JMS objects such as Connection, Session, MessageConsumer and MessageProducer.
 
 + **jms.username** User name value used to authenticate the connection
-* __jms.password__ The password value used to authenticate the connection
-* __jms.clientId__ A client ID value that is applied to the connection.
-* __jms.forceAsyncSend__ Configures whether all Messages sent from a MessageProducer are sent asynchronously or only those Message that qualify such as Messages inside a transaction or non-persistent messages.
-* __jms.alwaysSyncSend__ Override all asynchronous send conditions and always sends every Message from a MessageProducer synchronously.
-* __jms.sendAcksAsync__ Causes all Message acknowledgments to be sent asynchronously.
-* __jms.localMessagePriority__ If enabled prefetched messages are reordered locally based on their given Message priority value.
-* __jms.queuePrefix__ Optional prefix value added to the name of any Queue created from a JMS Session.
-* __jms.topicPrefix__ Optional prefix value added to the name of any Topic created from a JMS Session.
-* __jms.closeTimeout__ Timeout value that controls how long the client waits on Connection close before returning. (By default the client waits 15 seconds for a normal close completion event).
-* __jms.connectTimeout__ Timeout value that controls how long the client waits on Connection establishment before returning with an error. (By default the client waits 15 seconds for a connection to be established before failing).
-* __jms.clientIDPrefix__ Optional prefix value that is used for generated Client ID values when a new Connection is created for the JMS ConnectionFactory.  The default prefix is 'ID:'.
-* __jms.connectionIDPrefix__ Optional prefix value that is used for generated Connection ID values when a new Connection is created for the JMS ConnectionFactory.  This connection ID is used when logging some information from the JMS Connection object so a configurable prefix can make breadcrumbing the logs easier.  The default prefix is 'ID:'.
++ **jms.password** The password value used to authenticate the connection
++ **jms.clientId** A client ID value that is applied to the connection.
++ **jms.forceAsyncSend** Configures whether all Messages sent from a MessageProducer are sent asynchronously or only those Message that qualify such as Messages inside a transaction or non-persistent messages.
++ **jms.alwaysSyncSend** Override all asynchronous send conditions and always sends every Message from a MessageProducer synchronously.
++ **jms.sendAcksAsync** Causes all Message acknowledgments to be sent asynchronously.
++ **jms.localMessagePriority** If enabled prefetched messages are reordered locally based on their given Message priority value.
++ **jms.queuePrefix** Optional prefix value added to the name of any Queue created from a JMS Session.
++ **jms.topicPrefix** Optional prefix value added to the name of any Topic created from a JMS Session.
++ **jms.closeTimeout** Timeout value that controls how long the client waits on Connection close before returning. (By default the client waits 15 seconds for a normal close completion event).
++ **jms.connectTimeout** Timeout value that controls how long the client waits on Connection establishment before returning with an error. (By default the client waits 15 seconds for a connection to be established before failing).
++ **jms.clientIDPrefix** Optional prefix value that is used for generated Client ID values when a new Connection is created for the JMS ConnectionFactory.  The default prefix is 'ID:'.
++ **jms.connectionIDPrefix** Optional prefix value that is used for generated Connection ID values when a new Connection is created for the JMS ConnectionFactory.  This connection ID is used when logging some information from the JMS Connection object so a configurable prefix can make breadcrumbing the logs easier.  The default prefix is 'ID:'.
 
 These values control how many messages the remote peer can send to the client and be held in a prefetch buffer for each consumer instance.
 
-* __jms.prefetchPolicy.queuePrefetch__ defaults to 1000
-* __jms.prefetchPolicy.topicPrefetch__ defaults to 1000
-* __jms.prefetchPolicy.queueBrowserPrefetch__ defaults to 1000
-* __jms.prefetchPolicy.durableTopicPrefetch__ defaults to 1000
-* __jms.prefetchPolicy.all__ used to set all prefetch values at once.
++ **jms.prefetchPolicy.queuePrefetch** defaults to 1000
++ **jms.prefetchPolicy.topicPrefetch** defaults to 1000
++ **jms.prefetchPolicy.queueBrowserPrefetch** defaults to 1000
++ **jms.prefetchPolicy.durableTopicPrefetch** defaults to 1000
++ **jms.prefetchPolicy.all** used to set all prefetch values at once.
 
 ### TCP Transport Configuration options
 
@@ -103,14 +103,14 @@ When connected to a remote using plain TCP these options configure the behaviour
 
 The complete set of TCP Transport options is listed below:
 
-* __transport.sendBufferSize__ default is 64k
-* __transport.receiveBufferSize__ default is 64k
-* __transport.trafficClass__ default is 0
-* __transport.connectTimeout__ default is 60 seconds
-* __transport.soTimeout__ default is -1
-* __transport.soLinger__ default is -1
-* __transport.tcpKeepAlive__ default is false
-* __transport.tcpNoDelay__ default is true
++ **transport.sendBufferSize** default is 64k
++ **transport.receiveBufferSize** default is 64k
++ **transport.trafficClass** default is 0
++ **transport.connectTimeout** default is 60 seconds
++ **transport.soTimeout** default is -1
++ **transport.soLinger** default is -1
++ **transport.tcpKeepAlive** default is false
++ **transport.tcpNoDelay** default is true
 
 ### SSL Transport Configuration options
 
@@ -122,15 +122,15 @@ A simple SSL based client URI is shown below:
 
 The complete set of SSL Transport options is listed below:
 
-* __transport.keyStoreLocation__  default is to read from the system property "javax.net.ssl.keyStore"
-* __transport.keyStorePassword__  default is to read from the system property "javax.net.ssl.keyStorePassword"
-* __transport.trustStoreLocation__  default is to read from the system property "javax.net.ssl.trustStore"
-* __transport.trustStorePassword__  default is to read from the system property "javax.net.ssl.keyStorePassword"
-* __transport.storeType__  default is 'JKS'
-* __transport.enabledCipherSuites__  defaults to Java defaults
-* __transport.enabledProtocols__  defaults to Java defaults
-* __transport.trustAll__  defaults to false
-* __transport.verifyHost__  defaults to true
++ **transport.keyStoreLocation**  default is to read from the system property "javax.net.ssl.keyStore"
++ **transport.keyStorePassword**  default is to read from the system property "javax.net.ssl.keyStorePassword"
++ **transport.trustStoreLocation**  default is to read from the system property "javax.net.ssl.trustStore"
++ **transport.trustStorePassword**  default is to read from the system property "javax.net.ssl.keyStorePassword"
++ **transport.storeType**  default is 'JKS'
++ **transport.enabledCipherSuites**  defaults to Java defaults
++ **transport.enabledProtocols**  defaults to Java defaults
++ **transport.trustAll**  defaults to false
++ **transport.verifyHost**  defaults to true
 
 ### Failover Configuration options
 
@@ -142,11 +142,11 @@ The URI for failover looks something like the following:
 
 The complete set of configuration options for failover is listed below:
 
-* __failover.initialReconnectDelay__ The amount of time the client will wait before the first attempt to reconnect to a remote peer.  The default value is zero, meaning the first attempt happens immediately.
-* __failover.reconnectDelay__ Controls the delay between successive reconnection attempts, defaults to 10 milliseconds.  If the backoff option is not enabled this value remains constant.
-* __failover.maxReconnectDelay__ The maximum time that the client will wait before attempting a reconnect.  This value is only used when the backoff feature is enabled to ensure that the delay doesn't not grow to large.  Defaults to 30 seconds as the max time between connect attempts.
-* __failover.useReconnectBackOff__ Controls whether the time between reconnection attempts should grow based on a configured multiplier.  This option defaults to true.
-* __failover.reconnectBackOffMultiplier__ The multiplier used to grow the reconnection delay value, defaults to 2.0d
-* __failover.maxReconnectAttempts__ The number of reconnection attempts allowed before reporting the connection as failed to the client.  The default is no limit or (-1).
-* __failover.startupMaxReconnectAttempts__ For a client that has never connected to a remote peer before this option control how many attempts are made to connect before reporting the connection as failed.  The default is to default to the value of maxReconnectAttempts.
-* __failover.warnAfterReconnectAttempts__ Controls how often the client will log a message indicating that failover reconnection is being attempted.  The default is to log every 10 connection attempts.
++ **failover.initialReconnectDelay** The amount of time the client will wait before the first attempt to reconnect to a remote peer.  The default value is zero, meaning the first attempt happens immediately.
++ **failover.reconnectDelay** Controls the delay between successive reconnection attempts, defaults to 10 milliseconds.  If the backoff option is not enabled this value remains constant.
++ **failover.maxReconnectDelay** The maximum time that the client will wait before attempting a reconnect.  This value is only used when the backoff feature is enabled to ensure that the delay doesn't not grow to large.  Defaults to 30 seconds as the max time between connect attempts.
++ **failover.useReconnectBackOff** Controls whether the time between reconnection attempts should grow based on a configured multiplier.  This option defaults to true.
++ **failover.reconnectBackOffMultiplier** The multiplier used to grow the reconnection delay value, defaults to 2.0d
++ **failover.maxReconnectAttempts** The number of reconnection attempts allowed before reporting the connection as failed to the client.  The default is no limit or (-1).
++ **failover.startupMaxReconnectAttempts** For a client that has never connected to a remote peer before this option control how many attempts are made to connect before reporting the connection as failed.  The default is to default to the value of maxReconnectAttempts.
++ **failover.warnAfterReconnectAttempts** Controls how often the client will log a message indicating that failover reconnection is being attempted.  The default is to log every 10 connection attempts.

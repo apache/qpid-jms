@@ -265,6 +265,24 @@
           <propertyName>jacoco-config</propertyName>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>**/*.md</exclude>
+            <exclude>**/*.txt</exclude>
+            <exclude>etc/org.eclipse.*</exclude>
+            <exclude>**/target/</exclude>
+            <exclude>**/data/</exclude>
+            <exclude>**/*.lock</exclude>
+            <exclude>**/META-INF/services/*</exclude>
+            <exclude>**/*.iml</exclude>
+            <exclude>**/*.jceks</exclude>
+            <exclude>**/*.jks</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 

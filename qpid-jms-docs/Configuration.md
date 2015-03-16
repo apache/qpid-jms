@@ -73,7 +73,7 @@ The client can be configured with a number of different settings using the URI w
 
 The options apply to the behaviour of the JMS objects such as Connection, Session, MessageConsumer and MessageProducer.
 
-* __jms.username__ User name value used to authenticate the connection
+* **jms.username** User name value used to authenticate the connection
 * __jms.password__ The password value used to authenticate the connection
 * __jms.clientId__ A client ID value that is applied to the connection.
 * __jms.forceAsyncSend__ Configures whether all Messages sent from a MessageProducer are sent asynchronously or only those Message that qualify such as Messages inside a transaction or non-persistent messages.

@@ -316,6 +316,7 @@ public class TestAmqpPeer implements AutoCloseable
 
         addHandler(new SaslInitMatcher()
             .withMechanism(equalTo(Symbol.valueOf("ANONYMOUS")))
+            .withInitialResponse(nullValue())
             .onSuccess(new AmqpPeerRunnable()
             {
                 @Override

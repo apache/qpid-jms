@@ -61,7 +61,11 @@ public interface Mechanism extends Comparable<Mechanism> {
     String getName();
 
     /**
-     * @return the response buffer used to answer the initial SASL cycle.
+     * Create an initial response based on selected mechanism.
+     *
+     * May be null if there is no initial response.
+     *
+     * @return the initial response, or null if there isn't one.
      * @throws SaslException if an error occurs computing the response.
      */
     byte[] getInitialResponse() throws SaslException;

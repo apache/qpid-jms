@@ -59,12 +59,15 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
             // Expect a PLAIN connection
-            testPeer.expectPlainConnect("guest", "guest", null, null);
+            String user = "user";
+            String pass = "qwerty123456";
+
+            testPeer.expectPlainConnect(user, pass, null, null);
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin(true);
 
             ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort());
-            Connection connection = factory.createConnection("guest", "guest");
+            Connection connection = factory.createConnection(user, pass);
             // Set a clientID to provoke the actual AMQP connection process to occur.
             connection.setClientID("clientName");
 
@@ -79,7 +82,6 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 5000)
     public void testSaslAnonymousConnection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-
             // Expect an ANOYMOUS connection
             testPeer.expectAnonymousConnect(true);
             // Each connection creates a session for managing temporary destinations etc

@@ -47,7 +47,7 @@ public class CramMD5Mechanism extends AbstractMechanism {
 
     @Override
     public byte[] getInitialResponse() {
-        return EMPTY;
+        return null;
     }
 
     @Override

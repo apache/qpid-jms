@@ -23,7 +23,7 @@ public class AnonymousMechanism extends AbstractMechanism {
 
     @Override
     public byte[] getInitialResponse() {
-        return EMPTY;
+        return null;
     }
 
     @Override

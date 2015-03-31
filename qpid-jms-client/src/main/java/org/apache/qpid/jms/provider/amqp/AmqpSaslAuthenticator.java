@@ -86,7 +86,7 @@ public class AmqpSaslAuthenticator {
 
                     sasl.setMechanisms(mechanism.getName());
                     byte[] response = mechanism.getInitialResponse();
-                    if (response != null && response.length != 0) {
+                    if (response != null) {
                         sasl.send(response, 0, response.length);
                     }
                 } else {

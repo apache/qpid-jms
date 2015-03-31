@@ -51,10 +51,11 @@ public class FactoryFinder<T extends Object> {
          *
          * @throws IllegalAccessException if an error occurs while accessing the search path.
          * @throws InstantiationException if the factory object fails on create.
+         * @throws ResourceNotFoundException if the path does not exist.
          * @throws IOException if the search encounter an IO error.
          * @throws ClassNotFoundException if the class that is to be loaded cannot be found.
          */
-        public Object create(String path) throws IllegalAccessException, InstantiationException, IOException, ClassNotFoundException;
+        public Object create(String path) throws IllegalAccessException, InstantiationException, IOException, ClassNotFoundException, ResourceNotFoundException;
 
     }
 
@@ -106,11 +107,12 @@ public class FactoryFinder<T extends Object> {
      *
      * @throws IllegalAccessException if an error occurs while accessing the search path.
      * @throws InstantiationException if the factory object fails on create.
+     * @throws ResourceNotFoundException if the resource with the given key does not exist.
      * @throws IOException if the search encounter an IO error.
      * @throws ClassNotFoundException if the class that is to be loaded cannot be found.
      * @throws ClassCastException if the found object is not assignable to the request factory type.
      */
-    public T newInstance(String key) throws IllegalAccessException, InstantiationException, IOException, ClassNotFoundException, ClassCastException {
+    public T newInstance(String key) throws IllegalAccessException, InstantiationException, IOException, ClassNotFoundException, ClassCastException, ResourceNotFoundException {
         T factory = cachedFactories.get(key);
         if (factory == null) {
             Object found = objectFactory.create(path + key);
@@ -150,7 +152,7 @@ public class FactoryFinder<T extends Object> {
         final ConcurrentHashMap<String, Properties> propertiesMap = new ConcurrentHashMap<String, Properties>();
 
         @Override
-        public Object create(final String path) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
+        public Object create(final String path) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException, ResourceNotFoundException {
             Class<?> clazz = classMap.get(path);
             Properties properties = propertiesMap.get(path);
 
@@ -204,7 +206,7 @@ public class FactoryFinder<T extends Object> {
             return clazz;
         }
 
-        static public Properties loadProperties(String uri) throws IOException {
+        static public Properties loadProperties(String uri) throws IOException, ResourceNotFoundException {
             // lets try the thread context class loader first
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
             if (classLoader == null) {
@@ -214,7 +216,7 @@ public class FactoryFinder<T extends Object> {
             if (in == null) {
                 in = FactoryFinder.class.getClassLoader().getResourceAsStream(uri);
                 if (in == null) {
-                    throw new IOException("Could not find factory class for resource: " + uri);
+                    throw new ResourceNotFoundException("Could not find factory resource: " + uri);
                 }
             }
 

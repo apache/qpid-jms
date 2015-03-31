@@ -16,12 +16,12 @@
  */
 package org.apache.qpid.jms.sasl;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import org.apache.qpid.jms.util.FactoryFinder;
+import org.apache.qpid.jms.util.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,11 +58,9 @@ public class SaslMechanismFinder {
         List<Mechanism> found = new ArrayList<Mechanism>();
 
         for (String remoteMechanism : remoteMechanisms) {
-            try {
-                MechanismFactory factory = findMechanismFactory(remoteMechanism);
+            MechanismFactory factory = findMechanismFactory(remoteMechanism);
+            if (factory != null) {
                 found.add(factory.createMechanism());
-            } catch (IOException e) {
-                LOG.warn("Caught exception while searching for SASL mechanisms: {}", e.getMessage());
             }
         }
 
@@ -85,22 +83,23 @@ public class SaslMechanismFinder {
      * to search in the classpath.
      *
      * @param name
-     *        The name of the authentication mechanism to search for..
+     *        The name of the authentication mechanism to search for.
      *
-     * @return a mechanism factory instance matching the URI's scheme.
-     *
-     * @throws IOException if an error occurs while locating the factory.
+     * @return a mechanism factory instance matching the name, or null if none was created.
      */
-    protected static MechanismFactory findMechanismFactory(String name) throws IOException {
+    protected static MechanismFactory findMechanismFactory(String name) {
         if (name == null || name.isEmpty()) {
-            throw new IOException("No Mechanism name specified.");
+            LOG.warn("No SASL mechanism name was specified");
+            return null;
         }
 
         MechanismFactory factory = null;
         try {
             factory = MECHANISM_FACTORY_FINDER.newInstance(name);
-        } catch (Throwable e) {
-            throw new IOException("Mechanism scheme NOT recognized: [" + name + "]", e);
+        } catch (ResourceNotFoundException rnfe) {
+            LOG.debug("Unknown SASL mechanism: [" + name + "]");
+        } catch (Exception e) {
+            LOG.warn("Caught exception while finding factory for SASL mechanism {}: {}", name, e.getMessage());
         }
 
         return factory;

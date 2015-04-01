@@ -19,13 +19,17 @@ package org.apache.qpid.jms.consumer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Enumeration;
 
 import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.QueueBrowser;
 import javax.jms.Session;
+import javax.jms.TextMessage;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.JmsConnection;
@@ -77,6 +81,33 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
 
         Enumeration enumeration = browser.getEnumeration();
         assertFalse(enumeration.hasMoreElements());
+    }
+
+    @SuppressWarnings("rawtypes")
+    @Test(timeout=30000)
+    public void testBroseOneInQueue() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(getDestinationName());
+        MessageProducer producer = session.createProducer(queue);
+        producer.send(session.createTextMessage("hello"));
+        producer.close();
+
+        QueueBrowser browser = session.createBrowser(queue);
+        Enumeration enumeration = browser.getEnumeration();
+        while (enumeration.hasMoreElements()) {
+            Message m = (Message) enumeration.nextElement();
+            assertTrue(m instanceof TextMessage);
+        }
+
+        browser.close();
+
+        MessageConsumer consumer = session.createConsumer(queue);
+        Message msg = consumer.receive(5000);
+        assertNotNull(msg);
+        assertTrue(msg instanceof TextMessage);
     }
 
     @SuppressWarnings("rawtypes")

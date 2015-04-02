@@ -59,15 +59,18 @@ public class NettyEchoServer implements AutoCloseable {
     private Channel serverChannel;
     private final TransportOptions options;
     private int serverPort;
+    private boolean needClientAuth;
+    private volatile SslHandler sslHandler;
 
     private final AtomicBoolean started = new AtomicBoolean();
 
-    public NettyEchoServer() {
-        this.options = TransportOptions.INSTANCE;
+    public NettyEchoServer(TransportOptions options) {
+        this(options, false);
     }
 
-    public NettyEchoServer(TransportOptions options) {
+    public NettyEchoServer(TransportOptions options, boolean needClientAuth) {
         this.options = options;
+        this.needClientAuth = needClientAuth;
     }
 
     public void start() throws Exception {
@@ -84,6 +87,7 @@ public class NettyEchoServer implements AutoCloseable {
             server.option(ChannelOption.SO_BACKLOG, 100);
             server.handler(new LoggingHandler(LogLevel.INFO));
             server.childHandler(new ChannelInitializer<Channel>() {
+
                 @Override
                 public void initChannel(Channel ch) throws Exception {
                     if (options instanceof TransportSslOptions) {
@@ -91,7 +95,8 @@ public class NettyEchoServer implements AutoCloseable {
                         SSLContext context = TransportSupport.createSslContext(sslOptions);
                         SSLEngine engine = TransportSupport.createSslEngine(context, sslOptions);
                         engine.setUseClientMode(false);
-                        SslHandler sslHandler = new SslHandler(engine);
+                        engine.setNeedClientAuth(needClientAuth);
+                        sslHandler = new SslHandler(engine);
                         ch.pipeline().addLast(sslHandler);
                     }
                     ch.pipeline().addLast(new EchoServerHandler());
@@ -175,5 +180,9 @@ public class NettyEchoServer implements AutoCloseable {
             cause.printStackTrace();
             ctx.close();
         }
+    }
+
+    SslHandler getSslHandler() {
+        return sslHandler;
     }
 }

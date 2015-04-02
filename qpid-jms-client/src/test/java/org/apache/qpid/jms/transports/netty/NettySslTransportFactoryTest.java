@@ -52,7 +52,8 @@ public class NettySslTransportFactoryTest {
     public static final String CUSTOM_ENABLED_CIPHER_SUITES_STRING = "Suite-1,Suite-2";
     public static final String CUSTOM_STORE_TYPE = "jceks";
     public static final boolean CUSTOM_TRUST_ALL = true;
-    public static final boolean CUSTOM_VERIFY_HOST = true;
+    public static final boolean CUSTOM_VERIFY_HOST = false;
+    public static final String CUSTOM_KEY_ALIAS = "myTestAlias";
 
     @Test
     public void testCreateWithDefaultOptions() throws Exception {
@@ -89,6 +90,7 @@ public class NettySslTransportFactoryTest {
 
         assertEquals(TransportSslOptions.DEFAULT_STORE_TYPE, sslOptions.getStoreType());
         assertEquals(TransportSslOptions.DEFAULT_VERIFY_HOST, sslOptions.isVerifyHost());
+        assertNull(sslOptions.getKeyAlias());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -121,6 +123,7 @@ public class NettySslTransportFactoryTest {
             "transport.verifyHost=" + CUSTOM_VERIFY_HOST + "&" +
             "transport.storeType=" + CUSTOM_STORE_TYPE + "&" +
             "transport.trustAll=" + CUSTOM_TRUST_ALL + "&" +
+            "transport.keyAlias=" + CUSTOM_KEY_ALIAS + "&" +
             "transport.enabledProtocols=" + CUSTOM_ENABLED_PROTOCOLS_STRING + "&" +
             "transport.enabledCipherSuites=" + CUSTOM_ENABLED_CIPHER_SUITES_STRING);
 
@@ -157,5 +160,6 @@ public class NettySslTransportFactoryTest {
 
         assertEquals(CUSTOM_STORE_TYPE, sslOptions.getStoreType());
         assertEquals(CUSTOM_VERIFY_HOST, sslOptions.isVerifyHost());
+        assertEquals(CUSTOM_KEY_ALIAS, sslOptions.getKeyAlias());
     }
 }

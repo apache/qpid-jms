@@ -43,7 +43,7 @@ keytool -importkeystore -srckeystore broker-pkcs12.truststore -destkeystore brok
 
 # Create a key pair for the client, and sign it with the CA:
 # ----------------------------------------------------------
-keytool -storetype pkcs12 -keystore client-pkcs12.keystore -storepass password -keypass password -alias client -genkey -dname "O=Client,CN=localhost" -validity 9999 -ext bc=ca:false -ext eku=cA
+keytool -storetype pkcs12 -keystore client-pkcs12.keystore -storepass password -keypass password -alias client -genkey -dname "O=Client,CN=client" -validity 9999 -ext bc=ca:false -ext eku=cA
 
 keytool -storetype pkcs12 -keystore client-pkcs12.keystore -storepass password -alias client -certreq -file client.csr
 keytool -storetype pkcs12 -keystore ca-pkcs12.keystore -storepass password -alias ca -gencert -rfc -infile client.csr -outfile client.crt -ext bc=ca:false -ext eku=cA
@@ -69,3 +69,14 @@ keytool -storetype jks -keystore other-ca-jks.truststore -storepass password -ke
 keytool -storetype jks -keystore other-ca-jks.truststore -storepass password -alias other-ca -exportcert -rfc > other-ca.crt
 keytool -storetype jks -keystore other-ca-jks.truststore -storepass password -alias other-ca -delete
 keytool -storetype jks -keystore other-ca-jks.truststore -storepass password -keypass password -importcert -alias other-ca -file other-ca.crt -noprompt
+
+
+# Create a store with multiple key pairs for the client to allow for alias selection:
+# ----------------------------------------------------------
+keytool -importkeystore -srckeystore client-pkcs12.keystore -destkeystore client-multiple-keys-jks.keystore -srcstoretype pkcs12 -deststoretype jks -srcstorepass password -deststorepass password
+
+keytool -storetype jks -keystore client-multiple-keys-jks.keystore -storepass password -keypass password -alias client2 -genkey -dname "O=Client2,CN=client2" -validity 9999 -ext bc=ca:false -ext eku=cA
+
+keytool -storetype jks -keystore client-multiple-keys-jks.keystore -storepass password -alias client2 -certreq -file client2.csr
+keytool -storetype pkcs12 -keystore ca-pkcs12.keystore -storepass password -alias ca -gencert -rfc -infile client2.csr -outfile client2.crt -ext bc=ca:false -ext eku=cA
+keytool -storetype jks -keystore client-multiple-keys-jks.keystore -storepass password -keypass password -importcert -alias client2 -file client2.crt

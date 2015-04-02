@@ -18,10 +18,19 @@ package org.apache.qpid.jms.transports.netty;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import io.netty.handler.ssl.SslHandler;
 
+import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSession;
 
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
@@ -40,9 +49,17 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
     public static final String PASSWORD = "password";
     public static final String SERVER_KEYSTORE = "src/test/resources/broker-jks.keystore";
+    public static final String SERVER_TRUSTSTORE = "src/test/resources/broker-jks.truststore";
     public static final String SERVER_WRONG_HOST_KEYSTORE = "src/test/resources/broker-wrong-host-jks.keystore";
+    public static final String CLIENT_KEYSTORE = "src/test/resources/client-jks.keystore";
+    public static final String CLIENT_MULTI_KEYSTORE = "src/test/resources/client-multiple-keys-jks.keystore";
     public static final String CLIENT_TRUSTSTORE = "src/test/resources/client-jks.truststore";
     public static final String OTHER_CA_TRUSTSTORE = "src/test/resources/other-ca-jks.truststore";
+
+    public static final String CLIENT_KEY_ALIAS = "client";
+    public static final String CLIENT_DN = "O=Client,CN=client";
+    public static final String CLIENT2_KEY_ALIAS = "client2";
+    public static final String CLIENT2_DN = "O=Client2,CN=client2";
 
     public static final String KEYSTORE_TYPE = "jks";
 
@@ -186,8 +203,84 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
         assertTrue(exceptions.isEmpty());
     }
 
+    @Test(timeout = 60 * 1000)
+    public void testConnectWithNeedClientAuth() throws Exception {
+        TransportSslOptions serverOptions = createServerOptions();
+
+        try (NettyEchoServer server = new NettyEchoServer(serverOptions, true)) {
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            TransportSslOptions clientOptions = createClientOptions();
+
+            NettySslTransport transport = createTransport(serverLocation, testListener, clientOptions);
+            try {
+                transport.connect();
+                LOG.info("Connection established to test server.");
+            } catch (Exception e) {
+                fail("Should have connected to the server");
+            }
+
+            assertTrue(transport.isConnected());
+
+            // Verify there was a certificate sent to the server
+            assertNotNull(server.getSslHandler().engine().getSession().getPeerCertificates());
+
+            transport.close();
+        }
+
+        logTransportErrors();
+        assertTrue(exceptions.isEmpty());
+    }
+
+    @Test(timeout = 60 * 1000)
+    public void testConnectWithSpecificClientAuthKeyAlias() throws Exception {
+        doClientAuthAliasTestImpl(CLIENT_KEY_ALIAS, CLIENT_DN);
+        doClientAuthAliasTestImpl(CLIENT2_KEY_ALIAS, CLIENT2_DN);
+    }
+
+    private void doClientAuthAliasTestImpl(String alias, String expectedDN) throws Exception, URISyntaxException, IOException, InterruptedException {
+        TransportSslOptions serverOptions = createServerOptions();
+
+        try (NettyEchoServer server = new NettyEchoServer(serverOptions, true)) {
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            TransportSslOptions clientOptions = createClientOptions();
+            clientOptions.setKeyStoreLocation(CLIENT_MULTI_KEYSTORE);
+            clientOptions.setKeyAlias(alias);
+
+            NettySslTransport transport = createTransport(serverLocation, testListener, clientOptions);
+            try {
+                transport.connect();
+                LOG.info("Connection established to test server.");
+            } catch (Exception e) {
+                fail("Should have connected to the server");
+            }
+
+            assertTrue(transport.isConnected());
+
+            Certificate[] peerCertificates = server.getSslHandler().engine().getSession().getPeerCertificates();
+            assertNotNull(peerCertificates);
+
+            Certificate cert = peerCertificates[0];
+            assertTrue(cert instanceof X509Certificate);
+            String dn = ((X509Certificate)cert).getSubjectX500Principal().getName();
+            assertEquals("Unexpected certificate DN", expectedDN, dn);
+
+            transport.close();
+        }
+
+        logTransportErrors();
+        assertTrue(exceptions.isEmpty());
+    }
+
     @Override
-    protected Transport createTransport(URI serverLocation, TransportListener listener, TransportOptions options) {
+    protected NettySslTransport createTransport(URI serverLocation, TransportListener listener, TransportOptions options) {
         return new NettySslTransport(listener, serverLocation, options);
     }
 
@@ -199,7 +292,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     protected TransportSslOptions createClientOptionsIsVerify(boolean verifyHost) {
         TransportSslOptions options = TransportSslOptions.INSTANCE.clone();
 
-        options.setKeyStoreLocation(SERVER_KEYSTORE);
+        options.setKeyStoreLocation(CLIENT_KEYSTORE);
         options.setKeyStorePassword(PASSWORD);
         options.setTrustStoreLocation(CLIENT_TRUSTSTORE);
         options.setTrustStorePassword(PASSWORD);
@@ -215,9 +308,10 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
         options.setKeyStoreLocation(SERVER_KEYSTORE);
         options.setKeyStorePassword(PASSWORD);
-        options.setTrustStoreLocation(CLIENT_TRUSTSTORE);
+        options.setTrustStoreLocation(SERVER_TRUSTSTORE);
         options.setTrustStorePassword(PASSWORD);
         options.setStoreType(KEYSTORE_TYPE);
+        options.setVerifyHost(false);
 
         return options;
     }

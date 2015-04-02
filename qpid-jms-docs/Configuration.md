@@ -131,6 +131,7 @@ The complete set of SSL Transport options is listed below:
 + **transport.enabledProtocols**  defaults to Java defaults
 + **transport.trustAll**  defaults to false
 + **transport.verifyHost**  defaults to true
++ **transport.keyAlias** The alias to use for selecting an keystore entry when required to send a client certificate to the server. No default.
 
 ### Failover Configuration options
 

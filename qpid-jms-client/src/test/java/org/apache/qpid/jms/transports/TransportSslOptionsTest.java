@@ -31,6 +31,7 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
     public static final String CLIENT_KEYSTORE = "src/test/resources/client-jks.keystore";
     public static final String CLIENT_TRUSTSTORE = "src/test/resources/client-jks.truststore";
     public static final String KEYSTORE_TYPE = "jks";
+    public static final String KEY_ALIAS = "myTestAlias";
     public static final boolean TRUST_ALL = true;
     public static final boolean VERIFY_HOST = true;
 
@@ -54,6 +55,7 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         assertNull(options.getKeyStorePassword());
         assertNull(options.getTrustStoreLocation());
         assertNull(options.getTrustStorePassword());
+        assertNull(options.getKeyAlias());
     }
 
     @Test
@@ -74,6 +76,7 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         assertEquals(CLIENT_TRUSTSTORE, options.getTrustStoreLocation());
         assertEquals(PASSWORD, options.getTrustStorePassword());
         assertEquals(KEYSTORE_TYPE, options.getStoreType());
+        assertEquals(KEY_ALIAS, options.getKeyAlias());
     }
 
     @Test
@@ -94,6 +97,7 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         assertEquals(CLIENT_TRUSTSTORE, options.getTrustStoreLocation());
         assertEquals(PASSWORD, options.getTrustStorePassword());
         assertEquals(KEYSTORE_TYPE, options.getStoreType());
+        assertEquals(KEY_ALIAS, options.getKeyAlias());
     }
 
     private TransportSslOptions createSslOptions() {
@@ -106,6 +110,7 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         options.setStoreType(KEYSTORE_TYPE);
         options.setTrustAll(TRUST_ALL);
         options.setVerifyHost(VERIFY_HOST);
+        options.setKeyAlias(KEY_ALIAS);
 
         options.setSendBufferSize(TEST_SEND_BUFFER_SIZE);
         options.setReceiveBufferSize(TEST_RECEIVE_BUFFER_SIZE);

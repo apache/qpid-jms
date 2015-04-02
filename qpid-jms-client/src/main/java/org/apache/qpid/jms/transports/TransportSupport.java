@@ -34,6 +34,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509ExtendedKeyManager;
 import javax.net.ssl.X509TrustManager;
 
 import org.slf4j.Logger;
@@ -76,13 +77,7 @@ public class TransportSupport {
         try {
             SSLContext context = SSLContext.getInstance("TLS");
             KeyManager[] keyMgrs = loadKeyManagers(options);
-
-            TrustManager[] trustManagers;
-            if (options.isTrustAll()) {
-                trustManagers = new TrustManager[] { createTrustAllTrustManager() };
-            } else {
-                trustManagers = loadTrustManagers(options);
-            }
+            TrustManager[] trustManagers = loadTrustManagers(options);
 
             context.init(keyMgrs, trustManagers, new SecureRandom());
             return context;
@@ -149,6 +144,10 @@ public class TransportSupport {
     }
 
     private static TrustManager[] loadTrustManagers(TransportSslOptions options) throws Exception {
+        if (options.isTrustAll()) {
+            return new TrustManager[] { createTrustAllTrustManager() };
+        }
+
         if (options.getTrustStoreLocation() == null) {
             return null;
         }
@@ -177,13 +176,26 @@ public class TransportSupport {
         String storeLocation = options.getKeyStoreLocation();
         String storePassword = options.getKeyStorePassword();
         String storeType = options.getStoreType();
+        String alias = options.getKeyAlias();
 
         LOG.trace("Attempt to load KeyStore from location {} of type {}", storeLocation, storeType);
 
         KeyStore keyStore = loadStore(storeLocation, storePassword, storeType);
         fact.init(keyStore, storePassword != null ? storePassword.toCharArray() : null);
 
-        return fact.getKeyManagers();
+        KeyManager[] origKeyManagers = fact.getKeyManagers();
+
+        KeyManager[] keyManagers = new KeyManager[origKeyManagers.length];
+        for (int i = 0; i < origKeyManagers.length; i++) {
+            KeyManager km = origKeyManagers[i];
+            if (km instanceof X509ExtendedKeyManager) {
+                km = new X509AliasKeyManager(alias, (X509ExtendedKeyManager) km);
+            }
+
+            keyManagers[i] = km;
+        }
+
+        return keyManagers;
     }
 
     private static KeyStore loadStore(String storePath, final String password, String storeType) throws Exception {

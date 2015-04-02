@@ -23,17 +23,18 @@ import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
-import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.X509ExtendedKeyManager;
 
 /**
- * A X509KeyManager wrapper which chooses the given alias if
- * non-null, or else delegates to the wrapped X509KeyManager.
+ * An X509ExtendedKeyManager wrapper which chooses the given alias if
+ * non-null, or else delegates to the wrapped X509ExtendedKeyManager.
  */
-public class X509AliasKeyManager implements X509KeyManager {
-    private X509KeyManager delegate;
+public class X509AliasKeyManager extends X509ExtendedKeyManager {
+    private X509ExtendedKeyManager delegate;
     private String alias;
 
-    public X509AliasKeyManager(String alias, X509KeyManager delegate) {
+    public X509AliasKeyManager(String alias, X509ExtendedKeyManager delegate) {
         this.alias = alias;
         this.delegate = delegate;
     }
@@ -68,4 +69,13 @@ public class X509AliasKeyManager implements X509KeyManager {
         return delegate.getServerAliases(keyType, issuers);
     }
 
+    @Override
+    public String chooseEngineClientAlias(String[] keyType, Principal[] issuers, SSLEngine engine) {
+        return alias != null ? alias : delegate.chooseEngineClientAlias(keyType, issuers, engine);
+    }
+
+    @Override
+    public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine) {
+        return alias != null ? alias : delegate.chooseEngineServerAlias(keyType, issuers, engine);
+    }
 }

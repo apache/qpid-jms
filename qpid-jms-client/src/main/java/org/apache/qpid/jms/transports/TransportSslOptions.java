@@ -41,6 +41,7 @@ public class TransportSslOptions extends TransportOptions {
 
     private boolean trustAll = DEFAULT_TRUST_ALL;
     private boolean verifyHost = DEFAULT_VERIFY_HOST;
+    private String keyAlias;
 
     static {
         INSTANCE.setKeyStoreLocation(System.getProperty("javax.net.ssl.keyStore"));
@@ -179,6 +180,20 @@ public class TransportSslOptions extends TransportOptions {
         this.verifyHost = verifyHost;
     }
 
+    /**
+     * @return the key alias
+     */
+    public String getKeyAlias() {
+        return keyAlias;
+    }
+
+    /**
+     * @param keyAlias the key alias to use
+     */
+    public void setKeyAlias(String keyAlias) {
+        this.keyAlias = keyAlias;
+    }
+
     @Override
     public TransportSslOptions clone() {
         return copyOptions(new TransportSslOptions());
@@ -196,7 +211,7 @@ public class TransportSslOptions extends TransportOptions {
         copy.setEnabledProtocols(getEnabledProtocols());
         copy.setTrustAll(isTrustAll());
         copy.setVerifyHost(isVerifyHost());
-
+        copy.setKeyAlias(getKeyAlias());
         return copy;
     }
 }

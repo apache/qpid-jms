@@ -27,26 +27,31 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedKeyManager;
 
 /**
- * An X509ExtendedKeyManager wrapper which chooses the given alias if
- * non-null, or else delegates to the wrapped X509ExtendedKeyManager.
+ * An X509ExtendedKeyManager wrapper which always chooses and only
+ * returns the given alias, and defers retrieval to the delegate
+ * key manager.
  */
 public class X509AliasKeyManager extends X509ExtendedKeyManager {
     private X509ExtendedKeyManager delegate;
     private String alias;
 
-    public X509AliasKeyManager(String alias, X509ExtendedKeyManager delegate) {
+    public X509AliasKeyManager(String alias, X509ExtendedKeyManager delegate) throws IllegalArgumentException {
+        if (alias == null) {
+            throw new IllegalArgumentException("The given key alias must not be null.");
+        }
+
         this.alias = alias;
         this.delegate = delegate;
     }
 
     @Override
     public String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket) {
-        return alias != null ? alias : delegate.chooseClientAlias(keyType, issuers, socket);
+        return alias;
     }
 
     @Override
     public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket) {
-        return alias != null ? alias : delegate.chooseServerAlias(keyType, issuers, socket);
+        return alias;
     }
 
     @Override
@@ -56,7 +61,7 @@ public class X509AliasKeyManager extends X509ExtendedKeyManager {
 
     @Override
     public String[] getClientAliases(String keyType, Principal[] issuers) {
-        return delegate.getClientAliases(keyType, issuers);
+        return new String[] { alias };
     }
 
     @Override
@@ -66,16 +71,16 @@ public class X509AliasKeyManager extends X509ExtendedKeyManager {
 
     @Override
     public String[] getServerAliases(String keyType, Principal[] issuers) {
-        return delegate.getServerAliases(keyType, issuers);
+        return new String[] { alias };
     }
 
     @Override
     public String chooseEngineClientAlias(String[] keyType, Principal[] issuers, SSLEngine engine) {
-        return alias != null ? alias : delegate.chooseEngineClientAlias(keyType, issuers, engine);
+        return alias;
     }
 
     @Override
     public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine) {
-        return alias != null ? alias : delegate.chooseEngineServerAlias(keyType, issuers, engine);
+        return alias;
     }
 }

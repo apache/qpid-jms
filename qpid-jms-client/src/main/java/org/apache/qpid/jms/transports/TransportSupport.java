@@ -183,8 +183,14 @@ public class TransportSupport {
         KeyStore keyStore = loadStore(storeLocation, storePassword, storeType);
         fact.init(keyStore, storePassword != null ? storePassword.toCharArray() : null);
 
-        KeyManager[] origKeyManagers = fact.getKeyManagers();
+        if (alias == null) {
+            return fact.getKeyManagers();
+        } else {
+            return wrapKeyManagers(alias, fact.getKeyManagers());
+        }
+    }
 
+    private static KeyManager[] wrapKeyManagers(String alias, KeyManager[] origKeyManagers) {
         KeyManager[] keyManagers = new KeyManager[origKeyManagers.length];
         for (int i = 0; i < origKeyManagers.length; i++) {
             KeyManager km = origKeyManagers[i];

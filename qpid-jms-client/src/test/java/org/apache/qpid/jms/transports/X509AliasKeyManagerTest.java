@@ -1,7 +1,9 @@
 package org.apache.qpid.jms.transports;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -11,6 +13,7 @@ import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedKeyManager;
 
 import org.junit.Test;
@@ -18,19 +21,17 @@ import org.junit.Test;
 public class X509AliasKeyManagerTest {
 
     @Test
-    public void testChooseClientAliasDelegatesWithNullWrapperAlias() {
-        String wrapperAlias = null;
-        String myDelegateAlias = "delegateAlias";
-        X509ExtendedKeyManager mock = mock(X509ExtendedKeyManager.class);
-        when(mock.chooseClientAlias(any(String[].class), any(Principal[].class), any(Socket.class))).thenReturn(myDelegateAlias);
-
-        X509ExtendedKeyManager wrapper = new X509AliasKeyManager(wrapperAlias, mock);
-
-        assertEquals("Expected delegate alias", myDelegateAlias, wrapper.chooseClientAlias(new String[0], new Principal[0], new Socket()));
+    public void testNullAliasCausesIAE() {
+        try {
+            new X509AliasKeyManager(null, mock(X509ExtendedKeyManager.class));
+            fail("Expected an exception to be thrown");
+        } catch (IllegalArgumentException iae) {
+            // expected
+        }
     }
 
     @Test
-    public void testChooseClientAliasDoesNotDelegateWithNonNullWrapperAlias() {
+    public void testChooseClientAliasReturnsGivenAlias() {
         String wrapperAlias = "wrapperAlias";
         String myDelegateAlias = "delegateAlias";
         X509ExtendedKeyManager mock = mock(X509ExtendedKeyManager.class);
@@ -42,19 +43,7 @@ public class X509AliasKeyManagerTest {
     }
 
     @Test
-    public void testChooseServerAliasDelegatesWithNullWrapperAlias() {
-        String wrapperAlias = null;
-        String myDelegateAlias = "delegateAlias";
-        X509ExtendedKeyManager mock = mock(X509ExtendedKeyManager.class);
-        when(mock.chooseServerAlias(any(String.class), any(Principal[].class), any(Socket.class))).thenReturn(myDelegateAlias);
-
-        X509ExtendedKeyManager wrapper = new X509AliasKeyManager(wrapperAlias, mock);
-
-        assertEquals("Expected delegate alias", myDelegateAlias, wrapper.chooseServerAlias("", new Principal[0], new Socket()));
-    }
-
-    @Test
-    public void testChooseServerAliasDoesNotDelegateWithNonNullWrapperAlias() {
+    public void testChooseServerAliasReturnsGivenAlias() {
         String wrapperAlias = "wrapperAlias";
         String myDelegateAlias = "delegateAlias";
         X509ExtendedKeyManager mock = mock(X509ExtendedKeyManager.class);
@@ -79,29 +68,29 @@ public class X509AliasKeyManagerTest {
     }
 
     @Test
-    public void testGetClientAliasesDelegates() {
+    public void testGetClientAliasesReturnsGivenAliasOnly() {
         String wrapperAlias = "wrapperAlias";
-        String[] aliases = new String[5];
+        String[] delegateAliases = new String[] { "a", "b", wrapperAlias};
 
         X509ExtendedKeyManager mock = mock(X509ExtendedKeyManager.class);
-        when(mock.getClientAliases(any(String.class), any(Principal[].class))).thenReturn(aliases);
+        when(mock.getClientAliases(any(String.class), any(Principal[].class))).thenReturn(delegateAliases);
 
         X509ExtendedKeyManager wrapper = new X509AliasKeyManager(wrapperAlias, mock);
 
-        assertSame("Different object returned", aliases, wrapper.getClientAliases("", new Principal[0]));
+        assertArrayEquals("Expected array containing only the wrapper alias", new String[] { wrapperAlias }, wrapper.getClientAliases("", new Principal[0]));
     }
 
     @Test
-    public void testGetServerAliasesDelegates() {
+    public void testGetServerAliasesReturnsGivenAliasOnly() {
         String wrapperAlias = "wrapperAlias";
-        String[] aliases = new String[3];
+        String[] delegateAliases = new String[] { "a", "b", wrapperAlias};
 
         X509ExtendedKeyManager mock = mock(X509ExtendedKeyManager.class);
-        when(mock.getServerAliases(any(String.class), any(Principal[].class))).thenReturn(aliases);
+        when(mock.getServerAliases(any(String.class), any(Principal[].class))).thenReturn(delegateAliases);
 
         X509ExtendedKeyManager wrapper = new X509AliasKeyManager(wrapperAlias, mock);
 
-        assertSame("Different object returned", aliases, wrapper.getServerAliases("", new Principal[0]));
+        assertArrayEquals("Expected array containing only the wrapper alias", new String[] { wrapperAlias }, wrapper.getServerAliases("", new Principal[0]));
     }
 
     @Test
@@ -115,5 +104,29 @@ public class X509AliasKeyManagerTest {
         X509ExtendedKeyManager wrapper = new X509AliasKeyManager(wrapperAlias, mock);
 
         assertSame("Different object returned", mockKey, wrapper.getPrivateKey(wrapperAlias));
+    }
+
+    @Test
+    public void testChooseEngineClientAliasReturnsGivenAlias() {
+        String wrapperAlias = "wrapperAlias";
+        String myDelegateAlias = "delegateAlias";
+        X509ExtendedKeyManager mock = mock(X509ExtendedKeyManager.class);
+        when(mock.chooseEngineClientAlias(any(String[].class), any(Principal[].class), any(SSLEngine.class))).thenReturn(myDelegateAlias);
+
+        X509ExtendedKeyManager wrapper = new X509AliasKeyManager(wrapperAlias, mock);
+
+        assertEquals("Expected wrapper alias", wrapperAlias, wrapper.chooseEngineClientAlias(new String[0], new Principal[0], mock(SSLEngine.class)));
+    }
+
+    @Test
+    public void testChooseEngineServerAliasReturnsGivenAlias() {
+        String wrapperAlias = "wrapperAlias";
+        String myDelegateAlias = "delegateAlias";
+        X509ExtendedKeyManager mock = mock(X509ExtendedKeyManager.class);
+        when(mock.chooseEngineServerAlias(any(String.class), any(Principal[].class), any(SSLEngine.class))).thenReturn(myDelegateAlias);
+
+        X509ExtendedKeyManager wrapper = new X509AliasKeyManager(wrapperAlias, mock);
+
+        assertEquals("Expected wrapper alias", wrapperAlias, wrapper.chooseEngineServerAlias("", new Principal[0], mock(SSLEngine.class)));
     }
 }

@@ -134,7 +134,7 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
         coordinator.setCapabilities(TxnCapability.LOCAL_TXN);
         Source source = new Source();
 
-        String coordinatorName = resource.getSessionId().toString();
+        String coordinatorName = "qpid-jms:coordinator:" + resource.getSessionId().toString();
 
         Sender sender = session.getProtonSession().sender(coordinatorName);
         sender.setSource(source);

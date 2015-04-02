@@ -85,9 +85,9 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsTemporaryD
         String localDestinationName = resource.getName();
         String senderLinkName = null;
         if (resource.isQueue()) {
-            senderLinkName = TEMP_QUEUE_CREATOR + localDestinationName;
+            senderLinkName = "qpid-jms:" + TEMP_QUEUE_CREATOR + localDestinationName;
         } else {
-            senderLinkName = TEMP_TOPIC_CREATOR + localDestinationName;
+            senderLinkName = "qpid-jms:" + TEMP_TOPIC_CREATOR + localDestinationName;
         }
 
         // Just use a bare Source, this is a producer which

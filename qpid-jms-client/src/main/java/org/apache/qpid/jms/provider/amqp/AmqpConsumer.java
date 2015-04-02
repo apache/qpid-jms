@@ -155,7 +155,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
         configureSource(source);
 
-        String receiverName = getConsumerId() + ":" + subscription;
+        String receiverName = "qpid-jms:receiver:" + getConsumerId() + ":" + subscription;
         if (resource.getSubscriptionName() != null && !resource.getSubscriptionName().isEmpty()) {
             // In the case of Durable Topic Subscriptions the client must use the same
             // receiver name which is derived from the subscription name property.

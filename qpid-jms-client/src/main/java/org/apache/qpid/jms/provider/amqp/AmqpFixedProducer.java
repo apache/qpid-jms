@@ -260,7 +260,7 @@ public class AmqpFixedProducer extends AmqpProducer {
             target.setCapabilities(typeCapability);
         }
 
-        String senderName = sourceAddress + ":" + targetAddress;
+        String senderName = "qpid-jms:sender:" + sourceAddress + ":" + targetAddress;
 
         Sender sender = session.getProtonSession().sender(senderName);
         sender.setSource(source);

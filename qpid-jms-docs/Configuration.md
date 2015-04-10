@@ -127,11 +127,12 @@ The complete set of SSL Transport options is listed below:
 + **transport.trustStoreLocation**  default is to read from the system property "javax.net.ssl.trustStore"
 + **transport.trustStorePassword**  default is to read from the system property "javax.net.ssl.keyStorePassword"
 + **transport.storeType**  default is 'JKS'
-+ **transport.enabledCipherSuites**  defaults to Java defaults
-+ **transport.enabledProtocols**  defaults to Java defaults
++ **transport.contextProtocol** The protocol argument used when getting an SSLContext. Default is "TLS".
++ **transport.enabledCipherSuites** The cipher suites to enable, comma separated. No default, meaning the context defaults are used.
++ **transport.enabledProtocols** The protocols to enable, comma separated. No default, meaning the context defaults are used. "SSLv2Hello" and "SSLv3" protocols are always disabled.
 + **transport.trustAll**  defaults to false
 + **transport.verifyHost**  defaults to true
-+ **transport.keyAlias** The alias to use for selecting an keystore entry when required to send a client certificate to the server. No default.
++ **transport.keyAlias** The alias to use when selecting a keypair from the keystore if required to send a client certificate to the server. No default.
 
 ### Failover Configuration options
 

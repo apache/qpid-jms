@@ -101,17 +101,7 @@ public class TransportSupport {
      * @throws Exception if an error occurs while creating the new SSLEngine.
      */
     public static SSLEngine createSslEngine(SSLContext context, TransportSslOptions options) throws Exception {
-        SSLEngine engine = context.createSSLEngine();
-        engine.setEnabledProtocols(options.getEnabledProtocols());
-        engine.setUseClientMode(true);
-
-        if (options.isVerifyHost()) {
-            SSLParameters sslParameters = engine.getSSLParameters();
-            sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
-            engine.setSSLParameters(sslParameters);
-        }
-
-        return engine;
+        return createSslEngine(null, context, options);
     }
 
     /**
@@ -119,7 +109,7 @@ public class TransportSupport {
      * TransportSslOptions instances.
      *
      * @param remote
-     *        the URI of the remote peer that will be used to initialize the engine.
+     *        the URI of the remote peer that will be used to initialize the engine, may be null if none should.
      * @param context
      *        the SSLContext to use when creating the engine.
      * @param options
@@ -130,7 +120,13 @@ public class TransportSupport {
      * @throws Exception if an error occurs while creating the new SSLEngine.
      */
     public static SSLEngine createSslEngine(URI remote, SSLContext context, TransportSslOptions options) throws Exception {
-        SSLEngine engine = context.createSSLEngine(remote.getHost(), remote.getPort());
+        SSLEngine engine = null;
+        if(remote == null) {
+            engine = context.createSSLEngine();
+        } else {
+            engine = context.createSSLEngine(remote.getHost(), remote.getPort());
+        }
+
         engine.setEnabledProtocols(options.getEnabledProtocols());
         engine.setUseClientMode(true);
 

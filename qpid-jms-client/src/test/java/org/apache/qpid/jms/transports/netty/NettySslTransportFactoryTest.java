@@ -47,6 +47,7 @@ public class NettySslTransportFactoryTest {
     public static final int CUSTOM_SO_LINGER = Short.MIN_VALUE;
     public static final int CUSTOM_SO_TIMEOUT = 10;
     public static final int CUSTOM_CONNECT_TIMEOUT = 90000;
+    public static final String CUSTOM_CONTEXT_PROTOCOL = "TLSv1.2";
     public static final String[] CUSTOM_ENABLED_PROTOCOLS = { "TLSv1.1", "TLSv1.2" };
     public static final String CUSTOM_ENABLED_PROTOCOLS_STRING = "TLSv1.1,TLSv1.2";
     public static final String[] CUSTOM_ENABLED_CIPHER_SUITES = {"Suite-1", "Suite-2"};
@@ -83,6 +84,7 @@ public class NettySslTransportFactoryTest {
         assertTrue(options instanceof TransportSslOptions);
         TransportSslOptions sslOptions = (TransportSslOptions) options;
 
+        assertEquals(TransportSslOptions.DEFAULT_CONTEXT_PROTOCOL, sslOptions.getContextProtocol());
         assertNull(sslOptions.getEnabledProtocols());
         assertArrayEquals(TransportSslOptions.DEFAULT_DISABLED_PROTOCOLS.toArray(new String[0]), sslOptions.getDisabledProtocols());
         assertNull(sslOptions.getEnabledCipherSuites());
@@ -123,6 +125,7 @@ public class NettySslTransportFactoryTest {
             "transport.storeType=" + CUSTOM_STORE_TYPE + "&" +
             "transport.trustAll=" + CUSTOM_TRUST_ALL + "&" +
             "transport.keyAlias=" + CUSTOM_KEY_ALIAS + "&" +
+            "transport.contextProtocol=" + CUSTOM_CONTEXT_PROTOCOL + "&" +
             "transport.enabledProtocols=" + CUSTOM_ENABLED_PROTOCOLS_STRING + "&" +
             "transport.enabledCipherSuites=" + CUSTOM_ENABLED_CIPHER_SUITES_STRING);
 
@@ -160,5 +163,6 @@ public class NettySslTransportFactoryTest {
         assertEquals(CUSTOM_STORE_TYPE, sslOptions.getStoreType());
         assertEquals(CUSTOM_VERIFY_HOST, sslOptions.isVerifyHost());
         assertEquals(CUSTOM_KEY_ALIAS, sslOptions.getKeyAlias());
+        assertEquals(CUSTOM_CONTEXT_PROTOCOL, sslOptions.getContextProtocol());
     }
 }

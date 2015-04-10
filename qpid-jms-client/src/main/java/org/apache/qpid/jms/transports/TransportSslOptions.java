@@ -29,6 +29,7 @@ import java.util.List;
 public class TransportSslOptions extends TransportOptions {
 
     public static final String DEFAULT_STORE_TYPE = "jks";
+    public static final String DEFAULT_CONTEXT_PROTOCOL = "TLS";
     public static final boolean DEFAULT_TRUST_ALL = false;
     public static final boolean DEFAULT_VERIFY_HOST = true;
     public static final List<String> DEFAULT_DISABLED_PROTOCOLS = Collections.unmodifiableList(Arrays.asList(new String[]{"SSLv2Hello", "SSLv3"}));
@@ -43,6 +44,7 @@ public class TransportSslOptions extends TransportOptions {
     private String[] enabledCipherSuites;
     private String[] enabledProtocols;
     private String[] disabledProtocols = DEFAULT_DISABLED_PROTOCOLS.toArray(new String[0]);
+    private String contextProtocol = DEFAULT_CONTEXT_PROTOCOL;
 
     private boolean trustAll = DEFAULT_TRUST_ALL;
     private boolean verifyHost = DEFAULT_VERIFY_HOST;
@@ -177,6 +179,23 @@ public class TransportSslOptions extends TransportOptions {
     }
 
     /**
+    * @return the context protocol to use
+    */
+    public String getContextProtocol() {
+        return contextProtocol;
+    }
+
+    /**
+     * The protocol value to use when creating an SSLContext via
+     * SSLContext.getInstance(protocol).
+     *
+     * @param contextProtocol the context protocol to use.
+     */
+    public void setContextProtocol(String contextProtocol) {
+        this.contextProtocol = contextProtocol;
+    }
+
+    /**
      * @return the trustAll
      */
     public boolean isTrustAll() {
@@ -236,6 +255,7 @@ public class TransportSslOptions extends TransportOptions {
         copy.setTrustAll(isTrustAll());
         copy.setVerifyHost(isVerifyHost());
         copy.setKeyAlias(getKeyAlias());
+        copy.setContextProtocol(getContextProtocol());
         return copy;
     }
 }

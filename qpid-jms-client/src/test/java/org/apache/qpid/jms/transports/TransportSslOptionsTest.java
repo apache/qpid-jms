@@ -33,6 +33,7 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
     public static final String CLIENT_TRUSTSTORE = "src/test/resources/client-jks.truststore";
     public static final String KEYSTORE_TYPE = "jks";
     public static final String KEY_ALIAS = "myTestAlias";
+    public static final String CONTEXT_PROTOCOL = "TLSv1.1";
     public static final boolean TRUST_ALL = true;
     public static final boolean VERIFY_HOST = true;
 
@@ -52,6 +53,7 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         assertEquals(TransportSslOptions.DEFAULT_TRUST_ALL, options.isTrustAll());
         assertEquals(TransportSslOptions.DEFAULT_STORE_TYPE, options.getStoreType());
 
+        assertEquals(TransportSslOptions.DEFAULT_CONTEXT_PROTOCOL, options.getContextProtocol());
         assertNull(options.getEnabledProtocols());
         assertArrayEquals(TransportSslOptions.DEFAULT_DISABLED_PROTOCOLS.toArray(new String[0]),
                           options.getDisabledProtocols());
@@ -82,6 +84,7 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         assertEquals(PASSWORD, options.getTrustStorePassword());
         assertEquals(KEYSTORE_TYPE, options.getStoreType());
         assertEquals(KEY_ALIAS, options.getKeyAlias());
+        assertEquals(CONTEXT_PROTOCOL, options.getContextProtocol());
     }
 
     @Test
@@ -103,6 +106,7 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         assertEquals(PASSWORD, options.getTrustStorePassword());
         assertEquals(KEYSTORE_TYPE, options.getStoreType());
         assertEquals(KEY_ALIAS, options.getKeyAlias());
+        assertEquals(CONTEXT_PROTOCOL, options.getContextProtocol());
     }
 
     private TransportSslOptions createSslOptions() {
@@ -116,6 +120,7 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         options.setTrustAll(TRUST_ALL);
         options.setVerifyHost(VERIFY_HOST);
         options.setKeyAlias(KEY_ALIAS);
+        options.setContextProtocol(CONTEXT_PROTOCOL);
 
         options.setSendBufferSize(TEST_SEND_BUFFER_SIZE);
         options.setReceiveBufferSize(TEST_RECEIVE_BUFFER_SIZE);

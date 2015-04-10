@@ -78,7 +78,10 @@ public class TransportSupport {
      */
     public static SSLContext createSslContext(TransportSslOptions options) throws Exception {
         try {
-            SSLContext context = SSLContext.getInstance("TLS");
+            String contextProtocol = options.getContextProtocol();
+            LOG.trace("Getting SSLContext instance using protocol: {}", contextProtocol);
+
+            SSLContext context = SSLContext.getInstance(contextProtocol);
             KeyManager[] keyMgrs = loadKeyManagers(options);
             TrustManager[] trustManagers = loadTrustManagers(options);
 

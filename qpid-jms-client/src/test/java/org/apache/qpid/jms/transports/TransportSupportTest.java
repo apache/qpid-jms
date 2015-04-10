@@ -86,6 +86,18 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertEquals("TLS", context.getProtocol());
     }
 
+    @Test
+    public void testCreateSslContextJksStoreWithConfiguredContextProtocol() throws Exception {
+        TransportSslOptions options = createJksSslOptions();
+        String contextProtocol = "TLSv1.2";
+        options.setContextProtocol(contextProtocol);
+
+        SSLContext context = TransportSupport.createSslContext(options);
+        assertNotNull(context);
+
+        assertEquals(contextProtocol, context.getProtocol());
+    }
+
     @Test(expected = UnrecoverableKeyException.class)
     public void testCreateSslContextNoKeyStorePassword() throws Exception {
         TransportSslOptions options = createJksSslOptions();

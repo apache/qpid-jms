@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.transports.netty;
 
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -82,10 +83,8 @@ public class NettySslTransportFactoryTest {
         assertTrue(options instanceof TransportSslOptions);
         TransportSslOptions sslOptions = (TransportSslOptions) options;
 
-        List<String> enabledProtocols = Arrays.asList(sslOptions.getEnabledProtocols());
-        List<String> defaultProtocols = Arrays.asList(TransportSslOptions.DEFAULT_ENABLED_PROTOCOLS);
-        assertThat(enabledProtocols, containsInAnyOrder(defaultProtocols.toArray()));
-
+        assertNull(sslOptions.getEnabledProtocols());
+        assertArrayEquals(TransportSslOptions.DEFAULT_DISABLED_PROTOCOLS.toArray(new String[0]), sslOptions.getDisabledProtocols());
         assertNull(sslOptions.getEnabledCipherSuites());
 
         assertEquals(TransportSslOptions.DEFAULT_STORE_TYPE, sslOptions.getStoreType());

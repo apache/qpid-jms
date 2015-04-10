@@ -26,6 +26,9 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -127,7 +130,7 @@ public class TransportSupport {
             engine = context.createSSLEngine(remote.getHost(), remote.getPort());
         }
 
-        engine.setEnabledProtocols(options.getEnabledProtocols());
+        engine.setEnabledProtocols(buildEnabledProtocols(engine, options));
         engine.setUseClientMode(true);
 
         if (options.isVerifyHost()) {
@@ -137,6 +140,31 @@ public class TransportSupport {
         }
 
         return engine;
+    }
+
+    private static String[] buildEnabledProtocols(SSLEngine engine, TransportSslOptions options) {
+        List<String> enabledProtocols = new ArrayList<String>();
+
+        if (options.getEnabledProtocols() != null) {
+            List<String> configuredProtocols = Arrays.asList(options.getEnabledProtocols());
+            LOG.trace("Configured protocols from transport options: {}", configuredProtocols);
+            enabledProtocols.addAll(configuredProtocols);
+        } else {
+            List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
+            LOG.trace("Default protocols from the SSLEngine: {}", engineProtocols);
+            enabledProtocols.addAll(engineProtocols);
+        }
+
+        String[] disabledProtocols = options.getDisabledProtocols();
+        if (disabledProtocols != null) {
+            List<String> disabled = Arrays.asList(disabledProtocols);
+            LOG.trace("Disabled protocols: {}", disabled);
+            enabledProtocols.removeAll(disabled);
+        }
+
+        LOG.trace("Enabled protocols: {}", enabledProtocols);
+
+        return enabledProtocols.toArray(new String[0]);
     }
 
     private static TrustManager[] loadTrustManagers(TransportSslOptions options) throws Exception {

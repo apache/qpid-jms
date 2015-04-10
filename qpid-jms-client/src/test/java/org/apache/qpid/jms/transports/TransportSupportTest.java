@@ -16,11 +16,11 @@
  */
 package org.apache.qpid.jms.transports;
 
-import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
 import java.security.UnrecoverableKeyException;
@@ -58,6 +58,23 @@ public class TransportSupportTest extends QpidJmsTestCase {
     public static final String KEYSTORE_JKS_TYPE = "jks";
     public static final String KEYSTORE_JCEKS_TYPE = "jceks";
     public static final String KEYSTORE_PKCS12_TYPE = "pkcs12";
+
+    public static final String[] ENABLED_PROTOCOLS = new String[] { "TLSv1" };
+
+    @Test
+    public void testLegacySslProtocolsDisabledByDefault() throws Exception {
+        TransportSslOptions options = createJksSslOptions(null);
+
+        SSLContext context = TransportSupport.createSslContext(options);
+        assertNotNull(context);
+
+        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        assertNotNull(engine);
+
+        List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
+        assertFalse("SSLv3 should not be enabled by default", engineProtocols.contains("SSLv3"));
+        assertFalse("SSLv2Hello should not be enabled by default", engineProtocols.contains("SSLv2Hello"));
+    }
 
     @Test
     public void testCreateSslContextJksStore() throws Exception {
@@ -132,6 +149,33 @@ public class TransportSupportTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testCreateSslEngineFromPkcs12Store() throws Exception {
+        TransportSslOptions options = createPkcs12SslOptions();
+
+        SSLContext context = TransportSupport.createSslContext(options);
+        assertNotNull(context);
+
+        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        assertNotNull(engine);
+
+        List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
+        assertFalse(engineProtocols.isEmpty());
+    }
+
+    @Test
+    public void testCreateSslEngineFromPkcs12StoreWithExplicitEnabledProtocols() throws Exception {
+        TransportSslOptions options = createPkcs12SslOptions(ENABLED_PROTOCOLS);
+
+        SSLContext context = TransportSupport.createSslContext(options);
+        assertNotNull(context);
+
+        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        assertNotNull(engine);
+
+        assertArrayEquals("Enabled protocols not as expected", ENABLED_PROTOCOLS, engine.getEnabledProtocols());
+    }
+
+    @Test
     public void testCreateSslEngineFromJksStore() throws Exception {
         TransportSslOptions options = createJksSslOptions();
 
@@ -142,13 +186,24 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertNotNull(engine);
 
         List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
-        List<String> defaultProtocols = Arrays.asList(TransportSslOptions.DEFAULT_ENABLED_PROTOCOLS);
-
-        assertThat(engineProtocols, containsInAnyOrder(defaultProtocols.toArray()));
+        assertFalse(engineProtocols.isEmpty());
     }
 
     @Test
-    public void testCreateSslEngineFromJcsksStore() throws Exception {
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledProtocols() throws Exception {
+        TransportSslOptions options = createJksSslOptions(ENABLED_PROTOCOLS);
+
+        SSLContext context = TransportSupport.createSslContext(options);
+        assertNotNull(context);
+
+        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        assertNotNull(engine);
+
+        assertArrayEquals("Enabled protocols not as expected", ENABLED_PROTOCOLS, engine.getEnabledProtocols());
+    }
+
+    @Test
+    public void testCreateSslEngineFromJceksStore() throws Exception {
         TransportSslOptions options = createJceksSslOptions();
 
         SSLContext context = TransportSupport.createSslContext(options);
@@ -158,9 +213,20 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertNotNull(engine);
 
         List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
-        List<String> defaultProtocols = Arrays.asList(TransportSslOptions.DEFAULT_ENABLED_PROTOCOLS);
+        assertFalse(engineProtocols.isEmpty());
+    }
 
-        assertThat(engineProtocols, containsInAnyOrder(defaultProtocols.toArray()));
+    @Test
+    public void testCreateSslEngineFromJceksStoreWithExplicitEnabledProtocols() throws Exception {
+        TransportSslOptions options = createJceksSslOptions(ENABLED_PROTOCOLS);
+
+        SSLContext context = TransportSupport.createSslContext(options);
+        assertNotNull(context);
+
+        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        assertNotNull(engine);
+
+        assertArrayEquals("Enabled protocols not as expected", ENABLED_PROTOCOLS, engine.getEnabledProtocols());
     }
 
     @Test
@@ -175,11 +241,6 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertNotNull(engine);
 
         assertEquals("HTTPS", engine.getSSLParameters().getEndpointIdentificationAlgorithm());
-
-        List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
-        List<String> defaultProtocols = Arrays.asList(TransportSslOptions.DEFAULT_ENABLED_PROTOCOLS);
-
-        assertThat(engineProtocols, containsInAnyOrder(defaultProtocols.toArray()));
     }
 
     @Test
@@ -194,14 +255,13 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertNotNull(engine);
 
         assertNull(engine.getSSLParameters().getEndpointIdentificationAlgorithm());
-
-        List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
-        List<String> defaultProtocols = Arrays.asList(TransportSslOptions.DEFAULT_ENABLED_PROTOCOLS);
-
-        assertThat(engineProtocols, containsInAnyOrder(defaultProtocols.toArray()));
     }
 
     private TransportSslOptions createJksSslOptions() {
+        return createJksSslOptions(null);
+    }
+
+    private TransportSslOptions createJksSslOptions(String[] enabledProtocols) {
         TransportSslOptions options = new TransportSslOptions();
 
         options.setKeyStoreLocation(CLIENT_JKS_KEYSTORE);
@@ -209,11 +269,18 @@ public class TransportSupportTest extends QpidJmsTestCase {
         options.setStoreType(KEYSTORE_JKS_TYPE);
         options.setKeyStorePassword(PASSWORD);
         options.setTrustStorePassword(PASSWORD);
+        if (enabledProtocols != null) {
+            options.setEnabledProtocols(enabledProtocols);
+        }
 
         return options;
     }
 
     private TransportSslOptions createJceksSslOptions() {
+        return createJceksSslOptions(null);
+    }
+
+    private TransportSslOptions createJceksSslOptions(String[] enabledProtocols) {
         TransportSslOptions options = new TransportSslOptions();
 
         options.setKeyStoreLocation(CLIENT_JCEKS_KEYSTORE);
@@ -221,11 +288,18 @@ public class TransportSupportTest extends QpidJmsTestCase {
         options.setStoreType(KEYSTORE_JCEKS_TYPE);
         options.setKeyStorePassword(PASSWORD);
         options.setTrustStorePassword(PASSWORD);
+        if (enabledProtocols != null) {
+            options.setEnabledProtocols(enabledProtocols);
+        }
 
         return options;
     }
 
     private TransportSslOptions createPkcs12SslOptions() {
+        return createPkcs12SslOptions(null);
+    }
+
+    private TransportSslOptions createPkcs12SslOptions(String[] enabledProtocols) {
         TransportSslOptions options = new TransportSslOptions();
 
         options.setKeyStoreLocation(CLIENT_PKCS12_KEYSTORE);
@@ -233,6 +307,9 @@ public class TransportSupportTest extends QpidJmsTestCase {
         options.setStoreType(KEYSTORE_PKCS12_TYPE);
         options.setKeyStorePassword(PASSWORD);
         options.setTrustStorePassword(PASSWORD);
+        if (enabledProtocols != null) {
+            options.setEnabledProtocols(enabledProtocols);
+        }
 
         return options;
     }

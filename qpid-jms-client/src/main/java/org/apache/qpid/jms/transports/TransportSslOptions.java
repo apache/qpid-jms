@@ -16,6 +16,10 @@
  */
 package org.apache.qpid.jms.transports;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 
 /**
  * Holds the defined SSL options for connections that operate over a secure
@@ -24,10 +28,10 @@ package org.apache.qpid.jms.transports;
  */
 public class TransportSslOptions extends TransportOptions {
 
-    public static final String[] DEFAULT_ENABLED_PROTOCOLS = {"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"};
     public static final String DEFAULT_STORE_TYPE = "jks";
     public static final boolean DEFAULT_TRUST_ALL = false;
     public static final boolean DEFAULT_VERIFY_HOST = true;
+    public static final List<String> DEFAULT_DISABLED_PROTOCOLS = Collections.unmodifiableList(Arrays.asList(new String[]{"SSLv2Hello", "SSLv3"}));
 
     public static final TransportSslOptions INSTANCE = new TransportSslOptions();
 
@@ -37,7 +41,8 @@ public class TransportSslOptions extends TransportOptions {
     private String trustStorePassword;
     private String storeType = DEFAULT_STORE_TYPE;
     private String[] enabledCipherSuites;
-    private String[] enabledProtocols = DEFAULT_ENABLED_PROTOCOLS;
+    private String[] enabledProtocols;
+    private String[] disabledProtocols = DEFAULT_DISABLED_PROTOCOLS.toArray(new String[0]);
 
     private boolean trustAll = DEFAULT_TRUST_ALL;
     private boolean verifyHost = DEFAULT_VERIFY_HOST;
@@ -139,17 +144,36 @@ public class TransportSslOptions extends TransportOptions {
     }
 
     /**
-     * @return the enabledProtocols
+     * @return the enabledProtocols or null if the defaults should be used
      */
     public String[] getEnabledProtocols() {
         return enabledProtocols;
     }
 
     /**
-     * @param enabledProtocols the enabledProtocols to set
+     * The protocols to be set as enabled.
+     *
+     * @param enabledProtocols the enabled protocols to set, or null if the defaults should be used.
      */
     public void setEnabledProtocols(String[] enabledProtocols) {
         this.enabledProtocols = enabledProtocols;
+    }
+
+    /**
+     *
+     * @return the protocols to disable or null if none should be
+     */
+    public String[] getDisabledProtocols() {
+        return disabledProtocols;
+    }
+
+    /**
+     * The protocols to be disable.
+     *
+     * @param disabledProtocols the protocols to disable, or null if none should be.
+     */
+    public void setDisabledProtocols(String[] disabledProtocols) {
+        this.disabledProtocols = disabledProtocols;
     }
 
     /**

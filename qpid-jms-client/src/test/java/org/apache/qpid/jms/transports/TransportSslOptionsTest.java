@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.transports;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNull;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -50,6 +51,10 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
 
         assertEquals(TransportSslOptions.DEFAULT_TRUST_ALL, options.isTrustAll());
         assertEquals(TransportSslOptions.DEFAULT_STORE_TYPE, options.getStoreType());
+
+        assertNull(options.getEnabledProtocols());
+        assertArrayEquals(TransportSslOptions.DEFAULT_DISABLED_PROTOCOLS.toArray(new String[0]),
+                          options.getDisabledProtocols());
 
         assertNull(options.getKeyStoreLocation());
         assertNull(options.getKeyStorePassword());

@@ -129,7 +129,8 @@ The complete set of SSL Transport options is listed below:
 + **transport.storeType**  default is 'JKS'
 + **transport.contextProtocol** The protocol argument used when getting an SSLContext. Default is "TLS".
 + **transport.enabledCipherSuites** The cipher suites to enable, comma separated. No default, meaning the context defaults are used.
-+ **transport.enabledProtocols** The protocols to enable, comma separated. No default, meaning the context defaults are used. "SSLv2Hello" and "SSLv3" protocols are always disabled.
++ **transport.enabledProtocols** The protocols to enable, comma separated. No default, meaning the context default protocols are used. Any disabled protocols are removed from this.
++ **transport.disabledProtocols** The protocols to disable, comma separated. Protocols listed here are removed from the enabled protocols. Default is "SSLv2Hello,SSLv3".
 + **transport.trustAll**  defaults to false
 + **transport.verifyHost**  defaults to true
 + **transport.keyAlias** The alias to use when selecting a keypair from the keystore if required to send a client certificate to the server. No default.

@@ -21,8 +21,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
+import javax.jms.BytesMessage;
 import javax.jms.DeliveryMode;
 import javax.jms.JMSSecurityException;
 import javax.jms.Message;
@@ -35,10 +37,11 @@ import javax.jms.TextMessage;
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.support.AmqpTestSupport;
+import org.apache.qpid.jms.support.Wait;
 import org.junit.Test;
 
 /**
- *
+ * Test Various behaviors of the JMS MessageProducer implementation.
  */
 public class JmsMessageProducerTest extends AmqpTestSupport {
 
@@ -57,7 +60,79 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @Test
+    @Test(timeout = 20000)
+    public void testSendMultipleMessagesPersistent() throws Exception {
+        connection = createAmqpConnection();
+        assertNotNull(connection);
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageProducer producer = session.createProducer(queue);
+
+        final int MSG_COUNT = 100;
+
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(0, proxy.getQueueSize());
+
+        producer.setDeliveryMode(DeliveryMode.PERSISTENT);
+
+        byte[] payload = new byte[1024];
+        Arrays.fill(payload, (byte) 255);
+
+        for (int i = 0; i < MSG_COUNT; ++i) {
+            BytesMessage message = session.createBytesMessage();
+            message.writeBytes(payload);
+            LOG.trace("sending message: {}", i);
+            producer.send(message);
+            LOG.trace("sent message: {}", i);
+        }
+
+        producer.close();
+
+        assertEquals(MSG_COUNT, proxy.getQueueSize());
+    }
+
+    @Test(timeout = 20000)
+    public void testSendMultipleMessagesNonPersistent() throws Exception {
+        connection = createAmqpConnection();
+        assertNotNull(connection);
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageProducer producer = session.createProducer(queue);
+
+        final int MSG_COUNT = 100;
+
+        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(0, proxy.getQueueSize());
+
+        producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+
+        byte[] payload = new byte[1024];
+        Arrays.fill(payload, (byte) 255);
+
+        for (int i = 0; i < MSG_COUNT; ++i) {
+            BytesMessage message = session.createBytesMessage();
+            message.writeBytes(payload);
+            LOG.trace("sending message: {}", i);
+            producer.send(message);
+            LOG.trace("sent message: {}", i);
+        }
+
+        assertTrue("Should all make it to the Queue.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return proxy.getQueueSize() == MSG_COUNT;
+            }
+        }));
+
+        producer.close();
+    }
+
+    @Test(timeout = 20000)
     public void testSendWorksWhenConnectionNotStarted() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
@@ -76,7 +151,7 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         assertEquals(1, proxy.getQueueSize());
     }
 
-    @Test
+    @Test(timeout = 20000)
     public void testSendWorksAfterConnectionStopped() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
@@ -97,7 +172,7 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         assertEquals(1, proxy.getQueueSize());
     }
 
-    @Test
+    @Test(timeout = 20000)
     public void testPersistentSendsAreMarkedPersistent() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
@@ -123,7 +198,7 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         assertTrue(message.getJMSDeliveryMode() == DeliveryMode.PERSISTENT);
     }
 
-    @Test
+    @Test(timeout = 20000)
     public void testProducerWithNoTTLSendsMessagesWithoutTTL() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
@@ -148,7 +223,7 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         assertEquals(0, message.getJMSExpiration());
     }
 
-    @Test
+    @Test(timeout = 20000)
     public void testProducerWithNoMessageIdCanBeConsumed() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
@@ -189,7 +264,7 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         return builder.toString();
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test(timeout = 60000)
     public void testSendLargeMessage() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);
@@ -225,17 +300,17 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         session.createProducer(queue);
     }
 
-    @Test(timeout = 20 * 1000)
+    @Test(timeout = 20000)
     public void testProducerWithTTL() throws Exception {
         doProducerWithTTLTestImpl(false, null);
     }
 
-    @Test(timeout = 20 * 1000)
+    @Test(timeout = 20000)
     public void testProducerWithTTLDisableTimestamp() throws Exception {
         doProducerWithTTLTestImpl(true, null);
     }
 
-    @Test(timeout = 20 * 1000)
+    @Test(timeout = 20000)
     public void testProducerWithTTLDisableTimestampAndNoAmqpTtl() throws Exception {
         doProducerWithTTLTestImpl(true, 0L);
     }
@@ -272,5 +347,4 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         }
         assertNull("Unexpected message received, see log for details", message);
     }
-
 }

@@ -58,6 +58,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     protected final Lock lock = new ReentrantLock();
     protected final AtomicBoolean suspendedConnection = new AtomicBoolean();
     protected final AtomicBoolean delivered = new AtomicBoolean();
+    protected Exception failureCause;
 
     /**
      * Create a non-durable MessageConsumer
@@ -185,8 +186,13 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
      * @throws JMSException
      */
     protected void shutdown() throws JMSException {
+        shutdown(null);
+    }
+
+    protected void shutdown(Exception cause) throws JMSException {
         if (closed.compareAndSet(false, true)) {
-            this.session.remove(this);
+            failureCause = cause;
+            session.remove(this);
             stop(true);
         }
     }
@@ -247,8 +253,17 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     }
 
     protected void checkClosed() throws IllegalStateException {
-        if (this.closed.get()) {
-            throw new IllegalStateException("The MessageConsumer is closed");
+        if (closed.get()) {
+            IllegalStateException jmsEx = null;
+
+            if (failureCause == null) {
+                jmsEx = new IllegalStateException("The MessageConsumer is closed");
+            } else {
+                jmsEx = new IllegalStateException("The MessageConsumer was closed due to an unrecoverable error.");
+                jmsEx.initCause(failureCause);
+            }
+
+            throw jmsEx;
         }
     }
 

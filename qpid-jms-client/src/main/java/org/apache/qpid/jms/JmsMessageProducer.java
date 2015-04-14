@@ -48,6 +48,7 @@ public class JmsMessageProducer implements MessageProducer {
     protected boolean disableMessageId;
     protected boolean disableTimestamp;
     protected final AtomicLong messageSequence = new AtomicLong();
+    protected Exception failureCause;
 
     protected JmsMessageProducer(JmsProducerId producerId, JmsSession session, JmsDestination destination) throws JMSException {
         this.session = session;
@@ -91,8 +92,13 @@ public class JmsMessageProducer implements MessageProducer {
      * @throws JMSException
      */
     protected void shutdown() throws JMSException {
+        shutdown(null);
+    }
+
+    protected void shutdown(Exception cause) throws JMSException {
         if (closed.compareAndSet(false, true)) {
-            this.session.remove(this);
+            failureCause = cause;
+            session.remove(this);
         }
     }
 
@@ -303,7 +309,16 @@ public class JmsMessageProducer implements MessageProducer {
 
     protected void checkClosed() throws IllegalStateException {
         if (closed.get()) {
-            throw new IllegalStateException("The MessageProducer is closed");
+            IllegalStateException jmsEx = null;
+
+            if (failureCause == null) {
+                jmsEx = new IllegalStateException("The MessageProducer is closed");
+            } else {
+                jmsEx = new IllegalStateException("The MessageProducer was closed due to an unrecoverable error.");
+                jmsEx.initCause(failureCause);
+            }
+
+            throw jmsEx;
         }
     }
 

@@ -19,7 +19,6 @@
 package org.apache.qpid.jms.integration;
 
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import javax.jms.Connection;
 import javax.jms.IllegalStateException;
@@ -78,18 +77,15 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
                     try {
                         consumer.getMessageListener();
                     } catch (IllegalStateException jmsise) {
-                        return true;
+                        if (jmsise.getCause() != null) {
+                            return true;
+                        } else {
+                            return false;
+                        }
                     }
                     return false;
                 }
             }, 2000, 10));
-
-            try {
-                consumer.getMessageListener();
-                fail("Expected ISE to be thrown due to being closed");
-            } catch (IllegalStateException jmsise) {
-                // expected
-            }
 
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.

@@ -1292,7 +1292,11 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                     try {
                         consumer.getMessageListener();
                     } catch (IllegalStateException jmsise) {
-                        return true;
+                        if (jmsise.getCause() != null) {
+                            return true;
+                        } else {
+                            return false;
+                        }
                     }
                     return false;
                 }

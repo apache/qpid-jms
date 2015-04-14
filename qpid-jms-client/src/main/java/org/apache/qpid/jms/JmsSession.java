@@ -102,6 +102,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private final AtomicLong producerIdGenerator = new AtomicLong();
     private JmsTransactionContext transactionContext;
     private boolean sessionRecovered;
+    private Exception failureCause;
 
     protected JmsSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) throws JMSException {
         this.connection = connection;
@@ -245,23 +246,26 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      * @throws JMSException if an error occurs while shutting down the session resources.
      */
     protected void shutdown() throws JMSException {
+        shutdown(null);
+    }
+
+    protected void shutdown(Exception cause) throws JMSException {
         if (closed.compareAndSet(false, true)) {
             stop();
+            failureCause = cause;
             for (JmsMessageConsumer consumer : new ArrayList<JmsMessageConsumer>(this.consumers.values())) {
-                consumer.shutdown();
+                consumer.shutdown(cause);
             }
 
             for (JmsMessageProducer producer : new ArrayList<JmsMessageProducer>(this.producers.values())) {
-                producer.shutdown();
+                producer.shutdown(cause);
             }
         }
     }
 
     void remotelyClosed(Exception cause) {
-        // TODO - Store cause and use as exception when session methods called ?
-        // failureCause = cause; ?
         try {
-            shutdown();
+            shutdown(cause);
         } catch (Throwable error) {
             LOG.trace("Ignoring exception thrown during cleanup of remotely closed session", error);
         }
@@ -277,7 +281,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             try {
                 JmsMessageConsumer consumer = consumers.get(((JmsConsumerInfo) resource).getConsumerId());
                 if (consumer != null) {
-                    consumer.shutdown();
+                    consumer.shutdown(cause);
                 }
             } catch (Throwable error) {
                 LOG.trace("Ignoring exception thrown during cleanup of remotely closed consumer", error);
@@ -286,7 +290,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             try {
                 JmsMessageProducer producer = producers.get(((JmsProducerInfo) resource).getProducerId());
                 if (producer != null) {
-                    producer.shutdown();
+                    producer.shutdown(cause);
                 }
             } catch (Throwable error) {
                 LOG.trace("Ignoring exception thrown during cleanup of remotely closed producer", error);
@@ -804,7 +808,16 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     protected void checkClosed() throws IllegalStateException {
         if (closed.get()) {
-            throw new IllegalStateException("The Session is closed");
+            IllegalStateException jmsEx = null;
+
+            if (failureCause == null) {
+                jmsEx = new IllegalStateException("The Session is closed");
+            } else {
+                jmsEx = new IllegalStateException("The Session was closed due to an unrecoverable error.");
+                jmsEx.initCause(failureCause);
+            }
+
+            throw jmsEx;
         }
     }
 
@@ -914,6 +927,10 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     protected JmsProducerId getNextProducerId() {
         return new JmsProducerId(sessionInfo.getSessionId(), producerIdGenerator.incrementAndGet());
+    }
+
+    protected void setFailureCause(Exception failureCause) {
+        this.failureCause = failureCause;
     }
 
     private String getNextMessageId(JmsMessageProducer producer) {

@@ -222,11 +222,18 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      * Called to free all Connection resources.
      */
     protected void shutdown() throws JMSException {
+        shutdown(null);
+    }
+
+    /**
+     * Called to free all Connection resources.
+     */
+    protected void shutdown(Exception cause) throws JMSException {
 
         // NOTE - Once ConnectionConsumer is added we must shutdown those as well.
 
         for (JmsSession session : sessions.values()) {
-            session.shutdown();
+            session.shutdown(cause);
         }
 
         if (isConnected() && !failed.get() && !closing.get()) {
@@ -1086,7 +1093,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
                     }
 
                     try {
-                        shutdown();
+                        shutdown(ex);
                     } catch (JMSException e) {
                         LOG.warn("Exception during connection cleanup, " + e, e);
                     }

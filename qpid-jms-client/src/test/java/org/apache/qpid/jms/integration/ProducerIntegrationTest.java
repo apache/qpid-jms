@@ -542,7 +542,11 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                     try {
                         producer.getDestination();
                     } catch (IllegalStateException jmsise) {
-                        return true;
+                        if (jmsise.getCause() != null) {
+                            return true;
+                        } else {
+                            return false;
+                        }
                     }
                     return false;
                 }

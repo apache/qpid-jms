@@ -25,6 +25,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+
 import org.apache.qpid.proton.amqp.Binary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,9 +50,26 @@ class TestAmqpPeerRunner implements Runnable
 
     private volatile Throwable _throwable;
 
-    public TestAmqpPeerRunner(TestAmqpPeer peer) throws IOException
+    public TestAmqpPeerRunner(TestAmqpPeer peer, SSLContext sslContext, boolean needClientCert) throws IOException
     {
-        _serverSocket = new ServerSocket(useFixedPort ? PORT : 0);
+        int port = useFixedPort ? PORT : 0;
+
+        if (sslContext == null)
+        {
+            _serverSocket = new ServerSocket(port);
+        }
+        else
+        {
+            SSLServerSocketFactory socketFactory = sslContext.getServerSocketFactory();
+            _serverSocket = socketFactory.createServerSocket(port);
+
+            SSLServerSocket sslServerSocket = (SSLServerSocket) _serverSocket;
+            if (needClientCert)
+            {
+                sslServerSocket.setNeedClientAuth(true);
+            }
+        }
+
         _testFrameParser = new TestFrameParser(peer);
     }
 
@@ -169,5 +190,10 @@ class TestAmqpPeerRunner implements Runnable
         }
 
         return -1;
+    }
+
+    public Socket getClientSocket()
+    {
+        return _clientSocket;
     }
 }

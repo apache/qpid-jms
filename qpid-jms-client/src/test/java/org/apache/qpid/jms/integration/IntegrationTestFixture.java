@@ -50,10 +50,10 @@ public class IntegrationTestFixture {
     }
 
     Connection establishConnecton(TestAmqpPeer testPeer, String optionsString, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties) throws JMSException {
-        return establishConnecton(testPeer, null, serverCapabilities, serverProperties, true);
+        return establishConnecton(testPeer, false, null, serverCapabilities, serverProperties, true);
     }
 
-    Connection establishConnecton(TestAmqpPeer testPeer, String optionsString, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties, boolean setClientId) throws JMSException {
+    Connection establishConnecton(TestAmqpPeer testPeer, boolean ssl, String optionsString, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties, boolean setClientId) throws JMSException {
         Symbol[] desiredCapabilities = new Symbol[] { AmqpConnection.SOLE_CONNECTION_CAPABILITY };
 
         testPeer.expectPlainConnect("guest", "guest", desiredCapabilities, serverCapabilities, serverProperties);
@@ -61,7 +61,8 @@ public class IntegrationTestFixture {
         // Each connection creates a session for managing temporary destinations etc
         testPeer.expectBegin(true);
 
-        final String baseURI = "amqp://localhost:" + testPeer.getServerPort();
+        String scheme = ssl ? "amqps" : "amqp";
+        final String baseURI = scheme + "://localhost:" + testPeer.getServerPort();
         String remoteURI = baseURI;
         if (optionsString != null) {
             remoteURI = baseURI + optionsString;

@@ -601,7 +601,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     public void testCreateDurableTopicSubscriberFailsIfConnectionDoesntHaveExplicitClientID() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Create a connection without an explicit clientId
-            Connection connection = testFixture.establishConnecton(testPeer, null, null, null, false);
+            Connection connection = testFixture.establishConnecton(testPeer, false, null, null, null, false);
             connection.start();
 
             testPeer.expectBegin(true);

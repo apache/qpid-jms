@@ -27,11 +27,14 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.SSLContext;
 
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpTemporaryDestination;
@@ -115,7 +118,12 @@ public class TestAmqpPeer implements AutoCloseable
 
     public TestAmqpPeer() throws IOException
     {
-        _driverRunnable = new TestAmqpPeerRunner(this);
+        this(null, false);
+    }
+
+    public TestAmqpPeer(SSLContext context, boolean needClientCert) throws IOException
+    {
+        _driverRunnable = new TestAmqpPeerRunner(this, context, needClientCert);
         _driverThread = new Thread(_driverRunnable, "MockAmqpPeerThread");
         _driverThread.start();
     }
@@ -164,6 +172,11 @@ public class TestAmqpPeer implements AutoCloseable
     public int getServerPort()
     {
         return _driverRunnable.getServerPort();
+    }
+
+    public Socket getClientSocket()
+    {
+        return _driverRunnable.getClientSocket();
     }
 
     public void receiveHeader(byte[] header)

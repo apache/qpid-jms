@@ -209,13 +209,12 @@ public class AmqpFixedProducer extends AmqpProducer {
                 outcome = (Outcome) state;
             } else {
                 LOG.warn("Message send updated with unsupported state: {}", state);
-                continue;
+                outcome = null;
             }
 
             AsyncResult request = (AsyncResult) delivery.getContext();
 
             if (outcome instanceof Accepted) {
-                toRemove.add(delivery);
                 LOG.trace("Outcome of delivery was accepted: {}", delivery);
                 tagGenerator.returnTag(delivery.getTag());
                 if (request != null && !request.isComplete()) {
@@ -223,7 +222,6 @@ public class AmqpFixedProducer extends AmqpProducer {
                 }
             } else if (outcome instanceof Rejected) {
                 Exception remoteError = getRemoteError();
-                toRemove.add(delivery);
                 LOG.trace("Outcome of delivery was rejected: {}", delivery);
                 tagGenerator.returnTag(delivery.getTag());
                 if (request != null && !request.isComplete()) {
@@ -231,9 +229,13 @@ public class AmqpFixedProducer extends AmqpProducer {
                 } else {
                     connection.getProvider().fireProviderException(remoteError);
                 }
-            } else {
+            } else if (outcome != null) {
+                // TODO - Revisit these and better handle unknown or other outcomes
                 LOG.warn("Message send updated with unsupported outcome: {}", outcome);
             }
+
+            toRemove.add(delivery);
+            delivery.settle();
         }
 
         pending.removeAll(toRemove);

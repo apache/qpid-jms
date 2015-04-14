@@ -23,6 +23,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -213,6 +214,7 @@ public class TransportSupport {
         if (alias == null) {
             return fact.getKeyManagers();
         } else {
+            validateAlias(keyStore, alias);
             return wrapKeyManagers(alias, fact.getKeyManagers());
         }
     }
@@ -229,6 +231,16 @@ public class TransportSupport {
         }
 
         return keyManagers;
+    }
+
+    private static void validateAlias(KeyStore store, String alias) throws IllegalArgumentException, KeyStoreException {
+        if (!store.containsAlias(alias)) {
+            throw new IllegalArgumentException("The alias '" + alias + "' doesn't exist in the key store");
+        }
+
+        if (!store.isKeyEntry(alias)) {
+            throw new IllegalArgumentException("The alias '" + alias + "' in the keystore doesn't represent a key entry");
+        }
     }
 
     private static KeyStore loadStore(String storePath, final String password, String storeType) throws Exception {

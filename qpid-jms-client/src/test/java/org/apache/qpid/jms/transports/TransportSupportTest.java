@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.security.UnrecoverableKeyException;
@@ -60,6 +61,9 @@ public class TransportSupportTest extends QpidJmsTestCase {
     public static final String KEYSTORE_PKCS12_TYPE = "pkcs12";
 
     public static final String[] ENABLED_PROTOCOLS = new String[] { "TLSv1" };
+
+    private static final String ALIAS_DOES_NOT_EXIST = "alias.does.not.exist";
+    private static final String ALIAS_CA_CERT = "ca";
 
     @Test
     public void testLegacySslProtocolsDisabledByDefault() throws Exception {
@@ -267,6 +271,32 @@ public class TransportSupportTest extends QpidJmsTestCase {
         assertNotNull(engine);
 
         assertNull(engine.getSSLParameters().getEndpointIdentificationAlgorithm());
+    }
+
+    @Test
+    public void testCreateSslContextWithKeyAliasWhichDoesntExist() throws Exception {
+        TransportSslOptions options = createJksSslOptions();
+        options.setKeyAlias(ALIAS_DOES_NOT_EXIST);
+
+        try {
+            TransportSupport.createSslContext(options);
+            fail("Expected exception to be thrown");
+        } catch (IllegalArgumentException iae) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void testCreateSslContextWithKeyAliasWhichRepresentsNonKeyEntry() throws Exception {
+        TransportSslOptions options = createJksSslOptions();
+        options.setKeyAlias(ALIAS_CA_CERT);
+
+        try {
+            TransportSupport.createSslContext(options);
+            fail("Expected exception to be thrown");
+        } catch (IllegalArgumentException iae) {
+            // Expected
+        }
     }
 
     private TransportSslOptions createJksSslOptions() {

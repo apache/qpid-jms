@@ -135,6 +135,7 @@ public class TransportSupport {
         }
 
         engine.setEnabledProtocols(buildEnabledProtocols(engine, options));
+        engine.setEnabledCipherSuites(buildEnabledCipherSuites(engine, options));
         engine.setUseClientMode(true);
 
         if (options.isVerifyHost()) {
@@ -169,6 +170,31 @@ public class TransportSupport {
         LOG.trace("Enabled protocols: {}", enabledProtocols);
 
         return enabledProtocols.toArray(new String[0]);
+    }
+
+    private static String[] buildEnabledCipherSuites(SSLEngine engine, TransportSslOptions options) {
+        List<String> enabledCipherSuites = new ArrayList<String>();
+
+        if (options.getEnabledCipherSuites() != null) {
+            List<String> configuredCipherSuites = Arrays.asList(options.getEnabledCipherSuites());
+            LOG.trace("Configured cipher suites from transport options: {}", configuredCipherSuites);
+            enabledCipherSuites.addAll(configuredCipherSuites);
+        } else {
+            List<String> engineCipherSuites = Arrays.asList(engine.getEnabledCipherSuites());
+            LOG.trace("Default protocols from the SSLEngine: {}", engineCipherSuites);
+            enabledCipherSuites.addAll(engineCipherSuites);
+        }
+
+        String[] disabledCipherSuites = options.getDisabledCipherSuites();
+        if (disabledCipherSuites != null) {
+            List<String> disabled = Arrays.asList(disabledCipherSuites);
+            LOG.trace("Disabled cipher suites: {}", disabled);
+            enabledCipherSuites.removeAll(disabled);
+        }
+
+        LOG.trace("Enabled cipher suites: {}", enabledCipherSuites);
+
+        return enabledCipherSuites.toArray(new String[0]);
     }
 
     private static TrustManager[] loadTrustManagers(TransportSslOptions options) throws Exception {

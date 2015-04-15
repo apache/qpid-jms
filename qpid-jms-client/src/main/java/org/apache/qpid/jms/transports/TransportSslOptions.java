@@ -42,6 +42,7 @@ public class TransportSslOptions extends TransportOptions {
     private String trustStorePassword;
     private String storeType = DEFAULT_STORE_TYPE;
     private String[] enabledCipherSuites;
+    private String[] disabledCipherSuites;
     private String[] enabledProtocols;
     private String[] disabledProtocols = DEFAULT_DISABLED_PROTOCOLS.toArray(new String[0]);
     private String contextProtocol = DEFAULT_CONTEXT_PROTOCOL;
@@ -143,6 +144,20 @@ public class TransportSslOptions extends TransportOptions {
      */
     public void setEnabledCipherSuites(String[] enabledCipherSuites) {
         this.enabledCipherSuites = enabledCipherSuites;
+    }
+
+    /**
+     * @return the disabledCipherSuites
+     */
+    public String[] getDisabledCipherSuites() {
+        return disabledCipherSuites;
+    }
+
+    /**
+     * @param disabledCipherSuites the disabledCipherSuites to set
+     */
+    public void setDisabledCipherSuites(String[] disabledCipherSuites) {
+        this.disabledCipherSuites = disabledCipherSuites;
     }
 
     /**
@@ -251,6 +266,7 @@ public class TransportSslOptions extends TransportOptions {
         copy.setTrustStorePassword(getTrustStorePassword());
         copy.setStoreType(getStoreType());
         copy.setEnabledCipherSuites(getEnabledCipherSuites());
+        copy.setDisabledCipherSuites(getDisabledCipherSuites());
         copy.setEnabledProtocols(getEnabledProtocols());
         copy.setTrustAll(isTrustAll());
         copy.setVerifyHost(isVerifyHost());

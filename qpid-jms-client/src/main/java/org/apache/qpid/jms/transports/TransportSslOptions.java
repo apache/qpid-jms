@@ -268,6 +268,7 @@ public class TransportSslOptions extends TransportOptions {
         copy.setEnabledCipherSuites(getEnabledCipherSuites());
         copy.setDisabledCipherSuites(getDisabledCipherSuites());
         copy.setEnabledProtocols(getEnabledProtocols());
+        copy.setDisabledProtocols(getDisabledProtocols());
         copy.setTrustAll(isTrustAll());
         copy.setVerifyHost(isVerifyHost());
         copy.setKeyAlias(getKeyAlias());

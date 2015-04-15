@@ -46,6 +46,11 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
     public static final int TEST_SO_TIMEOUT = 10;
     public static final int TEST_CONNECT_TIMEOUT = 90000;
 
+    public static final String[] ENABLED_PROTOCOLS = new String[] {"TLSv1.2"};
+    public static final String[] DISABLED_PROTOCOLS = new String[] {"SSLv3", "TLSv1.2"};
+    public static final String[] ENABLED_CIPHERS = new String[] {"CIPHER_A", "CIPHER_B"};
+    public static final String[] DISABLED_CIPHERS = new String[] {"CIPHER_C"};
+
     @Test
     public void testCreate() {
         TransportSslOptions options = new TransportSslOptions();
@@ -57,6 +62,8 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         assertNull(options.getEnabledProtocols());
         assertArrayEquals(TransportSslOptions.DEFAULT_DISABLED_PROTOCOLS.toArray(new String[0]),
                           options.getDisabledProtocols());
+        assertNull(options.getEnabledCipherSuites());
+        assertNull(options.getDisabledCipherSuites());
 
         assertNull(options.getKeyStoreLocation());
         assertNull(options.getKeyStorePassword());
@@ -85,6 +92,10 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         assertEquals(KEYSTORE_TYPE, options.getStoreType());
         assertEquals(KEY_ALIAS, options.getKeyAlias());
         assertEquals(CONTEXT_PROTOCOL, options.getContextProtocol());
+        assertArrayEquals(ENABLED_PROTOCOLS,options.getEnabledProtocols());
+        assertArrayEquals(DISABLED_PROTOCOLS,options.getDisabledProtocols());
+        assertArrayEquals(ENABLED_CIPHERS,options.getEnabledCipherSuites());
+        assertArrayEquals(DISABLED_CIPHERS,options.getDisabledCipherSuites());
     }
 
     @Test
@@ -107,6 +118,10 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         assertEquals(KEYSTORE_TYPE, options.getStoreType());
         assertEquals(KEY_ALIAS, options.getKeyAlias());
         assertEquals(CONTEXT_PROTOCOL, options.getContextProtocol());
+        assertArrayEquals(ENABLED_PROTOCOLS,options.getEnabledProtocols());
+        assertArrayEquals(DISABLED_PROTOCOLS,options.getDisabledProtocols());
+        assertArrayEquals(ENABLED_CIPHERS,options.getEnabledCipherSuites());
+        assertArrayEquals(DISABLED_CIPHERS,options.getDisabledCipherSuites());
     }
 
     private TransportSslOptions createSslOptions() {
@@ -121,6 +136,10 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         options.setVerifyHost(VERIFY_HOST);
         options.setKeyAlias(KEY_ALIAS);
         options.setContextProtocol(CONTEXT_PROTOCOL);
+        options.setEnabledProtocols(ENABLED_PROTOCOLS);
+        options.setDisabledProtocols(DISABLED_PROTOCOLS);
+        options.setEnabledCipherSuites(ENABLED_CIPHERS);
+        options.setDisabledCipherSuites(DISABLED_CIPHERS);
 
         options.setSendBufferSize(TEST_SEND_BUFFER_SIZE);
         options.setReceiveBufferSize(TEST_RECEIVE_BUFFER_SIZE);

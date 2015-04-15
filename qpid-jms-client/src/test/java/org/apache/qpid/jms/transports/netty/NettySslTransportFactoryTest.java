@@ -50,8 +50,12 @@ public class NettySslTransportFactoryTest {
     public static final String CUSTOM_CONTEXT_PROTOCOL = "TLSv1.2";
     public static final String[] CUSTOM_ENABLED_PROTOCOLS = { "TLSv1.1", "TLSv1.2" };
     public static final String CUSTOM_ENABLED_PROTOCOLS_STRING = "TLSv1.1,TLSv1.2";
+    public static final String[] CUSTOM_DISABLED_PROTOCOLS = { "SSLv3", "TLSv1.1" };
+    public static final String CUSTOM_DISABLED_PROTOCOLS_STRING = "SSLv3,TLSv1.1";
     public static final String[] CUSTOM_ENABLED_CIPHER_SUITES = {"Suite-1", "Suite-2"};
     public static final String CUSTOM_ENABLED_CIPHER_SUITES_STRING = "Suite-1,Suite-2";
+    public static final String[] CUSTOM_DISABLED_CIPHER_SUITES = {"Suite-3", "Suite-4"};
+    public static final String CUSTOM_DISABLED_CIPHER_SUITES_STRING = "Suite-3,Suite-4";
     public static final String CUSTOM_STORE_TYPE = "jceks";
     public static final boolean CUSTOM_TRUST_ALL = true;
     public static final boolean CUSTOM_VERIFY_HOST = false;
@@ -127,7 +131,9 @@ public class NettySslTransportFactoryTest {
             "transport.keyAlias=" + CUSTOM_KEY_ALIAS + "&" +
             "transport.contextProtocol=" + CUSTOM_CONTEXT_PROTOCOL + "&" +
             "transport.enabledProtocols=" + CUSTOM_ENABLED_PROTOCOLS_STRING + "&" +
-            "transport.enabledCipherSuites=" + CUSTOM_ENABLED_CIPHER_SUITES_STRING);
+            "transport.disabledProtocols=" + CUSTOM_DISABLED_PROTOCOLS_STRING + "&" +
+            "transport.enabledCipherSuites=" + CUSTOM_ENABLED_CIPHER_SUITES_STRING + "&" +
+            "transport.disabledCipherSuites=" + CUSTOM_DISABLED_CIPHER_SUITES_STRING);
 
         NettySslTransportFactory factory = new NettySslTransportFactory();
 
@@ -156,9 +162,17 @@ public class NettySslTransportFactoryTest {
         List<String> customProtocols = Arrays.asList(CUSTOM_ENABLED_PROTOCOLS);
         assertThat(enabledProtocols, containsInAnyOrder(customProtocols.toArray()));
 
+        List<String> disabledProtocols = Arrays.asList(sslOptions.getDisabledProtocols());
+        List<String> customDisabledProtocols = Arrays.asList(CUSTOM_DISABLED_PROTOCOLS);
+        assertThat(disabledProtocols, containsInAnyOrder(customDisabledProtocols.toArray()));
+
         List<String> enabledCipherSuites = Arrays.asList(sslOptions.getEnabledCipherSuites());
         List<String> customChiperSuites = Arrays.asList(CUSTOM_ENABLED_CIPHER_SUITES);
         assertThat(enabledCipherSuites, containsInAnyOrder(customChiperSuites.toArray()));
+
+        List<String> disabledCipherSuites = Arrays.asList(sslOptions.getDisabledCipherSuites());
+        List<String> customDisabledChiperSuites = Arrays.asList(CUSTOM_DISABLED_CIPHER_SUITES);
+        assertThat(disabledCipherSuites, containsInAnyOrder(customDisabledChiperSuites.toArray()));
 
         assertEquals(CUSTOM_STORE_TYPE, sslOptions.getStoreType());
         assertEquals(CUSTOM_VERIFY_HOST, sslOptions.isVerifyHost());

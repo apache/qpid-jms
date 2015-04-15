@@ -29,6 +29,7 @@ import javax.jms.Session;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
+import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.junit.Test;
 
 public class ConsumerIntegrationTest extends QpidJmsTestCase {
@@ -55,6 +56,8 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testRemotelyCloseConsumer() throws Exception {
+        final String BREAD_CRUMB = "ErrorMessage";
+
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
 
@@ -64,7 +67,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             // Create a consumer, then remotely end it afterwards.
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlow();
-            testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(true, true);
+            testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(true, true, AmqpError.RESOURCE_DELETED, BREAD_CRUMB);
 
             Queue queue = session.createQueue("myQueue");
             final MessageConsumer consumer = session.createConsumer(queue);
@@ -78,7 +81,9 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
                         consumer.getMessageListener();
                     } catch (IllegalStateException jmsise) {
                         if (jmsise.getCause() != null) {
-                            return true;
+                            String message = jmsise.getCause().getMessage();
+                            return message.contains(AmqpError.RESOURCE_DELETED.toString()) &&
+                                   message.contains(BREAD_CRUMB);
                         } else {
                             return false;
                         }

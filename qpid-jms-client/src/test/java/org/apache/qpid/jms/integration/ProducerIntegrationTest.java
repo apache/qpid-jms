@@ -43,6 +43,7 @@ import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
+import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSectionMatcher;
@@ -521,6 +522,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testRemotelyCloseProducer() throws Exception {
+        final String BREAD_CRUMB = "ErrorMessage";
+
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
 
@@ -529,7 +532,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             // Create a producer, then remotely end it afterwards.
             testPeer.expectSenderAttach();
-            testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(true, true);
+            testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(true, true, AmqpError.RESOURCE_DELETED, BREAD_CRUMB);
 
             Queue queue = session.createQueue("myQueue");
             final MessageProducer producer = session.createProducer(queue);
@@ -543,7 +546,9 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                         producer.getDestination();
                     } catch (IllegalStateException jmsise) {
                         if (jmsise.getCause() != null) {
-                            return true;
+                            String message = jmsise.getCause().getMessage();
+                            return message.contains(AmqpError.RESOURCE_DELETED.toString()) &&
+                                   message.contains(BREAD_CRUMB);
                         } else {
                             return false;
                         }

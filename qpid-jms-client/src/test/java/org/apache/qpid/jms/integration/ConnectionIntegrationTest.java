@@ -41,6 +41,7 @@ import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
+import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
 import org.apache.qpid.proton.amqp.transaction.TxnCapability;
 import org.junit.Test;
@@ -137,6 +138,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testRemotelyEndConnectionWithSessionWithConsumer() throws Exception {
+        final String BREAD_CRUMB = "ErrorMessage";
+
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final Connection connection = testFixture.establishConnecton(testPeer);
 
@@ -146,7 +149,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             // Create a consumer, then remotely end the connection afterwards.
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlow();
-            testPeer.remotelyCloseConnection(true);
+            testPeer.remotelyCloseConnection(true, AmqpError.RESOURCE_LIMIT_EXCEEDED, BREAD_CRUMB);
 
             Queue queue = session.createQueue("myQueue");
             MessageConsumer consumer = session.createConsumer(queue);
@@ -159,12 +162,23 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
                 }
             }, 1000, 10));
 
+            try {
+                connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                fail("Expected ISE to be thrown due to being closed");
+            } catch (IllegalStateException jmsise) {
+                String message = jmsise.getCause().getMessage();
+                assertTrue(message.contains(AmqpError.RESOURCE_LIMIT_EXCEEDED.toString()));
+                assertTrue(message.contains(BREAD_CRUMB));
+            }
+
             // Verify the session is now marked closed
             try {
                 session.getAcknowledgeMode();
                 fail("Expected ISE to be thrown due to being closed");
             } catch (IllegalStateException jmsise) {
-                // expected
+                String message = jmsise.getCause().getMessage();
+                assertTrue(message.contains(AmqpError.RESOURCE_LIMIT_EXCEEDED.toString()));
+                assertTrue(message.contains(BREAD_CRUMB));
             }
 
             // Verify the consumer is now marked closed
@@ -172,7 +186,9 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
                 consumer.getMessageListener();
                 fail("Expected ISE to be thrown due to being closed");
             } catch (IllegalStateException jmsise) {
-                // expected
+                String message = jmsise.getCause().getMessage();
+                assertTrue(message.contains(AmqpError.RESOURCE_LIMIT_EXCEEDED.toString()));
+                assertTrue(message.contains(BREAD_CRUMB));
             }
 
             // Try closing them explicitly, should effectively no-op in client.

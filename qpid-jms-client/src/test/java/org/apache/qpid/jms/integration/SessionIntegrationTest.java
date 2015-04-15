@@ -1233,6 +1233,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testRemotelyEndSessionWithProducer() throws Exception {
+        final String BREAD_CRUMB = "ErrorMessage";
+
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
 
@@ -1241,7 +1243,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             // Create a producer, then remotely end the session afterwards.
             testPeer.expectSenderAttach();
-            testPeer.remotelyEndLastOpenedSession(true);
+            testPeer.remotelyEndLastOpenedSession(true, 0, AmqpError.RESOURCE_DELETED, BREAD_CRUMB);
 
             Queue queue = session.createQueue("myQueue");
             final MessageProducer producer = session.createProducer(queue);
@@ -1256,11 +1258,27 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                     try {
                         producer.getDestination();
                     } catch (IllegalStateException jmsise) {
-                        return true;
+                        if (jmsise.getCause() != null) {
+                            String message = jmsise.getCause().getMessage();
+                            return message.contains(AmqpError.RESOURCE_DELETED.toString()) &&
+                                   message.contains(BREAD_CRUMB);
+                        } else {
+                            return false;
+                        }
                     }
                     return false;
                 }
             }, 2000, 10));
+
+            // Verify the session is now marked closed
+            try {
+                session.getAcknowledgeMode();
+                fail("Expected ISE to be thrown due to being closed");
+            } catch (IllegalStateException jmsise) {
+                String message = jmsise.getCause().getMessage();
+                assertTrue(message.contains(AmqpError.RESOURCE_DELETED.toString()));
+                assertTrue(message.contains(BREAD_CRUMB));
+            }
 
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.
@@ -1270,6 +1288,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testRemotelyEndSessionWithConsumer() throws Exception {
+        final String BREAD_CRUMB = "ErrorMessage";
+
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
 
@@ -1279,7 +1299,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             // Create a consumer, then remotely end the session afterwards.
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlow();
-            testPeer.remotelyEndLastOpenedSession(true);
+            testPeer.remotelyEndLastOpenedSession(true, 0, AmqpError.RESOURCE_DELETED, BREAD_CRUMB);
 
             Queue queue = session.createQueue("myQueue");
             final MessageConsumer consumer = session.createConsumer(queue);
@@ -1293,7 +1313,9 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                         consumer.getMessageListener();
                     } catch (IllegalStateException jmsise) {
                         if (jmsise.getCause() != null) {
-                            return true;
+                            String message = jmsise.getCause().getMessage();
+                            return message.contains(AmqpError.RESOURCE_DELETED.toString()) &&
+                                   message.contains(BREAD_CRUMB);
                         } else {
                             return false;
                         }
@@ -1301,6 +1323,16 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                     return false;
                 }
             }, 2000, 10));
+
+            // Verify the session is now marked closed
+            try {
+                session.getAcknowledgeMode();
+                fail("Expected ISE to be thrown due to being closed");
+            } catch (IllegalStateException jmsise) {
+                String message = jmsise.getCause().getMessage();
+                assertTrue(message.contains(AmqpError.RESOURCE_DELETED.toString()));
+                assertTrue(message.contains(BREAD_CRUMB));
+            }
 
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.

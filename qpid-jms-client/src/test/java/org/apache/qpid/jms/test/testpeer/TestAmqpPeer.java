@@ -1247,16 +1247,25 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     public void remotelyEndLastOpenedSession(boolean expectEndResponse) {
-        remotelyEndLastOpenedSession(expectEndResponse, 0);
+        remotelyEndLastOpenedSession(expectEndResponse, 0, null, null);
     }
 
-    public void remotelyEndLastOpenedSession(boolean expectEndResponse, final long delayBeforeSend) {
+    public void remotelyEndLastOpenedSession(boolean expectEndResponse, long delayBeforeSend) {
+        remotelyEndLastOpenedSession(expectEndResponse, 0, null, null);
+    }
+
+    public void remotelyEndLastOpenedSession(boolean expectEndResponse, final long delayBeforeSend, Symbol errorType, String errorMessage) {
         synchronized (_handlersLock) {
             CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
 
             // Now generate the End for the appropriate session
             final EndFrame endFrame = new EndFrame();
-            // TODO: add an optional error msg+condition?
+            if (errorType != null) {
+                org.apache.qpid.jms.test.testpeer.describedtypes.Error detachError = new org.apache.qpid.jms.test.testpeer.describedtypes.Error();
+                detachError.setCondition(errorType);
+                detachError.setDescription(errorMessage);
+                endFrame.setError(detachError);
+            }
 
             int channel = -1;
             final FrameSender frameSender = new FrameSender(this, FrameType.AMQP, channel, endFrame, null);
@@ -1287,13 +1296,22 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     public void remotelyCloseConnection(boolean expectCloseResponse) {
+        remotelyCloseConnection(expectCloseResponse, null, null);
+    }
+
+    public void remotelyCloseConnection(boolean expectCloseResponse, Symbol errorType, String errorMessage) {
         synchronized (_handlersLock) {
             // Prepare a composite to insert this action at the end of the handler sequence
             CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
 
             // Now generate the Close
             final CloseFrame closeFrame = new CloseFrame();
-            // TODO: add an optional error msg+condition?
+            if (errorType != null) {
+                org.apache.qpid.jms.test.testpeer.describedtypes.Error detachError = new org.apache.qpid.jms.test.testpeer.describedtypes.Error();
+                detachError.setCondition(errorType);
+                detachError.setDescription(errorMessage);
+                closeFrame.setError(detachError);
+            }
 
             final FrameSender frameSender = new FrameSender(this, FrameType.AMQP, CONNECTION_CHANNEL, closeFrame, null);
 
@@ -1308,13 +1326,22 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     public void remotelyDetachLastOpenedLinkOnLastOpenedSession(boolean expectDetachResponse, boolean closed) {
+        remotelyDetachLastOpenedLinkOnLastOpenedSession(expectDetachResponse, closed, null, null);
+    }
+
+    public void remotelyDetachLastOpenedLinkOnLastOpenedSession(boolean expectDetachResponse, boolean closed, Symbol errorType, String errorMessage) {
         synchronized (_handlersLock) {
             CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
 
             // Now generate the Detach for the appropriate link on the appropriate session
             final DetachFrame detachFrame = new DetachFrame();
             detachFrame.setClosed(closed);
-            // TODO: add an optional error msg+condition?
+            if (errorType != null) {
+                org.apache.qpid.jms.test.testpeer.describedtypes.Error detachError = new org.apache.qpid.jms.test.testpeer.describedtypes.Error();
+                detachError.setCondition(errorType);
+                detachError.setDescription(errorMessage);
+                detachFrame.setError(detachError);
+            }
 
             // The response frame channel will be dynamically set based on the previous frames. Using the -1 is an illegal placeholder.
             final FrameSender frameSender = new FrameSender(this, FrameType.AMQP, -1, detachFrame, null);

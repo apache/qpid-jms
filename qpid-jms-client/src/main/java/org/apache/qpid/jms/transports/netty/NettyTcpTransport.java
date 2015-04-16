@@ -135,10 +135,20 @@ public class NettyTcpTransport implements Transport {
         } catch (InterruptedException ex) {
             LOG.debug("Transport connection was interrupted.");
             Thread.interrupted();
-            throw IOExceptionSupport.create(ex);
+            failureCause = IOExceptionSupport.create(ex);
         }
 
         if (failureCause != null) {
+            // Close out any Netty resources now as they are no longer needed.
+            if (channel != null) {
+                channel.close();
+                channel = null;
+            }
+            if (group != null) {
+                group.shutdownGracefully(QUIET_PERIOD, SHUTDOWN_TIMEOUT, TimeUnit.MILLISECONDS);
+                group = null;
+            }
+
             throw failureCause;
         }
     }

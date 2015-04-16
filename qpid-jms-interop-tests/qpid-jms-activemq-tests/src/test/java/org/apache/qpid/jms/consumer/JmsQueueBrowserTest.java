@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Test Basic Queue Browser implementation.
  */
+@SuppressWarnings("rawtypes")
 public class JmsQueueBrowserTest extends AmqpTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsQueueBrowserTest.class);
@@ -52,17 +53,16 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(getDestinationName());
         session.createConsumer(queue).close();
 
         QueueBrowser browser = session.createBrowser(queue);
         assertNotNull(browser);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(getDestinationName());
         assertEquals(0, proxy.getQueueSize());
     }
 
-    @SuppressWarnings("rawtypes")
     @Test(timeout = 60000)
     public void testNoMessagesBrowserHasNoElements() throws Exception {
         connection = createAmqpConnection();
@@ -70,20 +70,19 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(getDestinationName());
         session.createConsumer(queue).close();
 
         QueueBrowser browser = session.createBrowser(queue);
         assertNotNull(browser);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(getDestinationName());
         assertEquals(0, proxy.getQueueSize());
 
         Enumeration enumeration = browser.getEnumeration();
         assertFalse(enumeration.hasMoreElements());
     }
 
-    @SuppressWarnings("rawtypes")
     @Test(timeout=30000)
     public void testBroseOneInQueue() throws Exception {
         connection = createAmqpConnection();
@@ -110,7 +109,6 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
         assertTrue(msg instanceof TextMessage);
     }
 
-    @SuppressWarnings("rawtypes")
     @Test(timeout = 60000)
     public void testBrowseAllInQueue() throws Exception {
         connection = createAmqpConnection();
@@ -118,10 +116,10 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(getDestinationName());
         sendToAmqQueue(5);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(getDestinationName());
         assertEquals(5, proxy.getQueueSize());
 
         QueueBrowser browser = session.createBrowser(queue);
@@ -138,7 +136,76 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
         assertEquals(5, count);
     }
 
-    @SuppressWarnings("rawtypes")
+    @Test(timeout = 60000)
+    public void testBrowseAllInQueueTxSession() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        assertNotNull(session);
+        Queue queue = session.createQueue(getDestinationName());
+        sendToAmqQueue(5);
+
+        QueueViewMBean proxy = getProxyToQueue(getDestinationName());
+        assertEquals(5, proxy.getQueueSize());
+
+        QueueBrowser browser = session.createBrowser(queue);
+        assertNotNull(browser);
+        Enumeration enumeration = browser.getEnumeration();
+        int count = 0;
+        while (enumeration.hasMoreElements()) {
+            Message msg = (Message) enumeration.nextElement();
+            assertNotNull(msg);
+            LOG.debug("Recv: {}", msg);
+            count++;
+        }
+        assertFalse(enumeration.hasMoreElements());
+        assertEquals(5, count);
+    }
+
+    @Test(timeout = 60000)
+    public void testQueueBrowserInTxSessionLeavesOtherWorkUnaffected() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        assertNotNull(session);
+        Queue queue = session.createQueue(getDestinationName());
+        sendToAmqQueue(5);
+
+        QueueViewMBean proxy = getProxyToQueue(getDestinationName());
+        assertEquals(5, proxy.getQueueSize());
+
+        // Send some TX work but don't commit.
+        MessageProducer txProducer = session.createProducer(queue);
+        for (int i = 0; i < 5; ++i) {
+            txProducer.send(session.createMessage());
+        }
+
+        assertEquals(5, proxy.getQueueSize());
+
+        QueueBrowser browser = session.createBrowser(queue);
+        assertNotNull(browser);
+        Enumeration enumeration = browser.getEnumeration();
+        int count = 0;
+        while (enumeration.hasMoreElements()) {
+            Message msg = (Message) enumeration.nextElement();
+            assertNotNull(msg);
+            LOG.debug("Recv: {}", msg);
+            count++;
+        }
+
+        assertFalse(enumeration.hasMoreElements());
+        assertEquals(5, count);
+
+        browser.close();
+
+        // Now check that all browser work did not affect the session transaction.
+        assertEquals(5, proxy.getQueueSize());
+        session.commit();
+        assertEquals(10, proxy.getQueueSize());
+    }
+
     @Test(timeout = 90000)
     public void testBrowseAllInQueueSmallPrefetch() throws Exception {
         connection = createAmqpConnection();
@@ -149,10 +216,10 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
+        Queue queue = session.createQueue(getDestinationName());
         sendToAmqQueue(MSG_COUNT);
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        QueueViewMBean proxy = getProxyToQueue(getDestinationName());
         assertEquals(MSG_COUNT, proxy.getQueueSize());
 
         QueueBrowser browser = session.createBrowser(queue);

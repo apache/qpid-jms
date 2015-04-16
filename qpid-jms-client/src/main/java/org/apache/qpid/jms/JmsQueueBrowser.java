@@ -88,9 +88,6 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
             return;
         }
         try {
-            if (session.getTransacted()) {
-                session.commit();
-            }
             consumer.close();
             consumer = null;
         } catch (JMSException e) {

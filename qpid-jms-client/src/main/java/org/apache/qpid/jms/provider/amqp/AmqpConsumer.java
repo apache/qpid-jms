@@ -309,7 +309,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             }
             LOG.debug("Consumed Ack of message: {}", envelope);
             if (!delivery.isSettled()) {
-                if (session.isTransacted()) {
+                if (session.isTransacted() && !isBrowser()) {
                     Binary txnId = session.getTransactionContext().getAmqpTransactionId();
                     if (txnId != null) {
                         TransactionalState txState = new TransactionalState();
@@ -331,8 +331,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         } else if (ackType.equals(ACK_TYPE.RELEASED)) {
             delivery.disposition(Released.getInstance());
             delivery.settle();
-        }
-        else {
+        } else {
             LOG.warn("Unsupported Ack Type for message: {}", envelope);
         }
     }

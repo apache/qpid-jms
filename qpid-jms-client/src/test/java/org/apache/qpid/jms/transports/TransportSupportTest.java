@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
@@ -219,6 +220,70 @@ public class TransportSupportTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledCiphers() throws Exception {
+        // Discover the default enabled ciphers
+        TransportSslOptions options = createJksSslOptions();
+        SSLEngine directEngine = createSSLEngineDirectly(options);
+        String[] ciphers = directEngine.getEnabledCipherSuites();
+        assertTrue("There were no initial ciphers to choose from!", ciphers.length > 0);
+
+        // Pull out one to enable specifically
+        String cipher = ciphers[0];
+        String[] enabledCipher = new String[] { cipher };
+        options.setEnabledCipherSuites(enabledCipher);
+        SSLContext context = TransportSupport.createSslContext(options);
+        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+
+        // verify the option took effect
+        assertNotNull(engine);
+        assertArrayEquals("Enabled ciphers not as expected", enabledCipher, engine.getEnabledCipherSuites());
+    }
+
+    @Test
+    public void testCreateSslEngineFromJksStoreWithExplicitDisabledCiphers() throws Exception {
+        // Discover the default enabled ciphers
+        TransportSslOptions options = createJksSslOptions();
+        SSLEngine directEngine = createSSLEngineDirectly(options);
+        String[] ciphers = directEngine.getEnabledCipherSuites();
+        assertTrue("There were no initial ciphers to choose from!", ciphers.length > 0);
+
+        // Pull out one to disable specifically
+        String[] disabledCipher = new String[] { ciphers[ciphers.length - 1] };
+        String[] trimmedCiphers = Arrays.copyOf(ciphers, ciphers.length - 1);
+        options.setDisabledCipherSuites(disabledCipher);
+        SSLContext context = TransportSupport.createSslContext(options);
+        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+
+        // verify the option took effect
+        assertNotNull(engine);
+        assertArrayEquals("Enabled ciphers not as expected", trimmedCiphers, engine.getEnabledCipherSuites());
+    }
+
+    @Test
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledAndDisabledCiphers() throws Exception {
+        // Discover the default enabled ciphers
+        TransportSslOptions options = createJksSslOptions();
+        SSLEngine directEngine = createSSLEngineDirectly(options);
+        String[] ciphers = directEngine.getEnabledCipherSuites();
+        assertTrue("There werent enough initial ciphers to choose from!", ciphers.length > 1);
+
+        // Pull out two to enable, and one to disable specifically
+        String cipher1 = ciphers[0];
+        String cipher2 = ciphers[1];
+        String[] enabledCiphers = new String[] { cipher1, cipher2 };
+        String[] disabledCipher = new String[] { cipher1 };
+        String[] remainingCipher = new String[] { cipher2 };
+        options.setEnabledCipherSuites(enabledCiphers);
+        options.setDisabledCipherSuites(disabledCipher);
+        SSLContext context = TransportSupport.createSslContext(options);
+        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+
+        // verify the option took effect, that the disabled ciphers were removed from the enabled list.
+        assertNotNull(engine);
+        assertArrayEquals("Enabled ciphers not as expected", remainingCipher, engine.getEnabledCipherSuites());
+    }
+
+    @Test
     public void testCreateSslEngineFromJceksStore() throws Exception {
         TransportSslOptions options = createJceksSslOptions();
 
@@ -355,4 +420,11 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
         return options;
     }
+
+    private SSLEngine createSSLEngineDirectly(TransportSslOptions options) throws Exception {
+        SSLContext context = TransportSupport.createSslContext(options);
+        SSLEngine engine = context.createSSLEngine();
+        return engine;
+    }
+
 }

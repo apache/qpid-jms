@@ -220,6 +220,50 @@ public class TransportSupportTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testCreateSslEngineFromJksStoreWithExplicitDisabledProtocols() throws Exception {
+        // Discover the default enabled ciphers
+        TransportSslOptions options = createJksSslOptions();
+        SSLEngine directEngine = createSSLEngineDirectly(options);
+        String[] protocols = directEngine.getSupportedProtocols();
+        assertTrue("There were no initial protocols to choose from!", protocols.length > 0);
+
+        // Pull out one to disable specifically
+        String[] disabledProtocol = new String[] { protocols[protocols.length - 1] };
+        String[] trimmedProtocols = Arrays.copyOf(protocols, protocols.length - 1);
+        options.setDisabledProtocols(disabledProtocol);
+        SSLContext context = TransportSupport.createSslContext(options);
+        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+
+        // verify the option took effect
+        assertNotNull(engine);
+        assertArrayEquals("Enabled protocols not as expected", trimmedProtocols, engine.getEnabledProtocols());
+    }
+
+    @Test
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledAndDisabledProtocols() throws Exception {
+        // Discover the default enabled ciphers
+        TransportSslOptions options = createJksSslOptions();
+        SSLEngine directEngine = createSSLEngineDirectly(options);
+        String[] protocols = directEngine.getSupportedProtocols();
+        assertTrue("There were no initial protocols to choose from!", protocols.length > 1);
+
+        // Pull out two to enable, and one to disable specifically
+        String protocol1 = protocols[0];
+        String protocol2 = protocols[1];
+        String[] enabledProtocols = new String[] { protocol1, protocol2 };
+        String[] disabledProtocol = new String[] { protocol1 };
+        String[] remainingProtocols = new String[] { protocol2 };
+        options.setEnabledProtocols(enabledProtocols);
+        options.setDisabledProtocols(disabledProtocol);
+        SSLContext context = TransportSupport.createSslContext(options);
+        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+
+        // verify the option took effect, that the disabled protocols were removed from the enabled list.
+        assertNotNull(engine);
+        assertArrayEquals("Enabled protocols not as expected", remainingProtocols, engine.getEnabledProtocols());
+    }
+
+    @Test
     public void testCreateSslEngineFromJksStoreWithExplicitEnabledCiphers() throws Exception {
         // Discover the default enabled ciphers
         TransportSslOptions options = createJksSslOptions();

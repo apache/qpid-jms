@@ -221,10 +221,10 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     @Test
     public void testCreateSslEngineFromJksStoreWithExplicitDisabledProtocols() throws Exception {
-        // Discover the default enabled ciphers
+        // Discover the default enabled protocols
         TransportSslOptions options = createJksSslOptions();
         SSLEngine directEngine = createSSLEngineDirectly(options);
-        String[] protocols = directEngine.getSupportedProtocols();
+        String[] protocols = directEngine.getEnabledProtocols();
         assertTrue("There were no initial protocols to choose from!", protocols.length > 0);
 
         // Pull out one to disable specifically
@@ -241,10 +241,10 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     @Test
     public void testCreateSslEngineFromJksStoreWithExplicitEnabledAndDisabledProtocols() throws Exception {
-        // Discover the default enabled ciphers
+        // Discover the default enabled protocols
         TransportSslOptions options = createJksSslOptions();
         SSLEngine directEngine = createSSLEngineDirectly(options);
-        String[] protocols = directEngine.getSupportedProtocols();
+        String[] protocols = directEngine.getEnabledProtocols();
         assertTrue("There were no initial protocols to choose from!", protocols.length > 1);
 
         // Pull out two to enable, and one to disable specifically

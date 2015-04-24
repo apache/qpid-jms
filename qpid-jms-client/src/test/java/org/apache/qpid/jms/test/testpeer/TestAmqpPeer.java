@@ -29,6 +29,7 @@ import static org.hamcrest.Matchers.nullValue;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -456,6 +457,62 @@ public class TestAmqpPeer implements AutoCloseable
         }
 
         addHandler(openMatcher);
+    }
+
+    // TODO - Reject any incoming connection using the supplied information
+    public void rejectConnect(Symbol errorType, String errorMessage, Map<String, Object> errorInfo) {
+
+        SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(Symbol.valueOf("ANONYMOUS"));
+        addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
+                                            new FrameSender(
+                                                    this, FrameType.SASL, 0,
+                                                    saslMechanismsFrame, null)));
+
+        addHandler(new SaslInitMatcher()
+            .withMechanism(equalTo(Symbol.valueOf("ANONYMOUS")))
+            .withInitialResponse(nullValue())
+            .onSuccess(new AmqpPeerRunnable()
+            {
+                @Override
+                public void run()
+                {
+                    TestAmqpPeer.this.sendFrame(
+                            FrameType.SASL, 0,
+                            new SaslOutcomeFrame().setCode(UnsignedByte.valueOf((byte)0)),
+                            null,
+                            false);
+                    _driverRunnable.expectHeader();
+                }
+            }));
+
+        addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
+
+        Map<Symbol, Object> properties = new HashMap<Symbol, Object>();
+        properties.put(Symbol.valueOf("amqp:connection-establishment-failed"), true);
+
+        OpenFrame open = new OpenFrame();
+        open.setProperties(properties);
+        open.setContainerId("test-amqp-peer-container-id");
+
+        addHandler(new OpenMatcher()
+            .withContainerId(notNullValue(String.class))
+            .onSuccess(new FrameSender(this, FrameType.AMQP, CONNECTION_CHANNEL, open, null)));
+
+        // Now generate the Close with the supplied error
+        final CloseFrame closeFrame = new CloseFrame();
+        if (errorType != null) {
+            org.apache.qpid.jms.test.testpeer.describedtypes.Error detachError = new org.apache.qpid.jms.test.testpeer.describedtypes.Error();
+            detachError.setCondition(errorType);
+            detachError.setDescription(errorMessage);
+            detachError.setInfo(errorInfo);
+            closeFrame.setError(detachError);
+        }
+
+        CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
+        final FrameSender closeSender = new FrameSender(this, FrameType.AMQP, CONNECTION_CHANNEL, closeFrame, null);
+        comp.add(closeSender);
+
+        addHandler(new CloseMatcher().withError(Matchers.nullValue()));
     }
 
     public void expectClose()
@@ -1296,10 +1353,14 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     public void remotelyCloseConnection(boolean expectCloseResponse) {
-        remotelyCloseConnection(expectCloseResponse, null, null);
+        remotelyCloseConnection(expectCloseResponse, null, null, null);
     }
 
     public void remotelyCloseConnection(boolean expectCloseResponse, Symbol errorType, String errorMessage) {
+        remotelyCloseConnection(expectCloseResponse, errorType, errorMessage, null);
+    }
+
+    public void remotelyCloseConnection(boolean expectCloseResponse, Symbol errorType, String errorMessage, Map<String, Object> info) {
         synchronized (_handlersLock) {
             // Prepare a composite to insert this action at the end of the handler sequence
             CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
@@ -1310,6 +1371,7 @@ public class TestAmqpPeer implements AutoCloseable
                 org.apache.qpid.jms.test.testpeer.describedtypes.Error detachError = new org.apache.qpid.jms.test.testpeer.describedtypes.Error();
                 detachError.setCondition(errorType);
                 detachError.setDescription(errorMessage);
+                detachError.setInfo(info);
                 closeFrame.setError(detachError);
             }
 

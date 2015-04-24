@@ -21,12 +21,16 @@
 package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.arrayContaining;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionMetaData;
@@ -38,10 +42,12 @@ import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.provider.ProviderRedirectedException;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
+import org.apache.qpid.jms.test.testpeer.basictypes.ConnectionError;
 import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
 import org.apache.qpid.proton.amqp.transaction.TxnCapability;
 import org.junit.Test;
@@ -118,7 +124,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             // Tell the test peer to close the connection when executing its last handler
             testPeer.remotelyCloseConnection(true);
 
-            //Add the exception listener
+            // Add the exception listener
             connection.setExceptionListener(new ExceptionListener() {
 
                 @Override
@@ -131,6 +137,54 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             connection.start();
 
             assertTrue("Connection should report failure", done.await(5, TimeUnit.SECONDS));
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 10000)
+    public void testRemotelyEndConnectionWithRedirect() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final CountDownLatch done = new CountDownLatch(1);
+            final AtomicReference<JMSException> asyncError = new AtomicReference<JMSException>();
+
+            final String REDIRECTED_HOSTNAME = "vhost";
+            final String REDIRECTED_NETWORK_HOST = "localhost";
+            final int REDIRECTED_PORT = 5677;
+
+            // Don't set a ClientId, so that the underlying AMQP connection isn't established yet
+            Connection connection = testFixture.establishConnecton(testPeer, false, null, null, null, false);
+
+            // Tell the test peer to close the connection when executing its last handler
+            Map<String, Object> errorInfo = new HashMap<String, Object>();
+            errorInfo.put("hostname", REDIRECTED_HOSTNAME);
+            errorInfo.put("network-host", REDIRECTED_NETWORK_HOST);
+            errorInfo.put("port", 5677);
+
+            testPeer.remotelyCloseConnection(true, ConnectionError.REDIRECT, "Connection redirected", errorInfo);
+
+            // Add the exception listener
+            connection.setExceptionListener(new ExceptionListener() {
+
+                @Override
+                public void onException(JMSException exception) {
+                    asyncError.set(exception);
+                    done.countDown();
+                }
+            });
+
+            // Trigger the underlying AMQP connection
+            connection.start();
+
+            assertTrue("Connection should report failure", done.await(5, TimeUnit.SECONDS));
+
+            assertTrue(asyncError.get() instanceof JMSException);
+            assertTrue(asyncError.get().getCause() instanceof ProviderRedirectedException);
+
+            ProviderRedirectedException redirect = (ProviderRedirectedException) asyncError.get().getCause();
+            assertEquals(REDIRECTED_HOSTNAME, redirect.getHostname());
+            assertEquals(REDIRECTED_NETWORK_HOST, redirect.getNetworkHost());
+            assertEquals(REDIRECTED_PORT, redirect.getPort());
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

@@ -18,6 +18,7 @@ package org.apache.qpid.jms.provider.failover;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,6 +48,7 @@ import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFactory;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
+import org.apache.qpid.jms.provider.ProviderRedirectedException;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.jms.util.ThreadPoolUtils;
 import org.slf4j.Logger;
@@ -505,6 +507,16 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         this.provider = null;
 
         if (reconnectAllowed()) {
+
+            if (cause instanceof ProviderRedirectedException) {
+                ProviderRedirectedException redirect = (ProviderRedirectedException) cause;
+                try {
+                    uris.add(new URI(failedURI.getScheme() + "://" + redirect.getNetworkHost() + ":" + redirect.getPort()));
+                } catch (URISyntaxException ex) {
+                    LOG.warn("Could not construct redirection URI from remote provided information");
+                }
+            }
+
             ProviderListener listener = this.listener;
             if (listener != null) {
                 listener.onConnectionInterrupted(failedURI);
@@ -890,7 +902,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         public void run() {
             requests.put(id, this);
             if (provider == null) {
-                whenOffline(IOExceptionSupport.create(new IOException("Connection failed.")));
+                whenOffline(new IOException("Connection failed."));
             } else {
                 try {
                     LOG.debug("Executing Failover Task: {}", this);

@@ -734,12 +734,10 @@ public class AmqpProvider implements Provider, TransportListener {
                         amqpResource.processRemoteOpen(this);
                         break;
                     case LINK_REMOTE_CLOSE:
-                        LOG.info("Link closed: {}", protonEvent.getLink().getContext());
                         amqpResource = (AmqpResource) protonEvent.getLink().getContext();
                         amqpResource.processRemoteClose(this);
                         break;
                     case LINK_REMOTE_DETACH:
-                        LOG.info("Link detach: {}", protonEvent.getLink().getContext());
                         amqpResource = (AmqpResource) protonEvent.getLink().getContext();
                         amqpResource.processRemoteDetach(this);
                         break;

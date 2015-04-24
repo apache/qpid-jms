@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.provider.amqp;
 
 import java.io.IOException;
+import java.util.Map;
 
 import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
@@ -25,8 +26,10 @@ import javax.jms.JMSSecurityException;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.ProviderRedirectedException;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.transport.AmqpError;
+import org.apache.qpid.proton.amqp.transport.ConnectionError;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.Endpoint;
 import org.apache.qpid.proton.engine.EndpointState;
@@ -241,6 +244,8 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
                 remoteError = new JMSSecurityException(message);
             } else if (error.equals(AmqpError.NOT_FOUND)) {
                 remoteError = new InvalidDestinationException(message);
+            } else if (error.equals(ConnectionError.REDIRECT)) {
+                remoteError = createRedirectException(error, message, getEndpoint().getRemoteCondition());
             } else {
                 remoteError = new JMSException(message);
             }
@@ -328,6 +333,47 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     protected void doOpenCompletion() {
         LOG.debug("{} is now open: ", this);
         opened();
+    }
+
+    /**
+     * When a redirect type exception is received this method is called to create the
+     * appropriate redirect exception type containing the error details needed.
+     *
+     * @param error
+     *        the Symbol that defines the redirection error type.
+     * @param message
+     *        the basic error message that should used or amended for the returned exception.
+     * @param condition
+     *        the ErrorCondition that describes the redirection.
+     *
+     * @returns an Exception that captures the details of the redirection error.
+     */
+    @SuppressWarnings("unchecked")
+    protected Exception createRedirectException(Symbol error, String message, ErrorCondition condition) {
+        Exception result = null;
+        Map<String, Object> info = condition.getInfo();
+
+        if (info == null) {
+            result = new IOException(message + " : Redirection information not set.");
+        } else {
+            String hostname = (String) info.get("hostname");
+
+            String networkHost = (String) info.get("network-host");
+            if (networkHost == null || networkHost.isEmpty()) {
+                result = new IOException(message + " : Redirection information not set.");
+            }
+
+            int port = 0;
+            try {
+                port = Integer.valueOf(info.get("port").toString());
+            } catch (Exception ex) {
+                result = new IOException(message + " : Redirection information not set.");
+            }
+
+            result = new ProviderRedirectedException(message, hostname, networkHost, port);
+        }
+
+        return result;
     }
 
     /**

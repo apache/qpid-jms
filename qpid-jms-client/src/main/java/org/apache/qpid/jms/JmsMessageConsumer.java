@@ -114,11 +114,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         this.consumerInfo.setBrowser(isBrowser());
         this.consumerInfo.setPrefetchSize(getConfiguredPrefetch(destination, policy));
 
-        try {
-            session.getConnection().createResource(consumerInfo);
-        } catch (JMSException ex) {
-            throw ex;
-        }
+        session.getConnection().createResource(consumerInfo);
     }
 
     public void init() throws JMSException {

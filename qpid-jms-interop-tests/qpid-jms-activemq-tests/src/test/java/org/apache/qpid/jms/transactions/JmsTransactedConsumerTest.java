@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.jms.DeliveryMode;
+import javax.jms.Destination;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -35,6 +36,7 @@ import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.QpidJmsTestSupport;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -42,7 +44,8 @@ import org.junit.Test;
  */
 public class JmsTransactedConsumerTest extends AmqpTestSupport {
 
-    private static final String MSG_NUM = "MSG_NUM";
+    private final String MSG_NUM = "MSG_NUM";
+    private final int MSG_COUNT = 1000;
 
     @Test(timeout = 60000)
     public void testCreateConsumerFromTxSession() throws Exception {
@@ -378,6 +381,83 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
             pr.send(m, DeliveryMode.NON_PERSISTENT, Message.DEFAULT_PRIORITY , Message.DEFAULT_TIME_TO_LIVE);
         }
         session.commit();
+
+        session.close();
+    }
+
+    @Ignore("Fails at 500 messages consumed.")
+    @Test(timeout = 60000)
+    public void testSingleConsumedMessagePerTxCase() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Destination queue = session.createQueue(getTestName());
+        MessageProducer messageProducer = session.createProducer(queue);
+        for (int i = 0; i < MSG_COUNT; i++) {
+            TextMessage message = session.createTextMessage();
+            message.setText("test" + i);
+            messageProducer.send(message, DeliveryMode.PERSISTENT, javax.jms.Message.DEFAULT_PRIORITY, javax.jms.Message.DEFAULT_TIME_TO_LIVE);
+        }
+
+        session.close();
+
+        QueueViewMBean queueView = getProxyToQueue(getTestName());
+        assertEquals(MSG_COUNT, queueView.getQueueSize());
+
+        int counter = 0;
+        session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        MessageConsumer messageConsumer = session.createConsumer(queue);
+        do {
+            TextMessage message = (TextMessage) messageConsumer.receive(1000);
+            if (message != null) {
+                counter++;
+                LOG.info("Message n. {} with content '{}' has been recieved.", counter,message.getText());
+                session.commit();
+                LOG.info("Transaction has been committed.");
+                assertEquals(MSG_COUNT - counter, queueView.getQueueSize());
+            }
+        } while (counter < MSG_COUNT);
+
+        assertEquals(0, queueView.getQueueSize());
+
+        session.close();
+    }
+
+    @Test(timeout = 60000)
+    public void testConsumeAllMessagesInSingleTxCase() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Destination queue = session.createQueue(getTestName());
+        MessageProducer messageProducer = session.createProducer(queue);
+        for (int i = 0; i < MSG_COUNT; i++) {
+            TextMessage message = session.createTextMessage();
+            message.setText("test" + i);
+            messageProducer.send(message, DeliveryMode.PERSISTENT, javax.jms.Message.DEFAULT_PRIORITY, javax.jms.Message.DEFAULT_TIME_TO_LIVE);
+        }
+
+        session.close();
+
+        QueueViewMBean queueView = getProxyToQueue(getTestName());
+        assertEquals(MSG_COUNT, queueView.getQueueSize());
+
+        int counter = 0;
+        session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        MessageConsumer messageConsumer = session.createConsumer(queue);
+        do {
+            TextMessage message = (TextMessage) messageConsumer.receive(1000);
+            if (message != null) {
+                counter++;
+                LOG.info("Message n. {} with content '{}' has been recieved.", counter,message.getText());
+            }
+        } while (counter < MSG_COUNT);
+
+        LOG.info("Transaction has been committed.");
+        session.commit();
+
+        assertEquals(0, queueView.getQueueSize());
 
         session.close();
     }

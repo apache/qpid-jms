@@ -385,7 +385,7 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         session.close();
     }
 
-    @Ignore("Fails at 500 messages consumed.")
+    @Ignore("Fails at 500 messages consumed.") //TODO: needs 5.12 snapshot broker
     @Test(timeout = 60000)
     public void testSingleConsumedMessagePerTxCase() throws Exception {
         connection = createAmqpConnection();

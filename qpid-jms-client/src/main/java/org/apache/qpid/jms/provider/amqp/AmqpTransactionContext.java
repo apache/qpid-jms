@@ -87,13 +87,13 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
                     Declared declared = (Declared) state;
                     current.setProviderHint(declared.getTxnId());
                     pendingDelivery.settle();
-                    LOG.info("New TX started: {}", current.getProviderHint());
+                    LOG.debug("New TX started: {}", current.getProviderHint());
                     AsyncResult request = this.pendingRequest;
                     this.pendingRequest = null;
                     this.pendingDelivery = null;
                     request.onSuccess();
                 } else if (state instanceof Rejected) {
-                    LOG.info("Last TX request failed: {}", current.getProviderHint());
+                    LOG.debug("Last TX request failed: {}", current.getProviderHint());
                     pendingDelivery.settle();
                     Rejected rejected = (Rejected) state;
                     TransactionRolledBackException ex =
@@ -105,7 +105,7 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
                     postRollback();
                     request.onFailure(ex);
                 } else {
-                    LOG.info("Last TX request succeeded: {}", current.getProviderHint());
+                    LOG.debug("Last TX request succeeded: {}", current.getProviderHint());
                     pendingDelivery.settle();
                     AsyncResult request = this.pendingRequest;
                     if (pendingDelivery.getContext() != null) {

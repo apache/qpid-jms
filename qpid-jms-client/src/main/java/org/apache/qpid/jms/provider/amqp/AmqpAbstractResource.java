@@ -33,7 +33,6 @@ import org.apache.qpid.proton.amqp.transport.ConnectionError;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.Endpoint;
 import org.apache.qpid.proton.engine.EndpointState;
-import org.apache.qpid.proton.engine.Link;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,17 +133,8 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
     @Override
     public void closed() {
-        if (endpoint instanceof Link) {
-            // TODO: Workaround for PROTON-833. Remove when upgrading to 0.9
-            Link l = ((Link) endpoint);
-            if (l.getSession().getLocalState() != EndpointState.CLOSED) {
-                endpoint.close();
-                endpoint.free();
-            }
-        } else {
-            endpoint.close();
-            endpoint.free();
-        }
+        endpoint.close();
+        endpoint.free();
 
         if (this.closeRequest != null) {
             this.closeRequest.onSuccess();
@@ -182,13 +172,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
             error = new IOException("Remote has closed without error information");
         }
 
-        if (endpoint instanceof Link) {
-            // TODO: Workaround for PROTON-833. Remove when upgrading to 0.9
-            Link l = ((Link) endpoint);
-            if (l.getSession().getLocalState() != EndpointState.CLOSED) {
-                endpoint.close();
-            }
-        } else if (endpoint != null) {
+        if (endpoint != null) {
             // TODO: if this is a producer/consumer link then we may only be detached,
             // rather than fully closed, and should respond appropriately.
             endpoint.close();

@@ -80,7 +80,6 @@ import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class SessionIntegrationTest extends QpidJmsTestCase {
@@ -456,7 +455,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Ignore // TODO: The *test* needs Proton 0.9, enable when upgrading.
     @Test(timeout = 5000)
     public void testCreateAnonymousProducerTargetContainsNoTypeCapabilityWhenAnonymousRelayNodeIsSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
@@ -648,7 +646,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Ignore // TODO: The *test* needs Proton 0.9, enable when upgrading.
     @Test(timeout = 5000)
     public void testCreateAnonymousProducerWhenAnonymousRelayNodeIsSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
@@ -697,13 +694,11 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Ignore // TODO: The *test* needs Proton 0.9, enable when upgrading.
     @Test(timeout = 5000)
     public void testCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedTestImpl(false);
     }
 
-    @Ignore // TODO: The *test* needs Proton 0.9, enable when upgrading.
     @Test(timeout = 5000)
     public void testCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
         doCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedTestImpl(true);

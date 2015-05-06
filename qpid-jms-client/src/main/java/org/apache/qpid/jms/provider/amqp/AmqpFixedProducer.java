@@ -60,9 +60,6 @@ public class AmqpFixedProducer extends AmqpProducer {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpFixedProducer.class);
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[] {};
-    //TODO: Use constants available from Proton 0.9
-    private static final Symbol ACCEPTED_DESCRIPTOR_SYMBOL = Symbol.valueOf("amqp:accepted:list");
-    private static final Symbol REJECTED_DESCRIPTOR_SYMBOL = Symbol.valueOf("amqp:rejected:list");
 
     private final AmqpTransferTagGenerator tagGenerator = new AmqpTransferTagGenerator(true);
     private final Set<Delivery> pending = new LinkedHashSet<Delivery>();
@@ -248,7 +245,7 @@ public class AmqpFixedProducer extends AmqpProducer {
         JmsDestination destination = resource.getDestination();
         String targetAddress = AmqpDestinationHelper.INSTANCE.getDestinationAddress(destination, session.getConnection());
 
-        Symbol[] outcomes = new Symbol[]{ACCEPTED_DESCRIPTOR_SYMBOL, REJECTED_DESCRIPTOR_SYMBOL};
+        Symbol[] outcomes = new Symbol[]{ Accepted.DESCRIPTOR_SYMBOL, Rejected.DESCRIPTOR_SYMBOL };
         String sourceAddress = getProducerId().toString();
         Source source = new Source();
         source.setAddress(sourceAddress);

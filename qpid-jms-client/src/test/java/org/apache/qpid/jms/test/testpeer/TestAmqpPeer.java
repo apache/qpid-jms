@@ -653,7 +653,6 @@ public class TestAmqpPeer implements AutoCloseable
                 if (!refuseLink) {
                     Target t = (Target) createTargetObjectFromDescribedType(attachMatcher.getReceivedTarget());
                     t.setAddress(dynamicAddress);
-                    trimTargetCapabilities(t);
                     attachResponse.setTarget(t);
                 } else {
                     attachResponse.setTarget(null);
@@ -767,11 +766,11 @@ public class TestAmqpPeer implements AutoCloseable
                 attachResponseSender.setChannel(attachMatcher.getActualChannel());
                 attachResponse.setHandle(receivedHandle);
                 attachResponse.setName(attachMatcher.getReceivedName());
-                attachResponse.setSource(trimSourceOutcomesCapabilities(createSourceObjectFromDescribedType(attachMatcher.getReceivedSource())));
+                attachResponse.setSource(createSourceObjectFromDescribedType(attachMatcher.getReceivedSource()));
                 if(refuseLink) {
                     attachResponse.setTarget(null);
                 } else {
-                    attachResponse.setTarget(trimTargetCapabilities(createTargetObjectFromDescribedType(attachMatcher.getReceivedTarget())));
+                    attachResponse.setTarget(createTargetObjectFromDescribedType(attachMatcher.getReceivedTarget()));
                 }
 
                 _lastInitiatedLinkHandle = (UnsignedInteger) receivedHandle;
@@ -881,7 +880,7 @@ public class TestAmqpPeer implements AutoCloseable
                 if(refuseLink) {
                     attachResponse.setSource(null);
                 } else {
-                    attachResponse.setSource(trimSourceOutcomesCapabilities(createSourceObjectFromDescribedType(attachMatcher.getReceivedSource())));
+                    attachResponse.setSource(createSourceObjectFromDescribedType(attachMatcher.getReceivedSource()));
                 }
 
                 _lastInitiatedLinkHandle = (UnsignedInteger) receivedHandle;
@@ -1279,28 +1278,6 @@ public class TestAmqpPeer implements AutoCloseable
         List<Object> sourceFields = (List<Object>) described;
 
         return new Source(sourceFields.toArray());
-    }
-
-    private Source trimSourceOutcomesCapabilities(final Source source) {
-        // TODO: this is a workaround for Proton 0.8 compatibility for the tests.
-        // Remove method and update callers when upgrading to 0.9.
-        source.setOutcomes(null);
-        source.setCapabilities(null);
-        return source;
-    }
-
-    private Object trimTargetCapabilities(final Object target) {
-        // TODO: this is a workaround for Proton 0.8 compatibility for the tests.
-        // Remove method and update callers when upgrading to 0.9.
-        if (target instanceof Target) {
-            ((Target) target).setCapabilities(null);
-        } else if (target instanceof Coordinator) {
-            ((Coordinator) target).setCapabilities(null);
-        } else {
-            throw new IllegalArgumentException("Unexpected object type: " + target.getClass());
-        }
-
-        return target;
     }
 
     public void remotelyEndLastOpenedSession(boolean expectEndResponse) {

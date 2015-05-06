@@ -25,6 +25,7 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -59,6 +60,7 @@ import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.engine.Collector;
 import org.apache.qpid.proton.engine.Connection;
+import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Event;
 import org.apache.qpid.proton.engine.Event.Type;
 import org.apache.qpid.proton.engine.Sasl;
@@ -114,6 +116,8 @@ public class AmqpProvider implements Provider, TransportListener {
     private final ScheduledExecutorService serializer;
     private final Transport protonTransport = Transport.Factory.create();
     private final Collector protonCollector = new CollectorImpl();
+
+    private ScheduledFuture<?> nextIdleTimeoutCheck;
 
     /**
      * Create a new instance of an AmqpProvider bonded to the given remote URI.
@@ -206,6 +210,11 @@ public class AmqpProvider implements Provider, TransportListener {
                     }
                 }
 
+                if (nextIdleTimeoutCheck != null) {
+                    LOG.trace("Cancelling IdleTimeoutCheck");
+                    nextIdleTimeoutCheck.cancel(false);
+                    nextIdleTimeoutCheck = null;
+                }
                 serializer.shutdown();
             }
         }
@@ -796,6 +805,12 @@ public class AmqpProvider implements Provider, TransportListener {
     }
 
     void fireConnectionEstablished() {
+        int remoteIdleTimeout = protonTransport.getRemoteIdleTimeout();
+        if(remoteIdleTimeout > 0){
+            LOG.trace("IdleTimeoutCheck being initiated");
+            nextIdleTimeoutCheck = serializer.schedule(new IdleTimeoutCheck(), remoteIdleTimeout / 2, TimeUnit.MILLISECONDS);
+        }
+
         ProviderListener listener = this.listener;
         if (listener != null) {
             listener.onConnectionEstablished(remoteURI);
@@ -927,5 +942,32 @@ public class AmqpProvider implements Provider, TransportListener {
     @Override
     public URI getRemoteURI() {
         return remoteURI;
+    }
+
+    private final class IdleTimeoutCheck implements Runnable {
+        @Override
+        public void run() {
+            boolean doCheck = connection.getLocalState() == EndpointState.ACTIVE;
+
+            if (doCheck) {
+                long now = System.currentTimeMillis();
+                long deadline = protonTransport.tick(now);
+
+                pumpToProtonTransport(NOOP_REQUEST);
+                if (deadline > 0) {
+                    long delay = deadline - now;
+
+                    LOG.trace("IdleTimeoutCheck rescheduling with delay: {}", delay);
+                    nextIdleTimeoutCheck = serializer.schedule(this, delay, TimeUnit.MILLISECONDS);
+                } else {
+                    doCheck = false;
+                }
+            }
+
+            if(!doCheck) {
+                nextIdleTimeoutCheck = null;
+                LOG.trace("IdleTimeoutCheck exiting");
+            }
+        }
     }
 }

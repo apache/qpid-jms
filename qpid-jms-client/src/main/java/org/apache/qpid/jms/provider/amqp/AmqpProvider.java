@@ -261,6 +261,8 @@ public class AmqpProvider implements Provider, TransportListener {
                             Connection protonConnection = Connection.Factory.create();
                             protonTransport.setMaxFrameSize(getMaxFrameSize());
                             protonTransport.setChannelMax(getChannelMax());
+                            //TODO: wire up idle-timeout config, decide on a default.
+                            protonTransport.setIdleTimeout(60000);
                             protonTransport.bind(protonConnection);
                             protonConnection.collect(protonCollector);
                             Sasl sasl = protonTransport.sasl();
@@ -779,7 +781,7 @@ public class AmqpProvider implements Provider, TransportListener {
         }
     }
 
-    private void pumpToProtonTransport(AsyncResult request) {
+    private boolean pumpToProtonTransport(AsyncResult request) {
         try {
             boolean done = false;
             while (!done) {
@@ -801,14 +803,20 @@ public class AmqpProvider implements Provider, TransportListener {
         } catch (IOException e) {
             fireProviderException(e);
             request.onFailure(e);
+            return false;
         }
+
+        return true;
     }
 
     void fireConnectionEstablished() {
-        int remoteIdleTimeout = protonTransport.getRemoteIdleTimeout();
-        if(remoteIdleTimeout > 0){
-            LOG.trace("IdleTimeoutCheck being initiated");
-            nextIdleTimeoutCheck = serializer.schedule(new IdleTimeoutCheck(), remoteIdleTimeout / 2, TimeUnit.MILLISECONDS);
+
+        long now = System.currentTimeMillis();
+        long deadline = protonTransport.tick(now);
+        if (deadline > 0) {
+            long delay = deadline - now;
+            LOG.trace("IdleTimeoutCheck being initiated, initial delay: {}", deadline);
+            nextIdleTimeoutCheck = serializer.schedule(new IdleTimeoutCheck(), delay, TimeUnit.MILLISECONDS);
         }
 
         ProviderListener listener = this.listener;
@@ -947,24 +955,32 @@ public class AmqpProvider implements Provider, TransportListener {
     private final class IdleTimeoutCheck implements Runnable {
         @Override
         public void run() {
-            boolean doCheck = connection.getLocalState() == EndpointState.ACTIVE;
+            boolean checkScheduled = false;
 
-            if (doCheck) {
+            if (connection.getLocalState() == EndpointState.ACTIVE) {
                 long now = System.currentTimeMillis();
                 long deadline = protonTransport.tick(now);
 
-                pumpToProtonTransport(NOOP_REQUEST);
-                if (deadline > 0) {
-                    long delay = deadline - now;
+                boolean pumpSucceeded = pumpToProtonTransport(NOOP_REQUEST);
 
-                    LOG.trace("IdleTimeoutCheck rescheduling with delay: {}", delay);
-                    nextIdleTimeoutCheck = serializer.schedule(this, delay, TimeUnit.MILLISECONDS);
+                if (protonTransport.isClosed()) {
+                    LOG.info("IdleTimeoutCheck closed the transport due to the peer exceeding our requested idle-timeout.");
+                    if (pumpSucceeded) {
+                        fireProviderException(new IOException("Transport closed due to the peer exceeding our requested idle-timeout"));
+                    }
                 } else {
-                    doCheck = false;
+                    if (deadline > 0) {
+                        long delay = deadline - now;
+                        checkScheduled = true;
+                        LOG.trace("IdleTimeoutCheck rescheduling with delay: {}", delay);
+                        nextIdleTimeoutCheck = serializer.schedule(this, delay, TimeUnit.MILLISECONDS);
+                    }
                 }
+            } else {
+                LOG.trace("IdleTimeoutCheck skipping check, connection is not active.");
             }
 
-            if(!doCheck) {
+            if(!checkScheduled) {
                 nextIdleTimeoutCheck = null;
                 LOG.trace("IdleTimeoutCheck exiting");
             }

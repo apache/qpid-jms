@@ -110,6 +110,7 @@ public class AmqpProvider implements Provider, TransportListener {
     private long requestTimeout = JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
     private long sendTimeout = JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
     private int channelMax = DEFAULT_CHANNEL_MAX;
+    private int idleTimeout = 60000;
 
     private final URI remoteURI;
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -261,8 +262,7 @@ public class AmqpProvider implements Provider, TransportListener {
                             Connection protonConnection = Connection.Factory.create();
                             protonTransport.setMaxFrameSize(getMaxFrameSize());
                             protonTransport.setChannelMax(getChannelMax());
-                            //TODO: wire up idle-timeout config, decide on a default.
-                            protonTransport.setIdleTimeout(60000);
+                            protonTransport.setIdleTimeout(idleTimeout);
                             protonTransport.bind(protonConnection);
                             protonConnection.collect(protonCollector);
                             Sasl sasl = protonTransport.sasl();
@@ -870,6 +870,22 @@ public class AmqpProvider implements Provider, TransportListener {
 
     public boolean isTraceBytes() {
         return this.traceBytes;
+    }
+
+    public int getIdleTimeout() {
+        return idleTimeout;
+    }
+
+    /**
+     * Sets the idle timeout (in milliseconds) after which the connection will
+     * be closed if the peer has not send any data. The provided value will be
+     * halved before being transmitted as our advertised idle-timeout in the
+     * AMQP Open frame.
+     *
+     * @param idleTimeout the timeout in milliseconds.
+     */
+    public void setIdleTimeout(int idleTimeout) {
+        this.idleTimeout = idleTimeout;
     }
 
     public long getCloseTimeout() {

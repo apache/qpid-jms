@@ -74,6 +74,27 @@ public class AmqpProviderFactoryTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 10000)
+    public void testCreateProviderHasDefaultIdleTimeoutValue() throws IOException, Exception {
+        Provider provider = AmqpProviderFactory.create(new URI(peerURI.toString()));
+        assertNotNull(provider);
+        assertTrue(provider instanceof AmqpProvider);
+        AmqpProvider amqpProvider = (AmqpProvider) provider;
+
+        assertTrue("No default idle timeout", amqpProvider.getIdleTimeout() > 0);
+    }
+
+    @Test(timeout = 10000)
+    public void testCreateProviderAppliesIdleTimeoutURIOption() throws IOException, Exception {
+        int timeout = 54321;
+        Provider provider = AmqpProviderFactory.create(new URI(peerURI.toString() + "?amqp.idleTimeout=" + timeout));
+        assertNotNull(provider);
+        assertTrue(provider instanceof AmqpProvider);
+        AmqpProvider amqpProvider = (AmqpProvider) provider;
+
+        assertEquals("idle timeout option was not applied", timeout, amqpProvider.getIdleTimeout());
+    }
+
+    @Test(timeout = 10000)
     public void testCreateProviderAppliesOptions() throws IOException, Exception {
         URI configuredURI = new URI(peerURI.toString() +
             "?amqp.presettleConsumers=true" +

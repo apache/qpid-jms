@@ -322,6 +322,11 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectAnonymousConnect(boolean authorize)
     {
+        expectAnonymousConnect(authorize, null);
+    }
+
+    public void expectAnonymousConnect(boolean authorize, Matcher<?> idleTimeoutMatcher)
+    {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(Symbol.valueOf("ANONYMOUS"));
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
                                             new FrameSender(
@@ -347,12 +352,19 @@ public class TestAmqpPeer implements AutoCloseable
 
         addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
 
-        addHandler(new OpenMatcher()
+        OpenMatcher openMatcher = new OpenMatcher()
             .withContainerId(notNullValue(String.class))
             .onSuccess(new FrameSender(
                     this, FrameType.AMQP, 0,
                     new OpenFrame().setContainerId("test-amqp-peer-container-id"),
-                    null)));
+                    null));
+
+        if(idleTimeoutMatcher !=null)
+        {
+            openMatcher.withIdleTimeOut(idleTimeoutMatcher);
+        }
+
+        addHandler(openMatcher);
     }
 
     /**

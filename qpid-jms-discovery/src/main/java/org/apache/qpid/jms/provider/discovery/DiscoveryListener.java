@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.provider.discovery;
 
+import java.net.URI;
+
 /**
  * A listener of services being added or removed from a network
  */
@@ -24,17 +26,17 @@ public interface DiscoveryListener {
     /**
      * Called when a DiscoveryAgent becomes aware of a new remote peer.
      *
-     * @param event
-     *        the event data which contains the peer address and optional name.
+     * @param remoteURI
+     *        the URI of the newly discovered peer.
      */
-    void onServiceAdd(DiscoveryEvent event);
+    void onServiceAdd(URI remoteURI);
 
     /**
      * Called when a DiscoveryAgent can no longer detect a previously known remote peer.
      *
-     * @param event
-     *        the event data which contains the peer address and optional name.
+     * @param remoteURI
+     *        the URI of the previously discovered peer that is no longer active.
      */
-    void onServiceRemove(DiscoveryEvent event);
+    void onServiceRemove(URI remoteURI);
 
 }

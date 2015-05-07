@@ -17,7 +17,8 @@
 package org.apache.qpid.jms.provider.discovery;
 
 import java.net.URI;
-import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.jms.provider.Provider;
@@ -32,7 +33,15 @@ import org.apache.qpid.jms.util.URISupport.CompositeData;
  */
 public class DiscoveryProviderFactory extends ProviderFactory {
 
-    private static final String DISCOVERED_OPTION_PREFIX = "discovered.";
+    /**
+     * Prefix used for all properties that apply specifically to the DiscoveryProvider
+     */
+    public static final String DISCOVERY_OPTION_PREFIX = "discovery.";
+
+    /**
+     * Prefix used for all properties that should be applied to any discovered remote URIs.
+     */
+    public static final String DISCOVERED_OPTION_PREFIX = "discovered.";
 
     @Override
     public Provider createProvider(URI remoteURI) throws Exception {
@@ -40,28 +49,33 @@ public class DiscoveryProviderFactory extends ProviderFactory {
         CompositeData composite = URISupport.parseComposite(remoteURI);
         Map<String, String> options = composite.getParameters();
 
-        // We currently only allow for one agent to feed URIs to the embedded FailoverProvider
-        // in the DiscoveryProvider.  We could allow more in the future if we found that to be
-        // a useful feature.
-        if (composite.getComponents().size() > 1) {
-            throw new URISyntaxException(remoteURI.toString(), "Only one discovery agent can be specified");
-        }
+        Map<String, String> discoveryOptions = PropertyUtil.filterProperties(options, DISCOVERY_OPTION_PREFIX);
+        Map<String, String> discoveredOptions = PropertyUtil.filterProperties(options, DISCOVERED_OPTION_PREFIX);
 
         // Failover will apply the nested options to each URI while attempting to connect.
-        Map<String, String> nested = PropertyUtil.filterProperties(options, DISCOVERED_OPTION_PREFIX);
-        FailoverProvider failover = new FailoverProvider(nested);
-        PropertyUtil.setProperties(failover, options);
-
-        // TODO - Revisit URI options setting and enhance the ProperyUtils to provide a
-        //        means of setting some properties on a object and obtaining the leftovers
-        //        so we can pass those along to the next until we consume them all or we
-        //        have leftovers which implies a bad URI.
+        FailoverProvider failover = new FailoverProvider(discoveredOptions);
+        discoveryOptions = PropertyUtil.setProperties(failover, discoveryOptions);
 
         DiscoveryProvider discovery = new DiscoveryProvider(remoteURI, failover);
-        PropertyUtil.setProperties(discovery, options);
+        discoveryOptions = PropertyUtil.setProperties(discovery, discoveryOptions);
 
-        DiscoveryAgent agent = DiscoveryAgentFactory.createAgent(composite.getComponents().get(0));
-        discovery.setDiscoveryAgent(agent);
+        if (!discoveryOptions.isEmpty()) {
+            String msg = ""
+                + " Not all options could be set on the Discovery provider."
+                + " Check the options are spelled correctly."
+                + " Unused parameters=[" + discoveryOptions + "]."
+                + " This Provider cannot be started.";
+            throw new IllegalArgumentException(msg);
+        }
+
+        List<URI> agentURIs = composite.getComponents();
+        List<DiscoveryAgent> discoveryAgents = new ArrayList<DiscoveryAgent>(agentURIs.size());
+
+        for (URI agentURI : agentURIs) {
+            discoveryAgents.add(DiscoveryAgentFactory.createAgent(agentURI));
+        }
+
+        discovery.setDiscoveryAgents(discoveryAgents);
 
         return discovery;
     }

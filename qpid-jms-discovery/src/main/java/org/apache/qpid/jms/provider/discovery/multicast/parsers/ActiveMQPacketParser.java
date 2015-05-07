@@ -16,14 +16,21 @@
  */
 package org.apache.qpid.jms.provider.discovery.multicast.parsers;
 
-import org.apache.qpid.jms.provider.discovery.DiscoveryEvent;
-import org.apache.qpid.jms.provider.discovery.DiscoveryEvent.EventType;
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import org.apache.qpid.jms.provider.discovery.multicast.DiscoveryEvent;
+import org.apache.qpid.jms.provider.discovery.multicast.DiscoveryEvent.EventType;
 import org.apache.qpid.jms.provider.discovery.multicast.PacketParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Parser instance for ActiveMQ multicast discovery processing.
  */
 public class ActiveMQPacketParser implements PacketParser {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ActiveMQPacketParser.class);
 
     private static final String TYPE_SUFFIX = "ActiveMQ-4.";
     private static final String ALIVE = "alive.";
@@ -50,12 +57,20 @@ public class ActiveMQPacketParser implements PacketParser {
             String payload = str.substring(getType().length());
             if (payload.startsWith(ALIVE)) {
                 String brokerName = getBrokerName(payload.substring(ALIVE.length()));
-                String brokerUri = payload.substring(ALIVE.length() + brokerName.length() + 2);
-                event = new DiscoveryEvent(brokerUri, EventType.ALIVE);
+                try {
+                    String brokerUri = payload.substring(ALIVE.length() + brokerName.length() + 2);
+                    event = new DiscoveryEvent(new URI(brokerUri), EventType.ALIVE);
+                } catch (URISyntaxException ex) {
+                    LOG.warn("Published URI has invalid URI syntax, ignoring: {}", payload);
+                }
             } else {
                 String brokerName = getBrokerName(payload.substring(DEAD.length()));
-                String brokerUri = payload.substring(DEAD.length() + brokerName.length() + 2);
-                event = new DiscoveryEvent(brokerUri, EventType.SHUTDOWN);
+                try {
+                    String brokerUri = payload.substring(DEAD.length() + brokerName.length() + 2);
+                    event = new DiscoveryEvent(new URI(brokerUri), EventType.SHUTDOWN);
+                } catch (URISyntaxException ex) {
+                    LOG.warn("Published URI has invalid URI syntax, ignoring: {}", payload);
+                }
             }
         }
         return event;

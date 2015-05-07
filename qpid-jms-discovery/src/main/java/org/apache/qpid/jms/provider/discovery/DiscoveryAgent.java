@@ -17,11 +17,31 @@
 package org.apache.qpid.jms.provider.discovery;
 
 import java.io.IOException;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Interface for all agents used to detect instances of remote peers on the network.
  */
 public interface DiscoveryAgent {
+
+    /**
+     * Indicates if this DiscoveryAgent requires a ScheduledExecutorService in order
+     * to perform its discovery work.
+     *
+     * @returns true if the agent requires that its parent provide it with a scheduler.
+     */
+    boolean isSchedulerRequired();
+
+    /**
+     * Provider a ScheduledExecutorService to the DiscoveryAgent that requires a
+     * scheduler to perform its discovery work.  If the agent performs long polling
+     * style operations such as a socket read then it should not use the provided
+     * scheduler as that could block other agents from performing their own work.
+     *
+     * @param scheduler
+     *        An initialized Scheduler service that this agent can use for its work.
+     */
+    void setScheduler(ScheduledExecutorService scheduler);
 
     /**
      * Sets the discovery listener

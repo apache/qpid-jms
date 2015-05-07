@@ -35,12 +35,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.jms.provider.discovery.DiscoveryAgent;
-import org.apache.qpid.jms.provider.discovery.DiscoveryEvent;
-import org.apache.qpid.jms.provider.discovery.DiscoveryEvent.EventType;
 import org.apache.qpid.jms.provider.discovery.DiscoveryListener;
+import org.apache.qpid.jms.provider.discovery.multicast.DiscoveryEvent.EventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +70,7 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
     private URI discoveryURI;
     private int timeToLive = 1;
     private boolean loopBackMode;
-    private final Map<String, RemoteBrokerData> brokersByService = new ConcurrentHashMap<String, RemoteBrokerData>();
+    private final Map<URI, RemoteBrokerData> brokersByService = new ConcurrentHashMap<URI, RemoteBrokerData>();
     private String group = "default";
     private InetAddress inetAddress;
     private SocketAddress sockAddress;
@@ -95,6 +95,16 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
 
     public DiscoveryListener getDiscoveryListener() {
         return this.listener;
+    }
+
+    @Override
+    public void setScheduler(ScheduledExecutorService scheduler) {
+        // Not needed for this agent
+    }
+
+    @Override
+    public boolean isSchedulerRequired() {
+        return false;
     }
 
     @Override
@@ -233,7 +243,7 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
     private void processAlive(DiscoveryEvent event) {
         RemoteBrokerData data = brokersByService.get(event.getPeerUri());
         if (data == null) {
-            String peerUri = event.getPeerUri();
+            URI peerUri = event.getPeerUri();
             data = new RemoteBrokerData(event.getPeerUri());
             brokersByService.put(peerUri, data);
             fireServiceAddEvent(data);
@@ -261,13 +271,13 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
 
     private void fireServiceRemovedEvent(final RemoteBrokerData data) {
         if (listener != null && started.get()) {
-            listener.onServiceRemove(data);
+            listener.onServiceRemove(data.getPeerUri());
         }
     }
 
     private void fireServiceAddEvent(final RemoteBrokerData data) {
         if (listener != null && started.get()) {
-            listener.onServiceAdd(data);
+            listener.onServiceAdd(data.getPeerUri());
         }
     }
 
@@ -436,7 +446,7 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
 
         long lastHeartBeat;
 
-        public RemoteBrokerData(String peerUri) {
+        public RemoteBrokerData(URI peerUri) {
             super(peerUri, EventType.ALIVE);
             this.lastHeartBeat = System.currentTimeMillis();
         }

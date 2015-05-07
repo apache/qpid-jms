@@ -14,7 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.provider.discovery;
+package org.apache.qpid.jms.provider.discovery.multicast;
+
+import java.net.URI;
 
 /**
  * Event class used to convey discovered remote peer information to the
@@ -27,15 +29,15 @@ public class DiscoveryEvent {
         SHUTDOWN
     };
 
-    private final String peerUri;
+    private final URI peerUri;
     private final EventType type;
 
-    public DiscoveryEvent(String peerUri, EventType type) {
+    public DiscoveryEvent(URI peerUri, EventType type) {
         this.peerUri = peerUri;
         this.type = type;
     }
 
-    public String getPeerUri() {
+    public URI getPeerUri() {
         return peerUri;
     }
 

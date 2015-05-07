@@ -18,26 +18,31 @@ package org.apache.qpid.jms.provider.discovery;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 
 import org.apache.qpid.jms.provider.ProviderWrapper;
 import org.apache.qpid.jms.provider.failover.FailoverProvider;
+import org.apache.qpid.jms.util.ThreadPoolUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An AsyncProvider instance that wraps the FailoverProvider and listens for
- * events about discovered remote peers using a configured DiscoveryAgent
- * instance.
+ * An Provider instance that wraps the FailoverProvider and listens for events
+ * about discovered remote peers using a configured set of DiscoveryAgent instance.
  */
 public class DiscoveryProvider extends ProviderWrapper<FailoverProvider> implements DiscoveryListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(DiscoveryProviderFactory.class);
 
     private final URI discoveryUri;
-    private DiscoveryAgent discoveryAgent;
-    private final ConcurrentHashMap<String, URI> serviceURIs = new ConcurrentHashMap<String, URI>();
+    private final List<DiscoveryAgent> discoveryAgents = new ArrayList<DiscoveryAgent>();
+
+    private ScheduledExecutorService sharedScheduler;
 
     /**
      * Creates a new instance of the DiscoveryProvider.
@@ -56,19 +61,29 @@ public class DiscoveryProvider extends ProviderWrapper<FailoverProvider> impleme
 
     @Override
     public void start() throws IOException, IllegalStateException {
-        if (this.discoveryAgent == null) {
+        if (discoveryAgents.isEmpty()) {
             throw new IllegalStateException("No DiscoveryAgent configured.");
         }
 
-        discoveryAgent.setDiscoveryListener(this);
-        discoveryAgent.start();
+        for (DiscoveryAgent discoveryAgent : discoveryAgents) {
+            discoveryAgent.setDiscoveryListener(this);
+            if (discoveryAgent.isSchedulerRequired()) {
+                discoveryAgent.setScheduler(getSharedScheduler());
+            }
+            discoveryAgent.start();
+        }
 
         super.start();
     }
 
     @Override
     public void close() {
-        discoveryAgent.close();
+        ThreadPoolUtils.shutdownGraceful(sharedScheduler);
+
+        for (DiscoveryAgent discoveryAgent : discoveryAgents) {
+            discoveryAgent.close();
+        }
+
         super.close();
     }
 
@@ -82,10 +97,10 @@ public class DiscoveryProvider extends ProviderWrapper<FailoverProvider> impleme
     }
 
     /**
-     * @return the configured DiscoveryAgent instance used by this DiscoveryProvider.
+     * @return a list of configured DiscoveryAgent instances used by this DiscoveryProvider.
      */
-    public DiscoveryAgent getDiscoveryAgent() {
-        return this.discoveryAgent;
+    public List<DiscoveryAgent> getDiscoveryAgents() {
+        return Collections.unmodifiableList(discoveryAgents);
     }
 
     /**
@@ -94,32 +109,25 @@ public class DiscoveryProvider extends ProviderWrapper<FailoverProvider> impleme
      * @param agent
      *        the agent to use to discover remote peers
      */
-    public void setDiscoveryAgent(DiscoveryAgent agent) {
-        this.discoveryAgent = agent;
+    public void setDiscoveryAgents(List<DiscoveryAgent> agents) {
+        discoveryAgents.addAll(agents);
     }
 
     //------------------- Discovery Event Handlers ---------------------------//
 
     @Override
-    public void onServiceAdd(DiscoveryEvent event) {
-        String url = event.getPeerUri();
-        if (url != null) {
-            try {
-                URI uri = new URI(url);
-                LOG.info("Adding new peer connection URL: {}", uri);
-                serviceURIs.put(event.getPeerUri(), uri);
-                next.add(uri);
-            } catch (URISyntaxException e) {
-                LOG.warn("Could not add remote URI: {} due to bad URI syntax: {}", url, e.getMessage());
-            }
+    public void onServiceAdd(URI remoteURI) {
+        if (remoteURI != null) {
+            LOG.debug("Adding URI of remote peer: {}", remoteURI);
+            next.add(remoteURI);
         }
     }
 
     @Override
-    public void onServiceRemove(DiscoveryEvent event) {
-        URI uri = serviceURIs.get(event.getPeerUri());
-        if (uri != null) {
-            next.remove(uri);
+    public void onServiceRemove(URI remoteURI) {
+        if (remoteURI != null) {
+            LOG.debug("Removing URI of remote peer: {}", remoteURI);
+            next.remove(remoteURI);
         }
     }
 
@@ -127,13 +135,38 @@ public class DiscoveryProvider extends ProviderWrapper<FailoverProvider> impleme
 
     @Override
     public void onConnectionInterrupted(URI remoteURI) {
-        this.discoveryAgent.resume();
+        for (DiscoveryAgent discoveryAgent : discoveryAgents) {
+            discoveryAgent.resume();
+        }
+
         super.onConnectionInterrupted(remoteURI);
     }
 
     @Override
     public void onConnectionRestored(URI remoteURI) {
-        this.discoveryAgent.suspend();
+        for (DiscoveryAgent discoveryAgent : discoveryAgents) {
+            discoveryAgent.suspend();
+        }
+
         super.onConnectionRestored(remoteURI);
+    }
+
+    //----- Internal implementation ------------------------------------------//
+
+    private ScheduledExecutorService getSharedScheduler() {
+        if (sharedScheduler == null) {
+            sharedScheduler = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+
+                @Override
+                public Thread newThread(Runnable runner) {
+                    Thread serial = new Thread(runner);
+                    serial.setDaemon(true);
+                    serial.setName(DiscoveryProvider.this.getClass().getSimpleName() + ":[" + getDiscoveryURI() + "]");
+                    return serial;
+                }
+            });
+        }
+
+        return sharedScheduler;
     }
 }

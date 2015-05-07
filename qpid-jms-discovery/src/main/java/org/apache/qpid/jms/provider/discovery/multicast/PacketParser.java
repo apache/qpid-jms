@@ -16,8 +16,6 @@
  */
 package org.apache.qpid.jms.provider.discovery.multicast;
 
-import org.apache.qpid.jms.provider.discovery.DiscoveryEvent;
-
 /**
  * Interface for a DatagramPacket parser object which is used by the
  * MulticastDiscoveryAget to parse incoming packets to determine the

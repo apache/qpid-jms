@@ -333,7 +333,7 @@ class TestFrameParser
                         }
                         else
                         {
-                            LOGGER.debug("Ignored empty frame");
+                            _peer.receiveEmptyFrame(type, channel);
                         }
                         _size = 0;
                         currentInput = nextFramesInput;

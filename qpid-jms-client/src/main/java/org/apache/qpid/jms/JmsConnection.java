@@ -937,6 +937,10 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         return closed.get();
     }
 
+    public boolean isFailed() {
+        return failed.get();
+    }
+
     public JmsConnectionId getConnectionId() {
         return connectionInfo.getConnectionId();
     }

@@ -116,6 +116,8 @@ public class TestAmqpPeer implements AutoCloseable
     private byte[] _deferredBytes;
     private int _lastInitiatedChannel = -1;
     private UnsignedInteger _lastInitiatedLinkHandle = null;
+    private int advertisedIdleTimeout = 0;
+    private int _emptyFrameCount = 0;
 
     public TestAmqpPeer() throws IOException
     {
@@ -180,6 +182,20 @@ public class TestAmqpPeer implements AutoCloseable
         return _driverRunnable.getClientSocket();
     }
 
+    public int getAdvertisedIdleTimeout()
+    {
+        return advertisedIdleTimeout;
+    }
+
+    public void setAdvertisedIdleTimeout(int advertisedIdleTimeout)
+    {
+        this.advertisedIdleTimeout = advertisedIdleTimeout;
+    }
+
+    public int getEmptyFrameCount() {
+        return _emptyFrameCount;
+    }
+
     public void receiveHeader(byte[] header)
     {
         Handler handler = getFirstHandler();
@@ -212,6 +228,12 @@ public class TestAmqpPeer implements AutoCloseable
         {
             throw new IllegalStateException("Received frame but the next handler is a " + handler);
         }
+    }
+
+    public void receiveEmptyFrame(int type, int channel)
+    {
+        _emptyFrameCount ++;
+        LOGGER.debug("Received empty frame");
     }
 
     private void removeFirstHandler()
@@ -279,6 +301,11 @@ public class TestAmqpPeer implements AutoCloseable
         _driverRunnable.sendBytes(header);
     }
 
+    public void sendEmptyFrame(boolean deferWrite)
+    {
+        sendFrame(FrameType.AMQP, 0, null, null, deferWrite);
+    }
+
     public void sendFrame(FrameType type, int channel, DescribedType frameDescribedType, Binary framePayload, boolean deferWrite)
     {
         if(channel < 0)
@@ -320,6 +347,18 @@ public class TestAmqpPeer implements AutoCloseable
         }
     }
 
+    private OpenFrame createOpenFrame()
+    {
+        OpenFrame openFrame = new OpenFrame();
+        openFrame.setContainerId("test-amqp-peer-container-id");
+        if(advertisedIdleTimeout != 0)
+        {
+            openFrame.setIdleTimeOut(UnsignedInteger.valueOf(advertisedIdleTimeout));
+        }
+
+        return openFrame;
+    }
+
     public void expectAnonymousConnect(boolean authorize)
     {
         expectAnonymousConnect(authorize, null);
@@ -352,11 +391,13 @@ public class TestAmqpPeer implements AutoCloseable
 
         addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
 
+        OpenFrame openFrame = createOpenFrame();
+
         OpenMatcher openMatcher = new OpenMatcher()
             .withContainerId(notNullValue(String.class))
             .onSuccess(new FrameSender(
                     this, FrameType.AMQP, 0,
-                    new OpenFrame().setContainerId("test-amqp-peer-container-id"),
+                    openFrame,
                     null));
 
         if(idleTimeoutMatcher !=null)
@@ -397,11 +438,13 @@ public class TestAmqpPeer implements AutoCloseable
 
         addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
 
+        OpenFrame openFrame = createOpenFrame();
+
         addHandler(new OpenMatcher()
             .withContainerId(notNullValue(String.class))
             .onSuccess(new FrameSender(
                     this, FrameType.AMQP, 0,
-                    new OpenFrame().setContainerId("test-amqp-peer-container-id"),
+                    openFrame,
                     null)));
     }
 
@@ -443,8 +486,7 @@ public class TestAmqpPeer implements AutoCloseable
 
         addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
 
-        OpenFrame open = new OpenFrame();
-        open.setContainerId("test-amqp-peer-container-id");
+        OpenFrame open = createOpenFrame();
         if(serverCapabilities != null)
         {
             open.setOfferedCapabilities(serverCapabilities);
@@ -502,9 +544,8 @@ public class TestAmqpPeer implements AutoCloseable
         Map<Symbol, Object> properties = new HashMap<Symbol, Object>();
         properties.put(Symbol.valueOf("amqp:connection-establishment-failed"), true);
 
-        OpenFrame open = new OpenFrame();
+        OpenFrame open = createOpenFrame();
         open.setProperties(properties);
-        open.setContainerId("test-amqp-peer-container-id");
 
         addHandler(new OpenMatcher()
             .withContainerId(notNullValue(String.class))
@@ -529,8 +570,13 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectClose()
     {
+        expectClose(Matchers.nullValue());
+    }
+
+    public void expectClose(Matcher<?> errorMatcher)
+    {
         addHandler(new CloseMatcher()
-            .withError(Matchers.nullValue())
+            .withError(errorMatcher)
             .onSuccess(new FrameSender(this, FrameType.AMQP, 0,
                     new CloseFrame(),
                     null)));
@@ -1462,6 +1508,14 @@ public class TestAmqpPeer implements AutoCloseable
             });
 
             comp.add(transferSender);
+        }
+    }
+
+    public void runAfterLastHandler(AmqpPeerRunnable action) {
+        synchronized (_handlersLock) {
+            // Prepare a composite to insert this action at the end of the handler sequence
+            CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
+            comp.add(action);
         }
     }
 }

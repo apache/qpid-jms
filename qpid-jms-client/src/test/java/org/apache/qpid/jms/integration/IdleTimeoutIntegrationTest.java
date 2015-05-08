@@ -20,20 +20,34 @@
  */
 package org.apache.qpid.jms.integration;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 
+import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
+import org.apache.qpid.jms.test.Wait;
+import org.apache.qpid.jms.test.testpeer.AmqpPeerRunnable;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
+import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(IdleTimeoutIntegrationTest.class);
 
     @Test(timeout = 5000)
     public void testIdleTimeoutIsAdvertisedByDefault() throws Exception {
@@ -65,7 +79,7 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin(true);
 
-            ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + "?amqp.IdleTimeout=" + configuredTimeout);
+            ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + "?amqp.idleTimeout=" + configuredTimeout);
             Connection connection = factory.createConnection();
             // Set a clientID to provoke the actual AMQP connection process to occur.
             connection.setClientID("clientName");
@@ -75,6 +89,170 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectClose();
             connection.close();
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testClientSendsEmptyFramesWhenPeerAdvertisesIdleTimeout() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            int period = 20;
+            int idleSleep =  100;
+            int advertisedTimeout = period * 2;
+
+            testPeer.setAdvertisedIdleTimeout(advertisedTimeout);
+
+            testPeer.expectAnonymousConnect(true);
+            // Each connection creates a session for managing temporary destinations etc
+            testPeer.expectBegin(true);
+
+            ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort());
+            Connection connection = factory.createConnection();
+            // Set a clientID to provoke the actual AMQP connection process to occur.
+            connection.setClientID("clientName");
+
+            testPeer.waitForAllHandlersToComplete(1000);
+            assertNull(testPeer.getThrowable());
+
+            // Sleep for a bit, let the idle handling work
+            Thread.sleep(idleSleep);
+
+            testPeer.expectClose();
+
+            connection.close();
+
+            // Verify that *any* empty frames were received by the peer.
+            // We will verify additional behaviours with slower tests.
+            assertThat(testPeer.getEmptyFrameCount(), Matchers.greaterThan(0));
+        }
+    }
+
+    //TODO: Could use JUnit categories to make this slowish test skipable?
+    //      If so, make it slower still and more granular.
+    @Test(timeout = 5000)
+    public void testClientSendsEmptyFramesWithExpectedFrequency() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            int period = 250;
+            int advertisedTimeout = period * 2;
+            int cycles = 10;
+            int idleSleep =  cycles * period;
+            int offset = 2;
+
+            testPeer.setAdvertisedIdleTimeout(advertisedTimeout);
+
+            testPeer.expectAnonymousConnect(true);
+            // Each connection creates a session for managing temporary destinations etc
+            testPeer.expectBegin(true);
+
+            ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort());
+            Connection connection = factory.createConnection();
+            // Set a clientID to provoke the actual AMQP connection process to occur.
+            connection.setClientID("clientName");
+
+            testPeer.waitForAllHandlersToComplete(1000);
+            assertNull(testPeer.getThrowable());
+
+            // Sleep for a bit, let the idle handling work
+            Thread.sleep(idleSleep);
+
+            testPeer.expectClose();
+
+            connection.close();
+
+            assertThat(testPeer.getEmptyFrameCount(), Matchers.greaterThanOrEqualTo(cycles - offset));
+            assertThat(testPeer.getEmptyFrameCount(), Matchers.lessThanOrEqualTo(cycles + offset));
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testConnectionSetFailedWhenPeerNeglectsToSendEmptyFrames() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            int configuredTimeout = 200;
+
+            testPeer.expectAnonymousConnect(true);
+            // Each connection creates a session for managing temporary destinations etc
+            testPeer.expectBegin(true);
+
+            JmsConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + "?amqp.idleTimeout=" + configuredTimeout);
+            final JmsConnection connection = (JmsConnection) factory.createConnection();
+            // Set a clientID to provoke the actual AMQP connection process to occur.
+            connection.setClientID("clientName");
+
+            testPeer.waitForAllHandlersToComplete(1000);
+            // The peer is still connected, so it will get the close frame with error
+            testPeer.expectClose(Matchers.notNullValue());
+            assertNull(testPeer.getThrowable());
+
+            boolean failed = Wait.waitFor(new Wait.Condition() {
+                @Override
+                public boolean isSatisified() throws Exception {
+                    return connection.isFailed();
+                }
+            }, configuredTimeout * 2, 10);
+
+            assertTrue("connection didnt fail in expected timeframe", failed);
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testConnectionNotMarkedFailedWhenPeerSendsEmptyFrames() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            int configuredTimeout = 1000;
+            int period = 250;
+            int cycles = 8;
+
+            final CountDownLatch latch = new CountDownLatch(cycles);
+
+            testPeer.expectAnonymousConnect(true);
+            // Each connection creates a session for managing temporary destinations etc
+            testPeer.expectBegin(true);
+
+            // Start to emit idle frames when the connection is set up, this should stop it timing out
+            testPeer.runAfterLastHandler(new EmptyFrameSender(latch, period, cycles, testPeer));
+
+            JmsConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + "?amqp.idleTimeout=" + configuredTimeout);
+            final JmsConnection connection = (JmsConnection) factory.createConnection();
+            // Set a clientID to provoke the actual AMQP connection process to occur.
+            connection.setClientID("clientName");
+
+            boolean framesSent = latch.await(cycles * period * 2, TimeUnit.MILLISECONDS);
+            assertTrue("idle frames were not sent as expected", framesSent);
+
+            assertFalse("connection shouldnt fail", connection.isFailed());
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+            assertNull(testPeer.getThrowable());
+        }
+    }
+
+    private static class EmptyFrameSender implements AmqpPeerRunnable
+    {
+        private int delay;
+        private int cycles;
+        private CountDownLatch latch;
+        private TestAmqpPeer testPeer;
+
+        public EmptyFrameSender(CountDownLatch latch, int delay, int cycles, TestAmqpPeer testPeer) {
+            this.cycles = cycles;
+            this.delay = delay;
+            this.latch = latch;
+            this.testPeer = testPeer;
+        }
+
+        @Override
+        public void run() {
+            for (int i = 0; i < cycles; i++) {
+                LOGGER.info("Delaying before empty frame: {}", i + 1);
+                try {
+                    Thread.sleep(delay);
+                } catch (InterruptedException e) {
+                    // pass
+                }
+                LOGGER.info("Sending empty frame: {}", i + 1);
+                testPeer.sendEmptyFrame(false);
+                latch.countDown();
+            }
         }
     }
 }

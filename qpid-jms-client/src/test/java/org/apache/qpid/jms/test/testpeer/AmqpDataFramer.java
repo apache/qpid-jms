@@ -40,9 +40,12 @@ public class AmqpDataFramer
 
         buffer.position(8); // leave hole for frame header
 
-        Data frameBody = Proton.data(CAPACITY);
-        frameBody.putDescribedType(describedType);
-        frameBody.encode(buffer);
+        if (describedType != null) {
+            Data frameBody = Proton.data(CAPACITY);
+            frameBody.putDescribedType(describedType);
+            frameBody.encode(buffer);
+        }
+
         if(payload != null)
         {
             buffer.put(payload.asByteBuffer());

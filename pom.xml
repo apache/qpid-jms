@@ -280,6 +280,8 @@
             <exclude>**/*.iml</exclude>
             <exclude>**/*.jceks</exclude>
             <exclude>**/*.jks</exclude>
+            <exclude>**/*.crt</exclude>
+            <exclude>**/*.csr</exclude>
           </excludes>
         </configuration>
       </plugin>

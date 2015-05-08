@@ -104,10 +104,10 @@ public class DiscoveryProvider extends ProviderWrapper<FailoverProvider> impleme
     }
 
     /**
-     * Sets the discovery agent used by this provider to locate remote peer instance.
+     * Sets the discovery agents used by this provider to locate remote peer instance.
      *
-     * @param agent
-     *        the agent to use to discover remote peers
+     * @param agents
+     *        the agents to use to discover remote peers
      */
     public void setDiscoveryAgents(List<DiscoveryAgent> agents) {
         discoveryAgents.addAll(agents);

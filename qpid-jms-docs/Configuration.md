@@ -154,3 +154,9 @@ The complete set of configuration options for failover is listed below:
 + **failover.maxReconnectAttempts** The number of reconnection attempts allowed before reporting the connection as failed to the client.  The default is no limit or (-1).
 + **failover.startupMaxReconnectAttempts** For a client that has never connected to a remote peer before this option control how many attempts are made to connect before reporting the connection as failed.  The default is to default to the value of maxReconnectAttempts.
 + **failover.warnAfterReconnectAttempts** Controls how often the client will log a message indicating that failover reconnection is being attempted.  The default is to log every 10 connection attempts.
+
+### AMQP Configuration options
+
+These options apply to the behaviour of certain AMQP functionality.
+
++ **amqp.idleTimeout** Controls the idle timeout in milliseconds after which the connection will be failed if the peer sends no AMQP frames. Default is 60000.

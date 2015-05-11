@@ -35,6 +35,11 @@
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-jms-discovery</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <optional>true</optional>
+    </dependency>
   </dependencies>
 
   <build>

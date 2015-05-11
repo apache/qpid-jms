@@ -44,6 +44,19 @@
     <dependencySet>
       <outputDirectory>/lib</outputDirectory>
       <useProjectArtifact>false</useProjectArtifact>
+      <useTransitiveFiltering>true</useTransitiveFiltering>
+      <excludes>
+        <exclude>org.slf4j:slf4j-log4j12</exclude>
+      </excludes>
+    </dependencySet>
+
+    <dependencySet>
+      <outputDirectory>/lib/optional</outputDirectory>
+      <useProjectArtifact>false</useProjectArtifact>
+      <useTransitiveFiltering>true</useTransitiveFiltering>
+      <includes>
+        <include>org.slf4j:slf4j-log4j12</include>
+      </includes>
     </dependencySet>
   </dependencySets>
   <moduleSets>

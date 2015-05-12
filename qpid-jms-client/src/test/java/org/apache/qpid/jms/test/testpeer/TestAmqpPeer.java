@@ -172,6 +172,11 @@ public class TestAmqpPeer implements AutoCloseable
         return _driverRunnable.getException();
     }
 
+    public void setSuppressReadExceptionOnClose(boolean suppress)
+    {
+        _driverRunnable.setSuppressReadExceptionOnClose(suppress);
+    }
+
     public int getServerPort()
     {
         return _driverRunnable.getServerPort();

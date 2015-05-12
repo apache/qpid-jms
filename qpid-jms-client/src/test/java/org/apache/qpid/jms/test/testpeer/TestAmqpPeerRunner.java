@@ -47,6 +47,7 @@ class TestAmqpPeerRunner implements Runnable
 
     private final Object _inputHandlingLock = new Object();
     private final TestFrameParser _testFrameParser;
+    private volatile boolean _suppressReadExceptionOnClose;
 
     private volatile Throwable _throwable;
 
@@ -76,6 +77,7 @@ class TestAmqpPeerRunner implements Runnable
     @Override
     public void run()
     {
+        boolean attemptingRead = false;
         try
         (
             Socket clientSocket = _serverSocket.accept();
@@ -90,8 +92,10 @@ class TestAmqpPeerRunner implements Runnable
             byte[] networkInputBytes = new byte[1024];
 
             LOGGER.trace("Attempting read");
+            attemptingRead = true;
             while((bytesRead = networkInputStream.read(networkInputBytes)) != -1)
             {
+                attemptingRead = false;
                 //prevent stop() from killing the socket while the frame parser might be using it handling input
                 synchronized(_inputHandlingLock)
                 {
@@ -102,13 +106,18 @@ class TestAmqpPeerRunner implements Runnable
                     _testFrameParser.input(networkInputByteBuffer);
                 }
                 LOGGER.trace("Attempting read");
+                attemptingRead = true;
             }
 
             LOGGER.trace("Exited read loop");
         }
         catch (Throwable t)
         {
-            if(!_serverSocket.isClosed())
+            if (attemptingRead && _suppressReadExceptionOnClose && t instanceof IOException)
+            {
+                LOGGER.debug("Caught exception during read, suppressing as expected: " + t, t);
+            }
+            else if(!_serverSocket.isClosed())
             {
                 LOGGER.error("Problem in peer", t);
                 _throwable = t;
@@ -195,5 +204,10 @@ class TestAmqpPeerRunner implements Runnable
     public Socket getClientSocket()
     {
         return _clientSocket;
+    }
+
+    public void setSuppressReadExceptionOnClose(boolean suppress)
+    {
+        _suppressReadExceptionOnClose = suppress;
     }
 }

@@ -62,7 +62,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
     @Test(timeout=60000)
     public void testFailoverConnectsWithMultipleURIs() throws Exception {
-        URI brokerURI = new URI("failover://(amqp://127.0.0.1:61616,amqp://localhost:5777," +
+        URI brokerURI = new URI("failover://(amqp://127.0.0.1:5678,amqp://localhost:5777," +
                                 getBrokerAmqpConnectionURI() + ")?failover.useReconnectBackOff=false");
         Connection connection = createAmqpConnection(brokerURI);
         connection.start();
@@ -71,7 +71,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
     @Test(timeout=60000)
     public void testStartupReconnectAttempts() throws Exception {
-        URI brokerURI = new URI("failover://(amqp://localhost:61616)" +
+        URI brokerURI = new URI("failover://(amqp://localhost:5677)" +
                                 "?failover.startupMaxReconnectAttempts=5" +
                                 "&failover.useReconnectBackOff=false");
         JmsConnectionFactory factory = new JmsConnectionFactory(brokerURI);
@@ -89,7 +89,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
     @Test(timeout=60000)
     public void testStartupReconnectAttemptsMultipleHosts() throws Exception {
-        URI brokerURI = new URI("failover://(amqp://localhost:61616,amqp://localhost:61617)" +
+        URI brokerURI = new URI("failover://(amqp://localhost:5678,amqp://localhost:5677)" +
                                 "?failover.startupMaxReconnectAttempts=6" +
                                 "&failover.useReconnectBackOff=false");
         JmsConnectionFactory factory = new JmsConnectionFactory(brokerURI);
@@ -215,7 +215,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
     @Test(timeout=90000)
     public void testBadFirstURIConnectsAndProducerWorks() throws Exception {
-        URI brokerURI = new URI("failover://(amqp://localhost:61616," + getBrokerAmqpConnectionURI() + ")");
+        URI brokerURI = new URI("failover://(amqp://localhost:5679," + getBrokerAmqpConnectionURI() + ")");
 
         connection = createAmqpConnection(brokerURI);
         connection.start();

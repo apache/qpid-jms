@@ -28,6 +28,7 @@ import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsConnectionListener;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
+import org.apache.qpid.jms.provider.discovery.DiscoveryProviderFactory;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
 import org.junit.Before;
@@ -57,7 +58,7 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
         restored = new CountDownLatch(1);
     }
 
-    @Test(timeout=60000)
+    @Test(timeout=30000)
     public void testRunningBrokerIsDiscovered() throws Exception {
         connection = createConnection();
         connection.start();
@@ -71,7 +72,7 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
         }));
     }
 
-    @Test(timeout=60000)
+    @Test(timeout=30000)
     public void testConnectionFailsWhenBrokerGoesDown() throws Exception {
         connection = createConnection();
         connection.start();
@@ -87,10 +88,10 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
         LOG.info("Connection established, stopping broker.");
         stopPrimaryBroker();
 
-        assertTrue("Interrupted event never fired", interrupted.await(30, TimeUnit.SECONDS));
+        assertTrue("Interrupted event never fired", interrupted.await(10, TimeUnit.SECONDS));
     }
 
-    @Test(timeout=60000)
+    @Test(timeout=30000)
     public void testConnectionRestoresAfterBrokerRestarted() throws Exception {
         connection = createConnection();
         connection.start();
@@ -104,12 +105,12 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
         }));
 
         stopPrimaryBroker();
-        assertTrue(interrupted.await(20, TimeUnit.SECONDS));
+        assertTrue(interrupted.await(10, TimeUnit.SECONDS));
         startPrimaryBroker();
-        assertTrue(restored.await(20, TimeUnit.SECONDS));
+        assertTrue(restored.await(10, TimeUnit.SECONDS));
     }
 
-    @Test(timeout=60000)
+    @Test(timeout=30000)
     public void testDiscoversAndReconnectsToSecondaryBroker() throws Exception {
 
         connection = createConnection();
@@ -126,8 +127,8 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
         startNewBroker();
         stopPrimaryBroker();
 
-        assertTrue(interrupted.await(20, TimeUnit.SECONDS));
-        assertTrue(restored.await(20, TimeUnit.SECONDS));
+        assertTrue(interrupted.await(10, TimeUnit.SECONDS));
+        assertTrue(restored.await(10, TimeUnit.SECONDS));
     }
 
     @Override
@@ -136,8 +137,9 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
     }
 
     protected Connection createConnection() throws Exception {
+        String discoveryPrefix = DiscoveryProviderFactory.DISCOVERY_OPTION_PREFIX;
         JmsConnectionFactory factory = new JmsConnectionFactory(
-            "discovery:(multicast://default)?maxReconnectDelay=500");
+            "discovery:(multicast://default)?" + discoveryPrefix + "startupMaxReconnectAttempts=25" + "&" + discoveryPrefix +"maxReconnectDelay=500");
         connection = factory.createConnection();
         jmsConnection = (JmsConnection) connection;
         jmsConnection.addConnectionListener(this);

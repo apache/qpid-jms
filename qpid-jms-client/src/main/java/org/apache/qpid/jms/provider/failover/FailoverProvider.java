@@ -634,12 +634,18 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                             provider.close();
                         } catch (Throwable ex) {}
                     }
+                } else {
+                    LOG.debug("No target URI available to connect to");
                 }
 
                 if (reconnectLimit != UNLIMITED && reconnectAttempts >= reconnectLimit) {
                     LOG.error("Failed to connect after: " + reconnectAttempts + " attempt(s)");
                     failed.set(true);
-                    failureCause = IOExceptionSupport.create(failure);
+                    if(failure == null) {
+                        failureCause = new IOException("Failed to connect after: " + reconnectAttempts + " attempt(s)");
+                    } else {
+                        failureCause = IOExceptionSupport.create(failure);
+                    }
                     if (listener != null) {
                         listener.onConnectionFailure(failureCause);
                     };

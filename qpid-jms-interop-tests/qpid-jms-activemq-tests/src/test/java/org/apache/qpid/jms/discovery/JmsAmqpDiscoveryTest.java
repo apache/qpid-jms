@@ -17,12 +17,14 @@
 package org.apache.qpid.jms.discovery;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
+import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
@@ -56,6 +58,19 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
         connected = new CountDownLatch(1);
         interrupted = new CountDownLatch(1);
         restored = new CountDownLatch(1);
+    }
+
+    @Test(timeout=10000)
+    public void testFailureToDiscoverLeadsToConnectionFailure() throws Exception {
+        // We are using a different group to ensure failure,
+        // but shut down the broker anyway.
+        stopPrimaryBroker();
+        try {
+            createFailingConnection();
+            fail("Should have failed to connect");
+        } catch (JMSException jmse) {
+            // expected
+        }
     }
 
     @Test(timeout=30000)
@@ -134,6 +149,17 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
     @Override
     protected boolean isAmqpDiscovery() {
         return true;
+    }
+
+    protected Connection createFailingConnection() throws JMSException {
+        String discoveryPrefix = DiscoveryProviderFactory.DISCOVERY_OPTION_PREFIX;
+        JmsConnectionFactory factory = new JmsConnectionFactory(
+            "discovery:(multicast://default?group=altGroup)?" + discoveryPrefix + "startupMaxReconnectAttempts=10" + "&" + discoveryPrefix +"maxReconnectDelay=100");
+        connection = factory.createConnection();
+        jmsConnection = (JmsConnection) connection;
+        jmsConnection.addConnectionListener(this);
+        jmsConnection.start();
+        return connection;
     }
 
     protected Connection createConnection() throws Exception {

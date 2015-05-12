@@ -396,7 +396,7 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
         this.parser = parser;
     }
 
-    private void trySetNetworkInterface(MulticastSocket mcastSock) throws SocketException {
+    public static void trySetNetworkInterface(MulticastSocket mcastSock) throws SocketException {
         List<NetworkInterface> interfaces = findNetworkInterface();
         SocketException lastError = null;
         boolean found = false;
@@ -404,7 +404,7 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
         for (NetworkInterface networkInterface : interfaces) {
             try {
                 mcastSock.setNetworkInterface(networkInterface);
-                LOG.debug("Configured mcast socket {} to network interface {}", mcast, networkInterface);
+                LOG.debug("Configured mcast socket {} to network interface {}", mcastSock, networkInterface);
                 found = true;
                 break;
             } catch (SocketException error) {
@@ -421,7 +421,7 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
         }
     }
 
-    private List<NetworkInterface> findNetworkInterface() throws SocketException {
+    private static List<NetworkInterface> findNetworkInterface() throws SocketException {
         Enumeration<NetworkInterface> ifcs = NetworkInterface.getNetworkInterfaces();
         List<NetworkInterface> interfaces = new ArrayList<NetworkInterface>();
         while (ifcs.hasMoreElements()) {

@@ -190,6 +190,12 @@ public class AmqpProvider implements Provider, TransportListener {
                         }
                     } catch (Exception e) {
                         LOG.debug("Caught exception while closing proton connection: {}", e.getMessage());
+                    } finally {
+                        if (nextIdleTimeoutCheck != null) {
+                            LOG.trace("Cancelling scheduled IdleTimeoutCheck");
+                            nextIdleTimeoutCheck.cancel(false);
+                            nextIdleTimeoutCheck = null;
+                        }
                     }
                 }
             });
@@ -211,11 +217,6 @@ public class AmqpProvider implements Provider, TransportListener {
                     }
                 }
 
-                if (nextIdleTimeoutCheck != null) {
-                    LOG.trace("Cancelling IdleTimeoutCheck");
-                    nextIdleTimeoutCheck.cancel(false);
-                    nextIdleTimeoutCheck = null;
-                }
                 serializer.shutdown();
             }
         }

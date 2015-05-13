@@ -28,7 +28,7 @@ public interface DiscoveryAgent {
      * Indicates if this DiscoveryAgent requires a ScheduledExecutorService in order
      * to perform its discovery work.
      *
-     * @returns true if the agent requires that its parent provide it with a scheduler.
+     * @return true if the agent requires that its parent provide it with a scheduler.
      */
     boolean isSchedulerRequired();
 

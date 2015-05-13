@@ -330,7 +330,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
      * @param condition
      *        the ErrorCondition that describes the redirection.
      *
-     * @returns an Exception that captures the details of the redirection error.
+     * @return an Exception that captures the details of the redirection error.
      */
     @SuppressWarnings("unchecked")
     protected Exception createRedirectException(Symbol error, String message, ErrorCondition condition) {

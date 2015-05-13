@@ -198,7 +198,7 @@
           <artifactId>maven-release-plugin</artifactId>
           <configuration>
             <autoVersionSubmodules>true</autoVersionSubmodules>
-            <tagNameFormat>qpid-jms-@{project.version}</tagNameFormat>
+            <tagNameFormat>@{project.version}</tagNameFormat>
           </configuration>
         </plugin>
         <plugin>

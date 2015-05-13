@@ -159,7 +159,7 @@ The complete set of configuration options for failover is listed below:
 
 These options apply to the behaviour of certain AMQP functionality.
 
-+ **amqp.idleTimeout** Controls the idle timeout in milliseconds after which the connection will be failed if the peer sends no AMQP frames. Default is 60000.
++ **amqp.idleTimeout** The idle timeout in milliseconds after which the connection will be failed if the peer sends no AMQP frames. Default is 60000.
 
 ## Logging
 
@@ -168,5 +168,6 @@ The client makes use of the SLF4J API, allowing users to select a particular log
 The client uses Logger names residing within the *org.apache.qpid.jms* heirarchy, which you can use to configure a logging implementation based on your needs.
 
 When debugging some issues, it may sometimes be useful to enable additional protocol trace logging from the Qpid Proton AMQP 1.0 library. There are two options to achieve this:
+
 + Set the environment variable (not Java system property) *PN_TRACE_FRM* to *true*, which will cause Proton to emit frame logging to stdout.
 + Add the option *amqp.traceFrames=true* to your connection URI to have the client add a protocol tracer to Proton, and configure the *org.apache.qpid.jms.provider.amqp.FRAMES* Logger to *TRACE* level to include the output in your logs.

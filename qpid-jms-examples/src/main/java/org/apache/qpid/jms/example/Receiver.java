@@ -25,9 +25,9 @@ import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
+import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
-import javax.jms.TextMessage;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 
@@ -69,7 +69,7 @@ public class Receiver {
             boolean deductTimeout = false;
             int timeout = 1000;
             for (int i = 1; i <= count; i++, actualCount++) {
-                TextMessage message = (TextMessage) messageConsumer.receive(timeout);
+                Message message = messageConsumer.receive(timeout);
                 if (message == null) {
                     System.out.println("Message " + i + " not received within timeout, stopping.");
                     deductTimeout = true;

@@ -321,16 +321,20 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
 
     /**
      * Test that a message with no body section, and with the content type set to
-     * an unknown value results in an exception when not otherwise annotated to
+     * an unknown value results in a plain Message when not otherwise annotated to
      * indicate the type of JMS message it is.
      */
-    @Test(expected = IOException.class)
-    public void testNoBodySectionAndUnknownContentTypeThrowsException() throws Exception {
-        //TODO: decide if this should instead just be a plain Message
+    public void testCreateGenericMessageFromNoBodySectionAndUnknownContentType() throws Exception {
         Message message = Proton.message();
         message.setContentType("unknown-content-type");
 
-        AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsMessage.class, jmsMessage.getClass());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsMessageFacade.class, facade.getClass());
     }
 
     // --------- Data Body Section ---------
@@ -346,6 +350,26 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         Binary binary = new Binary(new byte[0]);
         message.setBody(new Data(binary));
         message.setContentType(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE);
+
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsBytesMessage.class, jmsMessage.getClass());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsBytesMessageFacade.class, facade.getClass());
+    }
+
+    /**
+     * Test that a message with an empty data body section, and with the content type
+     * set to an unknown value results in a BytesMessage when not otherwise annotated
+     * to indicate the type of JMS message it is.
+     */
+    public void testCreateBytesMessageFromDataWithUnknownContentType() throws Exception {
+        Message message = Proton.message();
+        Binary binary = new Binary(new byte[0]);
+        message.setBody(new Data(binary));
+        message.setContentType("unknown-content-type");
 
         JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
         assertNotNull("Message should not be null", jmsMessage);
@@ -421,22 +445,6 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         JmsMessageFacade facade = jmsMessage.getFacade();
         assertNotNull("Facade should not be null", facade);
         assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, facade.getClass());
-    }
-
-    /**
-     * Test that a message with a data body section, and with the content type set
-     * to an unknown value results in an exception when not otherwise annotated to
-     * indicate the type of JMS message it is.
-     */
-    @Test(expected = IOException.class)
-    public void testDataWithUnknownContentTypeAndEmptyBinaryThrowsException() throws Exception {
-        //TODO: decide if this should instead just be a plain Message or BytesMessage instead?
-        Message message = Proton.message();
-        Binary binary = new Binary(new byte[0]);
-        message.setBody(new Data(binary));
-        message.setContentType("unknown-content-type");
-
-        AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
     }
 
     // --------- AmqpValue Body Section ---------

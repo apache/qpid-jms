@@ -117,6 +117,8 @@ public class AmqpJmsMessageBuilder {
                 return createObjectMessage(consumer, message);
             } else if (isContentType(OCTET_STREAM_CONTENT_TYPE, message) || isContentType(null, message)) {
                 return createBytesMessage(consumer, message);
+            } else {
+                return createMessage(consumer, message);
             }
         } else if (body instanceof Data) {
             // TODO: accept textual content types other than strictly "text/plain"
@@ -126,11 +128,9 @@ public class AmqpJmsMessageBuilder {
                 return createBytesMessage(consumer, message);
             } else if (isContentType(SERIALIZED_JAVA_OBJECT_CONTENT_TYPE, message)) {
                 return createObjectMessage(consumer, message);
+            } else {
+                return createBytesMessage(consumer, message);
             }
-
-            // TODO: should this situation throw an exception, or just become a bytes message?
-            // Content type is set, but not to something we understand above.
-            // Falling through to return null.
         } else if (body instanceof AmqpValue) {
             Object value = ((AmqpValue) body).getValue();
 

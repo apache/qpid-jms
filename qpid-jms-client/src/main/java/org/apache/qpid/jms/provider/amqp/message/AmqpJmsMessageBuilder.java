@@ -25,10 +25,11 @@ import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_S
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_TEXT_MESSAGE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.TEXT_PLAIN_CONTENT_TYPE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.isContentType;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.qpid.jms.message.JmsBytesMessage;
 import org.apache.qpid.jms.message.JmsMapMessage;
@@ -37,6 +38,8 @@ import org.apache.qpid.jms.message.JmsObjectMessage;
 import org.apache.qpid.jms.message.JmsStreamMessage;
 import org.apache.qpid.jms.message.JmsTextMessage;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
+import org.apache.qpid.jms.util.ContentTypeSupport;
+import org.apache.qpid.jms.util.InvalidContentTypeException;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
@@ -91,7 +94,7 @@ public class AmqpJmsMessageBuilder {
                 case JMS_BYTES_MESSAGE:
                     return createBytesMessage(consumer, message);
                 case JMS_TEXT_MESSAGE:
-                    return createTextMessage(consumer, message);
+                    return createTextMessage(consumer, message, StandardCharsets.UTF_8);
                 case JMS_MAP_MESSAGE:
                     return createMapMessage(consumer, message);
                 case JMS_STREAM_MESSAGE:
@@ -110,32 +113,36 @@ public class AmqpJmsMessageBuilder {
         Section body = message.getBody();
 
         if (body == null) {
-            // TODO: accept textual content types other than strictly "text/plain"
-            if (isContentType(TEXT_PLAIN_CONTENT_TYPE, message)) {
-                return createTextMessage(consumer, message);
-            } else if (isContentType(SERIALIZED_JAVA_OBJECT_CONTENT_TYPE, message)) {
+            if (isContentType(SERIALIZED_JAVA_OBJECT_CONTENT_TYPE, message)) {
                 return createObjectMessage(consumer, message);
             } else if (isContentType(OCTET_STREAM_CONTENT_TYPE, message) || isContentType(null, message)) {
                 return createBytesMessage(consumer, message);
             } else {
-                return createMessage(consumer, message);
+                Charset charset = getCharsetForTextualContent(message.getContentType());
+                if (charset != null) {
+                    return createTextMessage(consumer, message, charset);
+                } else {
+                    return createMessage(consumer, message);
+                }
             }
         } else if (body instanceof Data) {
-            // TODO: accept textual content types other than strictly "text/plain"
-            if (isContentType(TEXT_PLAIN_CONTENT_TYPE, message)) {
-                return createTextMessage(consumer, message);
-            } else if (isContentType(OCTET_STREAM_CONTENT_TYPE, message) || isContentType(null, message)) {
+            if (isContentType(OCTET_STREAM_CONTENT_TYPE, message) || isContentType(null, message)) {
                 return createBytesMessage(consumer, message);
             } else if (isContentType(SERIALIZED_JAVA_OBJECT_CONTENT_TYPE, message)) {
                 return createObjectMessage(consumer, message);
             } else {
-                return createBytesMessage(consumer, message);
+                Charset charset = getCharsetForTextualContent(message.getContentType());
+                if (charset != null) {
+                    return createTextMessage(consumer, message, charset);
+                } else {
+                    return createBytesMessage(consumer, message);
+                }
             }
         } else if (body instanceof AmqpValue) {
             Object value = ((AmqpValue) body).getValue();
 
             if (value == null || value instanceof String) {
-                return createTextMessage(consumer, message);
+                return createTextMessage(consumer, message, StandardCharsets.UTF_8);
             } else if (value instanceof Binary) {
                 return createBytesMessage(consumer, message);
             } else {
@@ -160,8 +167,8 @@ public class AmqpJmsMessageBuilder {
         return new JmsMapMessage(new AmqpJmsMapMessageFacade(consumer, message));
     }
 
-    private static JmsTextMessage createTextMessage(AmqpConsumer consumer, Message message) {
-        return new JmsTextMessage(new AmqpJmsTextMessageFacade(consumer, message));
+    private static JmsTextMessage createTextMessage(AmqpConsumer consumer, Message message, Charset charset) {
+        return new JmsTextMessage(new AmqpJmsTextMessageFacade(consumer, message, charset));
     }
 
     private static JmsBytesMessage createBytesMessage(AmqpConsumer consumer, Message message) {
@@ -170,5 +177,17 @@ public class AmqpJmsMessageBuilder {
 
     private static JmsMessage createMessage(AmqpConsumer consumer, Message message) {
         return new JmsMessage(new AmqpJmsMessageFacade(consumer, message));
+    }
+
+    /**
+     * @param contentType the contentType of the received message
+     * @return the character set to use, or null if not to treat the message as text
+     */
+    private static Charset getCharsetForTextualContent(String contentType) {
+        try {
+            return ContentTypeSupport.parseContentTypeForTextualCharset(contentType);
+        } catch (InvalidContentTypeException e) {
+            return null;
+        }
     }
 }

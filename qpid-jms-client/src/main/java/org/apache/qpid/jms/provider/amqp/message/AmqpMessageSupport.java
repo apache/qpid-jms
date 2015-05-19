@@ -80,11 +80,6 @@ public final class AmqpMessageSupport {
     public static final String JMS_AMQP_TYPED_ENCODING = "JMS_AMQP_TYPED_ENCODING";
 
     /**
-     * Content type used to mark Data sections as containing text.
-     */
-    public static final String TEXT_PLAIN_CONTENT_TYPE = "text/plain";
-
-    /**
      * Content type used to mark Data sections as containing a serialized java object.
      */
     public static final String SERIALIZED_JAVA_OBJECT_CONTENT_TYPE = "application/x-java-serialized-object";

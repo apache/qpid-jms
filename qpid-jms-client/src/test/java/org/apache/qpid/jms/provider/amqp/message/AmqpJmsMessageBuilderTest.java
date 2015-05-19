@@ -26,6 +26,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -300,15 +302,10 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         assertTrue("Unexpected delegate type: " + delegate, delegate instanceof AmqpSerializedObjectDelegate);
     }
 
-    /**
-     * Test that a message with no body section, but with the content type set to
-     * {@value AmqpMessageSupport#TEXT_PLAIN_CONTENT_TYPE} results in a TextMessage
-     * when not otherwise annotated to indicate the type of JMS message it is.
-     */
     @Test
     public void testCreateTextMessageFromNoBodySectionAndContentType() throws Exception {
         Message message = Proton.message();
-        message.setContentType(AmqpMessageSupport.TEXT_PLAIN_CONTENT_TYPE);
+        message.setContentType("text/plain");
 
         JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
         assertNotNull("Message should not be null", jmsMessage);
@@ -427,16 +424,103 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
     }
 
     /**
-     * Test that receiving a data body containing nothing, but with the content type set to
-     * {@value AmqpMessageSupport#TEXT_PLAIN_CONTENT_TYPE} results in a TextMessage when
-     * not otherwise annotated to indicate the type of JMS message it is.
+     * Test that receiving a Data body section with the content type set to
+     * 'text/plain' results in a TextMessage when not otherwise annotated to
+     * indicate the type of JMS message it is.
      */
     @Test
-    public void testCreateTextMessageFromDataWithContentTypeAndEmptyBinary() throws Exception {
+    public void testCreateTextMessageFromDataWithContentTypeTextPlain() throws Exception {
+        doCreateTextMessageFromDataWithContentTypeTestImpl("text/plain;charset=iso-8859-1", StandardCharsets.ISO_8859_1);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("text/plain;charset=us-ascii", StandardCharsets.US_ASCII);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("text/plain;charset=utf-8", StandardCharsets.UTF_8);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("text/plain", StandardCharsets.UTF_8);
+    }
+
+    @Test
+    public void testCreateTextMessageFromDataWithContentTypeTextJson() throws Exception {
+        doCreateTextMessageFromDataWithContentTypeTestImpl("text/json;charset=iso-8859-1", StandardCharsets.ISO_8859_1);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("text/json;charset=us-ascii", StandardCharsets.US_ASCII);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("text/json;charset=utf-8", StandardCharsets.UTF_8);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("text/json", StandardCharsets.UTF_8);
+    }
+
+    @Test
+    public void testCreateTextMessageFromDataWithContentTypeTextHtml() throws Exception {
+        doCreateTextMessageFromDataWithContentTypeTestImpl("text/html;charset=iso-8859-1", StandardCharsets.ISO_8859_1);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("text/html;charset=us-ascii", StandardCharsets.US_ASCII);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("text/html;charset=utf-8", StandardCharsets.UTF_8);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("text/html", StandardCharsets.UTF_8);
+    }
+
+    @Test
+    public void testCreateTextMessageFromDataWithContentTypeTextFoo() throws Exception {
+        doCreateTextMessageFromDataWithContentTypeTestImpl("text/foo;charset=iso-8859-1", StandardCharsets.ISO_8859_1);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("text/foo;charset=us-ascii", StandardCharsets.US_ASCII);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("text/foo;charset=utf-8", StandardCharsets.UTF_8);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("text/foo", StandardCharsets.UTF_8);
+    }
+
+    @Test
+    public void testCreateTextMessageFromDataWithContentTypeApplicationJson() throws Exception {
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/json;charset=iso-8859-1", StandardCharsets.ISO_8859_1);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/json;charset=us-ascii", StandardCharsets.US_ASCII);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/json;charset=utf-8", StandardCharsets.UTF_8);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/json", StandardCharsets.UTF_8);
+    }
+
+    @Test
+    public void testCreateTextMessageFromDataWithContentTypeApplicationJsonVariant() throws Exception {
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/something+json;charset=iso-8859-1", StandardCharsets.ISO_8859_1);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/something+json;charset=us-ascii", StandardCharsets.US_ASCII);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/something+json;charset=utf-8", StandardCharsets.UTF_8);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/something+json", StandardCharsets.UTF_8);
+    }
+
+    @Test
+    public void testCreateTextMessageFromDataWithContentTypeApplicationJavascript() throws Exception {
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/javascript;charset=iso-8859-1", StandardCharsets.ISO_8859_1);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/javascript;charset=us-ascii", StandardCharsets.US_ASCII);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/javascript;charset=utf-8", StandardCharsets.UTF_8);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/javascript", StandardCharsets.UTF_8);
+    }
+
+    @Test
+    public void testCreateTextMessageFromDataWithContentTypeApplicationEcmascript() throws Exception {
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/ecmascript;charset=iso-8859-1", StandardCharsets.ISO_8859_1);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/ecmascript;charset=us-ascii", StandardCharsets.US_ASCII);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/ecmascript;charset=utf-8", StandardCharsets.UTF_8);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/ecmascript", StandardCharsets.UTF_8);
+    }
+
+    @Test
+    public void testCreateTextMessageFromDataWithContentTypeApplicationXml() throws Exception {
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/xml;charset=iso-8859-1", StandardCharsets.ISO_8859_1);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/xml;charset=us-ascii", StandardCharsets.US_ASCII);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/xml;charset=utf-8", StandardCharsets.UTF_8);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/xml", StandardCharsets.UTF_8);
+    }
+
+    @Test
+    public void testCreateTextMessageFromDataWithContentTypeApplicationXmlVariant() throws Exception {
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/something+xml;charset=iso-8859-1", StandardCharsets.ISO_8859_1);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/something+xml;charset=us-ascii", StandardCharsets.US_ASCII);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/something+xml;charset=utf-8", StandardCharsets.UTF_8);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/something+xml", StandardCharsets.UTF_8);
+    }
+
+    @Test
+    public void testCreateTextMessageFromDataWithContentTypeApplicationXmlDtd() throws Exception {
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/xml-dtd;charset=iso-8859-1", StandardCharsets.ISO_8859_1);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/xml-dtd;charset=us-ascii", StandardCharsets.US_ASCII);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/xml-dtd;charset=utf-8", StandardCharsets.UTF_8);
+        doCreateTextMessageFromDataWithContentTypeTestImpl("application/xml-dtd", StandardCharsets.UTF_8);
+    }
+
+    private void doCreateTextMessageFromDataWithContentTypeTestImpl(String contentType, Charset expectedCharset) throws IOException {
         Message message = Proton.message();
         Binary binary = new Binary(new byte[0]);
         message.setBody(new Data(binary));
-        message.setContentType(AmqpMessageSupport.TEXT_PLAIN_CONTENT_TYPE);
+        message.setContentType(contentType);
 
         JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
         assertNotNull("Message should not be null", jmsMessage);
@@ -445,6 +529,9 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         JmsMessageFacade facade = jmsMessage.getFacade();
         assertNotNull("Facade should not be null", facade);
         assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, facade.getClass());
+
+        AmqpJmsTextMessageFacade textFacade = (AmqpJmsTextMessageFacade) facade;
+        assertEquals("Unexpected character set", expectedCharset, textFacade.getCharset());
     }
 
     // --------- AmqpValue Body Section ---------

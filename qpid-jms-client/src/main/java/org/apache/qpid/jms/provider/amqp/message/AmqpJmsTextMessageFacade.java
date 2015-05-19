@@ -24,6 +24,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
+import java.nio.charset.StandardCharsets;
 
 import javax.jms.JMSException;
 
@@ -43,15 +44,7 @@ import org.apache.qpid.proton.message.Message;
  */
 public class AmqpJmsTextMessageFacade extends AmqpJmsMessageFacade implements JmsTextMessageFacade {
 
-    private static final String UTF_8 = "UTF-8";
-
-    /**
-     * Content type, only to be used when message uses a data
-     * body section, and not when using an amqp-value body section
-     */
-    public static final String CONTENT_TYPE = "text/plain";
-
-    private final CharsetDecoder decoder =  Charset.forName(UTF_8).newDecoder();
+    private final Charset charset;
 
     /**
      * Create a new AMQP Message facade ready for sending.
@@ -63,6 +56,7 @@ public class AmqpJmsTextMessageFacade extends AmqpJmsMessageFacade implements Jm
         super(connection);
         setMessageAnnotation(JMS_MSG_TYPE, JMS_TEXT_MESSAGE);
         setText(null);
+        charset = StandardCharsets.UTF_8;
     }
 
     /**
@@ -73,9 +67,12 @@ public class AmqpJmsTextMessageFacade extends AmqpJmsMessageFacade implements Jm
      *        the consumer that received this message.
      * @param message
      *        the incoming Message instance that is being wrapped.
+     * @param charset
+     *        the character set to use when decoding the text when the body is a Data section
      */
-    public AmqpJmsTextMessageFacade(AmqpConsumer consumer, Message message) {
+    public AmqpJmsTextMessageFacade(AmqpConsumer consumer, Message message, Charset charset) {
         super(consumer, message);
+        this.charset = charset;
     }
 
     /**
@@ -109,10 +106,10 @@ public class AmqpJmsTextMessageFacade extends AmqpJmsMessageFacade implements Jm
                 ByteBuffer buf = ByteBuffer.wrap(b.getArray(), b.getArrayOffset(), b.getLength());
 
                 try {
-                    CharBuffer chars = decoder.decode(buf);
+                    CharBuffer chars = charset.newDecoder().decode(buf);
                     return String.valueOf(chars);
                 } catch (CharacterCodingException e) {
-                    throw JmsExceptionSupport.create("Cannot decode String in UFT-8", e);
+                    throw JmsExceptionSupport.create("Cannot decode String in " + charset.displayName(), e);
                 }
             }
         } else if (body instanceof AmqpValue) {
@@ -165,5 +162,9 @@ public class AmqpJmsTextMessageFacade extends AmqpJmsMessageFacade implements Jm
         }
 
         return false;
+    }
+
+    Charset getCharset() {
+        return charset;
     }
 }

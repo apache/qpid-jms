@@ -25,10 +25,12 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -89,7 +91,26 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 5000)
-    public void testReceiveBasicBytesMessageWithContentUsingDataSection() throws Exception {
+    public void testReceiveBytesMessageUsingDataSectionWithContentTypeOctectStream() throws Exception {
+        doReceiveBasicBytesMessageUsingDataSectionTestImpl(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE, true);
+    }
+
+    @Test(timeout = 5000)
+    public void testReceiveBytesMessageUsingDataSectionWithContentTypeOctectStreamNoTypeAnnotation() throws Exception {
+        doReceiveBasicBytesMessageUsingDataSectionTestImpl(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE, false);
+    }
+
+    @Test(timeout = 5000)
+    public void testReceiveBasicBytesMessageUsingDataSectionWithContentTypeEmptyNoTypeAnnotation() throws Exception {
+        doReceiveBasicBytesMessageUsingDataSectionTestImpl("", false);
+    }
+
+    @Test(timeout = 5000)
+    public void testReceiveBasicBytesMessageUsingDataSectionWithContentTypeUnknownNoTypeAnnotation() throws Exception {
+        doReceiveBasicBytesMessageUsingDataSectionTestImpl("type/unknown", false);
+    }
+
+    private void doReceiveBasicBytesMessageUsingDataSectionTestImpl(String contentType, boolean typeAnnotation) throws JMSException, InterruptedException, Exception, IOException {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
@@ -100,10 +121,13 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
             Queue queue = session.createQueue("myQueue");
 
             PropertiesDescribedType properties = new PropertiesDescribedType();
-            properties.setContentType(Symbol.valueOf(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE));
+            properties.setContentType(Symbol.valueOf(contentType));
 
-            MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
-            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE, AmqpMessageSupport.JMS_BYTES_MESSAGE);
+            MessageAnnotationsDescribedType msgAnnotations = null;
+            if (typeAnnotation) {
+                msgAnnotations = new MessageAnnotationsDescribedType();
+                msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE, AmqpMessageSupport.JMS_BYTES_MESSAGE);
+            }
 
             final byte[] expectedContent = "expectedContent".getBytes();
             DescribedType dataContent = new DataDescribedType(new Binary(expectedContent));

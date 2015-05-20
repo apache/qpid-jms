@@ -24,7 +24,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
+
 import javax.jms.Connection;
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -35,12 +38,16 @@ import javax.jms.TextMessage;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.DataDescribedType;
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.junit.Test;
 
 public class TextMessageIntegrationTest extends QpidJmsTestCase {
@@ -155,6 +162,86 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
             assertNotNull(receivedMessage);
             assertTrue(receivedMessage instanceof TextMessage);
             assertNull(((TextMessage) receivedMessage).getText());
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testReceiveTextMessageUsingDataSectionWithContentTypeTextPlainNoTypeAnnotation() throws Exception {
+        String expectedString = "expectedContent";
+        final byte[] sentBytes = expectedString.getBytes("UTF-8");
+
+        doReceiveTextMessageUsingDataSectionTestImpl("text/plain", sentBytes, expectedString);
+    }
+
+    @Test(timeout = 5000)
+    public void testReceiveTextMessageUsingDataSectionWithContentTypeTextPlainCharsetUtf8NoTypeAnnotation() throws Exception {
+        String expectedString = "expectedContent";
+        final byte[] sentBytes = expectedString.getBytes("UTF-8");
+
+        doReceiveTextMessageUsingDataSectionTestImpl("text/plain;charset=utf-8", sentBytes, expectedString);
+    }
+
+    @Test(timeout = 5000)
+    public void testReceiveTextMessageUsingDataSectionWithContentTypeTextPlainCharsetUtf16NoTypeAnnotation() throws Exception {
+        String expectedString = "expectedContent";
+        final byte[] sentBytes = expectedString.getBytes("UTF-16");
+
+        doReceiveTextMessageUsingDataSectionTestImpl("text/plain;charset=utf-16", sentBytes, expectedString);
+    }
+
+    @Test(timeout = 5000)
+    public void testReceiveTextMessageUsingDataSectionWithContentTypeTextOtherNoTypeAnnotation() throws Exception {
+        String expectedString = "expectedContent";
+        final byte[] sentBytes = expectedString.getBytes("UTF-8");
+
+        doReceiveTextMessageUsingDataSectionTestImpl("text/other", sentBytes, expectedString);
+    }
+
+    @Test(timeout = 5000)
+    public void testReceiveTextMessageUsingDataSectionWithContentTypeApplicationJsonNoTypeAnnotation() throws Exception {
+        String expectedString = "expectedContent";
+        final byte[] sentBytes = expectedString.getBytes("UTF-8");
+
+        doReceiveTextMessageUsingDataSectionTestImpl("application/json", sentBytes, expectedString);
+    }
+
+    @Test(timeout = 5000)
+    public void testReceiveTextMessageUsingDataSectionWithContentTypeApplicationXmlNoTypeAnnotation() throws Exception {
+        String expectedString = "expectedContent";
+        final byte[] sentBytes = expectedString.getBytes("UTF-8");
+
+        doReceiveTextMessageUsingDataSectionTestImpl("application/xml", sentBytes, expectedString);
+    }
+
+    private void doReceiveTextMessageUsingDataSectionTestImpl(String contentType, byte[] sentBytes, String expectedString)
+                                                                     throws JMSException, InterruptedException, Exception, IOException {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin(true);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            PropertiesDescribedType properties = new PropertiesDescribedType();
+            properties.setContentType(Symbol.valueOf(contentType));
+
+            DescribedType dataContent = new DataDescribedType(new Binary(sentBytes));
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, properties, null, dataContent);
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+            Message receivedMessage = messageConsumer.receive(1000);
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            assertNotNull(receivedMessage);
+            assertTrue(receivedMessage instanceof TextMessage);
+            String text = ((TextMessage) receivedMessage).getText();
+
+            assertEquals(expectedString, text);
         }
     }
 }

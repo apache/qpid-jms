@@ -79,7 +79,6 @@ import org.slf4j.LoggerFactory;
 /**
  * JMS Session implementation
  */
-@SuppressWarnings("static-access")
 public class JmsSession implements Session, QueueSession, TopicSession, JmsMessageDispatcher {
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsSession.class);
@@ -821,38 +820,16 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         }
     }
 
-    // This extra wrapping class around SelectorParser is used to avoid
-    // ClassNotFoundException if SelectorParser is not in the class path.
-    static class OptionalSectorParser {
-        public static void check(String selector) throws InvalidSelectorException {
-            try {
-                SelectorParser.parse(selector);
-            } catch (FilterException e) {
-                throw new InvalidSelectorException(e.getMessage());
-            }
-        }
-    }
-
-    static final OptionalSectorParser SELECTOR_PARSER;
-    static {
-        OptionalSectorParser parser;
-        try {
-            // lets verify it's working..
-            parser = new OptionalSectorParser();
-            parser.check("x=1");
-        } catch (Throwable e) {
-            parser = null;
-        }
-        SELECTOR_PARSER = parser;
-    }
-
-    public static String checkSelector(String selector) throws InvalidSelectorException {
+    static String checkSelector(String selector) throws InvalidSelectorException {
         if (selector != null) {
             if (selector.trim().length() == 0) {
                 return null;
             }
-            if (SELECTOR_PARSER != null) {
-                SELECTOR_PARSER.check(selector);
+
+            try {
+                SelectorParser.parse(selector);
+            } catch (FilterException e) {
+                throw new InvalidSelectorException(e.getMessage());
             }
         }
         return selector;

@@ -29,6 +29,7 @@ public class TransportOptions {
     public static final int DEFAULT_SO_LINGER = Integer.MIN_VALUE;
     public static final int DEFAULT_SO_TIMEOUT = -1;
     public static final int DEFAULT_CONNECT_TIMEOUT = 60000;
+    public static final int DEFAULT_TCP_PORT = 5672;
 
     public static final TransportOptions INSTANCE = new TransportOptions();
 
@@ -40,6 +41,7 @@ public class TransportOptions {
     private int soLinger = DEFAULT_SO_LINGER;
     private boolean tcpKeepAlive = DEFAULT_TCP_KEEP_ALIVE;
     private boolean tcpNoDelay = DEFAULT_TCP_NO_DELAY;
+    private int defaultTcpPort = DEFAULT_TCP_PORT;
 
     /**
      * @return the currently set send buffer size in bytes.
@@ -151,6 +153,14 @@ public class TransportOptions {
 
     public void setConnectTimeout(int connectTimeout) {
         this.connectTimeout = connectTimeout;
+    }
+
+    public int getDefaultTcpPort() {
+        return defaultTcpPort;
+    }
+
+    public void setDefaultTcpPort(int defaultTcpPort) {
+        this.defaultTcpPort = defaultTcpPort;
     }
 
     @Override

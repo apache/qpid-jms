@@ -115,7 +115,7 @@ public class NettyTcpTransport implements Transport {
 
         configureNetty(bootstrap, getTransportOptions());
 
-        ChannelFuture future = bootstrap.connect(remote.getHost(), remote.getPort());
+        ChannelFuture future = bootstrap.connect(getRemoteHost(), getRemotePort());
         future.addListener(new ChannelFutureListener() {
 
             @Override
@@ -215,6 +215,14 @@ public class NettyTcpTransport implements Transport {
     }
 
     //----- Internal implementation details, can be overridden as needed --//
+
+    protected String getRemoteHost() {
+        return remote.getHost();
+    }
+
+    protected int getRemotePort() {
+        return remote.getPort() != -1 ? remote.getPort() : getTransportOptions().getDefaultTcpPort();
+    }
 
     protected void configureNetty(Bootstrap bootstrap, TransportOptions options) {
         bootstrap.option(ChannelOption.TCP_NODELAY, options.isTcpNoDelay());

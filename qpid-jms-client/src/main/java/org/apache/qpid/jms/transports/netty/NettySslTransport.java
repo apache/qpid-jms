@@ -98,6 +98,11 @@ public class NettySslTransport extends NettyTcpTransport {
         return options;
     }
 
+    @Override
+    protected int getRemotePort() {
+        return remote.getPort() != -1 ? remote.getPort() : getSslOptions().getDefaultSslPort();
+    }
+
     private TransportSslOptions getSslOptions() {
         return (TransportSslOptions) getTransportOptions();
     }

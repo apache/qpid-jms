@@ -33,6 +33,7 @@ public class TransportSslOptions extends TransportOptions {
     public static final boolean DEFAULT_TRUST_ALL = false;
     public static final boolean DEFAULT_VERIFY_HOST = true;
     public static final List<String> DEFAULT_DISABLED_PROTOCOLS = Collections.unmodifiableList(Arrays.asList(new String[]{"SSLv2Hello", "SSLv3"}));
+    public static final int DEFAULT_SSL_PORT = 5671;
 
     public static final TransportSslOptions INSTANCE = new TransportSslOptions();
 
@@ -50,6 +51,7 @@ public class TransportSslOptions extends TransportOptions {
     private boolean trustAll = DEFAULT_TRUST_ALL;
     private boolean verifyHost = DEFAULT_VERIFY_HOST;
     private String keyAlias;
+    private int defaultSslPort = DEFAULT_SSL_PORT;
 
     static {
         INSTANCE.setKeyStoreLocation(System.getProperty("javax.net.ssl.keyStore"));
@@ -250,6 +252,14 @@ public class TransportSslOptions extends TransportOptions {
      */
     public void setKeyAlias(String keyAlias) {
         this.keyAlias = keyAlias;
+    }
+
+    public int getDefaultSslPort() {
+        return defaultSslPort;
+    }
+
+    public void setDefaultSslPort(int defaultSslPort) {
+        this.defaultSslPort = defaultSslPort;
     }
 
     @Override

@@ -187,18 +187,6 @@ public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
     }
 
     @Test
-    public void testIsEmpty() throws Exception {
-        AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createNewStreamMessageFacade();
-
-        assertTrue("unexpected value", amqpStreamMessageFacade.isEmpty());
-
-        // add something
-        amqpStreamMessageFacade.put(Boolean.TRUE);
-
-        assertFalse("unexpected value", amqpStreamMessageFacade.isEmpty());
-    }
-
-    @Test
     public void testHasNext() throws Exception {
         AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createNewStreamMessageFacade();
 

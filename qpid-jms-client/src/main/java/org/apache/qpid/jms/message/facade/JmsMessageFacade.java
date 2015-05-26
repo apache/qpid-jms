@@ -106,14 +106,6 @@ public interface JmsMessageFacade {
     void onDispatch() throws JMSException;
 
     /**
-     * This method should provide a quick check on the message to determine if
-     * there is any content actually contained within.
-     *
-     * @return true if the message content is non-empty.
-     */
-    boolean isEmpty();
-
-    /**
      * Clears the contents of this Message.
      */
     void clearBody();

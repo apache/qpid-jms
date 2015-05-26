@@ -64,15 +64,6 @@ public final class JmsDefaultBytesMessageFacade extends JmsDefaultMessageFacade 
     }
 
     @Override
-    public boolean isEmpty() {
-        if (content == null || content.readableBytes() == 0) {
-            return true;
-        }
-
-        return false;
-    }
-
-    @Override
     public void clearBody() {
         if (bytesIn != null) {
             try {

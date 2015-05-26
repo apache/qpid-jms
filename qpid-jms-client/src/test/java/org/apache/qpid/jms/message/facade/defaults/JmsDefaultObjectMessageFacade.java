@@ -47,15 +47,10 @@ public class JmsDefaultObjectMessageFacade extends JmsDefaultMessageFacade imple
     }
 
     @Override
-    public boolean isEmpty() {
-        return object == null || object.length == 0;
-    }
-
-    @Override
     public JmsDefaultObjectMessageFacade copy() {
         JmsDefaultObjectMessageFacade copy = new JmsDefaultObjectMessageFacade();
         copyInto(copy);
-        if (!isEmpty()) {
+        if (object != null) {
             copy.object = Arrays.copyOf(object, object.length);
         }
 
@@ -69,8 +64,7 @@ public class JmsDefaultObjectMessageFacade extends JmsDefaultMessageFacade imple
 
     @Override
     public Serializable getObject() throws IOException, ClassNotFoundException {
-
-        if (isEmpty()) {
+        if (object == null) {
             return null;
         }
 

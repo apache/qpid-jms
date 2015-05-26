@@ -73,78 +73,6 @@ public class AmqpJmsTextMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
     }
 
     @Test
-    public void testNewMessageToSendReportsIsEmpty() throws Exception {
-        AmqpJmsTextMessageFacade amqpTextMessageFacade = createNewTextMessageFacade();
-        amqpTextMessageFacade.clearBody();
-        assertTrue(amqpTextMessageFacade.isEmpty());
-    }
-
-    @Test
-    public void testMessageWithNullBodyRetportsIsEmpty() throws Exception {
-        AmqpJmsTextMessageFacade amqpTextMessageFacade = createNewTextMessageFacade();
-        amqpTextMessageFacade.getAmqpMessage().setBody(null);
-        assertTrue(amqpTextMessageFacade.isEmpty());
-    }
-
-    @Test
-    public void testIsEmptyUsingReceivedMessageWithZeroLengthDataSection() throws Exception {
-        org.apache.qpid.proton.codec.Data payloadData = new DataImpl();
-        payloadData.putDescribedType(new DataDescribedType(new Binary(new byte[0])));
-        Binary b = payloadData.encode();
-
-        Message message = Message.Factory.create();
-        int decoded = message.decode(b.getArray(), b.getArrayOffset(), b.getLength());
-        assertEquals(decoded, b.getLength());
-        AmqpJmsTextMessageFacade amqpTextMessageFacade = createReceivedTextMessageFacade(createMockAmqpConsumer(), message);
-
-        assertTrue(amqpTextMessageFacade.isEmpty());
-    }
-
-    @Test
-    public void testMessageWithEmptyDataRetportsIsEmpty() throws Exception {
-        Message message = Message.Factory.create();
-        message.setBody(new Data(null));
-
-        // This shouldn't happen with actual received messages, since Data sections can't really
-        // have a null value in them, they would have an empty byte array, but just in case...
-        AmqpJmsTextMessageFacade amqpTextMessageFacade = createReceivedTextMessageFacade(createMockAmqpConsumer(), message);
-
-        assertTrue(amqpTextMessageFacade.isEmpty());
-    }
-
-    @Test
-    public void testMessageWithEmptyDataBinaryRetportsIsEmpty() throws Exception {
-        Message message = Message.Factory.create();
-        message.setBody(new Data(new Binary(new byte[0])));
-        AmqpJmsTextMessageFacade amqpTextMessageFacade = createReceivedTextMessageFacade(createMockAmqpConsumer(), message);
-        assertTrue(amqpTextMessageFacade.isEmpty());
-    }
-
-    @Test
-    public void testMessageWithNonEmptyDataBinaryRetportsIsEmpty() throws Exception {
-        Message message = Message.Factory.create();
-        message.setBody(new Data(new Binary(new byte[1])));
-        AmqpJmsTextMessageFacade amqpTextMessageFacade = createReceivedTextMessageFacade(createMockAmqpConsumer(), message);
-        assertFalse(amqpTextMessageFacade.isEmpty());
-    }
-
-    @Test
-    public void testMessageWithEmptyAmqpValueStringRetportsIsEmpty() throws Exception {
-        Message message = Message.Factory.create();
-        message.setBody(new AmqpValue(""));
-        AmqpJmsTextMessageFacade amqpTextMessageFacade = createReceivedTextMessageFacade(createMockAmqpConsumer(), message);
-        assertTrue(amqpTextMessageFacade.isEmpty());
-    }
-
-    @Test
-    public void testMessageWithUnexpectedContentsReturnsEmpty() throws Exception {
-        Message message = Message.Factory.create();
-        message.setBody(new AmqpSequence(null));
-        AmqpJmsTextMessageFacade amqpTextMessageFacade = createReceivedTextMessageFacade(createMockAmqpConsumer(), message);
-        assertTrue(amqpTextMessageFacade.isEmpty());
-    }
-
-    @Test
     public void testNewMessageToSendReturnsNullText() throws Exception {
         AmqpJmsTextMessageFacade amqpTextMessageFacade = createNewTextMessageFacade();
         amqpTextMessageFacade.clearBody();
@@ -156,11 +84,11 @@ public class AmqpJmsTextMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
     @Test
     public void testMessageClearBodyWorks() throws Exception {
         AmqpJmsTextMessageFacade amqpTextMessageFacade = createNewTextMessageFacade();
-        assertTrue(amqpTextMessageFacade.isEmpty());
+        assertNull(amqpTextMessageFacade.getText());
         amqpTextMessageFacade.setText("SomeTextForMe");
-        assertFalse(amqpTextMessageFacade.isEmpty());
+        assertNotNull(amqpTextMessageFacade.getText());
         amqpTextMessageFacade.clearBody();
-        assertTrue(amqpTextMessageFacade.isEmpty());
+        assertNull(amqpTextMessageFacade.getText());
     }
 
     @Test

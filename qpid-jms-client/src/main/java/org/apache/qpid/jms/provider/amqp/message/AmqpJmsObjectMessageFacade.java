@@ -77,12 +77,6 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
         return JMS_OBJECT_MESSAGE;
     }
 
-    @Override
-    public boolean isEmpty() {
-        // TODO - If null body changes to empty AmqpValue this needs to also change.
-        return getAmqpMessage().getBody() == null;
-    }
-
     public boolean isAmqpTypedEncoding() {
         return delegate.isAmqpTypeEncoded();
     }

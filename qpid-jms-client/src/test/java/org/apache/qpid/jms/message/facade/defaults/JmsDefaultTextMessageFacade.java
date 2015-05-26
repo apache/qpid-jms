@@ -31,11 +31,6 @@ public final class JmsDefaultTextMessageFacade extends JmsDefaultMessageFacade i
     }
 
     @Override
-    public boolean isEmpty() {
-        return text != null && !text.isEmpty();
-    }
-
-    @Override
     public JmsDefaultTextMessageFacade copy() {
         JmsDefaultTextMessageFacade copy = new JmsDefaultTextMessageFacade();
         copyInto(copy);

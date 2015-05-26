@@ -1865,12 +1865,6 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     }
 
     @Test
-    public void testIsEmpty() {
-        AmqpJmsMessageFacade message = createNewMessageFacade();
-        assertTrue(message.isEmpty());
-    }
-
-    @Test
     public void testClearBodyRemoveMessageBody() {
         Message message = Mockito.mock(Message.class);
         JmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);

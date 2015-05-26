@@ -136,11 +136,6 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public boolean isEmpty() {
-        return true;
-    }
-
-    @Override
     public void clearBody() {
     }
 

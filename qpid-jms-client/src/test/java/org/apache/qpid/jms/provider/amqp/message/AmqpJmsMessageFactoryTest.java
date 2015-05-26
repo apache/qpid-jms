@@ -108,7 +108,7 @@ public class AmqpJmsMessageFactoryTest extends QpidJmsTestCase {
         AmqpJmsBytesMessageFacade amqpMessage = (AmqpJmsBytesMessageFacade) facade;
 
         assertEquals(JMS_BYTES_MESSAGE, amqpMessage.getJmsMsgType());
-        assertTrue(amqpMessage.isEmpty());
+        assertEquals(0, amqpMessage.getBodyLength());
     }
 
     @Test
@@ -120,7 +120,7 @@ public class AmqpJmsMessageFactoryTest extends QpidJmsTestCase {
         AmqpJmsMapMessageFacade amqpMessage = (AmqpJmsMapMessageFacade) facade;
 
         assertEquals(JMS_MAP_MESSAGE, amqpMessage.getJmsMsgType());
-        assertTrue(amqpMessage.isEmpty());
+        assertFalse(amqpMessage.getMapNames().hasMoreElements());
     }
 
     @Test
@@ -132,7 +132,7 @@ public class AmqpJmsMessageFactoryTest extends QpidJmsTestCase {
         AmqpJmsStreamMessageFacade amqpMessage = (AmqpJmsStreamMessageFacade) facade;
 
         assertEquals(JMS_STREAM_MESSAGE, amqpMessage.getJmsMsgType());
-        assertTrue(amqpMessage.isEmpty());
+        assertFalse(amqpMessage.hasNext());
     }
 
     @Test

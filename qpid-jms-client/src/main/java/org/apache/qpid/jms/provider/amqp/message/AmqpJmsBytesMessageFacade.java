@@ -102,11 +102,6 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
     }
 
     @Override
-    public boolean isEmpty() {
-        return getBinaryFromBody().getLength() == 0;
-    }
-
-    @Override
     public void clearBody() {
         if (bytesIn != null) {
             try {

@@ -110,11 +110,6 @@ public class AmqpJmsMapMessageFacade extends AmqpJmsMessageFacade implements Jms
     }
 
     @Override
-    public boolean isEmpty() {
-        return messageBodyMap.isEmpty();
-    }
-
-    @Override
     public Object get(String key) {
         Object value = messageBodyMap.get(key);
         if (value instanceof Binary) {

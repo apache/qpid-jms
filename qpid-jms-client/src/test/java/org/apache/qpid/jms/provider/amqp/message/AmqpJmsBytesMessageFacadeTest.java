@@ -273,7 +273,6 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
 
         assertEquals("Message reports unexpected length", length, amqpBytesMessageFacade.getBodyLength());
-        assertFalse(amqpBytesMessageFacade.isEmpty());
     }
 
     @Test
@@ -293,7 +292,6 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
 
         assertEquals("Message reports unexpected length", 0, amqpBytesMessageFacade.getBodyLength());
-        assertTrue(amqpBytesMessageFacade.isEmpty());
     }
 
     @Test
@@ -397,24 +395,6 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         } catch (IllegalStateException ise) {
             // expected
         }
-    }
-
-    @Test
-    public void testIsEmpty() throws Exception {
-        Message message = Message.Factory.create();
-        message.setBody(new Data(new Binary(new byte[1])));
-        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
-
-        // Very small payload.
-        assertFalse(amqpBytesMessageFacade.isEmpty());
-
-        // Ensure no NPE
-        message.setBody(null);
-        assertTrue(amqpBytesMessageFacade.isEmpty());
-
-        byte[] bytes = "myBytes".getBytes();
-        message.setBody(new AmqpValue(new Binary(bytes)));
-        assertFalse(amqpBytesMessageFacade.isEmpty());
     }
 
     /**

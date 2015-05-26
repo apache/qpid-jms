@@ -65,7 +65,7 @@ public class AmqpJmsMapMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
     @Test
     public void testNewMessageToSendReportsIsEmpty() throws Exception {
         AmqpJmsMapMessageFacade amqpMapMessageFacade = createNewMapMessageFacade();
-        assertTrue(amqpMapMessageFacade.isEmpty());
+        assertFalse(amqpMapMessageFacade.getMapNames().hasMoreElements());
     }
 
     @Test
@@ -100,11 +100,11 @@ public class AmqpJmsMapMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
     @Test
     public void testMessageClearBodyWorks() throws Exception {
         AmqpJmsMapMessageFacade amqpMapMessageFacade = createNewMapMessageFacade();
-        assertTrue(amqpMapMessageFacade.isEmpty());
+        assertFalse(amqpMapMessageFacade.getMapNames().hasMoreElements());
         amqpMapMessageFacade.put("entry", "value");
-        assertFalse(amqpMapMessageFacade.isEmpty());
+        assertTrue(amqpMapMessageFacade.getMapNames().hasMoreElements());
         amqpMapMessageFacade.clearBody();
-        assertTrue(amqpMapMessageFacade.isEmpty());
+        assertFalse(amqpMapMessageFacade.getMapNames().hasMoreElements());
     }
 
     @Test
@@ -148,7 +148,7 @@ public class AmqpJmsMapMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         AmqpJmsMapMessageFacade amqpMapMessageFacade = createReceivedMapMessageFacade(createMockAmqpConsumer(), message);
 
         // Data should be preserved
-        assertFalse(amqpMapMessageFacade.isEmpty());
+        assertTrue(amqpMapMessageFacade.getMapNames().hasMoreElements());
         Object result = amqpMapMessageFacade.get("entry1");
         assertNotNull(result);
         assertTrue(result instanceof Boolean);
@@ -194,7 +194,7 @@ public class AmqpJmsMapMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         // Should be able to use the message, e.g clearing it and adding to it.
         amqpMapMessageFacade.clearBody();
         amqpMapMessageFacade.put("entry", "value");
-        assertFalse(amqpMapMessageFacade.isEmpty());
+        assertTrue(amqpMapMessageFacade.getMapNames().hasMoreElements());
     }
 
     @Test
@@ -207,6 +207,6 @@ public class AmqpJmsMapMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         // Should be able to use the message, e.g clearing it and adding to it.
         amqpMapMessageFacade.clearBody();
         amqpMapMessageFacade.put("entry", "value");
-        assertFalse(amqpMapMessageFacade.isEmpty());
+        assertTrue(amqpMapMessageFacade.getMapNames().hasMoreElements());
     }
 }

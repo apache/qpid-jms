@@ -160,7 +160,6 @@ public class JmsMapMessageTest {
 
         assertTrue("key should exist: " + myKey1, mapMessage.itemExists(myKey1));
         mapMessage.clearBody();
-        assertTrue("expected map to be emptied", facade.isEmpty());
         assertFalse("key should not exist", mapMessage.itemExists(myKey1));
     }
 

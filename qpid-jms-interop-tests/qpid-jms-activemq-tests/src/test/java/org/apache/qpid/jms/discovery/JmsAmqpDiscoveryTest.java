@@ -42,7 +42,6 @@ import org.apache.qpid.jms.provider.discovery.DiscoveryProviderFactory;
 import org.apache.qpid.jms.provider.discovery.multicast.MulticastDiscoveryAgent;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
-import org.apache.qpid.proton.amqp.Binary;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;

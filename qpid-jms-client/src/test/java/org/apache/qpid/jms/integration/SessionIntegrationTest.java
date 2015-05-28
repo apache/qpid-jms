@@ -18,6 +18,7 @@
  */
 package org.apache.qpid.jms.integration;
 
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.ANONYMOUS_RELAY;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -50,7 +51,6 @@ import javax.jms.Topic;
 import javax.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.JmsConnection;
-import org.apache.qpid.jms.provider.amqp.AmqpConnectionProperties;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
@@ -460,7 +460,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
             //Add capability to indicate support for ANONYMOUS-RELAY
-            Symbol[] serverCapabilities = new Symbol[]{AmqpConnectionProperties.ANONYMOUS_RELAY};
+            Symbol[] serverCapabilities = new Symbol[]{ANONYMOUS_RELAY};
 
             Connection connection = testFixture.establishConnecton(testPeer, serverCapabilities);
             connection.start();
@@ -650,7 +650,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     public void testCreateAnonymousProducerWhenAnonymousRelayNodeIsSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             //Add capability to indicate support for ANONYMOUS-RELAY
-            Symbol[] serverCapabilities = new Symbol[]{AmqpConnectionProperties.ANONYMOUS_RELAY};
+            Symbol[] serverCapabilities = new Symbol[]{ANONYMOUS_RELAY};
 
             Connection connection = testFixture.establishConnecton(testPeer, serverCapabilities);
             connection.start();
@@ -707,7 +707,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     private void doCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedTestImpl(boolean deferAttachFrameWrite) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             //Add capability to indicate support for ANONYMOUS-RELAY
-            Symbol[] serverCapabilities = new Symbol[]{AmqpConnectionProperties.ANONYMOUS_RELAY};
+            Symbol[] serverCapabilities = new Symbol[]{ANONYMOUS_RELAY};
 
             Connection connection = testFixture.establishConnecton(testPeer, serverCapabilities);
             connection.start();

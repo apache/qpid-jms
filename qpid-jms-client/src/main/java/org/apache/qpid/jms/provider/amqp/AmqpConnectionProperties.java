@@ -16,6 +16,11 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.ANONYMOUS_RELAY;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.CONNECTION_OPEN_FAILED;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.QUEUE_PREFIX;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.TOPIC_PREFIX;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -33,11 +38,6 @@ import org.slf4j.LoggerFactory;
 public class AmqpConnectionProperties {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnectionProperties.class);
-
-    public static final Symbol ANONYMOUS_RELAY = Symbol.valueOf("ANONYMOUS-RELAY");
-    public static final Symbol QUEUE_PREFIX = Symbol.valueOf("queue-prefix");
-    public static final Symbol TOPIC_PREFIX = Symbol.valueOf("topic-prefix");
-    public static final Symbol CONNECTION_OPEN_FAILED = Symbol.valueOf("amqp:connection-establishment-failed");
 
     private final JmsConnectionInfo connectionInfo;
 

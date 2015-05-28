@@ -59,7 +59,7 @@ public class FailoverRedirectTest extends QpidJmsTestCase {
             redirectedPeer.expectAnonymousConnect(true);
             redirectedPeer.expectBegin(true);
 
-            Map<String, Object> redirectInfo = new HashMap<String, Object>();
+            Map<Object, Object> redirectInfo = new HashMap<Object, Object>();
 
             redirectInfo.put("hostname", "localhost");
             redirectInfo.put("network-host", "localhost");
@@ -103,7 +103,7 @@ public class FailoverRedirectTest extends QpidJmsTestCase {
             redirectedPeer.expectAnonymousConnect(true);
             redirectedPeer.expectBegin(true);
 
-            Map<String, Object> redirectInfo = new HashMap<String, Object>();
+            Map<Object, Object> redirectInfo = new HashMap<Object, Object>();
 
             redirectInfo.put("hostname", "localhost");
             redirectInfo.put("network-host", "localhost");

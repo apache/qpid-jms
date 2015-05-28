@@ -27,7 +27,7 @@ import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
-import org.apache.qpid.jms.provider.amqp.AmqpConnection;
+import org.apache.qpid.jms.provider.amqp.AmqpSupport;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.proton.amqp.Symbol;
 
@@ -54,7 +54,7 @@ public class IntegrationTestFixture {
     }
 
     Connection establishConnecton(TestAmqpPeer testPeer, boolean ssl, String optionsString, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties, boolean setClientId) throws JMSException {
-        Symbol[] desiredCapabilities = new Symbol[] { AmqpConnection.SOLE_CONNECTION_CAPABILITY };
+        Symbol[] desiredCapabilities = new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY };
 
         testPeer.expectPlainConnect("guest", "guest", desiredCapabilities, serverCapabilities, serverProperties);
 

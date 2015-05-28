@@ -69,6 +69,8 @@ public class JmsConnectionTest extends AmqpTestSupport {
             connection2.setClientID("Test");
             fail("should have thrown a JMSException");
         } catch (JMSException ex) {
+            //TODO: change to InvalidClientIDException when updating to 5.12 or above
+            LOG.info("Remote threw ex: {}", ex);
         } catch (Exception unexpected) {
             fail("Wrong exception type thrown: " + unexpected);
         }

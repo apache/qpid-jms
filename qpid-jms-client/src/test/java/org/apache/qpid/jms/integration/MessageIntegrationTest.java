@@ -18,6 +18,8 @@
  */
 package org.apache.qpid.jms.integration;
 
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.QUEUE_PREFIX;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.TOPIC_PREFIX;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -47,7 +49,6 @@ import javax.jms.Topic;
 
 import org.apache.qpid.jms.JmsClientProperties;
 import org.apache.qpid.jms.JmsConnection;
-import org.apache.qpid.jms.provider.amqp.AmqpConnectionProperties;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageIdHelper;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
@@ -748,8 +749,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Have the test peer provide the destination prefixes as connection properties
             Map<Symbol, Object> properties = new HashMap<Symbol, Object>();
-            properties.put(AmqpConnectionProperties.QUEUE_PREFIX, destPrefix);
-            properties.put(AmqpConnectionProperties.TOPIC_PREFIX, destPrefix);
+            properties.put(QUEUE_PREFIX, destPrefix);
+            properties.put(TOPIC_PREFIX, destPrefix);
 
             Connection connection = testFixture.establishConnecton(testPeer, null, null, properties);
             connection.start();
@@ -858,8 +859,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Have the test peer provide the destination prefixes as connection properties
             Map<Symbol, Object> properties = new HashMap<Symbol, Object>();
-            properties.put(AmqpConnectionProperties.QUEUE_PREFIX, destPrefix);
-            properties.put(AmqpConnectionProperties.TOPIC_PREFIX, destPrefix);
+            properties.put(QUEUE_PREFIX, destPrefix);
+            properties.put(TOPIC_PREFIX, destPrefix);
 
             Connection connection = testFixture.establishConnecton(testPeer, null, null, properties);
 

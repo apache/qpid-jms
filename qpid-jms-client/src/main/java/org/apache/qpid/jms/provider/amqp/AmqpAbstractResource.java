@@ -16,9 +16,13 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.CONTAINER_ID;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.INVALID_FIELD;
+
 import java.io.IOException;
 import java.util.Map;
 
+import javax.jms.InvalidClientIDException;
 import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
@@ -221,7 +225,8 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     @Override
     public Exception getRemoteError() {
         Exception remoteError = null;
-        Symbol error = getEndpoint().getRemoteCondition().getCondition();
+        ErrorCondition remoteCondition = getEndpoint().getRemoteCondition();
+        Symbol error = remoteCondition.getCondition();
         if (error != null) {
             String message = getRemoteErrorMessage();
             if (error.equals(AmqpError.UNAUTHORIZED_ACCESS)) {
@@ -229,7 +234,14 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
             } else if (error.equals(AmqpError.NOT_FOUND)) {
                 remoteError = new InvalidDestinationException(message);
             } else if (error.equals(ConnectionError.REDIRECT)) {
-                remoteError = createRedirectException(error, message, getEndpoint().getRemoteCondition());
+                remoteError = createRedirectException(error, message, remoteCondition);
+            } else if (error.equals(AmqpError.INVALID_FIELD)) {
+                Map<?, ?> info = remoteCondition.getInfo();
+                if (info != null && CONTAINER_ID.equals(info.get(INVALID_FIELD))) {
+                    remoteError = new InvalidClientIDException(message);
+                } else {
+                    remoteError = new JMSException(message);
+                }
             } else {
                 remoteError = new JMSException(message);
             }
@@ -335,7 +347,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     @SuppressWarnings("unchecked")
     protected Exception createRedirectException(Symbol error, String message, ErrorCondition condition) {
         Exception result = null;
-        Map<String, Object> info = condition.getInfo();
+        Map<Object, Object> info = condition.getInfo();
 
         if (info == null) {
             result = new IOException(message + " : Redirection information not set.");

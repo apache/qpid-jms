@@ -33,16 +33,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
 import javax.jms.ConnectionMetaData;
 import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
+import javax.jms.InvalidClientIDException;
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.provider.ProviderRedirectedException;
+import org.apache.qpid.jms.provider.amqp.AmqpSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -142,6 +146,30 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Test(timeout = 5000)
+    public void testConnectionThrowsInvalidClientIdExceptionWhenInvalidContainerHintPresent() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final String remoteURI = "amqp://localhost:" + testPeer.getServerPort();
+
+            Map<Object, Object> errorInfo = new HashMap<Object, Object>();
+            errorInfo.put(AmqpSupport.INVALID_FIELD, AmqpSupport.CONTAINER_ID);
+
+            testPeer.rejectConnect(AmqpError.INVALID_FIELD, "Client ID already in use", errorInfo);
+
+            try {
+                ConnectionFactory factory = new JmsConnectionFactory(remoteURI);
+                Connection connection = factory.createConnection();
+                connection.setClientID("in-use-client-id");
+
+                fail("Should have thrown InvalidClientIDException");
+            } catch (InvalidClientIDException e) {
+                // Expected
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
     @Test(timeout = 10000)
     public void testRemotelyEndConnectionWithRedirect() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
@@ -156,7 +184,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer, false, null, null, null, false);
 
             // Tell the test peer to close the connection when executing its last handler
-            Map<String, Object> errorInfo = new HashMap<String, Object>();
+            Map<Object, Object> errorInfo = new HashMap<Object, Object>();
             errorInfo.put("hostname", REDIRECTED_HOSTNAME);
             errorInfo.put("network-host", REDIRECTED_NETWORK_HOST);
             errorInfo.put("port", 5677);

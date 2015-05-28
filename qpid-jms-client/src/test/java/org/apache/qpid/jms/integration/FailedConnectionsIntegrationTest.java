@@ -76,7 +76,7 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testConnectWithRedirect() throws Exception {
-        Map<String, Object> redirectInfo = new HashMap<String, Object>();
+        Map<Object, Object> redirectInfo = new HashMap<Object, Object>();
 
         redirectInfo.put("hostname", "localhost");
         redirectInfo.put("network-host", "127.0.0.1");

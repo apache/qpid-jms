@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 
-import org.apache.qpid.jms.provider.amqp.AmqpConnection;
+import org.apache.qpid.jms.provider.amqp.AmqpSupport;
 import org.apache.qpid.jms.provider.amqp.AmqpTemporaryDestination;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.test.testpeer.basictypes.ReceiverSettleMode;
@@ -455,7 +455,7 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectPlainConnect(String username, String password, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties)
     {
-        expectPlainConnect(username, password, new Symbol[] { AmqpConnection.SOLE_CONNECTION_CAPABILITY }, serverCapabilities, serverProperties);
+        expectPlainConnect(username, password, new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, serverCapabilities, serverProperties);
     }
 
     public void expectPlainConnect(String username, String password, Symbol[] desiredCapabilities, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties)
@@ -519,8 +519,7 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     // TODO - Reject any incoming connection using the supplied information
-    public void rejectConnect(Symbol errorType, String errorMessage, Map<String, Object> errorInfo) {
-
+    public void rejectConnect(Symbol errorType, String errorMessage, Map<Object, Object> errorInfo) {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(Symbol.valueOf("ANONYMOUS"));
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
                                             new FrameSender(
@@ -1400,7 +1399,7 @@ public class TestAmqpPeer implements AutoCloseable
         remotelyCloseConnection(expectCloseResponse, errorType, errorMessage, null);
     }
 
-    public void remotelyCloseConnection(boolean expectCloseResponse, Symbol errorType, String errorMessage, Map<String, Object> info) {
+    public void remotelyCloseConnection(boolean expectCloseResponse, Symbol errorType, String errorMessage, Map<Object, Object> info) {
         synchronized (_handlersLock) {
             // Prepare a composite to insert this action at the end of the handler sequence
             CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();

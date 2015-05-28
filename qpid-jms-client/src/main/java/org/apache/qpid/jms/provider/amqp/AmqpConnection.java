@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SOLE_CONNECTION_CAPABILITY;
+
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,8 +43,6 @@ import org.slf4j.LoggerFactory;
 public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Connection> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
-
-    public static final Symbol SOLE_CONNECTION_CAPABILITY = Symbol.valueOf("sole-connection-for-container");
 
     private final AmqpJmsMessageFactory amqpMessageFactory;
 

@@ -28,6 +28,12 @@ public class AmqpSupport {
     public static final Symbol INVALID_FIELD = Symbol.valueOf("invalid-field");
     public static final Symbol CONTAINER_ID = Symbol.valueOf("container-id");
 
+    // Symbols used to announce connection redirect ErrorCondition 'info'
+    public static final Symbol PORT = Symbol.valueOf("port");
+    public static final Symbol NETWORK_HOST = Symbol.valueOf("network-host");
+    public static final Symbol OPEN_HOSTNAME = Symbol.valueOf("hostname");
+
+    // Symbols used for connection properties
     public static final Symbol QUEUE_PREFIX = Symbol.valueOf("queue-prefix");
     public static final Symbol TOPIC_PREFIX = Symbol.valueOf("topic-prefix");
 }

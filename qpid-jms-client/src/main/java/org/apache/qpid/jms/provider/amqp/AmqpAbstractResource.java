@@ -16,6 +16,9 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.NETWORK_HOST;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.OPEN_HOSTNAME;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.PORT;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.CONTAINER_ID;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.INVALID_FIELD;
 
@@ -344,24 +347,23 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
      *
      * @return an Exception that captures the details of the redirection error.
      */
-    @SuppressWarnings("unchecked")
     protected Exception createRedirectException(Symbol error, String message, ErrorCondition condition) {
         Exception result = null;
-        Map<Object, Object> info = condition.getInfo();
+        Map<?, ?> info = condition.getInfo();
 
         if (info == null) {
             result = new IOException(message + " : Redirection information not set.");
         } else {
-            String hostname = (String) info.get("hostname");
+            String hostname = (String) info.get(OPEN_HOSTNAME);
 
-            String networkHost = (String) info.get("network-host");
+            String networkHost = (String) info.get(NETWORK_HOST);
             if (networkHost == null || networkHost.isEmpty()) {
                 result = new IOException(message + " : Redirection information not set.");
             }
 
             int port = 0;
             try {
-                port = Integer.valueOf(info.get("port").toString());
+                port = Integer.valueOf(info.get(PORT).toString());
             } catch (Exception ex) {
                 result = new IOException(message + " : Redirection information not set.");
             }

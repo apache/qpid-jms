@@ -519,7 +519,7 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     // TODO - Reject any incoming connection using the supplied information
-    public void rejectConnect(Symbol errorType, String errorMessage, Map<Object, Object> errorInfo) {
+    public void rejectConnect(Symbol errorType, String errorMessage, Map<Symbol, Object> errorInfo) {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(Symbol.valueOf("ANONYMOUS"));
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
                                             new FrameSender(
@@ -1399,7 +1399,7 @@ public class TestAmqpPeer implements AutoCloseable
         remotelyCloseConnection(expectCloseResponse, errorType, errorMessage, null);
     }
 
-    public void remotelyCloseConnection(boolean expectCloseResponse, Symbol errorType, String errorMessage, Map<Object, Object> info) {
+    public void remotelyCloseConnection(boolean expectCloseResponse, Symbol errorType, String errorMessage, Map<Symbol, Object> info) {
         synchronized (_handlersLock) {
             // Prepare a composite to insert this action at the end of the handler sequence
             CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();

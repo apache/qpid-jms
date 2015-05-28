@@ -16,6 +16,9 @@
  */
 package org.apache.qpid.jms.provider.failover;
 
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.NETWORK_HOST;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.OPEN_HOSTNAME;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.PORT;
 import static org.junit.Assert.assertTrue;
 
 import java.net.URI;
@@ -34,6 +37,7 @@ import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.ConnectionError;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,11 +63,10 @@ public class FailoverRedirectTest extends QpidJmsTestCase {
             redirectedPeer.expectAnonymousConnect(true);
             redirectedPeer.expectBegin(true);
 
-            Map<Object, Object> redirectInfo = new HashMap<Object, Object>();
-
-            redirectInfo.put("hostname", "localhost");
-            redirectInfo.put("network-host", "localhost");
-            redirectInfo.put("port", redirectedPeer.getServerPort());
+            Map<Symbol, Object> redirectInfo = new HashMap<Symbol, Object>();
+            redirectInfo.put(OPEN_HOSTNAME, "localhost");
+            redirectInfo.put(NETWORK_HOST, "localhost");
+            redirectInfo.put(PORT, redirectedPeer.getServerPort());
 
             rejectingPeer.rejectConnect(ConnectionError.REDIRECT, "Server is full, go away", redirectInfo);
 
@@ -103,11 +106,10 @@ public class FailoverRedirectTest extends QpidJmsTestCase {
             redirectedPeer.expectAnonymousConnect(true);
             redirectedPeer.expectBegin(true);
 
-            Map<Object, Object> redirectInfo = new HashMap<Object, Object>();
-
-            redirectInfo.put("hostname", "localhost");
-            redirectInfo.put("network-host", "localhost");
-            redirectInfo.put("port", redirectedPeer.getServerPort());
+            Map<Symbol, Object> redirectInfo = new HashMap<Symbol, Object>();
+            redirectInfo.put(OPEN_HOSTNAME, "localhost");
+            redirectInfo.put(NETWORK_HOST, "localhost");
+            redirectInfo.put(PORT, redirectedPeer.getServerPort());
 
             rejectingPeer.expectAnonymousConnect(true);
             rejectingPeer.expectBegin(true);

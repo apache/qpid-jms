@@ -16,6 +16,9 @@
  */
 package org.apache.qpid.jms.integration;
 
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.NETWORK_HOST;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.OPEN_HOSTNAME;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.PORT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -34,6 +37,7 @@ import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.basictypes.ConnectionError;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.junit.Test;
 
 /**
@@ -76,11 +80,11 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
     public void testConnectWithRedirect() throws Exception {
-        Map<Object, Object> redirectInfo = new HashMap<Object, Object>();
+        Map<Symbol, Object> redirectInfo = new HashMap<Symbol, Object>();
 
-        redirectInfo.put("hostname", "localhost");
-        redirectInfo.put("network-host", "127.0.0.1");
-        redirectInfo.put("port", 5672);
+        redirectInfo.put(OPEN_HOSTNAME, "vhost");
+        redirectInfo.put(NETWORK_HOST, "127.0.0.1");
+        redirectInfo.put(PORT, 5672);
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             testPeer.rejectConnect(ConnectionError.REDIRECT, "Server is full, go away", redirectInfo);
@@ -90,7 +94,7 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
             } catch (JMSException jmsex) {
                 assertTrue(jmsex.getCause() instanceof ProviderRedirectedException);
                 ProviderRedirectedException redirectEx = (ProviderRedirectedException) jmsex.getCause();
-                assertEquals("localhost", redirectEx.getHostname());
+                assertEquals("vhost", redirectEx.getHostname());
                 assertEquals("127.0.0.1", redirectEx.getNetworkHost());
                 assertEquals(5672, redirectEx.getPort());
             } catch (Exception ex) {

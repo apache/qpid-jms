@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.jms.integration;
 
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.NETWORK_HOST;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.OPEN_HOSTNAME;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.PORT;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -53,6 +56,7 @@ import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.basictypes.ConnectionError;
 import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.transaction.TxnCapability;
 import org.junit.Test;
 
@@ -151,7 +155,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final String remoteURI = "amqp://localhost:" + testPeer.getServerPort();
 
-            Map<Object, Object> errorInfo = new HashMap<Object, Object>();
+            Map<Symbol, Object> errorInfo = new HashMap<Symbol, Object>();
             errorInfo.put(AmqpSupport.INVALID_FIELD, AmqpSupport.CONTAINER_ID);
 
             testPeer.rejectConnect(AmqpError.INVALID_FIELD, "Client ID already in use", errorInfo);
@@ -176,18 +180,18 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             final CountDownLatch done = new CountDownLatch(1);
             final AtomicReference<JMSException> asyncError = new AtomicReference<JMSException>();
 
-            final String REDIRECTED_HOSTNAME = "vhost";
-            final String REDIRECTED_NETWORK_HOST = "localhost";
-            final int REDIRECTED_PORT = 5677;
+            final String redirectVhost = "vhost";
+            final String redirectNetworkHost = "localhost";
+            final int redirectPort = 5677;
 
             // Don't set a ClientId, so that the underlying AMQP connection isn't established yet
             Connection connection = testFixture.establishConnecton(testPeer, false, null, null, null, false);
 
             // Tell the test peer to close the connection when executing its last handler
-            Map<Object, Object> errorInfo = new HashMap<Object, Object>();
-            errorInfo.put("hostname", REDIRECTED_HOSTNAME);
-            errorInfo.put("network-host", REDIRECTED_NETWORK_HOST);
-            errorInfo.put("port", 5677);
+            Map<Symbol, Object> errorInfo = new HashMap<Symbol, Object>();
+            errorInfo.put(OPEN_HOSTNAME, redirectVhost);
+            errorInfo.put(NETWORK_HOST, redirectNetworkHost);
+            errorInfo.put(PORT, 5677);
 
             testPeer.remotelyCloseConnection(true, ConnectionError.REDIRECT, "Connection redirected", errorInfo);
 
@@ -210,9 +214,9 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             assertTrue(asyncError.get().getCause() instanceof ProviderRedirectedException);
 
             ProviderRedirectedException redirect = (ProviderRedirectedException) asyncError.get().getCause();
-            assertEquals(REDIRECTED_HOSTNAME, redirect.getHostname());
-            assertEquals(REDIRECTED_NETWORK_HOST, redirect.getNetworkHost());
-            assertEquals(REDIRECTED_PORT, redirect.getPort());
+            assertEquals(redirectVhost, redirect.getHostname());
+            assertEquals(redirectNetworkHost, redirect.getNetworkHost());
+            assertEquals(redirectPort, redirect.getPort());
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 public class AmqpTestSupport extends QpidJmsTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(AmqpTestSupport.class);
+    private static final int PORT = Integer.getInteger("activemq.test.amqp.port", 0);
 
     protected boolean isAmqpDiscovery() {
         return false;
@@ -50,7 +51,7 @@ public class AmqpTestSupport extends QpidJmsTestSupport {
 
     @Override
     protected void addAdditionalConnectors(BrokerService brokerService, Map<String, Integer> portMap) throws Exception {
-        int port = 0;
+        int port = PORT;
         if (portMap.containsKey("amqp")) {
             port = portMap.get("amqp");
         }

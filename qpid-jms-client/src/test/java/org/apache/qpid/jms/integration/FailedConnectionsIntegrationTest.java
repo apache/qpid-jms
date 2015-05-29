@@ -29,10 +29,12 @@ import java.util.Map;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
+import javax.jms.InvalidClientIDException;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.provider.ProviderRedirectedException;
+import org.apache.qpid.jms.provider.amqp.AmqpSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
@@ -47,15 +49,40 @@ import org.junit.Test;
 public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 5000)
-    public void testConnectWithInvalidClientId() throws Exception {
+    public void testConnectWithInvalidClientIdThrowsJMSEWhenInvalidContainerHintNotPresent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             testPeer.rejectConnect(AmqpError.INVALID_FIELD, "Client ID already in use", null);
             try {
                 establishAnonymousConnecton(testPeer, true);
                 fail("Should have thrown JMSException");
             } catch (JMSException jmsEx) {
+                // Expected
             } catch (Exception ex) {
                 fail("Should have thrown JMSException: " + ex);
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testConnectWithInvalidClientIdThrowsICIDEWhenInvalidContainerHintPresent() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final String remoteURI = "amqp://localhost:" + testPeer.getServerPort();
+
+            Map<Symbol, Object> errorInfo = new HashMap<Symbol, Object>();
+            errorInfo.put(AmqpSupport.INVALID_FIELD, AmqpSupport.CONTAINER_ID);
+
+            testPeer.rejectConnect(AmqpError.INVALID_FIELD, "Client ID already in use", errorInfo);
+
+            try {
+                ConnectionFactory factory = new JmsConnectionFactory(remoteURI);
+                Connection connection = factory.createConnection();
+                connection.setClientID("in-use-client-id");
+
+                fail("Should have thrown InvalidClientIDException");
+            } catch (InvalidClientIDException e) {
+                // Expected
             }
 
             testPeer.waitForAllHandlersToComplete(1000);

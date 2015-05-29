@@ -150,30 +150,6 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
-    public void testConnectionThrowsInvalidClientIdExceptionWhenInvalidContainerHintPresent() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            final String remoteURI = "amqp://localhost:" + testPeer.getServerPort();
-
-            Map<Symbol, Object> errorInfo = new HashMap<Symbol, Object>();
-            errorInfo.put(AmqpSupport.INVALID_FIELD, AmqpSupport.CONTAINER_ID);
-
-            testPeer.rejectConnect(AmqpError.INVALID_FIELD, "Client ID already in use", errorInfo);
-
-            try {
-                ConnectionFactory factory = new JmsConnectionFactory(remoteURI);
-                Connection connection = factory.createConnection();
-                connection.setClientID("in-use-client-id");
-
-                fail("Should have thrown InvalidClientIDException");
-            } catch (InvalidClientIDException e) {
-                // Expected
-            }
-
-            testPeer.waitForAllHandlersToComplete(1000);
-        }
-    }
-
     @Test(timeout = 10000)
     public void testRemotelyEndConnectionWithRedirect() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {

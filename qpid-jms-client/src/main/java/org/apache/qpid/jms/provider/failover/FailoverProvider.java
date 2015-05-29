@@ -511,7 +511,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             if (cause instanceof ProviderRedirectedException) {
                 ProviderRedirectedException redirect = (ProviderRedirectedException) cause;
                 try {
-                    uris.add(new URI(failedURI.getScheme() + "://" + redirect.getNetworkHost() + ":" + redirect.getPort()));
+                    uris.addFirst(new URI(failedURI.getScheme() + "://" + redirect.getNetworkHost() + ":" + redirect.getPort()));
                 } catch (URISyntaxException ex) {
                     LOG.warn("Could not construct redirection URI from remote provided information");
                 }

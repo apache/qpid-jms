@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.jms.util.URISupport;
 import org.slf4j.Logger;
@@ -41,7 +42,7 @@ public class FailoverUriPool {
 
     private final LinkedList<URI> uris;
     private final Map<String, String> nestedOptions;
-    private boolean randomize = DEFAULT_RANDOMIZE_ENABLED;
+    private final AtomicBoolean randomize = new AtomicBoolean(DEFAULT_RANDOMIZE_ENABLED);
 
     public FailoverUriPool() {
         this.uris = new LinkedList<URI>();
@@ -67,14 +68,18 @@ public class FailoverUriPool {
      * @return the current size of the URI pool.
      */
     public int size() {
-        return uris.size();
+        synchronized (uris) {
+            return uris.size();
+        }
     }
 
     /**
      * @return true if the URI pool is empty.
      */
     public boolean isEmpty() {
-        return uris.isEmpty();
+        synchronized (uris) {
+            return uris.isEmpty();
+        }
     }
 
     /**
@@ -86,9 +91,11 @@ public class FailoverUriPool {
      */
     public URI getNext() {
         URI next = null;
-        if (!uris.isEmpty()) {
-            next = uris.removeFirst();
-            uris.addLast(next);
+        synchronized (uris) {
+            if (!uris.isEmpty()) {
+                next = uris.removeFirst();
+                uris.addLast(next);
+            }
         }
 
         return next;
@@ -101,7 +108,9 @@ public class FailoverUriPool {
      */
     public void connected() {
         if (isRandomize()) {
-            Collections.shuffle(uris);
+            synchronized (uris) {
+                Collections.shuffle(uris);
+            }
         }
     }
 
@@ -109,20 +118,23 @@ public class FailoverUriPool {
      * @return true if this pool returns the URI values in random order.
      */
     public boolean isRandomize() {
-        return randomize;
+        return randomize.get();
     }
 
     /**
      * Sets whether the URIs that are returned by this pool are returned in random
      * order or not.  If false the URIs are returned in FIFO order.
      *
-     * @param randomize
+     * @param random
      *        true to have the URIs returned in a random order.
      */
-    public void setRandomize(boolean randomize) {
-        this.randomize = randomize;
-        if (randomize) {
-            Collections.shuffle(uris);
+    public void setRandomize(boolean random) {
+        if (randomize.compareAndSet(!random, random)) {
+            if (random) {
+                synchronized (uris) {
+                    Collections.shuffle(uris);
+                }
+            }
         }
     }
 
@@ -134,16 +146,52 @@ public class FailoverUriPool {
      *        The new URI to add to the pool.
      */
     public void add(URI uri) {
-        if (uri != null && !contains(uri)) {
-            if (!nestedOptions.isEmpty()) {
-                try {
-                    uri = URISupport.applyParameters(uri, nestedOptions);
-                } catch (URISyntaxException e) {
-                    LOG.debug("Failed to add nested options to uri: {}", uri);
-                }
-            }
+        if (uri == null) {
+            return;
+        }
 
-            this.uris.add(uri);
+        synchronized (uris) {
+            if (!contains(uri)) {
+                if (!nestedOptions.isEmpty()) {
+                    try {
+                        uri = URISupport.applyParameters(uri, nestedOptions);
+                    } catch (URISyntaxException e) {
+                        LOG.debug("Failed to add nested options to uri: {}", uri);
+                    }
+                }
+
+                uris.add(uri);
+            }
+        }
+    }
+
+    /**
+     * Adds a new URI to the pool if not already contained within.  The URI will have
+     * any nested options that have been configured added to its existing set of options.
+     *
+     * The URI is added to the head of the pooled URIs and will be the next value that
+     * is returned from the pool.
+     *
+     * @param uri
+     *        The new URI to add to the pool.
+     */
+    public void addFirst(URI uri) {
+        if (uri == null) {
+            return;
+        }
+
+        synchronized (uris) {
+            if (!contains(uri)) {
+                if (!nestedOptions.isEmpty()) {
+                    try {
+                        uri = URISupport.applyParameters(uri, nestedOptions);
+                    } catch (URISyntaxException e) {
+                        LOG.debug("Failed to add nested options to uri: {}", uri);
+                    }
+                }
+
+                uris.addFirst(uri);
+            }
         }
     }
 
@@ -152,9 +200,23 @@ public class FailoverUriPool {
      *
      * @param uri
      *        The URI to attempt to remove from the pool.
+     *
+     * @returns true if the given URI was removed from the pool.
      */
-    public void remove(URI uri) {
-        this.uris.remove(uri);
+    public boolean remove(URI uri) {
+        if (uri == null) {
+            return false;
+        }
+
+        synchronized (uris) {
+            for (URI candidate : uris) {
+                if (compareURIs(uri, candidate)) {
+                    return uris.remove(candidate);
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -166,6 +228,8 @@ public class FailoverUriPool {
     public Map<String, String> getNestedOptions() {
         return nestedOptions;
     }
+
+    //----- Internal methods that require the locks be held ------------------//
 
     private boolean contains(URI newURI) {
         boolean result = false;

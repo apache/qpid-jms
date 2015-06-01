@@ -26,6 +26,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
@@ -82,6 +83,31 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
         assertNull(amqpObjectMessageFacade.getObject());
     }
 
+    // ---------- Test state of messages prepared to send -----------------//
+
+    @Test
+    public void testNewMessageToSendHasBodySectionRepresentingNull() throws Exception {
+        doNewMessageToSendHasBodySectionRepresentingNull(false);
+    }
+
+    @Test
+    public void testNewAmqpTypedMessageToSendHasBodySectionRepresentingNull() throws Exception {
+        doNewMessageToSendHasBodySectionRepresentingNull(true);
+    }
+
+    private void doNewMessageToSendHasBodySectionRepresentingNull(boolean amqpTyped) throws Exception {
+        AmqpJmsObjectMessageFacade amqpObjectMessageFacade = createNewObjectMessageFacade(amqpTyped);
+        amqpObjectMessageFacade.onSend(false, false, 0);
+
+        Message protonMessage = amqpObjectMessageFacade.getAmqpMessage();
+        assertNotNull("Message body should be presents", protonMessage.getBody());
+        if(amqpTyped) {
+            assertSame("Expected existing body section to be replaced", AmqpTypedObjectDelegate.NULL_OBJECT_BODY, protonMessage.getBody());
+        } else {
+            assertSame("Expected existing body section to be replaced", AmqpSerializedObjectDelegate.NULL_OBJECT_BODY, protonMessage.getBody());
+        }
+    }
+
     // ---------- test for normal message operations -------------------------//
 
     /**
@@ -132,8 +158,8 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
     }
 
     /**
-    * Test that setting a null object on a message results in the underlying
-    * body section being cleared, ensuring getObject returns null.
+    * Test that setting a null object on a message results in the underlying body
+    * section being set with the null object body, ensuring getObject returns null.
     */
     @Test
     public void testSetObjectWithNullClearsExistingBodySection() throws Exception {
@@ -145,13 +171,13 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         assertNotNull("Expected existing body section to be found", protonMessage.getBody());
         amqpObjectMessageFacade.setObject(null);
-        assertNull("Expected existing body section to be cleared", protonMessage.getBody());
+        assertSame("Expected existing body section to be replaced", AmqpSerializedObjectDelegate.NULL_OBJECT_BODY, protonMessage.getBody());
         assertNull("Expected null object", amqpObjectMessageFacade.getObject());
     }
 
     /**
-    * Test that setting a null object on a message results in the underlying
-    * body section being cleared, ensuring getObject returns null.
+    * Test that clearing the body on a message results in the underlying body
+    * section being set with the null object body, ensuring getObject returns null.
     */
     @Test
     public void testClearBodyWithExistingSerializedBodySection() throws Exception {
@@ -163,7 +189,7 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         assertNotNull("Expected existing body section to be found", protonMessage.getBody());
         amqpObjectMessageFacade.clearBody();
-        assertNull("Expected existing body section to be cleared", protonMessage.getBody());
+        assertSame("Expected existing body section to be replaced", AmqpSerializedObjectDelegate.NULL_OBJECT_BODY, protonMessage.getBody());
         assertNull("Expected null object", amqpObjectMessageFacade.getObject());
     }
 

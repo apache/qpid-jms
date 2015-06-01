@@ -33,6 +33,8 @@ import org.apache.qpid.proton.message.Message;
  */
 public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
 
+    static final AmqpValue NULL_OBJECT_BODY = new AmqpValue(null);
+
     private final Message message;
 
     /**
@@ -75,9 +77,7 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
     @Override
     public void setObject(Serializable value) throws IOException {
         if (value == null) {
-            // TODO: verify whether not sending a body is OK, send some form of
-            // null (AmqpValue containing null) instead if it isn't?
-            message.setBody(null);
+            message.setBody(NULL_OBJECT_BODY);
         } else if (isSupportedAmqpValueObjectType(value)) {
             // TODO: This is a temporary hack, we actually need to take a snapshot of the object
             // at this point in time, not simply set the object itself into the Proton message.
@@ -98,6 +98,9 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
     @Override
     public void onSend() {
         message.setContentType(null);
+        if (message.getBody() == null) {
+            message.setBody(NULL_OBJECT_BODY);
+        }
     }
 
     private boolean isSupportedAmqpValueObjectType(Serializable serializable) {

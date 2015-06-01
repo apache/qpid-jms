@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -34,7 +36,18 @@ import org.apache.qpid.proton.message.Message;
  */
 public class AmqpSerializedObjectDelegate implements AmqpObjectTypeDelegate {
 
-    public static final String CONTENT_TYPE = "application/x-java-serialized-object";
+    static final Data NULL_OBJECT_BODY;
+    static
+    {
+        byte[] bytes;
+        try {
+            bytes = getSerializedBytes(null);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to initialise null object body", e);
+        }
+
+        NULL_OBJECT_BODY = new Data(new Binary(bytes));
+    }
 
     private final Message message;
 
@@ -46,7 +59,18 @@ public class AmqpSerializedObjectDelegate implements AmqpObjectTypeDelegate {
      */
     public AmqpSerializedObjectDelegate(Message message) {
         this.message = message;
-        this.message.setContentType(CONTENT_TYPE);
+        this.message.setContentType(SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
+    }
+
+    private static byte[] getSerializedBytes(Serializable value) throws IOException {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+            oos.writeObject(value);
+            oos.flush();
+            oos.close();
+
+            return baos.toByteArray();
+        }
     }
 
     @Override
@@ -54,7 +78,7 @@ public class AmqpSerializedObjectDelegate implements AmqpObjectTypeDelegate {
         Binary bin = null;
 
         Section body = message.getBody();
-        if (body == null) {
+        if (body == null || body == NULL_OBJECT_BODY) {
             return null;
         } else if (body instanceof Data) {
             bin = ((Data) body).getValue();
@@ -80,26 +104,19 @@ public class AmqpSerializedObjectDelegate implements AmqpObjectTypeDelegate {
     @Override
     public void setObject(Serializable value) throws IOException {
         if(value == null) {
-            // TODO: verify whether not sending a body is ok,
-            //       send a serialized null instead if it isn't
-            message.setBody(null);
+            message.setBody(NULL_OBJECT_BODY);
         } else {
-            try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                 ObjectOutputStream oos = new ObjectOutputStream(baos)) {
-
-               oos.writeObject(value);
-               oos.flush();
-               oos.close();
-
-               byte[] bytes = baos.toByteArray();
-               message.setBody(new Data(new Binary(bytes)));
-            }
+            byte[] bytes = getSerializedBytes(value);
+            message.setBody(new Data(new Binary(bytes)));
         }
     }
 
     @Override
     public void onSend() {
-        this.message.setContentType(CONTENT_TYPE);
+        this.message.setContentType(SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
+        if(message.getBody() == null) {
+            message.setBody(NULL_OBJECT_BODY);
+        }
     }
 
     @Override

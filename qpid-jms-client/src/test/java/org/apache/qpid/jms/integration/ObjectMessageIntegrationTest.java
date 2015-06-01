@@ -25,10 +25,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.HashMap;
 
 import javax.jms.Connection;
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -62,6 +64,20 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
 
     @Test(timeout = 5000)
     public void testSendBasicObjectMessageWithSerializedContent() throws Exception {
+        doSendBasicObjectMessageWithSerializedContentTestImpl("myObjectString", false);
+    }
+
+    @Test(timeout = 5000)
+    public void testSendBasicObjectMessageWithSerializedContentExplicitNull() throws Exception {
+        doSendBasicObjectMessageWithSerializedContentTestImpl(null, true);
+    }
+
+    @Test(timeout = 5000)
+    public void testSendBasicObjectMessageWithSerializedContentImplicitNull() throws Exception {
+        doSendBasicObjectMessageWithSerializedContentTestImpl(null, false);
+    }
+
+    private void doSendBasicObjectMessageWithSerializedContentTestImpl(String content, boolean setObjectIfNull) throws JMSException, IOException, InterruptedException, Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin(true);
@@ -70,8 +86,6 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
             MessageProducer producer = session.createProducer(queue);
-
-            String content = "myObjectString";
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ObjectOutputStream oos = new ObjectOutputStream(baos);
@@ -94,7 +108,9 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
             testPeer.expectTransfer(messageMatcher);
 
             ObjectMessage message = session.createObjectMessage();
-            message.setObject(content);
+            if (content != null || setObjectIfNull) {
+                message.setObject(content);
+            }
 
             producer.send(message);
 

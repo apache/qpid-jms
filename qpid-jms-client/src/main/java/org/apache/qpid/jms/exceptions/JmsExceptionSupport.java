@@ -32,71 +32,114 @@ public final class JmsExceptionSupport {
 
     private JmsExceptionSupport() {}
 
-    public static JMSException create(String msg, Throwable cause) {
-        JMSException exception = new JMSException(msg);
+    /**
+     * Creates or passes through a JMSException to be thrown to the client.
+     *
+     * In the event that the exception passed to this method is already a
+     * JMSException it is passed through unmodified, otherwise a new JMSException
+     * is created with the given message and the cause is set to the given
+     * cause Throwable instance.
+     *
+     * @param message
+     *        The message value to set when a new JMSException is created.
+     * @param cause
+     *        The exception that caused this error state.
+     *
+     * @return a JMSException instance.
+     */
+    public static JMSException create(String message, Throwable cause) {
+        if (cause instanceof JMSException) {
+            return (JMSException) cause;
+        }
+
+        if (cause.getCause() instanceof JMSException) {
+            return (JMSException) cause.getCause();
+        }
+
+        if (message == null || message.isEmpty()) {
+            message = cause.getMessage();
+            if (message == null || message.isEmpty()) {
+                message = cause.toString();
+            }
+        }
+
+        JMSException exception = new JMSException(message);
+        if (cause instanceof Exception) {
+            exception.setLinkedException((Exception) cause);
+        }
         exception.initCause(cause);
         return exception;
     }
 
-    public static JMSException create(String msg, Exception cause) {
-        JMSException exception = new JMSException(msg);
-        exception.setLinkedException(cause);
-        exception.initCause(cause);
-        return exception;
-    }
-
+    /**
+     * Creates or passes through a JMSException to be thrown to the client.
+     *
+     * In the event that the exception passed to this method is already a
+     * JMSException it is passed through unmodified, otherwise a new JMSException
+     * is created using the error message taken from the given Throwable value
+     * and the cause value is set to the given Throwable instance.
+     *
+     * @param cause
+     *        The exception that caused this error state.
+     *
+     * @return a JMSException instance.
+     */
     public static JMSException create(Throwable cause) {
-        if (cause instanceof JMSException) {
-            return (JMSException) cause;
-        }
-        if (cause.getCause() instanceof JMSException) {
-            return (JMSException) cause.getCause();
+        return create(null, cause);
+    }
+
+    /**
+     * Creates or passes through a MessageEOFException to be thrown to the client.
+     *
+     * In the event that the exception passed to this method is already a
+     * MessageEOFException it is passed through unmodified, otherwise a new
+     * MessageEOFException is created using the error message taken from the
+     * given Throwable value and the cause value is set to the given Throwable
+     * instance.
+     *
+     * @param cause
+     *        The exception that caused this error state.
+     *
+     * @return a MessageEOFException instance.
+     */
+    public static MessageEOFException createMessageEOFException(Throwable cause) {
+        String message = cause.getMessage();
+        if (message == null || message.length() == 0) {
+            message = cause.toString();
         }
 
-        String msg = cause.getMessage();
-        if (msg == null || msg.length() == 0) {
-            msg = cause.toString();
+        MessageEOFException exception = new MessageEOFException(message);
+        if (cause instanceof Exception) {
+            exception.setLinkedException((Exception) cause);
         }
-        JMSException exception = new JMSException(msg);
         exception.initCause(cause);
         return exception;
     }
 
-    public static JMSException create(Exception cause) {
-        if (cause instanceof JMSException) {
-            return (JMSException) cause;
-        }
-        if (cause.getCause() instanceof JMSException) {
-            return (JMSException) cause.getCause();
-        }
-
-        String msg = cause.getMessage();
-        if (msg == null || msg.length() == 0) {
-            msg = cause.toString();
-        }
-        JMSException exception = new JMSException(msg);
-        exception.setLinkedException(cause);
-        exception.initCause(cause);
-        return exception;
-    }
-
-    public static MessageEOFException createMessageEOFException(Exception cause) {
-        String msg = cause.getMessage();
-        if (msg == null || msg.length() == 0) {
-            msg = cause.toString();
-        }
-        MessageEOFException exception = new MessageEOFException(msg);
-        exception.setLinkedException(cause);
-        exception.initCause(cause);
-        return exception;
-    }
-
+    /**
+     * Creates or passes through a MessageFormatException to be thrown to the client.
+     *
+     * In the event that the exception passed to this method is already a
+     * MessageFormatException it is passed through unmodified, otherwise a new
+     * MessageFormatException is created using the error message taken from the
+     * given Throwable value and the cause value is set to the given Throwable
+     * instance.
+     *
+     * @param cause
+     *        The exception that caused this error state.
+     *
+     * @return a MessageEOFException instance.
+     */
     public static MessageFormatException createMessageFormatException(Throwable cause) {
-        String msg = cause.getMessage();
-        if (msg == null || msg.length() == 0) {
-            msg = cause.toString();
+        String message = cause.getMessage();
+        if (message == null || message.length() == 0) {
+            message = cause.toString();
         }
-        MessageFormatException exception = new MessageFormatException(msg);
+
+        MessageFormatException exception = new MessageFormatException(message);
+        if (cause instanceof Exception) {
+            exception.setLinkedException((Exception) cause);
+        }
         exception.initCause(cause);
         return exception;
     }

@@ -180,7 +180,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             JmsConnection result = new JmsConnection(connectionId, provider, getClientIdGenerator());
             return configureConnection(result, username, password);
         } catch (Exception e) {
-            throw JmsExceptionSupport.create(e);
+            throw JmsExceptionSupport.create("Failed to create connection to: " + getRemoteURI(), e);
         }
     }
 

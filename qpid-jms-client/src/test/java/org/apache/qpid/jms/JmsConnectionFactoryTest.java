@@ -40,8 +40,12 @@ import javax.jms.JMSException;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JmsConnectionFactoryTest extends QpidJmsTestCase {
+
+    private static final Logger LOG = LoggerFactory.getLogger(JmsConnectionFactoryTest.class);
 
     private static final String CLIENT_ID_PROP = "clientID";
     private static final String QUEUE_PREFIX_PROP = "queuePrefix";
@@ -397,5 +401,26 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
 
         assertFalse("Properties map should not contain ExceptionListener", props.containsKey("exceptionListener"));
         assertEquals("Properties were not equal", props, props2);
+    }
+
+    @Test(timeout = 5000)
+    public void testCreateConnectionWithPortOutOfRange() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory("amqp://127.0.0.1:567564562");
+
+        try {
+            factory.createConnection();
+            fail("Should have thrown exception");
+        } catch (JMSException jmse) {
+            LOG.debug("Caught Ex -> ", jmse);
+        }
+
+        factory = new JmsConnectionFactory("amqp://127.0.0.1:5675645622");
+
+        try {
+            factory.createConnection();
+            fail("Should have thrown exception");
+        } catch (JMSException jmse) {
+            LOG.debug("Caught Ex -> ", jmse);
+        }
     }
 }

@@ -21,16 +21,26 @@
 package org.apache.qpid.jms.integration;
 
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.JMSSecurityException;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.junit.Test;
 
 public class SaslIntegrationTest extends QpidJmsTestCase {
+
+    private static final Symbol ANONYMOUS = Symbol.valueOf("ANONYMOUS");
+    private static final Symbol PLAIN = Symbol.valueOf("PLAIN");
+    private static final Symbol CRAM_MD5 = Symbol.valueOf("CRAM-MD5");
 
     @Test(timeout = 5000)
     public void testSaslExternalConnection() throws Exception {
@@ -97,6 +107,40 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectClose();
             connection.close();
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testAnonymousSelectedWhenNoCredentialsWereSupplied() throws Exception {
+        doMechanismSelectedTestImpl(null, null, ANONYMOUS, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS});
+    }
+
+    @Test(timeout = 5000)
+    public void testAnonymousSelectedWhenNoPasswordWasSupplied() throws Exception {
+        doMechanismSelectedTestImpl("username", null, ANONYMOUS, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS});
+    }
+
+    @Test(timeout = 5000)
+    public void testCramMd5SelectedWhenCredentialsPresent() throws Exception {
+        doMechanismSelectedTestImpl("username", "password", CRAM_MD5, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS});
+    }
+
+    private void doMechanismSelectedTestImpl(String username, String password, Symbol clientSelectedMech, Symbol[] serverMechs) throws JMSException, InterruptedException, Exception, IOException {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            testPeer.expectFailingSaslConnect(serverMechs, clientSelectedMech);
+
+            ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + "?jms.clientID=myclientid");
+            try {
+                factory.createConnection(username, password);
+                fail("Excepted exception to be thrown");
+            }catch (JMSSecurityException jmsse) {
+                // Expected, we deliberately failed the SASL process,
+                // we only wanted to verify the correct mechanism
+                // was selected, other tests verify the remainder.
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 }

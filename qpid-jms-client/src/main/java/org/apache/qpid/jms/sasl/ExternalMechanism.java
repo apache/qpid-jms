@@ -40,4 +40,9 @@ public class ExternalMechanism extends AbstractMechanism {
     public String getName() {
         return "EXTERNAL";
     }
+
+    @Override
+    public boolean isApplicable(String username, String password) {
+        return true;
+    }
 }

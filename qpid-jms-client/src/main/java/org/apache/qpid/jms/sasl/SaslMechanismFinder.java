@@ -47,12 +47,16 @@ public class SaslMechanismFinder {
      * mechanisms from a remote peer.  Can return null if no matching Mechanisms are
      * found.
      *
+     * @param username
+     *        the username, or null if there is none
+     * @param password
+     *        the password, or null if there is none
      * @param remoteMechanisms
      *        list of mechanism names that are supported by the remote peer.
      *
      * @return the best matching Mechanism for the supported remote set.
      */
-    public static Mechanism findMatchingMechanism(String...remoteMechanisms) {
+    public static Mechanism findMatchingMechanism(String username, String password, String... remoteMechanisms) {
 
         Mechanism match = null;
         List<Mechanism> found = new ArrayList<Mechanism>();
@@ -60,7 +64,12 @@ public class SaslMechanismFinder {
         for (String remoteMechanism : remoteMechanisms) {
             MechanismFactory factory = findMechanismFactory(remoteMechanism);
             if (factory != null) {
-                found.add(factory.createMechanism());
+                Mechanism mech = factory.createMechanism();
+                if(mech.isApplicable(username, password)) {
+                    found.add(mech);
+                } else {
+                    LOG.debug("Skipping {} mechanism because the available credentials are not sufficient", mech);
+                }
             }
         }
 

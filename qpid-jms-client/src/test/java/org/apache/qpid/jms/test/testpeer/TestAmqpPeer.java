@@ -364,6 +364,31 @@ public class TestAmqpPeer implements AutoCloseable
         return openFrame;
     }
 
+    public void expectFailingSaslConnect(Symbol[] serverMechs, Symbol clientSelectedMech)
+    {
+        SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(serverMechs);
+        addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
+                                            new FrameSender(
+                                                    this, FrameType.SASL, 0,
+                                                    saslMechanismsFrame, null)));
+
+        SaslInitMatcher saslInitMatcher = new SaslInitMatcher().withMechanism(equalTo(clientSelectedMech));
+        saslInitMatcher.onSuccess(new AmqpPeerRunnable()
+        {
+            @Override
+            public void run()
+            {
+                TestAmqpPeer.this.sendFrame(
+                        FrameType.SASL, 0,
+                        new SaslOutcomeFrame().setCode(UnsignedByte.valueOf((byte)1)),
+                        null,
+                        false);
+                _driverRunnable.expectHeader();
+            }
+        });
+        addHandler(saslInitMatcher);
+    }
+
     public void expectAnonymousConnect(boolean authorize)
     {
         expectAnonymousConnect(authorize, null);

@@ -29,7 +29,6 @@ public abstract class AbstractMechanism implements Mechanism {
 
     private String username;
     private String password;
-    private Map<String, Object> properties = new HashMap<String, Object>();
 
     @Override
     public int compareTo(Mechanism other) {
@@ -61,16 +60,6 @@ public abstract class AbstractMechanism implements Mechanism {
     @Override
     public String getPassword() {
         return this.password;
-    }
-
-    @Override
-    public void setProperties(Map<String, Object> properties) {
-        this.properties = properties;
-    }
-
-    @Override
-    public Map<String, Object> getProperties() {
-        return this.properties;
     }
 
     @Override

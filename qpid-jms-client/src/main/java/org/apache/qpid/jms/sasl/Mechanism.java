@@ -113,19 +113,6 @@ public interface Mechanism extends Comparable<Mechanism> {
      */
     String getPassword();
 
-    /**
-     * Sets any additional Mechanism specific properties using a {@code Map<String, Object>}
-     *
-     * @param options
-     *        the map of additional properties that this Mechanism should utilize.
-     */
-    void setProperties(Map<String, Object> options);
-
-    /**
-     * The currently set Properties for this Mechanism.
-     *
-     * @return the current set of configuration Properties for this Mechanism.
-     */
-    Map<String, Object> getProperties();
+    boolean isApplicable(String username, String password);
 
 }

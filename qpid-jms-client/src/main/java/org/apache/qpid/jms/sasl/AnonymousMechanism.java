@@ -40,4 +40,9 @@ public class AnonymousMechanism extends AbstractMechanism {
     public String getName() {
         return "ANONYMOUS";
     }
+
+    @Override
+    public boolean isApplicable(String username, String password) {
+        return true;
+    }
 }

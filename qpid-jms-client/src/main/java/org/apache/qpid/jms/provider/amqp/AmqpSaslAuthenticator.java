@@ -77,7 +77,7 @@ public class AmqpSaslAuthenticator {
         try {
             String[] remoteMechanisms = sasl.getRemoteMechanisms();
             if (remoteMechanisms != null && remoteMechanisms.length != 0) {
-                mechanism = SaslMechanismFinder.findMatchingMechanism(remoteMechanisms);
+                mechanism = SaslMechanismFinder.findMatchingMechanism(info.getUsername(), info.getPassword(), remoteMechanisms);
                 if (mechanism != null) {
                     mechanism.setUsername(info.getUsername());
                     mechanism.setPassword(info.getPassword());

@@ -16,8 +16,6 @@
  */
 package org.apache.qpid.jms.sasl;
 
-import java.util.Map;
-
 import javax.security.sasl.SaslException;
 
 /**

@@ -16,9 +16,6 @@
  */
 package org.apache.qpid.jms.sasl;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Base class for SASL Authentication Mechanism that implements the basic
  * methods of a Mechanism class.

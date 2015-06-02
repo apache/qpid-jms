@@ -379,6 +379,7 @@ public class TestAmqpPeer implements AutoCloseable
 
         addHandler(new SaslInitMatcher()
             .withMechanism(equalTo(Symbol.valueOf("ANONYMOUS")))
+            .withInitialResponse(equalTo(new Binary(new byte[0])))
             .onSuccess(new AmqpPeerRunnable()
             {
                 @Override
@@ -527,6 +528,7 @@ public class TestAmqpPeer implements AutoCloseable
 
         addHandler(new SaslInitMatcher()
             .withMechanism(equalTo(Symbol.valueOf("ANONYMOUS")))
+            .withInitialResponse(equalTo(new Binary(new byte[0])))
             .onSuccess(new AmqpPeerRunnable()
             {
                 @Override

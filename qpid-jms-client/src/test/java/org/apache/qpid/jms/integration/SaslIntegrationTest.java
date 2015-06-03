@@ -37,6 +37,7 @@ import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.transports.TransportSslOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 
 public class SaslIntegrationTest extends QpidJmsTestCase {
@@ -153,6 +154,10 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectFailingSaslConnect(serverMechs, clientSelectedMech);
 
+            // Work around race with test peer close
+            testPeer.expectHeaderAndOpen();
+            testPeer.expectClose(Matchers.nullValue(), false);
+
             ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + "?jms.clientID=myclientid");
             try {
                 factory.createConnection(username, password);
@@ -199,6 +204,10 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
             }
 
             testPeer.expectFailingSaslConnect(serverMechs, clientSelectedMech);
+
+            // Work around race with test peer close
+            testPeer.expectHeaderAndOpen();
+            testPeer.expectClose(Matchers.nullValue(), false);
 
             JmsConnectionFactory factory = new JmsConnectionFactory("amqps://localhost:" + testPeer.getServerPort() + connOptions);
             try {

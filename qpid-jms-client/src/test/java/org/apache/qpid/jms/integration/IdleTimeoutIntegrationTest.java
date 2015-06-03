@@ -179,7 +179,7 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
 
             testPeer.waitForAllHandlersToComplete(1000);
             // The peer is still connected, so it will get the close frame with error
-            testPeer.expectClose(Matchers.notNullValue());
+            testPeer.expectClose(Matchers.notNullValue(), false);
             assertNull(testPeer.getThrowable());
             testPeer.setSuppressReadExceptionOnClose(true);
 

@@ -600,16 +600,25 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectClose()
     {
-        expectClose(Matchers.nullValue());
+        expectClose(Matchers.nullValue(), true);
     }
 
-    public void expectClose(Matcher<?> errorMatcher)
+    public void expectClose(Matcher<?> errorMatcher, boolean sendReply)
     {
-        addHandler(new CloseMatcher()
-            .withError(errorMatcher)
-            .onSuccess(new FrameSender(this, FrameType.AMQP, 0,
+        CloseMatcher closeMatcher = new CloseMatcher().withError(errorMatcher);
+        if(sendReply) {
+            closeMatcher.onSuccess(new FrameSender(this, FrameType.AMQP, 0,
                     new CloseFrame(),
-                    null)));
+                    null));
+        }
+
+        addHandler(closeMatcher);
+    }
+
+    public void expectHeaderAndOpen()
+    {
+        addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
+        addHandler(new OpenMatcher());
     }
 
     public void expectBegin(boolean expectSessionFlow)

@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import java.security.Principal;
+
 import javax.jms.JMSSecurityException;
 import javax.security.sasl.SaslException;
 
@@ -32,6 +34,7 @@ public class AmqpSaslAuthenticator {
     private final Sasl sasl;
     private final JmsConnectionInfo info;
     private Mechanism mechanism;
+    private Principal localPrincipal;
 
     /**
      * Create the authenticator and initialize it.
@@ -40,10 +43,13 @@ public class AmqpSaslAuthenticator {
      *        The Proton SASL entry point this class will use to manage the authentication.
      * @param info
      *        The Connection information used to provide credentials to the remote peer.
+     * @param localPrincipal
+     *        The local Principal associated with the transport, or null if there is none.
      */
-    public AmqpSaslAuthenticator(Sasl sasl, JmsConnectionInfo info) {
+    public AmqpSaslAuthenticator(Sasl sasl, JmsConnectionInfo info, Principal localPrincipal) {
         this.sasl = sasl;
         this.info = info;
+        this.localPrincipal = localPrincipal;
     }
 
     /**
@@ -77,7 +83,7 @@ public class AmqpSaslAuthenticator {
         try {
             String[] remoteMechanisms = sasl.getRemoteMechanisms();
             if (remoteMechanisms != null && remoteMechanisms.length != 0) {
-                mechanism = SaslMechanismFinder.findMatchingMechanism(info.getUsername(), info.getPassword(), remoteMechanisms);
+                mechanism = SaslMechanismFinder.findMatchingMechanism(info.getUsername(), info.getPassword(), localPrincipal, remoteMechanisms);
                 if (mechanism != null) {
                     mechanism.setUsername(info.getUsername());
                     mechanism.setPassword(info.getPassword());
@@ -91,7 +97,7 @@ public class AmqpSaslAuthenticator {
                     }
                 } else {
                     // TODO - Better error message.
-                    throw new JMSSecurityException("Could not find a matching SASL mechanism for the remote peer.");
+                    throw new JMSSecurityException("Could not find a suitable SASL mechanism for the remote peer using the available credentials.");
                 }
             }
         } catch (SaslException se) {

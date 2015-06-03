@@ -24,6 +24,7 @@ public class MockProviderConfiguration {
     private boolean failOnConnect;
     private boolean failOnStart;
     private boolean failOnClose;
+    private String localPrincipal;
 
     public boolean isFailOnConnect() {
         return failOnConnect;
@@ -48,4 +49,13 @@ public class MockProviderConfiguration {
     public void setFailOnClose(boolean value) {
         this.failOnClose = value;
     }
+
+    public String getLocalPrincipal() {
+        return localPrincipal;
+    }
+
+    public void setLocalPrincipal(String localPrincipal) {
+        this.localPrincipal = localPrincipal;
+    }
+
 }

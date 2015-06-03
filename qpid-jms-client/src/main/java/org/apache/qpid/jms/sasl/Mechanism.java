@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.sasl;
 
+import java.security.Principal;
+
 import javax.security.sasl.SaslException;
 
 /**
@@ -111,6 +113,6 @@ public interface Mechanism extends Comparable<Mechanism> {
      */
     String getPassword();
 
-    boolean isApplicable(String username, String password);
+    boolean isApplicable(String username, String password, Principal localPrincipal);
 
 }

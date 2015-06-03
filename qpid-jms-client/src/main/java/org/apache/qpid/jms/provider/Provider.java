@@ -18,6 +18,7 @@ package org.apache.qpid.jms.provider;
 
 import java.io.IOException;
 import java.net.URI;
+import java.security.Principal;
 
 import javax.jms.JMSException;
 
@@ -28,6 +29,7 @@ import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.transports.SSLTransport;
 
 /**
  * Defines the interface that an Implementation of a Specific wire level protocol
@@ -316,4 +318,11 @@ public interface Provider {
      */
     ProviderListener getProviderListener();
 
+    /**
+     * Get the local Principal associated with the {@link SSLTransport}
+     * if the Provider is using one.
+     *
+     * @return the {@link Principal}, or null if there isn't one
+     */
+    Principal getLocalPrincipal();
 }

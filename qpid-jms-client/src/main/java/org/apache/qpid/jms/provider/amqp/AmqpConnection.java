@@ -66,7 +66,7 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
         this.amqpMessageFactory = new AmqpJmsMessageFactory(this);
 
         if (sasl != null) {
-            this.authenticator = new AmqpSaslAuthenticator(sasl, info);
+            this.authenticator = new AmqpSaslAuthenticator(sasl, info, provider.getLocalPrincipal());
         }
 
         this.resource.getConnectionId().setProviderHint(this);

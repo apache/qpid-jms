@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.sasl;
 
+import java.security.Principal;
+
 /**
  * Implements the Anonymous SASL authentication mechanism.
  */
@@ -42,7 +44,7 @@ public class AnonymousMechanism extends AbstractMechanism {
     }
 
     @Override
-    public boolean isApplicable(String username, String password) {
+    public boolean isApplicable(String username, String password, Principal localPrincipal) {
         return true;
     }
 }

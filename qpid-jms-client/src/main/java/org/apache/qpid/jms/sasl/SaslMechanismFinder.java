@@ -16,6 +16,7 @@
  */
 package org.apache.qpid.jms.sasl;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -51,12 +52,14 @@ public class SaslMechanismFinder {
      *        the username, or null if there is none
      * @param password
      *        the password, or null if there is none
+     * @param localPrincipal
+     *        the Principal associated with the transport, or null if there is none
      * @param remoteMechanisms
      *        list of mechanism names that are supported by the remote peer.
      *
      * @return the best matching Mechanism for the supported remote set.
      */
-    public static Mechanism findMatchingMechanism(String username, String password, String... remoteMechanisms) {
+    public static Mechanism findMatchingMechanism(String username, String password, Principal localPrincipal, String... remoteMechanisms) {
 
         Mechanism match = null;
         List<Mechanism> found = new ArrayList<Mechanism>();
@@ -65,7 +68,7 @@ public class SaslMechanismFinder {
             MechanismFactory factory = findMechanismFactory(remoteMechanism);
             if (factory != null) {
                 Mechanism mech = factory.createMechanism();
-                if(mech.isApplicable(username, password)) {
+                if(mech.isApplicable(username, password, localPrincipal)) {
                     found.add(mech);
                 } else {
                     LOG.debug("Skipping {} mechanism because the available credentials are not sufficient", mech);

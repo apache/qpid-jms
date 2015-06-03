@@ -29,10 +29,13 @@ import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
+import javax.net.ssl.SSLContext;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
+import org.apache.qpid.jms.transports.TransportSslOptions;
+import org.apache.qpid.jms.transports.TransportSupport;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.junit.Test;
 
@@ -41,17 +44,37 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     private static final Symbol ANONYMOUS = Symbol.valueOf("ANONYMOUS");
     private static final Symbol PLAIN = Symbol.valueOf("PLAIN");
     private static final Symbol CRAM_MD5 = Symbol.valueOf("CRAM-MD5");
+    private static final Symbol EXTERNAL = Symbol.valueOf("EXTERNAL");
+
+    private static final String BROKER_JKS_KEYSTORE = "src/test/resources/broker-jks.keystore";
+    private static final String BROKER_JKS_TRUSTSTORE = "src/test/resources/broker-jks.truststore";
+    private static final String CLIENT_JKS_KEYSTORE = "src/test/resources/client-jks.keystore";
+    private static final String CLIENT_JKS_TRUSTSTORE = "src/test/resources/client-jks.truststore";
+    private static final String PASSWORD = "password";
 
     @Test(timeout = 5000)
     public void testSaslExternalConnection() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+        TransportSslOptions sslOptions = new TransportSslOptions();
+        sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
+        sslOptions.setKeyStorePassword(PASSWORD);
+        sslOptions.setVerifyHost(false);
+        sslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
+        sslOptions.setTrustStorePassword(PASSWORD);
 
+        String connOptions = "?transport.trustStoreLocation=" + CLIENT_JKS_TRUSTSTORE + "&" +
+                             "transport.trustStorePassword=" + PASSWORD + "&" +
+                             "transport.keyStoreLocation=" + CLIENT_JKS_KEYSTORE + "&" +
+                             "transport.keyStorePassword=" + PASSWORD;
+
+        SSLContext context = TransportSupport.createSslContext(sslOptions);
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(context, true);) {
             // Expect an EXTERNAL connection
             testPeer.expectExternalConnect();
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin(true);
 
-            ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort());
+            ConnectionFactory factory = new JmsConnectionFactory("amqps://localhost:" + testPeer.getServerPort() + connOptions);
             Connection connection = factory.createConnection();
             // Set a clientID to provoke the actual AMQP connection process to occur.
             connection.setClientID("clientName");
@@ -138,6 +161,51 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
                 // Expected, we deliberately failed the SASL process,
                 // we only wanted to verify the correct mechanism
                 // was selected, other tests verify the remainder.
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testExternalSelectedWhenLocalPrincipalPresent() throws Exception {
+        doMechanismSelectedExternalTestImpl(true, EXTERNAL, new Symbol[] {EXTERNAL, ANONYMOUS});
+    }
+
+    @Test(timeout = 5000)
+    public void testExternalNotSelectedWhenLocalPrincipalMissing() throws Exception {
+        doMechanismSelectedExternalTestImpl(false, ANONYMOUS, new Symbol[] {EXTERNAL, ANONYMOUS});
+    }
+
+    private void doMechanismSelectedExternalTestImpl(boolean requireClientCert, Symbol clientSelectedMech, Symbol[] serverMechs) throws Exception {
+        TransportSslOptions sslOptions = new TransportSslOptions();
+        sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
+        sslOptions.setKeyStorePassword(PASSWORD);
+        sslOptions.setVerifyHost(false);
+        if (requireClientCert) {
+            sslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
+            sslOptions.setTrustStorePassword(PASSWORD);
+        }
+
+        SSLContext context = TransportSupport.createSslContext(sslOptions);
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(context, requireClientCert);) {
+            String connOptions = "?transport.trustStoreLocation=" + CLIENT_JKS_TRUSTSTORE + "&" +
+                                 "transport.trustStorePassword=" + PASSWORD + "&" +
+                                 "jms.clientID=myclientid";
+            if (requireClientCert) {
+                connOptions += "&transport.keyStoreLocation=" + CLIENT_JKS_KEYSTORE + "&" +
+                               "transport.keyStorePassword=" + PASSWORD;
+            }
+
+            testPeer.expectFailingSaslConnect(serverMechs, clientSelectedMech);
+
+            JmsConnectionFactory factory = new JmsConnectionFactory("amqps://localhost:" + testPeer.getServerPort() + connOptions);
+            try {
+                factory.createConnection();
+                fail("Expected exception to be thrown");
+            } catch (JMSException jmse) {
+                // Expected
             }
 
             testPeer.waitForAllHandlersToComplete(1000);

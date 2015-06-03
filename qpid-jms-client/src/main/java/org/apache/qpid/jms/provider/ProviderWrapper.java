@@ -18,6 +18,7 @@ package org.apache.qpid.jms.provider;
 
 import java.io.IOException;
 import java.net.URI;
+import java.security.Principal;
 
 import javax.jms.JMSException;
 
@@ -30,8 +31,8 @@ import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 
 /**
- * Allows one AsyncProvider instance to wrap around another and provide some additional
- * features beyond the normal AsyncProvider interface.
+ * Allows one {@link Provider} instance to wrap around another and provide some additional
+ * features beyond the normal {@link Provider} interface.
  *
  * This wrapper is meant primarily for Providers that are adding some additional feature
  * on-top of an existing provider such as a discovery based provider that only needs to
@@ -190,5 +191,10 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
      */
     public Provider getNext() {
         return next;
+    }
+
+    @Override
+    public Principal getLocalPrincipal() {
+        return next.getLocalPrincipal();
     }
 }

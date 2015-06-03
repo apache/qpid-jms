@@ -16,7 +16,10 @@
  */
 package org.apache.qpid.jms.sasl;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.security.Principal;
 
 import org.junit.Test;
 
@@ -26,48 +29,60 @@ public class PlainMechanismTest {
     public void testIsNotApplicableWithNoCredentials() {
         PlainMechanism mech = new PlainMechanism();
 
-        assertFalse("Should not be applicable with no credentials", mech.isApplicable(null, null));
+        assertFalse("Should not be applicable with no credentials", mech.isApplicable(null, null, null));
     }
 
     @Test
     public void testIsNotApplicableWithNoUser() {
         PlainMechanism mech = new PlainMechanism();
 
-        assertFalse("Should not be applicable with no username", mech.isApplicable(null, "pass"));
+        assertFalse("Should not be applicable with no username", mech.isApplicable(null, "pass", null));
     }
 
     @Test
     public void testIsNotApplicableWithNoPassword() {
         PlainMechanism mech = new PlainMechanism();
 
-        assertFalse("Should not be applicable with no password", mech.isApplicable("user", null));
+        assertFalse("Should not be applicable with no password", mech.isApplicable("user", null, null));
     }
 
     @Test
     public void testIsNotApplicableWithEmtpyUser() {
         PlainMechanism mech = new PlainMechanism();
 
-        assertFalse("Should not be applicable with empty username", mech.isApplicable("", "pass"));
+        assertFalse("Should not be applicable with empty username", mech.isApplicable("", "pass", null));
     }
 
     @Test
     public void testIsNotApplicableWithEmtpyPassword() {
         PlainMechanism mech = new PlainMechanism();
 
-        assertFalse("Should not be applicable with empty password", mech.isApplicable("user", ""));
+        assertFalse("Should not be applicable with empty password", mech.isApplicable("user", "", null));
     }
 
     @Test
     public void testIsNotApplicableWithEmtpyUserAndPassword() {
         PlainMechanism mech = new PlainMechanism();
 
-        assertFalse("Should not be applicable with empty user and password", mech.isApplicable("", ""));
+        assertFalse("Should not be applicable with empty user and password", mech.isApplicable("", "", null));
     }
 
     @Test
     public void testIsApplicableWithUserAndPassword() {
         PlainMechanism mech = new PlainMechanism();
 
-        assertTrue("Should be applicable with user and password", mech.isApplicable("user", "password"));
+        assertTrue("Should be applicable with user and password", mech.isApplicable("user", "password", null));
+    }
+
+    @Test
+    public void testIsApplicableWithUserAndPasswordAndPrincipal() {
+        PlainMechanism mech = new PlainMechanism();
+
+        assertTrue("Should be applicable with user and password and principal", mech.isApplicable("user", "password", new Principal() {
+            @Override
+            public String getName() {
+                return "name";
+            }
+        }));
     }
 }

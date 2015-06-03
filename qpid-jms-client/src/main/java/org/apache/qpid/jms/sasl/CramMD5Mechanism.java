@@ -19,6 +19,7 @@ package org.apache.qpid.jms.sasl;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -85,7 +86,7 @@ public class CramMD5Mechanism extends AbstractMechanism {
     }
 
     @Override
-    public boolean isApplicable(String username, String password) {
+    public boolean isApplicable(String username, String password, Principal localPrincipal) {
         return username != null && username.length() > 0 && password != null && password.length() > 0;
     }
 }

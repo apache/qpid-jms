@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -14,37 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.sasl;
+package org.apache.qpid.jms.transports;
 
 import java.security.Principal;
 
-/**
- * Implements the External SASL authentication mechanism.
- */
-public class ExternalMechanism extends AbstractMechanism {
-
-    @Override
-    public byte[] getInitialResponse() {
-        return EMPTY;
-    }
-
-    @Override
-    public byte[] getChallengeResponse(byte[] challenge) {
-        return EMPTY;
-    }
-
-    @Override
-    public int getPriority() {
-        return PRIORITY.HIGHER.getValue();
-    }
-
-    @Override
-    public String getName() {
-        return "EXTERNAL";
-    }
-
-    @Override
-    public boolean isApplicable(String username, String password, Principal localPrincipal) {
-        return localPrincipal != null;
-    }
+public interface SSLTransport extends Transport {
+    Principal getLocalPrincipal();
 }

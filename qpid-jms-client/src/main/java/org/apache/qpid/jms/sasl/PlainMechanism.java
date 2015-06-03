@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.sasl;
 
+import java.security.Principal;
+
 /**
  * Implements the SASL PLAIN authentication Mechanism.
  *
@@ -61,7 +63,7 @@ public class PlainMechanism extends AbstractMechanism {
     }
 
     @Override
-    public boolean isApplicable(String username, String password) {
+    public boolean isApplicable(String username, String password, Principal localPrincipal) {
         return username != null && username.length() > 0 && password != null && password.length() > 0;
     }
 }

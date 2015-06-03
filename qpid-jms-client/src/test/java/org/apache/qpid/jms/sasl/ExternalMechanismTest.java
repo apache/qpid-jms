@@ -16,58 +16,43 @@
  */
 package org.apache.qpid.jms.sasl;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.security.Principal;
 
 import org.junit.Test;
 
 public class ExternalMechanismTest {
 
     @Test
-    public void testIsApplicableWithNoCredentials() {
+    public void testIsNotApplicableWithUserAndPasswordButNoPrincipal() {
         ExternalMechanism mech = new ExternalMechanism();
 
-        assertTrue("Should be applicable with no credentials", mech.isApplicable(null, null));
+        assertFalse("Should not be applicable with user and password but no principal", mech.isApplicable("user", "password", null));
     }
 
     @Test
-    public void testIsNotApplicableWithNoUser() {
+    public void testIsApplicableWithUserAndPasswordAndPrincipal() {
         ExternalMechanism mech = new ExternalMechanism();
 
-        assertTrue("Should be applicable with no username", mech.isApplicable(null, "pass"));
+        assertTrue("Should be applicable with user and password and principal", mech.isApplicable("user", "password", new Principal() {
+            @Override
+            public String getName() {
+                return "name";
+            }
+        }));
     }
 
     @Test
-    public void testIsApplicableWithNoPassword() {
+    public void testIsApplicableWithPrincipalOnly() {
         ExternalMechanism mech = new ExternalMechanism();
 
-        assertTrue("Should be applicable with no password", mech.isApplicable("user", null));
-    }
-
-    @Test
-    public void testIsApplicableWithEmtpyUser() {
-        ExternalMechanism mech = new ExternalMechanism();
-
-        assertTrue("Should be applicable with empty username", mech.isApplicable("", "pass"));
-    }
-
-    @Test
-    public void testIsApplicableWithEmtpyPassword() {
-        ExternalMechanism mech = new ExternalMechanism();
-
-        assertTrue("Should be applicable with empty password", mech.isApplicable("user", ""));
-    }
-
-    @Test
-    public void testIsApplicableWithEmtpyUserAndPassword() {
-        ExternalMechanism mech = new ExternalMechanism();
-
-        assertTrue("Should be applicable with empty user and password", mech.isApplicable("", ""));
-    }
-
-    @Test
-    public void testIsApplicableWithUserAndPassword() {
-        ExternalMechanism mech = new ExternalMechanism();
-
-        assertTrue("Should be applicable with user and password", mech.isApplicable("user", "password"));
+        assertTrue("Should be applicable with principal only", mech.isApplicable(null, null, new Principal() {
+            @Override
+            public String getName() {
+                return "name";
+            }
+        }));
     }
 }

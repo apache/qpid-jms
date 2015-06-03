@@ -22,7 +22,9 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
 import java.net.URI;
+import java.security.Principal;
 
+import org.apache.qpid.jms.transports.SSLTransport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportSslOptions;
@@ -34,7 +36,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Extends the Netty based TCP transport to add SSL support.
  */
-public class NettySslTransport extends NettyTcpTransport {
+public class NettySslTransport extends NettyTcpTransport implements SSLTransport {
 
     private static final Logger LOG = LoggerFactory.getLogger(NettySslTransport.class);
 
@@ -105,5 +107,12 @@ public class NettySslTransport extends NettyTcpTransport {
 
     private TransportSslOptions getSslOptions() {
         return (TransportSslOptions) getTransportOptions();
+    }
+
+    @Override
+    public Principal getLocalPrincipal() {
+        SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
+
+        return sslHandler.engine().getSession().getLocalPrincipal();
     }
 }

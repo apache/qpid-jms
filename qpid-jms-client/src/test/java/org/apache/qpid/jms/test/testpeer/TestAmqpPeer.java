@@ -438,11 +438,12 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(openMatcher);
     }
 
-    /**
-     * NOTE: this is only testing use of the mechanism, there is no SSL here yet.
-     */
     public void expectExternalConnect()
     {
+        if(!_driverRunnable.isNeedClientCert()) {
+            throw new IllegalStateException("Need client cert must be enabled");
+        }
+
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(Symbol.valueOf("EXTERNAL"));
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
                                             new FrameSender(

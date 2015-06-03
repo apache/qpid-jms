@@ -23,6 +23,7 @@ import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.security.Principal;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -55,6 +56,7 @@ import org.apache.qpid.jms.provider.ProviderClosedException;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
+import org.apache.qpid.jms.transports.SSLTransport;
 import org.apache.qpid.jms.transports.TransportFactory;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.util.IOExceptionSupport;
@@ -1002,5 +1004,14 @@ public class AmqpProvider implements Provider, TransportListener {
                 LOG.trace("IdleTimeoutCheck exiting");
             }
         }
+    }
+
+    @Override
+    public Principal getLocalPrincipal() {
+        if(transport instanceof SSLTransport) {
+            return ((SSLTransport) transport).getLocalPrincipal();
+        }
+
+        return null;
     }
 }

@@ -51,9 +51,12 @@ class TestAmqpPeerRunner implements Runnable
 
     private volatile Throwable _throwable;
 
+    private boolean needClientCert;
+
     public TestAmqpPeerRunner(TestAmqpPeer peer, SSLContext sslContext, boolean needClientCert) throws IOException
     {
         int port = useFixedPort ? PORT : 0;
+        this.needClientCert = needClientCert;
 
         if (sslContext == null)
         {
@@ -65,7 +68,7 @@ class TestAmqpPeerRunner implements Runnable
             _serverSocket = socketFactory.createServerSocket(port);
 
             SSLServerSocket sslServerSocket = (SSLServerSocket) _serverSocket;
-            if (needClientCert)
+            if (this.needClientCert)
             {
                 sslServerSocket.setNeedClientAuth(true);
             }
@@ -209,5 +212,9 @@ class TestAmqpPeerRunner implements Runnable
     public void setSuppressReadExceptionOnClose(boolean suppress)
     {
         _suppressReadExceptionOnClose = suppress;
+    }
+
+    public boolean isNeedClientCert() {
+        return needClientCert;
     }
 }

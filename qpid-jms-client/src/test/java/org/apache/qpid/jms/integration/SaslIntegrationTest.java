@@ -37,7 +37,6 @@ import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.transports.TransportSslOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
 import org.apache.qpid.proton.amqp.Symbol;
-import org.hamcrest.Matchers;
 import org.junit.Test;
 
 public class SaslIntegrationTest extends QpidJmsTestCase {
@@ -134,29 +133,34 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    /**
+     * Add a small delay after the SASL process fails, test peer will throw if
+     * any unexpected frames arrive, such as erroneous open+close.
+     */
+    @Test(timeout = 5000)
+    public void testWaitForUnexpectedFramesAfterSaslFailure() throws Exception {
+        doMechanismSelectedTestImpl(null, null, ANONYMOUS, new Symbol[] {ANONYMOUS}, true);
+    }
+
     @Test(timeout = 5000)
     public void testAnonymousSelectedWhenNoCredentialsWereSupplied() throws Exception {
-        doMechanismSelectedTestImpl(null, null, ANONYMOUS, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS});
+        doMechanismSelectedTestImpl(null, null, ANONYMOUS, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS}, false);
     }
 
     @Test(timeout = 5000)
     public void testAnonymousSelectedWhenNoPasswordWasSupplied() throws Exception {
-        doMechanismSelectedTestImpl("username", null, ANONYMOUS, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS});
+        doMechanismSelectedTestImpl("username", null, ANONYMOUS, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS}, false);
     }
 
     @Test(timeout = 5000)
     public void testCramMd5SelectedWhenCredentialsPresent() throws Exception {
-        doMechanismSelectedTestImpl("username", "password", CRAM_MD5, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS});
+        doMechanismSelectedTestImpl("username", "password", CRAM_MD5, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS}, false);
     }
 
-    private void doMechanismSelectedTestImpl(String username, String password, Symbol clientSelectedMech, Symbol[] serverMechs) throws JMSException, InterruptedException, Exception, IOException {
+    private void doMechanismSelectedTestImpl(String username, String password, Symbol clientSelectedMech, Symbol[] serverMechs, boolean wait) throws JMSException, InterruptedException, Exception, IOException {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
             testPeer.expectFailingSaslConnect(serverMechs, clientSelectedMech);
-
-            // Work around race with test peer close
-            testPeer.expectHeaderAndOpen();
-            testPeer.expectClose(Matchers.nullValue(), false);
 
             ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + "?jms.clientID=myclientid");
             try {
@@ -166,6 +170,10 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
                 // Expected, we deliberately failed the SASL process,
                 // we only wanted to verify the correct mechanism
                 // was selected, other tests verify the remainder.
+            }
+
+            if (wait) {
+                Thread.sleep(200);
             }
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -204,10 +212,6 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
             }
 
             testPeer.expectFailingSaslConnect(serverMechs, clientSelectedMech);
-
-            // Work around race with test peer close
-            testPeer.expectHeaderAndOpen();
-            testPeer.expectClose(Matchers.nullValue(), false);
 
             JmsConnectionFactory factory = new JmsConnectionFactory("amqps://localhost:" + testPeer.getServerPort() + connOptions);
             try {

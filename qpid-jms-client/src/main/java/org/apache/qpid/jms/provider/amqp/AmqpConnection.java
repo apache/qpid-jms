@@ -156,7 +156,13 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
                 authenticator = null;
             }
         } catch (JMSSecurityException ex) {
-            failed(ex);
+            try {
+                // TODO: this is a hack to stop Proton sending the open(+close) frame(s)
+                org.apache.qpid.proton.engine.Transport t = getEndpoint().getTransport();
+                t.close_head();
+            } finally {
+                failed(ex);
+            }
         }
     }
 

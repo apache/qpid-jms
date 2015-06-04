@@ -75,7 +75,7 @@ The options apply to the behaviour of the JMS objects such as Connection, Sessio
 
 + **jms.username** User name value used to authenticate the connection
 + **jms.password** The password value used to authenticate the connection
-+ **jms.clientId** A client ID value that is applied to the connection.
++ **jms.clientID** The ClientID value that is applied to the connection.
 + **jms.forceAsyncSend** Configures whether all Messages sent from a MessageProducer are sent asynchronously or only those Message that qualify such as Messages inside a transaction or non-persistent messages.
 + **jms.alwaysSyncSend** Override all asynchronous send conditions and always sends every Message from a MessageProducer synchronously.
 + **jms.sendAcksAsync** Causes all Message acknowledgments to be sent asynchronously.

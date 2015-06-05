@@ -648,7 +648,9 @@ public class AmqpProvider implements Provider, TransportListener {
 
             @Override
             public void run() {
-                LOG.trace("Received from Broker {} bytes: {}", input.readableBytes(), input);
+                if (isTraceBytes()) {
+                    TRACE_BYTES.info("Recieved: {}", ByteBufUtil.hexDump(input));
+                }
 
                 ByteBuffer source = input.nioBuffer();
 

@@ -49,4 +49,9 @@
     </Or>
     <Bug pattern="NP_NULL_PARAM_DEREF"/>
   </Match>
+
+  <!-- Generated selector parser -->
+  <Match>
+    <Package name="org.apache.qpid.jms.selector.parser"/>
+  </Match>
 </FindBugsFilter>

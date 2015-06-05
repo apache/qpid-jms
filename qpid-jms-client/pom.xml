@@ -101,6 +101,7 @@
         <configuration>
           <threshold>Normal</threshold>
           <effort>Default</effort>
+          <excludeFilterFile>${project.basedir}/src/site/findbugs-exclude.xml</excludeFilterFile>
         </configuration>
       </plugin>
     </plugins>

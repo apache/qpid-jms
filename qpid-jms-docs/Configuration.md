@@ -160,6 +160,7 @@ The complete set of configuration options for failover is listed below:
 These options apply to the behaviour of certain AMQP functionality.
 
 + **amqp.idleTimeout** The idle timeout in milliseconds after which the connection will be failed if the peer sends no AMQP frames. Default is 60000.
++ **amqp.vhost** The vhost to connect to. Used to populate the Sasl and Open hostname fields. Default is the main hostname from the Connection URI.
 
 ## Logging
 

@@ -24,11 +24,15 @@ import static org.apache.qpid.jms.provider.amqp.AmqpSupport.NETWORK_HOST;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.OPEN_HOSTNAME;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.PORT;
 import static org.hamcrest.Matchers.arrayContaining;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -36,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
 import javax.jms.ConnectionMetaData;
 import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
@@ -45,6 +50,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.provider.ProviderRedirectedException;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
@@ -54,6 +60,7 @@ import org.apache.qpid.jms.test.testpeer.basictypes.ConnectionError;
 import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.transaction.TxnCapability;
+import org.hamcrest.Matcher;
 import org.junit.Test;
 
 // TODO find a way to make the test abort immediately if the TestAmqpPeer throws an exception
@@ -114,6 +121,46 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             assertTrue("Expected non-zero provider major / minor version", result != 0);
 
             testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testAmqpHostnameSetByDefault() throws Exception {
+        doAmqpHostnameTestImpl("localhost", false, equalTo("localhost"));
+    }
+
+    @Test(timeout = 5000)
+    public void testAmqpHostnameSetByVhostOption() throws Exception {
+        String vhost = "myAmqpHost";
+        doAmqpHostnameTestImpl(vhost, true, equalTo(vhost));
+    }
+
+    @Test(timeout = 500000)
+    public void testAmqpHostnameNotSetWithEmptyVhostOption() throws Exception {
+        doAmqpHostnameTestImpl("", true, nullValue());
+    }
+
+    private void doAmqpHostnameTestImpl(String amqpHostname, boolean setHostnameOption, Matcher<?> hostnameMatcher) throws JMSException, InterruptedException, Exception, IOException {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            testPeer.expectAnonymousConnect(true, null, hostnameMatcher);
+            // Each connection creates a session for managing temporary destinations etc
+            testPeer.expectBegin(true);
+
+            String uri = "amqp://localhost:" + testPeer.getServerPort();
+            if(setHostnameOption) {
+                uri += "?amqp.vhost=" + amqpHostname;
+            }
+
+            ConnectionFactory factory = new JmsConnectionFactory(uri);
+            Connection connection = factory.createConnection();
+            // Set a clientID to provoke the actual AMQP connection process to occur.
+            connection.setClientID("clientName");
+
+            testPeer.waitForAllHandlersToComplete(1000);
+            assertNull(testPeer.getThrowable());
+
+            testPeer.expectClose();
+            connection.close();
         }
     }
 

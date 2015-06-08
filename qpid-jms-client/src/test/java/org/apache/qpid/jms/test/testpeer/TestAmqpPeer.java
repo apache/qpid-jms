@@ -391,10 +391,10 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectAnonymousConnect(boolean authorize)
     {
-        expectAnonymousConnect(authorize, null);
+        expectAnonymousConnect(authorize, null, null);
     }
 
-    public void expectAnonymousConnect(boolean authorize, Matcher<?> idleTimeoutMatcher)
+    public void expectAnonymousConnect(boolean authorize, Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher)
     {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(Symbol.valueOf("ANONYMOUS"));
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
@@ -402,7 +402,7 @@ public class TestAmqpPeer implements AutoCloseable
                                                     this, FrameType.SASL, 0,
                                                     saslMechanismsFrame, null)));
 
-        addHandler(new SaslInitMatcher()
+        SaslInitMatcher saslInitMatcher = new SaslInitMatcher()
             .withMechanism(equalTo(Symbol.valueOf("ANONYMOUS")))
             .withInitialResponse(equalTo(new Binary(new byte[0])))
             .onSuccess(new AmqpPeerRunnable()
@@ -417,7 +417,14 @@ public class TestAmqpPeer implements AutoCloseable
                             false);
                     _driverRunnable.expectHeader();
                 }
-            }));
+            });
+
+        if(hostnameMatcher != null)
+        {
+            saslInitMatcher.withHostname(hostnameMatcher);
+        }
+
+        addHandler(saslInitMatcher);
 
         addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
 
@@ -433,6 +440,11 @@ public class TestAmqpPeer implements AutoCloseable
         if(idleTimeoutMatcher !=null)
         {
             openMatcher.withIdleTimeOut(idleTimeoutMatcher);
+        }
+
+        if(hostnameMatcher != null)
+        {
+            openMatcher.withHostname(hostnameMatcher);
         }
 
         addHandler(openMatcher);

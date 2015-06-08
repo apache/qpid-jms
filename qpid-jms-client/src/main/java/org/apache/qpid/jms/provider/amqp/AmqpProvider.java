@@ -21,6 +21,7 @@ import io.netty.buffer.ByteBufUtil;
 import io.netty.util.ReferenceCountUtil;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.security.Principal;
@@ -103,6 +104,7 @@ public class AmqpProvider implements Provider, TransportListener {
     private AmqpConnection connection;
     private org.apache.qpid.jms.transports.Transport transport;
     private String transportType = AmqpProviderFactory.DEFAULT_TRANSPORT_TYPE;
+    private String vhost;
     private boolean traceFrames;
     private boolean traceBytes;
     private boolean presettleConsumers;
@@ -271,6 +273,15 @@ public class AmqpProvider implements Provider, TransportListener {
                             Sasl sasl = protonTransport.sasl();
                             if (sasl != null) {
                                 sasl.client();
+
+                                String hostname = getVhost();
+                                if(hostname == null) {
+                                    hostname = remoteURI.getHost();
+                                } else if (hostname.isEmpty()) {
+                                    hostname = null;
+                                }
+
+                                setHostname(sasl, hostname);
                             }
                             connection = new AmqpConnection(AmqpProvider.this, protonConnection, sasl, connectionInfo);
                             connection.open(new AsyncResult() {
@@ -877,6 +888,22 @@ public class AmqpProvider implements Provider, TransportListener {
         return this.traceBytes;
     }
 
+    public String getVhost() {
+        return vhost;
+    }
+
+    /**
+     * Sets the hostname to be used in the AMQP SASL Init and Open frames.
+     *
+     * If set null, the host provided in the remoteURI will be used. If set to
+     * the empty string, the hostname field of the frames will be cleared.
+     *
+     * @param vhost the hostname to include in SASL Init and Open frames.
+     */
+    public void setVhost(String vhost) {
+        this.vhost = vhost;
+    }
+
     public int getIdleTimeout() {
         return idleTimeout;
     }
@@ -1015,5 +1042,16 @@ public class AmqpProvider implements Provider, TransportListener {
         }
 
         return null;
+    }
+
+    private static void setHostname(Sasl sasl, String hostname) {
+        //TODO: this is a hack until Proton 0.10+ is available with sasl#setHostname method.
+        try {
+            Field field = sasl.getClass().getDeclaredField("_hostname");
+            field.setAccessible(true);
+            field.set(sasl, hostname);
+        } catch (Exception e) {
+            LOG.trace("Failed to set SASL hostname", e);
+        }
     }
 }

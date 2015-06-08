@@ -52,7 +52,7 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 5000)
     public void testIdleTimeoutIsAdvertisedByDefault() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            testPeer.expectAnonymousConnect(true, greaterThan(UnsignedInteger.valueOf(0)));
+            testPeer.expectAnonymousConnect(true, greaterThan(UnsignedInteger.valueOf(0)), null);
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin(true);
 
@@ -75,7 +75,7 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
             int configuredTimeout = 54320;
             int advertisedValue = configuredTimeout / 2;
 
-            testPeer.expectAnonymousConnect(true, equalTo(UnsignedInteger.valueOf(advertisedValue)));
+            testPeer.expectAnonymousConnect(true, equalTo(UnsignedInteger.valueOf(advertisedValue)), null);
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin(true);
 

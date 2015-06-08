@@ -84,8 +84,15 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
 
     @Override
     protected void doOpen() {
+        String hostname = provider.getVhost();
+        if(hostname == null) {
+            hostname = remoteURI.getHost();
+        } else if (hostname.isEmpty()) {
+            hostname = null;
+        }
+
+        getEndpoint().setHostname(hostname);
         getEndpoint().setContainer(resource.getClientId());
-        getEndpoint().setHostname(remoteURI.getHost());
         getEndpoint().setDesiredCapabilities(new Symbol[] { SOLE_CONNECTION_CAPABILITY });
         super.doOpen();
     }

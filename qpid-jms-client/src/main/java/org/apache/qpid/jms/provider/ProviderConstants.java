@@ -26,10 +26,9 @@ public final class ProviderConstants {
     public enum ACK_TYPE {
         DELIVERED(0),
         CONSUMED(1),
-        REDELIVERED(2),
-        POISONED(3),
-        EXPIRED(4),
-        RELEASED(5);
+        POISONED(2),
+        EXPIRED(3),
+        RELEASED(4);
 
         private final int value;
 

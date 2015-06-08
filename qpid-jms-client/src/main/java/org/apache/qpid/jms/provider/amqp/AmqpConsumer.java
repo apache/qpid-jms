@@ -320,8 +320,6 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                     delivery.settle();
                 }
             }
-        } else if (ackType.equals(ACK_TYPE.REDELIVERED)) {
-            //TODO: remove ack type?
         } else if (ackType.equals(ACK_TYPE.POISONED)) {
             deliveryFailed(delivery, false);
         } else if (ackType.equals(ACK_TYPE.RELEASED)) {

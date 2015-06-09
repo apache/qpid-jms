@@ -100,7 +100,7 @@ These values control how many messages the remote peer can send to the client an
 
 When connected to a remote using plain TCP these options configure the behaviour of the underlying socket.  These options are appended to the connection URI along with the other configuration options, for example:
 
-      amqp://localhost:5672?jms.topicPrefix=foo&transport.connectTimeout=30000
+      amqp://localhost:5672?jms.clientID=foo&transport.connectTimeout=30000
 
 The complete set of TCP Transport options is listed below:
 

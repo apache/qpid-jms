@@ -80,6 +80,7 @@ The options apply to the behaviour of the JMS objects such as Connection, Sessio
 + **jms.alwaysSyncSend** Override all asynchronous send conditions and always sends every Message from a MessageProducer synchronously.
 + **jms.sendAcksAsync** Causes all Message acknowledgments to be sent asynchronously.
 + **jms.localMessagePriority** If enabled prefetched messages are reordered locally based on their given Message priority value.
++ **jms.validatePropertyNames** If message property names should be validated as valid Java identifiers. Default is true.
 + **jms.queuePrefix** Optional prefix value added to the name of any Queue created from a JMS Session.
 + **jms.topicPrefix** Optional prefix value added to the name of any Topic created from a JMS Session.
 + **jms.closeTimeout** Timeout value that controls how long the client waits on Connection close before returning. (By default the client waits 15 seconds for a normal close completion event).

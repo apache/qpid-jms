@@ -43,6 +43,7 @@ public class JmsMessage implements javax.jms.Message {
     protected final JmsMessageFacade facade;
     protected boolean readOnlyBody;
     protected boolean readOnlyProperties;
+    protected boolean validatePropertyNames = true;
 
     public JmsMessage(JmsMessageFacade facade) {
         this.facade = facade;
@@ -59,6 +60,7 @@ public class JmsMessage implements javax.jms.Message {
         this.readOnlyProperties = other.readOnlyBody;
         this.acknowledgeCallback = other.acknowledgeCallback;
         this.connection = other.connection;
+        this.validatePropertyNames = other.validatePropertyNames;
     }
 
     @Override
@@ -103,6 +105,14 @@ public class JmsMessage implements javax.jms.Message {
     public void clearBody() throws JMSException {
         readOnlyBody = false;
         facade.clearBody();
+    }
+
+    public boolean isValidatePropertyNames() {
+        return validatePropertyNames;
+    }
+
+    public void setValidatePropertyNames(boolean validatePropertyNames) {
+        this.validatePropertyNames = validatePropertyNames;
     }
 
     public boolean isReadOnlyBody() {
@@ -243,13 +253,31 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public boolean propertyExists(String name) throws JMSException {
+        try {
+            checkPropertyNameIsValid(name);
+        } catch (IllegalArgumentException iae) {
+            return false;
+        }
+
         return JmsMessagePropertyIntercepter.propertyExists(facade, name);
     }
 
     @Override
     public Enumeration<?> getPropertyNames() throws JMSException {
         Set<String> result = new HashSet<String>();
-        result.addAll(JmsMessagePropertyIntercepter.getPropertyNames(facade, true));
+
+        Set<String> propertyNames = JmsMessagePropertyIntercepter.getPropertyNames(facade, true);
+        for (String name : propertyNames) {
+            try {
+                checkPropertyNameIsValid(name);
+            } catch (IllegalArgumentException iae) {
+                // Don't add the name
+                continue;
+            }
+
+            result.add(name);
+        }
+
         return Collections.enumeration(result);
     }
 
@@ -524,13 +552,11 @@ public class JmsMessage implements javax.jms.Message {
             throw new IllegalArgumentException("Property name must not be the empty string");
         }
 
-        checkIdentifierFormat(propertyName);
-    }
-
-    private void checkIdentifierFormat(String identifier) throws IllegalArgumentException {
-        checkIdentifierLetterAndDigitRequirements(identifier);
-        checkIdentifierIsntNullTrueFalse(identifier);
-        checkIdentifierIsntLogicOperator(identifier);
+        if (isValidatePropertyNames()) {
+            checkIdentifierLetterAndDigitRequirements(propertyName);
+            checkIdentifierIsntNullTrueFalse(propertyName);
+            checkIdentifierIsntLogicOperator(propertyName);
+        }
     }
 
     private void checkIdentifierIsntLogicOperator(String identifier) {

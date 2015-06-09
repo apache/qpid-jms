@@ -36,6 +36,7 @@ import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
+import org.apache.qpid.jms.message.facade.test.JmsTestMessageFacade;
 import org.apache.qpid.jms.message.facade.test.JmsTestMessageFactory;
 import org.junit.Before;
 import org.junit.Test;
@@ -211,6 +212,8 @@ public class JmsMessageTest {
         msg1.setJMSTimestamp(this.jmsTimestamp);
         msg1.setReadOnlyProperties(true);
         msg1.setConnection(connection);
+        boolean isValidate = !msg1.isValidatePropertyNames();
+        msg1.setValidatePropertyNames(isValidate);
         JmsMessage msg2 = msg1.copy();
         assertEquals(msg1.getJMSMessageID(), msg2.getJMSMessageID());
         assertTrue(msg1.getJMSCorrelationID().equals(msg2.getJMSCorrelationID()));
@@ -223,6 +226,7 @@ public class JmsMessageTest {
         assertEquals(msg1.getJMSPriority(), msg2.getJMSPriority());
         assertEquals(msg1.getJMSTimestamp(), msg2.getJMSTimestamp());
         assertEquals(msg1.getConnection(), msg2.getConnection());
+        assertEquals(msg1.isValidatePropertyNames(), msg2.isValidatePropertyNames());
 
         LOG.info("Message is:  " + msg1);
     }
@@ -364,6 +368,34 @@ public class JmsMessageTest {
     }
 
     @Test
+    public void testPropertyExistsWithInvalidName() throws JMSException {
+        doPropertyExistsWithInvalidNameTestImpl(false);
+    }
+
+    private void doPropertyExistsWithInvalidNameTestImpl(boolean disableValidation) throws JMSException {
+        String invalidPropName = "my-invalid-property";
+        String valueA = "valueA";
+
+        JmsMessage msg = factory.createMessage();
+        if(disableValidation) {
+            msg.setValidatePropertyNames(false);
+        }
+
+        assertTrue(msg.getFacade() instanceof JmsTestMessageFacade);
+        JmsTestMessageFacade testFacade = (JmsTestMessageFacade) msg.getFacade();
+
+        assertFalse(testFacade.propertyExists(invalidPropName));
+        testFacade.setProperty(invalidPropName, valueA);
+        assertTrue(testFacade.propertyExists(invalidPropName));
+
+        if(!disableValidation) {
+            assertFalse("Property should be indicated to not exist", msg.propertyExists(invalidPropName));
+        } else {
+            assertTrue("Property should be indicated to exist", msg.propertyExists(invalidPropName));
+        }
+    }
+
+    @Test
     public void testGetBooleanProperty() throws JMSException {
         JmsMessage msg = factory.createMessage();
         String name = "booleanProperty";
@@ -437,7 +469,39 @@ public class JmsMessageTest {
     }
 
     @Test
-    @SuppressWarnings("rawtypes")
+    public void testGetObjectPropertyWithInvalidNameThrowsIAEByDefault() throws JMSException {
+        doGetObjectPropertyNameValidationTestImpl(false);
+    }
+
+    private void doGetObjectPropertyNameValidationTestImpl(boolean disableValidation) throws JMSException {
+        String invalidPropName1 = "my-invalid-property";
+        String valueA = "valueA";
+
+        JmsMessage msg = factory.createMessage();
+        if(disableValidation) {
+            msg.setValidatePropertyNames(false);
+        }
+
+        assertTrue(msg.getFacade() instanceof JmsTestMessageFacade);
+        JmsTestMessageFacade testFacade = (JmsTestMessageFacade) msg.getFacade();
+
+        assertNull(testFacade.getProperty(invalidPropName1));
+        testFacade.setProperty(invalidPropName1, valueA);
+        assertEquals(valueA, testFacade.getProperty(invalidPropName1));
+
+        if (!disableValidation) {
+            try {
+                msg.getObjectProperty(invalidPropName1);
+                fail("expected rejection of identifier");
+            } catch (IllegalArgumentException iae) {
+                //expected
+            }
+        } else {
+            assertEquals(valueA, msg.getObjectProperty(invalidPropName1));
+        }
+    }
+
+    @Test
     public void testGetPropertyNames() throws JMSException {
         JmsMessage msg = factory.createMessage();
         String propName = "floatProperty";
@@ -449,7 +513,7 @@ public class JmsMessageTest {
         boolean propNameFound = false;
         boolean jmsxNameFound = false;
         boolean headerNameFound1 = false;
-        for (Enumeration iter = msg.getPropertyNames(); iter.hasMoreElements();) {
+        for (Enumeration<?> iter = msg.getPropertyNames(); iter.hasMoreElements();) {
             Object element = iter.nextElement();
             propNameFound |= element.equals(propName);
             jmsxNameFound |= element.equals(jmsxName);
@@ -459,6 +523,60 @@ public class JmsMessageTest {
         assertTrue("jmsx prop name not found", jmsxNameFound);
         // spec compliance, only non-'JMS header' props returned
         assertFalse("header name should not have been found", headerNameFound1);
+    }
+
+    @Test
+    public void testGetPropertyNamesReturnsValidNamesByDefault() throws JMSException {
+        doGetPropertyNamesResultFilteringTestImpl(false);
+    }
+
+    private void doGetPropertyNamesResultFilteringTestImpl(boolean disableValidation) throws JMSException {
+        String invalidPropName1 = "my-invalid-property1";
+        String invalidPropName2 = "my.invalid.property2";
+        String validPropName = "my_valid_property";
+
+        String valueA = "valueA";
+        String valueB = "valueB";
+        String valueC = "valueC";
+
+        JmsMessage msg = factory.createMessage();
+        if(disableValidation) {
+            msg.setValidatePropertyNames(false);
+        }
+
+        assertTrue(msg.getFacade() instanceof JmsTestMessageFacade);
+        JmsTestMessageFacade testFacade = (JmsTestMessageFacade) msg.getFacade();
+
+        assertNull(testFacade.getProperty(invalidPropName1));
+        assertNull(testFacade.getProperty(invalidPropName2));
+        assertNull(testFacade.getProperty(validPropName));
+
+        testFacade.setProperty(invalidPropName1, valueA);
+        testFacade.setProperty(invalidPropName2, valueB);
+        testFacade.setProperty(validPropName, valueC);
+
+        assertEquals(valueA, testFacade.getProperty(invalidPropName1));
+        assertEquals(valueB, testFacade.getProperty(invalidPropName2));
+        assertEquals(valueC, testFacade.getProperty(validPropName));
+
+        boolean invalidPropName1Found = false;
+        boolean invalidPropName2Found = false;
+        boolean validPropNameFound = false;
+        for (Enumeration<?> iter = msg.getPropertyNames(); iter.hasMoreElements();) {
+            Object element = iter.nextElement();
+            invalidPropName1Found |= element.equals(invalidPropName1);
+            invalidPropName2Found |= element.equals(invalidPropName2);
+            validPropNameFound |= element.equals(validPropName);
+        }
+
+        if (!disableValidation) {
+            assertFalse("Invalid prop name 1 was found", invalidPropName1Found);
+            assertFalse("Invalid prop name 2 was found", invalidPropName2Found);
+        } else {
+            assertTrue("Invalid prop name 1 was not found", invalidPropName1Found);
+            assertTrue("Invalid prop name 2 was not found", invalidPropName2Found);
+        }
+        assertTrue("valid prop name was not found", validPropNameFound);
     }
 
     @Test
@@ -1108,12 +1226,32 @@ public class JmsMessageTest {
      */
     @Test
     public void testSetPropertyWithNonLetterOrDigitCharacterThrowsIAE() throws Exception {
-        String propertyName = "name-invalid";
-        JmsMessage testMessage = factory.createMessage();
-        try {
-            testMessage.setObjectProperty(propertyName, "value");
-            fail("expected rejection of identifier starting with non-letter character");
-        } catch (IllegalArgumentException iae) {
+        doSetObjectPropertyWithNonLetterOrDigitCharacterTestImpl(false);
+    }
+
+    private void doSetObjectPropertyWithNonLetterOrDigitCharacterTestImpl(boolean disableValidation) throws JMSException {
+        String invalidPropertyName = "name-invalid";
+        String valueA = "value";
+
+        JmsMessage msg = factory.createMessage();
+        if(disableValidation) {
+            msg.setValidatePropertyNames(false);
+        }
+
+        assertTrue(msg.getFacade() instanceof JmsTestMessageFacade);
+        JmsTestMessageFacade testFacade = (JmsTestMessageFacade) msg.getFacade();
+
+        if (!disableValidation) {
+            try {
+                msg.setObjectProperty(invalidPropertyName, valueA);
+                fail("expected rejection of identifier starting with non-letter character");
+            } catch (IllegalArgumentException iae) {
+                // Expected
+            }
+        } else {
+            msg.setObjectProperty(invalidPropertyName, valueA);
+
+            assertEquals(valueA, testFacade.getProperty(invalidPropertyName));
         }
     }
 
@@ -1288,6 +1426,28 @@ public class JmsMessageTest {
             fail("expected rejection of identifier named ESCAPE");
         } catch (IllegalArgumentException iae) {
         }
+    }
+
+    //---------- Test disabling Message Properties name validation -------------//
+
+    @Test
+    public void testGetPropertyNamesReturnsAllNamesWithValidationDisabled() throws JMSException {
+        doGetPropertyNamesResultFilteringTestImpl(true);
+    }
+
+    @Test
+    public void testGetObjectPropertyWithInvalidNameAndValidationDisabled() throws JMSException {
+        doGetObjectPropertyNameValidationTestImpl(true);
+    }
+
+    @Test
+    public void testSetObjectPropertyWithInvalidNameAndValidationDisabled() throws Exception {
+        doSetObjectPropertyWithNonLetterOrDigitCharacterTestImpl(true);
+    }
+
+    @Test
+    public void testPropertyExistsWithInvalidNameAndValidationDisabled() throws JMSException {
+        doPropertyExistsWithInvalidNameTestImpl(true);
     }
 
     //--------- Test support method ------------------------------------------//

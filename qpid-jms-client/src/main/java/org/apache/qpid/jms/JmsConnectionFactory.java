@@ -62,6 +62,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private boolean localMessagePriority;
     private String queuePrefix = null;
     private String topicPrefix = null;
+    private boolean validatePropertyNames = true;
     private long sendTimeout = JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
     private long requestTimeout = JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
@@ -422,6 +423,14 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     public void setTopicPrefix(String topicPrefix) {
         this.topicPrefix = topicPrefix;
+    }
+
+    public boolean isValidatePropertyNames() {
+        return validatePropertyNames;
+    }
+
+    public void setValidatePropertyNames(boolean validatePropertyNames) {
+        this.validatePropertyNames = validatePropertyNames;
     }
 
     /**

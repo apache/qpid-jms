@@ -71,6 +71,8 @@ public class JmsConnectionInfoTest {
         info.setSendTimeout(150);
         info.setTopicPrefix("topic");
         info.setUsername("user");
+        boolean validatePropertyNames = ! info.isValidatePropertyNames();
+        info.setValidatePropertyNames(validatePropertyNames);
 
         JmsConnectionInfo copy = info.copy();
 
@@ -85,6 +87,7 @@ public class JmsConnectionInfoTest {
         assertEquals(150, copy.getSendTimeout());
         assertEquals("topic", copy.getTopicPrefix());
         assertEquals("user", copy.getUsername());
+        assertEquals(validatePropertyNames, copy.isValidatePropertyNames());
 
         assertEquals(info, copy);
 }

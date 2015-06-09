@@ -42,6 +42,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     public long closeTimeout = DEFAULT_CLOSE_TIMEOUT;
     private String queuePrefix = null;
     private String topicPrefix = null;
+    private boolean validatePropertyNames = true;
 
     public JmsConnectionInfo(JmsConnectionId connectionId) {
         if (connectionId == null) {
@@ -69,6 +70,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         copy.queuePrefix = queuePrefix;
         copy.topicPrefix = topicPrefix;
         copy.connectTimeout = connectTimeout;
+        copy.validatePropertyNames = validatePropertyNames;
     }
 
     public boolean isForceAsyncSend() {
@@ -129,6 +131,14 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     public void setTopicPrefix(String topicPrefix) {
         this.topicPrefix = topicPrefix;
+    }
+
+    public boolean isValidatePropertyNames() {
+        return validatePropertyNames;
+    }
+
+    public void setValidatePropertyNames(boolean validatePropertyNames) {
+        this.validatePropertyNames = validatePropertyNames;
     }
 
     public long getCloseTimeout() {

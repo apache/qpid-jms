@@ -50,7 +50,7 @@ public class IntegrationTestFixture {
     }
 
     Connection establishConnecton(TestAmqpPeer testPeer, String optionsString, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties) throws JMSException {
-        return establishConnecton(testPeer, false, null, serverCapabilities, serverProperties, true);
+        return establishConnecton(testPeer, false, optionsString, serverCapabilities, serverProperties, true);
     }
 
     Connection establishConnecton(TestAmqpPeer testPeer, boolean ssl, String optionsString, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties, boolean setClientId) throws JMSException {

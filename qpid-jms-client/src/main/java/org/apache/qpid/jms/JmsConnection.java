@@ -845,6 +845,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         connectionInfo.setQueuePrefix(queuePrefix);
     }
 
+    public boolean isValidatePropertyNames() {
+        return connectionInfo.isValidatePropertyNames();
+    }
+
+    public void setValidatePropertyNames(boolean validatePropertyNames) {
+        connectionInfo.setValidatePropertyNames(validatePropertyNames);
+    }
+
     public JmsPrefetchPolicy getPrefetchPolicy() {
         return prefetchPolicy;
     }
@@ -970,10 +978,12 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     public void onInboundMessage(final JmsInboundMessageDispatch envelope) {
 
         JmsMessage incoming = envelope.getMessage();
-        // Ensure incoming Messages are in readonly mode.
         if (incoming != null) {
+            // Ensure incoming Messages are in readonly mode.
             incoming.setReadOnlyBody(true);
             incoming.setReadOnlyProperties(true);
+
+            incoming.setValidatePropertyNames(isValidatePropertyNames());
         }
 
         JmsMessageDispatcher dispatcher = dispatchers.get(envelope.getConsumerId());

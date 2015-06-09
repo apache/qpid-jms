@@ -30,6 +30,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -38,6 +39,7 @@ import java.util.UUID;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -208,6 +210,114 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             assertEquals(LONG_PROP_VALUE, receivedMessage.getLongProperty(LONG_PROP));
             assertEquals(FLOAT_PROP_VALUE, receivedMessage.getFloatProperty(FLOAT_PROP), 0.0);
             assertEquals(DOUBLE_PROP_VALUE, receivedMessage.getDoubleProperty(DOUBLE_PROP), 0.0);
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testReceiveMessageWithInvalidPropertyName() throws Exception {
+        doReceiveMessageWithInvalidPropertyNameTestImpl(false);
+    }
+
+    @Test(timeout = 5000)
+    public void testReceiveMessageWithInvalidPropertyNameAndWithValidationDisabled() throws Exception {
+        doReceiveMessageWithInvalidPropertyNameTestImpl(true);
+    }
+
+    private void doReceiveMessageWithInvalidPropertyNameTestImpl(boolean disableValidation) throws JMSException, InterruptedException, Exception, IOException {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer, "?jms.validatePropertyNames=" + !disableValidation);
+            connection.start();
+
+            testPeer.expectBegin(true);
+
+            String invalidPropName = "invalid-name";
+            String value = "valueA";
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            ApplicationPropertiesDescribedType appProperties = new ApplicationPropertiesDescribedType();
+            appProperties.setApplicationProperty(invalidPropName, value);
+
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, appProperties, amqpValueNullContent);
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+            Message receivedMessage = messageConsumer.receive(1000);
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            if(!disableValidation) {
+                assertFalse("Expected property to be indicated as not existing", receivedMessage.propertyExists(invalidPropName));
+
+                try {
+                    receivedMessage.getStringProperty(invalidPropName);
+                    fail("Expected exception to be thrown");
+                } catch (IllegalArgumentException iae) {
+                    // expected
+                }
+            } else {
+                assertTrue(receivedMessage.propertyExists(invalidPropName));
+                assertEquals(value, receivedMessage.getStringProperty(invalidPropName));
+            }
+
+        }
+    }
+
+    @Test(timeout = 5000)
+    public void testSendMessageWithInvalidPropertyName() throws Exception {
+        doSendMessageWithInvalidPropertyNameTestImpl(false);
+    }
+
+    @Test(timeout = 5000)
+    public void testSendMessageWithInvalidPropertyNameAndWithValidationDisabled() throws Exception {
+        doSendMessageWithInvalidPropertyNameTestImpl(true);
+    }
+
+    private void doSendMessageWithInvalidPropertyNameTestImpl(boolean disableValidation) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer, "?jms.validatePropertyNames=" + !disableValidation);
+            connection.start();
+
+            testPeer.expectBegin(true);
+
+            String invalidPropName = "invalid-name";
+            String value = "valueA";
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            testPeer.expectSenderAttach();
+
+            MessageProducer producer = session.createProducer(queue);
+
+            Message message = session.createMessage();
+
+            if (!disableValidation) {
+                try {
+                    message.setStringProperty(invalidPropName, value);
+                    fail("Expected exception to be thrown");
+                } catch (IllegalArgumentException iae) {
+                    // expected
+                }
+            } else {
+                MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+                MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+                MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true);
+                ApplicationPropertiesSectionMatcher appPropsMatcher = new ApplicationPropertiesSectionMatcher(true);
+                appPropsMatcher.withEntry(invalidPropName, equalTo(value));
+
+                TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+                messageMatcher.setHeadersMatcher(headersMatcher);
+                messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+                messageMatcher.setPropertiesMatcher(propsMatcher);
+
+                testPeer.expectTransfer(messageMatcher);
+
+                producer.send(message);
+            }
+
+            testPeer.waitForAllHandlersToComplete(2000);
         }
     }
 

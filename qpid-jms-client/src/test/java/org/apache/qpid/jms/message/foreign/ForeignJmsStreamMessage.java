@@ -20,7 +20,7 @@ import javax.jms.JMSException;
 import javax.jms.StreamMessage;
 
 import org.apache.qpid.jms.message.JmsStreamMessage;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultStreamMessageFacade;
+import org.apache.qpid.jms.message.facade.test.JmsTestStreamMessageFacade;
 
 /**
  * Foreign JMS StreamMessage class
@@ -30,7 +30,7 @@ public class ForeignJmsStreamMessage extends ForeignJmsMessage implements Stream
     private final JmsStreamMessage message;
 
     public ForeignJmsStreamMessage() {
-        super(new JmsStreamMessage(new JmsDefaultStreamMessageFacade()));
+        super(new JmsStreamMessage(new JmsTestStreamMessageFacade()));
         this.message = (JmsStreamMessage) super.message;
     }
 

@@ -23,7 +23,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 
 import org.apache.qpid.jms.message.JmsMessage;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
+import org.apache.qpid.jms.message.facade.test.JmsTestMessageFactory;
 
 /**
  * Test class used to simulate receipt of a JMS Message from another
@@ -34,7 +34,7 @@ public class ForeignJmsMessage implements Message {
     protected final JmsMessage message;
 
     public ForeignJmsMessage() {
-        this.message = new JmsDefaultMessageFactory().createMessage();
+        this.message = new JmsTestMessageFactory().createMessage();
     }
 
     protected ForeignJmsMessage(JmsMessage message) {

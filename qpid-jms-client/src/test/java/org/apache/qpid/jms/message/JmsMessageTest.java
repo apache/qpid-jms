@@ -36,7 +36,7 @@ import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
+import org.apache.qpid.jms.message.facade.test.JmsTestMessageFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -47,7 +47,7 @@ public class JmsMessageTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsMessageTest.class);
 
-    private final JmsMessageFactory factory = new JmsDefaultMessageFactory();
+    private final JmsMessageFactory factory = new JmsTestMessageFactory();
 
     protected boolean readOnlyMessage;
 

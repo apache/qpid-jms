@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.message.facade.defaults;
+package org.apache.qpid.jms.message.facade.test;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
@@ -31,18 +31,18 @@ import javax.jms.JMSException;
 import org.apache.qpid.jms.message.facade.JmsBytesMessageFacade;
 
 /**
- * A default implementation of the JmsBytesMessageFacade that simply holds a raw Buffer
+ * A test implementation of the JmsBytesMessageFacade that simply holds a raw Buffer
  */
-public final class JmsDefaultBytesMessageFacade extends JmsDefaultMessageFacade implements JmsBytesMessageFacade {
+public final class JmsTestBytesMessageFacade extends JmsTestMessageFacade implements JmsBytesMessageFacade {
 
     private ByteBuf content = Unpooled.EMPTY_BUFFER;
     private ByteBufOutputStream bytesOut;
     private ByteBufInputStream bytesIn;
 
-    public JmsDefaultBytesMessageFacade() {
+    public JmsTestBytesMessageFacade() {
     }
 
-    public JmsDefaultBytesMessageFacade(byte[] content) {
+    public JmsTestBytesMessageFacade(byte[] content) {
         this.content = Unpooled.copiedBuffer(content);
     }
 
@@ -52,9 +52,9 @@ public final class JmsDefaultBytesMessageFacade extends JmsDefaultMessageFacade 
     }
 
     @Override
-    public JmsDefaultBytesMessageFacade copy() {
+    public JmsTestBytesMessageFacade copy() {
         reset();
-        JmsDefaultBytesMessageFacade copy = new JmsDefaultBytesMessageFacade();
+        JmsTestBytesMessageFacade copy = new JmsTestBytesMessageFacade();
         copyInto(copy);
         if (this.content != null) {
             copy.content = this.content.copy();

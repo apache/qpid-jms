@@ -22,7 +22,7 @@ import javax.jms.JMSException;
 import javax.jms.ObjectMessage;
 
 import org.apache.qpid.jms.message.JmsObjectMessage;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultObjectMessageFacade;
+import org.apache.qpid.jms.message.facade.test.JmsTestObjectMessageFacade;
 
 /**
  * Foreign JMS ObjectMessage class
@@ -32,7 +32,7 @@ public class ForeignJmsObjectMessage extends ForeignJmsMessage implements Object
     private final JmsObjectMessage message;
 
     public ForeignJmsObjectMessage() {
-        super(new JmsObjectMessage(new JmsDefaultObjectMessageFacade()));
+        super(new JmsObjectMessage(new JmsTestObjectMessageFacade()));
         this.message = (JmsObjectMessage) super.message;
     }
 

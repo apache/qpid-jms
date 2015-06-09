@@ -32,7 +32,7 @@ import javax.jms.JMSException;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessageFactory;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
+import org.apache.qpid.jms.message.facade.test.JmsTestMessageFactory;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsResource;
@@ -57,7 +57,7 @@ public class MockProvider implements Provider {
 
     private static final AtomicInteger PROVIDER_SEQUENCE = new AtomicInteger();
 
-    private final JmsMessageFactory messageFactory = new JmsDefaultMessageFactory();
+    private final JmsMessageFactory messageFactory = new JmsTestMessageFactory();
     private final MockProviderStats stats;
     private final URI remoteURI;
     private final MockProviderConfiguration configuration;

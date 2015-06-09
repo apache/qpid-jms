@@ -14,14 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.message.facade.defaults;
+package org.apache.qpid.jms.message.facade.test;
 
 import org.apache.qpid.jms.message.facade.JmsTextMessageFacade;
 
 /**
- * Default implementation of the JmsTextMessageFacade.
+ * Test implementation of the JmsTextMessageFacade.
  */
-public final class JmsDefaultTextMessageFacade extends JmsDefaultMessageFacade implements JmsTextMessageFacade {
+public final class JmsTestTextMessageFacade extends JmsTestMessageFacade implements JmsTextMessageFacade {
 
     private String text;
 
@@ -31,8 +31,8 @@ public final class JmsDefaultTextMessageFacade extends JmsDefaultMessageFacade i
     }
 
     @Override
-    public JmsDefaultTextMessageFacade copy() {
-        JmsDefaultTextMessageFacade copy = new JmsDefaultTextMessageFacade();
+    public JmsTestTextMessageFacade copy() {
+        JmsTestTextMessageFacade copy = new JmsTestTextMessageFacade();
         copyInto(copy);
         if (text != null) {
             copy.setText(text);

@@ -20,7 +20,7 @@ import javax.jms.BytesMessage;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.message.JmsBytesMessage;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultBytesMessageFacade;
+import org.apache.qpid.jms.message.facade.test.JmsTestBytesMessageFacade;
 
 /**
  * Foreign JMS BytesMessage type.
@@ -30,7 +30,7 @@ public class ForeignJmsBytesMessage extends ForeignJmsMessage implements BytesMe
     private final JmsBytesMessage message;
 
     public ForeignJmsBytesMessage() {
-        super(new JmsBytesMessage(new JmsDefaultBytesMessageFacade()));
+        super(new JmsBytesMessage(new JmsTestBytesMessageFacade()));
         this.message = (JmsBytesMessage) super.message;
     }
 

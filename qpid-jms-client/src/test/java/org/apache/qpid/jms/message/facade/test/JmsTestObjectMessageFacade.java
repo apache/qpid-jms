@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.message.facade.defaults;
+package org.apache.qpid.jms.message.facade.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -27,9 +27,9 @@ import org.apache.qpid.jms.message.facade.JmsObjectMessageFacade;
 import org.apache.qpid.jms.util.ClassLoadingAwareObjectInputStream;
 
 /**
- * Default implementation for a JMS Object Message Facade.
+ * Test implementation for a JMS Object Message Facade.
  */
-public class JmsDefaultObjectMessageFacade extends JmsDefaultMessageFacade implements JmsObjectMessageFacade {
+public class JmsTestObjectMessageFacade extends JmsTestMessageFacade implements JmsObjectMessageFacade {
 
     private byte[] object;
 
@@ -47,8 +47,8 @@ public class JmsDefaultObjectMessageFacade extends JmsDefaultMessageFacade imple
     }
 
     @Override
-    public JmsDefaultObjectMessageFacade copy() {
-        JmsDefaultObjectMessageFacade copy = new JmsDefaultObjectMessageFacade();
+    public JmsTestObjectMessageFacade copy() {
+        JmsTestObjectMessageFacade copy = new JmsTestObjectMessageFacade();
         copyInto(copy);
         if (object != null) {
             copy.object = Arrays.copyOf(object, object.length);

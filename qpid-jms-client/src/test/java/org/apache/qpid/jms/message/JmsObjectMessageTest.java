@@ -37,8 +37,8 @@ import javax.jms.MessageNotWriteableException;
 import javax.jms.ObjectMessage;
 
 import org.apache.qpid.jms.message.facade.JmsObjectMessageFacade;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultObjectMessageFacade;
+import org.apache.qpid.jms.message.facade.test.JmsTestMessageFactory;
+import org.apache.qpid.jms.message.facade.test.JmsTestObjectMessageFacade;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -47,7 +47,7 @@ import org.mockito.Mockito;
  */
 public class JmsObjectMessageTest {
 
-    private final JmsMessageFactory factory = new JmsDefaultMessageFactory();
+    private final JmsMessageFactory factory = new JmsTestMessageFactory();
 
     /**
      * Test that attempting to write bytes to a received message (without calling {@link ObjectMessage#clearBody()} first)
@@ -56,7 +56,7 @@ public class JmsObjectMessageTest {
     @Test
     public void testReceivedObjectMessageThrowsMessageNotWriteableExceptionOnSetObject() throws Exception {
         String content = "myStringContent";
-        JmsObjectMessageFacade facade = new JmsDefaultObjectMessageFacade();
+        JmsObjectMessageFacade facade = new JmsTestObjectMessageFacade();
         facade.setObject(content);
         JmsObjectMessage objectMessage = new JmsObjectMessage(facade);
         objectMessage.onDispatch();
@@ -75,7 +75,7 @@ public class JmsObjectMessageTest {
     @Test
     public void testToString() throws Exception {
         String content = "myStringContent";
-        JmsObjectMessageFacade facade = new JmsDefaultObjectMessageFacade();
+        JmsObjectMessageFacade facade = new JmsTestObjectMessageFacade();
         facade.setObject(content);
         JmsObjectMessage objectMessage = new JmsObjectMessage(facade);
         objectMessage.onDispatch();
@@ -90,7 +90,7 @@ public class JmsObjectMessageTest {
     @Test
     public void testClearBodyOnReceivedObjectMessageMakesMessageWritable() throws Exception {
         String content = "myStringContent";
-        JmsObjectMessageFacade facade = new JmsDefaultObjectMessageFacade();
+        JmsObjectMessageFacade facade = new JmsTestObjectMessageFacade();
         facade.setObject(content);
         JmsObjectMessage objectMessage = new JmsObjectMessage(facade);
         objectMessage.onDispatch();
@@ -107,7 +107,7 @@ public class JmsObjectMessageTest {
     @Test
     public void testClearBodyOnReceivedObjectMessageClearsUnderlyingMessageBody() throws Exception {
         String content = "myStringContent";
-        JmsDefaultObjectMessageFacade facade = new JmsDefaultObjectMessageFacade();
+        JmsTestObjectMessageFacade facade = new JmsTestObjectMessageFacade();
         facade.setObject(content);
         JmsObjectMessage objectMessage = new JmsObjectMessage(facade);
         objectMessage.onDispatch();
@@ -132,7 +132,7 @@ public class JmsObjectMessageTest {
         Map<String,String> origMap = new HashMap<String,String>();
         origMap.put("key1", "value1");
 
-        JmsDefaultObjectMessageFacade facade = new JmsDefaultObjectMessageFacade();
+        JmsTestObjectMessageFacade facade = new JmsTestObjectMessageFacade();
         facade.setObject((Serializable) origMap);
         JmsObjectMessage objectMessage = new JmsObjectMessage(facade);
         objectMessage.onDispatch();
@@ -193,7 +193,7 @@ public class JmsObjectMessageTest {
      */
     @Test(expected=MessageFormatException.class)
     public void testGetObjectWithFailedDeserialisationThrowsJMSMFE() throws Exception {
-        JmsObjectMessageFacade facade = Mockito.mock(JmsDefaultObjectMessageFacade.class);
+        JmsObjectMessageFacade facade = Mockito.mock(JmsTestObjectMessageFacade.class);
         Mockito.when(facade.getObject()).thenThrow(new ClassCastException("Failed to get object"));
         JmsObjectMessage objectMessage = new JmsObjectMessage(facade);
         objectMessage.getObject();

@@ -32,8 +32,8 @@ import javax.jms.MessageFormatException;
 import javax.jms.MessageNotWriteableException;
 
 import org.apache.qpid.jms.message.facade.JmsMapMessageFacade;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMapMessageFacade;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
+import org.apache.qpid.jms.message.facade.test.JmsTestMapMessageFacade;
+import org.apache.qpid.jms.message.facade.test.JmsTestMessageFactory;
 import org.junit.Test;
 
 /**
@@ -42,7 +42,7 @@ import org.junit.Test;
  */
 public class JmsMapMessageTest {
 
-    private final JmsMessageFactory factory = new JmsDefaultMessageFactory();
+    private final JmsMessageFactory factory = new JmsTestMessageFactory();
 
     // ======= general =========
 
@@ -66,7 +66,7 @@ public class JmsMapMessageTest {
      */
     @Test
     public void testGetMapNamesUsingReceivedMessageReturnsExpectedEnumeration() throws Exception {
-        JmsMapMessageFacade facade = new JmsDefaultMapMessageFacade();
+        JmsMapMessageFacade facade = new JmsTestMapMessageFacade();
         String myKey1 = "key1";
         String myKey2 = "key2";
         facade.put(myKey1, "value1");
@@ -114,7 +114,7 @@ public class JmsMapMessageTest {
      */
     @Test
     public void testReceivedMessageIsReadOnlyAndThrowsMNWE() throws Exception {
-        JmsMapMessageFacade facade = new JmsDefaultMapMessageFacade();
+        JmsMapMessageFacade facade = new JmsTestMapMessageFacade();
         String myKey1 = "key1";
         facade.put(myKey1, "value1");
         JmsMapMessage mapMessage = new JmsMapMessage(facade);
@@ -133,7 +133,7 @@ public class JmsMapMessageTest {
      */
     @Test
     public void testClearBodyMakesReceivedMessageWritable() throws Exception {
-        JmsMapMessageFacade facade = new JmsDefaultMapMessageFacade();
+        JmsMapMessageFacade facade = new JmsTestMapMessageFacade();
         String myKey1 = "key1";
         facade.put(myKey1, "value1");
 
@@ -152,7 +152,7 @@ public class JmsMapMessageTest {
      */
     @Test
     public void testClearBodyClearsUnderlyingMessageMap() throws Exception {
-        JmsMapMessageFacade facade = new JmsDefaultMapMessageFacade();
+        JmsMapMessageFacade facade = new JmsTestMapMessageFacade();
         String myKey1 = "key1";
         facade.put(myKey1, "value1");
 

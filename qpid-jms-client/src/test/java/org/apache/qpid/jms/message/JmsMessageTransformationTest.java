@@ -37,8 +37,8 @@ import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsTopic;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFacade;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
+import org.apache.qpid.jms.message.facade.test.JmsTestMessageFacade;
+import org.apache.qpid.jms.message.facade.test.JmsTestMessageFactory;
 import org.apache.qpid.jms.message.foreign.ForeignJmsBytesMessage;
 import org.apache.qpid.jms.message.foreign.ForeignJmsMapMessage;
 import org.apache.qpid.jms.message.foreign.ForeignJmsMessage;
@@ -64,7 +64,7 @@ public class JmsMessageTransformationTest {
 
     @Test
     public void testTransformJmsMessageCopies() throws JMSException {
-        JmsMessage source = new JmsMessage(new JmsDefaultMessageFacade());
+        JmsMessage source = new JmsMessage(new JmsTestMessageFacade());
 
         source.setJMSMessageID("ID:CONNECTION:1:1");
 
@@ -278,8 +278,8 @@ public class JmsMessageTransformationTest {
 
     @Test
     public void testJMSMessagePropertiesAreCopied() throws JMSException {
-        JmsMessage source = new JmsMessage(new JmsDefaultMessageFacade());
-        JmsMessage target = new JmsMessage(new JmsDefaultMessageFacade());
+        JmsMessage source = new JmsMessage(new JmsTestMessageFacade());
+        JmsMessage target = new JmsMessage(new JmsTestMessageFacade());
 
         source.setJMSType("text/test");
 
@@ -441,7 +441,7 @@ public class JmsMessageTransformationTest {
     private JmsConnection createMockJmsConnection() {
         JmsConnection connection = Mockito.mock(JmsConnection.class);
 
-        Mockito.when(connection.getMessageFactory()).thenReturn(new JmsDefaultMessageFactory());
+        Mockito.when(connection.getMessageFactory()).thenReturn(new JmsTestMessageFactory());
 
         return connection;
     }

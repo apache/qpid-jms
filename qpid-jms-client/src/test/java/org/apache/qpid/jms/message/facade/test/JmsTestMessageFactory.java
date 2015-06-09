@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.message.facade.defaults;
+package org.apache.qpid.jms.message.facade.test;
 
 import java.io.Serializable;
 
@@ -32,11 +32,11 @@ import org.apache.qpid.jms.message.JmsTextMessage;
  * Implementation of the JmsMessageFactory that create simple
  * javax.jms.Message instances with test facades.
  */
-public class JmsDefaultMessageFactory implements JmsMessageFactory {
+public class JmsTestMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsMessage createMessage() throws UnsupportedOperationException {
-        return new JmsMessage(new JmsDefaultMessageFacade());
+        return new JmsMessage(new JmsTestMessageFacade());
     }
 
     @Override
@@ -46,7 +46,7 @@ public class JmsDefaultMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsTextMessage createTextMessage(String payload) throws UnsupportedOperationException {
-        JmsTextMessage result = new JmsTextMessage(new JmsDefaultTextMessageFacade());
+        JmsTextMessage result = new JmsTextMessage(new JmsTestTextMessageFacade());
         if (payload != null) {
             try {
                 result.setText(payload);
@@ -58,17 +58,17 @@ public class JmsDefaultMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsBytesMessage createBytesMessage() throws UnsupportedOperationException {
-        return new JmsBytesMessage(new JmsDefaultBytesMessageFacade());
+        return new JmsBytesMessage(new JmsTestBytesMessageFacade());
     }
 
     @Override
     public JmsMapMessage createMapMessage() throws UnsupportedOperationException {
-        return new JmsMapMessage(new JmsDefaultMapMessageFacade());
+        return new JmsMapMessage(new JmsTestMapMessageFacade());
     }
 
     @Override
     public JmsStreamMessage createStreamMessage() throws UnsupportedOperationException {
-        return new JmsStreamMessage(new JmsDefaultStreamMessageFacade());
+        return new JmsStreamMessage(new JmsTestStreamMessageFacade());
     }
 
     @Override
@@ -78,7 +78,7 @@ public class JmsDefaultMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsObjectMessage createObjectMessage(Serializable payload) throws UnsupportedOperationException {
-        JmsObjectMessage result = new JmsObjectMessage(new JmsDefaultObjectMessageFacade());
+        JmsObjectMessage result = new JmsObjectMessage(new JmsTestObjectMessageFacade());
         if (payload != null) {
             try {
                 result.setObject(payload);

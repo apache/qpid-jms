@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.message.facade.defaults;
+package org.apache.qpid.jms.message.facade.test;
 
 import java.util.Collections;
 import java.util.Enumeration;
@@ -26,7 +26,7 @@ import org.apache.qpid.jms.message.facade.JmsMapMessageFacade;
 /**
  * Simple implementation of the JmsMapMessageFacade used for testing.
  */
-public class JmsDefaultMapMessageFacade extends JmsDefaultMessageFacade implements JmsMapMessageFacade {
+public class JmsTestMapMessageFacade extends JmsTestMessageFacade implements JmsMapMessageFacade {
 
     protected final Map<String, Object> map = new HashMap<String, Object>();
 
@@ -36,8 +36,8 @@ public class JmsDefaultMapMessageFacade extends JmsDefaultMessageFacade implemen
     }
 
     @Override
-    public JmsDefaultMapMessageFacade copy() {
-        JmsDefaultMapMessageFacade copy = new JmsDefaultMapMessageFacade();
+    public JmsTestMapMessageFacade copy() {
+        JmsTestMapMessageFacade copy = new JmsTestMapMessageFacade();
         copyInto(copy);
         copy.map.putAll(map);
         return copy;

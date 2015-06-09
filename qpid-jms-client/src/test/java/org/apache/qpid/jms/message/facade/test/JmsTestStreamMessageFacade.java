@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.message.facade.defaults;
+package org.apache.qpid.jms.message.facade.test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,9 +24,9 @@ import javax.jms.MessageEOFException;
 import org.apache.qpid.jms.message.facade.JmsStreamMessageFacade;
 
 /**
- * Default implementation of the JmsStreamMessageFacade
+ * Test implementation of the JmsStreamMessageFacade
  */
-public class JmsDefaultStreamMessageFacade extends JmsDefaultMessageFacade implements JmsStreamMessageFacade {
+public class JmsTestStreamMessageFacade extends JmsTestMessageFacade implements JmsStreamMessageFacade {
 
     private final List<Object> stream = new ArrayList<Object>();
     private int index = -1;
@@ -37,8 +37,8 @@ public class JmsDefaultStreamMessageFacade extends JmsDefaultMessageFacade imple
     }
 
     @Override
-    public JmsDefaultStreamMessageFacade copy() {
-        JmsDefaultStreamMessageFacade copy = new JmsDefaultStreamMessageFacade();
+    public JmsTestStreamMessageFacade copy() {
+        JmsTestStreamMessageFacade copy = new JmsTestStreamMessageFacade();
         copyInto(copy);
         copy.stream.addAll(stream);
         return copy;

@@ -36,13 +36,13 @@ import javax.jms.MessageNotWriteableException;
 import javax.jms.StreamMessage;
 
 import org.apache.qpid.jms.message.facade.JmsStreamMessageFacade;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultStreamMessageFacade;
+import org.apache.qpid.jms.message.facade.test.JmsTestMessageFactory;
+import org.apache.qpid.jms.message.facade.test.JmsTestStreamMessageFacade;
 import org.junit.Test;
 
 public class JmsStreamMessageTest {
 
-    private final JmsMessageFactory factory = new JmsDefaultMessageFactory();
+    private final JmsMessageFactory factory = new JmsTestMessageFactory();
 
     // ======= general =========
 
@@ -1065,7 +1065,7 @@ public class JmsStreamMessageTest {
 
     @Test
     public void testReadObjectGetsInvalidObjectThrowsMFE() throws Exception {
-        JmsStreamMessageFacade facade = new JmsDefaultStreamMessageFacade();
+        JmsStreamMessageFacade facade = new JmsTestStreamMessageFacade();
         JmsStreamMessage streamMessage = new JmsStreamMessage(facade);
         facade.put(new URI("test://test"));
         streamMessage.reset();

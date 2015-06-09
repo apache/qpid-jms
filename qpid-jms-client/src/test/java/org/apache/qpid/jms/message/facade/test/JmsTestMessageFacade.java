@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.message.facade.defaults;
+package org.apache.qpid.jms.message.facade.test;
 
 import java.nio.charset.Charset;
 import java.util.HashMap;
@@ -28,11 +28,11 @@ import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 
 /**
- * A default implementation of the JmsMessageFaceade that provides a generic
+ * A test implementation of the JmsMessageFaceade that provides a generic
  * message instance which can be used instead of implemented in Provider specific
  * version that maps to a Provider message object.
  */
-public class JmsDefaultMessageFacade implements JmsMessageFacade {
+public class JmsTestMessageFacade implements JmsMessageFacade {
 
     private static final Charset UTF8 = Charset.forName("UTF-8");
 
@@ -74,13 +74,13 @@ public class JmsDefaultMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public JmsDefaultMessageFacade copy() {
-        JmsDefaultMessageFacade copy = new JmsDefaultMessageFacade();
+    public JmsTestMessageFacade copy() {
+        JmsTestMessageFacade copy = new JmsTestMessageFacade();
         copyInto(copy);
         return copy;
     }
 
-    protected void copyInto(JmsDefaultMessageFacade target) {
+    protected void copyInto(JmsTestMessageFacade target) {
         target.priority = this.priority;
         target.groupSequence = this.groupSequence;
         target.groupId = this.groupId;

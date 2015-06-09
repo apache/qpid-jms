@@ -28,7 +28,7 @@ import javax.jms.JMSException;
 import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFactory;
+import org.apache.qpid.jms.message.facade.test.JmsTestMessageFactory;
 import org.junit.Test;
 
 /**
@@ -36,7 +36,7 @@ import org.junit.Test;
  */
 public class JmsTextMessageTest {
 
-    private final JmsMessageFactory factory = new JmsDefaultMessageFactory();
+    private final JmsMessageFactory factory = new JmsTestMessageFactory();
 
     @Test
     public void testShallowCopy() throws JMSException {

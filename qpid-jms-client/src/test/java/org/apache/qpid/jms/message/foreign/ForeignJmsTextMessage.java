@@ -20,7 +20,7 @@ import javax.jms.JMSException;
 import javax.jms.TextMessage;
 
 import org.apache.qpid.jms.message.JmsTextMessage;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultTextMessageFacade;
+import org.apache.qpid.jms.message.facade.test.JmsTestTextMessageFacade;
 
 /**
  * Foreign JMS TextMessage class
@@ -30,7 +30,7 @@ public class ForeignJmsTextMessage extends ForeignJmsMessage implements TextMess
     private final JmsTextMessage message;
 
     public ForeignJmsTextMessage() {
-        super(new JmsTextMessage(new JmsDefaultTextMessageFacade()));
+        super(new JmsTextMessage(new JmsTestTextMessageFacade()));
         this.message = (JmsTextMessage) super.message;
     }
 

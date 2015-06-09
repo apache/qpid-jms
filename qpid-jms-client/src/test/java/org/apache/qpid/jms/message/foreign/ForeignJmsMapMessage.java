@@ -22,7 +22,7 @@ import javax.jms.JMSException;
 import javax.jms.MapMessage;
 
 import org.apache.qpid.jms.message.JmsMapMessage;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMapMessageFacade;
+import org.apache.qpid.jms.message.facade.test.JmsTestMapMessageFacade;
 
 /**
  * Foreign JMS MapMessage class
@@ -32,7 +32,7 @@ public class ForeignJmsMapMessage extends ForeignJmsMessage implements MapMessag
     private final JmsMapMessage message;
 
     public ForeignJmsMapMessage() {
-        super(new JmsMapMessage(new JmsDefaultMapMessageFacade()));
+        super(new JmsMapMessage(new JmsTestMapMessageFacade()));
         this.message = (JmsMapMessage) super.message;
     }
 

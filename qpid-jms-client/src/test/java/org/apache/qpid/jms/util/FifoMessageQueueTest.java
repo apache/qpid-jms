@@ -32,7 +32,7 @@ import javax.jms.JMSException;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
-import org.apache.qpid.jms.message.facade.defaults.JmsDefaultMessageFacade;
+import org.apache.qpid.jms.message.facade.test.JmsTestMessageFacade;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -302,7 +302,7 @@ public class FifoMessageQueueTest {
     }
 
     private JmsMessage createMessage(int priority) {
-        JmsDefaultMessageFacade facade = new JmsDefaultMessageFacade();
+        JmsTestMessageFacade facade = new JmsTestMessageFacade();
         facade.setMessageId(messageId.generateId());
         facade.setPriority((byte) priority);
         JmsMessage message = new JmsMessage(facade);

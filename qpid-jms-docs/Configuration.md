@@ -96,6 +96,10 @@ These values control how many messages the remote peer can send to the client an
 + **jms.prefetchPolicy.durableTopicPrefetch** defaults to 1000
 + **jms.prefetchPolicy.all** used to set all prefetch values at once.
 
+The RedeliveryPolicy controls how redelivered messages are handled on the client.
+
++ **jms.redeliveryPolicy.maxRedeliveries** controls when an incoming message is rejected based on the number of times it has been redelivered, the default value is (-1) disabled.  A value of zero would indicate no message redeliveries are accepted, a value of five would allow a message to be redelivered five times, etc.
+
 ### TCP Transport Configuration options
 
 When connected to a remote using plain TCP these options configure the behaviour of the underlying socket.  These options are appended to the connection URI along with the other configuration options, for example:

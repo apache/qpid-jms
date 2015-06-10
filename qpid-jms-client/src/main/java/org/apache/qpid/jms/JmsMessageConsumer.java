@@ -102,17 +102,19 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
             this.messageQueue = new FifoMessageQueue();
         }
 
-        JmsPrefetchPolicy policy = this.connection.getPrefetchPolicy();
+        JmsPrefetchPolicy policy = connection.getPrefetchPolicy();
+        JmsRedeliveryPolicy redeliveryPolicy = connection.getRedeliveryPolicy().copy();
 
-        this.consumerInfo = new JmsConsumerInfo(consumerId);
-        this.consumerInfo.setClientId(connection.getClientID());
-        this.consumerInfo.setSelector(selector);
-        this.consumerInfo.setSubscriptionName(name);
-        this.consumerInfo.setDestination(destination);
-        this.consumerInfo.setAcknowledgementMode(acknowledgementMode);
-        this.consumerInfo.setNoLocal(noLocal);
-        this.consumerInfo.setBrowser(isBrowser());
-        this.consumerInfo.setPrefetchSize(getConfiguredPrefetch(destination, policy));
+        consumerInfo = new JmsConsumerInfo(consumerId);
+        consumerInfo.setClientId(connection.getClientID());
+        consumerInfo.setSelector(selector);
+        consumerInfo.setSubscriptionName(name);
+        consumerInfo.setDestination(destination);
+        consumerInfo.setAcknowledgementMode(acknowledgementMode);
+        consumerInfo.setNoLocal(noLocal);
+        consumerInfo.setBrowser(isBrowser());
+        consumerInfo.setPrefetchSize(getConfiguredPrefetch(destination, policy));
+        consumerInfo.setRedeliveryPolicy(redeliveryPolicy);
 
         session.getConnection().createResource(consumerInfo);
     }

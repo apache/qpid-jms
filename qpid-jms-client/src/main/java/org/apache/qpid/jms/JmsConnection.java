@@ -97,6 +97,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private URI configuredURI;
     private URI connectedURI;
     private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
+    private JmsRedeliveryPolicy redeliveryPolicy = new JmsRedeliveryPolicy();
     private boolean localMessagePriority;
     private boolean clientIdSet;
     private boolean sendAcksAsync;
@@ -858,7 +859,15 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     public void setPrefetchPolicy(JmsPrefetchPolicy prefetchPolicy) {
-        this.prefetchPolicy = prefetchPolicy;
+        this.prefetchPolicy = prefetchPolicy.copy();
+    }
+
+    public JmsRedeliveryPolicy getRedeliveryPolicy() {
+        return redeliveryPolicy;
+    }
+
+    public void setRedeliveryPolicy(JmsRedeliveryPolicy redeliveryPolicy) {
+        this.redeliveryPolicy = redeliveryPolicy.copy();
     }
 
     public boolean isLocalMessagePriority() {

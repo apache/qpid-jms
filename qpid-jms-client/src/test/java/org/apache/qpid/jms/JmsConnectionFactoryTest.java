@@ -344,6 +344,35 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         assertEquals("Properties were not equal", props, props2);
     }
 
+    /**
+     * The redelivery policy is maintained in a child-object, which we extract the properties from
+     * when serializing the factory. Ensure this functions by doing a round trip on a factory
+     * configured with some new redelivery configuration via the URI.
+     */
+    @Test
+    public void testSerializeThenDeserializeMaintainsRedeliveryPolicy() throws Exception {
+        String maxRedeliveryValue = "5";
+        String maxRedeliveryKey = "redeliveryPolicy.maxRedeliveries";
+        String uri = "amqp://localhost:1234?jms." + maxRedeliveryKey + "=" + maxRedeliveryValue;
+
+        JmsConnectionFactory cf = new JmsConnectionFactory(uri);
+        Map<String, String> props = cf.getProperties();
+
+        assertTrue("Props dont contain expected redelivery policy change", props.containsKey(maxRedeliveryKey));
+        assertEquals("Unexpected value", maxRedeliveryValue, props.get(maxRedeliveryKey));
+
+        Object roundTripped = roundTripSerialize(cf);
+
+        assertNotNull("Null object returned", roundTripped);
+        assertEquals("Unexpected type", JmsConnectionFactory.class, roundTripped.getClass());
+
+        Map<String, String> props2 = ((JmsConnectionFactory)roundTripped).getProperties();
+        assertTrue("Props dont contain expected redelivery policy change", props2.containsKey(maxRedeliveryKey));
+        assertEquals("Unexpected value", maxRedeliveryValue, props2.get(maxRedeliveryKey));
+
+        assertEquals("Properties were not equal", props, props2);
+    }
+
     @Test
     public void testSerializeTwoConnectionFactories() throws Exception {
         String uri = "amqp://localhost:1234";

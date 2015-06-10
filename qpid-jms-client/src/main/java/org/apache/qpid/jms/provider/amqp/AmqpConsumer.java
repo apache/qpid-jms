@@ -81,7 +81,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     private final ByteBuf incomingBuffer = Unpooled.buffer(INITIAL_BUFFER_CAPACITY);
 
-    private final AtomicLong _incomingSequence = new AtomicLong(0);
+    private final AtomicLong incomingSequence = new AtomicLong(0);
 
     private AsyncResult stopRequest;
 
@@ -115,7 +115,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                 stopRequest = request;
             }
         } else {
-            //TODO: We dont actually want the additional messages that could be sent while
+            // TODO: We dont actually want the additional messages that could be sent while
             // draining. We could explicitly reduce credit first, or possibly use 'echo' instead
             // of drain if it was supported. We would first need to understand what happens
             // if we reduce credit below the number of messages already in-flight before
@@ -321,7 +321,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                 }
             }
         } else if (ackType.equals(ACK_TYPE.POISONED)) {
-            deliveryFailed(delivery, false);
+            deliveryFailed(delivery);
         } else if (ackType.equals(ACK_TYPE.RELEASED)) {
             delivery.disposition(Released.getInstance());
             delivery.settle();
@@ -387,14 +387,13 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         do {
             incoming = getEndpoint().current();
             if (incoming != null) {
-                if(incoming.isReadable() && !incoming.isPartial()) {
+                if (incoming.isReadable() && !incoming.isPartial()) {
                     LOG.trace("{} has incoming Message(s).", this);
                     try {
                         processDelivery(incoming);
                     } catch (Exception e) {
                         throw IOExceptionSupport.create(e);
                     }
-                    getEndpoint().advance();
                 } else {
                     LOG.trace("{} has a partial incoming Message(s), deferring.", this);
                     incoming = null;
@@ -402,12 +401,9 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             } else {
                 // We have exhausted the locally queued messages on this link.
                 // Check if we tried to stop and have now run out of credit.
-                if(stopRequest != null) {
-                    if(getEndpoint().getRemoteCredit() <= 0)
-                    {
-                        stopRequest.onSuccess();
-                        stopRequest = null;
-                    }
+                if (stopRequest != null && getEndpoint().getRemoteCredit() <= 0) {
+                    stopRequest.onSuccess();
+                    stopRequest = null;
                 }
             }
         } while (incoming != null);
@@ -416,9 +412,22 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     private void processDelivery(Delivery incoming) throws Exception {
+
+        Message amqpMessage = decodeIncomingMessage(incoming);
+        long deliveryCount = amqpMessage.getDeliveryCount();
+        int maxRedeliveries = getJmsResource().getRedeliveryPolicy().getMaxRedeliveries();
+
+        if (maxRedeliveries >= 0 && deliveryCount > maxRedeliveries) {
+            LOG.trace("{} rejecting delivery that exceeds max redelivery count. {}", this, amqpMessage.getMessageId());
+            deliveryFailed(incoming);
+            return;
+        } else {
+            getEndpoint().advance();
+        }
+
         JmsMessage message = null;
         try {
-            message = AmqpJmsMessageBuilder.createJmsMessage(this, decodeIncomingMessage(incoming));
+            message = AmqpJmsMessageBuilder.createJmsMessage(this, amqpMessage);
         } catch (Exception e) {
             LOG.warn("Error on transform: {}", e.getMessage());
             // TODO - We could signal provider error but not sure we want to fail
@@ -426,7 +435,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             //        In the future once the JMS mapping is complete we should be
             //        able to convert everything to some message even if its just
             //        a bytes messages as a fall back.
-            deliveryFailed(incoming, true);
+            deliveryFailed(incoming);
             return;
         }
 
@@ -449,7 +458,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     protected long getNextIncomingSequenceNumber() {
-        return _incomingSequence.incrementAndGet();
+        return incomingSequence.incrementAndGet();
     }
 
     @Override
@@ -498,15 +507,13 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         return "AmqpConsumer { " + this.resource.getConsumerId() + " }";
     }
 
-    protected void deliveryFailed(Delivery incoming, boolean expandCredit) {
+    protected void deliveryFailed(Delivery incoming) {
         Modified disposition = new Modified();
         disposition.setUndeliverableHere(true);
         disposition.setDeliveryFailed(true);
         incoming.disposition(disposition);
         incoming.settle();
-        if (expandCredit) {
-            getEndpoint().flow(1);
-        }
+        sendFlowIfNeeded();
     }
 
     protected void deliver(JmsInboundMessageDispatch envelope) throws Exception {

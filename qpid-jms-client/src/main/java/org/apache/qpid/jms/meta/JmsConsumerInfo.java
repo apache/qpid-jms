@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.meta;
 
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.JmsRedeliveryPolicy;
 import org.apache.qpid.jms.util.ToStringSupport;
 
 public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsumerInfo> {
@@ -30,6 +31,8 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
     protected String subscriptionName;
     protected boolean noLocal;
     protected int acknowledgementMode;
+
+    protected JmsRedeliveryPolicy redeliveryPolicy;
 
     // Can be used to track the last consumed message.
     private transient long lastDeliveredSequenceId;
@@ -148,6 +151,14 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
 
     public void setAcknowledgementMode(int acknowledgementMode) {
         this.acknowledgementMode = acknowledgementMode;
+    }
+
+    public JmsRedeliveryPolicy getRedeliveryPolicy() {
+        return redeliveryPolicy;
+    }
+
+    public void setRedeliveryPolicy(JmsRedeliveryPolicy redeliveryPolicy) {
+        this.redeliveryPolicy = redeliveryPolicy;
     }
 
     @Override

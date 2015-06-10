@@ -66,6 +66,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.Rejected;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Released;
 import org.apache.qpid.jms.test.testpeer.describedtypes.TransactionalState;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.HeaderDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
@@ -892,6 +893,41 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectTransfer(dischargeMatcher, nullValue(), false, new Accepted(), true);
 
             session.commit();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=5000)
+    public void testIncomingMessageExceedsMaxRedeliveries() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final int COUNT = 5;
+
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            ((JmsConnection) connection).getRedeliveryPolicy().setMaxRedeliveries(1);
+
+            testPeer.expectBegin(true);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            HeaderDescribedType header = new HeaderDescribedType();
+            header.setDeliveryCount(new UnsignedInteger(2));
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(header, null, null, null, new AmqpValueDescribedType("content"), COUNT);
+
+            for (int i = 0; i < COUNT; i++) {
+                // Then expect an *settled* Modified disposition that rejects each message once
+                ModifiedMatcher modified = new ModifiedMatcher();
+                modified.withDeliveryFailed(equalTo(true));
+                modified.withUndeliverableHere(equalTo(true));
+                testPeer.expectDisposition(true, modified);
+            }
+
+            session.createConsumer(queue);
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

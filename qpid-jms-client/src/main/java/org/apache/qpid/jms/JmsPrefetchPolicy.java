@@ -63,6 +63,15 @@ public class JmsPrefetchPolicy {
     }
 
     /**
+     * Copy this policy into a newly allocated instance.
+     *
+     * @return a new JmsPrefetchPolicy that is a copy of this one.
+     */
+    public JmsPrefetchPolicy copy() {
+        return new JmsPrefetchPolicy(this);
+    }
+
+    /**
      * @return Returns the durableTopicPrefetch.
      */
     public int getDurableTopicPrefetch() {

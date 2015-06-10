@@ -74,6 +74,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private ExceptionListener exceptionListener;
 
     private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
+    private JmsRedeliveryPolicy redeliveryPolicy = new JmsRedeliveryPolicy();
 
     public JmsConnectionFactory() {
     }
@@ -502,6 +503,25 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     public void setPrefetchPolicy(JmsPrefetchPolicy prefetchPolicy) {
         this.prefetchPolicy = prefetchPolicy;
+    }
+
+    /**
+     * Returns the JmsRedeliveryPolicy that is applied when a new connection is created.
+     *
+     * @return the redeliveryPolicy that is currently configured for this factory.
+     */
+    public JmsRedeliveryPolicy getRedeliveryPolicy() {
+        return redeliveryPolicy;
+    }
+
+    /**
+     * Sets the JmsRedeliveryPolicy that is applied when a new connection is created.
+     *
+     * @param redeliveryPolicy
+     *        The new redeliveryPolicy to set
+     */
+    public void setRedeliveryPolicy(JmsRedeliveryPolicy redeliveryPolicy) {
+        this.redeliveryPolicy = redeliveryPolicy;
     }
 
     /**

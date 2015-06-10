@@ -202,15 +202,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
      */
     @Override
     public Message receive() throws JMSException {
-        checkClosed();
-        checkMessageListener();
-        sendPullCommand(0);
-
-        try {
-            return copy(ackFromReceive(this.messageQueue.dequeue(-1)));
-        } catch (Exception e) {
-            throw JmsExceptionSupport.create(e);
-        }
+        return receive(0);
     }
 
     /**
@@ -225,15 +217,16 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         checkMessageListener();
         sendPullCommand(timeout);
 
-        if (timeout > 0) {
-            try {
-                return copy(ackFromReceive(this.messageQueue.dequeue(timeout)));
-            } catch (InterruptedException e) {
-                throw JmsExceptionSupport.create(e);
-            }
+        long wait = timeout;
+        if (timeout == 0) {
+            wait = -1;
         }
 
-        return null;
+        try {
+            return copy(ackFromReceive(this.messageQueue.dequeue(wait)));
+        } catch (InterruptedException e) {
+            throw JmsExceptionSupport.create(e);
+        }
     }
 
     /**

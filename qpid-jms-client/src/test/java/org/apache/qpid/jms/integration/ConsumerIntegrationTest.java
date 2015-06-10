@@ -18,10 +18,12 @@
  */
 package org.apache.qpid.jms.integration;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import javax.jms.Connection;
 import javax.jms.IllegalStateException;
+import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Queue;
 import javax.jms.Session;
@@ -30,6 +32,8 @@ import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
+import org.apache.qpid.proton.amqp.DescribedType;
 import org.junit.Test;
 
 public class ConsumerIntegrationTest extends QpidJmsTestCase {
@@ -95,6 +99,36 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.
             consumer.close();
+        }
+    }
+
+    /**
+     * Test that a message is received when calling recieve with a timeout
+     * of 0, which means wait indefinitely.
+     */
+    @Test(timeout = 5000)
+    public void testReceiveMessageWithRecieveZeroTimeout() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin(true);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent);
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+            Message receivedMessage = messageConsumer.receive(0);
+
+            assertNotNull("A message should have been recieved", receivedMessage);
+
+            testPeer.waitForAllHandlersToComplete(2000);
         }
     }
 }

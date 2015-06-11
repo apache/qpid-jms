@@ -177,24 +177,24 @@ These options apply to the behaviour of certain AMQP functionality.
 
 The client has an optional Discovery module, which provides a customised failover layer where the broker URIs to connect to are not given in the initial URI, but discovered as the client operates via associated discovery agents. There are currently two discovery agent implementations, a file watcher that loads URIs from a file, and a multicast listener that works with ActiveMQ 5 brokers which have been configured to broadcast their broker addresses for listening clients.
 
-The general set of failover related options when using discovery are the same as those detailed earlier, with the main prefix updated from *failover.* to *discovery.*, and with the 'nested' options prefix used to supply URI options common to all the discovered broker URIs bring updated from *failover.nested.* to *discovery.discovered*. For example, a general discovery URI might look like:
+The general set of failover related options when using discovery are the same as those detailed earlier, with the main prefix updated from *failover.* to *discovery.*, and with the 'nested' options prefix used to supply URI options common to all the discovered broker URIs bring updated from *failover.nested.* to *discovery.discovered*. For example, without the agent URI details, a general discovery URI might look like:
 
-    discovery:(<agent-uri-details>)?discovery.maxReconnectAttempts=20&discovery.discovered.jms.clientID=foo
+    discovery:(<agent-uri>)?discovery.maxReconnectAttempts=20&discovery.discovered.jms.clientID=foo
 
-To use the file watcher discovery agent, utilise a URI of the form:
+To use the file watcher discovery agent, utilise an agent URI of the form:
 
-    discovery:(file:///path/to/monitored-file?updateInterval=60000)?discovery.maxReconnectAttempts=20&discovery.discovered.jms.clientID=foo
+    discovery:(file:///path/to/monitored-file?updateInterval=60000)
 
 The URI options for the file watcher discovery agent are listed below:
 
 + **updateInterval** Controls the frequency in milliseconds which the file is inspected for change. The default value is 30000.
 
 
-To use the multicast discovery agent with an ActiveMQ 5 broker, utilise a URI of the form:
+To use the multicast discovery agent with an ActiveMQ 5 broker, utilise an agent URI of the form:
 
-    discovery:(multicast://default?group=default)?discovery.maxReconnectAttempts=20&discovery.discovered.jms.clientID=foo
+    discovery:(multicast://default?group=default)
 
-Note that the use of *default* as the host in the multicast agent URI above is a special value (which is substituted with "239.255.2.3:6155" by the agent). You may change this to specify the actual IP and port in use in your multicast configuration.
+Note that the use of *default* as the host in the multicast agent URI above is a special value (that is substituted by the agent with the default "239.255.2.3:6155"). You may change this to specify the actual IP and port in use with your multicast configuration.
 
 The URI options for the multicast discovery agent are listed below:
 

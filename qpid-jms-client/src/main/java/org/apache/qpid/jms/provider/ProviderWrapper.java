@@ -187,7 +187,7 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
     }
 
     /**
-     * @return the wrapped AsyncProvider.
+     * @return the wrapped Provider.
      */
     public Provider getNext() {
         return next;

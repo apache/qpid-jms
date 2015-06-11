@@ -18,12 +18,14 @@ package org.apache.qpid.jms.provider.discovery;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderFactory;
 import org.apache.qpid.jms.provider.failover.FailoverProvider;
+import org.apache.qpid.jms.provider.failover.FailoverProviderFactory;
 import org.apache.qpid.jms.util.PropertyUtil;
 import org.apache.qpid.jms.util.URISupport;
 import org.apache.qpid.jms.util.URISupport.CompositeData;
@@ -39,9 +41,9 @@ public class DiscoveryProviderFactory extends ProviderFactory {
     public static final String DISCOVERY_OPTION_PREFIX = "discovery.";
 
     /**
-     * Prefix used for all properties that should be applied to any discovered remote URIs.
+     * Prefix addon used for all properties that should be applied to any discovered remote URIs.
      */
-    public static final String DISCOVERED_OPTION_PREFIX = "discovered.";
+    public static final String DISCOVERY_DISCOVERED_OPTION_PREFIX_ADON = "discovered.";
 
     @Override
     public Provider createProvider(URI remoteURI) throws Exception {
@@ -49,21 +51,34 @@ public class DiscoveryProviderFactory extends ProviderFactory {
         CompositeData composite = URISupport.parseComposite(remoteURI);
         Map<String, String> options = composite.getParameters();
 
+        // Gather failover and discovery options.
+        Map<String, String> failoverOptions = PropertyUtil.filterProperties(options, FailoverProviderFactory.FAILOVER_OPTION_PREFIX);
+        Map<String, String> failoverNestedOptions = PropertyUtil.filterProperties(failoverOptions, FailoverProviderFactory.FAILOVER_NESTED_OPTION_PREFIX_ADDON);
+
         Map<String, String> discoveryOptions = PropertyUtil.filterProperties(options, DISCOVERY_OPTION_PREFIX);
-        Map<String, String> discoveredOptions = PropertyUtil.filterProperties(options, DISCOVERED_OPTION_PREFIX);
+        Map<String, String> discoveredOptions = PropertyUtil.filterProperties(discoveryOptions, DISCOVERY_DISCOVERED_OPTION_PREFIX_ADON);
+
+        // Combine the provider options, and the nested/discovered options.
+        Map<String, String> mainOptions = new HashMap<String, String>();
+        mainOptions.putAll(failoverOptions);
+        mainOptions.putAll(discoveryOptions);
+
+        Map<String, String> nestedOptions = new HashMap<String, String>();
+        nestedOptions.putAll(failoverNestedOptions);
+        nestedOptions.putAll(discoveredOptions);
 
         // Failover will apply the nested options to each URI while attempting to connect.
-        FailoverProvider failover = new FailoverProvider(discoveredOptions);
-        discoveryOptions = PropertyUtil.setProperties(failover, discoveryOptions);
+        FailoverProvider failover = new FailoverProvider(nestedOptions);
+        Map<String, String> leftOverDiscoveryOptions = PropertyUtil.setProperties(failover, mainOptions);
 
         DiscoveryProvider discovery = new DiscoveryProvider(remoteURI, failover);
-        discoveryOptions = PropertyUtil.setProperties(discovery, discoveryOptions);
+        Map<String, String> unusedOptions = PropertyUtil.setProperties(discovery, leftOverDiscoveryOptions);
 
-        if (!discoveryOptions.isEmpty()) {
+        if (!unusedOptions.isEmpty()) {
             String msg = ""
                 + " Not all options could be set on the Discovery provider."
                 + " Check the options are spelled correctly."
-                + " Unused parameters=[" + discoveryOptions + "]."
+                + " Unused parameters=[" + unusedOptions + "]."
                 + " This Provider cannot be started.";
             throw new IllegalArgumentException(msg);
         }

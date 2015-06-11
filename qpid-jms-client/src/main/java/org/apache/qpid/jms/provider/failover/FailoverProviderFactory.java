@@ -30,13 +30,23 @@ import org.apache.qpid.jms.util.URISupport.CompositeData;
  */
 public class FailoverProviderFactory extends ProviderFactory {
 
+    /**
+     * Prefix used for all properties that apply specifically to the FailoverProvider
+     */
+    public static final String FAILOVER_OPTION_PREFIX = "failover.";
+
+    /**
+     * Prefix addion used for all nested properties that should be applied to any remote URIs.
+     */
+    public static final String FAILOVER_NESTED_OPTION_PREFIX_ADDON = "nested.";
+
     @Override
     public Provider createProvider(URI remoteURI) throws Exception {
         CompositeData composite = URISupport.parseComposite(remoteURI);
         Map<String, String> options = composite.getParameters();
 
-        Map<String, String> filtered = PropertyUtil.filterProperties(options, "failover.");
-        Map<String, String> nested = PropertyUtil.filterProperties(filtered, "nested.");
+        Map<String, String> filtered = PropertyUtil.filterProperties(options, FAILOVER_OPTION_PREFIX);
+        Map<String, String> nested = PropertyUtil.filterProperties(filtered, FAILOVER_NESTED_OPTION_PREFIX_ADDON);
 
         FailoverProvider provider = new FailoverProvider(composite.getComponents(), nested);
         Map<String, String> unused = PropertyUtil.setProperties(provider, filtered);

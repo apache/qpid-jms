@@ -201,7 +201,7 @@ public class FailoverUriPool {
      * @param uri
      *        The URI to attempt to remove from the pool.
      *
-     * @returns true if the given URI was removed from the pool.
+     * @return true if the given URI was removed from the pool.
      */
     public boolean remove(URI uri) {
         if (uri == null) {

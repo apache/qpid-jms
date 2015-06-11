@@ -29,7 +29,7 @@ Applications use a JNDI InitialContext, itself obtained from an InitialContextFa
     a file, which is passed using the *java.naming.provider.url* system property. The syntax for these properties is detailed
     below.
 
-3.  Programatically using an environment Hashtable.
+3.  Programmatically using an environment Hashtable.
 
     The InitialContext may also be configured directly by passing an environment during creation:
 
@@ -205,7 +205,7 @@ The URI options for the multicast discovery agent are listed below:
 
 The client makes use of the SLF4J API, allowing users to select a particular logging implementation based on their needs by supplying a SLF4J 'binding', such as *slf4j-log4j* in order to use Log4J. More details on SLF4J are available from http://www.slf4j.org/.
 
-The client uses Logger names residing within the *org.apache.qpid.jms* heirarchy, which you can use to configure a logging implementation based on your needs.
+The client uses Logger names residing within the *org.apache.qpid.jms* hierarchy, which you can use to configure a logging implementation based on your needs.
 
 When debugging some issues, it may sometimes be useful to enable additional protocol trace logging from the Qpid Proton AMQP 1.0 library. There are two options to achieve this:
 

@@ -153,12 +153,17 @@ The complete set of configuration options for failover is listed below:
 
 + **failover.initialReconnectDelay** The amount of time the client will wait before the first attempt to reconnect to a remote peer.  The default value is zero, meaning the first attempt happens immediately.
 + **failover.reconnectDelay** Controls the delay between successive reconnection attempts, defaults to 10 milliseconds.  If the backoff option is not enabled this value remains constant.
-+ **failover.maxReconnectDelay** The maximum time that the client will wait before attempting a reconnect.  This value is only used when the backoff feature is enabled to ensure that the delay doesn't not grow to large.  Defaults to 30 seconds as the max time between connect attempts.
++ **failover.maxReconnectDelay** The maximum time that the client will wait before attempting a reconnect.  This value is only used when the backoff feature is enabled to ensure that the delay doesn't not grow too large.  Defaults to 30 seconds as the max time between connect attempts.
 + **failover.useReconnectBackOff** Controls whether the time between reconnection attempts should grow based on a configured multiplier.  This option defaults to true.
-+ **failover.reconnectBackOffMultiplier** The multiplier used to grow the reconnection delay value, defaults to 2.0d
++ **failover.reconnectBackOffMultiplier** The multiplier used to grow the reconnection delay value, defaults to 2.0d.
 + **failover.maxReconnectAttempts** The number of reconnection attempts allowed before reporting the connection as failed to the client.  The default is no limit or (-1).
-+ **failover.startupMaxReconnectAttempts** For a client that has never connected to a remote peer before this option control how many attempts are made to connect before reporting the connection as failed.  The default is to default to the value of maxReconnectAttempts.
++ **failover.startupMaxReconnectAttempts** For a client that has never connected to a remote peer before this option control how many attempts are made to connect before reporting the connection as failed.  The default is to use the value of maxReconnectAttempts.
 + **failover.warnAfterReconnectAttempts** Controls how often the client will log a message indicating that failover reconnection is being attempted.  The default is to log every 10 connection attempts.
+
+The failover URI options also supports defining 'nested' options applicable to each individual broker URI, which can be used to avoid repetition and define options common to them all. This is accomplished using the same URI options outlined earlier for the indivual broker URI but now prefixed with *failover.nested.*:
+
+    failover:(amqp://broker1:5672,amqp://broker2:5672)?failover.nested.jms.clientID=foo
+
 
 ### AMQP Configuration options
 

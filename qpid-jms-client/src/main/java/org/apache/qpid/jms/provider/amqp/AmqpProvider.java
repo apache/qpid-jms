@@ -660,7 +660,7 @@ public class AmqpProvider implements Provider, TransportListener {
             @Override
             public void run() {
                 if (isTraceBytes()) {
-                    TRACE_BYTES.info("Recieved: {}", ByteBufUtil.hexDump(input));
+                    TRACE_BYTES.info("Received: {}", ByteBufUtil.hexDump(input));
                 }
 
                 ByteBuffer source = input.nioBuffer();

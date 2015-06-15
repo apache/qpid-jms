@@ -224,4 +224,25 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
         }
     }
+
+    @Test(timeout = 5000)
+    public void testSaslLayerDisabledConnection() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Expect a connection with no SASL layer.
+            testPeer.expectSaslLayerDisabledConnect();
+            // Each connection creates a session for managing temporary destinations etc
+            testPeer.expectBegin(true);
+
+            ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + "?amqp.saslLayer=false");
+            Connection connection = factory.createConnection();
+            // Set a clientID to provoke the actual AMQP connection process to occur.
+            connection.setClientID("clientName");
+
+            testPeer.waitForAllHandlersToComplete(1000);
+            assertNull(testPeer.getThrowable());
+
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
 }

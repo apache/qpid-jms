@@ -107,6 +107,7 @@ public class AmqpProvider implements Provider, TransportListener {
     private String vhost;
     private boolean traceFrames;
     private boolean traceBytes;
+    private boolean saslLayer = true;
     private boolean presettleConsumers;
     private boolean presettleProducers;
     private long connectTimeout = JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT;
@@ -270,8 +271,9 @@ public class AmqpProvider implements Provider, TransportListener {
                             protonTransport.setIdleTimeout(idleTimeout);
                             protonTransport.bind(protonConnection);
                             protonConnection.collect(protonCollector);
-                            Sasl sasl = protonTransport.sasl();
-                            if (sasl != null) {
+                            Sasl sasl = null;
+                            if (saslLayer) {
+                                sasl = protonTransport.sasl();
                                 sasl.client();
 
                                 String hostname = getVhost();
@@ -886,6 +888,19 @@ public class AmqpProvider implements Provider, TransportListener {
 
     public boolean isTraceBytes() {
         return this.traceBytes;
+    }
+
+    public boolean isSaslLayer() {
+        return saslLayer;
+    }
+
+    /**
+     * Sets whether a sasl layer is used for the connection or not.
+     *
+     * @param saslLayer true to enable the sasl layer, false to disable it.
+     */
+    public void setSaslLayer(boolean saslLayer) {
+        this.saslLayer = saslLayer;
     }
 
     public String getVhost() {

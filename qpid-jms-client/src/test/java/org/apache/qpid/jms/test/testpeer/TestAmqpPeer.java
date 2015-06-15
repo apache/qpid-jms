@@ -389,6 +389,27 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(saslInitMatcher);
     }
 
+    /**
+     * Expect a connection that does not use a SASL layer, but proceeds straight
+     * to the AMQP connection (useful to skip a stage for connections that don't
+     * require SASL, e.g. because of anonymous or client certificate authentication).
+     */
+    public void expectSaslLayerDisabledConnect()
+    {
+        addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
+
+        OpenFrame openFrame = createOpenFrame();
+
+        OpenMatcher openMatcher = new OpenMatcher()
+            .withContainerId(notNullValue(String.class))
+            .onSuccess(new FrameSender(
+                    this, FrameType.AMQP, 0,
+                    openFrame,
+                    null));
+
+        addHandler(openMatcher);
+    }
+
     public void expectAnonymousConnect(boolean authorize)
     {
         expectAnonymousConnect(authorize, null, null);
@@ -625,12 +646,6 @@ public class TestAmqpPeer implements AutoCloseable
         }
 
         addHandler(closeMatcher);
-    }
-
-    public void expectHeaderAndOpen()
-    {
-        addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
-        addHandler(new OpenMatcher());
     }
 
     public void expectBegin(boolean expectSessionFlow)

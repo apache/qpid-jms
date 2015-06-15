@@ -20,6 +20,7 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.qpid.jms.util.FactoryFinder;
 import org.apache.qpid.jms.util.ResourceNotFoundException;
@@ -54,12 +55,16 @@ public class SaslMechanismFinder {
      *        the password, or null if there is none
      * @param localPrincipal
      *        the Principal associated with the transport, or null if there is none
+     * @param mechRestrictions
+     *        The possible mechanism(s) to which the client should restrict its
+     *        mechanism selection to if offered by the server, or null if there
+     *        is no restriction
      * @param remoteMechanisms
      *        list of mechanism names that are supported by the remote peer.
      *
      * @return the best matching Mechanism for the supported remote set.
      */
-    public static Mechanism findMatchingMechanism(String username, String password, Principal localPrincipal, String... remoteMechanisms) {
+    public static Mechanism findMatchingMechanism(String username, String password, Principal localPrincipal, Set<String> mechRestrictions, String... remoteMechanisms) {
 
         Mechanism match = null;
         List<Mechanism> found = new ArrayList<Mechanism>();
@@ -68,7 +73,9 @@ public class SaslMechanismFinder {
             MechanismFactory factory = findMechanismFactory(remoteMechanism);
             if (factory != null) {
                 Mechanism mech = factory.createMechanism();
-                if(mech.isApplicable(username, password, localPrincipal)) {
+                if(mechRestrictions != null && !mechRestrictions.contains(remoteMechanism)) {
+                    LOG.debug("Skipping {} mechanism because it is not in the configured mechanisms restriction set", remoteMechanism);
+                } else if(mech.isApplicable(username, password, localPrincipal)) {
                     found.add(mech);
                 } else {
                     LOG.debug("Skipping {} mechanism because the available credentials are not sufficient", mech);

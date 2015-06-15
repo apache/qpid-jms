@@ -23,8 +23,6 @@ package org.apache.qpid.jms.integration;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-import java.io.IOException;
-
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
@@ -157,7 +155,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         doMechanismSelectedTestImpl("username", "password", CRAM_MD5, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS}, false);
     }
 
-    private void doMechanismSelectedTestImpl(String username, String password, Symbol clientSelectedMech, Symbol[] serverMechs, boolean wait) throws JMSException, InterruptedException, Exception, IOException {
+    private void doMechanismSelectedTestImpl(String username, String password, Symbol clientSelectedMech, Symbol[] serverMechs, boolean wait) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
             testPeer.expectFailingSaslConnect(serverMechs, clientSelectedMech);
@@ -243,6 +241,55 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectClose();
             connection.close();
+        }
+    }
+
+    @Test(timeout = 10000)
+    public void testRestrictSaslMechanismsWithSingleMech() throws Exception {
+        // Check PLAIN gets picked when we don't specify a restriction
+        doMechanismSelectionRestrictedTestImpl("username", "password", PLAIN, new Symbol[] { PLAIN, ANONYMOUS}, null);
+
+        // Check ANONYMOUS gets picked when we do specify a restriction
+        doMechanismSelectionRestrictedTestImpl("username", "password", ANONYMOUS, new Symbol[] { PLAIN, ANONYMOUS}, "ANONYMOUS");
+    }
+
+    @Test(timeout = 10000)
+    public void testRestrictSaslMechanismsWithMultipleMechs() throws Exception {
+        // Check CRAM-MD5 gets picked when we dont specify a restriction
+        doMechanismSelectionRestrictedTestImpl("username", "password", CRAM_MD5, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS}, null);
+
+        // Check PLAIN gets picked when we specify a restriction with multiple mechs
+        doMechanismSelectionRestrictedTestImpl("username", "password", PLAIN, new Symbol[] { CRAM_MD5, PLAIN, ANONYMOUS}, "PLAIN,ANONYMOUS");
+    }
+
+    @Test(timeout = 5000)
+    public void testRestrictSaslMechanismsWithMultipleMechsNoPassword() throws Exception {
+        // Check ANONYMOUS gets picked when we specify a restriction with multiple mechs but don't give a password
+        doMechanismSelectionRestrictedTestImpl("username", null, ANONYMOUS, new Symbol[] { CRAM_MD5, PLAIN, ANONYMOUS}, "PLAIN,ANONYMOUS");
+    }
+
+    private void doMechanismSelectionRestrictedTestImpl(String username, String password, Symbol clientSelectedMech, Symbol[] serverMechs, String mechanismsOptionValue) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            testPeer.expectFailingSaslConnect(serverMechs, clientSelectedMech);
+
+            String uriOptions = "?jms.clientID=myclientid";
+            if(mechanismsOptionValue != null) {
+                uriOptions += "&amqp.saslMechanisms=" + mechanismsOptionValue;
+            }
+
+            ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + uriOptions);
+            try {
+                factory.createConnection(username, password);
+
+                fail("Excepted exception to be thrown");
+            }catch (JMSSecurityException jmsse) {
+                // Expected, we deliberately failed the SASL process,
+                // we only wanted to verify the correct mechanism
+                // was selected, other tests verify the remainder.
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 }

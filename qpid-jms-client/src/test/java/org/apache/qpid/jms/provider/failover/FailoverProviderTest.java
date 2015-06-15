@@ -140,34 +140,6 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         }, TimeUnit.SECONDS.toMillis(20), 10));
     }
 
-    @Test(timeout = 15000)
-    public void testGetLocalPrincipal() throws Exception {
-        String principalName = "foo";
-
-        FailoverProviderFactory factory = new FailoverProviderFactory();
-        provider = (FailoverProvider) factory.createProvider(new URI("failover:(mock://192.168.2.1:5672?mock.localPrincipal=" + principalName + ")"));
-        provider.setProviderListener(new DefaultProviderListener());
-
-        provider.connect();
-
-        ProviderFuture request = new ProviderFuture();
-        provider.create(createConnectionInfo(), request);
-
-        request.sync(10, TimeUnit.SECONDS);
-        assertTrue(request.isComplete());
-
-        assertNotNull(provider.getLocalPrincipal());
-        assertEquals(principalName, provider.getLocalPrincipal().getName());
-    }
-
-    @Test(timeout = 15000)
-    public void testGetLocalPrincipalNull() throws Exception {
-        FailoverProviderFactory factory = new FailoverProviderFactory();
-        provider = (FailoverProvider) factory.createProvider(new URI("failover:(mock://192.168.2.1:5672)"));
-
-        assertNull(provider.getLocalPrincipal());
-    }
-
     @Test(timeout = 30000)
     public void testToString() throws Exception {
         provider = new FailoverProvider(uris, Collections.<String, String>emptyMap());

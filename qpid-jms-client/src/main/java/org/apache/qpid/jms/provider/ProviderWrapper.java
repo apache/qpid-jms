@@ -18,7 +18,6 @@ package org.apache.qpid.jms.provider;
 
 import java.io.IOException;
 import java.net.URI;
-import java.security.Principal;
 
 import javax.jms.JMSException;
 
@@ -191,10 +190,5 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
      */
     public Provider getNext() {
         return next;
-    }
-
-    @Override
-    public Principal getLocalPrincipal() {
-        return next.getLocalPrincipal();
     }
 }

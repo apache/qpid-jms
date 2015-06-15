@@ -18,7 +18,6 @@ package org.apache.qpid.jms.provider.mock;
 
 import java.io.IOException;
 import java.net.URI;
-import java.security.Principal;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -487,36 +486,12 @@ public class MockProvider implements Provider {
         this.connectTimeout = connectTimeout;
     }
 
-    @Override
-    public Principal getLocalPrincipal() {
-        final String localPrincipal = configuration.getLocalPrincipal();
-
-        if (localPrincipal == null) {
-             return null;
-        } else {
-            return new MockPrincipal(localPrincipal);
-        }
-    }
-
     //----- Implementation details -------------------------------------------//
 
 
     private void checkClosed() throws ProviderClosedException {
         if (closed.get()) {
             throw new ProviderClosedException("This Provider is already closed");
-        }
-    }
-
-    private static final class MockPrincipal implements Principal {
-        private final String name;
-
-        private MockPrincipal(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public String getName() {
-            return name;
         }
     }
 

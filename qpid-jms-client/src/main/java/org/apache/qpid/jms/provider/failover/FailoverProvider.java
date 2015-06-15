@@ -19,7 +19,6 @@ package org.apache.qpid.jms.provider.failover;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1027,15 +1026,5 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         public void signalConnected() {
             super.onSuccess();
         }
-    }
-
-    @Override
-    public Principal getLocalPrincipal() {
-        Provider provider = this.provider;
-        if (provider != null) {
-            return provider.getLocalPrincipal();
-        }
-
-        return null;
     }
 }

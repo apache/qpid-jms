@@ -36,7 +36,6 @@ import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageFactory;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.engine.Connection;
-import org.apache.qpid.proton.engine.Sasl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,16 +57,13 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     private boolean anonymousProducerCache = false;
     private int anonymousProducerCacheSize = 10;
 
-    public AmqpConnection(AmqpProvider provider, Connection protonConnection, Sasl sasl, JmsConnectionInfo info) {
+    public AmqpConnection(AmqpProvider provider, Connection protonConnection, AmqpSaslAuthenticator authenticator, JmsConnectionInfo info) {
         super(info, protonConnection);
 
         this.provider = provider;
         this.remoteURI = provider.getRemoteURI();
         this.amqpMessageFactory = new AmqpJmsMessageFactory(this);
-
-        if (sasl != null) {
-            this.authenticator = new AmqpSaslAuthenticator(sasl, info, provider.getLocalPrincipal());
-        }
+        this.authenticator = authenticator;
 
         this.resource.getConnectionId().setProviderHint(this);
 

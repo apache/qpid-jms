@@ -16,17 +16,9 @@
  */
 package org.apache.qpid.jms.provider;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-
-import java.net.URI;
-
 import org.apache.qpid.jms.provider.mock.MockProvider;
-import org.apache.qpid.jms.provider.mock.MockProviderFactory;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.junit.After;
-import org.junit.Test;
 
 public class ProviderWrapperTest extends QpidJmsTestCase{
 
@@ -39,33 +31,5 @@ public class ProviderWrapperTest extends QpidJmsTestCase{
             mockProvider.close();
         }
         super.tearDown();
-    }
-
-    @Test
-    public void testGetLocalPrincipal() throws Exception {
-        String principalName = "foo";
-
-        MockProviderFactory factory = new MockProviderFactory();
-        mockProvider = factory.createProvider(new URI("mock://1.2.3.4:5678?mock.localPrincipal=" + principalName));
-
-        assertNotNull(mockProvider.getLocalPrincipal());
-        assertEquals(principalName, mockProvider.getLocalPrincipal().getName());
-
-        ProviderWrapper<MockProvider> wrapper = new ProviderWrapper<MockProvider>(mockProvider);
-
-        assertNotNull(wrapper.getLocalPrincipal());
-        assertEquals(principalName, wrapper.getLocalPrincipal().getName());
-    }
-
-    @Test
-    public void testGetLocalPrincipalNull() throws Exception {
-        MockProviderFactory factory = new MockProviderFactory();
-        mockProvider = factory.createProvider(new URI("mock://1.2.3.4:5678"));
-
-        assertNull(mockProvider.getLocalPrincipal());
-
-        ProviderWrapper<MockProvider> wrapper = new ProviderWrapper<MockProvider>(mockProvider);
-
-        assertNull(wrapper.getLocalPrincipal());
     }
 }

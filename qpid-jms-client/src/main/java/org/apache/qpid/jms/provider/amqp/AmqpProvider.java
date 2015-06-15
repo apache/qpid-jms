@@ -108,6 +108,7 @@ public class AmqpProvider implements Provider, TransportListener {
     private boolean traceFrames;
     private boolean traceBytes;
     private boolean saslLayer = true;
+    private String[] saslMechanisms;
     private boolean presettleConsumers;
     private boolean presettleProducers;
     private long connectTimeout = JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT;
@@ -271,9 +272,10 @@ public class AmqpProvider implements Provider, TransportListener {
                             protonTransport.setIdleTimeout(idleTimeout);
                             protonTransport.bind(protonConnection);
                             protonConnection.collect(protonCollector);
-                            Sasl sasl = null;
+
+                            AmqpSaslAuthenticator authenticator = null;
                             if (saslLayer) {
-                                sasl = protonTransport.sasl();
+                                Sasl sasl = protonTransport.sasl();
                                 sasl.client();
 
                                 String hostname = getVhost();
@@ -284,8 +286,11 @@ public class AmqpProvider implements Provider, TransportListener {
                                 }
 
                                 setHostname(sasl, hostname);
+
+                                authenticator = new AmqpSaslAuthenticator(sasl, connectionInfo, getLocalPrincipal(), saslMechanisms);
                             }
-                            connection = new AmqpConnection(AmqpProvider.this, protonConnection, sasl, connectionInfo);
+
+                            connection = new AmqpConnection(AmqpProvider.this, protonConnection, authenticator, connectionInfo);
                             connection.open(new AsyncResult() {
 
                                 @Override
@@ -903,6 +908,20 @@ public class AmqpProvider implements Provider, TransportListener {
         this.saslLayer = saslLayer;
     }
 
+    public String[] getSaslMechanisms() {
+        return saslMechanisms;
+    }
+
+    /**
+     * Sets a selection of mechanisms to restrict the choice to, enabling only
+     * a subset of the servers offered mechanisms to be selectable.
+     *
+     * @param saslMechanisms the mechanisms to restrict choice to, or null not to restrict.
+     */
+    public void setSaslMechanisms(String[] saslMechanisms) {
+        this.saslMechanisms = saslMechanisms;
+    }
+
     public String getVhost() {
         return vhost;
     }
@@ -1050,8 +1069,7 @@ public class AmqpProvider implements Provider, TransportListener {
         }
     }
 
-    @Override
-    public Principal getLocalPrincipal() {
+    Principal getLocalPrincipal() {
         if(transport instanceof SSLTransport) {
             return ((SSLTransport) transport).getLocalPrincipal();
         }

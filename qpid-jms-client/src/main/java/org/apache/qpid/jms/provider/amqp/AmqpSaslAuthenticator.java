@@ -17,6 +17,8 @@
 package org.apache.qpid.jms.provider.amqp;
 
 import java.security.Principal;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.jms.JMSSecurityException;
 import javax.security.sasl.SaslException;
@@ -35,6 +37,7 @@ public class AmqpSaslAuthenticator {
     private final JmsConnectionInfo info;
     private Mechanism mechanism;
     private Principal localPrincipal;
+    private Set<String> mechanismsRestriction;
 
     /**
      * Create the authenticator and initialize it.
@@ -45,11 +48,27 @@ public class AmqpSaslAuthenticator {
      *        The Connection information used to provide credentials to the remote peer.
      * @param localPrincipal
      *        The local Principal associated with the transport, or null if there is none.
+     * @param mechanismsRestriction
+     *        The possible mechanism(s) to which the client should restrict its
+     *        mechanism selection to if offered by the server
      */
-    public AmqpSaslAuthenticator(Sasl sasl, JmsConnectionInfo info, Principal localPrincipal) {
+    public AmqpSaslAuthenticator(Sasl sasl, JmsConnectionInfo info, Principal localPrincipal, String[] mechanismsRestriction) {
         this.sasl = sasl;
         this.info = info;
         this.localPrincipal = localPrincipal;
+        if(mechanismsRestriction != null) {
+            Set<String> mechs = new HashSet<String>();
+            for(int i = 0; i < mechanismsRestriction.length; i++) {
+                String mech = mechanismsRestriction[i];
+                if(!mech.trim().isEmpty()) {
+                    mechs.add(mech);
+                }
+            }
+
+            if(!mechs.isEmpty()) {
+                this.mechanismsRestriction = mechs;
+            }
+        }
     }
 
     /**
@@ -83,7 +102,7 @@ public class AmqpSaslAuthenticator {
         try {
             String[] remoteMechanisms = sasl.getRemoteMechanisms();
             if (remoteMechanisms != null && remoteMechanisms.length != 0) {
-                mechanism = SaslMechanismFinder.findMatchingMechanism(info.getUsername(), info.getPassword(), localPrincipal, remoteMechanisms);
+                mechanism = SaslMechanismFinder.findMatchingMechanism(info.getUsername(), info.getPassword(), localPrincipal, mechanismsRestriction, remoteMechanisms);
                 if (mechanism != null) {
                     mechanism.setUsername(info.getUsername());
                     mechanism.setPassword(info.getPassword());

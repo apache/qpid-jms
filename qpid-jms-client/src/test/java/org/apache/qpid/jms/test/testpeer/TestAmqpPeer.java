@@ -482,7 +482,12 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectSaslAnonymousConnect(Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher)
     {
-        expectSaslConnect(ANONYMOUS, equalTo(new Binary(new byte[0])), new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, null, idleTimeoutMatcher, hostnameMatcher);
+        expectSaslAnonymousConnect(idleTimeoutMatcher, hostnameMatcher, null);
+    }
+
+    public void expectSaslAnonymousConnect(Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher, Map<Symbol, Object> serverProperties)
+    {
+        expectSaslConnect(ANONYMOUS, equalTo(new Binary(new byte[0])), new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, serverProperties, idleTimeoutMatcher, hostnameMatcher);
     }
 
     public void expectFailingSaslConnect(Symbol[] serverMechs, Symbol clientSelectedMech)
@@ -531,44 +536,14 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(openMatcher);
     }
 
-    // TODO - Reject any incoming connection using the supplied information
     public void rejectConnect(Symbol errorType, String errorMessage, Map<Symbol, Object> errorInfo) {
-        SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(ANONYMOUS);
-        addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
-                                            new FrameSender(
-                                                    this, FrameType.SASL, 0,
-                                                    saslMechanismsFrame, null)));
+        // Expect a connection, establish through the SASL negotiation and sending of the Open frame
+        Map<Symbol, Object> serverProperties = new HashMap<Symbol, Object>();
+        serverProperties.put(AmqpSupport.CONNECTION_OPEN_FAILED, true);
 
-        addHandler(new SaslInitMatcher()
-            .withMechanism(equalTo(ANONYMOUS))
-            .withInitialResponse(equalTo(new Binary(new byte[0])))
-            .onSuccess(new AmqpPeerRunnable()
-            {
-                @Override
-                public void run()
-                {
-                    TestAmqpPeer.this.sendFrame(
-                            FrameType.SASL, 0,
-                            new SaslOutcomeFrame().setCode(SASL_OK),
-                            null,
-                            false);
-                    _driverRunnable.expectHeader();
-                }
-            }));
+        expectSaslAnonymousConnect(null, null, serverProperties);
 
-        addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
-
-        Map<Symbol, Object> properties = new HashMap<Symbol, Object>();
-        properties.put(Symbol.valueOf("amqp:connection-establishment-failed"), true);
-
-        OpenFrame open = createOpenFrame();
-        open.setProperties(properties);
-
-        addHandler(new OpenMatcher()
-            .withContainerId(notNullValue(String.class))
-            .onSuccess(new FrameSender(this, FrameType.AMQP, CONNECTION_CHANNEL, open, null)));
-
-        // Now generate the Close with the supplied error
+        // Now generate the Close frame with the supplied error
         final CloseFrame closeFrame = new CloseFrame();
         if (errorType != null) {
             org.apache.qpid.jms.test.testpeer.describedtypes.Error detachError = new org.apache.qpid.jms.test.testpeer.describedtypes.Error();
@@ -578,6 +553,7 @@ public class TestAmqpPeer implements AutoCloseable
             closeFrame.setError(detachError);
         }
 
+        // Update the handler to send the Close frame after the Open frame.
         CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
         final FrameSender closeSender = new FrameSender(this, FrameType.AMQP, CONNECTION_CHANNEL, closeFrame, null);
         comp.add(closeSender);

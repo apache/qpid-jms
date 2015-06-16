@@ -114,7 +114,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     public void testSaslAnonymousConnection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Expect an ANOYMOUS connection
-            testPeer.expectAnonymousConnect();
+            testPeer.expectSaslAnonymousConnect();
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin(true);
 

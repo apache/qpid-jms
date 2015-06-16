@@ -96,6 +96,7 @@ import org.slf4j.LoggerFactory;
 // TODO should expectXXXYYYZZZ methods just be expect(matcher)?
 public class TestAmqpPeer implements AutoCloseable
 {
+    private static final Symbol ANONYMOUS = Symbol.valueOf("ANONYMOUS");
     private static final Symbol EXTERNAL = Symbol.valueOf("EXTERNAL");
     private static final Symbol PLAIN = Symbol.valueOf("PLAIN");
     private static final Logger LOGGER = LoggerFactory.getLogger(TestAmqpPeer.class.getName());
@@ -366,7 +367,8 @@ public class TestAmqpPeer implements AutoCloseable
         return openFrame;
     }
 
-    public void expectSaslConnect(Symbol mechanism, Matcher<Binary> initialResponseMatcher, Symbol[] desiredCapabilities, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties)
+    public void expectSaslConnect(Symbol mechanism, Matcher<Binary> initialResponseMatcher, Symbol[] desiredCapabilities, Symbol[] serverCapabilities,
+                                    Map<Symbol, Object> serverProperties, Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher)
     {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(mechanism);
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
@@ -374,7 +376,7 @@ public class TestAmqpPeer implements AutoCloseable
                                                     this, FrameType.SASL, 0,
                                                     saslMechanismsFrame, null)));
 
-        addHandler(new SaslInitMatcher()
+        SaslInitMatcher saslInitMatcher = new SaslInitMatcher()
             .withMechanism(equalTo(mechanism))
             .withInitialResponse(initialResponseMatcher)
             .onSuccess(new AmqpPeerRunnable()
@@ -387,9 +389,19 @@ public class TestAmqpPeer implements AutoCloseable
                             new SaslOutcomeFrame().setCode(UnsignedByte.valueOf((byte)0)),
                             null,
                             false);
+
+                    // Now that we processed the SASL layer AMQP header, reset the
+                    // peer to expect the non-SASL AMQP header.
                     _driverRunnable.expectHeader();
                 }
-            }));
+            });
+
+        if(hostnameMatcher != null)
+        {
+            saslInitMatcher.withHostname(hostnameMatcher);
+        }
+
+        addHandler(saslInitMatcher);
 
         addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
 
@@ -420,6 +432,16 @@ public class TestAmqpPeer implements AutoCloseable
             openMatcher.withDesiredCapabilities(nullValue());
         }
 
+        if(idleTimeoutMatcher !=null)
+        {
+            openMatcher.withIdleTimeOut(idleTimeoutMatcher);
+        }
+
+        if(hostnameMatcher != null)
+        {
+            openMatcher.withHostname(hostnameMatcher);
+        }
+
         addHandler(openMatcher);
     }
 
@@ -438,7 +460,7 @@ public class TestAmqpPeer implements AutoCloseable
 
         Matcher<Binary> initialResponseMatcher = equalTo(new Binary(data));
 
-        expectSaslConnect(PLAIN, initialResponseMatcher, desiredCapabilities, serverCapabilities, serverProperties);
+        expectSaslConnect(PLAIN, initialResponseMatcher, desiredCapabilities, serverCapabilities, serverProperties, null, null);
     }
 
     public void expectSaslExternalConnect()
@@ -448,7 +470,17 @@ public class TestAmqpPeer implements AutoCloseable
             throw new IllegalStateException("need-client-cert must be enabled on the test peer");
         }
 
-        expectSaslConnect(EXTERNAL, equalTo(new Binary(new byte[0])), new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, null);
+        expectSaslConnect(EXTERNAL, equalTo(new Binary(new byte[0])), new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, null, null, null);
+    }
+
+    public void expectSaslAnonymousConnect()
+    {
+        expectSaslAnonymousConnect(null, null);
+    }
+
+    public void expectSaslAnonymousConnect(Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher)
+    {
+        expectSaslConnect(ANONYMOUS, equalTo(new Binary(new byte[0])), new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, null, idleTimeoutMatcher, hostnameMatcher);
     }
 
     public void expectFailingSaslConnect(Symbol[] serverMechs, Symbol clientSelectedMech)
@@ -497,77 +529,16 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(openMatcher);
     }
 
-    public void expectAnonymousConnect()
-    {
-        expectAnonymousConnect(null, null);
-    }
-
-    public void expectAnonymousConnect(Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher)
-    {
-        SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(Symbol.valueOf("ANONYMOUS"));
-        addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
-                                            new FrameSender(
-                                                    this, FrameType.SASL, 0,
-                                                    saslMechanismsFrame, null)));
-
-        SaslInitMatcher saslInitMatcher = new SaslInitMatcher()
-            .withMechanism(equalTo(Symbol.valueOf("ANONYMOUS")))
-            .withInitialResponse(equalTo(new Binary(new byte[0])))
-            .onSuccess(new AmqpPeerRunnable()
-            {
-                @Override
-                public void run()
-                {
-                    TestAmqpPeer.this.sendFrame(
-                            FrameType.SASL, 0,
-                            new SaslOutcomeFrame().setCode(UnsignedByte.valueOf((byte)0)),
-                            null,
-                            false);
-                    _driverRunnable.expectHeader();
-                }
-            });
-
-        if(hostnameMatcher != null)
-        {
-            saslInitMatcher.withHostname(hostnameMatcher);
-        }
-
-        addHandler(saslInitMatcher);
-
-        addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
-
-        OpenFrame openFrame = createOpenFrame();
-
-        OpenMatcher openMatcher = new OpenMatcher()
-            .withContainerId(notNullValue(String.class))
-            .onSuccess(new FrameSender(
-                    this, FrameType.AMQP, 0,
-                    openFrame,
-                    null));
-
-        if(idleTimeoutMatcher !=null)
-        {
-            openMatcher.withIdleTimeOut(idleTimeoutMatcher);
-        }
-
-        if(hostnameMatcher != null)
-        {
-            openMatcher.withHostname(hostnameMatcher);
-        }
-
-        addHandler(openMatcher);
-    }
-
     // TODO - Reject any incoming connection using the supplied information
     public void rejectConnect(Symbol errorType, String errorMessage, Map<Symbol, Object> errorInfo) {
-        SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(Symbol.valueOf("ANONYMOUS"));
+        SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(ANONYMOUS);
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
                                             new FrameSender(
                                                     this, FrameType.SASL, 0,
                                                     saslMechanismsFrame, null)));
 
         addHandler(new SaslInitMatcher()
-            .withMechanism(equalTo(Symbol.valueOf("ANONYMOUS")))
+            .withMechanism(equalTo(ANONYMOUS))
             .withInitialResponse(equalTo(new Binary(new byte[0])))
             .onSuccess(new AmqpPeerRunnable()
             {

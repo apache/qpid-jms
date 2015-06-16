@@ -93,13 +93,15 @@ import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// TODO should expectXXXYYYZZZ methods just be expect(matcher)?
 public class TestAmqpPeer implements AutoCloseable
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TestAmqpPeer.class.getName());
+
     private static final Symbol ANONYMOUS = Symbol.valueOf("ANONYMOUS");
     private static final Symbol EXTERNAL = Symbol.valueOf("EXTERNAL");
     private static final Symbol PLAIN = Symbol.valueOf("PLAIN");
-    private static final Logger LOGGER = LoggerFactory.getLogger(TestAmqpPeer.class.getName());
+    private static final UnsignedByte SASL_OK = UnsignedByte.valueOf((byte)0);
+    private static final UnsignedByte SASL_FAIL_AUTH = UnsignedByte.valueOf((byte)1);
     private static final int CONNECTION_CHANNEL = 0;
 
     private final TestAmqpPeerRunner _driverRunnable;
@@ -204,7 +206,7 @@ public class TestAmqpPeer implements AutoCloseable
         return _emptyFrameCount;
     }
 
-    public void receiveHeader(byte[] header)
+    void receiveHeader(byte[] header)
     {
         Handler handler = getFirstHandler();
         if(handler instanceof HeaderHandler)
@@ -221,7 +223,7 @@ public class TestAmqpPeer implements AutoCloseable
         }
     }
 
-    public void receiveFrame(int type, int channel, DescribedType describedType, Binary payload)
+    void receiveFrame(int type, int channel, DescribedType describedType, Binary payload)
     {
         Handler handler = getFirstHandler();
         if(handler instanceof FrameHandler)
@@ -238,7 +240,7 @@ public class TestAmqpPeer implements AutoCloseable
         }
     }
 
-    public void receiveEmptyFrame(int type, int channel)
+    void receiveEmptyFrame(int type, int channel)
     {
         _emptyFrameCount ++;
         LOGGER.debug("Received empty frame");
@@ -314,7 +316,7 @@ public class TestAmqpPeer implements AutoCloseable
         sendFrame(FrameType.AMQP, 0, null, null, deferWrite);
     }
 
-    public void sendFrame(FrameType type, int channel, DescribedType frameDescribedType, Binary framePayload, boolean deferWrite)
+    void sendFrame(FrameType type, int channel, DescribedType frameDescribedType, Binary framePayload, boolean deferWrite)
     {
         if(channel < 0)
         {
@@ -386,7 +388,7 @@ public class TestAmqpPeer implements AutoCloseable
                 {
                     TestAmqpPeer.this.sendFrame(
                             FrameType.SASL, 0,
-                            new SaslOutcomeFrame().setCode(UnsignedByte.valueOf((byte)0)),
+                            new SaslOutcomeFrame().setCode(SASL_OK),
                             null,
                             false);
 
@@ -499,7 +501,7 @@ public class TestAmqpPeer implements AutoCloseable
             {
                 TestAmqpPeer.this.sendFrame(
                         FrameType.SASL, 0,
-                        new SaslOutcomeFrame().setCode(UnsignedByte.valueOf((byte)1)),
+                        new SaslOutcomeFrame().setCode(SASL_FAIL_AUTH),
                         null,
                         false);
                 _driverRunnable.expectHeader();
@@ -547,7 +549,7 @@ public class TestAmqpPeer implements AutoCloseable
                 {
                     TestAmqpPeer.this.sendFrame(
                             FrameType.SASL, 0,
-                            new SaslOutcomeFrame().setCode(UnsignedByte.valueOf((byte)0)),
+                            new SaslOutcomeFrame().setCode(SASL_OK),
                             null,
                             false);
                     _driverRunnable.expectHeader();

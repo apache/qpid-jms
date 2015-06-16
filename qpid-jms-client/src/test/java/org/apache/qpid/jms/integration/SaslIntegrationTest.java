@@ -93,7 +93,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
             String user = "user";
             String pass = "qwerty123456";
 
-            testPeer.expectPlainConnect(user, pass, null, null);
+            testPeer.expectSaslPlainConnect(user, pass, null, null);
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin(true);
 

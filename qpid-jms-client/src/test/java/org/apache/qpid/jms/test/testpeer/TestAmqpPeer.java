@@ -96,6 +96,7 @@ import org.slf4j.LoggerFactory;
 // TODO should expectXXXYYYZZZ methods just be expect(matcher)?
 public class TestAmqpPeer implements AutoCloseable
 {
+    private static final Symbol PLAIN = Symbol.valueOf("PLAIN");
     private static final Logger LOGGER = LoggerFactory.getLogger(TestAmqpPeer.class.getName());
     private static final int CONNECTION_CHANNEL = 0;
 
@@ -364,6 +365,81 @@ public class TestAmqpPeer implements AutoCloseable
         return openFrame;
     }
 
+    public void expectSaslConnect(Symbol mechanism, Matcher<Binary> initialResponseMatcher, Symbol[] desiredCapabilities, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties)
+    {
+        SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(mechanism);
+        addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
+                                            new FrameSender(
+                                                    this, FrameType.SASL, 0,
+                                                    saslMechanismsFrame, null)));
+
+        addHandler(new SaslInitMatcher()
+            .withMechanism(equalTo(mechanism))
+            .withInitialResponse(initialResponseMatcher)
+            .onSuccess(new AmqpPeerRunnable()
+            {
+                @Override
+                public void run()
+                {
+                    TestAmqpPeer.this.sendFrame(
+                            FrameType.SASL, 0,
+                            new SaslOutcomeFrame().setCode(UnsignedByte.valueOf((byte)0)),
+                            null,
+                            false);
+                    _driverRunnable.expectHeader();
+                }
+            }));
+
+        addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
+
+        OpenFrame open = createOpenFrame();
+        if(serverCapabilities != null)
+        {
+            open.setOfferedCapabilities(serverCapabilities);
+        }
+
+        if(serverProperties != null)
+        {
+            open.setProperties(serverProperties);
+        }
+
+        OpenMatcher openMatcher = new OpenMatcher()
+            .withContainerId(notNullValue(String.class))
+            .onSuccess(new FrameSender(
+                    this, FrameType.AMQP, 0,
+                    open,
+                    null));
+
+        if (desiredCapabilities != null)
+        {
+            openMatcher.withDesiredCapabilities(arrayContaining(desiredCapabilities));
+        }
+        else
+        {
+            openMatcher.withDesiredCapabilities(nullValue());
+        }
+
+        addHandler(openMatcher);
+    }
+
+    public void expectSaslPlainConnect(String username, String password, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties)
+    {
+        expectSaslPlainConnect(username, password, new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, serverCapabilities, serverProperties);
+    }
+
+    public void expectSaslPlainConnect(String username, String password, Symbol[] desiredCapabilities, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties)
+    {
+        byte[] usernameBytes = username.getBytes();
+        byte[] passwordBytes = password.getBytes();
+        byte[] data = new byte[usernameBytes.length+passwordBytes.length+2];
+        System.arraycopy(usernameBytes, 0, data, 1, usernameBytes.length);
+        System.arraycopy(passwordBytes, 0, data, 2 + usernameBytes.length, passwordBytes.length);
+
+        Matcher<Binary> initialResponseMatcher = equalTo(new Binary(data));
+
+        expectSaslConnect(PLAIN, initialResponseMatcher, desiredCapabilities, serverCapabilities, serverProperties);
+    }
+
     public void expectFailingSaslConnect(Symbol[] serverMechs, Symbol clientSelectedMech)
     {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(serverMechs);
@@ -510,71 +586,6 @@ public class TestAmqpPeer implements AutoCloseable
                     this, FrameType.AMQP, 0,
                     openFrame,
                     null)));
-    }
-
-    public void expectPlainConnect(String username, String password, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties)
-    {
-        expectPlainConnect(username, password, new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, serverCapabilities, serverProperties);
-    }
-
-    public void expectPlainConnect(String username, String password, Symbol[] desiredCapabilities, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties)
-    {
-        SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(Symbol.valueOf("PLAIN"));
-        addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
-                                            new FrameSender(
-                                                    this, FrameType.SASL, 0,
-                                                    saslMechanismsFrame, null)));
-
-        byte[] usernameBytes = username.getBytes();
-        byte[] passwordBytes = password.getBytes();
-        byte[] data = new byte[usernameBytes.length+passwordBytes.length+2];
-        System.arraycopy(usernameBytes, 0, data, 1, usernameBytes.length);
-        System.arraycopy(passwordBytes, 0, data, 2 + usernameBytes.length, passwordBytes.length);
-
-        addHandler(new SaslInitMatcher()
-            .withMechanism(equalTo(Symbol.valueOf("PLAIN")))
-            .withInitialResponse(equalTo(new Binary(data)))
-            .onSuccess(new AmqpPeerRunnable()
-            {
-                @Override
-                public void run()
-                {
-                    TestAmqpPeer.this.sendFrame(
-                            FrameType.SASL, 0,
-                            new SaslOutcomeFrame().setCode(UnsignedByte.valueOf((byte)0)),
-                            null,
-                            false);
-                    _driverRunnable.expectHeader();
-                }
-            }));
-
-        addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
-
-        OpenFrame open = createOpenFrame();
-        if(serverCapabilities != null)
-        {
-            open.setOfferedCapabilities(serverCapabilities);
-        }
-
-        if(serverProperties != null)
-        {
-            open.setProperties(serverProperties);
-        }
-
-        OpenMatcher openMatcher = new OpenMatcher()
-            .withContainerId(notNullValue(String.class))
-            .onSuccess(new FrameSender(
-                    this, FrameType.AMQP, 0,
-                    open,
-                    null));
-
-        if (desiredCapabilities != null) {
-            openMatcher.withDesiredCapabilities(arrayContaining(desiredCapabilities));
-        } else {
-            openMatcher.withDesiredCapabilities(nullValue());
-        }
-
-        addHandler(openMatcher);
     }
 
     // TODO - Reject any incoming connection using the supplied information

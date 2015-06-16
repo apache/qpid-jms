@@ -410,12 +410,12 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(openMatcher);
     }
 
-    public void expectAnonymousConnect(boolean authorize)
+    public void expectAnonymousConnect()
     {
-        expectAnonymousConnect(authorize, null, null);
+        expectAnonymousConnect(null, null);
     }
 
-    public void expectAnonymousConnect(boolean authorize, Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher)
+    public void expectAnonymousConnect(Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher)
     {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(Symbol.valueOf("ANONYMOUS"));
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,

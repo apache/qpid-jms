@@ -60,7 +60,7 @@ public class FailoverRedirectTest extends QpidJmsTestCase {
             final String redirectURI = createPeerURI(redirectedPeer);
             LOG.info("Backup peer is at: {}", redirectURI);
 
-            redirectedPeer.expectAnonymousConnect(true);
+            redirectedPeer.expectAnonymousConnect();
             redirectedPeer.expectBegin(true);
 
             Map<Symbol, Object> redirectInfo = new HashMap<Symbol, Object>();
@@ -103,7 +103,7 @@ public class FailoverRedirectTest extends QpidJmsTestCase {
             final String redirectURI = createPeerURI(redirectedPeer);
             LOG.info("Primary is at {}: Backup peer is at: {}", rejectingURI, redirectURI);
 
-            redirectedPeer.expectAnonymousConnect(true);
+            redirectedPeer.expectAnonymousConnect();
             redirectedPeer.expectBegin(true);
 
             Map<Symbol, Object> redirectInfo = new HashMap<Symbol, Object>();
@@ -111,7 +111,7 @@ public class FailoverRedirectTest extends QpidJmsTestCase {
             redirectInfo.put(NETWORK_HOST, "localhost");
             redirectInfo.put(PORT, redirectedPeer.getServerPort());
 
-            rejectingPeer.expectAnonymousConnect(true);
+            rejectingPeer.expectAnonymousConnect();
             rejectingPeer.expectBegin(true);
             rejectingPeer.remotelyCloseConnection(true, ConnectionError.REDIRECT, "Server is full, go away", redirectInfo);
 

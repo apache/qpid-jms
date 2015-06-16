@@ -142,7 +142,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
 
     private void doAmqpHostnameTestImpl(String amqpHostname, boolean setHostnameOption, Matcher<?> hostnameMatcher) throws JMSException, InterruptedException, Exception, IOException {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            testPeer.expectAnonymousConnect(true, null, hostnameMatcher);
+            testPeer.expectAnonymousConnect(null, hostnameMatcher);
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin(true);
 

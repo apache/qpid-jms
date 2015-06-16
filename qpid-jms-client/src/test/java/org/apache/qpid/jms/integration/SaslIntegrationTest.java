@@ -68,7 +68,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer(context, true);) {
             // Expect an EXTERNAL connection
-            testPeer.expectExternalConnect();
+            testPeer.expectSaslExternalConnect();
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin(true);
 

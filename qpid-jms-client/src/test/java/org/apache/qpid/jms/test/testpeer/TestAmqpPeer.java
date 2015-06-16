@@ -96,6 +96,7 @@ import org.slf4j.LoggerFactory;
 // TODO should expectXXXYYYZZZ methods just be expect(matcher)?
 public class TestAmqpPeer implements AutoCloseable
 {
+    private static final Symbol EXTERNAL = Symbol.valueOf("EXTERNAL");
     private static final Symbol PLAIN = Symbol.valueOf("PLAIN");
     private static final Logger LOGGER = LoggerFactory.getLogger(TestAmqpPeer.class.getName());
     private static final int CONNECTION_CHANNEL = 0;
@@ -440,6 +441,16 @@ public class TestAmqpPeer implements AutoCloseable
         expectSaslConnect(PLAIN, initialResponseMatcher, desiredCapabilities, serverCapabilities, serverProperties);
     }
 
+    public void expectSaslExternalConnect()
+    {
+        if(!_driverRunnable.isNeedClientCert())
+        {
+            throw new IllegalStateException("need-client-cert must be enabled on the test peer");
+        }
+
+        expectSaslConnect(EXTERNAL, equalTo(new Binary(new byte[0])), new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, null);
+    }
+
     public void expectFailingSaslConnect(Symbol[] serverMechs, Symbol clientSelectedMech)
     {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(serverMechs);
@@ -545,47 +556,6 @@ public class TestAmqpPeer implements AutoCloseable
         }
 
         addHandler(openMatcher);
-    }
-
-    public void expectExternalConnect()
-    {
-        if(!_driverRunnable.isNeedClientCert()) {
-            throw new IllegalStateException("Need client cert must be enabled");
-        }
-
-        SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(Symbol.valueOf("EXTERNAL"));
-        addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
-                                            new FrameSender(
-                                                    this, FrameType.SASL, 0,
-                                                    saslMechanismsFrame, null)));
-
-        addHandler(new SaslInitMatcher()
-            .withMechanism(equalTo(Symbol.valueOf("EXTERNAL")))
-            .withInitialResponse(equalTo(new Binary(new byte[0])))
-            .onSuccess(new AmqpPeerRunnable()
-            {
-                @Override
-                public void run()
-                {
-                    TestAmqpPeer.this.sendFrame(
-                            FrameType.SASL, 0,
-                            new SaslOutcomeFrame().setCode(UnsignedByte.valueOf((byte)0)),
-                            null,
-                            false);
-                    _driverRunnable.expectHeader();
-                }
-            }));
-
-        addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
-
-        OpenFrame openFrame = createOpenFrame();
-
-        addHandler(new OpenMatcher()
-            .withContainerId(notNullValue(String.class))
-            .onSuccess(new FrameSender(
-                    this, FrameType.AMQP, 0,
-                    openFrame,
-                    null)));
     }
 
     // TODO - Reject any incoming connection using the supplied information

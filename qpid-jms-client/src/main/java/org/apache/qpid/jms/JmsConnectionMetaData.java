@@ -16,16 +16,12 @@
  */
 package org.apache.qpid.jms;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.util.Enumeration;
 import java.util.Vector;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.jms.ConnectionMetaData;
+
+import org.apache.qpid.jms.util.MetaDataSupport;
 
 /**
  * A <CODE>ConnectionMetaData</CODE> object provides information describing
@@ -33,49 +29,7 @@ import javax.jms.ConnectionMetaData;
  */
 public final class JmsConnectionMetaData implements ConnectionMetaData {
 
-    public static final String PROVIDER_VERSION;
-    public static final int PROVIDER_MAJOR_VERSION;
-    public static final int PROVIDER_MINOR_VERSION;
-
     public static final JmsConnectionMetaData INSTANCE = new JmsConnectionMetaData();
-
-    static {
-        String version = null;
-        int major = 0;
-        int minor = 0;
-        try {
-            Package p = Package.getPackage(JmsConnectionMetaData.class.getPackage().getName());
-            if (p != null) {
-                version = p.getImplementationVersion();
-                Pattern pattern = Pattern.compile("(\\d+)\\.(\\d+).*");
-                Matcher m = pattern.matcher(version);
-                if (m.matches()) {
-                    major = Integer.parseInt(m.group(1));
-                    minor = Integer.parseInt(m.group(2));
-                }
-            }
-        } catch (Throwable e) {
-            InputStream in = null;
-            String path = JmsConnectionMetaData.class.getPackage().getName().replace(".", "/");
-            if ((in = JmsConnectionMetaData.class.getResourceAsStream("/" + path + "/version.txt")) != null) {
-                try {
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(in, Charset.forName("US-ASCII")));
-                    version = reader.readLine();
-                    Pattern pattern = Pattern.compile("(\\d+)\\.(\\d+).*");
-                    Matcher m = pattern.matcher(version);
-                    if (m.matches()) {
-                        major = Integer.parseInt(m.group(1));
-                        minor = Integer.parseInt(m.group(2));
-                    }
-                    reader.close();
-                } catch(Throwable err) {
-                }
-            }
-        }
-        PROVIDER_VERSION = version;
-        PROVIDER_MAJOR_VERSION = major;
-        PROVIDER_MINOR_VERSION = minor;
-    }
 
     private JmsConnectionMetaData() {}
 
@@ -116,7 +70,7 @@ public final class JmsConnectionMetaData implements ConnectionMetaData {
      */
     @Override
     public String getJMSProviderName() {
-        return "QpidJMS";
+        return MetaDataSupport.PROVIDER_NAME;
     }
 
     /**
@@ -126,7 +80,7 @@ public final class JmsConnectionMetaData implements ConnectionMetaData {
      */
     @Override
     public String getProviderVersion() {
-        return PROVIDER_VERSION;
+        return MetaDataSupport.PROVIDER_VERSION;
     }
 
     /**
@@ -136,7 +90,7 @@ public final class JmsConnectionMetaData implements ConnectionMetaData {
      */
     @Override
     public int getProviderMajorVersion() {
-        return PROVIDER_MAJOR_VERSION;
+        return MetaDataSupport.PROVIDER_MAJOR_VERSION;
     }
 
     /**
@@ -146,7 +100,7 @@ public final class JmsConnectionMetaData implements ConnectionMetaData {
      */
     @Override
     public int getProviderMinorVersion() {
-        return PROVIDER_MINOR_VERSION;
+        return MetaDataSupport.PROVIDER_MINOR_VERSION;
     }
 
     /**

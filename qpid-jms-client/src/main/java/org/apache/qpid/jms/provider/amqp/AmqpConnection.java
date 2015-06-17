@@ -20,6 +20,7 @@ import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SOLE_CONNECTION_CAPA
 
 import java.net.URI;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.jms.JMSException;
@@ -34,6 +35,7 @@ import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageFactory;
 import org.apache.qpid.jms.util.IOExceptionSupport;
+import org.apache.qpid.jms.util.MetaDataSupport;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.engine.Connection;
 import org.slf4j.Logger;
@@ -87,9 +89,17 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
             hostname = null;
         }
 
-        getEndpoint().setHostname(hostname);
-        getEndpoint().setContainer(resource.getClientId());
-        getEndpoint().setDesiredCapabilities(new Symbol[] { SOLE_CONNECTION_CAPABILITY });
+        Map<Symbol, Object> props = new LinkedHashMap<Symbol, Object>();
+        props.put(AmqpSupport.PRODUCT, MetaDataSupport.PROVIDER_NAME);
+        props.put(AmqpSupport.VERSION, MetaDataSupport.PROVIDER_VERSION);
+        props.put(AmqpSupport.PLATFORM, MetaDataSupport.PLATFORM_DETAILS);
+
+        Connection conn = getEndpoint();
+        conn.setHostname(hostname);
+        conn.setContainer(resource.getClientId());
+        conn.setDesiredCapabilities(new Symbol[] { SOLE_CONNECTION_CAPABILITY });
+        conn.setProperties(props);
+
         super.doOpen();
     }
 

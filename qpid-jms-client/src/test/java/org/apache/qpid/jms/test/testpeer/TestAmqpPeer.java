@@ -370,7 +370,7 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     public void expectSaslConnect(Symbol mechanism, Matcher<Binary> initialResponseMatcher, Symbol[] desiredCapabilities, Symbol[] serverCapabilities,
-                                    Map<Symbol, Object> serverProperties, Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher)
+                                    Matcher<?> clientPropertiesMatcher, Map<Symbol, Object> serverProperties, Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher)
     {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(mechanism);
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
@@ -444,6 +444,10 @@ public class TestAmqpPeer implements AutoCloseable
             openMatcher.withHostname(hostnameMatcher);
         }
 
+        if(clientPropertiesMatcher != null) {
+            openMatcher.withProperties(clientPropertiesMatcher);
+        }
+
         addHandler(openMatcher);
     }
 
@@ -462,7 +466,7 @@ public class TestAmqpPeer implements AutoCloseable
 
         Matcher<Binary> initialResponseMatcher = equalTo(new Binary(data));
 
-        expectSaslConnect(PLAIN, initialResponseMatcher, desiredCapabilities, serverCapabilities, serverProperties, null, null);
+        expectSaslConnect(PLAIN, initialResponseMatcher, desiredCapabilities, serverCapabilities, null, serverProperties, null, null);
     }
 
     public void expectSaslExternalConnect()
@@ -472,7 +476,7 @@ public class TestAmqpPeer implements AutoCloseable
             throw new IllegalStateException("need-client-cert must be enabled on the test peer");
         }
 
-        expectSaslConnect(EXTERNAL, equalTo(new Binary(new byte[0])), new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, null, null, null);
+        expectSaslConnect(EXTERNAL, equalTo(new Binary(new byte[0])), new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, null, null, null, null);
     }
 
     public void expectSaslAnonymousConnect()
@@ -482,12 +486,12 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectSaslAnonymousConnect(Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher)
     {
-        expectSaslAnonymousConnect(idleTimeoutMatcher, hostnameMatcher, null);
+        expectSaslAnonymousConnect(idleTimeoutMatcher, hostnameMatcher, null, null);
     }
 
-    public void expectSaslAnonymousConnect(Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher, Map<Symbol, Object> serverProperties)
+    public void expectSaslAnonymousConnect(Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher, Matcher<?> propertiesMatcher, Map<Symbol, Object> serverProperties)
     {
-        expectSaslConnect(ANONYMOUS, equalTo(new Binary(new byte[0])), new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, serverProperties, idleTimeoutMatcher, hostnameMatcher);
+        expectSaslConnect(ANONYMOUS, equalTo(new Binary(new byte[0])), new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, propertiesMatcher, serverProperties, idleTimeoutMatcher, hostnameMatcher);
     }
 
     public void expectFailingSaslConnect(Symbol[] serverMechs, Symbol clientSelectedMech)
@@ -541,7 +545,7 @@ public class TestAmqpPeer implements AutoCloseable
         Map<Symbol, Object> serverProperties = new HashMap<Symbol, Object>();
         serverProperties.put(AmqpSupport.CONNECTION_OPEN_FAILED, true);
 
-        expectSaslAnonymousConnect(null, null, serverProperties);
+        expectSaslAnonymousConnect(null, null, null, serverProperties);
 
         // Now generate the Close frame with the supplied error
         final CloseFrame closeFrame = new CloseFrame();

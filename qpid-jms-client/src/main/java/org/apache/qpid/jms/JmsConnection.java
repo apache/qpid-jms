@@ -311,9 +311,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         // We weren't connected if we got this far, we should now connect to ensure the
         // configured clientID is valid.
         connect();
-
-        // TODO: determine if any resulting failure is only the result of the ClientID value,
-        //       or other reasons such as auth.  (Provider should have thrown the correct error)
     }
 
     /**

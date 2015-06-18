@@ -81,12 +81,13 @@ public class MetaDataSupport {
     {
         String details = "unknown";
         try {
-            StringBuilder platformInfo = new StringBuilder(System.getProperty("java.version"));
+            StringBuilder platformInfo = new StringBuilder("JVM: ");
+            platformInfo.append(System.getProperty("java.version"));
             platformInfo.append(", ");
             platformInfo.append(System.getProperty("java.vm.version"));
             platformInfo.append(", ");
             platformInfo.append(System.getProperty("java.vendor"));
-            platformInfo.append(", ");
+            platformInfo.append(", OS: ");
             platformInfo.append(System.getProperty("os.name"));
             platformInfo.append(", ");
             platformInfo.append(System.getProperty("os.version"));

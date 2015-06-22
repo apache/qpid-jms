@@ -53,7 +53,7 @@ class HeaderHandlerImpl implements HeaderHandler
     }
 
     @Override
-    public void header(byte[] header, TestAmqpPeer peer)
+    public void header(byte[] header, TestAmqpPeer peer) throws AssertionError
     {
         LOGGER.debug("About to check received header {}", new Binary(header));
 

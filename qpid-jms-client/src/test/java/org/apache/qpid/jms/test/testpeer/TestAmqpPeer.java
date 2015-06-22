@@ -104,6 +104,7 @@ public class TestAmqpPeer implements AutoCloseable
     private static final UnsignedByte SASL_FAIL_AUTH = UnsignedByte.valueOf((byte)1);
     private static final int CONNECTION_CHANNEL = 0;
 
+    private volatile AssertionError _firstAssertionError = null;
     private final TestAmqpPeerRunner _driverRunnable;
     private final Thread _driverThread;
 
@@ -156,6 +157,18 @@ public class TestAmqpPeer implements AutoCloseable
         }
         finally
         {
+            AssertionError ae = _firstAssertionError;
+            if(ae != null)
+            {
+                String message = "Assertion failure during test run";
+                if(ae.getMessage() != null)
+                {
+                    message += ": " + ae.getMessage();
+                }
+
+                throw new AssertionError(message, _firstAssertionError);
+            }
+
             Throwable throwable = getThrowable();
             if(throwable == null)
             {
@@ -1516,6 +1529,13 @@ public class TestAmqpPeer implements AutoCloseable
             // Prepare a composite to insert this action at the end of the handler sequence
             CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
             comp.add(action);
+        }
+    }
+
+    void assertionFailed(AssertionError ae) {
+        if(_firstAssertionError == null)
+        {
+            _firstAssertionError = ae;
         }
     }
 }

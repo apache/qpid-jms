@@ -84,7 +84,7 @@ public abstract class AbstractFieldAndDescriptorMatcher {
      * @param described the list of fields from the described type.
      * @throws AssertionError if a registered matcher assertion is not met.
      */
-    public void verifyFields(List<Object> described) throws AssertionError {
+    public final void verifyFields(List<Object> described) throws AssertionError {
         int fieldNumber = 0;
         HashMap<Enum<?>, Object> valueMap = new LinkedHashMap<>();
         for (Object value : described) {

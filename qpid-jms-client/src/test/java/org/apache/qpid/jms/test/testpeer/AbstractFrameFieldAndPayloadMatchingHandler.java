@@ -54,21 +54,11 @@ public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends Abstra
         _onSuccessAction = onSuccessAction;
     }
 
-    /**
-     * Handle the supplied frame and its payload, e.g. by checking that it matches what we expect
-     * @throws RuntimeException or a subclass thereof if the frame does not match what we expect
-     */
-    protected void verifyFrame(List<Object> described, Binary payload)
-    {
-        verifyFields(described);
-        verifyPayload(payload);
-    }
-
-    protected abstract void verifyPayload(Binary payload);
+    protected abstract void verifyPayload(Binary payload) throws AssertionError;
 
     @SuppressWarnings("unchecked")
     @Override
-    public void frame(int type, int ch, DescribedType dt, Binary payload, TestAmqpPeer peer)
+    public final void frame(int type, int ch, DescribedType dt, Binary payload, TestAmqpPeer peer)
     {
         if(type == _frameType.ordinal()
            && (_expectedChannel == ANY_CHANNEL || _expectedChannel == ch)
@@ -76,7 +66,28 @@ public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends Abstra
            && (dt.getDescribed() instanceof List))
         {
             _actualChannel = ch;
-            verifyFrame((List<Object>)dt.getDescribed(),payload);
+
+            try
+            {
+                verifyFields((List<Object>)dt.getDescribed());
+            }
+            catch(AssertionError ae)
+            {
+                LOGGER.error("Failure when verifying frame fields", ae);
+                peer.assertionFailed(ae);
+            }
+
+            try
+            {
+                verifyPayload(payload);
+            }
+            catch(AssertionError ae)
+            {
+                LOGGER.error("Failure when verifying frame payload", ae);
+                peer.assertionFailed(ae);
+            }
+
+            //TODO: rename 'completed'
             succeeded();
         }
         else

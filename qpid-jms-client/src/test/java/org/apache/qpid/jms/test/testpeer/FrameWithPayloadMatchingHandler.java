@@ -48,11 +48,11 @@ public class FrameWithPayloadMatchingHandler extends AbstractFrameFieldAndPayloa
     protected final void verifyPayload(Binary payload) throws AssertionError
     {
         _logger.debug("About to check the payload" + "\n  Received: {}", payload);
+        _receivedPayload = payload;
         if(_payloadMatcher != null)
         {
             assertThat("Payload should match", payload, _payloadMatcher);
         }
-        _receivedPayload = payload;
     }
 
     public Binary getReceivedPayload()

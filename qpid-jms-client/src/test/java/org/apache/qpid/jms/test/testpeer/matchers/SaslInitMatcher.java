@@ -45,8 +45,7 @@ public class SaslInitMatcher extends FrameWithNoPayloadMatchingHandler
         super(FrameType.SASL,
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000041L),
-              Symbol.valueOf("amqp:sasl-init:list"),
-              null);
+              Symbol.valueOf("amqp:sasl-init:list"));
     }
 
     @Override

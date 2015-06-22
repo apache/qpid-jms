@@ -48,8 +48,7 @@ public class DispositionMatcher extends FrameWithNoPayloadMatchingHandler
         super(FrameType.AMQP,
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000015L),
-              Symbol.valueOf("amqp:disposition:list"),
-              null);
+              Symbol.valueOf("amqp:disposition:list"));
     }
 
     @Override

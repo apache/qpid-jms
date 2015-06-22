@@ -44,13 +44,11 @@ public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends Abstra
     protected AbstractFrameFieldAndPayloadMatchingHandler(FrameType frameType,
                                                 int channel,
                                                 UnsignedLong numericDescriptor,
-                                                Symbol symbolicDescriptor,
-                                                AmqpPeerRunnable onCompletion)
+                                                Symbol symbolicDescriptor)
     {
         super(numericDescriptor, symbolicDescriptor);
         _frameType = frameType;
         _expectedChannel = channel;
-        _onCompletion = onCompletion;
     }
 
     protected abstract void verifyPayload(Binary payload) throws AssertionError;

@@ -53,8 +53,7 @@ public class TransferMatcher extends FrameWithPayloadMatchingHandler
         super(FrameType.AMQP,
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000014L),
-              Symbol.valueOf("amqp:transfer:list"),
-              null);
+              Symbol.valueOf("amqp:transfer:list"));
     }
 
     @Override

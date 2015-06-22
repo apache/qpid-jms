@@ -53,8 +53,7 @@ public class FlowMatcher extends FrameWithNoPayloadMatchingHandler
         super(FrameType.AMQP,
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000013L),
-              Symbol.valueOf("amqp:flow:list"),
-              null);
+              Symbol.valueOf("amqp:flow:list"));
     }
 
     @Override

@@ -43,8 +43,7 @@ public class EndMatcher extends FrameWithNoPayloadMatchingHandler
         super(FrameType.AMQP,
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000017L),
-              Symbol.valueOf("amqp:end:list"),
-              null);
+              Symbol.valueOf("amqp:end:list"));
     }
 
     @Override

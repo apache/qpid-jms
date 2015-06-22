@@ -52,8 +52,7 @@ public class OpenMatcher extends FrameWithNoPayloadMatchingHandler
         super(FrameType.AMQP,
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000010L),
-              Symbol.valueOf("amqp:open:list"),
-              null);
+              Symbol.valueOf("amqp:open:list"));
     }
 
     @Override

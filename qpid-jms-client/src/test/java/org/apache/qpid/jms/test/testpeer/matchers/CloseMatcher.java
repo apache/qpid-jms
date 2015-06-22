@@ -43,8 +43,7 @@ public class CloseMatcher extends FrameWithNoPayloadMatchingHandler
         super(FrameType.AMQP,
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000018L),
-              Symbol.valueOf("amqp:close:list"),
-              null);
+              Symbol.valueOf("amqp:close:list"));
     }
 
     @Override

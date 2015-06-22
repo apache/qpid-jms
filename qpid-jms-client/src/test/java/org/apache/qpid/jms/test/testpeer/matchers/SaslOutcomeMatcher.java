@@ -44,8 +44,7 @@ public class SaslOutcomeMatcher extends FrameWithNoPayloadMatchingHandler
         super(FrameType.SASL,
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000044L),
-              Symbol.valueOf("amqp:sasl-outcome:list"),
-              null);
+              Symbol.valueOf("amqp:sasl-outcome:list"));
     }
 
     @Override

@@ -45,8 +45,7 @@ public class DetachMatcher extends FrameWithNoPayloadMatchingHandler
         super(FrameType.AMQP,
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000016L),
-              Symbol.valueOf("amqp:detach:list"),
-              null);
+              Symbol.valueOf("amqp:detach:list"));
     }
 
     @Override

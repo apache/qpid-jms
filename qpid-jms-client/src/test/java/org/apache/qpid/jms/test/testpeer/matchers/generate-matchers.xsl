@@ -92,8 +92,7 @@ public class <xsl:value-of select="$classname"/> extends <xsl:value-of select="$
         super(FrameType.<xsl:choose><xsl:when test="@provides='sasl-frame'">SASL</xsl:when><xsl:otherwise>AMQP</xsl:otherwise></xsl:choose>,
               ANY_CHANNEL,
               UnsignedLong.valueOf(<xsl:value-of select="concat(substring(descendant::node()[name()='descriptor']/@code,1,10),substring(descendant::node()[name()='descriptor']/@code,14))"/>L),
-              Symbol.valueOf("<xsl:value-of select="descendant::node()[name()='descriptor']/@name"/>"),
-              null);
+              Symbol.valueOf("<xsl:value-of select="descendant::node()[name()='descriptor']/@name"/>"));
     }
 
     @Override

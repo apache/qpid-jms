@@ -28,10 +28,9 @@ public class FrameWithNoPayloadMatchingHandler extends AbstractFrameFieldAndPayl
     protected FrameWithNoPayloadMatchingHandler(FrameType frameType,
                                                 int channel,
                                                 UnsignedLong numericDescriptor,
-                                                Symbol symbolicDescriptor,
-                                                AmqpPeerRunnable onSuccess)
+                                                Symbol symbolicDescriptor)
     {
-        super(frameType, channel, numericDescriptor, symbolicDescriptor, onSuccess);
+        super(frameType, channel, numericDescriptor, symbolicDescriptor);
     }
 
     @Override

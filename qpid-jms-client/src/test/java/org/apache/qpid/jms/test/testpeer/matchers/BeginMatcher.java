@@ -50,8 +50,7 @@ public class BeginMatcher extends FrameWithNoPayloadMatchingHandler
         super(FrameType.AMQP,
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000011L),
-              Symbol.valueOf("amqp:begin:list"),
-              null);
+              Symbol.valueOf("amqp:begin:list"));
     }
 
     @Override

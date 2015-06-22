@@ -43,8 +43,7 @@ public class SaslResponseMatcher extends FrameWithNoPayloadMatchingHandler
         super(FrameType.SASL,
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000043L),
-              Symbol.valueOf("amqp:sasl-response:list"),
-              null);
+              Symbol.valueOf("amqp:sasl-response:list"));
     }
 
     @Override

@@ -43,8 +43,7 @@ public class SaslChallengeMatcher extends FrameWithNoPayloadMatchingHandler
         super(FrameType.SASL,
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000042L),
-              Symbol.valueOf("amqp:sasl-challenge:list"),
-              null);
+              Symbol.valueOf("amqp:sasl-challenge:list"));
     }
 
     @Override

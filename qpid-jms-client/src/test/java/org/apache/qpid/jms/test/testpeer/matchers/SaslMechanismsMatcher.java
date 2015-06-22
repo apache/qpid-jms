@@ -43,8 +43,7 @@ public class SaslMechanismsMatcher extends FrameWithNoPayloadMatchingHandler
         super(FrameType.SASL,
               ANY_CHANNEL,
               UnsignedLong.valueOf(0x0000000000000040L),
-              Symbol.valueOf("amqp:sasl-mechanisms:list"),
-              null);
+              Symbol.valueOf("amqp:sasl-mechanisms:list"));
     }
 
     @Override

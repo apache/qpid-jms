@@ -50,11 +50,26 @@ class HeaderHandlerImpl implements HeaderHandler
     {
         LOGGER.debug("About to check received header {}", new Binary(header));
 
-        assertThat("Header should match", header, equalTo(_expectedHeader));
+        try
+        {
+            assertThat("Header should match", header, equalTo(_expectedHeader));
+        }
+        catch(AssertionError ae)
+        {
+            LOGGER.error("Failure when verifying header", ae);
+            peer.assertionFailed(ae);
+        }
+
+        LOGGER.debug("Sending header response.");
         peer.sendHeader(_response);
+
         if(_onCompletion != null)
         {
             _onCompletion.run();
+        }
+        else
+        {
+            LOGGER.debug("No onCompletion action, doing nothing.");
         }
     }
 

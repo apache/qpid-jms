@@ -41,7 +41,7 @@ import org.junit.Test;
 public class ForeignMessageIntegrationTest extends QpidJmsTestCase {
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testSendForeignBytesMessageWithContent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);

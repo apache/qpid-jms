@@ -54,26 +54,26 @@ public class AmqpProviderFactoryTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testGetName() throws IOException, Exception {
         AmqpProviderFactory factory = new AmqpProviderFactory();
         assertEquals("AMQP", factory.getName());
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testCreateProvider() throws IOException, Exception {
         Provider provider = AmqpProviderFactory.create(peerURI);
         assertNotNull(provider);
         assertTrue(provider instanceof AmqpProvider);
     }
 
-    @Test(timeout = 10000, expected=IllegalArgumentException.class)
+    @Test(timeout = 20000, expected=IllegalArgumentException.class)
     public void testCreateProviderFailsWithBadOption() throws IOException, Exception {
         URI badOptionsURI = new URI(peerURI.toString() + "?amqp.badOption=true");
         AmqpProviderFactory.create(badOptionsURI);
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testCreateProviderHasDefaultIdleTimeoutValue() throws IOException, Exception {
         Provider provider = AmqpProviderFactory.create(new URI(peerURI.toString()));
         assertNotNull(provider);
@@ -83,7 +83,7 @@ public class AmqpProviderFactoryTest extends QpidJmsTestCase {
         assertTrue("No default idle timeout", amqpProvider.getIdleTimeout() > 0);
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testCreateProviderAppliesIdleTimeoutURIOption() throws IOException, Exception {
         int timeout = 54321;
         Provider provider = AmqpProviderFactory.create(new URI(peerURI.toString() + "?amqp.idleTimeout=" + timeout));
@@ -94,7 +94,7 @@ public class AmqpProviderFactoryTest extends QpidJmsTestCase {
         assertEquals("idle timeout option was not applied", timeout, amqpProvider.getIdleTimeout());
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testCreateProviderAppliesOptions() throws IOException, Exception {
         URI configuredURI = new URI(peerURI.toString() +
             "?amqp.presettleConsumers=true" +
@@ -115,7 +115,7 @@ public class AmqpProviderFactoryTest extends QpidJmsTestCase {
         assertEquals(32, amqpProvider.getChannelMax());
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testCreateProviderAppliesPresettleOption() throws IOException, Exception {
         URI configuredURI = new URI(peerURI.toString() + "?amqp.presettle=true");
         Provider provider = AmqpProviderFactory.create(configuredURI);

@@ -101,7 +101,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     //==== Application Properties Section ====
     //========================================
 
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testSendMessageWithApplicationProperties() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -156,7 +156,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         }
     }
 
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceiveMessageWithApplicationProperties() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -213,12 +213,12 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testReceiveMessageWithInvalidPropertyName() throws Exception {
         doReceiveMessageWithInvalidPropertyNameTestImpl(false);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testReceiveMessageWithInvalidPropertyNameAndWithValidationDisabled() throws Exception {
         doReceiveMessageWithInvalidPropertyNameTestImpl(true);
     }
@@ -265,12 +265,12 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testSendMessageWithInvalidPropertyName() throws Exception {
         doSendMessageWithInvalidPropertyNameTestImpl(false);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testSendMessageWithInvalidPropertyNameAndWithValidationDisabled() throws Exception {
         doSendMessageWithInvalidPropertyNameTestImpl(true);
     }
@@ -331,7 +331,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * one sent by a non-JMS client) is handled by making the JMSDestination method simply
      * return the Queue Destination used to create the consumer that received the message.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageFromQueueWithoutToResultsInUseOfConsumerDestinationQueue() throws Exception {
         receivedMessageFromQueueWithoutToResultsInUseOfConsumerDestinationImpl(true);
     }
@@ -341,7 +341,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * one sent by a non-JMS client) is handled by making the JMSDestination method simply
      * return the Topic Destination used to create the consumer that received the message.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageFromQueueWithoutToResultsInUseOfConsumerDestinationTopic() throws Exception {
         receivedMessageFromQueueWithoutToResultsInUseOfConsumerDestinationImpl(false);
     }
@@ -396,7 +396,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that lack of the reply-to set on a message results in it returning null for JMSReplyTo
      * and not the consumer destination as happens for JMSDestination.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageFromQueueWithNoReplyToReturnsNull() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -431,7 +431,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that the a connection with a 'topic prefix' set on it strips the
      * prefix from the content of the to/reply-to fields for incoming messages.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithTopicDestinationsOnConnectionWithTopicPrefix() throws Exception {
         Class<? extends Destination> destType = Topic.class;
         String destPrefix = "t12321-";
@@ -454,7 +454,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * prefix from the content of the to/reply-to fields for incoming messages
      * if they don't have the 'destination type annotation' set.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithNoTypeAnnotationAndTopicDestinationsOnConnectionWithTopicPrefix() throws Exception {
         Class<? extends Destination> destType = Topic.class;
         String destPrefix = "t12321-";
@@ -476,7 +476,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that the a connection with a 'queue prefix' set on it strips the
      * prefix from the content of the to/reply-to fields for incoming messages.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithQueueDestinationsOnConnectionWithQueuePrefix() throws Exception {
         Class<? extends Destination> destType = Queue.class;
         String destPrefix = "q12321-";
@@ -499,7 +499,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * prefix from the content of the to/reply-to fields for incoming messages
      * if they don't have the 'destination type annotation' set.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithNoTypeAnnotationAndQueueDestinationsOnConnectionWithQueuePrefix() throws Exception {
         Class<? extends Destination> destType = Queue.class;
         String destPrefix = "q12321-";
@@ -521,7 +521,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that a connection with a 'prefixes' set on its does not alter the
      * address for a temporary queue in the to/reply-to fields for incoming messages.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithTemporaryQueueDestinationsOnConnectionWithPrefixes() throws Exception {
         Class<? extends Destination> destType = TemporaryQueue.class;
         String destPrefix = "q12321-";
@@ -543,7 +543,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that a connection with a 'prefixes' set on its does not alter the
      * address for a temporary queue in the to/reply-to fields for incoming messages.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithTemporaryTopicDestinationsOnConnectionWithPrefixes() throws Exception {
         Class<? extends Destination> destType = TemporaryTopic.class;
         String destPrefix = "q12321-";
@@ -670,7 +670,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that the a connection with a 'topic prefix' set on it adds the
      * prefix to the content of the to/reply-to fields for outgoing messages.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testSendMessageWithTopicDestinationsOnConnectionWithTopicPrefix() throws Exception {
         Class<? extends Destination> destType = Topic.class;
         String destPrefix = "t12321-";
@@ -685,7 +685,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that the a connection with a 'queue prefix' set on it adds the
      * prefix to the content of the to/reply-to fields for outgoing messages.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testSendMessageWithQueueDestinationsOnConnectionWithQueuePrefix() throws Exception {
         Class<? extends Destination> destType = Queue.class;
         String destPrefix = "q12321-";
@@ -700,7 +700,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that the a connection with 'destination prefixes' set on it does not add
      * the prefix to the content of the to/reply-to fields for TemporaryQueues.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testSendMessageWithTemporaryQueueDestinationsOnConnectionWithDestinationPrefixes() throws Exception {
         Class<? extends Destination> destType = TemporaryQueue.class;
         String destPrefix = "q12321-";
@@ -715,7 +715,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that the a connection with 'destination prefixes' set on it does not add
      * the prefix to the content of the to/reply-to fields for TemporaryTopics.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testSendMessageWithTemporaryTopicDestinationsOnConnectionWithDestinationPrefixes() throws Exception {
         Class<? extends Destination> destType = TemporaryTopic.class;
         String destPrefix = "q12321-";
@@ -806,7 +806,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that a connection with 'prefixes' set on it via broker-provided connection properties
      * strips the prefix from the to/reply-to fields for incoming messages with Topic destinations.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithTopicDestinationsOnConnectionWithBrokerDefinedPrefixProperties() throws Exception {
         Class<? extends Destination> destType = Topic.class;
         String destPrefix = "t-broker-provided-prefix-";
@@ -828,7 +828,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that a connection with 'prefixes' set on it via broker-provided connection properties
      * strips the prefix from the to/reply-to fields for incoming messages with Queue destinations.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithQueueDestinationsOnConnectionWithBrokerDefinedPrefixProperties() throws Exception {
         Class<? extends Destination> destType = Queue.class;
         String destPrefix = "q-broker-provided-prefix-";
@@ -935,7 +935,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that the a connection with a 'queue prefix' set on it via broker-provided connection
      * properties adds the prefix to the content of the to/reply-to fields for outgoing messages.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testSendMessageWithQueueDestinationsOnConnectionWithBrokerDefinedPrefixProperties() throws Exception {
         Class<? extends Destination> destType = Queue.class;
         String destPrefix = "q-broker-provided-prefix-";
@@ -950,7 +950,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that the a connection with a 'topic prefix' set on it via broker-provided connection
      * properties adds the prefix to the content of the to/reply-to fields for outgoing messages.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testSendMessageWithTopicDestinationsOnConnectionWithBrokerDefinedPrefixProperties() throws Exception {
         Class<? extends Destination> destType = Topic.class;
         String destPrefix = "t-broker-provided-prefix-";
@@ -1032,7 +1032,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * on a message to indicate type of its 'reply-to' address results in it
      * being classed as the same type as the consumer destination.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageFromTopicWithReplyToWithoutTypeAnnotationResultsInUseOfConsumerDestinationType() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1073,7 +1073,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that the {@link AmqpDestinationHelper#JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME} is set as a byte on
      * a sent message to indicate its 'to' address represents a Topic JMSDestination.
      */
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testSentMessageContainsToTypeAnnotationByte() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1110,7 +1110,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that the {@link AmqpDestinationHelper#JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME} is set as a byte on
      * a sent message to indicate its 'reply-to' address represents a Topic JMSDestination.
      */
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testSentMessageContainsReplyToTypeAnnotationByte() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1155,7 +1155,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * indicate its 'to' address represents a Topic results in the JMSDestination object being a
      * Topic. Ensure the consumers destination is not used by consuming from a Queue.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageFromQueueWithToLegacyTypeAnnotationForTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1197,7 +1197,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * indicate its 'reply-to' address represents a Topic results in the JMSReplyTo object being a
      * Topic. Ensure the consumers destination is not used by consuming from a Queue.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageFromQueueWithLegacyReplyToTypeAnnotationForTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1240,7 +1240,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that lack of the absolute-expiry-time and ttl fields on a message results
      * in it returning 0 for for JMSExpiration
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageFromQueueWithNoAbsoluteExpiryOrTtlReturnsJMSExpirationZero() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1273,7 +1273,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that setting a non-zero value in the absolute-expiry-time field on a
      * message results in it returning this value for JMSExpiration
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageFromQueueWithAbsoluteExpiryReturnsJMSExpirationNonZero() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1308,7 +1308,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     //==== MessageID and CorrelationID Handling ====
     //==============================================
 
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceiveMessageWithoutMessageId() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1337,7 +1337,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that receiving a message with a string typed message-id results in returning the
      * expected value for JMSMessageId where the JMS "ID:" prefix has been added.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithStringMessageIdReturnsExpectedJMSMessageID() throws Exception {
         receivedMessageWithMessageIdTestImpl("myTestMessageIdString");
     }
@@ -1346,7 +1346,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that receiving a message with a UUID typed message-id results in returning the
      * expected value for JMSMessageId where the JMS "ID:" prefix has been added to the UUID.tostring()
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithUUIDMessageIdReturnsExpectedJMSMessageID() throws Exception {
         receivedMessageWithMessageIdTestImpl(UUID.randomUUID());
     }
@@ -1355,7 +1355,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that receiving a message with a ulong typed message-id results in returning the
      * expected value for JMSMessageId where the JMS "ID:" prefix has been added to the UnsignedLong.tostring()
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithUnsignedLongMessageIdReturnsExpectedJMSMessageID() throws Exception {
         receivedMessageWithMessageIdTestImpl(UnsignedLong.valueOf(123456789L));
     }
@@ -1364,7 +1364,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that receiving a message with a binary typed message-id results in returning the
      * expected value for JMSMessageId where the JMS "ID:" prefix has been added to the hex representation of the binary.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithBinaryMessageIdReturnsExpectedJMSMessageID() throws Exception {
         receivedMessageWithMessageIdTestImpl(new Binary(new byte[]{(byte)0x02, (byte)0x20, (byte) 0xAE, (byte) 0x00}));
     }
@@ -1403,7 +1403,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that receiving a message with a string typed correlation-id results in returning the
      * expected value for JMSCorrelationID where the JMS "ID:" prefix has been added.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithStringCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception {
         receivedMessageWithCorrelationIdTestImpl("myTestCorrelationIdString", false);
     }
@@ -1413,7 +1413,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * application-specific value, results in returning the expected value for JMSCorrelationID
      * where the JMS "ID:" prefix has NOT been added.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithAppSpecificStringCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception {
         receivedMessageWithCorrelationIdTestImpl("myTestCorrelationIdString", true);
     }
@@ -1422,7 +1422,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that receiving a message with a UUID typed correlation-id results in returning the
      * expected value for JMSCorrelationID where the JMS "ID:" prefix has been added to the UUID.tostring()
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithUUIDCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception {
         receivedMessageWithCorrelationIdTestImpl(UUID.randomUUID(), false);
     }
@@ -1431,7 +1431,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that receiving a message with a UUID typed correlation-id results in returning the
      * expected value for JMSCorrelationID where the JMS "ID:" prefix has been added to the UUID.tostring()
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithLongCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception {
         receivedMessageWithCorrelationIdTestImpl(UnsignedLong.valueOf(123456789L), false);
     }
@@ -1482,7 +1482,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * where the type is uuid, the "ID:" prefix of the JMSCorrelationID value is (obviously) not present, and there is
      * no presence of the message annotation to indicate an app-specific correlation-id.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testSentMessageWithUUIDCorrelationId() throws Exception {
         UUID uuid = UUID.randomUUID();
         String stringCorrelationId = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_UUID_PREFIX +  uuid.toString();
@@ -1495,7 +1495,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * where the type is binary, the "ID:" prefix of the JMSCorrelationID value is (obviously) not present, and there is
      * no presence of the message annotation to indicate an app-specific correlation-id.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testSentMessageWithBinaryCorrelationId() throws Exception
     {
         Binary bin = new Binary(new byte[]{(byte)0x01, (byte)0x23, (byte) 0xAF, (byte) 0x00});
@@ -1509,7 +1509,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * where the type is ulong, the "ID:" prefix of the JMSCorrelationID value is (obviously) not present, and there is
      * no presence of the message annotation to indicate an app-specific correlation-id.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testSentMessageWithUlongCorrelationId() throws Exception {
         UnsignedLong ulong = UnsignedLong.valueOf(Long.MAX_VALUE);
         String stringCorrelationId = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_ULONG_PREFIX +  ulong.toString();
@@ -1522,7 +1522,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * where the "ID:" prefix of the JMSCorrelationID value is not present, and there is
      * no presence of the message annotation to indicate an app-specific correlation-id.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testSentMessageWithStringCorrelationId() throws Exception {
         String stringCorrelationId = "ID:myTestMessageIdString";
         String underlyingCorrelationId = "myTestMessageIdString";
@@ -1534,7 +1534,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * app-specific results in an AMQP message with the expected encoding of the correlation-id,
      * and the presence of the message annotation to indicate an app-specific correlation-id.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testSentMessageWithAppSpecificStringCorrelationId() throws Exception {
         String stringCorrelationId = "myTestAppSpecificString";
         sentMessageWithCorrelationIdTestImpl(stringCorrelationId, stringCorrelationId, true);
@@ -1588,7 +1588,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * uses the result of calling getJMSMessageID as the value for setJMSCorrelationId results in
      * transmission of the expected AMQP message content.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithStringMessageIdAndSendValueAsCorrelationId() throws Exception {
         recieveMessageIdSendCorrelationIdTestImpl("myStringMessageId");
     }
@@ -1598,7 +1598,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * uses the result of calling getJMSMessageID as the value for setJMSCorrelationId results in
      * transmission of the expected AMQP message content.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithUUIDMessageIdAndSendValueAsCorrelationId() throws Exception {
         recieveMessageIdSendCorrelationIdTestImpl(UUID.randomUUID());
     }
@@ -1608,7 +1608,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * uses the result of calling getJMSMessageID as the value for setJMSCorrelationId results in
      * transmission of the expected AMQP message content.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithUlongMessageIdAndSendValueAsCorrelationId() throws Exception {
         recieveMessageIdSendCorrelationIdTestImpl(UnsignedLong.valueOf(123456789L));
     }
@@ -1618,7 +1618,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * uses the result of calling getJMSMessageID as the value for setJMSCorrelationId results in
      * transmission of the expected AMQP message content.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithBinaryMessageIdAndSendValueAsCorrelationId() throws Exception {
         recieveMessageIdSendCorrelationIdTestImpl(new Binary(new byte[]{(byte)0x00, (byte)0xCD, (byte) 0xEF, (byte) 0x01}));
     }
@@ -1689,7 +1689,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * fields of the AMQP properties section set, that the expected JMSX or JMS_AMQP properties
      * are present, and the expected values are returned when retrieved from the JMS message.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testReceivedMessageWithGroupRelatedPropertiesSet() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1764,7 +1764,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * properties of the JMS message set, that the expected values are included in the fields of
      * the AMQP message emitted.
      */
-    @Test(timeout = 2000)
+    @Test(timeout = 20000)
     public void testSendMessageWithGroupRelatedPropertiesSet() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);

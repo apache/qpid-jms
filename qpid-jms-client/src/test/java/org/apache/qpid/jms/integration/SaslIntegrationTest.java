@@ -50,7 +50,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     private static final String CLIENT_JKS_TRUSTSTORE = "src/test/resources/client-jks.truststore";
     private static final String PASSWORD = "password";
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testSaslExternalConnection() throws Exception {
         TransportSslOptions sslOptions = new TransportSslOptions();
         sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
@@ -85,7 +85,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testSaslPlainConnection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -110,7 +110,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testSaslAnonymousConnection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Expect an ANOYMOUS connection
@@ -135,22 +135,22 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
      * Add a small delay after the SASL process fails, test peer will throw if
      * any unexpected frames arrive, such as erroneous open+close.
      */
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testWaitForUnexpectedFramesAfterSaslFailure() throws Exception {
         doMechanismSelectedTestImpl(null, null, ANONYMOUS, new Symbol[] {ANONYMOUS}, true);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testAnonymousSelectedWhenNoCredentialsWereSupplied() throws Exception {
         doMechanismSelectedTestImpl(null, null, ANONYMOUS, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS}, false);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testAnonymousSelectedWhenNoPasswordWasSupplied() throws Exception {
         doMechanismSelectedTestImpl("username", null, ANONYMOUS, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS}, false);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCramMd5SelectedWhenCredentialsPresent() throws Exception {
         doMechanismSelectedTestImpl("username", "password", CRAM_MD5, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS}, false);
     }
@@ -178,12 +178,12 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testExternalSelectedWhenLocalPrincipalPresent() throws Exception {
         doMechanismSelectedExternalTestImpl(true, EXTERNAL, new Symbol[] {EXTERNAL, ANONYMOUS});
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testExternalNotSelectedWhenLocalPrincipalMissing() throws Exception {
         doMechanismSelectedExternalTestImpl(false, ANONYMOUS, new Symbol[] {EXTERNAL, ANONYMOUS});
     }
@@ -223,7 +223,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testSaslLayerDisabledConnection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Expect a connection with no SASL layer.
@@ -244,7 +244,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testRestrictSaslMechanismsWithSingleMech() throws Exception {
         // Check PLAIN gets picked when we don't specify a restriction
         doMechanismSelectionRestrictedTestImpl("username", "password", PLAIN, new Symbol[] { PLAIN, ANONYMOUS}, null);
@@ -253,7 +253,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         doMechanismSelectionRestrictedTestImpl("username", "password", ANONYMOUS, new Symbol[] { PLAIN, ANONYMOUS}, "ANONYMOUS");
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testRestrictSaslMechanismsWithMultipleMechs() throws Exception {
         // Check CRAM-MD5 gets picked when we dont specify a restriction
         doMechanismSelectionRestrictedTestImpl("username", "password", CRAM_MD5, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS}, null);
@@ -262,7 +262,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         doMechanismSelectionRestrictedTestImpl("username", "password", PLAIN, new Symbol[] { CRAM_MD5, PLAIN, ANONYMOUS}, "PLAIN,ANONYMOUS");
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testRestrictSaslMechanismsWithMultipleMechsNoPassword() throws Exception {
         // Check ANONYMOUS gets picked when we specify a restriction with multiple mechs but don't give a password
         doMechanismSelectionRestrictedTestImpl("username", null, ANONYMOUS, new Symbol[] { CRAM_MD5, PLAIN, ANONYMOUS}, "PLAIN,ANONYMOUS");

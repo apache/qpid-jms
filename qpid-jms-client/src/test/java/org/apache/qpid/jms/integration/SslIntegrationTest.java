@@ -62,7 +62,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateAndCloseSslConnection() throws Exception {
         TransportSslOptions sslOptions = new TransportSslOptions();
         sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
@@ -84,7 +84,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateAndCloseSslConnectionWithClientAuth() throws Exception {
         TransportSslOptions sslOptions = new TransportSslOptions();
         sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
@@ -111,7 +111,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateAndCloseSslConnectionWithAlias() throws Exception {
         doConnectionWithAliasTestImpl(CLIENT_KEY_ALIAS, CLIENT_DN);
         doConnectionWithAliasTestImpl(CLIENT2_KEY_ALIAS, CLIENT2_DN);
@@ -152,12 +152,12 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateConnectionWithAliasThatDoesNotExist() throws Exception {
         doCreateConnectionWithInvalidAliasTestImpl(ALIAS_DOES_NOT_EXIST);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateConnectionWithAliasThatDoesNotRepresentKeyEntry() throws Exception {
         doCreateConnectionWithInvalidAliasTestImpl(ALIAS_CA_CERT);
     }

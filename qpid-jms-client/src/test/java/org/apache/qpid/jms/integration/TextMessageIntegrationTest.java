@@ -53,7 +53,7 @@ import org.junit.Test;
 public class TextMessageIntegrationTest extends QpidJmsTestCase {
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testSendTextMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -82,7 +82,7 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testReceiveTextMessageWithContentAmqpValue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -110,7 +110,7 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testSendTextMessageWithoutContent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -138,7 +138,7 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testReceiveTextMessageWithAmqpValueNullBodyAndNoMsgTypeAnnotation() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -165,7 +165,7 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testReceiveTextMessageUsingDataSectionWithContentTypeTextPlainNoTypeAnnotation() throws Exception {
         String expectedString = "expectedContent";
         final byte[] sentBytes = expectedString.getBytes("UTF-8");
@@ -173,7 +173,7 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
         doReceiveTextMessageUsingDataSectionTestImpl("text/plain", sentBytes, expectedString);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testReceiveTextMessageUsingDataSectionWithContentTypeTextPlainCharsetUtf8NoTypeAnnotation() throws Exception {
         String expectedString = "expectedContent";
         final byte[] sentBytes = expectedString.getBytes("UTF-8");
@@ -181,7 +181,7 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
         doReceiveTextMessageUsingDataSectionTestImpl("text/plain;charset=utf-8", sentBytes, expectedString);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testReceiveTextMessageUsingDataSectionWithContentTypeTextPlainCharsetUtf16NoTypeAnnotation() throws Exception {
         String expectedString = "expectedContent";
         final byte[] sentBytes = expectedString.getBytes("UTF-16");
@@ -189,7 +189,7 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
         doReceiveTextMessageUsingDataSectionTestImpl("text/plain;charset=utf-16", sentBytes, expectedString);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testReceiveTextMessageUsingDataSectionWithContentTypeTextOtherNoTypeAnnotation() throws Exception {
         String expectedString = "expectedContent";
         final byte[] sentBytes = expectedString.getBytes("UTF-8");
@@ -197,7 +197,7 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
         doReceiveTextMessageUsingDataSectionTestImpl("text/other", sentBytes, expectedString);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testReceiveTextMessageUsingDataSectionWithContentTypeApplicationJsonNoTypeAnnotation() throws Exception {
         String expectedString = "expectedContent";
         final byte[] sentBytes = expectedString.getBytes("UTF-8");
@@ -205,7 +205,7 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
         doReceiveTextMessageUsingDataSectionTestImpl("application/json", sentBytes, expectedString);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testReceiveTextMessageUsingDataSectionWithContentTypeApplicationXmlNoTypeAnnotation() throws Exception {
         String expectedString = "expectedContent";
         final byte[] sentBytes = expectedString.getBytes("UTF-8");

@@ -86,7 +86,7 @@ import org.junit.Test;
 public class SessionIntegrationTest extends QpidJmsTestCase {
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCloseSession() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -98,7 +98,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateProducer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -113,7 +113,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateProducerLinkSupportsAcceptedAndRejectedOutcomes() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -139,7 +139,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -159,12 +159,12 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateConsumerFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateConsumerFailsWhenLinkRefusedTestImpl(false);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateConsumerFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
         doCreateConsumerFailsWhenLinkRefusedTestImpl(true);
     }
@@ -202,22 +202,22 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateTemporaryQueueFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(false, false);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateTemporaryQueueFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
         doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(false, true);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateTemporaryTopicFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(true, false);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateTemporaryTopicFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
         doCreateTemporaryDestinationFailsWhenLinkRefusedTestImpl(true, true);
     }
@@ -253,7 +253,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateTemporaryQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -274,7 +274,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateAndDeleteTemporaryQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -295,7 +295,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateTemporaryTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -316,7 +316,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateAndDeleteTemporaryTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -337,22 +337,22 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateConsumerSourceContainsQueueCapability() throws Exception {
         doCreateConsumerSourceContainsCapabilityTestImpl(Queue.class);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateConsumerSourceContainsTopicCapability() throws Exception {
         doCreateConsumerSourceContainsCapabilityTestImpl(Topic.class);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateConsumerSourceContainsTempQueueCapability() throws Exception {
         doCreateConsumerSourceContainsCapabilityTestImpl(TemporaryQueue.class);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateConsumerSourceContainsTempTopicCapability() throws Exception {
         doCreateConsumerSourceContainsCapabilityTestImpl(TemporaryTopic.class);
     }
@@ -398,22 +398,22 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateProducerTargetContainsQueueCapability() throws Exception {
         doCreateProducerTargetContainsCapabilityTestImpl(Queue.class);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateProducerTargetContainsTopicCapability() throws Exception {
         doCreateProducerTargetContainsCapabilityTestImpl(Topic.class);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateProducerTargetContainsTempQueueCapability() throws Exception {
         doCreateProducerTargetContainsCapabilityTestImpl(TemporaryQueue.class);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateProducerTargetContainsTempTopicCapability() throws Exception {
         doCreateProducerTargetContainsCapabilityTestImpl(TemporaryTopic.class);
     }
@@ -456,7 +456,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateAnonymousProducerTargetContainsNoTypeCapabilityWhenAnonymousRelayNodeIsSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -486,22 +486,22 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateAnonymousProducerTargetContainsQueueCapabilityWhenAnonymousRelayNodeIsNotSupported() throws Exception {
         doCreateAnonymousProducerTargetContainsCapabilityWhenAnonymousRelayNodeIsNotSupportedTestImpl(Queue.class);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateAnonymousProducerTargetContainsTopicCapabilityWhenAnonymousRelayNodeIsNotSupported() throws Exception {
         doCreateAnonymousProducerTargetContainsCapabilityWhenAnonymousRelayNodeIsNotSupportedTestImpl(Topic.class);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateAnonymousProducerTargetContainsTempQueueCapabilityWhenAnonymousRelayNodeIsNotSupported() throws Exception {
         doCreateAnonymousProducerTargetContainsCapabilityWhenAnonymousRelayNodeIsNotSupportedTestImpl(TemporaryQueue.class);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateAnonymousProducerTargetContainsTempTopicCapabilityWhenAnonymousRelayNodeIsNotSupported() throws Exception {
         doCreateAnonymousProducerTargetContainsCapabilityWhenAnonymousRelayNodeIsNotSupportedTestImpl(TemporaryQueue.class);
     }
@@ -571,7 +571,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateDurableTopicSubscriber() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -596,7 +596,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateDurableTopicSubscriberFailsIfConnectionDoesntHaveExplicitClientID() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Create a connection without an explicit clientId
@@ -622,7 +622,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCloseDurableTopicSubscriberDetachesWithCloseFalse() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -647,7 +647,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateAnonymousProducerWhenAnonymousRelayNodeIsSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             //Add capability to indicate support for ANONYMOUS-RELAY
@@ -695,12 +695,12 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedTestImpl(false);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
         doCreateAnonymousProducerFailsWhenAnonymousRelayNodeIsSupportedButLinkRefusedTestImpl(true);
     }
@@ -737,12 +737,12 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateProducerFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateProducerFailsWhenLinkRefusedTestImpl(false);
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateProducerFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
         doCreateProducerFailsWhenLinkRefusedTestImpl(true);
     }
@@ -780,7 +780,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateAnonymousProducerWhenAnonymousRelayNodeIsNotSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -833,12 +833,12 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=5000)
+    @Test(timeout=20000)
     public void testCommitTransactedSessionWithConsumerReceivingAllMessages() throws Exception {
         doCommitTransactedSessionWithConsumerTestImpl(1, 1);
     }
 
-    @Test(timeout=5000)
+    @Test(timeout=20000)
     public void testCommitTransactedSessionWithConsumerReceivingSomeMessages() throws Exception {
         doCommitTransactedSessionWithConsumerTestImpl(5, 2);
     }
@@ -898,7 +898,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=5000)
+    @Test(timeout=20000)
     public void testIncomingMessageExceedsMaxRedeliveries() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final int COUNT = 5;
@@ -933,7 +933,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=5000)
+    @Test(timeout=20000)
     public void testProducedMessagesOnTransactedSessionCarryTxnId() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -980,12 +980,12 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=5000)
+    @Test(timeout=20000)
     public void testRollbackTransactedSessionWithConsumerReceivingAllMessages() throws Exception {
         doRollbackTransactedSessionWithConsumerTestImpl(1, 1);
     }
 
-    @Test(timeout=5000)
+    @Test(timeout=20000)
     public void testRollbackTransactedSessionWithConsumerReceivingSomeMessages() throws Exception {
         doRollbackTransactedSessionWithConsumerTestImpl(5, 2);
     }
@@ -1057,7 +1057,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=5000)
+    @Test(timeout=20000)
     public void testRollbackTransactedSessionWithPrefetchFullBeforeStoppingConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1131,7 +1131,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=5000)
+    @Test(timeout=20000)
     public void testRollbackTransactedSessionWithPrefetchFullyUtilisedByDrainWhenStoppingConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1210,7 +1210,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=5000)
+    @Test(timeout=20000)
     public void testDefaultOutcomeIsModifiedForConsumerSourceOnTransactedSession() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1240,7 +1240,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=5000)
+    @Test(timeout=20000)
     public void testPrefetchPolicyInfluencesCreditFlow() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1262,7 +1262,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testRemotelyEndSessionWithProducer() throws Exception {
         final String BREAD_CRUMB = "ErrorMessage";
 
@@ -1317,7 +1317,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testRemotelyEndSessionWithConsumer() throws Exception {
         final String BREAD_CRUMB = "ErrorMessage";
 
@@ -1371,7 +1371,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCloseSessionWithConsumerThatRemoteDetaches() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -1397,7 +1397,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCloseSessionWithConsumerThatRemoteDetachesWithUnackedMessages() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);

@@ -57,7 +57,7 @@ import org.junit.Test;
 public class ProducerIntegrationTest extends QpidJmsTestCase {
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testCloseSender() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -75,7 +75,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testDefaultDeliveryModeProducesDurableMessages() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -104,7 +104,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testProducerOverridesMessageDeliveryMode() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -142,7 +142,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      * Test that when a message is sent the JMSDestination header is set to
      * the Destination used by the producer.
      */
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testSendingMessageSetsJMSDestination() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -177,7 +177,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testSendingMessageSetsJMSTimestamp() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -221,7 +221,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      * Test that after sending a message with the disableMessageTimestamp hint set, the
      * message object has a 0 JMSTimestamp value, and no creation-time field value was set.
      */
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testSendingMessageWithDisableMessageTimestampHint() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -258,7 +258,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testSendingMessageSetsJMSExpirationRelatedAbsoluteExpiryAndTtlFields() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -274,7 +274,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             long ttl = 100_000;
 
             Date expirationLower = new Date(currentTime + ttl);
-            Date expirationUpper = new Date(currentTime + ttl + 3000);
+            Date expirationUpper = new Date(currentTime + ttl + 5000);
 
             // Create matcher to expect the absolute-expiry-time field of the properties section to
             // be set to a value greater than 'now'+ttl, within a delta.
@@ -302,12 +302,12 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testSendingMessageWithJMS_AMQP_TTLSetPositive() throws Exception {
         sendingMessageWithJMS_AMQP_TTLSetTestImpl(100_000, 20_000);
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testSendingMessageWithJMS_AMQP_TTLSetZero() throws Exception {
         sendingMessageWithJMS_AMQP_TTLSetTestImpl(50_000, 0);
     }
@@ -363,7 +363,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      * Test that when a message is sent with default priority of 4, the emitted AMQP message has no value in the header
      * priority field, since the default for that field is already 4.
      */
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testDefaultPriorityProducesMessagesWithoutPriorityField() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -399,7 +399,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      * Test that when a message is sent with a non-default priority, the emitted AMQP message has that value in the
      * header priority field, and the JMS message has had JMSPriority set.
      */
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testNonDefaultPriorityProducesMessagesWithPriorityFieldAndSetsJMSPriority() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -437,7 +437,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      * Test that upon sending a message, the sender sets the JMSMessageID on the Message object,
      * and that the value is included in the AMQP message sent by the client.
      */
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testSendingMessageSetsJMSMessageID() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -483,7 +483,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      * Test that after sending a message with the disableMessageID hint set, the message
      * object has a null JMSMessageID value, and no message-id field value was set.
      */
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testSendingMessageWithDisableMessageIDHint() throws Exception {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -520,7 +520,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testRemotelyCloseProducer() throws Exception {
         final String BREAD_CRUMB = "ErrorMessage";
 

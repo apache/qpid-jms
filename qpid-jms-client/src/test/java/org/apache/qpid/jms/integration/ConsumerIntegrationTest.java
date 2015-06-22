@@ -39,7 +39,7 @@ import org.junit.Test;
 public class ConsumerIntegrationTest extends QpidJmsTestCase {
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCloseConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -58,7 +58,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testRemotelyCloseConsumer() throws Exception {
         final String BREAD_CRUMB = "ErrorMessage";
 
@@ -106,7 +106,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
      * Test that a message is received when calling recieve with a timeout
      * of 0, which means wait indefinitely.
      */
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testReceiveMessageWithRecieveZeroTimeout() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);

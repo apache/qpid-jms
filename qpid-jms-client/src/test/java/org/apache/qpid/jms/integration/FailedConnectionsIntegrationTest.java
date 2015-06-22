@@ -48,7 +48,7 @@ import org.junit.Test;
  */
 public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testConnectWithInvalidClientIdThrowsJMSEWhenInvalidContainerHintNotPresent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             testPeer.rejectConnect(AmqpError.INVALID_FIELD, "Client ID already in use", null);
@@ -65,7 +65,7 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testConnectWithInvalidClientIdThrowsICIDEWhenInvalidContainerHintPresent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final String remoteURI = "amqp://localhost:" + testPeer.getServerPort();
@@ -89,7 +89,7 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testConnectSecurityViolation() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             testPeer.rejectConnect(AmqpError.UNAUTHORIZED_ACCESS, "Anonymous connections not allowed", null);
@@ -105,7 +105,7 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testConnectWithRedirect() throws Exception {
         Map<Symbol, Object> redirectInfo = new HashMap<Symbol, Object>();
 

@@ -71,19 +71,19 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=10000)
+    @Test(timeout=20000)
     public void testCreate() {
         provider = new AmqpProvider(peerURI);
         assertFalse(provider.isPresettleConsumers());
     }
 
-    @Test(timeout=10000, expected=RuntimeException.class)
+    @Test(timeout=20000, expected=RuntimeException.class)
     public void testGetMessageFactoryTrowsWhenNotConnected() {
         provider = new AmqpProvider(peerURI);
         provider.getMessageFactory();
     }
 
-    @Test(timeout=10000)
+    @Test(timeout=20000)
     public void testConnectWithUnknownProtocol() throws Exception {
         provider = new AmqpProvider(peerURI);
         provider.setTransportType("ftp");
@@ -94,7 +94,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=10000)
+    @Test(timeout=20000)
     public void testConnectThrowsWhenNoPeer() throws Exception {
         provider = new AmqpProvider(peerURI);
         testPeer.close();
@@ -105,7 +105,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=10000)
+    @Test(timeout=20000)
     public void testStartThrowsIfNoListenerSet() throws Exception {
         provider = new AmqpProvider(peerURI);
         provider.connect();
@@ -117,7 +117,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=10000)
+    @Test(timeout=20000)
     public void testToString() throws IOException {
         provider = new AmqpProvider(peerURI);
         provider.connect();
@@ -125,7 +125,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         assertTrue(provider.toString().contains(String.valueOf(peerURI.getPort())));
     }
 
-    @Test(timeout=10000)
+    @Test(timeout=20000)
     public void testClosedProviderThrowsIOException() throws IOException {
         provider = new AmqpProvider(peerURI);
         provider.connect();
@@ -148,7 +148,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         } catch (IOException ex) {}
     }
 
-    @Test(timeout=10000)
+    @Test(timeout=20000)
     public void testTimeoutsSetFromConnectionInfo() throws IOException, JMSException {
         final long CONNECT_TIMEOUT = TimeUnit.SECONDS.toMillis(4);
         final long CLOSE_TIMEOUT = TimeUnit.SECONDS.toMillis(5);

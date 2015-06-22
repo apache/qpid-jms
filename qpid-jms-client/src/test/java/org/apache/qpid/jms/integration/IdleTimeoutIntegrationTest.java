@@ -49,7 +49,7 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(IdleTimeoutIntegrationTest.class);
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testIdleTimeoutIsAdvertisedByDefault() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             testPeer.expectSaslAnonymousConnect(greaterThan(UnsignedInteger.valueOf(0)), null);
@@ -69,7 +69,7 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testAdvertisedIdleTimeoutIsHalfOfActualTimeoutValue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             int configuredTimeout = 54320;
@@ -92,7 +92,7 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testClientSendsEmptyFramesWhenPeerAdvertisesIdleTimeout() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             int period = 20;
@@ -128,7 +128,7 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
 
     //TODO: Could use JUnit categories to make this slowish test skipable?
     //      If so, make it slower still and more granular.
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testClientSendsEmptyFramesWithExpectedFrequency() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             int period = 250;
@@ -163,7 +163,7 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testConnectionSetFailedWhenPeerNeglectsToSendEmptyFrames() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             int configuredTimeout = 200;
@@ -194,7 +194,7 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testConnectionNotMarkedFailedWhenPeerSendsEmptyFrames() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             int configuredTimeout = 1000;

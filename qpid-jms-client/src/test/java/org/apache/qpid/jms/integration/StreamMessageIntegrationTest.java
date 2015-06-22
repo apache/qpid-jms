@@ -58,7 +58,7 @@ public class StreamMessageIntegrationTest extends QpidJmsTestCase {
      * a list which holds entries of the various supported entry types is returned as a
      * {@link StreamMessage}, and verify the values can all be retrieved as expected.
      */
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testReceiveBasicMapMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -143,7 +143,7 @@ public class StreamMessageIntegrationTest extends QpidJmsTestCase {
      * an AmqpValue section containing a list which holds entries of the various supported entry
      * types with the expected values.
      */
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testSendBasicMapMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);

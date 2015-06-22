@@ -70,7 +70,7 @@ import org.junit.Test;
 public class ConnectionIntegrationTest extends QpidJmsTestCase {
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateAndCloseConnection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -79,7 +79,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateConnectionWithClientId() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, false, null, null, null, true);
@@ -88,7 +88,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateAutoAckSession() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -98,7 +98,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testCreateTransactedSession() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -115,7 +115,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testConnectionMetaDataVersion() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -127,7 +127,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testConnectionPropertiesContainExpectedMetaData() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -149,18 +149,18 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testAmqpHostnameSetByDefault() throws Exception {
         doAmqpHostnameTestImpl("localhost", false, equalTo("localhost"));
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testAmqpHostnameSetByVhostOption() throws Exception {
         String vhost = "myAmqpHost";
         doAmqpHostnameTestImpl(vhost, true, equalTo(vhost));
     }
 
-    @Test(timeout = 500000)
+    @Test(timeout = 20000)
     public void testAmqpHostnameNotSetWithEmptyVhostOption() throws Exception {
         doAmqpHostnameTestImpl("", true, nullValue());
     }
@@ -189,7 +189,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testRemotelyEndConnectionListenerInvoked() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final CountDownLatch done = new CountDownLatch(1);
@@ -218,7 +218,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test(timeout = 20000)
     public void testRemotelyEndConnectionWithRedirect() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final CountDownLatch done = new CountDownLatch(1);
@@ -266,7 +266,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 5000)
+    @Test(timeout = 20000)
     public void testRemotelyEndConnectionWithSessionWithConsumer() throws Exception {
         final String BREAD_CRUMB = "ErrorMessage";
 

@@ -35,7 +35,7 @@ import org.junit.Test;
 
 public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
 
-    @Test(timeout=5000)
+    @Test(timeout=20000)
     public void testCreateConnectionGoodProviderURI() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // DONT create a test fixture, we will drive everything directly.
@@ -46,7 +46,7 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=5000)
+    @Test(timeout=20000)
     public void testCreateConnectionGoodProviderString() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // DONT create a test fixture, we will drive everything directly.
@@ -57,7 +57,7 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=5000)
+    @Test(timeout=20000)
     public void testUriOptionsAppliedToConnection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // DONT create a test fixture, we will drive everything directly.

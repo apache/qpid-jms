@@ -225,10 +225,7 @@ public class TestAmqpPeer implements AutoCloseable
         if(handler instanceof HeaderHandler)
         {
             ((HeaderHandler)handler).header(header,this);
-            if(handler.isComplete())
-            {
-                removeFirstHandler();
-            }
+            removeFirstHandler();
         }
         else
         {
@@ -242,10 +239,7 @@ public class TestAmqpPeer implements AutoCloseable
         if(handler instanceof FrameHandler)
         {
             ((FrameHandler)handler).frame(type, channel, describedType, payload, this);
-            if(handler.isComplete())
-            {
-                removeFirstHandler();
-            }
+            removeFirstHandler();
         }
         else
         {
@@ -394,7 +388,7 @@ public class TestAmqpPeer implements AutoCloseable
         SaslInitMatcher saslInitMatcher = new SaslInitMatcher()
             .withMechanism(equalTo(mechanism))
             .withInitialResponse(initialResponseMatcher)
-            .onSuccess(new AmqpPeerRunnable()
+            .onCompletion(new AmqpPeerRunnable()
             {
                 @Override
                 public void run()
@@ -433,7 +427,7 @@ public class TestAmqpPeer implements AutoCloseable
 
         OpenMatcher openMatcher = new OpenMatcher()
             .withContainerId(notNullValue(String.class))
-            .onSuccess(new FrameSender(
+            .onCompletion(new FrameSender(
                     this, FrameType.AMQP, 0,
                     open,
                     null));
@@ -516,7 +510,7 @@ public class TestAmqpPeer implements AutoCloseable
                                                     saslMechanismsFrame, null)));
 
         SaslInitMatcher saslInitMatcher = new SaslInitMatcher().withMechanism(equalTo(clientSelectedMech));
-        saslInitMatcher.onSuccess(new AmqpPeerRunnable()
+        saslInitMatcher.onCompletion(new AmqpPeerRunnable()
         {
             @Override
             public void run()
@@ -545,7 +539,7 @@ public class TestAmqpPeer implements AutoCloseable
 
         OpenMatcher openMatcher = new OpenMatcher()
             .withContainerId(notNullValue(String.class))
-            .onSuccess(new FrameSender(
+            .onCompletion(new FrameSender(
                     this, FrameType.AMQP, 0,
                     openFrame,
                     null));
@@ -587,7 +581,7 @@ public class TestAmqpPeer implements AutoCloseable
     {
         CloseMatcher closeMatcher = new CloseMatcher().withError(errorMatcher);
         if(sendReply) {
-            closeMatcher.onSuccess(new FrameSender(this, FrameType.AMQP, 0,
+            closeMatcher.onCompletion(new FrameSender(this, FrameType.AMQP, 0,
                     new CloseFrame(),
                     null));
         }
@@ -625,7 +619,7 @@ public class TestAmqpPeer implements AutoCloseable
                 _lastInitiatedChannel = actualChannel;
             }
         });
-        beginMatcher.onSuccess(beginResponseSender);
+        beginMatcher.onCompletion(beginResponseSender);
 
         addHandler(beginMatcher);
 
@@ -657,7 +651,7 @@ public class TestAmqpPeer implements AutoCloseable
                     frameSender.setChannel(endMatcher.getActualChannel());
                 }
             });
-            endMatcher.onSuccess(frameSender);
+            endMatcher.onCompletion(frameSender);
         }
 
         addHandler(endMatcher);
@@ -789,7 +783,7 @@ public class TestAmqpPeer implements AutoCloseable
             composite.add(detachResonseSender);
         }
 
-        attachMatcher.onSuccess(composite);
+        attachMatcher.onCompletion(composite);
 
         addHandler(attachMatcher);
     }
@@ -903,7 +897,7 @@ public class TestAmqpPeer implements AutoCloseable
             composite.add(flowFrameSender);
         }
 
-        attachMatcher.onSuccess(composite);
+        attachMatcher.onCompletion(composite);
 
         addHandler(attachMatcher);
     }
@@ -996,7 +990,7 @@ public class TestAmqpPeer implements AutoCloseable
             composite.add(detachResonseSender);
         }
 
-        attachMatcher.onSuccess(composite);
+        attachMatcher.onCompletion(composite);
 
         addHandler(attachMatcher);
     }
@@ -1052,7 +1046,7 @@ public class TestAmqpPeer implements AutoCloseable
                 }
             });
 
-            detachMatcher.onSuccess(detachResponseSender);
+            detachMatcher.onCompletion(detachResponseSender);
         }
 
         addHandler(detachMatcher);
@@ -1203,7 +1197,7 @@ public class TestAmqpPeer implements AutoCloseable
         }
 
         if(addComposite) {
-            flowMatcher.onSuccess(composite);
+            flowMatcher.onCompletion(composite);
         }
 
         addHandler(flowMatcher);
@@ -1298,7 +1292,7 @@ public class TestAmqpPeer implements AutoCloseable
                 dispositionResponse.setFirst(transferMatcher.getReceivedDeliveryId());
             }
         });
-        transferMatcher.onSuccess(dispositionFrameSender);
+        transferMatcher.onCompletion(dispositionFrameSender);
 
         addHandler(transferMatcher);
     }
@@ -1483,11 +1477,11 @@ public class TestAmqpPeer implements AutoCloseable
     private CompositeAmqpPeerRunnable insertCompsiteActionForLastHandler() {
         CompositeAmqpPeerRunnable comp = new CompositeAmqpPeerRunnable();
         Handler h = getLastHandler();
-        AmqpPeerRunnable orig = h.getOnSuccessAction();
+        AmqpPeerRunnable orig = h.getOnCompletionAction();
         if (orig != null) {
             comp.add(orig);
         }
-        h.onSuccess(comp);
+        h.onCompletion(comp);
         return comp;
     }
 

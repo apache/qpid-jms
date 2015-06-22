@@ -48,9 +48,9 @@ public class CloseMatcher extends FrameWithNoPayloadMatchingHandler
     }
 
     @Override
-    public CloseMatcher onSuccess(AmqpPeerRunnable onSuccessAction)
+    public CloseMatcher onCompletion(AmqpPeerRunnable onCompletion)
     {
-        super.onSuccess(onSuccessAction);
+        super.onCompletion(onCompletion);
         return this;
     }
 

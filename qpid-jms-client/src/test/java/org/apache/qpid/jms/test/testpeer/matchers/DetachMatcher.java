@@ -50,9 +50,9 @@ public class DetachMatcher extends FrameWithNoPayloadMatchingHandler
     }
 
     @Override
-    public DetachMatcher onSuccess(AmqpPeerRunnable onSuccessAction)
+    public DetachMatcher onCompletion(AmqpPeerRunnable onCompletion)
     {
-        super.onSuccess(onSuccessAction);
+        super.onCompletion(onCompletion);
         return this;
     }
 

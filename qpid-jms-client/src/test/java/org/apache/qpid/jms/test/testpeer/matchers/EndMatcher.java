@@ -48,9 +48,9 @@ public class EndMatcher extends FrameWithNoPayloadMatchingHandler
     }
 
     @Override
-    public EndMatcher onSuccess(AmqpPeerRunnable onSuccessAction)
+    public EndMatcher onCompletion(AmqpPeerRunnable onCompletion)
     {
-        super.onSuccess(onSuccessAction);
+        super.onCompletion(onCompletion);
         return this;
     }
 

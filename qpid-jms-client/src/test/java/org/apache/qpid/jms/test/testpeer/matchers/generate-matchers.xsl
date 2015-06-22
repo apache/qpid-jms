@@ -97,9 +97,9 @@ public class <xsl:value-of select="$classname"/> extends <xsl:value-of select="$
     }
 
     @Override
-    public <xsl:value-of select="$classname"/> onSuccess(AmqpPeerRunnable onSuccessAction)
+    public <xsl:value-of select="$classname"/> onCompletion(AmqpPeerRunnable onCompletion)
     {
-        super.onSuccess(onSuccessAction);
+        super.onCompletion(onCompletion);
         return this;
     }
 <xsl:for-each select="descendant::node()[name()='field']">

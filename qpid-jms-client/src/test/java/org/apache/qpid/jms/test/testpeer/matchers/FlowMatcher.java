@@ -58,9 +58,9 @@ public class FlowMatcher extends FrameWithNoPayloadMatchingHandler
     }
 
     @Override
-    public FlowMatcher onSuccess(AmqpPeerRunnable onSuccessAction)
+    public FlowMatcher onCompletion(AmqpPeerRunnable onCompletion)
     {
-        super.onSuccess(onSuccessAction);
+        super.onCompletion(onCompletion);
         return this;
     }
 

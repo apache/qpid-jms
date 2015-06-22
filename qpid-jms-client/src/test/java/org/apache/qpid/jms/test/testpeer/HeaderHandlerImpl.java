@@ -31,25 +31,18 @@ class HeaderHandlerImpl implements HeaderHandler
 
     private final byte[] _expectedHeader;
     private final byte[] _response;
-    private AmqpPeerRunnable _onSuccess;
-    private boolean _isComplete;
+    private AmqpPeerRunnable _onCompletion;
 
     HeaderHandlerImpl(byte[] expectedHeader, byte[] response)
     {
        this(expectedHeader, response, null);
     }
 
-    public HeaderHandlerImpl(byte[] header, byte[] response, AmqpPeerRunnable onSuccess)
+    public HeaderHandlerImpl(byte[] header, byte[] response, AmqpPeerRunnable onCompletion)
     {
         _expectedHeader = header;
         _response = response;
-        _onSuccess = onSuccess;
-    }
-
-    @Override
-    public boolean isComplete()
-    {
-        return _isComplete;
+        _onCompletion = onCompletion;
     }
 
     @Override
@@ -59,11 +52,10 @@ class HeaderHandlerImpl implements HeaderHandler
 
         assertThat("Header should match", header, equalTo(_expectedHeader));
         peer.sendHeader(_response);
-        if(_onSuccess !=null)
+        if(_onCompletion != null)
         {
-            _onSuccess.run();
+            _onCompletion.run();
         }
-        _isComplete = true;
     }
 
     @Override
@@ -73,15 +65,15 @@ class HeaderHandlerImpl implements HeaderHandler
     }
 
     @Override
-    public AmqpPeerRunnable getOnSuccessAction()
+    public AmqpPeerRunnable getOnCompletionAction()
     {
-        return _onSuccess;
+        return _onCompletion;
     }
 
     @Override
-    public Handler onSuccess(AmqpPeerRunnable onSuccessAction)
+    public Handler onCompletion(AmqpPeerRunnable onCompletion)
     {
-        _onSuccess = onSuccessAction;
+        _onCompletion = onCompletion;
         return this;
     }
 }

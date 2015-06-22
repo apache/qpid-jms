@@ -50,9 +50,9 @@ public class SaslInitMatcher extends FrameWithNoPayloadMatchingHandler
     }
 
     @Override
-    public SaslInitMatcher onSuccess(AmqpPeerRunnable onSuccessAction)
+    public SaslInitMatcher onCompletion(AmqpPeerRunnable onCompletion)
     {
-        super.onSuccess(onSuccessAction);
+        super.onCompletion(onCompletion);
         return this;
     }
 

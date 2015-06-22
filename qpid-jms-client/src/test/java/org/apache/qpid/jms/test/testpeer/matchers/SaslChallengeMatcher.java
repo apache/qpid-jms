@@ -48,9 +48,9 @@ public class SaslChallengeMatcher extends FrameWithNoPayloadMatchingHandler
     }
 
     @Override
-    public SaslChallengeMatcher onSuccess(AmqpPeerRunnable onSuccessAction)
+    public SaslChallengeMatcher onCompletion(AmqpPeerRunnable onCompletion)
     {
-        super.onSuccess(onSuccessAction);
+        super.onCompletion(onCompletion);
         return this;
     }
 

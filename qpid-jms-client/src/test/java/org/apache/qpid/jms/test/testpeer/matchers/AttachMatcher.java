@@ -61,9 +61,9 @@ public class AttachMatcher extends FrameWithNoPayloadMatchingHandler
     }
 
     @Override
-    public AttachMatcher onSuccess(AmqpPeerRunnable onSuccessAction)
+    public AttachMatcher onCompletion(AmqpPeerRunnable onCompletion)
     {
-        super.onSuccess(onSuccessAction);
+        super.onCompletion(onCompletion);
         return this;
     }
 

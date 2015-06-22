@@ -34,9 +34,9 @@ public class FrameWithPayloadMatchingHandler extends AbstractFrameFieldAndPayloa
                                                 int channel,
                                                 UnsignedLong numericDescriptor,
                                                 Symbol symbolicDescriptor,
-                                                AmqpPeerRunnable onSuccess)
+                                                AmqpPeerRunnable onCompletion)
     {
-        super(frameType, channel, numericDescriptor, symbolicDescriptor, onSuccess);
+        super(frameType, channel, numericDescriptor, symbolicDescriptor, onCompletion);
     }
 
     public void setPayloadMatcher(Matcher<Binary> payloadMatcher)

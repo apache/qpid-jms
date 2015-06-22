@@ -53,9 +53,9 @@ public class DispositionMatcher extends FrameWithNoPayloadMatchingHandler
     }
 
     @Override
-    public DispositionMatcher onSuccess(AmqpPeerRunnable onSuccessAction)
+    public DispositionMatcher onCompletion(AmqpPeerRunnable onCompletion)
     {
-        super.onSuccess(onSuccessAction);
+        super.onCompletion(onCompletion);
         return this;
     }
 

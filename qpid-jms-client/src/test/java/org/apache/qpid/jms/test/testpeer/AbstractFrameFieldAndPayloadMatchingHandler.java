@@ -39,19 +39,18 @@ public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends Abstra
     private int _expectedChannel;
     private int _actualChannel;
 
-    private AmqpPeerRunnable _onSuccessAction;
-    private volatile boolean _isComplete;
+    private AmqpPeerRunnable _onCompletion;
 
     protected AbstractFrameFieldAndPayloadMatchingHandler(FrameType frameType,
                                                 int channel,
                                                 UnsignedLong numericDescriptor,
                                                 Symbol symbolicDescriptor,
-                                                AmqpPeerRunnable onSuccessAction)
+                                                AmqpPeerRunnable onCompletion)
     {
         super(numericDescriptor, symbolicDescriptor);
         _frameType = frameType;
         _expectedChannel = channel;
-        _onSuccessAction = onSuccessAction;
+        _onCompletion = onCompletion;
     }
 
     protected abstract void verifyPayload(Binary payload) throws AssertionError;
@@ -87,8 +86,14 @@ public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends Abstra
                 peer.assertionFailed(ae);
             }
 
-            //TODO: rename 'completed'
-            succeeded();
+            if(_onCompletion != null)
+            {
+                _onCompletion.run();
+            }
+            else
+            {
+                LOGGER.debug("No onCompletion action, doing nothing.");
+            }
         }
         else
         {
@@ -106,28 +111,14 @@ public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends Abstra
         return _expectedChannel == ANY_CHANNEL ? "<any>" : String.valueOf(_expectedChannel);
     }
 
-    private void succeeded()
+    public AmqpPeerRunnable getOnCompletionAction()
     {
-        if(_onSuccessAction != null)
-        {
-            _onSuccessAction.run();
-        }
-        else
-        {
-            LOGGER.debug("No onSuccess action, doing nothing.");
-        }
-
-        _isComplete = true;
+        return _onCompletion;
     }
 
-    public AmqpPeerRunnable getOnSuccessAction()
+    public AbstractFrameFieldAndPayloadMatchingHandler onCompletion(AmqpPeerRunnable onSuccessAction)
     {
-        return _onSuccessAction;
-    }
-
-    public AbstractFrameFieldAndPayloadMatchingHandler onSuccess(AmqpPeerRunnable onSuccessAction)
-    {
-        _onSuccessAction = onSuccessAction;
+        _onCompletion = onSuccessAction;
         return this;
     }
 
@@ -140,12 +131,6 @@ public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends Abstra
     public int getActualChannel()
     {
         return _actualChannel;
-    }
-
-    @Override
-    public boolean isComplete()
-    {
-        return _isComplete;
     }
 
     @Override

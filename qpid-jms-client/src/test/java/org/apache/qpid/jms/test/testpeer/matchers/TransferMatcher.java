@@ -58,9 +58,9 @@ public class TransferMatcher extends FrameWithPayloadMatchingHandler
     }
 
     @Override
-    public TransferMatcher onSuccess(AmqpPeerRunnable onSuccessAction)
+    public TransferMatcher onCompletion(AmqpPeerRunnable onCompletion)
     {
-        super.onSuccess(onSuccessAction);
+        super.onCompletion(onCompletion);
         return this;
     }
 

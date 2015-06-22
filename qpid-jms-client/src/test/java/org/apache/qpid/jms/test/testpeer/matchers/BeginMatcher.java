@@ -55,9 +55,9 @@ public class BeginMatcher extends FrameWithNoPayloadMatchingHandler
     }
 
     @Override
-    public BeginMatcher onSuccess(AmqpPeerRunnable onSuccessAction)
+    public BeginMatcher onCompletion(AmqpPeerRunnable onCompletion)
     {
-        super.onSuccess(onSuccessAction);
+        super.onCompletion(onCompletion);
         return this;
     }
 

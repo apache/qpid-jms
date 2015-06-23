@@ -253,8 +253,8 @@
             <exclude>**/*.lock</exclude>
             <exclude>**/META-INF/services/*</exclude>
             <exclude>**/*.iml</exclude>
-            <exclude>**/*.jceks</exclude>
-            <exclude>**/*.jks</exclude>
+            <exclude>**/*.keystore</exclude>
+            <exclude>**/*.truststore</exclude>
             <exclude>**/*.crt</exclude>
             <exclude>**/*.csr</exclude>
           </excludes>

@@ -172,7 +172,7 @@ These options apply to the behaviour of certain AMQP functionality.
 + **amqp.idleTimeout** The idle timeout in milliseconds after which the connection will be failed if the peer sends no AMQP frames. Default is 60000.
 + **amqp.vhost** The vhost to connect to. Used to populate the Sasl and Open hostname fields. Default is the main hostname from the Connection URI.
 + **amqp.saslLayer** Controls whether connections should use a SASL layer or not. Default is true.
-+ **amqp.saslMechanisms** Which SASL mechanism(s) the client should allow selection of if offered by the server, comma separated.  Default is no restriction.
++ **amqp.saslMechanisms** Which SASL mechanism(s) the client should allow selection of, if offered by the server and usable with the configured credentials. Comma separated if specifying more than 1 mechanism. Default is to allow selection from all the clients supported mechanisms, which are currently EXTERNAL, CRAM-MD5, PLAIN, and ANONYMOUS.
 
 
 ### Discovery Configuration options

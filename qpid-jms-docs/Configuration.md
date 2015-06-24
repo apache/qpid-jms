@@ -160,7 +160,7 @@ The complete set of configuration options for failover is listed below:
 + **failover.startupMaxReconnectAttempts** For a client that has never connected to a remote peer before this option control how many attempts are made to connect before reporting the connection as failed.  The default is to use the value of maxReconnectAttempts.
 + **failover.warnAfterReconnectAttempts** Controls how often the client will log a message indicating that failover reconnection is being attempted.  The default is to log every 10 connection attempts.
 
-The failover URI options also supports defining 'nested' options applicable to each individual broker URI, which can be used to avoid repetition and define options common to them all. This is accomplished using the same URI options outlined earlier for the indivual broker URI but now prefixed with *failover.nested.*:
+The failover URI also supports defining 'nested' options. These provide means of specifying global option values applicable to all the individual nested broker URI's, which can be useful to avoid repetition. This is accomplished using the same URI options outlined earlier for the individual broker URI but prefixed with *failover.nested.*. For example, to apply a value for the *jms.clientID* option to every broker URI you could specify:
 
     failover:(amqp://broker1:5672,amqp://broker2:5672)?failover.nested.jms.clientID=foo
 

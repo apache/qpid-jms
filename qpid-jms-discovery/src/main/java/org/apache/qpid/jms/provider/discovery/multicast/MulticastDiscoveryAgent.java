@@ -29,7 +29,6 @@ import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -397,7 +396,7 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
     }
 
     public static void trySetNetworkInterface(MulticastSocket mcastSock) throws SocketException {
-        List<NetworkInterface> interfaces = findNetworkInterface();
+        List<NetworkInterface> interfaces = findNetworkInterfaces();
         SocketException lastError = null;
         boolean found = false;
 
@@ -421,23 +420,30 @@ public class MulticastDiscoveryAgent implements DiscoveryAgent, Runnable {
         }
     }
 
-    private static List<NetworkInterface> findNetworkInterface() throws SocketException {
+    private static List<NetworkInterface> findNetworkInterfaces() throws SocketException {
         Enumeration<NetworkInterface> ifcs = NetworkInterface.getNetworkInterfaces();
         List<NetworkInterface> interfaces = new ArrayList<NetworkInterface>();
         while (ifcs.hasMoreElements()) {
             NetworkInterface ni = ifcs.nextElement();
+            LOG.trace("findNetworkInterfaces checking interface: {}", ni);
+
             if (ni.supportsMulticast() && ni.isUp()) {
                 for (InterfaceAddress ia : ni.getInterfaceAddresses()) {
                     if (ia.getAddress() instanceof java.net.Inet4Address &&
                         !ia.getAddress().isLoopbackAddress() &&
                         !DEFAULT_EXCLUSIONS.contains(ni.getName())) {
-                        interfaces.add(ni);
+                        // Add at the start, make usage order consistent with the
+                        // existing ActiveMQ releases discovery will be used with.
+                        interfaces.add(0, ni);
+                        break;
                     }
                 }
             }
         }
 
-        return interfaces.isEmpty() ? Collections.<NetworkInterface>emptyList() : interfaces;
+        LOG.trace("findNetworkInterfaces returning: {}", interfaces);
+
+        return interfaces;
     }
 
     // ---------- Discovered Peer Bookkeeping Class ---------------------------//

@@ -37,6 +37,10 @@ public class AmqpTestSupport extends QpidJmsTestSupport {
         return false;
     }
 
+    protected String getDiscoveryNetworkInterface() {
+        return null;
+    }
+
     protected String getAmqpTransformer() {
         return "jms";
     }
@@ -60,7 +64,11 @@ public class AmqpTestSupport extends QpidJmsTestSupport {
             "&transport.socketBufferSize=" + getSocketBufferSize() + "&ioBufferSize=" + getIOBufferSize());
         connector.setName("amqp");
         if (isAmqpDiscovery()) {
-            connector.setDiscoveryUri(new URI("multicast://default"));
+            String uriString = "multicast://default";
+            if(getDiscoveryNetworkInterface() != null) {
+                uriString += "?networkInterface=" + getDiscoveryNetworkInterface();
+            }
+            connector.setDiscoveryUri(new URI(uriString));
         }
         port = connector.getPublishableConnectURI().getPort();
         LOG.debug("Using amqp port: {}", port);

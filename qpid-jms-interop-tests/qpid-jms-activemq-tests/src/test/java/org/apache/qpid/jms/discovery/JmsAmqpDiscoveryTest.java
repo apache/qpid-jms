@@ -55,6 +55,8 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
     private static final Logger LOG = LoggerFactory.getLogger(JmsAmqpDiscoveryTest.class);
 
     private static boolean multicastWorking = false;
+    private static String networkInterface = null;
+
     static
     {
         String host = MulticastDiscoveryAgent.DEFAULT_HOST_IP;
@@ -91,6 +93,7 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
                 if(packetIn.getLength() > 0) {
                     LOG.info("Received packet with content, multicast seems to be working!");
                     success = true;
+                    networkInterface = mcastRcv.getNetworkInterface().getName();
                 } else {
                     LOG.info("Received packet without content, lets assume multicast isnt working!");
                 }
@@ -225,6 +228,11 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
     @Override
     protected boolean isAmqpDiscovery() {
         return true;
+    }
+
+    @Override
+    protected String getDiscoveryNetworkInterface() {
+        return networkInterface;
     }
 
     protected Connection createFailingConnection() throws JMSException {

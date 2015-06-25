@@ -20,14 +20,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.MulticastSocket;
-import java.net.SocketTimeoutException;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -39,8 +32,9 @@ import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsConnectionListener;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.provider.discovery.DiscoveryProviderFactory;
-import org.apache.qpid.jms.provider.discovery.multicast.MulticastDiscoveryAgent;
 import org.apache.qpid.jms.support.AmqpTestSupport;
+import org.apache.qpid.jms.support.MulticastTestSupport;
+import org.apache.qpid.jms.support.MulticastTestSupport.MulticastSupportResult;
 import org.apache.qpid.jms.support.Wait;
 import org.junit.Before;
 import org.junit.Test;
@@ -59,54 +53,9 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
 
     static
     {
-        String host = MulticastDiscoveryAgent.DEFAULT_HOST_IP;
-        int myPort = MulticastDiscoveryAgent.DEFAULT_PORT;
-        int timeToLive = 1;
-        int soTimeout = 500;
-        boolean success = false;
-        try {
-            InetAddress inetAddress = InetAddress.getByName(host);
-            InetSocketAddress sockAddress = new InetSocketAddress(inetAddress, myPort);
-
-            MulticastSocket mcastSend = new MulticastSocket(myPort);
-            mcastSend.setTimeToLive(timeToLive);
-            MulticastDiscoveryAgent.trySetNetworkInterface(mcastSend);
-            mcastSend.joinGroup(inetAddress);
-            mcastSend.setSoTimeout(soTimeout);
-
-            MulticastSocket mcastRcv = new MulticastSocket(myPort);
-            MulticastDiscoveryAgent.trySetNetworkInterface(mcastRcv);
-            mcastRcv.joinGroup(inetAddress);
-            mcastRcv.setSoTimeout(soTimeout);
-
-            byte[] bytesOut = "verifyingMulticast".getBytes("UTF-8");
-            DatagramPacket packetOut = new DatagramPacket(bytesOut, 0, bytesOut.length, sockAddress);
-
-                mcastSend.send(packetOut);
-
-            byte[] buf = new byte[1024];
-            DatagramPacket packetIn = new DatagramPacket(buf, 0, buf.length);
-
-            try {
-                mcastRcv.receive(packetIn);
-
-                if(packetIn.getLength() > 0) {
-                    LOG.info("Received packet with content, multicast seems to be working!");
-                    success = true;
-                    networkInterface = mcastRcv.getNetworkInterface().getName();
-                } else {
-                    LOG.info("Received packet without content, lets assume multicast isnt working!");
-                }
-            } catch (SocketTimeoutException e) {
-                LOG.info("Recieve timed out, assuming multicast isn't available");
-            }
-        } catch (UnknownHostException e) {
-            LOG.info("Caught exception testing for multicast functionality", e);
-        } catch (IOException e) {
-            LOG.info("Caught exception testing for multicast functionality", e);
-        }
-
-        multicastWorking = success;
+        MulticastSupportResult msr = MulticastTestSupport.checkMulticastWorking();
+        multicastWorking = msr.isMulticastWorking();
+        networkInterface = msr.getNetworkInterface();
     }
 
     private CountDownLatch connected;
@@ -114,13 +63,13 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
     private CountDownLatch restored;
     private JmsConnection jmsConnection;
 
-    public void verifyMulticastIsWorking() {
-        assumeTrue("Multicast does not seem to be working, skip!", multicastWorking);
-    }
-
     @Override
     @Before
     public void setUp() throws Exception {
+        // Check assumptions *before* trying to start
+        // the broker, which may fail otherwise
+        assumeTrue("Multicast does not seem to be working, skip!", multicastWorking);
+
         super.setUp();
 
         connected = new CountDownLatch(1);
@@ -143,9 +92,6 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
 
     @Test(timeout=30000)
     public void testRunningBrokerIsDiscovered() throws Exception {
-        // Check assumptions
-        verifyMulticastIsWorking();
-
         connection = createConnection();
         connection.start();
 
@@ -160,9 +106,6 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
 
     @Test(timeout=30000)
     public void testConnectionFailsWhenBrokerGoesDown() throws Exception {
-        // Check assumptions
-        verifyMulticastIsWorking();
-
         connection = createConnection();
         connection.start();
 
@@ -182,9 +125,6 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
 
     @Test(timeout=30000)
     public void testConnectionRestoresAfterBrokerRestarted() throws Exception {
-        // Check assumptions
-        verifyMulticastIsWorking();
-
         connection = createConnection();
         connection.start();
 
@@ -204,9 +144,6 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
 
     @Test(timeout=30000)
     public void testDiscoversAndReconnectsToSecondaryBroker() throws Exception {
-        // Check assumptions
-        verifyMulticastIsWorking();
-
         connection = createConnection();
         connection.start();
 

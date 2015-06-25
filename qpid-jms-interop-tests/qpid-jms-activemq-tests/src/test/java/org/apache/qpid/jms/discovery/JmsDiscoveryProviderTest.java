@@ -18,6 +18,7 @@ package org.apache.qpid.jms.discovery;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.IOException;
 import java.net.URI;
@@ -27,6 +28,8 @@ import org.apache.activemq.broker.TransportConnector;
 import org.apache.qpid.jms.provider.DefaultProviderListener;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.discovery.DiscoveryProviderFactory;
+import org.apache.qpid.jms.support.MulticastTestSupport;
+import org.apache.qpid.jms.support.MulticastTestSupport.MulticastSupportResult;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -42,12 +45,24 @@ public class JmsDiscoveryProviderTest {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsDiscoveryProviderTest.class);
 
+    private static boolean multicastWorking = false;
+
+    static
+    {
+        MulticastSupportResult msr = MulticastTestSupport.checkMulticastWorking();
+        multicastWorking = msr.isMulticastWorking();
+    }
+
     @Rule public TestName name = new TestName();
 
     private BrokerService broker;
 
     @Before
     public void setup() throws Exception {
+        // Check assumptions *before* trying to start
+        // the broker, which may fail otherwise
+        assumeTrue("Multicast does not seem to be working, skip!", multicastWorking);
+
         broker = createBroker();
         try {
             broker.start();
@@ -71,7 +86,7 @@ public class JmsDiscoveryProviderTest {
     }
 
     @Test(timeout=30000)
-    public void testCreateDiscvoeryProvider() throws Exception {
+    public void testCreateDiscoveryProvider() throws Exception {
         URI discoveryUri = new URI("discovery:multicast://default");
         Provider provider = DiscoveryProviderFactory.create(discoveryUri);
         assertNotNull(provider);

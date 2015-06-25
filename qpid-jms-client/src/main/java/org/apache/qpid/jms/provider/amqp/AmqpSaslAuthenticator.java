@@ -107,7 +107,6 @@ public class AmqpSaslAuthenticator {
                     mechanism.setUsername(info.getUsername());
                     mechanism.setPassword(info.getPassword());
                     // TODO - set additional options from URI.
-                    // TODO - set a host value.
 
                     sasl.setMechanisms(mechanism.getName());
                     byte[] response = mechanism.getInitialResponse();

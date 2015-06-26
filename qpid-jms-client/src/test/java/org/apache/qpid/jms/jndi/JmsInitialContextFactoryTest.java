@@ -354,6 +354,8 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
             env.put(Context.INITIAL_CONTEXT_FACTORY, JmsInitialContextFactory.class.getName());
             if (useBareFilePath) {
                 env.put(Context.PROVIDER_URL, f.getAbsolutePath());
+            } else if(QpidJmsTestCase.IS_WINDOWS) {
+                env.put(Context.PROVIDER_URL, "file:///" + f.getAbsolutePath());
             } else {
                 env.put(Context.PROVIDER_URL, "file://" + f.getAbsolutePath());
             }
@@ -390,6 +392,11 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
 
             setTestSystemProperty(Context.INITIAL_CONTEXT_FACTORY, JmsInitialContextFactory.class.getName());
             setTestSystemProperty(Context.PROVIDER_URL, "file://" + f.getAbsolutePath());
+            if(QpidJmsTestCase.IS_WINDOWS) {
+                setTestSystemProperty(Context.PROVIDER_URL, "file:///" + f.getAbsolutePath());
+            } else {
+                setTestSystemProperty(Context.PROVIDER_URL, "file://" + f.getAbsolutePath());
+            }
 
             InitialContext context = new InitialContext();
 

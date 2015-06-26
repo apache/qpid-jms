@@ -29,6 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class QpidJmsTestCase {
+    public static final boolean IS_WINDOWS = System.getProperty("os.name", "unknown").toLowerCase().contains("windows");
+
     private final Logger _logger = LoggerFactory.getLogger(getClass());
 
     private final Map<String, String> _propertiesSetForTest = new HashMap<String, String>();

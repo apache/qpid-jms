@@ -562,4 +562,29 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             producer.close();
         }
     }
+
+    @Test(timeout = 20000)
+    public void testSendWhenLinkCreditIsDelayed() throws Exception {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer, "?amqp.traceFrames=true&amqp.traceBytes=true");
+            testPeer.expectBegin(true);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String queueName = "myQueue";
+            Queue queue = session.createQueue(queueName);
+
+            Message message = session.createTextMessage("text");
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+
+            // Expect the producer to attach. Delay sending credit when it does.
+            testPeer.expectSenderAttach(100);
+
+            testPeer.expectTransfer(messageMatcher);
+
+            MessageProducer producer = session.createProducer(queue);
+
+            producer.send(message);
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
 }

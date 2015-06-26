@@ -805,6 +805,11 @@ public class TestAmqpPeer implements AutoCloseable
         expectSenderAttach(notNullValue(), false, false);
     }
 
+    public void expectSenderAttach(long creditFlowDelay)
+    {
+        expectSenderAttach(notNullValue(), notNullValue(), false, false, creditFlowDelay, null, null);
+    }
+
     public void expectSenderAttach(final Matcher<?> targetMatcher, final boolean refuseLink, boolean deferAttachResponseWrite)
     {
         expectSenderAttach(notNullValue(), targetMatcher, refuseLink, deferAttachResponseWrite);
@@ -812,10 +817,10 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectSenderAttach(final Matcher<?> sourceMatcher, final Matcher<?> targetMatcher, final boolean refuseLink, boolean deferAttachResponseWrite)
     {
-        expectSenderAttach(notNullValue(), targetMatcher, refuseLink, deferAttachResponseWrite, null, null);
+        expectSenderAttach(notNullValue(), targetMatcher, refuseLink, deferAttachResponseWrite, 0, null, null);
     }
 
-    public void expectSenderAttach(final Matcher<?> sourceMatcher, final Matcher<?> targetMatcher, final boolean refuseLink, boolean deferAttachResponseWrite, Symbol errorType, String errorMessage)
+    public void expectSenderAttach(final Matcher<?> sourceMatcher, final Matcher<?> targetMatcher, final boolean refuseLink, boolean deferAttachResponseWrite, long creditFlowDelay, Symbol errorType, String errorMessage)
     {
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())
@@ -878,6 +883,7 @@ public class TestAmqpPeer implements AutoCloseable
                 flowFrame.setDeliveryCount(attachMatcher.getReceivedInitialDeliveryCount());
             }
         });
+        flowFrameSender.setSendDelay(creditFlowDelay);
 
         final DetachFrame detachResponse = new DetachFrame().setClosed(true);
         if (errorType != null)

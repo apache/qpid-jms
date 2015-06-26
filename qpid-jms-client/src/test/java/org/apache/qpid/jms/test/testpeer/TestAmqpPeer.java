@@ -320,10 +320,10 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void sendEmptyFrame(boolean deferWrite)
     {
-        sendFrame(FrameType.AMQP, 0, null, null, deferWrite);
+        sendFrame(FrameType.AMQP, 0, null, null, deferWrite, 0);
     }
 
-    void sendFrame(FrameType type, int channel, DescribedType frameDescribedType, Binary framePayload, boolean deferWrite)
+    void sendFrame(FrameType type, int channel, DescribedType frameDescribedType, Binary framePayload, boolean deferWrite, long sendDelay)
     {
         if(channel < 0)
         {
@@ -331,6 +331,18 @@ public class TestAmqpPeer implements AutoCloseable
         }
 
         LOGGER.debug("About to send: {}", frameDescribedType);
+
+        if(sendDelay > 0)
+        {
+            LOGGER.debug("Delaying send by {} ms", sendDelay);
+            try {
+                Thread.sleep(sendDelay);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Interrupted before send", e);
+            }
+        }
+
         byte[] output = AmqpDataFramer.encodeFrame(type, channel, frameDescribedType, framePayload);
 
         if(deferWrite && _deferredBytes == null)
@@ -397,7 +409,7 @@ public class TestAmqpPeer implements AutoCloseable
                             FrameType.SASL, 0,
                             new SaslOutcomeFrame().setCode(SASL_OK),
                             null,
-                            false);
+                            false, 0);
 
                     // Now that we processed the SASL layer AMQP header, reset the
                     // peer to expect the non-SASL AMQP header.
@@ -519,7 +531,7 @@ public class TestAmqpPeer implements AutoCloseable
                         FrameType.SASL, 0,
                         new SaslOutcomeFrame().setCode(SASL_FAIL_AUTH),
                         null,
-                        false);
+                        false, 0);
                 _driverRunnable.expectHeader();
             }
         });

@@ -838,7 +838,7 @@ public class AmqpProvider implements Provider, TransportListener {
         long deadline = protonTransport.tick(now);
         if (deadline > 0) {
             long delay = deadline - now;
-            LOG.trace("IdleTimeoutCheck being initiated, initial delay: {}", deadline);
+            LOG.trace("IdleTimeoutCheck being initiated, initial delay: {}", delay);
             nextIdleTimeoutCheck = serializer.schedule(new IdleTimeoutCheck(), delay, TimeUnit.MILLISECONDS);
         }
 

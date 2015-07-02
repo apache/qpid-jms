@@ -152,60 +152,6 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     }
 
     @Test(timeout = 60 * 1000)
-    public void testConnectToServerVerifyHost() throws Exception {
-        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
-            server.start();
-
-            int port = server.getServerPort();
-            URI serverLocation = new URI("tcp://localhost:" + port);
-
-            TransportSslOptions clientOptions = createClientOptionsIsVerify(true);
-            clientOptions.setKeyStoreLocation(SERVER_WRONG_HOST_KEYSTORE);
-            assertTrue("Expected verifyHost to be true", clientOptions.isVerifyHost());
-
-            Transport transport = createTransport(serverLocation, testListener, clientOptions);
-            try {
-                transport.connect();
-                fail("Should not have connected to the server");
-            } catch (Exception e) {
-                LOG.info("Connection failed to test server as expected.");
-            }
-
-            assertFalse(transport.isConnected());
-
-            transport.close();
-        }
-    }
-
-    @Test(timeout = 60 * 1000)
-    public void testConnectToServerNoVerifyHost() throws Exception {
-        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
-            server.start();
-
-            int port = server.getServerPort();
-            URI serverLocation = new URI("tcp://localhost:" + port);
-
-            TransportSslOptions clientOptions = createClientOptionsIsVerify(false);
-            assertFalse("Expected verifyHost to be false", clientOptions.isVerifyHost());
-
-            Transport transport = createTransport(serverLocation, testListener, clientOptions);
-            try {
-                transport.connect();
-                LOG.info("Connection established to test server.");
-            } catch (Exception e) {
-                fail("Should have connected to the server");
-            }
-
-            assertTrue(transport.isConnected());
-
-            transport.close();
-        }
-
-        logTransportErrors();
-        assertTrue(exceptions.isEmpty());
-    }
-
-    @Test(timeout = 60 * 1000)
     public void testConnectWithNeedClientAuth() throws Exception {
         TransportSslOptions serverOptions = createServerOptions();
 
@@ -279,6 +225,59 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
         logTransportErrors();
         assertTrue(exceptions.isEmpty());
+    }
+
+    @Test(timeout = 60 * 1000)
+    public void testConnectToServerVerifyHost() throws Exception {
+        doConnectToServerVerifyHostTestImpl(true);
+    }
+
+    @Test(timeout = 60 * 1000)
+    public void testConnectToServerNoVerifyHost() throws Exception {
+        doConnectToServerVerifyHostTestImpl(false);
+    }
+
+    private void doConnectToServerVerifyHostTestImpl(boolean verifyHost) throws Exception, URISyntaxException, IOException, InterruptedException {
+        TransportSslOptions serverOptions = createServerOptions();
+        serverOptions.setKeyStoreLocation(SERVER_WRONG_HOST_KEYSTORE);
+
+        try (NettyEchoServer server = new NettyEchoServer(serverOptions)) {
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            TransportSslOptions clientOptions = createClientOptionsIsVerify(verifyHost);
+
+            if (verifyHost) {
+                assertTrue("Expected verifyHost to be true", clientOptions.isVerifyHost());
+            } else {
+                assertFalse("Expected verifyHost to be false", clientOptions.isVerifyHost());
+            }
+
+            Transport transport = createTransport(serverLocation, testListener, clientOptions);
+            try {
+                transport.connect();
+                if (verifyHost) {
+                    fail("Should not have connected to the server");
+                }
+            } catch (Exception e) {
+                if (verifyHost) {
+                    LOG.info("Connection failed to test server as expected.");
+                } else {
+                    LOG.error("Failed to connect to test server", e);
+                    fail("Should have connected to the server, but got: " + e);
+                }
+            }
+
+            if (verifyHost) {
+                assertFalse(transport.isConnected());
+            } else {
+                assertTrue(transport.isConnected());
+            }
+
+            transport.close();
+        }
     }
 
     @Override

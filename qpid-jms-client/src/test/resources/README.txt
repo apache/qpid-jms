@@ -15,7 +15,7 @@ keytool -storetype pkcs12 -keystore ca-pkcs12.keystore -storepass password -alia
 keytool -storetype pkcs12 -keystore broker-pkcs12.keystore -storepass password -keypass password -alias broker -genkey -dname "O=Server,CN=localhost" -validity 9999 -ext bc=ca:false -ext eku=sA
 
 keytool -storetype pkcs12 -keystore broker-pkcs12.keystore -storepass password -alias broker -certreq -file broker.csr
-keytool -storetype pkcs12 -keystore ca-pkcs12.keystore -storepass password -alias ca -gencert -rfc -infile broker.csr -outfile broker.crt -ext bc=ca:false -ext eku=sA
+keytool -storetype pkcs12 -keystore ca-pkcs12.keystore -storepass password -alias ca -gencert -rfc -infile broker.csr -outfile broker.crt -validity 9999 -ext bc=ca:false -ext eku=sA
 
 keytool -storetype pkcs12 -keystore broker-pkcs12.keystore -storepass password -keypass password -importcert -alias ca -file ca.crt -noprompt
 keytool -storetype pkcs12 -keystore broker-pkcs12.keystore -storepass password -keypass password -importcert -alias broker -file broker.crt
@@ -27,13 +27,13 @@ keytool -importkeystore -srckeystore broker-pkcs12.keystore -destkeystore broker
 
 # Create a key pair for the broker with an unexpected hostname, and sign it with the CA:
 # --------------------------------------------------------------------------------------
-keytool -storetype pkcs12 -keystore broker-wrong-host-jks.keystore -storepass password -keypass password -alias broker -genkey -dname "O=Server,CN=localhost" -validity 9999 -ext bc=ca:false -ext eku=sA
+keytool -storetype jks -keystore broker-wrong-host-jks.keystore -storepass password -keypass password -alias broker-wrong-host -genkey -dname "O=Server,CN=wronghost" -validity 9999 -ext bc=ca:false -ext eku=sA
 
-keytool -storetype pkcs12 -keystore broker-wrong-host-jks.keystore -storepass password -alias broker -certreq -file broker.csr
-keytool -storetype pkcs12 -keystore ca-pkcs12.keystore -storepass password -alias ca -gencert -rfc -infile broker.csr -outfile broker.crt -ext bc=ca:false -ext eku=sA
+keytool -storetype jks -keystore broker-wrong-host-jks.keystore -storepass password -alias broker-wrong-host -certreq -file broker-wrong-host.csr
+keytool -storetype pkcs12 -keystore ca-pkcs12.keystore -storepass password -alias ca -gencert -rfc -infile broker-wrong-host.csr -outfile broker-wrong-host.crt -validity 9999 -ext bc=ca:false -ext eku=sA
 
-keytool -storetype pkcs12 -keystore broker-wrong-host-jks.keystore -storepass password -keypass password -importcert -alias ca -file ca.crt -noprompt
-keytool -storetype pkcs12 -keystore broker-wrong-host-jks.keystore -storepass password -keypass password -importcert -alias broker -file broker.crt
+keytool -storetype jks -keystore broker-wrong-host-jks.keystore -storepass password -keypass password -importcert -alias ca -file ca.crt -noprompt
+keytool -storetype jks -keystore broker-wrong-host-jks.keystore -storepass password -keypass password -importcert -alias broker-wrong-host -file broker-wrong-host.crt
 
 # Create trust stores for the broker, import the CA cert:
 # -------------------------------------------------------
@@ -46,7 +46,7 @@ keytool -importkeystore -srckeystore broker-pkcs12.truststore -destkeystore brok
 keytool -storetype pkcs12 -keystore client-pkcs12.keystore -storepass password -keypass password -alias client -genkey -dname "O=Client,CN=client" -validity 9999 -ext bc=ca:false -ext eku=cA
 
 keytool -storetype pkcs12 -keystore client-pkcs12.keystore -storepass password -alias client -certreq -file client.csr
-keytool -storetype pkcs12 -keystore ca-pkcs12.keystore -storepass password -alias ca -gencert -rfc -infile client.csr -outfile client.crt -ext bc=ca:false -ext eku=cA
+keytool -storetype pkcs12 -keystore ca-pkcs12.keystore -storepass password -alias ca -gencert -rfc -infile client.csr -outfile client.crt -validity 9999 -ext bc=ca:false -ext eku=cA
 
 keytool -storetype pkcs12 -keystore client-pkcs12.keystore -storepass password -keypass password -importcert -alias ca -file ca.crt -noprompt
 keytool -storetype pkcs12 -keystore client-pkcs12.keystore -storepass password -keypass password -importcert -alias client -file client.crt
@@ -78,5 +78,5 @@ keytool -importkeystore -srckeystore client-pkcs12.keystore -destkeystore client
 keytool -storetype jks -keystore client-multiple-keys-jks.keystore -storepass password -keypass password -alias client2 -genkey -dname "O=Client2,CN=client2" -validity 9999 -ext bc=ca:false -ext eku=cA
 
 keytool -storetype jks -keystore client-multiple-keys-jks.keystore -storepass password -alias client2 -certreq -file client2.csr
-keytool -storetype pkcs12 -keystore ca-pkcs12.keystore -storepass password -alias ca -gencert -rfc -infile client2.csr -outfile client2.crt -ext bc=ca:false -ext eku=cA
+keytool -storetype pkcs12 -keystore ca-pkcs12.keystore -storepass password -alias ca -gencert -rfc -infile client2.csr -outfile client2.crt -validity 9999 -ext bc=ca:false -ext eku=cA
 keytool -storetype jks -keystore client-multiple-keys-jks.keystore -storepass password -keypass password -importcert -alias client2 -file client2.crt

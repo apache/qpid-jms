@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -33,6 +34,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.qpid.jms.util.URISupport;
 import org.apache.qpid.jms.provider.discovery.DiscoveryAgent;
 import org.apache.qpid.jms.provider.discovery.DiscoveryListener;
 import org.apache.qpid.jms.util.ThreadPoolUtils;
@@ -59,8 +61,8 @@ public class FileWatcherDiscoveryAgent implements DiscoveryAgent {
     private int updateInterval = DEFAULT_UPDATE_INTERVAL;
     private boolean warnOnWatchedReadError;
 
-    public FileWatcherDiscoveryAgent(URI discoveryURI) {
-        this.discoveryURI = discoveryURI;
+    public FileWatcherDiscoveryAgent(URI discoveryURI) throws URISyntaxException {
+        this.discoveryURI = URISupport.removeQuery(discoveryURI);
     }
 
     @Override

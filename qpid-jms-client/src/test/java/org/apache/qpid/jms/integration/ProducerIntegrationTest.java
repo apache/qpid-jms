@@ -555,7 +555,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                     }
                     return false;
                 }
-            }, 2000, 10));
+            }, 10000, 10));
 
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.

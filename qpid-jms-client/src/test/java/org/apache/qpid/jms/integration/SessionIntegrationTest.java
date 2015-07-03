@@ -1282,7 +1282,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
 
             // Verify the producer gets marked closed
-            testPeer.waitForAllHandlersToComplete(1000);
             assertTrue("producer never closed.", Wait.waitFor(new Wait.Condition() {
                 @Override
                 public boolean isSatisified() throws Exception {
@@ -1299,7 +1298,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                     }
                     return false;
                 }
-            }, 2000, 10));
+            }, 10000, 10));
 
             // Verify the session is now marked closed
             try {
@@ -1353,7 +1352,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                     }
                     return false;
                 }
-            }, 2000, 10));
+            }, 10000, 10));
 
             // Verify the session is now marked closed
             try {

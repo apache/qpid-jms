@@ -188,7 +188,7 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
                 public boolean isSatisified() throws Exception {
                     return connection.isFailed();
                 }
-            }, configuredTimeout * 2, 10);
+            }, 10000, 10);
 
             assertTrue("connection didnt fail in expected timeframe", failed);
         }

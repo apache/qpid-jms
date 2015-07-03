@@ -290,7 +290,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
                 public boolean isSatisified() throws Exception {
                     return !((JmsConnection) connection).isConnected();
                 }
-            }, 1000, 10));
+            }, 10000, 10));
 
             try {
                 connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

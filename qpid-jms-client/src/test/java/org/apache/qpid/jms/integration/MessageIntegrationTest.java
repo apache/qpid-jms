@@ -105,7 +105,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     public void testSendMessageWithApplicationProperties() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -162,7 +162,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -228,7 +228,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.validatePropertyNames=" + !disableValidation);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             String invalidPropName = "invalid-name";
             String value = "valueA";
@@ -280,7 +280,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.validatePropertyNames=" + !disableValidation);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             String invalidPropName = "invalid-name";
             String value = "valueA";
@@ -351,7 +351,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             String queueName = "myQueue";
             String topicName = "myTopic";
@@ -402,7 +402,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -591,7 +591,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
                 ((JmsConnection) connection).setQueuePrefix(destPrefix);
             }
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -751,7 +751,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
                 ((JmsConnection) connection).setQueuePrefix(destPrefix);
             }
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -865,7 +865,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Connection connection = testFixture.establishConnecton(testPeer, null, null, properties);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -976,7 +976,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -1038,7 +1038,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Topic topic = session.createTopic("myTopic");
@@ -1077,7 +1077,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     public void testSentMessageContainsToTypeAnnotationByte() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -1115,7 +1115,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -1161,7 +1161,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -1203,7 +1203,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -1246,7 +1246,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -1279,7 +1279,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -1314,7 +1314,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -1374,7 +1374,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -1441,7 +1441,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -1543,7 +1543,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     private void sentMessageWithCorrelationIdTestImpl(String stringCorrelationId, Object correlationIdForAmqpMessageClass, boolean appSpecific) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -1628,7 +1628,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -1695,7 +1695,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -1768,7 +1768,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     public void testSendMessageWithGroupRelatedPropertiesSet() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

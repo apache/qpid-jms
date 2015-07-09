@@ -601,13 +601,25 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(closeMatcher);
     }
 
-    public void expectBegin(boolean expectSessionFlow)
+    public void expectBegin()
+    {
+        expectBegin(notNullValue());
+    }
+
+    public void expectBegin(Matcher<?> outgoingWindowMatcher)
     {
         final BeginMatcher beginMatcher = new BeginMatcher()
                 .withRemoteChannel(nullValue())
                 .withNextOutgoingId(equalTo(UnsignedInteger.ONE))
-                .withIncomingWindow(notNullValue())
-                .withOutgoingWindow(notNullValue());
+                .withIncomingWindow(notNullValue());
+        if(outgoingWindowMatcher != null)
+        {
+            beginMatcher.withOutgoingWindow(notNullValue());
+        }
+        else
+        {
+            beginMatcher.withOutgoingWindow(outgoingWindowMatcher);
+        }
 
         // The response will have its remoteChannel field dynamically set based on incoming value
         final BeginFrame beginResponse = new BeginFrame()
@@ -634,11 +646,6 @@ public class TestAmqpPeer implements AutoCloseable
         beginMatcher.onCompletion(beginResponseSender);
 
         addHandler(beginMatcher);
-
-        if(expectSessionFlow)
-        {
-            expectSessionFlow();
-        }
     }
 
     public void expectEnd()

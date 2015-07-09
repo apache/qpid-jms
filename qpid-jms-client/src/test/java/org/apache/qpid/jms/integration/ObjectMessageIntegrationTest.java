@@ -80,7 +80,7 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
     private void doSendBasicObjectMessageWithSerializedContentTestImpl(String content, boolean setObjectIfNull) throws JMSException, IOException, InterruptedException, Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -124,7 +124,7 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -170,7 +170,7 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -230,7 +230,7 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
     public void testSendBasicObjectMessageWithAmqpTypedContent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -269,7 +269,7 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");

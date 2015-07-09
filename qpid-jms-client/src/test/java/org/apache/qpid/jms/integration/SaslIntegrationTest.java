@@ -70,7 +70,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
             // Expect an EXTERNAL connection
             testPeer.expectSaslExternalConnect();
             // Each connection creates a session for managing temporary destinations etc
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             ConnectionFactory factory = new JmsConnectionFactory("amqps://localhost:" + testPeer.getServerPort() + connOptions);
             Connection connection = factory.createConnection();
@@ -95,7 +95,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectSaslPlainConnect(user, pass, null, null);
             // Each connection creates a session for managing temporary destinations etc
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort());
             Connection connection = factory.createConnection(user, pass);
@@ -116,7 +116,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
             // Expect an ANOYMOUS connection
             testPeer.expectSaslAnonymousConnect();
             // Each connection creates a session for managing temporary destinations etc
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort());
             Connection connection = factory.createConnection();
@@ -229,7 +229,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
             // Expect a connection with no SASL layer.
             testPeer.expectSaslLayerDisabledConnect();
             // Each connection creates a session for managing temporary destinations etc
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + "?amqp.saslLayer=false");
             Connection connection = factory.createConnection();

@@ -43,7 +43,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
     public void testCloseConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlow();
 
@@ -65,7 +65,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             // Create a consumer, then remotely end it afterwards.
@@ -112,7 +112,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");

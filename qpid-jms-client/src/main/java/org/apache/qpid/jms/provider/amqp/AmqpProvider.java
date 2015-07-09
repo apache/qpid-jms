@@ -117,6 +117,7 @@ public class AmqpProvider implements Provider, TransportListener {
     private long sendTimeout = JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
     private int channelMax = DEFAULT_CHANNEL_MAX;
     private int idleTimeout = 60000;
+    private long sessionOutoingWindow = -1; //Use proton default
 
     private final URI remoteURI;
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -952,6 +953,20 @@ public class AmqpProvider implements Provider, TransportListener {
      */
     public void setIdleTimeout(int idleTimeout) {
         this.idleTimeout = idleTimeout;
+    }
+
+    public long getSessionOutgoingWindow() {
+        return sessionOutoingWindow;
+    }
+
+    /**
+     * Sets the outgoing window size for the AMQP session. Values may
+     * be between -1 and 2^32-1, where -1 indicates to use the default.
+     *
+     * @param sessionOutoingWindow the outgoing window size
+     */
+    public void setSessionOutgoingWindow(long sessionOutoingWindow) {
+        this.sessionOutoingWindow = sessionOutoingWindow;
     }
 
     public long getCloseTimeout() {

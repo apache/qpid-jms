@@ -157,7 +157,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
 
         provider = new AmqpProvider(peerURI);
         testPeer.expectSaslPlainConnect(TEST_USERNAME, TEST_PASSWORD, null, null);
-        testPeer.expectBegin(true);
+        testPeer.expectBegin();
         provider.connect();
         testPeer.expectClose();
 

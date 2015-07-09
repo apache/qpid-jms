@@ -65,8 +65,16 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> {
 
     @Override
     protected void doOpen() {
-        this.getEndpoint().setIncomingCapacity(Integer.MAX_VALUE);
+        long outgoingWindow = getProvider().getSessionOutgoingWindow();
+
+        Session session = this.getEndpoint();
+        session.setIncomingCapacity(Integer.MAX_VALUE);
+        if(outgoingWindow >= 0) {
+            session.setOutgoingWindow(outgoingWindow);
+        }
+
         this.connection.addSession(this);
+
         super.doOpen();
     }
 

@@ -90,7 +90,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     public void testCloseSession() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             assertNotNull("Session should not be null", session);
             testPeer.expectEnd();
@@ -102,7 +102,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     public void testCreateProducer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -117,7 +117,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     public void testCreateProducerLinkSupportsAcceptedAndRejectedOutcomes() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -145,7 +145,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -174,7 +174,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             String topicName = "myTopic";
@@ -228,7 +228,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             try {
@@ -259,7 +259,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             String dynamicAddress = "myTempQueueAddress";
@@ -280,7 +280,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             String dynamicAddress = "myTempQueueAddress";
@@ -301,7 +301,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             String dynamicAddress = "myTempTopicAddress";
@@ -322,7 +322,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             String dynamicAddress = "myTempTopicAddress";
@@ -360,7 +360,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     private void doCreateConsumerSourceContainsCapabilityTestImpl(Class<? extends Destination> destType) throws JMSException, Exception, IOException {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -421,7 +421,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     private void doCreateProducerTargetContainsCapabilityTestImpl(Class<? extends Destination> destType) throws JMSException, Exception, IOException {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -466,7 +466,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer, serverCapabilities);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             //Expect and accept a link to the anonymous relay node, check it has no type capability
@@ -514,7 +514,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             String destName = "myDest";
@@ -577,7 +577,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             String topicName = "myTopic";
@@ -603,7 +603,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer, false, null, null, null, false);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             String topicName = "myTopic";
@@ -628,7 +628,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             String topicName = "myTopic";
@@ -656,7 +656,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer, serverCapabilities);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             String topicName = "myTopic";
@@ -713,7 +713,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer, serverCapabilities);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             //Expect and refuse a link to the anonymous relay node
@@ -752,7 +752,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             String topicName = "myTopic";
@@ -789,7 +789,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             String topicName = "myTopic";
@@ -848,7 +848,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
             testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
 
@@ -908,7 +908,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             ((JmsConnection) connection).getRedeliveryPolicy().setMaxRedeliveries(1);
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -939,7 +939,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
             testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
 
@@ -995,7 +995,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
             testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
 
@@ -1065,7 +1065,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             ((JmsConnection) connection).getPrefetchPolicy().setAll(messageCount);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
             testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
 
@@ -1139,7 +1139,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             ((JmsConnection) connection).getPrefetchPolicy().setAll(messageCount);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
             testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
 
@@ -1216,7 +1216,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
             testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
 
@@ -1248,7 +1248,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             ((JmsConnection) connection).getPrefetchPolicy().setAll(newPrefetch);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -1269,7 +1269,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             // Create a producer, then remotely end the session afterwards.
@@ -1323,7 +1323,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             // Create a consumer, then remotely end the session afterwards.
@@ -1375,7 +1375,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
 
             // Create a consumer
@@ -1402,7 +1402,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -1420,6 +1420,31 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.remotelyEndLastOpenedSession(false, 200);
 
             session.close();
+
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testSessionHasExpectedDefaultOutgoingWindow() throws Exception {
+        doSessionHasExpectedOutgoingWindowTestImpl(Integer.MAX_VALUE, null);
+    }
+
+    @Test(timeout = 20000)
+    public void testSessionHasExpectedConfiguredOutgoingWindow() throws Exception {
+        int windowSize = 13579;
+        doSessionHasExpectedOutgoingWindowTestImpl(windowSize, "?amqp.sessionOutgoingWindow=" + windowSize);
+    }
+
+    private void doSessionHasExpectedOutgoingWindowTestImpl(int value, String options) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer, options);
+
+            testPeer.expectBegin(equalTo(UnsignedInteger.valueOf(value)));
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            assertNotNull("Session should not be null", session);
 
             testPeer.expectClose();
             connection.close();

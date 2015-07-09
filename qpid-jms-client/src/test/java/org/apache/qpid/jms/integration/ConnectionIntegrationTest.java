@@ -92,7 +92,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
     public void testCreateAutoAckSession() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             assertNotNull("Session should not be null", session);
         }
@@ -103,7 +103,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             // Expect the session, with an immediate link to the transaction coordinator
             // using a target with the expected capabilities only.
             CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
@@ -136,7 +136,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
                     hasEntry(AmqpSupport.PLATFORM, MetaDataSupport.PLATFORM_DETAILS));
 
             testPeer.expectSaslAnonymousConnect(null, null, connPropsMatcher, null);
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + "?jms.clientID=foo");
             Connection connection = factory.createConnection();
@@ -169,7 +169,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             testPeer.expectSaslAnonymousConnect(null, hostnameMatcher);
             // Each connection creates a session for managing temporary destinations etc
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             String uri = "amqp://localhost:" + testPeer.getServerPort();
             if(setHostnameOption) {
@@ -273,7 +273,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final Connection connection = testFixture.establishConnecton(testPeer);
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             // Create a consumer, then remotely end the connection afterwards.

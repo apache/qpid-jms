@@ -61,7 +61,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
     public void testSendBasicBytesMessageWithContent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
             testPeer.expectSenderAttach();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -115,7 +115,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -164,7 +164,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -272,7 +272,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");

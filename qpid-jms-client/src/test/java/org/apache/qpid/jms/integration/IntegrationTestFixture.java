@@ -59,7 +59,7 @@ public class IntegrationTestFixture {
         testPeer.expectSaslPlainConnect("guest", "guest", desiredCapabilities, serverCapabilities, serverProperties);
 
         // Each connection creates a session for managing temporary destinations etc
-        testPeer.expectBegin(true);
+        testPeer.expectBegin();
 
         String scheme = ssl ? "amqps" : "amqp";
         final String baseURI = scheme + "://localhost:" + testPeer.getServerPort();

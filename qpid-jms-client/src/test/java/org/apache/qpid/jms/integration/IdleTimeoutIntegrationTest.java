@@ -54,7 +54,7 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             testPeer.expectSaslAnonymousConnect(greaterThan(UnsignedInteger.valueOf(0)), null);
             // Each connection creates a session for managing temporary destinations etc
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort());
             Connection connection = factory.createConnection();
@@ -77,7 +77,7 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectSaslAnonymousConnect(equalTo(UnsignedInteger.valueOf(advertisedValue)), null);
             // Each connection creates a session for managing temporary destinations etc
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + "?amqp.idleTimeout=" + configuredTimeout);
             Connection connection = factory.createConnection();
@@ -103,7 +103,7 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectSaslAnonymousConnect();
             // Each connection creates a session for managing temporary destinations etc
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort());
             Connection connection = factory.createConnection();
@@ -141,7 +141,7 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectSaslAnonymousConnect();
             // Each connection creates a session for managing temporary destinations etc
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort());
             Connection connection = factory.createConnection();
@@ -170,7 +170,7 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectSaslAnonymousConnect();
             // Each connection creates a session for managing temporary destinations etc
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             JmsConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + "?amqp.idleTimeout=" + configuredTimeout);
             final JmsConnection connection = (JmsConnection) factory.createConnection();
@@ -205,7 +205,7 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectSaslAnonymousConnect();
             // Each connection creates a session for managing temporary destinations etc
-            testPeer.expectBegin(true);
+            testPeer.expectBegin();
 
             // Start to emit idle frames when the connection is set up, this should stop it timing out
             testPeer.runAfterLastHandler(new EmptyFrameSender(latch, period, cycles, testPeer));

@@ -245,6 +245,7 @@
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
           <excludes>
+            <exclude>appveyor.yml</exclude>
             <exclude>.travis.yml</exclude>
             <exclude>**/*.md</exclude>
             <exclude>**/*.txt</exclude>

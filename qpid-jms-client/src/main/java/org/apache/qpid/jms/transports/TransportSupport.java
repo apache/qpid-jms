@@ -181,7 +181,7 @@ public class TransportSupport {
             enabledCipherSuites.addAll(configuredCipherSuites);
         } else {
             List<String> engineCipherSuites = Arrays.asList(engine.getEnabledCipherSuites());
-            LOG.trace("Default protocols from the SSLEngine: {}", engineCipherSuites);
+            LOG.trace("Default cipher suites from the SSLEngine: {}", engineCipherSuites);
             enabledCipherSuites.addAll(engineCipherSuites);
         }
 

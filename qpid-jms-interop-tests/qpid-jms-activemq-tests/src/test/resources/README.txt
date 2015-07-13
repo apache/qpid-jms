@@ -14,7 +14,7 @@ keytool -storetype jks -keystore ca-jks.keystore -storepass password -alias ca -
 keytool -storetype jks -keystore broker-jks.keystore -storepass password -keypass password -alias broker -genkey -dname "O=Server,CN=localhost" -validity 9999 -ext bc=ca:false -ext eku=sA
 
 keytool -storetype jks -keystore broker-jks.keystore -storepass password -alias broker -certreq -file broker.csr
-keytool -storetype jks -keystore ca-jks.keystore -storepass password -alias ca -gencert -rfc -infile broker.csr -outfile broker.crt -ext bc=ca:false -ext eku=sA
+keytool -storetype jks -keystore ca-jks.keystore -storepass password -alias ca -gencert -rfc -infile broker.csr -outfile broker.crt -validity 9999 -ext bc=ca:false -ext eku=sA
 
 keytool -storetype jks -keystore broker-jks.keystore -storepass password -keypass password -importcert -alias ca -file ca.crt -noprompt
 keytool -storetype jks -keystore broker-jks.keystore -storepass password -keypass password -importcert -alias broker -file broker.crt

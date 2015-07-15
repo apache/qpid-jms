@@ -18,6 +18,7 @@
  */
 package org.apache.qpid.jms.integration;
 
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -27,12 +28,16 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Queue;
 import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.jms.Topic;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
+import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.ReleasedMatcher;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.junit.Test;
 
@@ -129,6 +134,59 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             assertNotNull("A message should have been recieved", receivedMessage);
 
             testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testCloseDurableSubscriberWithUnackedAnUnconsumedPrefetchedMessages() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+
+            String topicName = "myTopic";
+            String subscriptionName = "mySubscription";
+
+            Topic topic = session.createTopic(topicName);
+
+            int messageCount = 5;
+            // Create a consumer and fill the prefetch with some messages,
+            // which we will consume some of but ack none of.
+            testPeer.expectDurableSubscriberAttach(topicName, subscriptionName);
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), messageCount);
+
+            MessageConsumer consumer = session.createDurableSubscriber(topic, subscriptionName);
+
+            int consumeCount = 2;
+            for (int i = 1; i <= consumeCount; i++) {
+                Message receivedMessage = consumer.receive(3000);
+
+                assertNotNull(receivedMessage);
+                assertTrue(receivedMessage instanceof TextMessage);
+            }
+
+            testPeer.expectDetach(false, true, false);
+
+            // Expect the messages that were not acked to be to be either
+            // modified or released depending on whether the app saw them
+            for (int i = 1; i <= consumeCount; i++) {
+                testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)));
+            }
+            for (int i = consumeCount + 1 ; i <= messageCount; i++) {
+                testPeer.expectDisposition(true, new ReleasedMatcher());
+            }
+            testPeer.expectEnd();
+
+            consumer.close();
+            session.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            testPeer.expectClose();
+            connection.close();
         }
     }
 }

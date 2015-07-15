@@ -1228,7 +1228,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             sourceMatcher.withAddress(equalTo(queueName));
             sourceMatcher.withDynamic(equalTo(false));
             sourceMatcher.withOutcomes(arrayContaining(Accepted.DESCRIPTOR_SYMBOL, Rejected.DESCRIPTOR_SYMBOL, Released.DESCRIPTOR_SYMBOL, Modified.DESCRIPTOR_SYMBOL));
-            ModifiedMatcher outcomeMatcher = new ModifiedMatcher().withDeliveryFailed(equalTo(true)).withUndeliverableHere(equalTo(false));
+            ModifiedMatcher outcomeMatcher = new ModifiedMatcher().withDeliveryFailed(equalTo(true)).withUndeliverableHere(nullValue());
             sourceMatcher.withDefaultOutcome(outcomeMatcher);
 
             testPeer.expectReceiverAttach(notNullValue(), sourceMatcher);

@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -54,6 +55,7 @@ import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
 import org.apache.qpid.proton.amqp.messaging.TerminusExpiryPolicy;
 import org.apache.qpid.proton.amqp.transaction.TransactionalState;
+import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Delivery;
@@ -74,6 +76,16 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     protected static final Symbol JMS_SELECTOR_SYMBOL = Symbol.valueOf("jms-selector");
 
     private static final int INITIAL_BUFFER_CAPACITY = 1024 * 128;
+
+    private static final Modified MODIFIED_FAILED = new Modified();
+    private static final Modified MODIFIED_UNDELIVERABLE = new Modified();
+    static
+    {
+        MODIFIED_FAILED.setDeliveryFailed(true);
+
+        MODIFIED_UNDELIVERABLE.setDeliveryFailed(true);
+        MODIFIED_UNDELIVERABLE.setUndeliverableHere(true);
+    }
 
     protected final AmqpSession session;
     protected final Map<JmsInboundMessageDispatch, Delivery> delivered = new LinkedHashMap<JmsInboundMessageDispatch, Delivery>();
@@ -228,12 +240,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         }
 
         source.setOutcomes(outcomes);
-
-        Modified modified = new Modified();
-        modified.setDeliveryFailed(true);
-        modified.setUndeliverableHere(false);
-
-        source.setDefaultOutcome(modified);
+        source.setDefaultOutcome(MODIFIED_FAILED);
 
         if (resource.isNoLocal()) {
             filters.put(JMS_NO_LOCAL_SYMBOL, AmqpJmsNoLocalType.NO_LOCAL);
@@ -296,6 +303,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             if (!isPresettle()) {
                 delivered.put(envelope, delivery);
             }
+            setDefaultDeliveryState(delivery, MODIFIED_FAILED);
             sendFlowIfNeeded();
         } else if (ackType.equals(ACK_TYPE.CONSUMED)) {
             // A Consumer may not always send a DELIVERED ack so we need to
@@ -412,7 +420,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     private void processDelivery(Delivery incoming) throws Exception {
-
+        setDefaultDeliveryState(incoming, Released.getInstance());
         Message amqpMessage = decodeIncomingMessage(incoming);
         long deliveryCount = amqpMessage.getDeliveryCount();
         int maxRedeliveries = getJmsResource().getRedeliveryPolicy().getMaxRedeliveries();
@@ -455,6 +463,17 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         incoming.setContext(envelope);
 
         deliver(envelope);
+    }
+
+    private void setDefaultDeliveryState(Delivery incoming, DeliveryState state) {
+        // TODO: temporary to maintain runtime compatibility with older
+        // Proton releases. Replace with direct invocation in future.
+        try {
+            Method m = incoming.getClass().getMethod("setDefaultDeliveryState", DeliveryState.class);
+            m.invoke(incoming, state);
+        } catch (Exception e) {
+            LOG.trace("Exception while setting defaultDeliveryState", e);
+        }
     }
 
     protected long getNextIncomingSequenceNumber() {
@@ -508,10 +527,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     protected void deliveryFailed(Delivery incoming) {
-        Modified disposition = new Modified();
-        disposition.setUndeliverableHere(true);
-        disposition.setDeliveryFailed(true);
-        incoming.disposition(disposition);
+        incoming.disposition(MODIFIED_UNDELIVERABLE);
         incoming.settle();
         sendFlowIfNeeded();
     }

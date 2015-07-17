@@ -543,15 +543,20 @@ public class TestAmqpPeer implements AutoCloseable
      * to the AMQP connection (useful to skip a stage for connections that don't
      * require SASL, e.g. because of anonymous or client certificate authentication).
      */
-    public void expectSaslLayerDisabledConnect()
+    public void expectSaslLayerDisabledConnect(Matcher<?> maxFrameSizeMatcher)
     {
         addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
 
         OpenFrame openFrame = createOpenFrame();
 
         OpenMatcher openMatcher = new OpenMatcher()
-            .withContainerId(notNullValue(String.class))
-            .onCompletion(new FrameSender(
+            .withContainerId(notNullValue(String.class));
+
+        if(maxFrameSizeMatcher != null) {
+            openMatcher.withMaxFrameSize(maxFrameSizeMatcher);
+        }
+
+        openMatcher.onCompletion(new FrameSender(
                     this, FrameType.AMQP, 0,
                     openFrame,
                     null));

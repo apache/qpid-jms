@@ -95,6 +95,17 @@ public class AmqpProviderFactoryTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testCreateProviderAppliesMaxFrameSizeURIOption() throws IOException, Exception {
+        int frameSize = 274893;
+        Provider provider = AmqpProviderFactory.create(new URI(peerURI.toString() + "?amqp.maxFrameSize=" + frameSize));
+        assertNotNull(provider);
+        assertTrue(provider instanceof AmqpProvider);
+        AmqpProvider amqpProvider = (AmqpProvider) provider;
+
+        assertEquals("maxFrameSize option was not applied", frameSize, amqpProvider.getMaxFrameSize());
+    }
+
+    @Test(timeout = 20000)
     public void testCreateProviderAppliesOptions() throws IOException, Exception {
         URI configuredURI = new URI(peerURI.toString() +
             "?amqp.presettleConsumers=true" +

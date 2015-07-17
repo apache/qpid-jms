@@ -118,6 +118,7 @@ public class AmqpProvider implements Provider, TransportListener {
     private int channelMax = DEFAULT_CHANNEL_MAX;
     private int idleTimeout = 60000;
     private long sessionOutoingWindow = -1; //Use proton default
+    private int maxFrameSize = DEFAULT_MAX_FRAME_SIZE;
 
     private final URI remoteURI;
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -268,7 +269,10 @@ public class AmqpProvider implements Provider, TransportListener {
                             requestTimeout = connectionInfo.getRequestTimeout();
 
                             Connection protonConnection = Connection.Factory.create();
-                            protonTransport.setMaxFrameSize(getMaxFrameSize());
+
+                            if(getMaxFrameSize() > 0) {
+                                protonTransport.setMaxFrameSize(getMaxFrameSize());
+                            }
                             protonTransport.setChannelMax(getChannelMax());
                             protonTransport.setIdleTimeout(idleTimeout);
                             protonTransport.bind(protonConnection);
@@ -955,6 +959,21 @@ public class AmqpProvider implements Provider, TransportListener {
         this.idleTimeout = idleTimeout;
     }
 
+    public int getMaxFrameSize() {
+        return maxFrameSize;
+    }
+
+    /**
+     * Sets the max frame size (in bytes).
+     *
+     * Values of -1 indicates to use the proton default.
+     *
+     * @param maxFrameSize the frame size in bytes.
+     */
+    public void setMaxFrameSize(int maxFrameSize) {
+        this.maxFrameSize = maxFrameSize;
+    }
+
     public long getSessionOutgoingWindow() {
         return sessionOutoingWindow;
     }
@@ -1004,13 +1023,6 @@ public class AmqpProvider implements Provider, TransportListener {
 
     public void setPresettleProducers(boolean presettle) {
         this.presettleProducers = presettle;
-    }
-
-    /**
-     * @return the currently set Max Frame Size value.
-     */
-    public int getMaxFrameSize() {
-        return DEFAULT_MAX_FRAME_SIZE;
     }
 
     @Override

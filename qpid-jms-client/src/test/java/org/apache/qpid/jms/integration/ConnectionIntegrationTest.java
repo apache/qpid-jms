@@ -63,6 +63,7 @@ import org.apache.qpid.jms.test.testpeer.basictypes.ConnectionError;
 import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
 import org.apache.qpid.jms.util.MetaDataSupport;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.transaction.TxnCapability;
 import org.hamcrest.Matcher;
 import org.junit.Test;
@@ -142,6 +143,36 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             Connection connection = factory.createConnection();
 
             testPeer.waitForAllHandlersToComplete(1000);
+            assertNull(testPeer.getThrowable());
+
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testMaxFrameSizeOptionCommunicatedInOpen() throws Exception {
+        int frameSize = 39215;
+        doMaxFrameSizeOptionTestImpl(frameSize, UnsignedInteger.valueOf(frameSize));
+    }
+
+    @Test(timeout = 20000)
+    public void testMaxFrameSizeOptionCommunicatedInOpenDefault() throws Exception {
+        doMaxFrameSizeOptionTestImpl(-1, UnsignedInteger.MAX_VALUE);
+    }
+
+    private void doMaxFrameSizeOptionTestImpl(int uriOption, UnsignedInteger transmittedValue) throws JMSException, InterruptedException, Exception, IOException {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            testPeer.expectSaslLayerDisabledConnect(equalTo(transmittedValue));
+            // Each connection creates a session for managing temporary destinations etc
+            testPeer.expectBegin();
+
+            String uri = "amqp://localhost:" + testPeer.getServerPort() + "?amqp.saslLayer=false&amqp.maxFrameSize=" + uriOption;
+            ConnectionFactory factory = new JmsConnectionFactory(uri);
+            Connection connection = factory.createConnection();
+            connection.start();
+
+            testPeer.waitForAllHandlersToComplete(3000);
             assertNull(testPeer.getThrowable());
 
             testPeer.expectClose();

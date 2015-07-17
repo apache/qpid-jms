@@ -227,7 +227,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     public void testSaslLayerDisabledConnection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Expect a connection with no SASL layer.
-            testPeer.expectSaslLayerDisabledConnect();
+            testPeer.expectSaslLayerDisabledConnect(null);
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin();
 

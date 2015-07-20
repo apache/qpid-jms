@@ -9,8 +9,9 @@ alongside their output:
 
 Now you can run the examples using commands of the format:
 
-  java -cp "target/classes/:target/dependency/*" org.apache.qpid.jms.example.HelloWorld
+  Linux:   java -cp "target/classes/:target/dependency/*" org.apache.qpid.jms.example.HelloWorld
 
+  Windows: java -cp "target\classes\;target\dependency\*" org.apache.qpid.jms.example.HelloWorld
 
 NOTE: The examples expect to use a Queue named "queue". You may need to create
 this before running the examples, depending on the broker/peer you are using.

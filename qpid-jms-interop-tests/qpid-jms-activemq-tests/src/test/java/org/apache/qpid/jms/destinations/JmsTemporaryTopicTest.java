@@ -30,7 +30,6 @@ import javax.jms.Session;
 import javax.jms.TemporaryTopic;
 
 import org.apache.qpid.jms.support.AmqpTestSupport;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +41,6 @@ public class JmsTemporaryTopicTest extends AmqpTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsTemporaryTopicTest.class);
 
-    @Ignore //TODO: enable and remove "testCreateTemporaryTopicWithoutBrokerCheck"
     @Test(timeout = 60000)
     public void testCreateTemporaryTopic() throws Exception {
         connection = createAmqpConnection();
@@ -53,19 +51,7 @@ public class JmsTemporaryTopicTest extends AmqpTestSupport {
         TemporaryTopic topic = session.createTemporaryTopic();
         session.createConsumer(topic);
 
-        //TODO: TempTopics not yet supported on the Broker, it is faking it, this check fails.
         assertEquals(1, brokerService.getAdminView().getTemporaryTopics().length);
-    }
-
-    @Test(timeout = 60000)
-    public void testCreateTemporaryTopicWithoutBrokerCheck() throws Exception {
-        connection = createAmqpConnection();
-        connection.start();
-
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        assertNotNull(session);
-        TemporaryTopic topic = session.createTemporaryTopic();
-        session.createConsumer(topic);
     }
 
     @Test(timeout = 60000)

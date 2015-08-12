@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.jms.DeliveryMode;
 import javax.jms.ExceptionListener;
+import javax.jms.InvalidClientIDException;
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
 import javax.jms.Message;
@@ -68,8 +69,7 @@ public class JmsConnectionTest extends AmqpTestSupport {
         try {
             connection2.setClientID("Test");
             fail("should have thrown a JMSException");
-        } catch (JMSException ex) {
-            //TODO: change to InvalidClientIDException when updating to 5.12 or above
+        } catch (InvalidClientIDException ex) {
             LOG.info("Remote threw ex: {}", ex);
         } catch (Exception unexpected) {
             fail("Wrong exception type thrown: " + unexpected);

@@ -35,7 +35,6 @@ import javax.jms.Topic;
 import org.apache.activemq.broker.jmx.BrokerViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -146,7 +145,6 @@ public class JmsSessionTest extends AmqpTestSupport {
         } catch (JMSSecurityException jmsse) {}
     }
 
-    @Ignore("Delete of Temporary destinations not yet supported.")
     @Test(timeout=30000)
     public void testDeleteTemporaryQueue() throws Exception {
         connection = createAmqpConnection();
@@ -170,7 +168,6 @@ public class JmsSessionTest extends AmqpTestSupport {
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
     }
 
-    @Ignore("Temporary Topics not supported in AMQ yet.")
     @Test(timeout=30000)
     public void testCreateTemporaryTopic() throws Exception {
         connection = createAmqpConnection();
@@ -183,7 +180,6 @@ public class JmsSessionTest extends AmqpTestSupport {
         assertEquals(1, broker.getTemporaryTopics().length);
     }
 
-    @Ignore("Temporary Topics not supported in AMQ yet.")
     @Test(timeout=30000)
     public void testCreateTemporaryTopicNotAuthorized() throws Exception {
         connection = createAmqpConnection("guest", "password");
@@ -194,7 +190,6 @@ public class JmsSessionTest extends AmqpTestSupport {
         } catch (JMSSecurityException jmsse) {}
     }
 
-    @Ignore("Temporary Topics not supported in AMQ yet.")
     @Test(timeout=30000)
     public void testDeleteTemporaryTopic() throws Exception {
         connection = createAmqpConnection();

@@ -36,7 +36,6 @@ import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.QpidJmsTestSupport;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -385,7 +384,6 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         session.close();
     }
 
-    @Ignore("Fails at 500 messages consumed.") //TODO: needs 5.12 snapshot broker
     @Test(timeout = 60000)
     public void testSingleConsumedMessagePerTxCase() throws Exception {
         connection = createAmqpConnection();

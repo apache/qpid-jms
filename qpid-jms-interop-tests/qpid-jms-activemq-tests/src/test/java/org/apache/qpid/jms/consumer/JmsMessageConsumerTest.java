@@ -47,7 +47,6 @@ import org.apache.qpid.jms.JmsMessageAvailableListener;
 import org.apache.qpid.jms.JmsMessageConsumer;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -456,7 +455,6 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertNull(consumer.receive(1000));
     }
 
-    @Ignore //TODO: needs 5.12 snapshot
     @Test(timeout=30000)
     public void testSelectorsWithJMSType() throws Exception {
         connection = createAmqpConnection();

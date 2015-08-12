@@ -34,7 +34,6 @@ import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -83,8 +82,6 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
         assertNull("Should have not received a message!", answer);
     }
 
-    // TODO - Enable once broker side credit handling is fixed
-    @Ignore // ActiveMQ doesn't honor link credit.
     @Test(timeout = 60000)
     public void testPullConsumerOnlyRequestsOneMessage() throws Exception {
         connection = createAmqpConnection();
@@ -121,8 +118,6 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
         assertEquals(0, queueView.getInFlightCount());
     }
 
-    // TODO - Enable once broker side credit handling is fixed
-    @Ignore // ActiveMQ doesn't honor link credit.
     @Test(timeout = 60000)
     public void testTwoConsumers() throws Exception {
         connection = createAmqpConnection();

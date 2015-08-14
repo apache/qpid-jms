@@ -43,7 +43,7 @@
     <target-version>1.7</target-version>
 
     <!-- Dependency Versions for this Project -->
-    <proton-version>0.10-SNAPSHOT</proton-version>
+    <proton-version>0.10</proton-version>
     <netty-version>4.0.17.Final</netty-version>
     <slf4j-version>1.7.12</slf4j-version>
     <geronimo-jms-1-1-spec-version>1.1.1</geronimo-jms-1-1-spec-version>

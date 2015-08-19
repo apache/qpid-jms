@@ -16,11 +16,11 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.CONTAINER_ID;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.INVALID_FIELD;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.NETWORK_HOST;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.OPEN_HOSTNAME;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.PORT;
-import static org.apache.qpid.jms.provider.amqp.AmqpSupport.CONTAINER_ID;
-import static org.apache.qpid.jms.provider.amqp.AmqpSupport.INVALID_FIELD;
 
 import java.io.IOException;
 import java.util.Map;
@@ -227,19 +227,24 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
     @Override
     public Exception getRemoteError() {
+        return getRemoteError(getEndpoint().getRemoteCondition());
+    }
+
+    @Override
+    public Exception getRemoteError(ErrorCondition errorCondition) {
         Exception remoteError = null;
-        ErrorCondition remoteCondition = getEndpoint().getRemoteCondition();
-        Symbol error = remoteCondition.getCondition();
+
+        Symbol error = errorCondition.getCondition();
         if (error != null) {
-            String message = getRemoteErrorMessage();
+            String message = getRemoteErrorMessage(errorCondition);
             if (error.equals(AmqpError.UNAUTHORIZED_ACCESS)) {
                 remoteError = new JMSSecurityException(message);
             } else if (error.equals(AmqpError.NOT_FOUND)) {
                 remoteError = new InvalidDestinationException(message);
             } else if (error.equals(ConnectionError.REDIRECT)) {
-                remoteError = createRedirectException(error, message, remoteCondition);
+                remoteError = createRedirectException(error, message, errorCondition);
             } else if (error.equals(AmqpError.INVALID_FIELD)) {
-                Map<?, ?> info = remoteCondition.getInfo();
+                Map<?, ?> info = errorCondition.getInfo();
                 if (info != null && CONTAINER_ID.equals(info.get(INVALID_FIELD))) {
                     remoteError = new InvalidClientIDException(message);
                 } else {
@@ -254,15 +259,14 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     }
 
     @Override
-    public String getRemoteErrorMessage() {
+    public String getRemoteErrorMessage(ErrorCondition errorCondition) {
         String message = "Received error from remote peer without description";
-        if (getEndpoint().getRemoteCondition() != null) {
-            ErrorCondition error = getEndpoint().getRemoteCondition();
-            if (error.getDescription() != null && !error.getDescription().isEmpty()) {
-                message = error.getDescription();
+        if (errorCondition != null) {
+            if (errorCondition.getDescription() != null && !errorCondition.getDescription().isEmpty()) {
+                message = errorCondition.getDescription();
             }
 
-            Symbol condition = getEndpoint().getRemoteCondition().getCondition();
+            Symbol condition = errorCondition.getCondition();
             if (condition != null) {
                 message = message + " [condition = " + condition + "]";
             }

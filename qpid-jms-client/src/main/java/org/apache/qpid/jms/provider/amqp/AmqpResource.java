@@ -19,6 +19,7 @@ package org.apache.qpid.jms.provider.amqp;
 import java.io.IOException;
 
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 
 /**
  * AmqpResource specification.
@@ -165,8 +166,19 @@ public interface AmqpResource {
     Exception getRemoteError();
 
     /**
+     * @param errorCondition
+     *      The Error that should be converted to an Exception instance.
+     *
+     * @return an Exception derived from the error state of the endpoint's Remote Condition.
+     */
+    Exception getRemoteError(ErrorCondition errorCondition);
+
+    /**
+     * @param errorCondition
+     *      The Error whose message is to be extracted.
+     *
      * @return an Error message derived from the error state of the endpoint's Remote Condition.
      */
-    String getRemoteErrorMessage();
+    String getRemoteErrorMessage(ErrorCondition errorCondition);
 
 }

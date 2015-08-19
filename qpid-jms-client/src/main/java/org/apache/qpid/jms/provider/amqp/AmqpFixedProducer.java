@@ -218,7 +218,10 @@ public class AmqpFixedProducer extends AmqpProducer {
                     request.onSuccess();
                 }
             } else if (outcome instanceof Rejected) {
-                Exception remoteError = getRemoteError();
+                Exception remoteError = getRemoteError(((Rejected) outcome).getError());
+                if (remoteError == null) {
+                    remoteError = getRemoteError();
+                }
                 LOG.trace("Outcome of delivery was rejected: {}", delivery);
                 tagGenerator.returnTag(delivery.getTag());
                 if (request != null && !request.isComplete()) {

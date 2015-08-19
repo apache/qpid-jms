@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.producer;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,6 +74,32 @@ public class JmsProducerFlowControlFailIfNoSpaceTest extends AmqpTestSupport {
     }
 
     @Test
+    public void testHandleSendFailIfNoSpaceSync() throws Exception {
+
+        connection = createAmqpConnection();
+
+        JmsConnection jmsConnection = (JmsConnection) connection;
+        jmsConnection.setAlwaysSyncSend(true);
+
+        connection.setExceptionListener(new TestExceptionListener());
+        connection.start();
+
+        Session session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(getDestinationName());
+        MessageProducer producer = session.createProducer(queue);
+
+        producer.send(session.createTextMessage("Message:1"));
+        try {
+            producer.send(session.createTextMessage("Message:2"));
+            fail("Should have failed to send message two");
+        } catch (JMSException ex) {
+            LOG.debug("Caught expected exception");
+        }
+
+        connection.close();
+    }
+
+    @Test
     public void testHandleSendFailIfNoSpaceAsync() throws Exception {
 
         connection = createAmqpConnection();
@@ -88,7 +115,7 @@ public class JmsProducerFlowControlFailIfNoSpaceTest extends AmqpTestSupport {
         MessageProducer producer = session.createProducer(queue);
 
         producer.send(session.createTextMessage("Message:1"));
-        producer.send(session.createTextMessage("Message:1"));
+        producer.send(session.createTextMessage("Message:2"));
 
         assertTrue("Should have got an error from no space.", Wait.waitFor(new Wait.Condition() {
 

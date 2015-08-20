@@ -18,7 +18,7 @@
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
-    <version>16</version>
+    <version>17</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -57,9 +57,9 @@
 
     <!-- Maven Plugin Versions for this Project -->
     <maven-javacc-plugin-version>2.6</maven-javacc-plugin-version>
-    <maven-eclipse-plugin-version>2.9</maven-eclipse-plugin-version>
+    <maven-eclipse-plugin-version>2.10</maven-eclipse-plugin-version>
     <maven-idea-plugin-version>2.5</maven-idea-plugin-version>
-    <findbugs-maven-plugin-version>3.0.0</findbugs-maven-plugin-version>
+    <findbugs-maven-plugin-version>3.0.2</findbugs-maven-plugin-version>
     <jacoco-plugin-version>0.7.5.201505241946</jacoco-plugin-version>
 
     <!-- Test properties -->

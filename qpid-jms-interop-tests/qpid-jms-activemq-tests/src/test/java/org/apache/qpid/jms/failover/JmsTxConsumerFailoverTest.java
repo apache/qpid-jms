@@ -86,8 +86,8 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
 
         for (int i = 0; i < MSG_COUNT; ++i) {
-            Message received = consumer.receive(1000);
-            assertNotNull(received);
+            Message received = consumer.receive(3000);
+            assertNotNull("Mesage was not expected but not received", received);
         }
 
         try {
@@ -117,8 +117,8 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
         assertEquals(MSG_COUNT, proxy.getQueueSize());
 
         for (int i = 0; i < MSG_COUNT; ++i) {
-            Message received = consumer.receive(1000);
-            assertNotNull(received);
+            Message received = consumer.receive(3000);
+            assertNotNull("Mesage was not expected but not received", received);
         }
 
         stopPrimaryBroker();
@@ -154,8 +154,8 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
         assertEquals(MSG_COUNT, proxy.getQueueSize());
 
         for (int i = 0; i < MSG_COUNT; ++i) {
-            Message received = consumer.receive(1000);
-            assertNotNull(received);
+            Message received = consumer.receive(3000);
+            assertNotNull("Mesage was not expected but not received", received);
         }
 
         proxy = getProxyToQueue(name.getMethodName());
@@ -198,9 +198,9 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
         assertEquals(MSG_COUNT, proxy.getQueueSize());
 
         for (int i = 0; i < MSG_COUNT / 2; ++i) {
-            Message received = consumer.receive(1000);
+            Message received = consumer.receive(3000);
+            assertNotNull("Mesage was not expected but not received", received);
             LOG.info("consumer received message #{} - {}", i + 1, received.getJMSMessageID());
-            assertNotNull(received);
         }
 
         assertEquals(MSG_COUNT, proxy.getQueueSize());
@@ -212,9 +212,9 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
         assertEquals(MSG_COUNT, proxy.getQueueSize());
 
         for (int i = 0; i < MSG_COUNT / 2; ++i) {
-            Message received = consumer.receive(1000);
+            Message received = consumer.receive(3000);
+            assertNotNull("Mesage was not expected but not received", received);
             LOG.info("consumer received message #{} - {}", i + 1, received.getJMSMessageID());
-            assertNotNull(received);
         }
 
         try {

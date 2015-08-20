@@ -23,7 +23,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeFalse;
 
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -157,7 +159,9 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
     }
 
     @Test
-    public void testDuplicatesNotAddedUnresolvable() throws URISyntaxException {
+    public void testDuplicatesNotAddedUnresolvable() throws Exception {
+        assumeFalse("Host resolution works when not expected", checkIfResolutionWorks());
+
         FailoverUriPool pool = new FailoverUriPool();
 
         assertTrue(pool.isEmpty());
@@ -179,6 +183,8 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
 
     @Test
     public void testDuplicatesNotAddedWhenQueryPresentAndUnresolveable() throws URISyntaxException {
+        assumeFalse("Host resolution works when not expected", checkIfResolutionWorks());
+
         FailoverUriPool pool = new FailoverUriPool();
 
         assertTrue(pool.isEmpty());
@@ -318,6 +324,8 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
 
     @Test
     public void testRemoveWhenUnresolvable() throws URISyntaxException {
+        assumeFalse("Host resolution works when not expected", checkIfResolutionWorks());
+
         FailoverUriPool pool = new FailoverUriPool();
 
         assertTrue(pool.isEmpty());
@@ -333,6 +341,8 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
 
     @Test
     public void testRemoveWhenQueryPresentAndUnresolveable() throws URISyntaxException {
+        assumeFalse("Host resolution works when not expected", checkIfResolutionWorks());
+
         FailoverUriPool pool = new FailoverUriPool();
 
         assertTrue(pool.isEmpty());
@@ -447,5 +457,17 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
             assertTrue(pool.remove(uris.get(i)));
             assertEquals(uris.size() - (i + 1), pool.size());
         }
+    }
+
+    private boolean checkIfResolutionWorks() {
+        boolean resolutionWorks = false;
+        try {
+            resolutionWorks = InetAddress.getByName("shouldbeunresolvable") != null;
+            resolutionWorks = InetAddress.getByName("SHOULDBEUNRESOLVABLE") != null;
+            resolutionWorks = InetAddress.getByName("SHOULDBEUNRESOLVABLE2") != null;
+        } catch (Exception e) {
+        }
+
+        return resolutionWorks;
     }
 }

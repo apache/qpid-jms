@@ -455,8 +455,6 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                     incoming = null;
                 }
             } else {
-                LOG.info("Incoming null delivery");
-
                 // We have exhausted the locally queued messages on this link.
                 // Check if we tried to stop and have now run out of credit.
                 if (getEndpoint().getRemoteCredit() <= 0) {

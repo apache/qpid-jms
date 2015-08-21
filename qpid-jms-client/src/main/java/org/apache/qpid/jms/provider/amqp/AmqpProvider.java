@@ -126,6 +126,7 @@ public class AmqpProvider implements Provider, TransportListener {
     private final Transport protonTransport = Transport.Factory.create();
     private final Collector protonCollector = new CollectorImpl();
 
+    private AsyncResult connectionOpenRequest;
     private ScheduledFuture<?> nextIdleTimeoutCheck;
 
     /**
@@ -240,7 +241,6 @@ public class AmqpProvider implements Provider, TransportListener {
                 try {
                     checkClosed();
                     resource.visit(new JmsResourceVistor() {
-
                         @Override
                         public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
                             AmqpSession session = connection.createSession(sessionInfo);
@@ -296,8 +296,7 @@ public class AmqpProvider implements Provider, TransportListener {
                             }
 
                             connection = new AmqpConnection(AmqpProvider.this, protonConnection, authenticator, connectionInfo);
-                            connection.open(new AsyncResult() {
-
+                            AsyncResult wrappedOpenRequest = new AsyncResult() {
                                 @Override
                                 public void onSuccess() {
                                     fireConnectionEstablished();
@@ -313,7 +312,11 @@ public class AmqpProvider implements Provider, TransportListener {
                                 public boolean isComplete() {
                                     return request.isComplete();
                                 }
-                            });
+                            };
+
+                            connectionOpenRequest = wrappedOpenRequest;
+
+                            connection.open(wrappedOpenRequest);
                         }
 
                         @Override
@@ -838,6 +841,8 @@ public class AmqpProvider implements Provider, TransportListener {
     }
 
     void fireConnectionEstablished() {
+        //The request onSuccess calls this method
+        connectionOpenRequest = null;
 
         long now = System.currentTimeMillis();
         long deadline = protonTransport.tick(now);
@@ -854,6 +859,11 @@ public class AmqpProvider implements Provider, TransportListener {
     }
 
     void fireProviderException(Throwable ex) {
+        if(connectionOpenRequest != null) {
+            connectionOpenRequest.onFailure(ex);
+            connectionOpenRequest = null;
+        }
+
         ProviderListener listener = this.listener;
         if (listener != null) {
             listener.onConnectionFailure(IOExceptionSupport.create(ex));

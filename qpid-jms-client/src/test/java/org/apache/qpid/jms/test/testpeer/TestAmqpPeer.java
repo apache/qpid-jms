@@ -1562,4 +1562,15 @@ public class TestAmqpPeer implements AutoCloseable
             _firstAssertionError = ae;
         }
     }
+
+    public void expectSaslHeaderThenDrop() {
+        AmqpPeerRunnable exitAfterHeader = new AmqpPeerRunnable() {
+            @Override
+            public void run() {
+                _driverRunnable.exitReadLoopEarly();
+            }
+        };
+
+        addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER, exitAfterHeader));
+    }
 }

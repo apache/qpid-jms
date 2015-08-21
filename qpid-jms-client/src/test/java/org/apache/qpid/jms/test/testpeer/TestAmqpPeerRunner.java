@@ -48,6 +48,7 @@ class TestAmqpPeerRunner implements Runnable
     private final Object _inputHandlingLock = new Object();
     private final TestFrameParser _testFrameParser;
     private volatile boolean _suppressReadExceptionOnClose;
+    private volatile boolean _exitReadLoopEarly;
 
     private volatile Throwable _throwable;
 
@@ -108,6 +109,13 @@ class TestAmqpPeerRunner implements Runnable
 
                     _testFrameParser.input(networkInputByteBuffer);
                 }
+
+                if(_exitReadLoopEarly)
+                {
+                    LOGGER.trace("Exiting read loop early");
+                    break;
+                }
+
                 LOGGER.trace("Attempting read");
                 attemptingRead = true;
             }
@@ -216,5 +224,9 @@ class TestAmqpPeerRunner implements Runnable
 
     public boolean isNeedClientCert() {
         return needClientCert;
+    }
+
+    public void exitReadLoopEarly() {
+        _exitReadLoopEarly = true;
     }
 }

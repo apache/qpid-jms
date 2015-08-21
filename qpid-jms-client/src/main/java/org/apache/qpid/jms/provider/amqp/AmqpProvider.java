@@ -189,6 +189,7 @@ public class AmqpProvider implements Provider, TransportListener {
                         // just signal success.
                         if (transport == null || !transport.isConnected()) {
                             request.onSuccess();
+                            //TODO: return here? mark proton connection closed then return?
                         }
 
                         if (connection != null) {
@@ -217,6 +218,7 @@ public class AmqpProvider implements Provider, TransportListener {
                 }
             } catch (IOException e) {
                 LOG.warn("Error caught while closing Provider: ", e.getMessage());
+                //TODO: message can be / seemingly usually is empty
             } finally {
                 if (transport != null) {
                     try {
@@ -740,6 +742,7 @@ public class AmqpProvider implements Provider, TransportListener {
                     LOG.debug("Transport connection remotely closed");
                     if (!closed.get()) {
                         fireProviderException(new IOException("Transport connection remotely closed."));
+                        //TODO: close the proton transport as well/instead?
                         if (connection != null) {
                             connection.closed();
                         }

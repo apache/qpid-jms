@@ -22,6 +22,8 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
@@ -328,6 +330,25 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
      */
     public AmqpConnectionProperties getProperties() {
         return properties;
+    }
+
+    /**
+     * Allows a connection resource to schedule a task for future execution.
+     *
+     * @param task
+     *      The Runnable task to be executed after the given delay.
+     * @param delay
+     *      The delay in milliseconds to schedule the given task for execution.
+     *
+     * @return a ScheduledFuture instance that can be used to cancel the task.
+     */
+    public ScheduledFuture<?> schedule(final Runnable task, long delay) {
+        if (task == null) {
+            LOG.trace("Resource attempted to schedule a null task.");
+            return null;
+        }
+
+        return getProvider().getScheduler().schedule(task, delay, TimeUnit.MILLISECONDS);
     }
 
     @Override

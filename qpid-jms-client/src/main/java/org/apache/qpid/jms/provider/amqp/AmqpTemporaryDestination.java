@@ -125,8 +125,8 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsTemporaryD
     @Override
     protected void doOpenCompletion() {
         // Verify the attach response contained a non-null target
-        org.apache.qpid.proton.amqp.transport.Target t = getEndpoint().getRemoteTarget();
-        if (t != null) {
+        org.apache.qpid.proton.amqp.transport.Target target = getEndpoint().getRemoteTarget();
+        if (target != null) {
             super.doOpenCompletion();
         } else {
             // No link terminus was created, the peer will now detach/close us.

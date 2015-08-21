@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.jms.InvalidDestinationException;
@@ -79,8 +80,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     private static final Modified MODIFIED_FAILED = new Modified();
     private static final Modified MODIFIED_UNDELIVERABLE = new Modified();
-    static
-    {
+
+    static {
         MODIFIED_FAILED.setDeliveryFailed(true);
 
         MODIFIED_UNDELIVERABLE.setDeliveryFailed(true);
@@ -96,6 +97,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     private final AtomicLong incomingSequence = new AtomicLong(0);
 
     private AsyncResult stopRequest;
+    private AsyncResult pullRequest;
 
     public AmqpConsumer(AmqpSession session, JmsConsumerInfo info) {
         super(info);
@@ -127,7 +129,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                 stopRequest = request;
             }
         } else {
-            // TODO: We dont actually want the additional messages that could be sent while
+            // TODO: We don't actually want the additional messages that could be sent while
             // draining. We could explicitly reduce credit first, or possibly use 'echo' instead
             // of drain if it was supported. We would first need to understand what happens
             // if we reduce credit below the number of messages already in-flight before
@@ -149,12 +151,26 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             }
         }
 
+        if (pullRequest != null) {
+            Receiver receiver = getEndpoint();
+            if (receiver.getRemoteCredit() <= 0) {
+                if (receiver.getQueued() <= 0) {
+                    pullRequest.onFailure(null);
+                } else {
+                    pullRequest.onSuccess();
+                }
+                pullRequest = null;
+            }
+        }
+
+        LOG.trace("Consumer {} flow updated, remote credit = {}", getConsumerId(), getEndpoint().getRemoteCredit());
+
         super.processFlowUpdates(provider);
     }
 
     @Override
     protected void doOpen() {
-        JmsDestination destination  = resource.getDestination();
+        JmsDestination destination = resource.getDestination();
         String subscription = AmqpDestinationHelper.INSTANCE.getDestinationAddress(destination, session.getConnection());
 
         Source source = new Source();
@@ -188,8 +204,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     @Override
     protected void doOpenCompletion() {
         // Verify the attach response contained a non-null Source
-        org.apache.qpid.proton.amqp.transport.Source s = getEndpoint().getRemoteSource();
-        if (s != null) {
+        org.apache.qpid.proton.amqp.transport.Source source = getEndpoint().getRemoteSource();
+        if (source != null) {
             super.doOpenCompletion();
         } else {
             // No link terminus was created, the peer will now detach/close us.
@@ -199,8 +215,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     @Override
     protected Exception getOpenAbortException() {
         // Verify the attach response contained a non-null Source
-        org.apache.qpid.proton.amqp.transport.Source s = getEndpoint().getRemoteSource();
-        if (s != null) {
+        org.apache.qpid.proton.amqp.transport.Source source = getEndpoint().getRemoteSource();
+        if (source != null) {
             return super.getOpenAbortException();
         } else {
             // No link terminus was created, the peer has detach/closed us, create IDE.
@@ -377,15 +393,41 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     /**
-     * For a consumer whose prefetch value is set to zero this method will attempt to solicite
-     * a new message dispatch from the broker.
+     * Request a remote peer send a Message to this client.
+     *
+     *   timeout < 0 then it should remain open until a message is received.
+     *   timeout = 0 then it returns a message or null if none available
+     *   timeout > 0 then it should remain open for timeout amount of time.
+     *
+     * The timeout value when positive is given in milliseconds.
      *
      * @param timeout
+     *        the amount of time to tell the remote peer to keep this pull request valid.
      */
-    public void pull(long timeout) {
+    public void pull(final long timeout) {
+        LOG.trace("Pull called on consumer {} with timouet = {}", getConsumerId(), timeout);
         if (resource.getPrefetchSize() == 0 && getEndpoint().getCredit() == 0) {
-            // expand the credit window by one.
-            getEndpoint().flow(1);
+            if (timeout < 0) {
+                getEndpoint().flow(1);
+            } else if (timeout == 0) {
+                pullRequest = new DrainingPullRequest();
+                getEndpoint().drain(1);
+            } else if (timeout > 0) {
+                // We need to turn off the credit and signal the consumer
+                // that there was no message.
+                final ScheduledFuture<?> future = getSession().schedule(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        if (getEndpoint().getRemoteCredit() != 0) {
+                            getEndpoint().drain(0);
+                        }
+                    }
+                }, timeout);
+
+                getEndpoint().flow(1);
+                pullRequest = new TimedPullRequest(future);
+            }
         }
     }
 
@@ -397,6 +439,12 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             if (incoming != null) {
                 if (incoming.isReadable() && !incoming.isPartial()) {
                     LOG.trace("{} has incoming Message(s).", this);
+
+                    if (pullRequest != null) {
+                        pullRequest.onSuccess();
+                        pullRequest = null;
+                    }
+
                     try {
                         processDelivery(incoming);
                     } catch (Exception e) {
@@ -407,11 +455,20 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                     incoming = null;
                 }
             } else {
+                LOG.info("Incoming null delivery");
+
                 // We have exhausted the locally queued messages on this link.
                 // Check if we tried to stop and have now run out of credit.
-                if (stopRequest != null && getEndpoint().getRemoteCredit() <= 0) {
-                    stopRequest.onSuccess();
-                    stopRequest = null;
+                if (getEndpoint().getRemoteCredit() <= 0) {
+                    if (stopRequest != null) {
+                        stopRequest.onSuccess();
+                        stopRequest = null;
+                    }
+
+                    if (pullRequest != null) {
+                        pullRequest.onFailure(null);
+                        pullRequest = null;
+                    }
                 }
             }
         } while (incoming != null);
@@ -582,5 +639,43 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      * @throws Exception if an error occurs while performing this action.
      */
     public void postRollback() throws Exception {
+    }
+
+    private class DrainingPullRequest implements AsyncResult {
+
+        @Override
+        public void onFailure(Throwable result) {
+            JmsInboundMessageDispatch pullDone = new JmsInboundMessageDispatch(getNextIncomingSequenceNumber());
+            pullDone.setConsumerId(getConsumerId());
+            try {
+                deliver(pullDone);
+            } catch (Exception e) {
+                getSession().reportError(IOExceptionSupport.create(e));
+            }
+        }
+
+        @Override
+        public void onSuccess() {
+            // Nothing to do here.
+        }
+
+        @Override
+        public boolean isComplete() {
+            return false;
+        }
+    }
+
+    private class TimedPullRequest extends DrainingPullRequest {
+
+        private final ScheduledFuture<?> completionTask;
+
+        public TimedPullRequest(ScheduledFuture<?> completionTask) {
+            this.completionTask = completionTask;
+        }
+
+        @Override
+        public void onSuccess() {
+            completionTask.cancel(false);
+        }
     }
 }

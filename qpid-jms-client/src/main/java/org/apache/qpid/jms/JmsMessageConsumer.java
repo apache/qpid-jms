@@ -40,11 +40,15 @@ import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.util.FifoMessageQueue;
 import org.apache.qpid.jms.util.MessageQueue;
 import org.apache.qpid.jms.util.PriorityMessageQueue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * implementation of a JMS Message Consumer
  */
 public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableConsumer, JmsMessageDispatcher {
+
+    private static final Logger LOG = LoggerFactory.getLogger(JmsMessageConsumer.class);
 
     protected final JmsSession session;
     protected final JmsConnection connection;
@@ -215,18 +219,22 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     public Message receive(long timeout) throws JMSException {
         checkClosed();
         checkMessageListener();
+
+        // Configure for infinite wait when timeout is zero (JMS Spec)
+        if (timeout == 0) {
+            timeout = -1;
+        }
+
         sendPullCommand(timeout);
 
-        long wait = timeout;
-        if (timeout == 0) {
-            wait = -1;
+        JmsInboundMessageDispatch envelope = null;
+        if (isPullConsumer()) {
+            envelope = dequeue(-1); // Let server tell us if empty.
+        } else {
+            envelope = dequeue(timeout); // Check local prefetch only.
         }
 
-        try {
-            return copy(ackFromReceive(this.messageQueue.dequeue(wait)));
-        } catch (InterruptedException e) {
-            throw JmsExceptionSupport.create(e);
-        }
+        return copy(ackFromReceive(envelope));
     }
 
     /**
@@ -238,9 +246,82 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     public Message receiveNoWait() throws JMSException {
         checkClosed();
         checkMessageListener();
-        sendPullCommand(-1);
+        sendPullCommand(0);
 
-        return copy(ackFromReceive(this.messageQueue.dequeueNoWait()));
+        JmsInboundMessageDispatch envelope = null;
+        if (isPullConsumer()) {
+            envelope = dequeue(-1); // Let server tell us if empty.
+        } else {
+            envelope = dequeue(0); // Check local prefetch only.
+        }
+
+        return copy(ackFromReceive(envelope));
+    }
+
+    /**
+     * Used to get an enqueued message from the unconsumedMessages list. The
+     * amount of time this method blocks is based on the timeout value.
+     *
+     *   timeout < 0 then it blocks until a message is received.
+     *   timeout = 0 then it returns a message or null if none available
+     *   timeout > 0 then it blocks up to timeout amount of time.
+     *
+     * This method may consume messages that are expired or exceed a configured
+     * delivery count value but will continue to wait for the configured timeout.
+     *
+     * @throws JMSException
+     * @return null if we timeout or if the consumer is closed.
+     */
+    private JmsInboundMessageDispatch dequeue(long timeout) throws JMSException {
+
+        try {
+            long deadline = 0;
+            if (timeout > 0) {
+                deadline = System.currentTimeMillis() + timeout;
+            }
+
+            while (true) {
+                JmsInboundMessageDispatch envelope = messageQueue.dequeue(timeout);
+                if (envelope == null) {
+                    if (timeout > 0 && !messageQueue.isClosed()) {
+                        timeout = Math.max(deadline - System.currentTimeMillis(), 0);
+                    } else {
+                        if (failureCause != null && !messageQueue.isClosed()) {
+                            LOG.debug("{} receive failed: {}", getConsumerId(), failureCause.getMessage());
+                            throw JmsExceptionSupport.create(failureCause);
+                        } else {
+                            return null;
+                        }
+                    }
+                } else if (envelope.getMessage() == null) {
+                    LOG.trace("{} no message was available for this consumer: {}", getConsumerId());
+                    return null;
+                } else if (redeliveryExceeded(envelope)) {
+                    LOG.debug("{} received with excessive redelivered: {}", getConsumerId(), envelope);
+                    // TODO - Future
+                    // Reject this delivery as not deliverable here
+                    if (timeout > 0) {
+                        timeout = Math.max(deadline - System.currentTimeMillis(), 0);
+                    }
+                    sendPullCommand(timeout);
+                } else {
+                    if (LOG.isTraceEnabled()) {
+                        LOG.trace(getConsumerId() + " received message: " + envelope);
+                    }
+                    return envelope;
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw JmsExceptionSupport.create(e);
+        }
+    }
+
+    protected boolean redeliveryExceeded(JmsInboundMessageDispatch envelope) {
+        // TODO - Future
+        // Check for message that have been redelivered to see if they exceed
+        // some set maximum redelivery count
+        return false;
     }
 
     protected void checkClosed() throws IllegalStateException {
@@ -500,6 +581,10 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         return false;
     }
 
+    public boolean isPullConsumer() {
+        return getPrefetchSize() == 0;
+    }
+
     @Override
     public void setAvailableListener(JmsMessageAvailableListener availableListener) {
         this.availableListener = availableListener;
@@ -511,6 +596,9 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     }
 
     protected void onConnectionInterrupted() {
+        // TODO - We might want to wake all blocking receive calls
+        //        to interrupt pull consumers, although that also
+        //        wakes infinite wait receivers so how to deal with that?
         messageQueue.clear();
     }
 
@@ -530,21 +618,19 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     }
 
     /**
-     * Triggers a pull request from the connected Provider.  An attempt is made to set
-     * a timeout on the pull request however some providers will not honor this value
-     * and the pull will remain active until a message is dispatched.
+     * Triggers a pull request from the connected Provider with the given timeout value.
      * <p>
      * The timeout value can be one of:
      * <br>
-     * {@literal < 0} to indicate that the request should expire immediately if no message.<br>
-     * {@literal = 0} to indicate that the request should never time out.<br>
-     * {@literal > 1} to indicate that the request should expire after the given time in milliseconds.
+     * {@literal < 0} to indicate that the request should never time out.<br>
+     * {@literal = 0} to indicate that the request should expire immediately if no message.<br>
+     * {@literal > 0} to indicate that the request should expire after the given time in milliseconds.
      *
      * @param timeout
      *        The amount of time the pull request should remain valid.
      */
     protected void sendPullCommand(long timeout) throws JMSException {
-        if (messageQueue.isEmpty() && (getPrefetchSize() == 0 || isBrowser())) {
+        if (!messageQueue.isClosed() && messageQueue.isEmpty() && (getPrefetchSize() == 0 || isBrowser())) {
             connection.pull(getConsumerId(), timeout);
         }
     }

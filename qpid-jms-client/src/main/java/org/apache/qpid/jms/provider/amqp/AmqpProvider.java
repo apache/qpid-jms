@@ -1061,6 +1061,10 @@ public class AmqpProvider implements Provider, TransportListener {
         return remoteURI;
     }
 
+    ScheduledExecutorService getScheduler() {
+        return this.serializer;
+    }
+
     private final class IdleTimeoutCheck implements Runnable {
         @Override
         public void run() {
@@ -1089,7 +1093,7 @@ public class AmqpProvider implements Provider, TransportListener {
                 LOG.trace("IdleTimeoutCheck skipping check, connection is not active.");
             }
 
-            if(!checkScheduled) {
+            if (!checkScheduled) {
                 nextIdleTimeoutCheck = null;
                 LOG.trace("IdleTimeoutCheck exiting");
             }
@@ -1097,7 +1101,7 @@ public class AmqpProvider implements Provider, TransportListener {
     }
 
     Principal getLocalPrincipal() {
-        if(transport instanceof SSLTransport) {
+        if (transport instanceof SSLTransport) {
             return ((SSLTransport) transport).getLocalPrincipal();
         }
 
@@ -1105,7 +1109,7 @@ public class AmqpProvider implements Provider, TransportListener {
     }
 
     private static void setHostname(Sasl sasl, String hostname) {
-        //TODO: this is a hack until Proton 0.10+ is available with sasl#setHostname method.
+        // TODO: this is a hack until Proton 0.10+ is available with sasl#setHostname method.
         try {
             Field field = sasl.getClass().getDeclaredField("_hostname");
             field.setAccessible(true);

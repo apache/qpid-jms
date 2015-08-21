@@ -18,6 +18,8 @@ package org.apache.qpid.jms.provider.amqp;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.IllegalStateException;
 
@@ -211,6 +213,25 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> {
         }
 
         getTransactionContext().rollback(request);
+    }
+
+    /**
+     * Allows a session resource to schedule a task for future execution.
+     *
+     * @param task
+     *      The Runnable task to be executed after the given delay.
+     * @param delay
+     *      The delay in milliseconds to schedule the given task for execution.
+     *
+     * @return a ScheduledFuture instance that can be used to cancel the task.
+     */
+    public ScheduledFuture<?> schedule(final Runnable task, long delay) {
+        if (task == null) {
+            LOG.trace("Resource attempted to schedule a null task.");
+            return null;
+        }
+
+        return getProvider().getScheduler().schedule(task, delay, TimeUnit.MILLISECONDS);
     }
 
     void addResource(AmqpConsumer consumer) {

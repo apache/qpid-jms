@@ -283,6 +283,12 @@ public interface Provider {
      * consumer.  If the consumer has a set prefetch that's greater than zero this method
      * should just return without performing and action.
      *
+     *   timeout < 0 then it should remain open until a message is received.
+     *   timeout = 0 then it returns a message or null if none available
+     *   timeout > 0 then it should remain open for timeout amount of time.
+     *
+     * The timeout value when positive is given in milliseconds.
+     *
      * @param timeout
      *        the amount of time to tell the remote peer to keep this pull request valid.
      * @param request

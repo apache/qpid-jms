@@ -258,7 +258,7 @@ public class AmqpFixedProducer extends AmqpProducer {
         Target target = new Target();
         target.setAddress(targetAddress);
         Symbol typeCapability =  AmqpDestinationHelper.INSTANCE.toTypeCapability(destination);
-        if(typeCapability != null) {
+        if (typeCapability != null) {
             target.setCapabilities(typeCapability);
         }
 
@@ -282,8 +282,8 @@ public class AmqpFixedProducer extends AmqpProducer {
     @Override
     protected void doOpenCompletion() {
         // Verify the attach response contained a non-null target
-        org.apache.qpid.proton.amqp.transport.Target t = getEndpoint().getRemoteTarget();
-        if (t != null) {
+        org.apache.qpid.proton.amqp.transport.Target target = getEndpoint().getRemoteTarget();
+        if (target != null) {
             super.doOpenCompletion();
         } else {
             // No link terminus was created, the peer will now detach/close us.
@@ -293,8 +293,8 @@ public class AmqpFixedProducer extends AmqpProducer {
     @Override
     protected Exception getOpenAbortException() {
         // Verify the attach response contained a non-null target
-        org.apache.qpid.proton.amqp.transport.Target t = getEndpoint().getRemoteTarget();
-        if (t != null) {
+        org.apache.qpid.proton.amqp.transport.Target target = getEndpoint().getRemoteTarget();
+        if (target != null) {
             return super.getOpenAbortException();
         } else {
             // No link terminus was created, the peer has detach/closed us, create IDE.

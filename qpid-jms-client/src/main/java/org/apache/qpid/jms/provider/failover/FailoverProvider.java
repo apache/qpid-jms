@@ -83,6 +83,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     private final ScheduledExecutorService connectionHub;
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean failed = new AtomicBoolean();
+    private final AtomicBoolean closingConnection = new AtomicBoolean(false);
     private final AtomicLong requestId = new AtomicLong();
     private final Map<Long, FailoverRequest> requests = new LinkedHashMap<Long, FailoverRequest>();
     private final DefaultProviderListener closedListener = new DefaultProviderListener();
@@ -287,6 +288,9 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         final FailoverRequest pending = new FailoverRequest(request) {
             @Override
             public void doTask() throws IOException, JMSException, UnsupportedOperationException {
+                if(resourceId instanceof JmsConnectionInfo) {
+                   closingConnection.set(true);
+                }
                 provider.destroy(resourceId, this);
             }
 
@@ -594,14 +598,14 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
      * point of view that connection was lost and an immediate attempt cycle should start.
      */
     private void triggerReconnectionAttempt() {
-        if (closed.get() || failed.get()) {
+        if (closingConnection.get() || closed.get() || failed.get()) {
             return;
         }
 
         connectionHub.execute(new Runnable() {
             @Override
             public void run() {
-                if (provider != null || closed.get() || failed.get()) {
+                if (provider != null || closingConnection.get() || closed.get() || failed.get()) {
                     return;
                 }
 
@@ -704,13 +708,13 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
     @Override
     public void onInboundMessage(final JmsInboundMessageDispatch envelope) {
-        if (closed.get() || failed.get()) {
+        if (closingConnection.get() || closed.get() || failed.get()) {
             return;
         }
         serializer.execute(new Runnable() {
             @Override
             public void run() {
-                if (!closed.get()) {
+                if (!closingConnection.get() && !closed.get() && !failed.get()) {
                     listener.onInboundMessage(envelope);
                 }
             }
@@ -719,13 +723,13 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
     @Override
     public void onConnectionFailure(final IOException ex) {
-        if (closed.get() || failed.get()) {
+        if (closingConnection.get() || closed.get() || failed.get()) {
             return;
         }
         serializer.execute(new Runnable() {
             @Override
             public void run() {
-                if (!closed.get() && !failed.get()) {
+                if (!closingConnection.get() && !closed.get() && !failed.get()) {
                     LOG.debug("Failover: the provider reports failure: {}", ex.getMessage());
                     handleProviderFailure(ex);
                 }
@@ -929,7 +933,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
         @Override
         public void onFailure(final Throwable result) {
-            if (closed.get() || failed.get()) {
+            if (closingConnection.get() || closed.get() || failed.get()) {
                 requests.remove(id);
                 super.onFailure(result);
             } else {

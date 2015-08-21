@@ -288,7 +288,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         final FailoverRequest pending = new FailoverRequest(request) {
             @Override
             public void doTask() throws IOException, JMSException, UnsupportedOperationException {
-                if(resourceId instanceof JmsConnectionInfo) {
+                if (resourceId instanceof JmsConnectionInfo) {
                    closingConnection.set(true);
                 }
                 provider.destroy(resourceId, this);
@@ -645,7 +645,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 if (reconnectLimit != UNLIMITED && reconnectAttempts >= reconnectLimit) {
                     LOG.error("Failed to connect after: " + reconnectAttempts + " attempt(s)");
                     failed.set(true);
-                    if(failure == null) {
+                    if (failure == null) {
                         failureCause = new IOException("Failed to connect after: " + reconnectAttempts + " attempt(s)");
                     } else {
                         failureCause = IOExceptionSupport.create(failure);

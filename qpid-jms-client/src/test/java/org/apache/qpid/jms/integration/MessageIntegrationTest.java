@@ -1284,7 +1284,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            long timestamp = System.currentTimeMillis();
+            long timestamp = System.currentTimeMillis() + 5000;
 
             PropertiesDescribedType props = new PropertiesDescribedType();
             props.setAbsoluteExpiryTime(new Date(timestamp));

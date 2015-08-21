@@ -346,6 +346,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             }
         } else if (ackType.equals(ACK_TYPE.POISONED)) {
             deliveryFailed(delivery);
+        } else if (ackType.equals(ACK_TYPE.EXPIRED)) {
+            deliveryFailed(delivery);
         } else if (ackType.equals(ACK_TYPE.RELEASED)) {
             delivery.disposition(Released.getInstance());
             delivery.settle();

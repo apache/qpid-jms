@@ -522,6 +522,11 @@ public class JmsMessage implements javax.jms.Message {
         return this.facade;
     }
 
+    public boolean isExpired() {
+        long expireTime = facade.getExpiration();
+        return expireTime > 0 && System.currentTimeMillis() > expireTime;
+    }
+
     @Override
     public String toString() {
         return "JmsMessage { " + facade + " }";

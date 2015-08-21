@@ -119,6 +119,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         consumerInfo.setBrowser(isBrowser());
         consumerInfo.setPrefetchSize(getConfiguredPrefetch(destination, policy));
         consumerInfo.setRedeliveryPolicy(redeliveryPolicy);
+        consumerInfo.setConsumerExpiryCheckEnabled(session.isConsumerExpiryCheckEnabled());
 
         session.getConnection().createResource(consumerInfo);
     }
@@ -296,6 +297,13 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                 } else if (envelope.getMessage() == null) {
                     LOG.trace("{} no message was available for this consumer: {}", getConsumerId());
                     return null;
+                } else if (consumeExpiredMessage(envelope)) {
+                    LOG.trace("{} filtered expired message: {}", getConsumerId(), envelope);
+                    doAckExpired(envelope);
+                    if (timeout > 0) {
+                        timeout = Math.max(deadline - System.currentTimeMillis(), 0);
+                    }
+                    sendPullCommand(timeout);
                 } else if (redeliveryExceeded(envelope)) {
                     LOG.debug("{} received with excessive redelivered: {}", getConsumerId(), envelope);
                     // TODO - Future
@@ -315,6 +323,14 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
             Thread.currentThread().interrupt();
             throw JmsExceptionSupport.create(e);
         }
+    }
+
+    private boolean consumeExpiredMessage(JmsInboundMessageDispatch dispatch) {
+        if (!isBrowser() && consumerInfo.isConsumerExpiryCheckEnabled() && dispatch.getMessage().isExpired()) {
+            return true;
+        }
+
+        return false;
     }
 
     protected boolean redeliveryExceeded(JmsInboundMessageDispatch envelope) {
@@ -382,6 +398,15 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
             throw ex;
         }
         return envelope;
+    }
+
+    private void doAckExpired(final JmsInboundMessageDispatch envelope) throws JMSException {
+        try {
+            session.acknowledge(envelope, ACK_TYPE.EXPIRED);
+        } catch (JMSException ex) {
+            session.onException(ex);
+            throw ex;
+        }
     }
 
     private void doAckReleased(final JmsInboundMessageDispatch envelope) throws JMSException {
@@ -661,19 +686,25 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
             while (session.isStarted() && (envelope = messageQueue.dequeueNoWait()) != null) {
                 try {
                     JmsMessage copy = null;
-                    boolean autoAckOrDupsOk = acknowledgementMode == Session.AUTO_ACKNOWLEDGE ||
-                                              acknowledgementMode == Session.DUPS_OK_ACKNOWLEDGE;
-                    if (autoAckOrDupsOk) {
-                        copy = copy(doAckDelivered(envelope));
+
+                    if (consumeExpiredMessage(envelope)) {
+                        LOG.trace("{} filtered expired message: {}", getConsumerId(), envelope);
+                        doAckExpired(envelope);
                     } else {
-                        copy = copy(ackFromReceive(envelope));
-                    }
-                    session.clearSessionRecovered();
+                        boolean autoAckOrDupsOk = acknowledgementMode == Session.AUTO_ACKNOWLEDGE ||
+                                                  acknowledgementMode == Session.DUPS_OK_ACKNOWLEDGE;
+                        if (autoAckOrDupsOk) {
+                            copy = copy(doAckDelivered(envelope));
+                        } else {
+                            copy = copy(ackFromReceive(envelope));
+                        }
+                        session.clearSessionRecovered();
 
-                    messageListener.onMessage(copy);
+                        messageListener.onMessage(copy);
 
-                    if (autoAckOrDupsOk && !session.isSessionRecovered()) {
-                        doAckConsumed(envelope);
+                        if (autoAckOrDupsOk && !session.isSessionRecovered()) {
+                            doAckConsumed(envelope);
+                        }
                     }
                 } catch (Exception e) {
                     // TODO - We need to handle exception of on message with some other

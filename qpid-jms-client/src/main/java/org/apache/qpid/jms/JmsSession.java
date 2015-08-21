@@ -117,6 +117,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         this.sessionInfo = new JmsSessionInfo(sessionId);
         this.sessionInfo.setAcknowledgementMode(acknowledgementMode);
         this.sessionInfo.setSendAcksAsync(connection.isSendAcksAsync());
+        this.sessionInfo.setConsumerExpiryCheckEnabled(connection.isConsumerExpiryCheckEnabled());
 
         connection.createResource(sessionInfo);
     }
@@ -803,6 +804,14 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      */
     public boolean isDupsOkAcknowledge() {
         return acknowledgementMode == Session.DUPS_OK_ACKNOWLEDGE;
+    }
+
+    public boolean isConsumerExpiryCheckEnabled() {
+        return sessionInfo.isConsumerExpiryCheckEnabled();
+    }
+
+    public void setConsumerExpiryCheckEnabled(boolean consumerExpiryCheckEnabled) {
+        sessionInfo.setConsumerExpiryCheckEnabled(consumerExpiryCheckEnabled);
     }
 
     protected void checkClosed() throws IllegalStateException {

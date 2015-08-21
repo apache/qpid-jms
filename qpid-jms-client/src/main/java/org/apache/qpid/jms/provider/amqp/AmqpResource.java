@@ -80,12 +80,6 @@ public interface AmqpResource {
     void closed();
 
     /**
-     * Sets the failed state for this Resource and triggers a failure signal for
-     * any pending ProduverRequest.
-     */
-    void failed();
-
-    /**
      * Called to indicate that the remote end has become closed but the resource
      * was not awaiting an open/close completion.
      *

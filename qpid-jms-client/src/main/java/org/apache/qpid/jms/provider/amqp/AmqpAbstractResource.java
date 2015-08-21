@@ -150,11 +150,6 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     }
 
     @Override
-    public void failed() {
-        failed(new JMSException("Remote request failed."));
-    }
-
-    @Override
     public void failed(Exception cause) {
         if (openRequest != null) {
             if (endpoint != null) {

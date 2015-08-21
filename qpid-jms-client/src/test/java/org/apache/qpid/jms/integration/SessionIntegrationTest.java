@@ -927,7 +927,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 testPeer.expectDisposition(true, modified);
             }
 
-            session.createConsumer(queue);
+            MessageConsumer consumer = session.createConsumer(queue);
+            consumer.receive(100);
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

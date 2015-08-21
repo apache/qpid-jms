@@ -423,6 +423,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                     public void run() {
                         if (getEndpoint().getRemoteCredit() != 0) {
                             getEndpoint().drain(0);
+                            session.getProvider().pumpToProtonTransport();
                         }
                     }
                 }, timeout);
@@ -479,17 +480,6 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     private void processDelivery(Delivery incoming) throws Exception {
         setDefaultDeliveryState(incoming, Released.getInstance());
         Message amqpMessage = decodeIncomingMessage(incoming);
-        long deliveryCount = amqpMessage.getDeliveryCount();
-        int maxRedeliveries = getJmsResource().getRedeliveryPolicy().getMaxRedeliveries();
-
-        if (maxRedeliveries >= 0 && deliveryCount > maxRedeliveries) {
-            LOG.trace("{} rejecting delivery that exceeds max redelivery count. {}", this, amqpMessage.getMessageId());
-            deliveryFailed(incoming);
-            return;
-        } else {
-            getEndpoint().advance();
-        }
-
         JmsMessage message = null;
         try {
             message = AmqpJmsMessageBuilder.createJmsMessage(this, amqpMessage);
@@ -503,6 +493,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             deliveryFailed(incoming);
             return;
         }
+
+        getEndpoint().advance();
 
         // Let the message do any final processing before sending it onto a consumer.
         // We could defer this to a later stage such as the JmsConnection or even in

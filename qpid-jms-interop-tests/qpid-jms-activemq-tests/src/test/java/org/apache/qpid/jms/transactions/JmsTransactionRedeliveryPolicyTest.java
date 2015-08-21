@@ -22,8 +22,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
@@ -44,7 +49,7 @@ public class JmsTransactionRedeliveryPolicyTest extends AmqpTestSupport {
     }
 
     @Test(timeout = 30000)
-    public void testConsumeAndRollbackWithMaxRedeliveries() throws Exception {
+    public void testSyncConsumeAndRollbackWithMaxRedeliveries() throws Exception {
         final int MAX_REDELIVERIES = 5;
         final int MSG_COUNT = 5;
 
@@ -85,6 +90,8 @@ public class JmsTransactionRedeliveryPolicyTest extends AmqpTestSupport {
             LOG.info("Queue size after session rollback is: {}", queueView.getQueueSize());
         }
 
+        assertNull(consumer.receive(50));
+
         assertTrue("Message should get DLQ'd", Wait.waitFor(new Wait.Condition() {
 
             @Override
@@ -96,7 +103,73 @@ public class JmsTransactionRedeliveryPolicyTest extends AmqpTestSupport {
         QueueViewMBean dlq = getProxyToQueue("ActiveMQ.DLQ");
         assertEquals(MSG_COUNT, dlq.getQueueSize());
 
+        session.commit();
+    }
+
+    @Test(timeout = 30000)
+    public void testAsyncConsumeAndRollbackWithMaxRedeliveries() throws Exception {
+        final int MAX_REDELIVERIES = 5;
+        final int MSG_COUNT = 5;
+
+        connection = createAmqpConnection();
+        connection.start();
+
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        Queue queue = session.createQueue(getDestinationName());
+        MessageConsumer consumer = session.createConsumer(queue);
+        sendMessages(connection, queue, MSG_COUNT);
+
+        final QueueViewMBean queueView = getProxyToQueue(getDestinationName());
+
+        // Consume the message for the first time.
+        Message incoming = null;
+        for (int i = 0; i < MSG_COUNT; ++i) {
+            incoming = consumer.receive(2000);
+            assertNotNull(incoming);
+            assertFalse(incoming.getJMSRedelivered());
+            assertTrue(incoming instanceof TextMessage);
+        }
+        session.rollback();
+
+        for (int i = 0; i < MAX_REDELIVERIES; ++i) {
+            LOG.info("Queue size before consume is: {}", queueView.getQueueSize());
+            assertEquals(MSG_COUNT, queueView.getQueueSize());
+
+            final CountDownLatch done = new CountDownLatch(MSG_COUNT);
+            consumer.setMessageListener(new MessageListener() {
+
+                @Override
+                public void onMessage(Message message) {
+                    try {
+                        assertTrue(message.getJMSRedelivered());
+                        assertTrue(message instanceof TextMessage);
+
+                        done.countDown();
+                    } catch (JMSException e) {
+                    }
+                }
+            });
+
+            assertTrue("Not All Messages Received", done.await(10, TimeUnit.SECONDS));
+            assertEquals(MSG_COUNT, queueView.getQueueSize());
+
+            consumer.setMessageListener(null);
+            session.rollback();
+            LOG.info("Queue size after session rollback is: {}", queueView.getQueueSize());
+        }
+
         assertNull(consumer.receive(50));
+
+        assertTrue("Message should get DLQ'd", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return queueView.getQueueSize() == 0;
+            }
+        }));
+
+        QueueViewMBean dlq = getProxyToQueue("ActiveMQ.DLQ");
+        assertEquals(MSG_COUNT, dlq.getQueueSize());
 
         session.commit();
     }

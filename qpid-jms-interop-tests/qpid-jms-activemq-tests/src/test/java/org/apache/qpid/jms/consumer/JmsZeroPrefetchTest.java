@@ -275,4 +275,40 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
         assertNotNull(answer);
         assertEquals("Should have received a message!", answer.getText(), "Msg1");
     }
+
+    @Test(timeout=60000)
+    public void testConsumerReceivePrefetchZeroRedeliveryZero() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+
+        // push message to queue
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue("test.prefetch.zero");
+        MessageProducer producer = session.createProducer(queue);
+        TextMessage textMessage = session.createTextMessage("test Message");
+        producer.send(textMessage);
+        session.close();
+
+        // consume and rollback - increase redelivery counter on message
+        session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        MessageConsumer consumer = session.createConsumer(queue);
+        Message message = consumer.receive(2000);
+        assertNotNull(message);
+        session.rollback();
+        session.close();
+
+        // Reconnect with zero prefetch and zero redeliveries allowed.
+        connection.close();
+        connection = createAmqpConnection();
+        ((JmsConnection)connection).getPrefetchPolicy().setAll(0);
+        ((JmsConnection)connection).getRedeliveryPolicy().setMaxRedeliveries(0);
+        connection.start();
+
+        // try consume with timeout - expect it to timeout and return NULL message
+        session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        consumer = session.createConsumer(queue);
+        message = consumer.receive(1000);
+
+        assertNull(message);
+    }
 }

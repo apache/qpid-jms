@@ -62,6 +62,16 @@ public class JmsInboundMessageDispatch extends JmsAbstractResourceId {
         return enqueueFirst;
     }
 
+    public int getRedeliveryCount() {
+        int redeliveryCount = 0;
+
+        if (message != null) {
+            redeliveryCount = message.getFacade().getRedeliveryCount();
+        }
+
+        return redeliveryCount;
+    }
+
     @Override
     public String toString() {
         return "JmsInboundMessageDispatch {sequence = " + sequence

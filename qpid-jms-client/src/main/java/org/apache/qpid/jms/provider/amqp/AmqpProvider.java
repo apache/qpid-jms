@@ -815,7 +815,11 @@ public class AmqpProvider implements Provider, TransportListener {
         }
     }
 
-    private boolean pumpToProtonTransport(AsyncResult request) {
+    protected boolean pumpToProtonTransport() {
+        return pumpToProtonTransport(NOOP_REQUEST);
+    }
+
+    protected boolean pumpToProtonTransport(AsyncResult request) {
         try {
             boolean done = false;
             while (!done) {
@@ -1087,7 +1091,7 @@ public class AmqpProvider implements Provider, TransportListener {
                 long now = System.currentTimeMillis();
                 long deadline = protonTransport.tick(now);
 
-                boolean pumpSucceeded = pumpToProtonTransport(NOOP_REQUEST);
+                boolean pumpSucceeded = pumpToProtonTransport();
 
                 if (protonTransport.isClosed()) {
                     LOG.info("IdleTimeoutCheck closed the transport due to the peer exceeding our requested idle-timeout.");

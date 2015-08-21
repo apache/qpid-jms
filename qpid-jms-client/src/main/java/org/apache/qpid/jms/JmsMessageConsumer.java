@@ -226,16 +226,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
             timeout = -1;
         }
 
-        sendPullCommand(timeout);
-
-        JmsInboundMessageDispatch envelope = null;
-        if (isPullConsumer()) {
-            envelope = dequeue(-1); // Let server tell us if empty.
-        } else {
-            envelope = dequeue(timeout); // Check local prefetch only.
-        }
-
-        return copy(ackFromReceive(envelope));
+        return copy(ackFromReceive(dequeue(timeout)));
     }
 
     /**
@@ -247,16 +238,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     public Message receiveNoWait() throws JMSException {
         checkClosed();
         checkMessageListener();
-        sendPullCommand(0);
-
-        JmsInboundMessageDispatch envelope = null;
-        if (isPullConsumer()) {
-            envelope = dequeue(-1); // Let server tell us if empty.
-        } else {
-            envelope = dequeue(0); // Check local prefetch only.
-        }
-
-        return copy(ackFromReceive(envelope));
+        return copy(ackFromReceive(dequeue(0)));
     }
 
     /**
@@ -281,8 +263,16 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                 deadline = System.currentTimeMillis() + timeout;
             }
 
+            sendPullCommand(timeout);
+
             while (true) {
-                JmsInboundMessageDispatch envelope = messageQueue.dequeue(timeout);
+                JmsInboundMessageDispatch envelope = null;
+                if (isPullConsumer()) {
+                    envelope = messageQueue.dequeue(-1);
+                } else {
+                    envelope = messageQueue.dequeue(timeout);
+                }
+
                 if (envelope == null) {
                     if (timeout > 0 && !messageQueue.isClosed()) {
                         timeout = Math.max(deadline - System.currentTimeMillis(), 0);
@@ -305,9 +295,8 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                     }
                     sendPullCommand(timeout);
                 } else if (redeliveryExceeded(envelope)) {
-                    LOG.debug("{} received with excessive redelivered: {}", getConsumerId(), envelope);
-                    // TODO - Future
-                    // Reject this delivery as not deliverable here
+                    LOG.debug("{} filtered message with excessive redelivery count: {}", getConsumerId(), envelope);
+                    doAckUndeliverable(envelope);
                     if (timeout > 0) {
                         timeout = Math.max(deadline - System.currentTimeMillis(), 0);
                     }
@@ -334,10 +323,12 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     }
 
     protected boolean redeliveryExceeded(JmsInboundMessageDispatch envelope) {
-        // TODO - Future
-        // Check for message that have been redelivered to see if they exceed
-        // some set maximum redelivery count
-        return false;
+        LOG.info("checking envelope with {} redeliveries", envelope.getRedeliveryCount());
+
+        JmsRedeliveryPolicy redeliveryPolicy = consumerInfo.getRedeliveryPolicy();
+        return redeliveryPolicy != null &&
+               redeliveryPolicy.getMaxRedeliveries() != JmsRedeliveryPolicy.DEFAULT_MAX_REDELIVERIES &&
+               redeliveryPolicy.getMaxRedeliveries() < envelope.getRedeliveryCount();
     }
 
     protected void checkClosed() throws IllegalStateException {
@@ -403,6 +394,15 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     private void doAckExpired(final JmsInboundMessageDispatch envelope) throws JMSException {
         try {
             session.acknowledge(envelope, ACK_TYPE.EXPIRED);
+        } catch (JMSException ex) {
+            session.onException(ex);
+            throw ex;
+        }
+    }
+
+    private void doAckUndeliverable(final JmsInboundMessageDispatch envelope) throws JMSException {
+        try {
+            session.acknowledge(envelope, ACK_TYPE.POISONED);
         } catch (JMSException ex) {
             session.onException(ex);
             throw ex;
@@ -690,6 +690,9 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                     if (consumeExpiredMessage(envelope)) {
                         LOG.trace("{} filtered expired message: {}", getConsumerId(), envelope);
                         doAckExpired(envelope);
+                    } else if (redeliveryExceeded(envelope)) {
+                        LOG.trace("{} filtered message with excessive redlivery count: {}", getConsumerId(), envelope);
+                        doAckUndeliverable(envelope);
                     } else {
                         boolean autoAckOrDupsOk = acknowledgementMode == Session.AUTO_ACKNOWLEDGE ||
                                                   acknowledgementMode == Session.DUPS_OK_ACKNOWLEDGE;

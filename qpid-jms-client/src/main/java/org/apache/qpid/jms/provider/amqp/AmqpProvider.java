@@ -736,7 +736,7 @@ public class AmqpProvider implements Provider, TransportListener {
                 public void run() {
                     LOG.debug("Transport connection remotely closed");
                     if (!closed.get()) {
-                        fireProviderException(new IOException("Connection remotely closed."));
+                        fireProviderException(new IOException("Transport connection remotely closed."));
                         if (connection != null) {
                             connection.closed();
                         }

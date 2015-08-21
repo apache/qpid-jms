@@ -294,6 +294,7 @@ public class NettyTcpTransport implements Transport {
             LOG.trace("Channel has gone inactive! Channel is {}", context.channel());
             if (!closed.get()) {
                 connected.set(false);
+                LOG.trace("Firing onTransportClosed listener");
                 listener.onTransportClosed();
             }
         }
@@ -303,6 +304,7 @@ public class NettyTcpTransport implements Transport {
             LOG.trace("Exception on channel! Channel is {}", context.channel());
             if (!closed.get()) {
                 connected.set(false);
+                LOG.trace("Firing onTransportError listener");
                 listener.onTransportError(cause);
             }
         }

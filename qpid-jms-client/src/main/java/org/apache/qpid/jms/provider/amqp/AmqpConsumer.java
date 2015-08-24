@@ -397,9 +397,9 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     /**
      * Request a remote peer send a Message to this client.
      *
-     *   timeout < 0 then it should remain open until a message is received.
-     *   timeout = 0 then it returns a message or null if none available
-     *   timeout > 0 then it should remain open for timeout amount of time.
+     *   {@literal timeout < 0} then it should remain open until a message is received.
+     *   {@literal timeout = 0} then it returns a message or null if none available
+     *   {@literal timeout > 0} then it should remain open for timeout amount of time.
      *
      * The timeout value when positive is given in milliseconds.
      *
@@ -407,7 +407,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      *        the amount of time to tell the remote peer to keep this pull request valid.
      */
     public void pull(final long timeout) {
-        LOG.trace("Pull called on consumer {} with timouet = {}", getConsumerId(), timeout);
+        LOG.trace("Pull called on consumer {} with timeout = {}", getConsumerId(), timeout);
         if (resource.getPrefetchSize() == 0 && getEndpoint().getCredit() == 0) {
             if (timeout < 0) {
                 getEndpoint().flow(1);

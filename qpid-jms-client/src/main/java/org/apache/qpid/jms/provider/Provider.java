@@ -281,11 +281,11 @@ public interface Provider {
      * Request a remote peer send a Message to this client.  A message pull request is
      * usually only needed in the case where the client sets a zero prefetch limit on the
      * consumer.  If the consumer has a set prefetch that's greater than zero this method
-     * should just return without performing and action.
+     * should just return without performing any action.
      *
-     *   timeout < 0 then it should remain open until a message is received.
-     *   timeout = 0 then it returns a message or null if none available
-     *   timeout > 0 then it should remain open for timeout amount of time.
+     *   {@literal timeout < 0} then it should remain open until a message is received.
+     *   {@literal timeout = 0} then it returns a message or null if none available
+     *   {@literal timeout > 0} then it should remain open for timeout amount of time.
      *
      * The timeout value when positive is given in milliseconds.
      *

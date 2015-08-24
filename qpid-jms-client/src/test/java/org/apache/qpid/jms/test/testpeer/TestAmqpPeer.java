@@ -1284,12 +1284,18 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectTransfer(Matcher<Binary> expectedPayloadMatcher)
     {
-        expectTransfer(expectedPayloadMatcher, nullValue(), false, new Accepted(), true);
+        expectTransfer(expectedPayloadMatcher, nullValue(), false, true, new Accepted(), true);
+    }
+
+    public void expectTransfer(Matcher<Binary> expectedPayloadMatcher, Matcher<?> stateMatcher, boolean settled,
+                               ListDescribedType responseState, boolean responseSettled)
+    {
+        expectTransfer(expectedPayloadMatcher, stateMatcher, settled, true, responseState, responseSettled);
     }
 
     //TODO: fix responseState to only admit applicable types.
     public void expectTransfer(Matcher<Binary> expectedPayloadMatcher, Matcher<?> stateMatcher, boolean settled,
-                               ListDescribedType responseState, boolean responseSettled)
+                               boolean sendResponseDisposition, ListDescribedType responseState, boolean responseSettled)
     {
         Matcher<Boolean> settledMatcher = null;
         if(settled)
@@ -1306,23 +1312,26 @@ public class TestAmqpPeer implements AutoCloseable
         transferMatcher.withSettled(settledMatcher);
         transferMatcher.withState(stateMatcher);
 
-        final DispositionFrame dispositionResponse = new DispositionFrame()
-                                                   .setRole(Role.RECEIVER)
-                                                   .setSettled(responseSettled)
-                                                   .setState(responseState);
+        if(sendResponseDisposition) {
+            final DispositionFrame dispositionResponse = new DispositionFrame()
+                                                       .setRole(Role.RECEIVER)
+                                                       .setSettled(responseSettled)
+                                                       .setState(responseState);
 
-        // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
-        final FrameSender dispositionFrameSender = new FrameSender(this, FrameType.AMQP, -1, dispositionResponse, null);
-        dispositionFrameSender.setValueProvider(new ValueProvider()
-        {
-            @Override
-            public void setValues()
+            // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+            final FrameSender dispositionFrameSender = new FrameSender(this, FrameType.AMQP, -1, dispositionResponse, null);
+            dispositionFrameSender.setValueProvider(new ValueProvider()
             {
-                dispositionFrameSender.setChannel(transferMatcher.getActualChannel());
-                dispositionResponse.setFirst(transferMatcher.getReceivedDeliveryId());
-            }
-        });
-        transferMatcher.onCompletion(dispositionFrameSender);
+                @Override
+                public void setValues()
+                {
+                    dispositionFrameSender.setChannel(transferMatcher.getActualChannel());
+                    dispositionResponse.setFirst(transferMatcher.getReceivedDeliveryId());
+                }
+            });
+
+            transferMatcher.onCompletion(dispositionFrameSender);
+        }
 
         addHandler(transferMatcher);
     }

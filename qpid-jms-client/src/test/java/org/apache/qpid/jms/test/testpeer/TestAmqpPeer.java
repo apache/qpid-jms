@@ -133,7 +133,7 @@ public class TestAmqpPeer implements AutoCloseable
     public TestAmqpPeer(SSLContext context, boolean needClientCert) throws IOException
     {
         _driverRunnable = new TestAmqpPeerRunner(this, context, needClientCert);
-        _driverThread = new Thread(_driverRunnable, "MockAmqpPeerThread");
+        _driverThread = new Thread(_driverRunnable, "MockAmqpPeer-" + _driverRunnable.getServerPort());
         _driverThread.start();
     }
 

@@ -178,7 +178,16 @@ public class AmqpProvider implements Provider, TransportListener {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            final ProviderFuture request = new ProviderFuture();
+            final ProviderFuture request = new ProviderFuture() {
+
+                @Override
+                public void onFailure(Throwable result) {
+                    // During close it is fine if the close call fails
+                    // this in unrecoverable so we just log the event.
+                    onSuccess();
+                }
+            };
+
             serializer.execute(new Runnable() {
 
                 @Override
@@ -189,7 +198,6 @@ public class AmqpProvider implements Provider, TransportListener {
                         // just signal success.
                         if (transport == null || !transport.isConnected()) {
                             request.onSuccess();
-                            //TODO: return here? mark proton connection closed then return?
                         }
 
                         if (connection != null) {
@@ -218,7 +226,7 @@ public class AmqpProvider implements Provider, TransportListener {
                 }
             } catch (IOException e) {
                 LOG.warn("Error caught while closing Provider: ", e.getMessage());
-                //TODO: message can be / seemingly usually is empty
+                // TODO: message can be / seemingly usually is empty
             } finally {
                 if (transport != null) {
                     try {
@@ -848,7 +856,7 @@ public class AmqpProvider implements Provider, TransportListener {
     }
 
     void fireConnectionEstablished() {
-        //The request onSuccess calls this method
+        // The request onSuccess calls this method
         connectionOpenRequest = null;
 
         long now = System.currentTimeMillis();

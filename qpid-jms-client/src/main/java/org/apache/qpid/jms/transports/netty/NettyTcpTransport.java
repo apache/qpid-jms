@@ -64,6 +64,7 @@ public class NettyTcpTransport implements Transport {
     private final AtomicBoolean closed = new AtomicBoolean();
     private final CountDownLatch connectLatch = new CountDownLatch(1);
     private IOException failureCause;
+    private Throwable pendingFailure;
 
     /**
      * Create a new transport instance
@@ -150,6 +151,17 @@ public class NettyTcpTransport implements Transport {
             }
 
             throw failureCause;
+        } else {
+            // Connected, allow any held async error to fire now and close the transport.
+            channel.eventLoop().execute(new Runnable() {
+
+                @Override
+                public void run() {
+                    if (pendingFailure != null) {
+                        channel.pipeline().fireExceptionCaught(pendingFailure);
+                    }
+                }
+            });
         }
     }
 
@@ -292,8 +304,7 @@ public class NettyTcpTransport implements Transport {
         @Override
         public void channelInactive(ChannelHandlerContext context) throws Exception {
             LOG.trace("Channel has gone inactive! Channel is {}", context.channel());
-            if (!closed.get()) {
-                connected.set(false);
+            if (connected.compareAndSet(true, false) && !closed.get()) {
                 LOG.trace("Firing onTransportClosed listener");
                 listener.onTransportClosed();
             }
@@ -302,10 +313,20 @@ public class NettyTcpTransport implements Transport {
         @Override
         public void exceptionCaught(ChannelHandlerContext context, Throwable cause) throws Exception {
             LOG.trace("Exception on channel! Channel is {}", context.channel());
-            if (!closed.get()) {
-                connected.set(false);
+            if (connected.compareAndSet(true, false) && !closed.get()) {
                 LOG.trace("Firing onTransportError listener");
-                listener.onTransportError(cause);
+                if (pendingFailure != null) {
+                    listener.onTransportError(pendingFailure);
+                } else {
+                    listener.onTransportError(cause);
+                }
+            } else {
+                // Hold the first failure for later dispatch if connect succeeds.
+                // This will then trigger disconnect using the first error reported.
+                if (pendingFailure != null) {
+                    LOG.trace("Holding error until connect succeeds: {}", cause.getMessage());
+                    pendingFailure = cause;
+                }
             }
         }
 

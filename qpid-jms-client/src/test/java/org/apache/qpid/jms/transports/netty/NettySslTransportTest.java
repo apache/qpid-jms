@@ -28,7 +28,6 @@ import java.net.URISyntaxException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
-import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
@@ -80,9 +79,9 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             Transport transport = createTransport(serverLocation, testListener, createClientOptionsWithoutTrustStore(false));
             try {
                 transport.connect();
-                fail("Should not have connected to the server");
+                fail("Should not have connected to the server: " + serverLocation);
             } catch (Exception e) {
-                LOG.info("Connection failed to untrusted test server.");
+                LOG.info("Connection failed to untrusted test server: {}", serverLocation);
             }
 
             assertFalse(transport.isConnected());
@@ -92,11 +91,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
         logTransportErrors();
 
-        //TODO: identify if why we also get exception
-        //via listener and whether it can be suppressed
-        if(!QpidJmsTestCase.IS_WINDOWS) {
-            assertTrue(exceptions.isEmpty());
-        }
+        assertTrue(exceptions.isEmpty());
     }
 
     @Test(timeout = 60 * 1000)
@@ -115,9 +110,9 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             Transport transport = createTransport(serverLocation, testListener, options);
             try {
                 transport.connect();
-                fail("Should not have connected to the server");
+                fail("Should not have connected to the server: " + serverLocation);
             } catch (Exception e) {
-                LOG.info("Connection failed to untrusted test server.");
+                LOG.info("Connection failed to untrusted test server: {}", serverLocation);
             }
 
             assertFalse(transport.isConnected());
@@ -137,9 +132,9 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             Transport transport = createTransport(serverLocation, testListener, createClientOptionsWithoutTrustStore(true));
             try {
                 transport.connect();
-                LOG.info("Connection established to untrusted test server.");
+                LOG.info("Connection established to untrusted test server: {}", serverLocation);
             } catch (Exception e) {
-                fail("Should have connected to the server");
+                fail("Should have connected to the server: " + serverLocation);
             }
 
             assertTrue(transport.isConnected());
@@ -166,9 +161,9 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             NettySslTransport transport = createTransport(serverLocation, testListener, clientOptions);
             try {
                 transport.connect();
-                LOG.info("Connection established to test server.");
+                LOG.info("Connection established to test server: {}", serverLocation);
             } catch (Exception e) {
-                fail("Should have connected to the server");
+                fail("Should have connected to the server: " + serverLocation);
             }
 
             assertTrue(transport.isConnected());
@@ -205,9 +200,9 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             NettySslTransport transport = createTransport(serverLocation, testListener, clientOptions);
             try {
                 transport.connect();
-                LOG.info("Connection established to test server.");
+                LOG.info("Connection established to test server: {}", serverLocation);
             } catch (Exception e) {
-                fail("Should have connected to the server");
+                fail("Should have connected to the server: " + serverLocation);
             }
 
             assertTrue(transport.isConnected());
@@ -259,14 +254,14 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             try {
                 transport.connect();
                 if (verifyHost) {
-                    fail("Should not have connected to the server");
+                    fail("Should not have connected to the server: " + serverLocation);
                 }
             } catch (Exception e) {
                 if (verifyHost) {
-                    LOG.info("Connection failed to test server as expected.");
+                    LOG.info("Connection failed to test server: {} as expected.", serverLocation);
                 } else {
-                    LOG.error("Failed to connect to test server", e);
-                    fail("Should have connected to the server, but got: " + e);
+                    LOG.error("Failed to connect to test server: " + serverLocation, e);
+                    fail("Should have connected to the server: " + serverLocation + ", but got: " + e);
                 }
             }
 

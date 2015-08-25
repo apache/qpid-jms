@@ -60,7 +60,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private boolean alwaysSyncSend;
     private boolean sendAcksAsync;
     private boolean localMessagePriority;
-    private boolean consumerExpiryCheckEnabled = true;
+    private boolean localMessageExpiry = true;
     private String queuePrefix = null;
     private String topicPrefix = null;
     private boolean validatePropertyNames = true;
@@ -650,21 +650,21 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     }
 
     /**
-     * @return true if MessageConsumer instance will check for expired messages before dispatch.
+     * @return true if MessageConsumer instance will check for expired messages locally before dispatch.
      */
-    public boolean isConsumerExpiryCheckEnabled() {
-        return consumerExpiryCheckEnabled;
+    public boolean isLocalMessageExpiry() {
+        return localMessageExpiry;
     }
 
     /**
-     * Controls whether message expiration checking is done in each MessageConsumer
-     * prior to dispatching a message.  Disabling this check can lead to consumption
-     * of expired messages.
+     * Controls whether message expiration checking is done locally (in addition to any broker
+     * side checks) in each MessageConsumer prior to dispatching a message.  Disabling this check
+     * can lead to consumption of expired messages.
      *
-     * @param consumerExpiryCheckEnabled
+     * @param localMessageExpiry
      *        controls whether expiration checking is done prior to dispatch.
      */
-    public void setConsumerExpiryCheckEnabled(boolean consumerExpiryCheckEnabled) {
-        this.consumerExpiryCheckEnabled = consumerExpiryCheckEnabled;
+    public void setLocalMessageExpiry(boolean localMessageExpiry) {
+        this.localMessageExpiry = localMessageExpiry;
     }
 }

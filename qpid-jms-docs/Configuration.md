@@ -79,7 +79,8 @@ The options apply to the behaviour of the JMS objects such as Connection, Sessio
 + **jms.forceAsyncSend** Configures whether all Messages sent from a MessageProducer are sent asynchronously or only those Message that qualify such as Messages inside a transaction or non-persistent messages.
 + **jms.alwaysSyncSend** Override all asynchronous send conditions and always sends every Message from a MessageProducer synchronously.
 + **jms.sendAcksAsync** Causes all Message acknowledgments to be sent asynchronously.
-+ **jms.localMessagePriority** If enabled prefetched messages are reordered locally based on their given Message priority value.
++ **jms.localMessageExpiry** Controls whether MessageConsumer instances will locally filter expired Messages or deliver them.  By default this value is set to true and expired messages will be filtered.
++ **jms.localMessagePriority** If enabled prefetched messages are reordered locally based on their given Message priority value. Default is false.
 + **jms.validatePropertyNames** If message property names should be validated as valid Java identifiers. Default is true.
 + **jms.queuePrefix** Optional prefix value added to the name of any Queue created from a JMS Session.
 + **jms.topicPrefix** Optional prefix value added to the name of any Topic created from a JMS Session.
@@ -87,8 +88,6 @@ The options apply to the behaviour of the JMS objects such as Connection, Sessio
 + **jms.connectTimeout** Timeout value that controls how long the client waits on Connection establishment before returning with an error. (By default the client waits 15 seconds for a connection to be established before failing).
 + **jms.clientIDPrefix** Optional prefix value that is used for generated Client ID values when a new Connection is created for the JMS ConnectionFactory.  The default prefix is 'ID:'.
 + **jms.connectionIDPrefix** Optional prefix value that is used for generated Connection ID values when a new Connection is created for the JMS ConnectionFactory.  This connection ID is used when logging some information from the JMS Connection object so a configurable prefix can make breadcrumbing the logs easier.  The default prefix is 'ID:'.
-+ **jms.consumerExpiryCheckEnabled** Controls whether a MessageConsumer instances will filter expired Messages
-or deliver them.  By default this value is set to true and expired messages will be filtered.
 
 These values control how many messages the remote peer can send to the client and be held in a prefetch buffer for each consumer instance.
 

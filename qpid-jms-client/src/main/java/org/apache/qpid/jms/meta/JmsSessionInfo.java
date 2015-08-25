@@ -25,7 +25,6 @@ public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionI
     private final JmsSessionId sessionId;
     private int acknowledgementMode;
     private boolean sendAcksAsync;
-    private boolean consumerExpiryCheckEnabled;
 
     public JmsSessionInfo(JmsConnectionInfo connectionInfo, long sessionId) {
         if (connectionInfo == null) {
@@ -80,14 +79,6 @@ public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionI
 
     public void setSendAcksAsync(boolean sendAcksAsync) {
         this.sendAcksAsync = sendAcksAsync;
-    }
-
-    public boolean isConsumerExpiryCheckEnabled() {
-        return consumerExpiryCheckEnabled;
-    }
-
-    public void setConsumerExpiryCheckEnabled(boolean consumerExpiryCheckEnabled) {
-        this.consumerExpiryCheckEnabled = consumerExpiryCheckEnabled;
     }
 
     @Override

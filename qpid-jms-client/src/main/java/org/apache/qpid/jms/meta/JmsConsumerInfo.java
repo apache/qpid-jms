@@ -31,7 +31,7 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
     protected String subscriptionName;
     protected boolean noLocal;
     protected int acknowledgementMode;
-    protected boolean consumerExpiryCheckEnabled;
+    protected boolean localMessageExpiry;
 
     protected JmsRedeliveryPolicy redeliveryPolicy;
 
@@ -154,12 +154,12 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
         this.acknowledgementMode = acknowledgementMode;
     }
 
-    public boolean isConsumerExpiryCheckEnabled() {
-        return consumerExpiryCheckEnabled;
+    public boolean isLocalMessageExpiry() {
+        return localMessageExpiry;
     }
 
-    public void setConsumerExpiryCheckEnabled(boolean consumerExpiryCheckEnabled) {
-        this.consumerExpiryCheckEnabled = consumerExpiryCheckEnabled;
+    public void setLocalMessageExpiry(boolean localMessageExpiry) {
+        this.localMessageExpiry = localMessageExpiry;
     }
 
     public JmsRedeliveryPolicy getRedeliveryPolicy() {

@@ -101,7 +101,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private boolean localMessagePriority;
     private boolean clientIdSet;
     private boolean sendAcksAsync;
-    private boolean consumerExpiryCheckEnabled;
+    private boolean localMessageExpiry;
     private ExceptionListener exceptionListener;
 
     private final ThreadPoolExecutor executor;
@@ -979,12 +979,12 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         this.sendAcksAsync = sendAcksAsync;
     }
 
-    public boolean isConsumerExpiryCheckEnabled() {
-        return consumerExpiryCheckEnabled;
+    public boolean isLocalMessageExpiry() {
+        return localMessageExpiry;
     }
 
-    public void setConsumerExpiryCheckEnabled(boolean consumerExpiryCheckEnabled) {
-        this.consumerExpiryCheckEnabled = consumerExpiryCheckEnabled;
+    public void setLocalMessageExpiry(boolean localMessageExpiry) {
+        this.localMessageExpiry = localMessageExpiry;
     }
 
     //----- Async event handlers ---------------------------------------------//

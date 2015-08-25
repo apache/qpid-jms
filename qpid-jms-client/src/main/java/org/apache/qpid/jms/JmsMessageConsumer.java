@@ -119,7 +119,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         consumerInfo.setBrowser(isBrowser());
         consumerInfo.setPrefetchSize(getConfiguredPrefetch(destination, policy));
         consumerInfo.setRedeliveryPolicy(redeliveryPolicy);
-        consumerInfo.setConsumerExpiryCheckEnabled(session.isConsumerExpiryCheckEnabled());
+        consumerInfo.setLocalMessageExpiry(connection.isLocalMessageExpiry());
 
         session.getConnection().createResource(consumerInfo);
     }
@@ -315,7 +315,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     }
 
     private boolean consumeExpiredMessage(JmsInboundMessageDispatch dispatch) {
-        if (!isBrowser() && consumerInfo.isConsumerExpiryCheckEnabled() && dispatch.getMessage().isExpired()) {
+        if (!isBrowser() && consumerInfo.isLocalMessageExpiry() && dispatch.getMessage().isExpired()) {
             return true;
         }
 

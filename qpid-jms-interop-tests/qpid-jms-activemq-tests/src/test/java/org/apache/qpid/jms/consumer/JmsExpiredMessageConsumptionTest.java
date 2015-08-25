@@ -154,7 +154,7 @@ public class JmsExpiredMessageConsumptionTest extends AmqpTestSupport {
         connection.start();
 
         JmsConnection jmsConnection = (JmsConnection) connection;
-        jmsConnection.setConsumerExpiryCheckEnabled(false);
+        jmsConnection.setLocalMessageExpiry(false);
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
@@ -188,7 +188,7 @@ public class JmsExpiredMessageConsumptionTest extends AmqpTestSupport {
         connection.start();
 
         JmsConnection jmsConnection = (JmsConnection) connection;
-        jmsConnection.setConsumerExpiryCheckEnabled(false);
+        jmsConnection.setLocalMessageExpiry(false);
 
         final CountDownLatch success = new CountDownLatch(1);
 

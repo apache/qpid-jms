@@ -1277,7 +1277,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     public void testReceivedMessageFromQueueWithAbsoluteExpiryReturnsJMSExpirationNonZero() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             //Disable local expiration checking in consumer
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.consumerExpiryCheckEnabled=false");
+            Connection connection = testFixture.establishConnecton(testPeer, "?jms.localMessageExpiry=false");
             connection.start();
 
             testPeer.expectBegin();

@@ -294,7 +294,7 @@ public class AmqpProvider implements Provider, TransportListener {
                                 sasl.client();
 
                                 String hostname = getVhost();
-                                if(hostname == null) {
+                                if (hostname == null) {
                                     hostname = remoteURI.getHost();
                                 } else if (hostname.isEmpty()) {
                                     hostname = null;
@@ -705,7 +705,7 @@ public class AmqpProvider implements Provider, TransportListener {
                 // Process the state changes from the latest data and then answer back
                 // any pending updates to the Broker.
                 processUpdates();
-                pumpToProtonTransport(NOOP_REQUEST);
+                pumpToProtonTransport();
             }
         });
     }

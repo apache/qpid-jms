@@ -28,7 +28,7 @@ import org.apache.qpid.jms.util.IOExceptionSupport;
 public class ProviderFuture extends WrappedAsyncResult {
 
     protected final CountDownLatch latch = new CountDownLatch(1);
-    protected Throwable error;
+    protected volatile Throwable error;
 
     public ProviderFuture() {
         super(null);
@@ -45,9 +45,11 @@ public class ProviderFuture extends WrappedAsyncResult {
 
     @Override
     public void onFailure(Throwable result) {
-        error = result;
-        latch.countDown();
-        super.onFailure(result);
+        if (error == null) {
+            error = result;
+            latch.countDown();
+            super.onFailure(result);
+        }
     }
 
     @Override

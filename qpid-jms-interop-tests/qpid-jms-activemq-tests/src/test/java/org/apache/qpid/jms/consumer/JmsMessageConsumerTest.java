@@ -455,28 +455,34 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertNull(consumer.receive(1000));
     }
 
-    @Test(timeout=30000)
+    @Test(timeout=45000)
     public void testSelectorsWithJMSType() throws Exception {
         connection = createAmqpConnection();
         connection.start();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
-        MessageProducer p = session.createProducer(queue);
+        MessageProducer producer = session.createProducer(queue);
 
         TextMessage message = session.createTextMessage();
         message.setText("text");
-        p.send(message, DeliveryMode.NON_PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+        producer.send(message, DeliveryMode.NON_PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
 
         TextMessage message2 = session.createTextMessage();
         String type = "myJMSType";
         message2.setJMSType(type);
         message2.setText("text + type");
-        p.send(message2, DeliveryMode.NON_PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+        producer.send(message2, DeliveryMode.NON_PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
 
-        p.close();
+        producer.close();
 
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
-        assertEquals(2, proxy.getQueueSize());
+        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertTrue("Queue did not get all expected messages", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return proxy.getQueueSize() == 2;
+            }
+        }));
 
         MessageConsumer consumer = session.createConsumer(queue, "JMSType = '" + type + "'");
         Message msg = consumer.receive(5000);

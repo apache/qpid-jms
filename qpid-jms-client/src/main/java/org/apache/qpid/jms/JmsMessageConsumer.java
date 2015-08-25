@@ -691,7 +691,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                         LOG.trace("{} filtered expired message: {}", getConsumerId(), envelope);
                         doAckExpired(envelope);
                     } else if (redeliveryExceeded(envelope)) {
-                        LOG.trace("{} filtered message with excessive redlivery count: {}", getConsumerId(), envelope);
+                        LOG.trace("{} filtered message with excessive redelivery count: {}", getConsumerId(), envelope);
                         doAckUndeliverable(envelope);
                     } else {
                         boolean autoAckOrDupsOk = acknowledgementMode == Session.AUTO_ACKNOWLEDGE ||

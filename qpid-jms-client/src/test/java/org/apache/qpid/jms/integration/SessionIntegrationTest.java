@@ -32,6 +32,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -927,10 +928,16 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 testPeer.expectDisposition(true, modified);
             }
 
-            MessageConsumer consumer = session.createConsumer(queue);
-            consumer.receive(100);
+            final MessageConsumer consumer = session.createConsumer(queue);
 
-            testPeer.waitForAllHandlersToComplete(1000);
+            assertTrue("Messages were not rejected as expected",
+                            Wait.waitFor(new Wait.Condition() {
+                                @Override
+                                public boolean isSatisified() throws Exception {
+                                    consumer.receive(20);
+                                    return testPeer.waitForAllHandlersToCompleteNoAssert(10);
+                                }
+                            }, TimeUnit.SECONDS.toMillis(5), TimeUnit.MILLISECONDS.toMillis(2)));
         }
     }
 

@@ -301,15 +301,19 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void waitForAllHandlersToComplete(int timeoutMillis) throws InterruptedException
     {
+        boolean countedDownOk =  waitForAllHandlersToCompleteNoAssert(timeoutMillis);
+
+        Assert.assertTrue("All handlers should have completed within the " + timeoutMillis + "ms timeout", countedDownOk);
+    }
+
+    public boolean waitForAllHandlersToCompleteNoAssert(int timeoutMillis) throws InterruptedException
+    {
         synchronized(_handlersLock)
         {
             _handlersCompletedLatch = new CountDownLatch(_handlers.size());
         }
 
-        boolean countedDownOk = _handlersCompletedLatch.await(timeoutMillis, TimeUnit.MILLISECONDS);
-
-        Assert.assertTrue(
-                "All handlers should have completed within the " + timeoutMillis + "ms timeout", countedDownOk);
+        return _handlersCompletedLatch.await(timeoutMillis, TimeUnit.MILLISECONDS);
     }
 
     void sendHeader(byte[] header)

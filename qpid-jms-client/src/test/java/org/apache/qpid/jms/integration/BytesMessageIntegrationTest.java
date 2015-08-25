@@ -137,7 +137,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
+            Message receivedMessage = messageConsumer.receive(3000);
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
@@ -213,7 +213,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
+            Message receivedMessage = messageConsumer.receive(3000);
             testPeer.waitForAllHandlersToComplete(3000);
 
             // verify the content is as expected
@@ -317,7 +317,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
+            Message receivedMessage = messageConsumer.receive(3000);
             testPeer.waitForAllHandlersToComplete(3000);
 
             // verify the content is as expected

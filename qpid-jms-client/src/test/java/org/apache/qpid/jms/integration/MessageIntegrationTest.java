@@ -188,7 +188,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
+            Message receivedMessage = messageConsumer.receive(3000);
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertTrue(receivedMessage.propertyExists(STRING_PROP));
@@ -245,7 +245,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
+            Message receivedMessage = messageConsumer.receive(3000);
             testPeer.waitForAllHandlersToComplete(3000);
 
             if(!disableValidation) {
@@ -374,7 +374,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(destination);
-            Message receivedMessage = messageConsumer.receive(1000);
+            Message receivedMessage = messageConsumer.receive(3000);
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
@@ -417,7 +417,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
+            Message receivedMessage = messageConsumer.receive(3000);
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
@@ -634,7 +634,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(dest);
-            Message receivedMessage = messageConsumer.receive(1000);
+            Message receivedMessage = messageConsumer.receive(3000);
 
             testPeer.waitForAllHandlersToComplete(2000);
             assertNotNull(receivedMessage);
@@ -904,7 +904,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(dest);
-            Message receivedMessage = messageConsumer.receive(1000);
+            Message receivedMessage = messageConsumer.receive(3000);
 
             testPeer.waitForAllHandlersToComplete(2000);
             assertNotNull(receivedMessage);
@@ -1055,7 +1055,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(topic);
-            Message receivedMessage = messageConsumer.receive(1000);
+            Message receivedMessage = messageConsumer.receive(3000);
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
@@ -1180,7 +1180,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
+            Message receivedMessage = messageConsumer.receive(3000);
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
@@ -1222,7 +1222,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
+            Message receivedMessage = messageConsumer.receive(3000);
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
@@ -1261,7 +1261,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
+            Message receivedMessage = messageConsumer.receive(3000);
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
@@ -1276,7 +1276,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     @Test(timeout = 20000)
     public void testReceivedMessageFromQueueWithAbsoluteExpiryReturnsJMSExpirationNonZero() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
+            //Disable local expiration checking in consumer
+            Connection connection = testFixture.establishConnecton(testPeer, "?jms.consumerExpiryCheckEnabled=false");
             connection.start();
 
             testPeer.expectBegin();
@@ -1284,7 +1285,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            long timestamp = System.currentTimeMillis() + 5000;
+            long timestamp = System.currentTimeMillis();
 
             PropertiesDescribedType props = new PropertiesDescribedType();
             props.setAbsoluteExpiryTime(new Date(timestamp));
@@ -1297,7 +1298,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
+            Message receivedMessage = messageConsumer.receive(3000);
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
@@ -1326,7 +1327,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
+            Message receivedMessage = messageConsumer.receive(3000);
             testPeer.waitForAllHandlersToComplete(2000);
 
             assertNull(receivedMessage.getJMSMessageID());
@@ -1388,7 +1389,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
+            Message receivedMessage = messageConsumer.receive(3000);
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
@@ -1462,7 +1463,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
+            Message receivedMessage = messageConsumer.receive(3000);
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
@@ -1642,7 +1643,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
+            Message receivedMessage = messageConsumer.receive(3000);
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
@@ -1718,7 +1719,7 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.expectDispositionThatIsAcceptedAndSettled();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
-            Message receivedMessage = messageConsumer.receive(1000);
+            Message receivedMessage = messageConsumer.receive(3000);
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull("did not receive the message", receivedMessage);

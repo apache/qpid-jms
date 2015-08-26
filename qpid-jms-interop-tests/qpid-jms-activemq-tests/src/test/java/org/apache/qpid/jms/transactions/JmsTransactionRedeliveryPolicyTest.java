@@ -136,19 +136,7 @@ public class JmsTransactionRedeliveryPolicyTest extends AmqpTestSupport {
             assertEquals(MSG_COUNT, queueView.getQueueSize());
 
             final CountDownLatch done = new CountDownLatch(MSG_COUNT);
-            consumer.setMessageListener(new MessageListener() {
-
-                @Override
-                public void onMessage(Message message) {
-                    try {
-                        assertTrue(message.getJMSRedelivered());
-                        assertTrue(message instanceof TextMessage);
-
-                        done.countDown();
-                    } catch (JMSException e) {
-                    }
-                }
-            });
+            consumer.setMessageListener(new MaxRedeliveryListener(done, i));
 
             assertTrue("Not All Messages Received", done.await(10, TimeUnit.SECONDS));
             assertEquals(MSG_COUNT, queueView.getQueueSize());
@@ -173,4 +161,29 @@ public class JmsTransactionRedeliveryPolicyTest extends AmqpTestSupport {
 
         session.commit();
     }
+
+    private static class MaxRedeliveryListener implements MessageListener {
+        private final CountDownLatch done;
+        private final int listenerNumber;
+
+        private MaxRedeliveryListener(CountDownLatch done, int listenerNumber) {
+            this.done = done;
+            this.listenerNumber = listenerNumber;
+        }
+
+        @Override
+        public void onMessage(Message message) {
+            try {
+                assertTrue(message.getJMSRedelivered());
+                assertTrue(message instanceof TextMessage);
+
+                LOG.debug("Listener {} received message: {}", listenerNumber, message.getIntProperty(AmqpTestSupport.MESSAGE_NUMBER));
+
+                done.countDown();
+            } catch (JMSException e) {
+                LOG.error("Caught exception in listener {}", listenerNumber, e);
+            }
+        }
+    }
+
 }

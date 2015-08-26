@@ -97,6 +97,8 @@ public class TestAmqpPeer implements AutoCloseable
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(TestAmqpPeer.class.getName());
 
+    public static final String MESSAGE_NUMBER = "MessageNumber";
+
     private static final Symbol ANONYMOUS = Symbol.valueOf("ANONYMOUS");
     private static final Symbol EXTERNAL = Symbol.valueOf("EXTERNAL");
     private static final Symbol PLAIN = Symbol.valueOf("PLAIN");
@@ -1102,7 +1104,7 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectLinkFlow(boolean drain, boolean sendDrainFlowResponse, Matcher<UnsignedInteger> creditMatcher)
     {
-        expectLinkFlowRespondWithTransfer(null, null, null, null, null, 0, drain, sendDrainFlowResponse, creditMatcher, null);
+        expectLinkFlowRespondWithTransfer(null, null, null, null, null, 0, drain, sendDrainFlowResponse, creditMatcher, null, false);
     }
 
     public void expectLinkFlowRespondWithTransfer(final HeaderDescribedType headerDescribedType,
@@ -1124,19 +1126,20 @@ public class TestAmqpPeer implements AutoCloseable
     {
         expectLinkFlowRespondWithTransfer(headerDescribedType, messageAnnotationsDescribedType, propertiesDescribedType,
                                           appPropertiesDescribedType, content, count, false, false,
-                                          Matchers.greaterThanOrEqualTo(UnsignedInteger.valueOf(count)), 1);
+                                          Matchers.greaterThanOrEqualTo(UnsignedInteger.valueOf(count)), 1, false);
     }
 
     public void expectLinkFlowRespondWithTransfer(final HeaderDescribedType headerDescribedType,
             final MessageAnnotationsDescribedType messageAnnotationsDescribedType,
             final PropertiesDescribedType propertiesDescribedType,
-            final ApplicationPropertiesDescribedType appPropertiesDescribedType,
+            ApplicationPropertiesDescribedType appPropertiesDescribedType,
             final DescribedType content,
             final int count,
             final boolean drain,
             final boolean sendDrainFlowResponse,
             Matcher<UnsignedInteger> creditMatcher,
-            final Integer nextIncomingId)
+            final Integer nextIncomingId,
+            boolean addMessageNumberProperty)
     {
         if (nextIncomingId == null && count > 0)
         {
@@ -1171,12 +1174,20 @@ public class TestAmqpPeer implements AutoCloseable
         CompositeAmqpPeerRunnable composite = new CompositeAmqpPeerRunnable();
         boolean addComposite = false;
 
+        if (appPropertiesDescribedType == null && addMessageNumberProperty) {
+            appPropertiesDescribedType = new ApplicationPropertiesDescribedType();
+        }
+
         for(int i = 0; i < count; i++)
         {
             final int nextId = nextIncomingId + i;
 
             String tagString = "theDeliveryTag" + nextId;
             Binary dtag = new Binary(tagString.getBytes());
+
+            if(addMessageNumberProperty) {
+                appPropertiesDescribedType.setApplicationProperty(MESSAGE_NUMBER, i);
+            }
 
             final TransferFrame transferResponse = new TransferFrame()
             .setDeliveryId(UnsignedInteger.valueOf(nextId))

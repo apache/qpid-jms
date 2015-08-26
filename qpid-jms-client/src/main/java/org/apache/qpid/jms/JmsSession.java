@@ -94,7 +94,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         new LinkedBlockingQueue<JmsInboundMessageDispatch>(10000);
     private JmsPrefetchPolicy prefetchPolicy;
     private final JmsSessionInfo sessionInfo;
-    private ExecutorService executor;
+    private volatile ExecutorService executor;
     private final ReentrantLock sendLock = new ReentrantLock();
 
     private final AtomicLong consumerIdGenerator = new AtomicLong();
@@ -860,9 +860,11 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             consumer.stop();
         }
 
-        if (executor != null) {
-            executor.shutdown();
-            executor = null;
+        synchronized (sessionInfo) {
+            if (executor != null) {
+                executor.shutdown();
+                executor = null;
+            }
         }
     }
 
@@ -875,19 +877,26 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     Executor getExecutor() {
-        if (executor == null) {
-            executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
-
-                @Override
-                public Thread newThread(Runnable runner) {
-                    Thread executor = new Thread(runner);
-                    executor.setName("JmsSession ["+ sessionInfo.getSessionId() + "] dispatcher");
-                    executor.setDaemon(true);
-                    return executor;
+        ExecutorService exec = executor;
+        if(exec == null) {
+            synchronized (sessionInfo) {
+                if (executor == null) {
+                    executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+                        @Override
+                        public Thread newThread(Runnable runner) {
+                            Thread executor = new Thread(runner);
+                            executor.setName("JmsSession ["+ sessionInfo.getSessionId() + "] dispatcher");
+                            executor.setDaemon(true);
+                            return executor;
+                        }
+                    });
                 }
-            });
+
+                exec = executor;
+            }
         }
-        return executor;
+
+        return exec;
     }
 
     protected JmsSessionInfo getSessionInfo() {

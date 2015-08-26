@@ -32,7 +32,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -42,6 +44,7 @@ import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
@@ -83,8 +86,12 @@ import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SessionIntegrationTest extends QpidJmsTestCase {
+    private static final Logger LOG = LoggerFactory.getLogger(SessionIntegrationTest.class);
+
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
     @Test(timeout = 20000)
@@ -1193,7 +1200,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             // the Flow was in flight to the peer), and then DONT send a flow frame back to the client
             // as it can tell from the messages that all the credit has been used.
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"),
-                                                       messageCount, true, false, equalTo(UnsignedInteger.valueOf(messageCount)), 1);
+                                                       messageCount, true, false, equalTo(UnsignedInteger.valueOf(messageCount)), 1, false);
 
             // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
             // and reply with accepted and settled disposition to indicate the rollback succeeded
@@ -1456,6 +1463,83 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectClose();
             connection.close();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncDeliveryOrder() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
+            testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+
+            // Create a consumer, don't expect any flow as the connection is stopped
+            testPeer.expectReceiverAttach();
+
+            int messageCount = 10;
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"),
+                    messageCount, false, false, equalTo(UnsignedInteger.valueOf(messageCount)), 1, true);
+
+            Queue queue = session.createQueue("myQueue");
+            MessageConsumer consumer = session.createConsumer(queue);
+
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            // First expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a declared disposition state containing the txnId.
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
+            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
+            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+
+            for (int i = 1; i <= messageCount; i++) {
+                // Then expect an *settled* TransactionalState disposition for each message once received by the consumer
+                TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
+                stateMatcher.withTxnId(equalTo(txnId));
+                stateMatcher.withOutcome(new AcceptedMatcher());
+
+                //TODO: could also match on delivery ID's
+                testPeer.expectDisposition(true, stateMatcher);
+            }
+
+            final CountDownLatch done = new CountDownLatch(messageCount);
+            final AtomicInteger index = new AtomicInteger(-1);
+
+            consumer.setMessageListener(new DeliveryOrderListener(done, index));
+
+            testPeer.waitForAllHandlersToComplete(3000);
+            assertTrue("Not all messages received in given time", done.await(10, TimeUnit.SECONDS));
+            assertEquals("Messages were not in expected order, final index was wrong", messageCount - 1, index.get());
+        }
+    }
+
+    private static class DeliveryOrderListener implements MessageListener {
+        private final CountDownLatch done;
+        private final AtomicInteger index;
+
+        private DeliveryOrderListener(CountDownLatch done, AtomicInteger index) {
+            this.done = done;
+            this.index = index;
+        }
+
+        @Override
+        public void onMessage(Message message) {
+            try {
+                int messageNumber = message.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER);
+
+                LOG.info("Listener received message: {}", messageNumber);
+
+                index.compareAndSet(messageNumber - 1, messageNumber);
+
+                done.countDown();
+            } catch (Exception e) {
+                LOG.error("Caught exception in listener", e);
+            }
         }
     }
 }

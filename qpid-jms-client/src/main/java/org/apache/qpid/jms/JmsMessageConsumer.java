@@ -323,7 +323,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     }
 
     protected boolean redeliveryExceeded(JmsInboundMessageDispatch envelope) {
-        LOG.info("checking envelope with {} redeliveries", envelope.getRedeliveryCount());
+        LOG.trace("checking envelope with {} redeliveries", envelope.getRedeliveryCount());
 
         JmsRedeliveryPolicy redeliveryPolicy = consumerInfo.getRedeliveryPolicy();
         return redeliveryPolicy != null &&

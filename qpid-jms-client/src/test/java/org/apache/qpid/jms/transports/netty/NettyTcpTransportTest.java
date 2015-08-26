@@ -287,15 +287,16 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
             server.close();
         }
 
+        final Transport connectedTransport = transport;
         assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
             public boolean isSatisified() throws Exception {
-                return transportClosed;
+                return !connectedTransport.isConnected();
             }
         }));
+
         assertTrue(data.isEmpty());
-        assertFalse(transport.isConnected());
 
         try {
             transport.close();

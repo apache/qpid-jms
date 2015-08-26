@@ -1008,6 +1008,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         // Run the application callbacks on the connection executor to allow the provider to
         // return to its normal processing without waiting for client level processing to finish.
+        //TODO: if this is usually empty, optimise this a little by skipping iteration?
         for (final JmsConnectionListener listener : connectionListeners) {
             executor.submit(new Runnable() {
 

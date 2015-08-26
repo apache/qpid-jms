@@ -949,6 +949,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     @Override
     public void onInboundMessage(JmsInboundMessageDispatch envelope) {
+        // TODO: is onInboundMessage ever called on the Session?
+        // Seems like we might only call it on consumers from within the connection.
         if (started.get()) {
             deliver(envelope);
         } else {

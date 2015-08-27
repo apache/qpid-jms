@@ -885,7 +885,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             MessageConsumer messageConsumer = session.createConsumer(queue);
 
             for (int i = 1; i <= consumeCount; i++) {
-                Message receivedMessage = messageConsumer.receive(1000);
+                Message receivedMessage = messageConsumer.receive(3000);
 
                 assertNotNull(receivedMessage);
                 assertTrue(receivedMessage instanceof TextMessage);
@@ -1039,7 +1039,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             MessageConsumer messageConsumer = session.createConsumer(queue);
 
             for (int i = 1; i <= consumeCount; i++) {
-                Message receivedMessage = messageConsumer.receive(1000);
+                Message receivedMessage = messageConsumer.receive(3000);
 
                 assertNotNull(receivedMessage);
                 assertTrue(receivedMessage instanceof TextMessage);

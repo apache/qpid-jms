@@ -68,7 +68,7 @@ public class JmsMessageIntegrityTest extends AmqpTestSupport {
             producer.send(message);
         }
         {
-            TextMessage message = (TextMessage)consumer.receive(1000);
+            TextMessage message = (TextMessage)consumer.receive(3000);
             assertNotNull(message);
             assertEquals("Hi", message.getText());
         }
@@ -93,7 +93,7 @@ public class JmsMessageIntegrityTest extends AmqpTestSupport {
             producer.send(message);
         }
         {
-            BytesMessage message = (BytesMessage)consumer.receive(1000);
+            BytesMessage message = (BytesMessage)consumer.receive(3000);
             assertNotNull(message);
             assertEquals(16, message.getBodyLength());
         }
@@ -117,7 +117,7 @@ public class JmsMessageIntegrityTest extends AmqpTestSupport {
             producer.send(message);
         }
         {
-            ObjectMessage message = (ObjectMessage)consumer.receive(1000);
+            ObjectMessage message = (ObjectMessage)consumer.receive(3000);
             assertNotNull(message);
             assertEquals(payload, message.getObject());
         }
@@ -138,7 +138,7 @@ public class JmsMessageIntegrityTest extends AmqpTestSupport {
             producer.send(message);
         }
         {
-            BytesMessage message = (BytesMessage)consumer.receive(1000);
+            BytesMessage message = (BytesMessage)consumer.receive(3000);
             assertNotNull(message);
             assertTrue(message.readBoolean());
 
@@ -165,7 +165,7 @@ public class JmsMessageIntegrityTest extends AmqpTestSupport {
             producer.send(message);
         }
         {
-            StreamMessage message = (StreamMessage)consumer.receive(1000);
+            StreamMessage message = (StreamMessage)consumer.receive(3000);
             assertNotNull(message);
 
             // Invalid conversion should throw exception and not move the stream position.
@@ -201,7 +201,7 @@ public class JmsMessageIntegrityTest extends AmqpTestSupport {
             producer.send(message);
         }
         {
-            MapMessage message = (MapMessage)consumer.receive(1000);
+            MapMessage message = (MapMessage)consumer.receive(3000);
             assertNotNull(message);
             assertTrue(message.getBoolean("boolKey"));
         }

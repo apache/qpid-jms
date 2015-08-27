@@ -67,7 +67,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
 
         // Consume the message...
         MessageConsumer consumer = session.createConsumer(queue);
-        Message msg = consumer.receive(1000);
+        Message msg = consumer.receive(3000);
         assertNotNull(msg);
         msg.acknowledge();
 
@@ -98,11 +98,11 @@ public class JmsClientAckTest extends AmqpTestSupport {
 
         // Consume the message...
         MessageConsumer consumer = session.createConsumer(queue);
-        Message msg = consumer.receive(1000);
+        Message msg = consumer.receive(3000);
         assertNotNull(msg);
-        msg = consumer.receive(1000);
+        msg = consumer.receive(3000);
         assertNotNull(msg);
-        msg = consumer.receive(1000);
+        msg = consumer.receive(3000);
         assertNotNull(msg);
         msg.acknowledge();
 
@@ -129,7 +129,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
 
         // Consume the message...but don't ack it.
         MessageConsumer consumer = session.createConsumer(queue);
-        Message msg = consumer.receive(1000);
+        Message msg = consumer.receive(3000);
         assertNotNull(msg);
         session.close();
 
@@ -138,7 +138,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         // Consume the message...and this time we ack it.
         session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         consumer = session.createConsumer(queue);
-        msg = consumer.receive(2000);
+        msg = consumer.receive(3000);
         assertNotNull(msg);
         msg.acknowledge();
 
@@ -216,7 +216,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         // Now we consume and ack the Message.
         session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         consumer = session.createConsumer(queue);
-        Message msg = consumer.receive(2000);
+        Message msg = consumer.receive(3000);
         assertNotNull(msg);
         msg.acknowledge();
 
@@ -339,7 +339,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         MessageConsumer consumer = session.createConsumer(queue);
 
         for(int i = 1; i <= consumeBeforeRecover; i++) {
-            Message message = consumer.receive(1000);
+            Message message = consumer.receive(3000);
             assertNotNull(message);
             assertEquals("Unexpected message number", i, message.getIntProperty(QpidJmsTestSupport.MESSAGE_NUMBER));
         }
@@ -352,7 +352,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         // again after the recover and then the remainder should follow
         List<Integer> messageNumbers = new ArrayList<Integer>();
         for (int i = 1; i <= totalCount; i++) {
-            Message message = consumer.receive(1000);
+            Message message = consumer.receive(3000);
             assertNotNull("Failed to receive message: " + i, message);
             int msgNum = message.getIntProperty(QpidJmsTestSupport.MESSAGE_NUMBER);
             messageNumbers.add(msgNum);
@@ -517,7 +517,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         MessageConsumer consumer = session.createConsumer(queue);
         for (int i = 0; i < MESSAGE_COUNT; ++i) {
-            Message msg = consumer.receive(2000);
+            Message msg = consumer.receive(3000);
             assertNotNull(msg);
             msg.acknowledge();
         }

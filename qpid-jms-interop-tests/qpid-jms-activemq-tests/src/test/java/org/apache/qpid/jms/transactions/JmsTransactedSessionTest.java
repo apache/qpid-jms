@@ -155,7 +155,7 @@ public class JmsTransactedSessionTest extends AmqpTestSupport {
 
         // consume all messages
         for (int i = 1; i <= messageCount; i++) {
-            msg = (TextMessage) consumer.receive(2000);
+            msg = (TextMessage) consumer.receive(3000);
             if (msg == null) {
                 fail("receive() returned null, message " + i + " was not received");
             } else if (!msg.getText().equals("Message " + i)) {

@@ -58,7 +58,7 @@ public class JmsMessageGroupTest extends AmqpTestSupport {
         // All the messages should have been sent down connection 1.. just get
         // the first 3
         for (int i = 0; i < 3; i++) {
-            TextMessage m1 = (TextMessage) consumer1.receive(500);
+            TextMessage m1 = (TextMessage) consumer1.receive(3000);
             assertNotNull("m1 is null for index: " + i, m1);
             assertEquals(m1.getIntProperty("JMSXGroupSeq"), i + 1);
         }
@@ -74,7 +74,7 @@ public class JmsMessageGroupTest extends AmqpTestSupport {
 
         // The last messages should now go the the second consumer.
         for (int i = 0; i < 1; i++) {
-            TextMessage m1 = (TextMessage) consumer2.receive(500);
+            TextMessage m1 = (TextMessage) consumer2.receive(3000);
             assertNotNull("m1 is null for index: " + i, m1);
             assertEquals(m1.getIntProperty("JMSXGroupSeq"), 4 + i);
         }

@@ -20,8 +20,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
@@ -34,6 +37,8 @@ import javax.jms.TextMessage;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.JmsConnectionListener;
+import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.QpidJmsTestSupport;
 import org.junit.Test;
@@ -97,7 +102,7 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
 
         MessageConsumer consumer = session.createConsumer(queue);
 
-        Message msg = consumer.receive(2000);
+        Message msg = consumer.receive(3000);
         assertNotNull(msg);
 
         session.rollback();
@@ -119,14 +124,14 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         Queue queue = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(queue);
 
-        Message message = consumer.receive(1000);
+        Message message = consumer.receive(3000);
         assertNotNull(message);
         session.commit();
 
         assertEquals(1, proxy.getQueueSize());
 
         // rollback so we can get that last message again.
-        message = consumer.receive(1000);
+        message = consumer.receive(3000);
         assertNotNull(message);
         session.rollback();
 
@@ -154,9 +159,9 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         Queue queue = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(queue);
 
-        Message message = consumer.receive(1000);
+        Message message = consumer.receive(3000);
         assertNotNull(message);
-        message = consumer.receive(1000);
+        message = consumer.receive(3000);
         assertNotNull(message);
         session.rollback();
 
@@ -186,9 +191,9 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         Queue queue = session.createQueue(name.getMethodName());
         MessageConsumer consumer = session.createConsumer(queue);
 
-        Message message = consumer.receive(1000);
+        Message message = consumer.receive(3000);
         assertNotNull(message);
-        message = consumer.receive(1000);
+        message = consumer.receive(3000);
         assertNotNull(message);
         session.rollback();
 
@@ -222,7 +227,7 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         MessageConsumer consumer = session.createConsumer(queue);
 
         for(int i = 1; i <= consumeBeforeRollback; i++) {
-            Message message = consumer.receive(1000);
+            Message message = consumer.receive(3000);
             assertNotNull(message);
             assertEquals("Unexpected message number", i, message.getIntProperty(QpidJmsTestSupport.MESSAGE_NUMBER));
         }
@@ -235,7 +240,7 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         // again after the rollback and then the remainder should follow
         List<Integer> messageNumbers = new ArrayList<Integer>();
         for(int i = 1; i <= totalCount; i++) {
-            Message message = consumer.receive(1000);
+            Message message = consumer.receive(3000);
             assertNotNull("Failed to receive message: " + i, message);
             int msgNum = message.getIntProperty(QpidJmsTestSupport.MESSAGE_NUMBER);
             messageNumbers.add(msgNum);
@@ -275,7 +280,7 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
 
         // Create a new consumer
         consumer = session.createConsumer(queue);
-        message = (TextMessage) consumer.receive(1000);
+        message = (TextMessage) consumer.receive(3000);
         session.commit();
 
         assertEquals(0, proxy.getQueueSize());
@@ -329,6 +334,31 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
 
         connection.start();
 
+        final CountDownLatch messagesArrived = new CountDownLatch(4);
+        ((JmsConnection) connection).addConnectionListener(new JmsConnectionListener() {
+
+            @Override
+            public void onInboundMessage(JmsInboundMessageDispatch envelope) {
+                messagesArrived.countDown();
+            }
+
+            @Override
+            public void onConnectionRestored(URI remoteURI) {
+            }
+
+            @Override
+            public void onConnectionInterrupted(URI remoteURI) {
+            }
+
+            @Override
+            public void onConnectionFailure(Throwable error) {
+            }
+
+            @Override
+            public void onConnectionEstablished(URI remoteURI) {
+            }
+        });
+
         MessageProducer pr = session.createProducer(queue);
         for (int i = 1; i <= 2; i++) {
             Message m = session.createTextMessage("TestMessage" + i);
@@ -352,21 +382,21 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
         }
         session.commit();
 
-        // Wait for them to arrive at the consumer
-        Thread.sleep(3000);
+        // Wait for them all to arrive at the consumer
+        assertTrue("Messages didnt all arrive in given time.", messagesArrived.await(5, TimeUnit.SECONDS));
 
         // Receive the other messages. Expect higher priority messages first.
-        msg = consumer.receive(50);
+        msg = consumer.receive(3000);
         assertNotNull(msg);
         assertEquals(3, msg.getIntProperty(MSG_NUM));
         assertEquals(5, msg.getJMSPriority());
 
-        msg = consumer.receive(50);
+        msg = consumer.receive(3000);
         assertNotNull(msg);
         assertEquals(4, msg.getIntProperty(MSG_NUM));
         assertEquals(5, msg.getJMSPriority());
 
-        msg = consumer.receive(50);
+        msg = consumer.receive(3000);
         assertNotNull(msg);
         assertEquals(2, msg.getIntProperty(MSG_NUM));
         assertEquals(Message.DEFAULT_PRIORITY, msg.getJMSPriority());

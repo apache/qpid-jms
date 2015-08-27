@@ -292,7 +292,7 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
         // consume and rollback - increase redelivery counter on message
         session = connection.createSession(true, Session.SESSION_TRANSACTED);
         MessageConsumer consumer = session.createConsumer(queue);
-        Message message = consumer.receive(2000);
+        Message message = consumer.receive(3000);
         assertNotNull(message);
         session.rollback();
         session.close();

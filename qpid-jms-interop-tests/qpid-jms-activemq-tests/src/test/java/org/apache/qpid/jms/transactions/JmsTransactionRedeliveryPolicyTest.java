@@ -66,7 +66,7 @@ public class JmsTransactionRedeliveryPolicyTest extends AmqpTestSupport {
         // Consume the message for the first time.
         Message incoming = null;
         for (int i = 0; i < MSG_COUNT; ++i) {
-            incoming = consumer.receive(2000);
+            incoming = consumer.receive(3000);
             assertNotNull(incoming);
             assertFalse(incoming.getJMSRedelivered());
             assertTrue(incoming instanceof TextMessage);
@@ -78,7 +78,7 @@ public class JmsTransactionRedeliveryPolicyTest extends AmqpTestSupport {
             assertEquals(MSG_COUNT, queueView.getQueueSize());
 
             for (int j = 0; j < MSG_COUNT; ++j) {
-                incoming = consumer.receive(2000);
+                incoming = consumer.receive(3000);
                 assertNotNull(incoming);
                 assertTrue(incoming.getJMSRedelivered());
                 assertTrue(incoming instanceof TextMessage);
@@ -124,7 +124,7 @@ public class JmsTransactionRedeliveryPolicyTest extends AmqpTestSupport {
         // Consume the message for the first time.
         Message incoming = null;
         for (int i = 0; i < MSG_COUNT; ++i) {
-            incoming = consumer.receive(2000);
+            incoming = consumer.receive(3000);
             assertNotNull(incoming);
             assertFalse(incoming.getJMSRedelivered());
             assertTrue(incoming instanceof TextMessage);

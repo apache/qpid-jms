@@ -347,6 +347,24 @@ public class PriorityMessageQueueTest {
         assertSame(message, queue.dequeue(-1));
     }
 
+    @Test(timeout = 10000)
+    public void testDequeueReturnsWhenQueueIsStopped() throws InterruptedException {
+        Thread runner = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    TimeUnit.MILLISECONDS.sleep(500);
+                } catch (InterruptedException e) {
+                }
+                queue.stop();
+            }
+        });
+        runner.start();
+
+        assertNull(queue.dequeue(-1));
+    }
+
     private List<JmsInboundMessageDispatch> createFullRangePrioritySet() {
         List<JmsInboundMessageDispatch> messages = new ArrayList<JmsInboundMessageDispatch>();
         for (int i = 0; i < 10; ++i) {

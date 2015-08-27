@@ -274,16 +274,19 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                 }
 
                 if (envelope == null) {
-                    if (timeout > 0 && !messageQueue.isClosed()) {
-                        timeout = Math.max(deadline - System.currentTimeMillis(), 0);
-                    } else {
-                        if (failureCause != null && !messageQueue.isClosed()) {
-                            LOG.debug("{} receive failed: {}", getConsumerId(), failureCause.getMessage());
-                            throw JmsExceptionSupport.create(failureCause);
-                        } else {
-                            return null;
-                        }
+
+                    if (failureCause != null && !messageQueue.isClosed() && timeout == 0) {
+                        LOG.debug("{} receive failed: {}", getConsumerId(), failureCause.getMessage());
+                        throw JmsExceptionSupport.create(failureCause);
                     }
+
+                    if (timeout == 0 || messageQueue.isClosed()) {
+                        return null;
+                    } else if (timeout > 0) {
+                        timeout = Math.max(deadline - System.currentTimeMillis(), 0);
+                    }
+
+                    sendPullCommand(timeout);
                 } else if (envelope.getMessage() == null) {
                     LOG.trace("{} no message was available for this consumer: {}", getConsumerId());
                     return null;
@@ -621,9 +624,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     }
 
     protected void onConnectionInterrupted() {
-        // TODO - We might want to wake all blocking receive calls
-        //        to interrupt pull consumers, although that also
-        //        wakes infinite wait receivers so how to deal with that?
         messageQueue.clear();
     }
 
@@ -637,6 +637,17 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         ProviderFuture request = new ProviderFuture();
         provider.start(consumerInfo, request);
         request.sync();
+
+        // For a pull consumer we want to stop the Queue waking an blocked receives and
+        // preventing a new one from blocking until it has reissued a new pull.
+        if (isPullConsumer()) {
+            lock.lock();
+            try {
+                messageQueue.stop();
+            } finally {
+                lock.unlock();
+            }
+        }
     }
 
     protected void onConnectionRestored() {
@@ -657,6 +668,17 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     protected void sendPullCommand(long timeout) throws JMSException {
         if (!messageQueue.isClosed() && messageQueue.isEmpty() && (getPrefetchSize() == 0 || isBrowser())) {
             connection.pull(getConsumerId(), timeout);
+
+            // Once a new pull has gone out check to see if the queue was stopped due to failover
+            // and restart it so that the receive calls can once again start blocking on dequeue.
+            lock.lock();
+            try {
+                if (started) {
+                    messageQueue.start();
+                }
+            } finally {
+                lock.unlock();
+            }
         }
     }
 

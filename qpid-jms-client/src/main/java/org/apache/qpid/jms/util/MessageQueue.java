@@ -76,13 +76,13 @@ public interface MessageQueue {
 
     /**
      * Starts the Message Queue.  An non-started Queue will always return null for
-     * any of the Queue accessor methods.
+     * any of the Queue methods.
      */
     void start();
 
     /**
      * Stops the Message Queue.  Messages cannot be read from the Queue when it is in
-     * the stopped state.
+     * the stopped state and any waiters will be awoken.
      */
     void stop();
 

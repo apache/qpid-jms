@@ -274,7 +274,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
                         LOG.debug("Producer sening message #{}", i + 1);
                         producer.send(session.createTextMessage("Message: " + i));
                         sentSome.countDown();
-                        if (sentSome.getCount() > 0) {
+                        if (sentSome.getCount() <= 0) {
                             TimeUnit.MILLISECONDS.sleep(50);
                         }
                     }

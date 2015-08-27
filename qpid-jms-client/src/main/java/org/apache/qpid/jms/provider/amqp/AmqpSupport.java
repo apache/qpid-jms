@@ -19,6 +19,7 @@ package org.apache.qpid.jms.provider.amqp;
 import org.apache.qpid.proton.amqp.Symbol;
 
 public class AmqpSupport {
+
     // Symbols used for connection capabilities
     public static final Symbol SOLE_CONNECTION_CAPABILITY = Symbol.valueOf("sole-connection-for-container");
     public static final Symbol ANONYMOUS_RELAY = Symbol.valueOf("ANONYMOUS-RELAY");

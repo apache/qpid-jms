@@ -280,7 +280,7 @@ public class AmqpProvider implements Provider, TransportListener {
 
                             Connection protonConnection = Connection.Factory.create();
 
-                            if(getMaxFrameSize() > 0) {
+                            if (getMaxFrameSize() > 0) {
                                 protonTransport.setMaxFrameSize(getMaxFrameSize());
                             }
                             protonTransport.setChannelMax(getChannelMax());
@@ -874,7 +874,7 @@ public class AmqpProvider implements Provider, TransportListener {
     }
 
     void fireProviderException(Throwable ex) {
-        if(connectionOpenRequest != null) {
+        if (connectionOpenRequest != null) {
             connectionOpenRequest.onFailure(ex);
             connectionOpenRequest = null;
         }

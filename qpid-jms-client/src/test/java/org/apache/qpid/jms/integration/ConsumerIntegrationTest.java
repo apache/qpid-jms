@@ -108,7 +108,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
     }
 
     /**
-     * Test that a message is received when calling recieve with a timeout
+     * Test that a message is received when calling receive with a timeout
      * of 0, which means wait indefinitely.
      */
     @Test(timeout = 20000)

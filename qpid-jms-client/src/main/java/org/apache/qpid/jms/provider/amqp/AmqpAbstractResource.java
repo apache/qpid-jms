@@ -374,9 +374,9 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     }
 
     /**
-     * When aborting the open operation, and there isnt an error condition,
+     * When aborting the open operation, and there isn't an error condition,
      * provided by the peer, the returned exception will be used instead.
-     * A subclass may override this method to provide alternative behaviour.
+     * A subclass may override this method to provide alternative behavior.
      */
     protected Exception getOpenAbortException() {
         return new IOException("Open failed unexpectedly.");

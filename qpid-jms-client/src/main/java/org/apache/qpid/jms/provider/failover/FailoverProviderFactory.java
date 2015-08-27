@@ -36,7 +36,7 @@ public class FailoverProviderFactory extends ProviderFactory {
     public static final String FAILOVER_OPTION_PREFIX = "failover.";
 
     /**
-     * Prefix addion used for all nested properties that should be applied to any remote URIs.
+     * Prefix addition used for all nested properties that should be applied to any remote URIs.
      */
     public static final String FAILOVER_NESTED_OPTION_PREFIX_ADDON = "nested.";
 

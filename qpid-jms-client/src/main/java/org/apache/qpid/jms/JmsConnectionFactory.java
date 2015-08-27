@@ -347,7 +347,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     }
 
     /**
-     * @return the username
+     * @return the user name used for connection authentication.
      */
     public String getUsername() {
         return this.username;
@@ -355,14 +355,14 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     /**
      * @param username
-     *        the username to set
+     *        the user name to set
      */
     public void setUsername(String username) {
         this.username = username;
     }
 
     /**
-     * @return the password
+     * @return the password set for connection authentication.
      */
     public String getPassword() {
         return this.password;

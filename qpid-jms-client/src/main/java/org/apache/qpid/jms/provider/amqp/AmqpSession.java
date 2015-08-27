@@ -71,7 +71,7 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> {
 
         Session session = this.getEndpoint();
         session.setIncomingCapacity(Integer.MAX_VALUE);
-        if(outgoingWindow >= 0) {
+        if (outgoingWindow >= 0) {
             session.setOutgoingWindow(outgoingWindow);
         }
 
@@ -261,7 +261,6 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> {
         return false;
     }
 
-    //TODO: unused?
     /**
      * Call to send an error that occurs outside of the normal asynchronous processing
      * of a session resource such as a remote close etc.

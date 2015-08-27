@@ -90,23 +90,15 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private final AtomicBoolean closing = new AtomicBoolean();
     private final AtomicBoolean started = new AtomicBoolean();
     private final AtomicBoolean failed = new AtomicBoolean();
-    private final Object connectLock = new Object();
-    private IOException firstFailureError;
-
-    private JmsConnectionInfo connectionInfo;
-    private URI configuredURI;
-    private URI connectedURI;
-    private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
-    private JmsRedeliveryPolicy redeliveryPolicy = new JmsRedeliveryPolicy();
-    private boolean localMessagePriority;
-    private boolean clientIdSet;
-    private boolean sendAcksAsync;
-    private boolean localMessageExpiry;
-    private ExceptionListener exceptionListener;
-
+    private final JmsConnectionInfo connectionInfo;
     private final ThreadPoolExecutor executor;
 
+    private IOException firstFailureError;
+    private boolean clientIdSet;
+    private ExceptionListener exceptionListener;
+    private JmsMessageFactory messageFactory;
     private Provider provider;
+
     private final Set<JmsConnectionListener> connectionListeners =
         new CopyOnWriteArraySet<JmsConnectionListener>();
     private final Map<JmsTemporaryDestination, JmsTemporaryDestination> tempDestinations =
@@ -114,7 +106,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private final AtomicLong sessionIdGenerator = new AtomicLong();
     private final AtomicLong tempDestIdGenerator = new AtomicLong();
     private final AtomicLong transactionIdGenerator = new AtomicLong();
-    private JmsMessageFactory messageFactory;
 
     protected JmsConnection(final String connectionId, Provider provider, IdGenerator clientIdGenerator) throws JMSException {
 
@@ -519,7 +510,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     private void connect() throws JMSException {
-        synchronized(this.connectLock) {
+        synchronized(this.connectionInfo) {
             if (isConnected() || closed.get()) {
                 return;
             }
@@ -797,7 +788,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      *        the new listener to add to the collection.
      */
     public void addConnectionListener(JmsConnectionListener listener) {
-        this.connectionListeners.add(listener);
+        connectionListeners.add(listener);
     }
 
     /**
@@ -809,7 +800,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      * @return true if the given listener was removed from the current set.
      */
     public boolean removeConnectionListener(JmsConnectionListener listener) {
-        return this.connectionListeners.remove(listener);
+        return connectionListeners.remove(listener);
     }
 
     public boolean isForceAsyncSend() {
@@ -825,7 +816,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     public void setAlwaysSyncSend(boolean alwaysSyncSend) {
-        this.connectionInfo.setAlwaysSyncSend(alwaysSyncSend);
+        connectionInfo.setAlwaysSyncSend(alwaysSyncSend);
     }
 
     public String getTopicPrefix() {
@@ -853,27 +844,27 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     public JmsPrefetchPolicy getPrefetchPolicy() {
-        return prefetchPolicy;
+        return connectionInfo.getPrefetchPolicy();
     }
 
     public void setPrefetchPolicy(JmsPrefetchPolicy prefetchPolicy) {
-        this.prefetchPolicy = prefetchPolicy.copy();
+        connectionInfo.setPrefetchPolicy(prefetchPolicy);
     }
 
     public JmsRedeliveryPolicy getRedeliveryPolicy() {
-        return redeliveryPolicy;
+        return connectionInfo.getRedeliveryPolicy();
     }
 
     public void setRedeliveryPolicy(JmsRedeliveryPolicy redeliveryPolicy) {
-        this.redeliveryPolicy = redeliveryPolicy.copy();
+        connectionInfo.setRedeliveryPolicy(redeliveryPolicy);
     }
 
     public boolean isLocalMessagePriority() {
-        return localMessagePriority;
+        return connectionInfo.isLocalMessagePriority();
     }
 
     public void setLocalMessagePriority(boolean localMessagePriority) {
-        this.localMessagePriority = localMessagePriority;
+        this.connectionInfo.setLocalMessagePriority(localMessagePriority);
     }
 
     public long getCloseTimeout() {
@@ -885,7 +876,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     public long getConnectTimeout() {
-        return this.connectionInfo.getConnectTimeout();
+        return connectionInfo.getConnectTimeout();
     }
 
     public void setConnectTimeout(long connectTimeout) {
@@ -909,19 +900,19 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     public URI getConfiguredURI() {
-        return configuredURI;
+        return connectionInfo.getConfiguredURI();
     }
 
     void setConfiguredURI(URI uri) {
-        this.configuredURI = uri;
+        connectionInfo.setConfiguredURI(uri);
     }
 
     public URI getConnectedURI() {
-        return connectedURI;
+        return connectionInfo.getConnectedURI();
     }
 
     void setConnectedURI(URI connectedURI) {
-        this.connectedURI = connectedURI;
+        connectionInfo.setConnectedURI(connectedURI);
     }
 
     public String getUsername() {
@@ -929,7 +920,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     void setUsername(String username) {
-        this.connectionInfo.setUsername(username);;
+        connectionInfo.setUsername(username);;
     }
 
     public String getPassword() {
@@ -941,11 +932,11 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     public boolean isConnected() {
-        return this.connected.get();
+        return connected.get();
     }
 
     public boolean isStarted() {
-        return this.started.get();
+        return started.get();
     }
 
     public boolean isClosed() {
@@ -968,23 +959,23 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     void setMessageFactory(JmsMessageFactory factory) {
-        this.messageFactory = factory;
+        messageFactory = factory;
     }
 
     public boolean isSendAcksAsync() {
-        return sendAcksAsync;
+        return connectionInfo.isSendAcksAsync();
     }
 
     public void setSendAcksAsync(boolean sendAcksAsync) {
-        this.sendAcksAsync = sendAcksAsync;
+        connectionInfo.setSendAcksAsync(sendAcksAsync);
     }
 
     public boolean isLocalMessageExpiry() {
-        return localMessageExpiry;
+        return connectionInfo.isLocalMessageExpiry();
     }
 
     public void setLocalMessageExpiry(boolean localMessageExpiry) {
-        this.localMessageExpiry = localMessageExpiry;
+        connectionInfo.setLocalMessageExpiry(localMessageExpiry);
     }
 
     //----- Async event handlers ---------------------------------------------//

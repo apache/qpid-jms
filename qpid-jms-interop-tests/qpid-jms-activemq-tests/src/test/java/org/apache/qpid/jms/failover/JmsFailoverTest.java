@@ -274,7 +274,9 @@ public class JmsFailoverTest extends AmqpTestSupport {
                         LOG.debug("Producer sening message #{}", i + 1);
                         producer.send(session.createTextMessage("Message: " + i));
                         sentSome.countDown();
-                        TimeUnit.MILLISECONDS.sleep(50);
+                        if (sentSome.getCount() > 0) {
+                            TimeUnit.MILLISECONDS.sleep(50);
+                        }
                     }
                 } catch (Exception e) {
                     failed.countDown();
@@ -284,7 +286,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         producerThread.start();
 
         // Wait until a couple messages get sent on first broker run.
-        assertTrue(sentSome.await(3, TimeUnit.SECONDS));
+        assertTrue(sentSome.await(6, TimeUnit.SECONDS));
         stopPrimaryBroker();
         TimeUnit.SECONDS.sleep(2);  // Gives FailoverProvider some CPU time
         restartPrimaryBroker();

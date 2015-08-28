@@ -666,7 +666,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
      *        The amount of time the pull request should remain valid.
      */
     protected void sendPullCommand(long timeout) throws JMSException {
-        if (!messageQueue.isClosed() && messageQueue.isEmpty() && (getPrefetchSize() == 0 || isBrowser())) {
+        if (!messageQueue.isClosed() && messageQueue.isEmpty() && isPullConsumer()) {
             connection.pull(getConsumerId(), timeout);
 
             // Once a new pull has gone out check to see if the queue was stopped due to failover

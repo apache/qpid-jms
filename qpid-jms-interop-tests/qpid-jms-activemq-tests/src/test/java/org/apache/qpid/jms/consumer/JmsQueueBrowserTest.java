@@ -99,6 +99,7 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
         while (enumeration.hasMoreElements()) {
             Message m = (Message) enumeration.nextElement();
             assertTrue(m instanceof TextMessage);
+            LOG.debug("Browsed message {} from Queue {}", m, queue);
         }
 
         browser.close();

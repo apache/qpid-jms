@@ -67,7 +67,6 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
 
     private Message next;
     private final AtomicBoolean closed = new AtomicBoolean();
-    private final Object semaphore = new Object();
 
     /**
      * Constructor for an JmsQueueBrowser - used internally
@@ -133,7 +132,7 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
 
             if (next == null) {
                 try {
-                    next = consumer.receiveNoWait();
+                    next = consumer.receive(2000);
                 } catch (JMSException e) {
                     LOG.warn("Error while receive the next message: {}", e.getMessage());
                 }
@@ -141,6 +140,9 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
                 if (next != null) {
                     return true;
                 }
+
+                LOG.info("Browser {} read message", next);
+
             } else {
                 return true;
             }
@@ -149,8 +151,6 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
                 destroyConsumer();
                 return false;
             }
-
-            waitForMessage();
         }
     }
 
@@ -208,25 +208,6 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
         return selector;
     }
 
-    /**
-     * Wait on a semaphore for a fixed amount of time for a message to come in.
-     */
-    protected void waitForMessage() {
-        try {
-            synchronized (semaphore) {
-                semaphore.wait(2000);
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
-    protected void notifyMessageAvailable() {
-        synchronized (semaphore) {
-            semaphore.notifyAll();
-        }
-    }
-
     @Override
     public String toString() {
         JmsMessageConsumer consumer = this.consumer;
@@ -243,13 +224,21 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
             }
 
             @Override
+            public boolean isPullConsumer() {
+                return true;
+            }
+
+            @Override
             public void onInboundMessage(JmsInboundMessageDispatch envelope) {
                 if (envelope.getMessage() == null) {
+
+                    // TODO - Remove
+                    LOG.info("Browser {} read browse done.", getConsumerId());
+
                     browseDone.set(true);
-                } else {
-                    super.onInboundMessage(envelope);
                 }
-                notifyMessageAvailable();
+
+                super.onInboundMessage(envelope);
             }
         };
         rc.init();

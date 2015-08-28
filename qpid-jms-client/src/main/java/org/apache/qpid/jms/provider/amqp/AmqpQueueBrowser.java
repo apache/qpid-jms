@@ -16,11 +16,9 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import java.io.IOException;
+import java.util.concurrent.ScheduledFuture;
 
-import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
-import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,72 +30,34 @@ public class AmqpQueueBrowser extends AmqpConsumer {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpQueueBrowser.class);
 
-    /**
-     * @param session
-     * @param info
-     */
     public AmqpQueueBrowser(AmqpSession session, JmsConsumerInfo info) {
         super(session, info);
     }
 
-    /**
-     * QueueBrowser will attempt to initiate a pull whenever there are no pending Messages.
-     *
-     * We need to initiate a drain to see if there are any messages and if the remote sender
-     * indicates it is drained then we can send end of browse.  We only do this when there
-     * are no pending incoming deliveries and all delivered messages have become settled
-     * in order to give the remote a chance to dispatch more messages once all deliveries
-     * have been settled.
-     *
-     * @param timeout
-     *        ignored in this context.
-     */
     @Override
-    public void pull(long timeout) {
-        if (!getEndpoint().getDrain() && getEndpoint().current() == null && getEndpoint().getUnsettled() == 0) {
-            LOG.trace("QueueBrowser {} will try to drain remote.", getConsumerId());
-            getEndpoint().drain(resource.getPrefetchSize());
-        } else {
-            getEndpoint().setDrain(false);
-        }
-    }
+    public void pull(final long timeout) {
+        LOG.trace("Pull on browser {} with timeout = {}", getConsumerId(), timeout);
 
-    @Override
-    public void processFlowUpdates(AmqpProvider provider) throws IOException {
-        if (getEndpoint().getDrain() && getEndpoint().getCredit() == getEndpoint().getRemoteCredit()) {
-            JmsInboundMessageDispatch browseDone = new JmsInboundMessageDispatch(getNextIncomingSequenceNumber());
-            browseDone.setConsumerId(getConsumerId());
-            try {
-                deliver(browseDone);
-            } catch (Exception e) {
-                throw IOExceptionSupport.create(e);
-            }
-        } else {
-            getEndpoint().setDrain(false);
-        }
+        // Pull for browser is called when there are no available messages buffered.
+        // If we still have some to dispatch then no pull is needed otherwise we might
+        // need to attempt try and drain to end the browse.
+        if (getEndpoint().getQueued() == 0) {
+            final ScheduledFuture<?> future = getSession().schedule(new Runnable() {
 
-        super.processFlowUpdates(provider);
-    }
+                @Override
+                public void run() {
+                    // Try for one last time to pull a message down, if this
+                    // fails then we can end the browse otherwise the link credit
+                    // will get updated on the next sent disposition and we will
+                    // end up back here if no more messages arrive.
+                    LOG.trace("Browser {} attemptig to force a message dispatch");
+                    getEndpoint().drain(1);
+                    pullRequest = new PullRequest();
+                    session.getProvider().pumpToProtonTransport();
+                }
+            }, timeout);
 
-    @Override
-    public void processDeliveryUpdates(AmqpProvider provider) throws IOException {
-        if (getEndpoint().getDrain() && getEndpoint().current() != null) {
-            LOG.trace("{} incoming delivery, cancel drain.", getConsumerId());
-            getEndpoint().setDrain(false);
-        }
-
-        super.processDeliveryUpdates(provider);
-
-        if (getEndpoint().getDrain() && getEndpoint().getCredit() == getEndpoint().getRemoteCredit()) {
-            JmsInboundMessageDispatch browseDone = new JmsInboundMessageDispatch(getNextIncomingSequenceNumber());
-            browseDone.setConsumerId(getConsumerId());
-            try {
-                deliver(browseDone);
-            } catch (Exception e) {
-                throw IOExceptionSupport.create(e);
-            }
-        } else {
-            getEndpoint().setDrain(false);
+            pullRequest = new BrowseEndPullRequest(future);
         }
     }
 
@@ -113,5 +73,19 @@ public class AmqpQueueBrowser extends AmqpConsumer {
     @Override
     public boolean isBrowser() {
         return true;
+    }
+
+    //----- Inner classes used in message pull operations --------------------//
+
+    protected class BrowseEndPullRequest extends TimedPullRequest {
+
+        public BrowseEndPullRequest(ScheduledFuture<?> completionTask) {
+            super(completionTask);
+        }
+
+        @Override
+        public void onFailure(Throwable result) {
+            // Nothing to do, the timer will take care of the end of browse signal.
+        }
     }
 }

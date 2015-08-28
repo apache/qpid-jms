@@ -91,13 +91,10 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     protected final AmqpSession session;
     protected final Map<JmsInboundMessageDispatch, Delivery> delivered = new LinkedHashMap<JmsInboundMessageDispatch, Delivery>();
     protected boolean presettle;
-
-    private final ByteBuf incomingBuffer = Unpooled.buffer(INITIAL_BUFFER_CAPACITY);
-
-    private final AtomicLong incomingSequence = new AtomicLong(0);
-
-    private AsyncResult stopRequest;
-    private PullRequest pullRequest;
+    protected AsyncResult stopRequest;
+    protected PullRequest pullRequest;
+    protected final ByteBuf incomingBuffer = Unpooled.buffer(INITIAL_BUFFER_CAPACITY);
+    protected final AtomicLong incomingSequence = new AtomicLong(0);
 
     public AmqpConsumer(AmqpSession session, JmsConsumerInfo info) {
         super(info);
@@ -385,7 +382,6 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
         while (reverseIterator.hasPrevious()) {
             JmsInboundMessageDispatch envelope = reverseIterator.previous();
-            // TODO: apply connection redelivery policy to those messages that are past max redelivery.
             envelope.getMessage().getFacade().setRedeliveryCount(
                 envelope.getMessage().getFacade().getRedeliveryCount() + 1);
             envelope.setEnqueueFirst(true);
@@ -408,8 +404,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      *        the amount of time to tell the remote peer to keep this pull request valid.
      */
     public void pull(final long timeout) {
-        LOG.trace("Pull called on consumer {} with timeout = {}", getConsumerId(), timeout);
-        if (resource.getPrefetchSize() == 0 && getEndpoint().getCredit() == 0) {
+        LOG.trace("Pull on consumer {} with timeout = {}", getConsumerId(), timeout);
+        if (getEndpoint().getCredit() == 0 && getEndpoint().getQueued() == 0) {
             if (timeout < 0) {
                 getEndpoint().flow(1);
             } else if (timeout == 0) {
@@ -636,7 +632,9 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     public void postRollback() throws Exception {
     }
 
-    private class PullRequest implements AsyncResult {
+    //----- Inner classes used in message pull operations --------------------//
+
+    protected class PullRequest implements AsyncResult {
 
         @Override
         public void onFailure(Throwable result) {
@@ -661,7 +659,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         }
     }
 
-    private class TimedPullRequest extends PullRequest {
+    protected class TimedPullRequest extends PullRequest {
 
         private final ScheduledFuture<?> completionTask;
 

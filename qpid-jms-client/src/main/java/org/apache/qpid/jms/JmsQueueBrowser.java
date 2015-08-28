@@ -140,9 +140,6 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
                 if (next != null) {
                     return true;
                 }
-
-                LOG.info("Browser {} read message", next);
-
             } else {
                 return true;
             }
@@ -231,10 +228,7 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
             @Override
             public void onInboundMessage(JmsInboundMessageDispatch envelope) {
                 if (envelope.getMessage() == null) {
-
-                    // TODO - Remove
-                    LOG.info("Browser {} read browse done.", getConsumerId());
-
+                    LOG.trace("Browser {} read browse done.", getConsumerId());
                     browseDone.set(true);
                 }
 

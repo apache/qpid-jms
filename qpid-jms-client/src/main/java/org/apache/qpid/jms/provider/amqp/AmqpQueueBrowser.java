@@ -82,6 +82,11 @@ public class AmqpQueueBrowser extends AmqpConsumer {
         return true;
     }
 
+    @Override
+    public String toString() {
+        return "AmqpQueueBrowser { " + this.resource.getConsumerId() + " }";
+    }
+
     //----- Inner classes used in message pull operations --------------------//
 
     protected class BrowseEndPullRequest extends TimedPullRequest {

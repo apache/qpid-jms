@@ -312,37 +312,4 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
         assertNull(message);
     }
 
-    @Test(timeout=20000)
-    public void testConsumerReceivePrefetchZeroMessageExpiredInFlight() throws Exception {
-        connection = createAmqpConnection();
-        connection.start();
-
-        JmsConnection jmsConnection = (JmsConnection) connection;
-        jmsConnection.getPrefetchPolicy().setAll(0);
-
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
-        MessageProducer producer = session.createProducer(queue);
-        TextMessage expiredMessage = session.createTextMessage("expired message");
-        TextMessage validMessage = session.createTextMessage("valid message");
-        producer.send(expiredMessage, Message.DEFAULT_DELIVERY_MODE, Message.DEFAULT_PRIORITY, 50);
-        producer.send(validMessage);
-        session.close();
-
-        session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        MessageConsumer consumer = session.createConsumer(queue);
-        Message message = consumer.receive(3000);
-        assertNotNull(message);
-        TextMessage received = (TextMessage) message;
-        assertEquals("expired message", received.getText());
-
-        // Rollback allow the first message to expire.
-        session.rollback();
-
-        // Consume again, this should fetch the second valid message via a pull.
-        message = consumer.receive(3000);
-        assertNotNull(message);
-        received = (TextMessage) message;
-        assertEquals("valid message", received.getText());
-    }
 }

@@ -197,9 +197,9 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 20000)
     public void testConnectionNotMarkedFailedWhenPeerSendsEmptyFrames() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            int configuredTimeout = 1000;
-            int period = 250;
-            int cycles = 8;
+            int configuredTimeout = 2000;
+            int period = 500;
+            int cycles = 6;
 
             final CountDownLatch latch = new CountDownLatch(cycles);
 

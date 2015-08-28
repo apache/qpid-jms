@@ -177,7 +177,6 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
 
         stopPrimaryBroker();
         session.close();
-        TimeUnit.SECONDS.sleep(2);
         restartPrimaryBroker();
 
         assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {

@@ -507,7 +507,6 @@ public class JmsClientAckTest extends AmqpTestSupport {
                 }
             });
 
-            TimeUnit.MILLISECONDS.sleep(2);
             session.close();
         }
 

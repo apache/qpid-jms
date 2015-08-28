@@ -171,7 +171,6 @@ public class QpidJmsTestSupport {
             kaha.setDirectory(new File(KAHADB_DIRECTORY + "/" + name));
             brokerService.setPersistenceAdapter(kaha);
         }
-        brokerService.setStoreOpenWireVersion(10);
 
         configureBrokerPolicies(brokerService);
 

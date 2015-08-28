@@ -238,7 +238,6 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
 
         sendToAmqQueue(msgCount);
         assertTrue(done.await(1000, TimeUnit.MILLISECONDS));
-        TimeUnit.SECONDS.sleep(1);
         assertEquals(msgCount, counter.get());
     }
 
@@ -311,7 +310,6 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         });
 
         assertTrue(done.await(1000, TimeUnit.MILLISECONDS));
-        TimeUnit.SECONDS.sleep(1);
         assertEquals(msgCount, counter.get());
     }
 

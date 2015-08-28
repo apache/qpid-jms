@@ -149,7 +149,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
 
                 @Override
                 public boolean validate(JmsTransactionContext context) throws Exception {
-                    if (!context.isInTransaction() || !delivered.get()) {
+                    if (!context.isInTransaction() || !delivered.get() || isBrowser()) {
                         doClose();
                         return false;
                     }

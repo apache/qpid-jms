@@ -58,7 +58,7 @@ public class JmsExpiredMessageConsumptionTest extends AmqpTestSupport {
             @Override
             public void preProcessDispatch(MessageDispatch messageDispatch) {
                 if (messageDispatch.getMessage() != null) {
-                    LOG.info("Preprocessing dispatch: {}", messageDispatch.getMessage().getMessageId());
+                    LOG.trace("Preprocessing dispatch: {}", messageDispatch.getMessage().getMessageId());
                     if (messageDispatch.getMessage().getExpiration() != 0) {
                         messageDispatch.getMessage().setExpiration(System.currentTimeMillis() - 1000);
                     }
@@ -66,19 +66,6 @@ public class JmsExpiredMessageConsumptionTest extends AmqpTestSupport {
 
                 super.preProcessDispatch(messageDispatch);
             }
-
-//            @Override
-//            public void postProcessDispatch(MessageDispatch messageDispatch) {
-//                if (messageDispatch.getMessage() != null) {
-//                    LOG.info("Postprocessing dispatch: {}", messageDispatch.getMessage().getMessageId());
-//                    if (messageDispatch.getMessage().getExpiration() != 0) {
-//                        messageDispatch.getMessage().setExpiration(System.currentTimeMillis() - 1000);
-//                    }
-//                }
-//
-//                super.postProcessDispatch(messageDispatch);
-//            }
-
         };
 
         plugins.add(expireOutbound);

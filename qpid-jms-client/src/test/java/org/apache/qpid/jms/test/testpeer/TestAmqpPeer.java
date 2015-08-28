@@ -1358,6 +1358,11 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectDisposition(boolean settled, Matcher<?> stateMatcher)
     {
+        expectDisposition(settled, stateMatcher, null, null);
+    }
+
+    public void expectDisposition(boolean settled, Matcher<?> stateMatcher, Integer firstDeliveryId, Integer lastDeliveryId)
+    {
         Matcher<Boolean> settledMatcher = null;
         if(settled)
         {
@@ -1368,8 +1373,20 @@ public class TestAmqpPeer implements AutoCloseable
             settledMatcher = Matchers.anyOf(equalTo(false), nullValue());
         }
 
+        Matcher<?> firstDeliveryIdMatcher = notNullValue();
+        if(firstDeliveryId != null) {
+            firstDeliveryIdMatcher = equalTo(UnsignedInteger.valueOf(firstDeliveryId));
+        }
+
+        Matcher<?> lastDeliveryIdMatcher = notNullValue();
+        if(lastDeliveryId != null) {
+            lastDeliveryIdMatcher = equalTo(UnsignedInteger.valueOf(lastDeliveryId));
+        }
+
         addHandler(new DispositionMatcher()
             .withSettled(settledMatcher)
+            .withFirst(firstDeliveryIdMatcher)
+            .withLast(lastDeliveryIdMatcher)
             .withState(stateMatcher));
     }
 
@@ -1539,22 +1556,25 @@ public class TestAmqpPeer implements AutoCloseable
         return comp;
     }
 
-    public void sendTransferToLastOpenedLinkOnLastOpenedSession() {
+    public void sendTransferToLastOpenedLinkOnLastOpenedSession(final HeaderDescribedType headerDescribedType,
+                                                                final MessageAnnotationsDescribedType messageAnnotationsDescribedType,
+                                                                final PropertiesDescribedType propertiesDescribedType,
+                                                                final ApplicationPropertiesDescribedType appPropertiesDescribedType,
+                                                                final DescribedType content,
+                                                                final int nextIncomingDeliveryId) {
         synchronized (_handlersLock) {
             CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
 
-            final int nextId = 0; //TODO: shouldn't be hard coded
-
-            String tagString = "theDeliveryTag" + nextId;
+            String tagString = "theDeliveryTag" + nextIncomingDeliveryId;
             Binary dtag = new Binary(tagString.getBytes());
 
             final TransferFrame transferResponse = new TransferFrame()
-            .setDeliveryId(UnsignedInteger.valueOf(nextId))
+            .setDeliveryId(UnsignedInteger.valueOf(nextIncomingDeliveryId))
             .setDeliveryTag(dtag)
             .setMessageFormat(UnsignedInteger.ZERO)
             .setSettled(false);
 
-            Binary payload = prepareTransferPayload(null, null, null, null, new AmqpValueDescribedType("myTextMessage"));
+            Binary payload = prepareTransferPayload(headerDescribedType, messageAnnotationsDescribedType, propertiesDescribedType, appPropertiesDescribedType, content);
 
             // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
             final FrameSender transferSender = new FrameSender(this, FrameType.AMQP, -1, transferResponse, payload);

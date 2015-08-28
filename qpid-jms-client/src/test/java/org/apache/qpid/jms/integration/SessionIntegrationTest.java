@@ -1430,7 +1430,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             //Expect the session close
             testPeer.expectEnd(false);
-            testPeer.sendTransferToLastOpenedLinkOnLastOpenedSession();
+            testPeer.sendTransferToLastOpenedLinkOnLastOpenedSession(null, null, null, null, new AmqpValueDescribedType("content"), 1);
             testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(false, true);
             testPeer.remotelyEndLastOpenedSession(false, 200);
 

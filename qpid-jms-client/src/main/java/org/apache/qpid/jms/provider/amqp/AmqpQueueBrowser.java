@@ -36,6 +36,13 @@ public class AmqpQueueBrowser extends AmqpConsumer {
 
     @Override
     public void pull(final long timeout) {
+
+        // Zero prefetch QueueBrowser behaves the same as a standard pull consumer.
+        if (resource.getPrefetchSize() == 0) {
+            super.pull(timeout);
+            return;
+        }
+
         LOG.trace("Pull on browser {} with timeout = {}", getConsumerId(), timeout);
 
         // Pull for browser is called when there are no available messages buffered.

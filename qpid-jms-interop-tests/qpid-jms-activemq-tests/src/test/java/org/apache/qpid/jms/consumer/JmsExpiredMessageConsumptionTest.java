@@ -16,10 +16,10 @@
  */
 package org.apache.qpid.jms.consumer;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -32,10 +32,13 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
+import org.apache.activemq.broker.BrokerPlugin;
+import org.apache.activemq.broker.BrokerPluginSupport;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.activemq.broker.region.policy.PolicyEntry;
 import org.apache.activemq.broker.region.policy.PolicyMap;
+import org.apache.activemq.command.MessageDispatch;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
@@ -46,6 +49,40 @@ import org.slf4j.LoggerFactory;
 public class JmsExpiredMessageConsumptionTest extends AmqpTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsMessageConsumerTest.class);
+
+    @Override
+    protected void addAdditionalBrokerPlugins(List<BrokerPlugin> plugins) {
+        @SuppressWarnings("unchecked")
+        BrokerPlugin expireOutbound = new BrokerPluginSupport() {
+
+            @Override
+            public void preProcessDispatch(MessageDispatch messageDispatch) {
+                if (messageDispatch.getMessage() != null) {
+                    LOG.info("Preprocessing dispatch: {}", messageDispatch.getMessage().getMessageId());
+                    if (messageDispatch.getMessage().getExpiration() != 0) {
+                        messageDispatch.getMessage().setExpiration(System.currentTimeMillis() - 1000);
+                    }
+                }
+
+                super.preProcessDispatch(messageDispatch);
+            }
+
+//            @Override
+//            public void postProcessDispatch(MessageDispatch messageDispatch) {
+//                if (messageDispatch.getMessage() != null) {
+//                    LOG.info("Postprocessing dispatch: {}", messageDispatch.getMessage().getMessageId());
+//                    if (messageDispatch.getMessage().getExpiration() != 0) {
+//                        messageDispatch.getMessage().setExpiration(System.currentTimeMillis() - 1000);
+//                    }
+//                }
+//
+//                super.postProcessDispatch(messageDispatch);
+//            }
+
+        };
+
+        plugins.add(expireOutbound);
+    }
 
     @Override
     protected void configureBrokerPolicies(BrokerService broker) {
@@ -74,8 +111,6 @@ public class JmsExpiredMessageConsumptionTest extends AmqpTestSupport {
 
         producer.setTimeToLive(Message.DEFAULT_TIME_TO_LIVE);
         producer.send(session.createTextMessage("Message-2"));
-
-        TimeUnit.MILLISECONDS.sleep(800);
 
         Message received = consumer.receive(5000);
         assertNotNull(received);
@@ -120,8 +155,6 @@ public class JmsExpiredMessageConsumptionTest extends AmqpTestSupport {
         producer.setTimeToLive(Message.DEFAULT_TIME_TO_LIVE);
         producer.send(session.createTextMessage("Message-2"));
 
-        TimeUnit.MILLISECONDS.sleep(800);
-
         consumer.setMessageListener(new MessageListener() {
 
             @Override
@@ -165,8 +198,6 @@ public class JmsExpiredMessageConsumptionTest extends AmqpTestSupport {
         producer.setTimeToLive(500);
         producer.send(session.createTextMessage("Message-1"));
 
-        TimeUnit.MILLISECONDS.sleep(800);
-
         Message received = consumer.receive(5000);
         assertNotNull(received);
         TextMessage textMessage = (TextMessage) received;
@@ -201,8 +232,6 @@ public class JmsExpiredMessageConsumptionTest extends AmqpTestSupport {
         producer.setTimeToLive(500);
         producer.send(session.createTextMessage("Message-1"));
 
-        TimeUnit.MILLISECONDS.sleep(800);
-
         consumer.setMessageListener(new MessageListener() {
 
             @Override
@@ -227,40 +256,5 @@ public class JmsExpiredMessageConsumptionTest extends AmqpTestSupport {
                 return proxy.getQueueSize() == 0;
             }
         }));
-    }
-
-    @Test(timeout=20000)
-    public void testConsumerReceivePrefetchZeroMessageExpiredInFlight() throws Exception {
-        connection = createAmqpConnection();
-        connection.start();
-
-        JmsConnection jmsConnection = (JmsConnection) connection;
-        jmsConnection.getPrefetchPolicy().setAll(0);
-
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
-        MessageProducer producer = session.createProducer(queue);
-        TextMessage expiredMessage = session.createTextMessage("expired message");
-        TextMessage validMessage = session.createTextMessage("valid message");
-        producer.send(expiredMessage, Message.DEFAULT_DELIVERY_MODE, Message.DEFAULT_PRIORITY, 50);
-        producer.send(validMessage);
-        session.close();
-
-        session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        MessageConsumer consumer = session.createConsumer(queue);
-        Message message = consumer.receive(3000);
-        assertNotNull(message);
-        TextMessage received = (TextMessage) message;
-        assertEquals("expired message", received.getText());
-
-        // Rollback allow the first message to expire.
-        session.rollback();
-        Thread.sleep(75);
-
-        // Consume again, this should fetch the second valid message via a pull.
-        message = consumer.receive(3000);
-        assertNotNull(message);
-        received = (TextMessage) message;
-        assertEquals("valid message", received.getText());
     }
 }

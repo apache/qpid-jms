@@ -16,18 +16,23 @@
  */
 package org.apache.qpid.jms.integration;
 
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Enumeration;
 
 import javax.jms.Connection;
+import javax.jms.Message;
 import javax.jms.Queue;
 import javax.jms.QueueBrowser;
 import javax.jms.Session;
 
+import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Declare;
@@ -38,10 +43,14 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompos
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
+import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.junit.Test;
 
 public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
+
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
+
+    //----- Test basic create and destroy mechanisms -------------------------//
 
     @Test(timeout=30000)
     public void testCreateQueueBrowserWithoutEnumeration() throws IOException, Exception {
@@ -90,6 +99,37 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(3000);
         }
     }
+
+    //----- Tests for expected behaviors of a QueueBrowser implementation ----//
+
+    @Test(timeout=30000)
+    public void testQueueBrowserNextElementWithNoMessage() throws IOException, Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // Expected the browser to create a consumer and send credit.
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlow();
+            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(1)));
+            testPeer.expectDetach(true, true, true);
+
+            QueueBrowser browser = session.createBrowser(queue);
+            Enumeration<?> queueView = browser.getEnumeration();
+            assertNotNull(queueView);
+            assertNull(queueView.nextElement());
+
+            browser.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+    //----- Tests that cover QueueBrowser and Session Ack mode interaction ---//
 
     @Test(timeout=30000)
     public void testCreateQueueBrowseAutoAckSession() throws IOException, Exception {
@@ -190,6 +230,115 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             Enumeration<?> queueView = browser.getEnumeration();
             assertNotNull(queueView);
             assertTrue(queueView.hasMoreElements());
+
+            browser.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    //----- Tests that cover QueueBrowser when prefetch is zero --------------//
+
+    @Test(timeout=30000)
+    public void testCreateQueueBrowserAndEnumerationZeroPrefetch() throws IOException, Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            JmsConnection jmsConnection = (JmsConnection) connection;
+            jmsConnection.getPrefetchPolicy().setAll(0);
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // Expected the browser to create a consumer and send credit.
+            testPeer.expectReceiverAttach();
+            testPeer.expectDetach(true, true, true);
+
+            QueueBrowser browser = session.createBrowser(queue);
+            Enumeration<?> queueView = browser.getEnumeration();
+            assertNotNull(queueView);
+
+            browser.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout=30000)
+    public void testQueueBrowseHasMoreElementsZeroPrefetchNoMessage() throws IOException, Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            JmsConnection jmsConnection = (JmsConnection) connection;
+            jmsConnection.getPrefetchPolicy().setAll(0);
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // Expected the browser to create a consumer and send credit.
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(1)));
+            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(1)));
+            testPeer.expectDetach(true, true, true);
+
+            QueueBrowser browser = session.createBrowser(queue);
+            Enumeration<?> queueView = browser.getEnumeration();
+            assertNotNull(queueView);
+            assertFalse(queueView.hasMoreElements());
+
+            browser.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout=30000)
+    public void testQueueBrowseHasMoreElementsZeroPrefetchDrainedMessage() throws IOException, Exception {
+        DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            JmsConnection jmsConnection = (JmsConnection) connection;
+            jmsConnection.getPrefetchPolicy().setAll(0);
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // Expected the browser to create a consumer and send credit.
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(1)));
+
+            // After timeout the browser should drain and here we want to ensure that if a
+            // message arrives that we handle it correctly.
+            testPeer.expectLinkFlowRespondWithTransfer(
+                null, null, null, null, amqpValueNullContent, 1, true, false, equalTo(UnsignedInteger.valueOf(1)), 1, false);
+
+            // Message gets ack'd right away
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            // Next attempt should not get a message and trigger a false on hasMoreElemets.
+            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(1)));
+            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(1)));
+
+            testPeer.expectDetach(true, true, true);
+
+            QueueBrowser browser = session.createBrowser(queue);
+            Enumeration<?> queueView = browser.getEnumeration();
+            assertNotNull(queueView);
+            assertTrue(queueView.hasMoreElements());
+            Message message = (Message) queueView.nextElement();
+            assertNotNull(message);
+            assertFalse(queueView.hasMoreElements());
 
             browser.close();
 

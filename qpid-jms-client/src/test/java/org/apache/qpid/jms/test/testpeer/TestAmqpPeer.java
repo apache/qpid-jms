@@ -60,7 +60,6 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.SaslOutcomeFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Source;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Target;
 import org.apache.qpid.jms.test.testpeer.describedtypes.TransferFrame;
-import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.ApplicationPropertiesDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.HeaderDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.MessageAnnotationsDescribedType;
@@ -1617,4 +1616,134 @@ public class TestAmqpPeer implements AutoCloseable
 
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER, exitAfterHeader));
     }
+
+    public void expectLinkFlowThenDrop()
+    {
+        AmqpPeerRunnable exitAfterFlow = new AmqpPeerRunnable() {
+            @Override
+            public void run() {
+                _driverRunnable.exitReadLoopEarly();
+            }
+        };
+
+        final FlowMatcher flowMatcher = new FlowMatcher().onCompletion(exitAfterFlow);
+
+        addHandler(flowMatcher);
+    }
+
+//    public void expectLinkFlowThenDrop()
+//    {
+//        AmqpPeerRunnable exitAfterHeader = new AmqpPeerRunnable() {
+//            @Override
+//            public void run() {
+//                _driverRunnable.exitReadLoopEarly();
+//            }
+//        };
+//
+//        if (nextIncomingId == null && count > 0)
+//        {
+//            throw new IllegalArgumentException("The remote NextIncomingId must be specified if transfers have been requested");
+//        }
+//
+//        Matcher<Boolean> drainMatcher = null;
+//        if(drain)
+//        {
+//            drainMatcher = equalTo(true);
+//        }
+//        else
+//        {
+//            drainMatcher = Matchers.anyOf(equalTo(false), nullValue());
+//        }
+//
+//        Matcher<UnsignedInteger> remoteNextIncomingIdMatcher = null;
+//        if(nextIncomingId != null)
+//        {
+//             remoteNextIncomingIdMatcher = Matchers.equalTo(UnsignedInteger.valueOf(nextIncomingId));
+//        }
+//        else
+//        {
+//            remoteNextIncomingIdMatcher = Matchers.greaterThanOrEqualTo(UnsignedInteger.ONE);
+//        }
+//
+//        final FlowMatcher flowMatcher = new FlowMatcher()
+//                        .withLinkCredit(Matchers.greaterThanOrEqualTo(UnsignedInteger.valueOf(count)))
+//                        .withDrain(drainMatcher)
+//                        .withNextIncomingId(remoteNextIncomingIdMatcher);
+//
+//        CompositeAmqpPeerRunnable composite = new CompositeAmqpPeerRunnable();
+//        boolean addComposite = false;
+//
+//        if (appPropertiesDescribedType == null && addMessageNumberProperty) {
+//            appPropertiesDescribedType = new ApplicationPropertiesDescribedType();
+//        }
+//
+//        for(int i = 0; i < count; i++)
+//        {
+//            final int nextId = nextIncomingId + i;
+//
+//            String tagString = "theDeliveryTag" + nextId;
+//            Binary dtag = new Binary(tagString.getBytes());
+//
+//            if(addMessageNumberProperty) {
+//                appPropertiesDescribedType.setApplicationProperty(MESSAGE_NUMBER, i);
+//            }
+//
+//            final TransferFrame transferResponse = new TransferFrame()
+//            .setDeliveryId(UnsignedInteger.valueOf(nextId))
+//            .setDeliveryTag(dtag)
+//            .setMessageFormat(UnsignedInteger.ZERO)
+//            .setSettled(false);
+//
+//            Binary payload = prepareTransferPayload(headerDescribedType, messageAnnotationsDescribedType,
+//                    propertiesDescribedType, appPropertiesDescribedType, content);
+//
+//            // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+//            final FrameSender transferResponseSender = new FrameSender(this, FrameType.AMQP, -1, transferResponse, payload);
+//            transferResponseSender.setValueProvider(new ValueProvider()
+//            {
+//                @Override
+//                public void setValues()
+//                {
+//                    transferResponse.setHandle(flowMatcher.getReceivedHandle());
+//                    transferResponseSender.setChannel(flowMatcher.getActualChannel());
+//                }
+//            });
+//
+//            addComposite = true;
+//            composite.add(transferResponseSender);
+//        }
+//
+//        if(drain && sendDrainFlowResponse)
+//        {
+//            final FlowFrame drainResponse = new FlowFrame();
+//            drainResponse.setOutgoingWindow(UnsignedInteger.ZERO); //TODO: shouldnt be hard coded
+//            drainResponse.setIncomingWindow(UnsignedInteger.valueOf(Integer.MAX_VALUE)); //TODO: shouldnt be hard coded
+//            drainResponse.setLinkCredit(UnsignedInteger.ZERO);
+//            drainResponse.setDrain(true);
+//
+//            // The flow frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+//            final FrameSender flowResponseSender = new FrameSender(this, FrameType.AMQP, -1, drainResponse, null);
+//            flowResponseSender.setValueProvider(new ValueProvider()
+//            {
+//                @Override
+//                public void setValues()
+//                {
+//                    flowResponseSender.setChannel(flowMatcher.getActualChannel());
+//                    drainResponse.setHandle(flowMatcher.getReceivedHandle());
+//                    drainResponse.setDeliveryCount(calculateNewDeliveryCount(flowMatcher));
+//                    drainResponse.setNextOutgoingId(calculateNewOutgoingId(flowMatcher, count));
+//                    drainResponse.setNextIncomingId(flowMatcher.getReceivedNextOutgoingId());
+//                }
+//            });
+//
+//            addComposite = true;
+//            composite.add(flowResponseSender);
+//        }
+//
+//        if(addComposite) {
+//            flowMatcher.onCompletion(composite);
+//        }
+//
+//        addHandler(flowMatcher);
+//    }
 }

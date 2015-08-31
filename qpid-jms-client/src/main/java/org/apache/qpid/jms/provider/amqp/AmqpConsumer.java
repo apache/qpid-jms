@@ -153,7 +153,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             Receiver receiver = getEndpoint();
             if (receiver.getRemoteCredit() <= 0) {
                 if (receiver.getQueued() <= 0) {
-                    pullRequest.onFailure(null);
+                    pullRequest.onFailure();
                 } else {
                     pullRequest.onSuccess();
                 }
@@ -248,6 +248,10 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             source.setExpiryPolicy(TerminusExpiryPolicy.LINK_DETACH);
         }
 
+        if (resource.isBrowser()) {
+            source.setDistributionMode(COPY);
+        }
+
         Symbol typeCapability =  AmqpDestinationHelper.INSTANCE.toTypeCapability(resource.getDestination());
         if(typeCapability != null) {
             source.setCapabilities(typeCapability);
@@ -327,7 +331,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             }
             LOG.debug("Consumed Ack of message: {}", envelope);
             if (!delivery.isSettled()) {
-                if (session.isTransacted() && !isBrowser()) {
+                if (session.isTransacted() && !resource.isBrowser()) {
                     Binary txnId = session.getTransactionContext().getAmqpTransactionId();
                     if (txnId != null) {
                         TransactionalState txState = new TransactionalState();
@@ -405,11 +409,13 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      */
     public void pull(final long timeout) {
         LOG.trace("Pull on consumer {} with timeout = {}", getConsumerId(), timeout);
-        if (getEndpoint().getCredit() == 0 && getEndpoint().getQueued() == 0) {
+        if (getEndpoint().getQueued() == 0) {
             if (timeout < 0) {
-                getEndpoint().flow(1);
+                if (getEndpoint().getCredit() == 0) {
+                    getEndpoint().flow(1);
+                }
             } else if (timeout == 0) {
-                pullRequest = new PullRequest();
+                pullRequest = new DrainingPullRequest();
                 getEndpoint().drain(1);
             } else if (timeout > 0) {
                 // We need to drain the credit if no message arrives. If that
@@ -421,12 +427,16 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                     public void run() {
                         if (getEndpoint().getRemoteCredit() != 0) {
                             getEndpoint().drain(0);
+                            pullRequest = new DrainingPullRequest();
                             session.getProvider().pumpToProtonTransport();
                         }
                     }
                 }, timeout);
 
-                getEndpoint().flow(1);
+                if (getEndpoint().getCredit() == 0) {
+                    getEndpoint().flow(1);
+                }
+
                 pullRequest = new TimedPullRequest(future);
             }
         }
@@ -466,7 +476,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
                     if (pullRequest != null) {
                         // Failure as we didn't get the desired message
-                        pullRequest.onFailure(null);
+                        pullRequest.onFailure();
                         pullRequest = null;
                     }
                 }
@@ -557,10 +567,6 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         return this.getEndpoint();
     }
 
-    public boolean isBrowser() {
-        return false;
-    }
-
     public boolean isPresettle() {
         return presettle;
     }
@@ -634,10 +640,18 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     //----- Inner classes used in message pull operations --------------------//
 
-    protected class PullRequest implements AsyncResult {
+    protected interface PullRequest {
+
+        void onSuccess();
+
+        void onFailure();
+
+    }
+
+    protected class DrainingPullRequest implements PullRequest {
 
         @Override
-        public void onFailure(Throwable result) {
+        public void onFailure() {
             JmsInboundMessageDispatch pullDone = new JmsInboundMessageDispatch(getNextIncomingSequenceNumber());
             pullDone.setConsumerId(getConsumerId());
             // Lack of setMessage on the dispatch is taken as signal no message arrived.
@@ -652,19 +666,19 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         public void onSuccess() {
             // Nothing to do here.
         }
-
-        @Override
-        public boolean isComplete() {
-            return false;
-        }
     }
 
-    protected class TimedPullRequest extends PullRequest {
+    protected class TimedPullRequest implements PullRequest {
 
         private final ScheduledFuture<?> completionTask;
 
         public TimedPullRequest(ScheduledFuture<?> completionTask) {
             this.completionTask = completionTask;
+        }
+
+        @Override
+        public void onFailure() {
+            // Nothing to do here timer task should handle the no message case.
         }
 
         @Override

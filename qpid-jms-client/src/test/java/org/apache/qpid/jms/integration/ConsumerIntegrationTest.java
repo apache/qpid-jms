@@ -112,7 +112,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
      * of 0, which means wait indefinitely.
      */
     @Test(timeout = 20000)
-    public void testReceiveMessageWithRecieveZeroTimeout() throws Exception {
+    public void testReceiveMessageWithReceiveZeroTimeout() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();

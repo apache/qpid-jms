@@ -108,7 +108,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      * Starts the consumer by setting the link credit to the given prefetch value.
      */
     public void start(AsyncResult request) {
-        getEndpoint().flow(resource.getPrefetchSize());
+        sendFlowIfNeeded();
         request.onSuccess();
     }
 
@@ -369,7 +369,9 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
         int currentCredit = getEndpoint().getCredit();
         if (currentCredit <= resource.getPrefetchSize() * 0.2) {
-            getEndpoint().flow(resource.getPrefetchSize() - currentCredit);
+            int newCredit = resource.getPrefetchSize() - currentCredit;
+            LOG.trace("Consumer {} granting additional credit: {}", getConsumerId(), newCredit);
+            getEndpoint().flow(newCredit);
         }
     }
 
@@ -416,7 +418,14 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                 }
             } else if (timeout == 0) {
                 pullRequest = new DrainingPullRequest();
-                getEndpoint().drain(1);
+                // If we have no credit then we need to issue some so that we can
+                // try to fulfill the pull request, otherwise we want to drain down
+                // what is there to ensure we consume everything available.
+                if (getEndpoint().getCredit() == 0) {
+                    getEndpoint().drain(1);
+                } else {
+                    getEndpoint().drain(0);
+                }
             } else if (timeout > 0) {
                 // We need to drain the credit if no message arrives. If that
                 // happens, processing completion of the drain attempt will signal

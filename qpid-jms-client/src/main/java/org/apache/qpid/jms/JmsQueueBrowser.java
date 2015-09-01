@@ -132,7 +132,7 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
 
             if (next == null) {
                 try {
-                    next = consumer.receive(2000);
+                    next = consumer.receiveNoWait();
                 } catch (JMSException e) {
                     LOG.warn("Error while receive the next message: {}", e.getMessage());
                 }

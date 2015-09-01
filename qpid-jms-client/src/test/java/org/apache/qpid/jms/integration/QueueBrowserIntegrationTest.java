@@ -39,6 +39,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.Declare;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Declared;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.Binary;
@@ -225,6 +226,8 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent);
             testPeer.expectDetach(true, true, true);
+            //TODO: even though it is a copy, perhaps we should use released (or pre-settled transfers) for browsers?
+            testPeer.expectDisposition(true, new ModifiedMatcher());
 
             QueueBrowser browser = session.createBrowser(queue);
             Enumeration<?> queueView = browser.getEnumeration();
@@ -232,6 +235,9 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             assertTrue(queueView.hasMoreElements());
 
             browser.close();
+
+            testPeer.expectEnd();
+            session.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
         }

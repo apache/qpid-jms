@@ -568,7 +568,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     public boolean isPresettle() {
-        return presettle;
+        return presettle || resource.isBrowser();
     }
 
     public void setPresettle(boolean presettle) {

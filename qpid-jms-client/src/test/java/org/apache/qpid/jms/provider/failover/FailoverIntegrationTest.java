@@ -488,7 +488,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             // Create session+producer, send a persistent message on auto-ack session for synchronous send
             originalPeer.expectBegin();
-            originalPeer.expectReceiverAttach();
+            originalPeer.expectQueueBrowserAttach();
             originalPeer.expectLinkFlow();
             originalPeer.expectLinkFlowThenDrop();
 
@@ -498,7 +498,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             finalPeer.expectSaslAnonymousConnect();
             finalPeer.expectBegin();
             finalPeer.expectBegin();
-            finalPeer.expectReceiverAttach();
+            finalPeer.expectQueueBrowserAttach();
             finalPeer.expectLinkFlow();
             finalPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(1)));
             finalPeer.expectDetach(true, true, true);

@@ -130,6 +130,45 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(3000);
         }
     }
+
+    @Test(timeout=30000)
+    public void testQueueBrowserPrefetchOne() throws IOException, Exception {
+        final DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            JmsConnection jmsConnection = (JmsConnection) connection;
+            jmsConnection.getPrefetchPolicy().setAll(1);
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // Expected the browser to create a consumer and send credit.
+            testPeer.expectReceiverAttach();
+
+            testPeer.expectLinkFlow();
+            testPeer.sendTransferToLastOpenedLinkOnLastOpenedSession(null, null, null, null, amqpValueNullContent, 1);
+            testPeer.expectLinkFlow();
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+            testPeer.expectDetach(true, true, true);
+
+            QueueBrowser browser = session.createBrowser(queue);
+            Enumeration<?> queueView = browser.getEnumeration();
+            assertNotNull(queueView);
+
+            assertTrue(queueView.hasMoreElements());
+            assertNotNull(queueView.nextElement());
+
+            browser.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
     //----- Tests that cover QueueBrowser and Session Ack mode interaction ---//
 
     @Test(timeout=30000)

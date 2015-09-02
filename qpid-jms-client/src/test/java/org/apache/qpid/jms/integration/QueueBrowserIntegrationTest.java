@@ -189,8 +189,9 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             // Auto acknowledge mode with a drain from the browser.
             testPeer.expectQueueBrowserAttach();
             testPeer.expectLinkFlow();
+            // TODO - End of Drain flow omitted for now to avoid spurious client flows.
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent,
-                1, true, true, Matchers.greaterThan(UnsignedInteger.ZERO), 1, true, false);
+                1, true, false, Matchers.greaterThan(UnsignedInteger.ZERO), 1, true, false);
             testPeer.expectDetach(true, true, true);
 
             QueueBrowser browser = session.createBrowser(queue);
@@ -199,6 +200,43 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             assertTrue(queueView.hasMoreElements());
 
             browser.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout=30000)
+    public void testCreateQueueBrowseClientAckSession() throws IOException, Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+            // Expected the browser to create a consumer and send credit, once hasMoreElements
+            // is called a message that is received should be accepted when the session is in
+            // Auto acknowledge mode.
+            testPeer.expectQueueBrowserAttach();
+            testPeer.expectLinkFlow();
+            // TODO - End of Drain flow omitted for now to avoid spurious client flows.
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent,
+                1, true, false, Matchers.greaterThan(UnsignedInteger.ZERO), 1, true, false);
+            testPeer.expectDetach(true, true, true);
+
+            QueueBrowser browser = session.createBrowser(queue);
+            Enumeration<?> queueView = browser.getEnumeration();
+            assertNotNull(queueView);
+            assertTrue(queueView.hasMoreElements());
+
+            browser.close();
+
+            testPeer.expectEnd();
+            session.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
         }
@@ -244,42 +282,6 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
 
             // Browser should close without delay as it does not participate in the TX
             browser.close();
-
-            testPeer.waitForAllHandlersToComplete(3000);
-        }
-    }
-
-    @Test(timeout=30000)
-    public void testCreateQueueBrowseClientAckSession() throws IOException, Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
-            connection.start();
-
-            testPeer.expectBegin();
-
-            Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-            Queue queue = session.createQueue("myQueue");
-
-            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
-
-            // Expected the browser to create a consumer and send credit, once hasMoreElements
-            // is called a message that is received should be accepted when the session is in
-            // Auto acknowledge mode.
-            testPeer.expectQueueBrowserAttach();
-            testPeer.expectLinkFlow();
-            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent,
-                1, true, true, Matchers.greaterThan(UnsignedInteger.ZERO), 1, true, false);
-            testPeer.expectDetach(true, true, true);
-
-            QueueBrowser browser = session.createBrowser(queue);
-            Enumeration<?> queueView = browser.getEnumeration();
-            assertNotNull(queueView);
-            assertTrue(queueView.hasMoreElements());
-
-            browser.close();
-
-            testPeer.expectEnd();
-            session.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
         }

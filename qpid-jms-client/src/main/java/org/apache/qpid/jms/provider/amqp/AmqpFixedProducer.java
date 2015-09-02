@@ -43,6 +43,7 @@ import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.transaction.TransactionalState;
 import org.apache.qpid.proton.amqp.transport.DeliveryState;
+import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Delivery;
@@ -218,16 +219,19 @@ public class AmqpFixedProducer extends AmqpProducer {
                     request.onSuccess();
                 }
             } else if (outcome instanceof Rejected) {
-                Exception remoteError = getRemoteError(((Rejected) outcome).getError());
+                ErrorCondition remoteError = ((Rejected) outcome).getError();
                 if (remoteError == null) {
-                    remoteError = getRemoteError();
+                    remoteError = getEndpoint().getRemoteCondition();
                 }
+
+                Exception cause = AmqpSupport.convertToException(remoteError);
+
                 LOG.trace("Outcome of delivery was rejected: {}", delivery);
                 tagGenerator.returnTag(delivery.getTag());
                 if (request != null && !request.isComplete()) {
-                    request.onFailure(remoteError);
+                    request.onFailure(cause);
                 } else {
-                    connection.getProvider().fireProviderException(remoteError);
+                    connection.getProvider().fireProviderException(cause);
                 }
             } else if (outcome != null) {
                 // TODO - Revisit these and better handle unknown or other outcomes

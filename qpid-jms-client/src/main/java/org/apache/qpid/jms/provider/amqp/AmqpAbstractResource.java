@@ -16,28 +16,11 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import static org.apache.qpid.jms.provider.amqp.AmqpSupport.CONTAINER_ID;
-import static org.apache.qpid.jms.provider.amqp.AmqpSupport.INVALID_FIELD;
-import static org.apache.qpid.jms.provider.amqp.AmqpSupport.NETWORK_HOST;
-import static org.apache.qpid.jms.provider.amqp.AmqpSupport.OPEN_HOSTNAME;
-import static org.apache.qpid.jms.provider.amqp.AmqpSupport.PORT;
-
 import java.io.IOException;
-import java.util.Map;
-
-import javax.jms.InvalidClientIDException;
-import javax.jms.InvalidDestinationException;
-import javax.jms.JMSException;
-import javax.jms.JMSSecurityException;
 
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.provider.AsyncResult;
-import org.apache.qpid.jms.provider.ProviderRedirectedException;
-import org.apache.qpid.proton.amqp.Symbol;
-import org.apache.qpid.proton.amqp.transport.AmqpError;
-import org.apache.qpid.proton.amqp.transport.ConnectionError;
-import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.engine.Endpoint;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.slf4j.Logger;
@@ -169,10 +152,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
     @Override
     public void remotelyClosed(AmqpProvider provider) {
-        Exception error = getRemoteError();
-        if (error == null) {
-            error = new IOException("Remote has closed without error information");
-        }
+        Exception error = AmqpSupport.convertToException(getEndpoint().getRemoteCondition());
 
         if (endpoint != null) {
             // TODO: if this is a producer/consumer link then we may only be detached,
@@ -215,59 +195,8 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
         return getEndpoint().getRemoteState();
     }
 
-    @Override
-    public boolean hasRemoteError() {
+    protected boolean hasRemoteError() {
         return getEndpoint().getRemoteCondition().getCondition() != null;
-    }
-
-    @Override
-    public Exception getRemoteError() {
-        return getRemoteError(getEndpoint().getRemoteCondition());
-    }
-
-    @Override
-    public Exception getRemoteError(ErrorCondition errorCondition) {
-        Exception remoteError = null;
-
-        Symbol error = errorCondition.getCondition();
-        if (error != null) {
-            String message = getRemoteErrorMessage(errorCondition);
-            if (error.equals(AmqpError.UNAUTHORIZED_ACCESS)) {
-                remoteError = new JMSSecurityException(message);
-            } else if (error.equals(AmqpError.NOT_FOUND)) {
-                remoteError = new InvalidDestinationException(message);
-            } else if (error.equals(ConnectionError.REDIRECT)) {
-                remoteError = createRedirectException(error, message, errorCondition);
-            } else if (error.equals(AmqpError.INVALID_FIELD)) {
-                Map<?, ?> info = errorCondition.getInfo();
-                if (info != null && CONTAINER_ID.equals(info.get(INVALID_FIELD))) {
-                    remoteError = new InvalidClientIDException(message);
-                } else {
-                    remoteError = new JMSException(message);
-                }
-            } else {
-                remoteError = new JMSException(message);
-            }
-        }
-
-        return remoteError;
-    }
-
-    @Override
-    public String getRemoteErrorMessage(ErrorCondition errorCondition) {
-        String message = "Received error from remote peer without description";
-        if (errorCondition != null) {
-            if (errorCondition.getDescription() != null && !errorCondition.getDescription().isEmpty()) {
-                message = errorCondition.getDescription();
-            }
-
-            Symbol condition = errorCondition.getCondition();
-            if (condition != null) {
-                message = message + " [condition = " + condition + "]";
-            }
-        }
-
-        return message;
     }
 
     @Override
@@ -295,7 +224,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
             LOG.warn("Open of {} failed: ", this);
             Exception openError;
             if (hasRemoteError()) {
-                openError = getRemoteError();
+                openError = AmqpSupport.convertToException(getEndpoint().getRemoteCondition());
             } else {
                 openError = getOpenAbortException();
             }
@@ -331,46 +260,6 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     protected void doOpenCompletion() {
         LOG.debug("{} is now open: ", this);
         opened();
-    }
-
-    /**
-     * When a redirect type exception is received this method is called to create the
-     * appropriate redirect exception type containing the error details needed.
-     *
-     * @param error
-     *        the Symbol that defines the redirection error type.
-     * @param message
-     *        the basic error message that should used or amended for the returned exception.
-     * @param condition
-     *        the ErrorCondition that describes the redirection.
-     *
-     * @return an Exception that captures the details of the redirection error.
-     */
-    protected Exception createRedirectException(Symbol error, String message, ErrorCondition condition) {
-        Exception result = null;
-        Map<?, ?> info = condition.getInfo();
-
-        if (info == null) {
-            result = new IOException(message + " : Redirection information not set.");
-        } else {
-            String hostname = (String) info.get(OPEN_HOSTNAME);
-
-            String networkHost = (String) info.get(NETWORK_HOST);
-            if (networkHost == null || networkHost.isEmpty()) {
-                result = new IOException(message + " : Redirection information not set.");
-            }
-
-            int port = 0;
-            try {
-                port = Integer.valueOf(info.get(PORT).toString());
-            } catch (Exception ex) {
-                result = new IOException(message + " : Redirection information not set.");
-            }
-
-            result = new ProviderRedirectedException(message, hostname, networkHost, port);
-        }
-
-        return result;
     }
 
     /**

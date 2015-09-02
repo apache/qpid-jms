@@ -16,7 +16,19 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import java.io.IOException;
+import java.util.Map;
+
+import javax.jms.InvalidClientIDException;
+import javax.jms.InvalidDestinationException;
+import javax.jms.JMSException;
+import javax.jms.JMSSecurityException;
+
+import org.apache.qpid.jms.provider.ProviderRedirectedException;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.transport.AmqpError;
+import org.apache.qpid.proton.amqp.transport.ConnectionError;
+import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 
 public class AmqpSupport {
 
@@ -41,4 +53,107 @@ public class AmqpSupport {
     public static final Symbol PRODUCT = Symbol.valueOf("product");
     public static final Symbol VERSION = Symbol.valueOf("version");
     public static final Symbol PLATFORM = Symbol.valueOf("platform");
+
+    /**
+     * Given an ErrorCondition instance create a new JMSException that best matches
+     * the error type.
+     *
+     * @param errorCondition
+     *      The ErrorCondition returned from the remote peer.
+     *
+     * @return a new JMSException instance that best matches the ErrorCondition value.
+     */
+    public static Exception convertToException(ErrorCondition errorCondition) {
+        Exception remoteError = null;
+
+        Symbol error = errorCondition.getCondition();
+        if (error != null) {
+            String message = extractErrorMessage(errorCondition);
+            if (error.equals(AmqpError.UNAUTHORIZED_ACCESS)) {
+                remoteError = new JMSSecurityException(message);
+            } else if (error.equals(AmqpError.NOT_FOUND)) {
+                remoteError = new InvalidDestinationException(message);
+            } else if (error.equals(ConnectionError.REDIRECT)) {
+                remoteError = createRedirectException(error, message, errorCondition);
+            } else if (error.equals(AmqpError.INVALID_FIELD)) {
+                Map<?, ?> info = errorCondition.getInfo();
+                if (info != null && CONTAINER_ID.equals(info.get(INVALID_FIELD))) {
+                    remoteError = new InvalidClientIDException(message);
+                } else {
+                    remoteError = new JMSException(message);
+                }
+            } else {
+                remoteError = new JMSException(message);
+            }
+        } else {
+            remoteError = new JMSException("Unknown error from remote peer");
+        }
+
+        return remoteError;
+    }
+
+    /**
+     * Attempt to read and return the embedded error message in the given ErrorCondition
+     * object.  If no message can be extracted a generic message is returned.
+     *
+     * @param errorCondition
+     *      The ErrorCondition to extract the error message from.
+     *
+     * @return an error message extracted from the given ErrorCondition.
+     */
+    public static String extractErrorMessage(ErrorCondition errorCondition) {
+        String message = "Received error from remote peer without description";
+        if (errorCondition != null) {
+            if (errorCondition.getDescription() != null && !errorCondition.getDescription().isEmpty()) {
+                message = errorCondition.getDescription();
+            }
+
+            Symbol condition = errorCondition.getCondition();
+            if (condition != null) {
+                message = message + " [condition = " + condition + "]";
+            }
+        }
+
+        return message;
+    }
+
+    /**
+     * When a redirect type exception is received this method is called to create the
+     * appropriate redirect exception type containing the error details needed.
+     *
+     * @param error
+     *        the Symbol that defines the redirection error type.
+     * @param message
+     *        the basic error message that should used or amended for the returned exception.
+     * @param condition
+     *        the ErrorCondition that describes the redirection.
+     *
+     * @return an Exception that captures the details of the redirection error.
+     */
+    public static Exception createRedirectException(Symbol error, String message, ErrorCondition condition) {
+        Exception result = null;
+        Map<?, ?> info = condition.getInfo();
+
+        if (info == null) {
+            result = new IOException(message + " : Redirection information not set.");
+        } else {
+            String hostname = (String) info.get(OPEN_HOSTNAME);
+
+            String networkHost = (String) info.get(NETWORK_HOST);
+            if (networkHost == null || networkHost.isEmpty()) {
+                result = new IOException(message + " : Redirection information not set.");
+            }
+
+            int port = 0;
+            try {
+                port = Integer.valueOf(info.get(PORT).toString());
+            } catch (Exception ex) {
+                result = new IOException(message + " : Redirection information not set.");
+            }
+
+            result = new ProviderRedirectedException(message, hostname, networkHost, port);
+        }
+
+        return result;
+    }
 }

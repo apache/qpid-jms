@@ -55,6 +55,7 @@ import javax.jms.Topic;
 import javax.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.JmsPrefetchPolicy;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
@@ -1483,7 +1484,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             int messageCount = 10;
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"),
-                    messageCount, false, false, equalTo(UnsignedInteger.valueOf(messageCount)), 1, true);
+                    messageCount, false, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)), 1, true);
 
             Queue queue = session.createQueue("myQueue");
             MessageConsumer consumer = session.createConsumer(queue);

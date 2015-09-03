@@ -33,6 +33,7 @@ import javax.jms.QueueBrowser;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.JmsPrefetchPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Declare;
@@ -117,7 +118,7 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             // Expected the browser to create a consumer and send credit.
             testPeer.expectQueueBrowserAttach();
             testPeer.expectLinkFlow();
-            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(1)));
+            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
             testPeer.expectDetach(true, true, true);
 
             QueueBrowser browser = session.createBrowser(queue);

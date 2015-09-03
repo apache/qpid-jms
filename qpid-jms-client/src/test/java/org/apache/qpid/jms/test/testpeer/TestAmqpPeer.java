@@ -1199,7 +1199,7 @@ public class TestAmqpPeer implements AutoCloseable
         }
 
         final FlowMatcher flowMatcher = new FlowMatcher()
-                        .withLinkCredit(Matchers.greaterThanOrEqualTo(UnsignedInteger.valueOf(count)))
+                        .withLinkCredit(creditMatcher)
                         .withDrain(drainMatcher)
                         .withNextIncomingId(remoteNextIncomingIdMatcher);
 

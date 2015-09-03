@@ -43,6 +43,7 @@ import javax.jms.Session;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
+import org.apache.qpid.jms.JmsPrefetchPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
@@ -500,7 +501,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             finalPeer.expectBegin();
             finalPeer.expectQueueBrowserAttach();
             finalPeer.expectLinkFlow();
-            finalPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(1)));
+            finalPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
             finalPeer.expectDetach(true, true, true);
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

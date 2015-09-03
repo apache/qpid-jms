@@ -287,10 +287,6 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            testPeer.expectSenderAttach();
-
-            MessageProducer producer = session.createProducer(queue);
-
             Message message = session.createMessage();
 
             if (!disableValidation) {
@@ -301,6 +297,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
                     // expected
                 }
             } else {
+                message.setStringProperty(invalidPropName, value);
+
                 MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
                 MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
                 MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true);
@@ -311,6 +309,10 @@ public class MessageIntegrationTest extends QpidJmsTestCase
                 messageMatcher.setHeadersMatcher(headersMatcher);
                 messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
                 messageMatcher.setPropertiesMatcher(propsMatcher);
+
+                testPeer.expectSenderAttach();
+
+                MessageProducer producer = session.createProducer(queue);
 
                 testPeer.expectTransfer(messageMatcher);
 

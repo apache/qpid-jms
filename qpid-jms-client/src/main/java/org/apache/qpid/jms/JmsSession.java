@@ -925,6 +925,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     private <T extends JmsMessage> T init(T message) {
         message.setConnection(connection);
+        message.setValidatePropertyNames(connection.isValidatePropertyNames());
         return message;
     }
 

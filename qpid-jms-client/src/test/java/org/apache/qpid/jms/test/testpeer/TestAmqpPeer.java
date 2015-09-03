@@ -1604,7 +1604,7 @@ public class TestAmqpPeer implements AutoCloseable
                                                                 final ApplicationPropertiesDescribedType appPropertiesDescribedType,
                                                                 final DescribedType content,
                                                                 final int nextIncomingDeliveryId,
-                                                                final boolean settled) {
+                                                                final boolean sendSettled) {
         synchronized (_handlersLock) {
             CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
 
@@ -1615,7 +1615,7 @@ public class TestAmqpPeer implements AutoCloseable
             .setDeliveryId(UnsignedInteger.valueOf(nextIncomingDeliveryId))
             .setDeliveryTag(dtag)
             .setMessageFormat(UnsignedInteger.ZERO)
-            .setSettled(false);
+            .setSettled(sendSettled);
 
             Binary payload = prepareTransferPayload(headerDescribedType, messageAnnotationsDescribedType, propertiesDescribedType, appPropertiesDescribedType, content);
 

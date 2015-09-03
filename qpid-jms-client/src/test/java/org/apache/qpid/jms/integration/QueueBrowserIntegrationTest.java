@@ -89,7 +89,7 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
 
             // Expected the browser to create a consumer and send credit.
             testPeer.expectQueueBrowserAttach();
-            testPeer.expectLinkFlow();
+            testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
             testPeer.expectDetach(true, true, true);
 
             QueueBrowser browser = session.createBrowser(queue);
@@ -148,13 +148,14 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            // Expected the browser to create a consumer and send credit.
-            // Prefetch of one sends flow on every received message so expect a new flow.
+            // Expected the browser to create a consumer and send credit, then drain it when
+            // no message arrives before hasMoreElements is called, at which point we send one.
             testPeer.expectQueueBrowserAttach();
-            testPeer.expectLinkFlow();
+            testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.ONE));
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent,
                 1, true, true, Matchers.equalTo(UnsignedInteger.ONE), 1, true, false);
-            testPeer.expectLinkFlow();
+            // Prefetch of one sends flow on every received message so expect a new flow.
+            testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.ONE));
             testPeer.expectDetach(true, true, true);
 
             QueueBrowser browser = session.createBrowser(queue);
@@ -173,7 +174,7 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
     //----- Tests that cover QueueBrowser and Session Ack mode interaction ---//
 
     @Test(timeout=30000)
-    public void testCreateQueueBrowseAutoAckSession() throws IOException, Exception {
+    public void testCreateQueueBrowserAutoAckSession() throws IOException, Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
@@ -185,14 +186,13 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
 
             DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
 
-            // Expected the browser to create a consumer and send credit, once hasMoreElements
-            // is called a message that is received should be accepted when the session is in
-            // Auto acknowledge mode with a drain from the browser.
+            // Expected the browser to create a consumer and send credit, then drain it when
+            // no message arrives before hasMoreElements is called, at which point we send one.
             testPeer.expectQueueBrowserAttach();
-            testPeer.expectLinkFlow();
+            testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
             // TODO - End of Drain flow omitted for now to avoid spurious client flows.
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent,
-                1, true, false, Matchers.greaterThan(UnsignedInteger.ZERO), 1, true, false);
+                1, true, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)), 1, true, false);
             testPeer.expectDetach(true, true, true);
 
             QueueBrowser browser = session.createBrowser(queue);
@@ -207,7 +207,7 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout=30000)
-    public void testCreateQueueBrowseClientAckSession() throws IOException, Exception {
+    public void testCreateQueueBrowserClientAckSession() throws IOException, Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
@@ -219,14 +219,13 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
 
             DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
 
-            // Expected the browser to create a consumer and send credit, once hasMoreElements
-            // is called a message that is received should be accepted when the session is in
-            // Auto acknowledge mode.
+            // Expected the browser to create a consumer and send credit, then drain it when
+            // no message arrives before hasMoreElements is called, at which point we send one.
             testPeer.expectQueueBrowserAttach();
-            testPeer.expectLinkFlow();
+            testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
             // TODO - End of Drain flow omitted for now to avoid spurious client flows.
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent,
-                1, true, false, Matchers.greaterThan(UnsignedInteger.ZERO), 1, true, false);
+                1, true, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)), 1, true, false);
             testPeer.expectDetach(true, true, true);
 
             QueueBrowser browser = session.createBrowser(queue);
@@ -244,7 +243,7 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout=30000)
-    public void testCreateQueueBrowseTransactedSession() throws IOException, Exception {
+    public void testCreateQueueBrowserTransactedSession() throws IOException, Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
@@ -259,9 +258,9 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
 
             testPeer.expectQueueBrowserAttach();
-            testPeer.expectLinkFlow();
+            testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent,
-                1, true, true, Matchers.greaterThan(UnsignedInteger.ZERO), 1, true, false);
+                1, true, true, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)), 1, true, false);
 
             // First expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.
@@ -304,7 +303,7 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            // Expected the browser to create a consumer and send credit.
+            // Expected the browser to create a consumer and NOT send credit.
             testPeer.expectQueueBrowserAttach();
             testPeer.expectDetach(true, true, true);
 
@@ -319,7 +318,7 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout=30000)
-    public void testQueueBrowseHasMoreElementsZeroPrefetchNoMessage() throws IOException, Exception {
+    public void testQueueBrowserHasMoreElementsZeroPrefetchNoMessage() throws IOException, Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
@@ -332,9 +331,9 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            // Expected the browser to create a consumer and send credit.
+            // Expected the browser to create a consumer, then drain with 1 credit.
             testPeer.expectQueueBrowserAttach();
-            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(1)));
+            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.ONE));
             testPeer.expectDetach(true, true, true);
 
             QueueBrowser browser = session.createBrowser(queue);
@@ -349,7 +348,7 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout=30000)
-    public void testQueueBrowseHasMoreElementsZeroPrefetchDrainedMessage() throws IOException, Exception {
+    public void testQueueBrowserHasMoreElementsZeroPrefetchDrainedMessage() throws IOException, Exception {
         DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
@@ -364,17 +363,18 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            // Expected the browser to create a consumer and send credit.
+            // Expected the browser to create a consumer.
             testPeer.expectQueueBrowserAttach();
 
-            // After timeout the browser should drain and here we want to ensure that if a
-            // message arrives that we handle it correctly.
+            // When hasMoreElements is called, the browser should drain with 1 credit,
+            // at which point we send it a message to use all the credit.
             testPeer.expectLinkFlowRespondWithTransfer(
                 null, null, null, null, amqpValueNullContent, 1, true,
-                true, equalTo(UnsignedInteger.valueOf(1)), 1, true, false);
+                false, equalTo(UnsignedInteger.ONE), 1, true, false);
 
-            // Next attempt should not get a message and trigger a false on hasMoreElemets.
-            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(1)));
+            // Next attempt should not get a message, we just send a response flow indicating
+            // the credit was cleared, triggering a false on hasMoreElemets.
+            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.ONE));
 
             testPeer.expectDetach(true, true, true);
 

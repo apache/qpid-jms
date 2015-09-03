@@ -1116,6 +1116,11 @@ public class TestAmqpPeer implements AutoCloseable
         expectLinkFlow(false, false, Matchers.greaterThan(UnsignedInteger.ZERO));
     }
 
+    public void expectLinkFlow(boolean drain, Matcher<UnsignedInteger> creditMatcher)
+    {
+        expectLinkFlow(drain, false, creditMatcher);
+    }
+
     public void expectLinkFlow(boolean drain, boolean sendDrainFlowResponse, Matcher<UnsignedInteger> creditMatcher)
     {
         expectLinkFlowRespondWithTransfer(null, null, null, null, null, 0, drain, sendDrainFlowResponse, creditMatcher, null, false, false);

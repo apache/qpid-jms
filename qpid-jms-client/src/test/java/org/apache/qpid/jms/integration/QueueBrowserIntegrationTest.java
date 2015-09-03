@@ -154,7 +154,6 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.ONE));
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent,
                 1, true, true, Matchers.equalTo(UnsignedInteger.ONE), 1, true, false);
-            // Prefetch of one sends flow on every received message so expect a new flow.
             testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.ONE));
             testPeer.expectDetach(true, true, true);
 
@@ -190,9 +189,8 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             // no message arrives before hasMoreElements is called, at which point we send one.
             testPeer.expectQueueBrowserAttach();
             testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
-            // TODO - End of Drain flow omitted for now to avoid spurious client flows.
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent,
-                1, true, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)), 1, true, false);
+                1, true, true, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)), 1, true, false);
             testPeer.expectDetach(true, true, true);
 
             QueueBrowser browser = session.createBrowser(queue);
@@ -223,9 +221,8 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             // no message arrives before hasMoreElements is called, at which point we send one.
             testPeer.expectQueueBrowserAttach();
             testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
-            // TODO - End of Drain flow omitted for now to avoid spurious client flows.
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent,
-                1, true, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)), 1, true, false);
+                1, true, true, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)), 1, true, false);
             testPeer.expectDetach(true, true, true);
 
             QueueBrowser browser = session.createBrowser(queue);

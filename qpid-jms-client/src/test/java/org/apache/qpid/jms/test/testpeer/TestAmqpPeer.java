@@ -55,6 +55,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.DispositionFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.EndFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.FlowFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.OpenFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Released;
 import org.apache.qpid.jms.test.testpeer.describedtypes.SaslMechanismsFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.SaslOutcomeFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Source;
@@ -1391,6 +1392,11 @@ public class TestAmqpPeer implements AutoCloseable
     public void expectDispositionThatIsAcceptedAndSettled()
     {
         expectDisposition(true, new DescriptorMatcher(Accepted.DESCRIPTOR_CODE, Accepted.DESCRIPTOR_SYMBOL));
+    }
+
+    public void expectDispositionThatIsReleasedAndSettled()
+    {
+        expectDisposition(true, new DescriptorMatcher(Released.DESCRIPTOR_CODE, Released.DESCRIPTOR_SYMBOL));
     }
 
     public void expectDisposition(boolean settled, Matcher<?> stateMatcher)

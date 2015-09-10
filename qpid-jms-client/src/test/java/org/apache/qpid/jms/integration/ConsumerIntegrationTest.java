@@ -26,6 +26,7 @@ import javax.jms.Connection;
 import javax.jms.IllegalStateException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
@@ -132,6 +133,72 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             Message receivedMessage = messageConsumer.receive(0);
 
             assertNotNull("A message should have been recieved", receivedMessage);
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    /**
+     * Test that an Ack is not dropped when RTE is thrown from onMessage
+     */
+    @Test(timeout = 20000)
+    public void testRuntimeExceptionInOnMessageReleasesInAutoAckMode() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent);
+            testPeer.expectDispositionThatIsReleasedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+            messageConsumer.setMessageListener(new MessageListener() {
+
+                @Override
+                public void onMessage(Message message) {
+                    throw new RuntimeException();
+                }
+            });
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    /**
+     * Test that an Ack is not dropped when RTE is thrown from onMessage
+     */
+    @Test(timeout = 20000)
+    public void testRuntimeExceptionInOnMessageReleasesInDupsOkAckMode() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.DUPS_OK_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent);
+            testPeer.expectDispositionThatIsReleasedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+            messageConsumer.setMessageListener(new MessageListener() {
+
+                @Override
+                public void onMessage(Message message) {
+                    throw new RuntimeException();
+                }
+            });
 
             testPeer.waitForAllHandlersToComplete(2000);
         }

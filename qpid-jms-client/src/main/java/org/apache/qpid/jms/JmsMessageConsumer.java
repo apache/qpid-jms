@@ -716,6 +716,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                         LOG.trace("{} filtered message with excessive redelivery count: {}", getConsumerId(), envelope);
                         doAckUndeliverable(envelope);
                     } else {
+                        boolean deliveryFailed = false;
                         boolean autoAckOrDupsOk = acknowledgementMode == Session.AUTO_ACKNOWLEDGE ||
                                                   acknowledgementMode == Session.DUPS_OK_ACKNOWLEDGE;
                         if (autoAckOrDupsOk) {
@@ -725,10 +726,18 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                         }
                         session.clearSessionRecovered();
 
-                        messageListener.onMessage(copy);
+                        try {
+                            messageListener.onMessage(copy);
+                        } catch (RuntimeException rte) {
+                            deliveryFailed = true;
+                        }
 
                         if (autoAckOrDupsOk && !session.isSessionRecovered()) {
-                            doAckConsumed(envelope);
+                            if (!deliveryFailed) {
+                                doAckConsumed(envelope);
+                            } else {
+                                doAckReleased(envelope);
+                            }
                         }
                     }
                 } catch (Exception e) {

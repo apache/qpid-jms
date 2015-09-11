@@ -32,9 +32,12 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
+import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -42,6 +45,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
+import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
@@ -59,10 +63,14 @@ import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.hamcrest.Matcher;
-import org.junit.Ignore;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProducerIntegrationTest extends QpidJmsTestCase {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ProducerIntegrationTest.class);
+
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
     @Test(timeout = 20000)
@@ -601,13 +609,11 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         doSyncSendMessageNotAcceptedTestImpl(new Rejected());
     }
 
-    @Ignore // TODO: released state not yet handled correctly for producers
     @Test(timeout = 20000)
     public void testSyncSendMessageReleased() throws Exception {
         doSyncSendMessageNotAcceptedTestImpl(new Released());
     }
 
-    @Ignore // TODO: modified state not yet handled correctly for producers
     @Test(timeout = 20000)
     public void testSyncSendMessageModifiedDeliveryFailed() throws Exception {
         Modified modified = new Modified();
@@ -616,7 +622,6 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         doSyncSendMessageNotAcceptedTestImpl(modified);
     }
 
-    @Ignore // TODO: modified state not yet handled correctly for producers
     @Test(timeout = 20000)
     public void testSyncSendMessageModifiedUndeliverable() throws Exception {
         Modified modified = new Modified();
@@ -625,7 +630,6 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         doSyncSendMessageNotAcceptedTestImpl(modified);
     }
 
-    @Ignore // TODO: modified state not yet handled correctly for producers
     @Test(timeout = 20000)
     public void testSyncSendMessageModifiedDeliveryFailedUndeliverable() throws Exception {
         Modified modified = new Modified();
@@ -662,4 +666,96 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Test(timeout = 20000)
+    public void testAsyncSendMessageRejected() throws Exception {
+        doAsyncSendMessageNotAcceptedTestImpl(new Rejected());
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncSendMessageReleased() throws Exception {
+        doAsyncSendMessageNotAcceptedTestImpl(new Released());
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncSendMessageModifiedDeliveryFailed() throws Exception {
+        Modified modified = new Modified();
+        modified.setDeliveryFailed(true);
+
+        doAsyncSendMessageNotAcceptedTestImpl(modified);
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncSendMessageModifiedUndeliverable() throws Exception {
+        Modified modified = new Modified();
+        modified.setUndeliverableHere(true);
+
+        doAsyncSendMessageNotAcceptedTestImpl(modified);
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncSendMessageModifiedDeliveryFailedUndeliverable() throws Exception {
+        Modified modified = new Modified();
+        modified.setDeliveryFailed(true);
+        modified.setUndeliverableHere(true);
+
+        doAsyncSendMessageNotAcceptedTestImpl(modified);
+    }
+
+    private void doAsyncSendMessageNotAcceptedTestImpl(ListDescribedType responseState) throws JMSException, InterruptedException, Exception, IOException {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+
+            final CountDownLatch asyncError = new CountDownLatch(1);
+
+            JmsConnection jmsConnection = (JmsConnection) connection;
+            jmsConnection.setForceAsyncSend(true);
+            jmsConnection.setExceptionListener(new ExceptionListener() {
+
+                @Override
+                public void onException(JMSException exception) {
+                    LOG.debug("ExceptionListener got error: {}", exception.getMessage());
+                    asyncError.countDown();
+                }
+            });
+
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            MessageProducer producer = session.createProducer(queue);
+
+            // Create a second producer which allows for a safe wait for credit for the
+            // first producer without the need for a sleep.  Otherwise the first producer
+            // might not do an actual async send due to not having received credit yet.
+            session.createProducer(queue);
+
+            Message message = session.createTextMessage("content");
+
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), false, responseState, true);
+
+            assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
+
+            try {
+                producer.send(message);
+            } catch (JMSException e) {
+                LOG.warn("Caught unexpected error: {}", e.getMessage());
+                fail("No expected exception for this send.");
+            }
+
+            assertTrue("Should get a non-fatal error", asyncError.await(10, TimeUnit.SECONDS));
+
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher());
+
+            try {
+                producer.send(message);
+            } catch (JMSException e) {
+                LOG.warn("Caught unexpected error: {}", e.getMessage());
+                fail("No expected exception for this send.");
+            }
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
 }

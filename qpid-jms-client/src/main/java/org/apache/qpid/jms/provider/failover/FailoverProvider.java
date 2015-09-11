@@ -737,6 +737,22 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         });
     }
 
+    @Override
+    public void onProviderException(final Exception ex) {
+        if (closingConnection.get() || closed.get() || failed.get()) {
+            return;
+        }
+        serializer.execute(new Runnable() {
+            @Override
+            public void run() {
+                if (!closingConnection.get() && !closed.get() && !failed.get()) {
+                    LOG.debug("Failover: the provider reports an async error: {}", ex.getMessage());
+                    listener.onProviderException(ex);
+                }
+            }
+        });
+    }
+
     //--------------- URI update and rebalance methods -----------------------//
 
     public void add(final URI uri) {

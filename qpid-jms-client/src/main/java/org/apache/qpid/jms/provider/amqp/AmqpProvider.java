@@ -889,6 +889,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         }
     }
 
+    void fireNonFatalProviderException(Exception ex) {
+        ProviderListener listener = this.listener;
+        if (listener != null) {
+            listener.onProviderException(ex);
+        }
+    }
+
     void fireProviderException(Throwable ex) {
         if (connectionOpenRequest != null) {
             connectionOpenRequest.onFailure(ex);

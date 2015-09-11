@@ -185,6 +185,11 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
         listener.onResourceRemotelyClosed(resource, cause);
     }
 
+    @Override
+    public void onProviderException(Exception cause) {
+        listener.onProviderException(cause);
+    }
+
     /**
      * @return the wrapped Provider.
      */

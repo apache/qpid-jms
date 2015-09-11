@@ -1100,7 +1100,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     @Override
     public void onConnectionFailure(final IOException ex) {
-        onAsyncException(ex);
+        onProviderException(ex);
         if (!closing.get() && !closed.get()) {
             executor.execute(new Runnable() {
                 @Override
@@ -1168,6 +1168,13 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
                 }
             });
         }
+    }
+
+    @Override
+    public void onProviderException(final Exception cause) {
+        // Report this to any registered exception listener, let the receiver
+        // decide if it should be fatal.
+        onAsyncException(cause);
     }
 
     /**

@@ -33,8 +33,10 @@ import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageFacade;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
+import org.apache.qpid.proton.amqp.messaging.Modified;
 import org.apache.qpid.proton.amqp.messaging.Outcome;
 import org.apache.qpid.proton.amqp.messaging.Rejected;
+import org.apache.qpid.proton.amqp.messaging.Released;
 import org.apache.qpid.proton.amqp.transaction.TransactionalState;
 import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
@@ -207,33 +209,38 @@ public class AmqpFixedProducer extends AmqpProducer {
             }
 
             AsyncResult request = (AsyncResult) delivery.getContext();
+            Exception deliveryError = null;
 
             if (outcome instanceof Accepted) {
                 LOG.trace("Outcome of delivery was accepted: {}", delivery);
-                tagGenerator.returnTag(delivery.getTag());
                 if (request != null && !request.isComplete()) {
                     request.onSuccess();
                 }
             } else if (outcome instanceof Rejected) {
+                LOG.trace("Outcome of delivery was rejected: {}", delivery);
                 ErrorCondition remoteError = ((Rejected) outcome).getError();
                 if (remoteError == null) {
                     remoteError = getEndpoint().getRemoteCondition();
                 }
 
-                Exception cause = AmqpSupport.convertToException(remoteError);
-
-                LOG.trace("Outcome of delivery was rejected: {}", delivery);
-                tagGenerator.returnTag(delivery.getTag());
-                if (request != null && !request.isComplete()) {
-                    request.onFailure(cause);
-                } else {
-                    connection.getProvider().fireProviderException(cause);
-                }
-            } else if (outcome != null) {
-                // TODO - Revisit these and better handle unknown or other outcomes
-                LOG.warn("Message send updated with unsupported outcome: {}", outcome);
+                deliveryError = AmqpSupport.convertToException(remoteError);
+            } else if (outcome instanceof Released) {
+                LOG.trace("Outcome of delivery was released: {}", delivery);
+                deliveryError = new JMSException("Delivery failed: released by receiver");
+            } else if (outcome instanceof Modified) {
+                LOG.trace("Outcome of delivery was modified: {}", delivery);
+                deliveryError = new JMSException("Delivery failed: failure at remote");
             }
 
+            if (deliveryError != null) {
+                if (request != null && !request.isComplete()) {
+                    request.onFailure(deliveryError);
+                } else {
+                    connection.getProvider().fireNonFatalProviderException(deliveryError);
+                }
+            }
+
+            tagGenerator.returnTag(delivery.getTag());
             toRemove.add(delivery);
             delivery.settle();
         }

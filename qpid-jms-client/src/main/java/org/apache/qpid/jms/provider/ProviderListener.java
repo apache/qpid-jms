@@ -122,4 +122,13 @@ public interface ProviderListener {
      */
     void onResourceRemotelyClosed(JmsResource resource, Exception cause);
 
+    /**
+     * Called to indicate that a some client operation caused or received an
+     * error that is not considered fatal at the provider level.
+     *
+     * @param cause
+     *        the exception object that is being reported to the listener.
+     */
+    void onProviderException(Exception cause);
+
 }

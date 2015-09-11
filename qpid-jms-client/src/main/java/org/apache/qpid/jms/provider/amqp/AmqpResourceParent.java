@@ -16,32 +16,28 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import org.apache.qpid.proton.amqp.DescribedType;
-import org.apache.qpid.proton.amqp.UnsignedLong;
-
 /**
- * A Described Type wrapper for JMS selector values.
+ * Interface for any object that can will manage the lifetime of AmqpResource
+ * based object instances.
  */
-public class AmqpJmsSelectorType implements DescribedType {
+public interface AmqpResourceParent {
 
-    private final String selector;
+    /**
+     * Adds the given resource as a child of this resource so that it's
+     * lifetime becomes managed by that of its parent.
+     *
+     * @param resource
+     *      The AmqpResource that is a child of this one.
+     */
+    void addChildResource(AmqpResource resource);
 
-    public AmqpJmsSelectorType(String selector) {
-        this.selector = selector;
-    }
+    /**
+     * Removes the given resource from the registered child resources
+     * managed by this one.
+     *
+     * @param resource
+     *      The AmqpResource that is no longer a child of this one.
+     */
+    void removeChildResource(AmqpResource resource);
 
-    @Override
-    public Object getDescriptor() {
-        return UnsignedLong.valueOf(0x0000468C00000004L);
-    }
-
-    @Override
-    public Object getDescribed() {
-        return this.selector;
-    }
-
-    @Override
-    public String toString() {
-        return "AmqpJmsSelectorType{" + selector + "}";
-    }
 }

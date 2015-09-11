@@ -26,6 +26,7 @@ import javax.jms.JMSSecurityException;
 
 import org.apache.qpid.jms.provider.ProviderRedirectedException;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.messaging.Modified;
 import org.apache.qpid.proton.amqp.transport.AmqpError;
 import org.apache.qpid.proton.amqp.transport.ConnectionError;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
@@ -53,6 +54,29 @@ public class AmqpSupport {
     public static final Symbol PRODUCT = Symbol.valueOf("product");
     public static final Symbol VERSION = Symbol.valueOf("version");
     public static final Symbol PLATFORM = Symbol.valueOf("platform");
+
+    // Symbols used for receivers.
+    public static final Symbol COPY = Symbol.getSymbol("copy");
+    public static final Symbol JMS_NO_LOCAL_SYMBOL = Symbol.valueOf("no-local");
+    public static final Symbol JMS_SELECTOR_SYMBOL = Symbol.valueOf("jms-selector");
+    public static final Modified MODIFIED_FAILED = new Modified();
+    public static final Modified MODIFIED_UNDELIVERABLE = new Modified();
+
+    // Temporary Destination constants
+    public static final Symbol DYNAMIC_NODE_LIFETIME_POLICY = Symbol.valueOf("lifetime-policy");
+    public static final String TEMP_QUEUE_CREATOR = "temp-queue-creator:";
+    public static final String TEMP_TOPIC_CREATOR = "temp-topic-creator:";
+
+    //----- Static initializer -----------------------------------------------//
+
+    static {
+        MODIFIED_FAILED.setDeliveryFailed(true);
+
+        MODIFIED_UNDELIVERABLE.setDeliveryFailed(true);
+        MODIFIED_UNDELIVERABLE.setUndeliverableHere(true);
+    }
+
+    //----- Utility Methods --------------------------------------------------//
 
     /**
      * Given an ErrorCondition instance create a new JMSException that best matches

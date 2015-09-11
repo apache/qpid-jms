@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.MODIFIED_FAILED;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.MODIFIED_UNDELIVERABLE;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -23,14 +25,12 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsDestination;
@@ -41,24 +41,13 @@ import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderListener;
-import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageBuilder;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.Binary;
-import org.apache.qpid.proton.amqp.DescribedType;
-import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
-import org.apache.qpid.proton.amqp.messaging.Modified;
-import org.apache.qpid.proton.amqp.messaging.Rejected;
 import org.apache.qpid.proton.amqp.messaging.Released;
-import org.apache.qpid.proton.amqp.messaging.Source;
-import org.apache.qpid.proton.amqp.messaging.Target;
-import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
-import org.apache.qpid.proton.amqp.messaging.TerminusExpiryPolicy;
 import org.apache.qpid.proton.amqp.transaction.TransactionalState;
 import org.apache.qpid.proton.amqp.transport.DeliveryState;
-import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
-import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Receiver;
 import org.apache.qpid.proton.message.Message;
@@ -72,21 +61,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConsumer.class);
 
-    protected static final Symbol COPY = Symbol.getSymbol("copy");
-    protected static final Symbol JMS_NO_LOCAL_SYMBOL = Symbol.valueOf("no-local");
-    protected static final Symbol JMS_SELECTOR_SYMBOL = Symbol.valueOf("jms-selector");
-
     private static final int INITIAL_BUFFER_CAPACITY = 1024 * 128;
-
-    private static final Modified MODIFIED_FAILED = new Modified();
-    private static final Modified MODIFIED_UNDELIVERABLE = new Modified();
-
-    static {
-        MODIFIED_FAILED.setDeliveryFailed(true);
-
-        MODIFIED_UNDELIVERABLE.setDeliveryFailed(true);
-        MODIFIED_UNDELIVERABLE.setUndeliverableHere(true);
-    }
 
     protected final AmqpSession session;
     protected final Map<JmsInboundMessageDispatch, Delivery> delivered = new LinkedHashMap<JmsInboundMessageDispatch, Delivery>();
@@ -96,12 +71,13 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     protected final ByteBuf incomingBuffer = Unpooled.buffer(INITIAL_BUFFER_CAPACITY);
     protected final AtomicLong incomingSequence = new AtomicLong(0);
 
-    public AmqpConsumer(AmqpSession session, JmsConsumerInfo info) {
-        super(info);
+    public AmqpConsumer(AmqpSession session, JmsConsumerInfo info, Receiver receiver) {
+        super(info, receiver);
+
         this.session = session;
 
         // Add a shortcut back to this Consumer for quicker lookups
-        this.resource.getConsumerId().setProviderHint(this);
+        getResourceInfo().getConsumerId().setProviderHint(this);
     }
 
     /**
@@ -162,110 +138,9 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     @Override
-    protected void doOpen() {
-        JmsDestination destination = resource.getDestination();
-        String subscription = AmqpDestinationHelper.INSTANCE.getDestinationAddress(destination, session.getConnection());
-
-        Source source = new Source();
-        source.setAddress(subscription);
-        Target target = new Target();
-
-        configureSource(source);
-
-        String receiverName = "qpid-jms:receiver:" + getConsumerId() + ":" + subscription;
-        if (resource.getSubscriptionName() != null && !resource.getSubscriptionName().isEmpty()) {
-            // In the case of Durable Topic Subscriptions the client must use the same
-            // receiver name which is derived from the subscription name property.
-            receiverName = resource.getSubscriptionName();
-        }
-
-        Receiver receiver = session.getProtonSession().receiver(receiverName);
-        receiver.setSource(source);
-        receiver.setTarget(target);
-        if (isPresettle()) {
-            receiver.setSenderSettleMode(SenderSettleMode.SETTLED);
-        } else {
-            receiver.setSenderSettleMode(SenderSettleMode.UNSETTLED);
-        }
-        receiver.setReceiverSettleMode(ReceiverSettleMode.FIRST);
-
-        setEndpoint(receiver);
-
-        super.doOpen();
-    }
-
-    @Override
-    protected void doOpenCompletion() {
-        // Verify the attach response contained a non-null Source
-        org.apache.qpid.proton.amqp.transport.Source source = getEndpoint().getRemoteSource();
-        if (source != null) {
-            super.doOpenCompletion();
-        } else {
-            // No link terminus was created, the peer will now detach/close us.
-        }
-    }
-
-    @Override
-    protected Exception getOpenAbortException() {
-        // Verify the attach response contained a non-null Source
-        org.apache.qpid.proton.amqp.transport.Source source = getEndpoint().getRemoteSource();
-        if (source != null) {
-            return super.getOpenAbortException();
-        } else {
-            // No link terminus was created, the peer has detach/closed us, create IDE.
-            return new InvalidDestinationException("Link creation was refused");
-        }
-    }
-
-    @Override
-    public void opened() {
-        this.session.addResource(this);
-        super.opened();
-    }
-
-    @Override
-    public void closed() {
-        this.session.removeResource(this);
-        super.closed();
-    }
-
-    protected void configureSource(Source source) {
-        Map<Symbol, DescribedType> filters = new HashMap<Symbol, DescribedType>();
-        Symbol[] outcomes = new Symbol[]{ Accepted.DESCRIPTOR_SYMBOL, Rejected.DESCRIPTOR_SYMBOL,
-                                          Released.DESCRIPTOR_SYMBOL, Modified.DESCRIPTOR_SYMBOL };
-
-        if (resource.getSubscriptionName() != null && !resource.getSubscriptionName().isEmpty()) {
-            source.setExpiryPolicy(TerminusExpiryPolicy.NEVER);
-            source.setDurable(TerminusDurability.UNSETTLED_STATE);
-            source.setDistributionMode(COPY);
-        } else {
-            source.setDurable(TerminusDurability.NONE);
-            source.setExpiryPolicy(TerminusExpiryPolicy.LINK_DETACH);
-        }
-
-        if (resource.isBrowser()) {
-            source.setDistributionMode(COPY);
-        }
-
-        Symbol typeCapability =  AmqpDestinationHelper.INSTANCE.toTypeCapability(resource.getDestination());
-        if(typeCapability != null) {
-            source.setCapabilities(typeCapability);
-        }
-
-        source.setOutcomes(outcomes);
-        source.setDefaultOutcome(MODIFIED_FAILED);
-
-        if (resource.isNoLocal()) {
-            filters.put(JMS_NO_LOCAL_SYMBOL, AmqpJmsNoLocalType.NO_LOCAL);
-        }
-
-        if (resource.getSelector() != null && !resource.getSelector().trim().equals("")) {
-            filters.put(JMS_SELECTOR_SYMBOL, new AmqpJmsSelectorType(resource.getSelector()));
-        }
-
-        if (!filters.isEmpty()) {
-            source.setFilter(filters);
-        }
+    public void resourceClosed() {
+        this.session.removeChildResource(this);
+        super.resourceClosed();
     }
 
     /**
@@ -278,7 +153,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      * would already have been given for these so we just need to settle them.
      */
     public void acknowledge() {
-        LOG.trace("Session Acknowledge for consumer: {}", resource.getConsumerId());
+        LOG.trace("Session Acknowledge for consumer: {}", getResourceInfo().getConsumerId());
         for (Delivery delivery : delivered.values()) {
             delivery.disposition(Accepted.getInstance());
             delivery.settle();
@@ -326,7 +201,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             }
             LOG.debug("Consumed Ack of message: {}", envelope);
             if (!delivery.isSettled()) {
-                if (session.isTransacted() && !resource.isBrowser()) {
+                if (session.isTransacted() && !getResourceInfo().isBrowser()) {
                     Binary txnId = session.getTransactionContext().getAmqpTransactionId();
                     if (txnId != null) {
                         TransactionalState txState = new TransactionalState();
@@ -359,13 +234,13 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      * or we are draining then we never send credit here.
      */
     private void sendFlowIfNeeded() {
-        if (resource.getPrefetchSize() == 0 || isDraining()) {
+        if (getResourceInfo().getPrefetchSize() == 0 || isDraining()) {
             return;
         }
 
         int currentCredit = getEndpoint().getCredit();
-        if (currentCredit <= resource.getPrefetchSize() * 0.2) {
-            int newCredit = resource.getPrefetchSize() - currentCredit;
+        if (currentCredit <= getResourceInfo().getPrefetchSize() * 0.2) {
+            int newCredit = getResourceInfo().getPrefetchSize() - currentCredit;
             LOG.trace("Consumer {} granting additional credit: {}", getConsumerId(), newCredit);
             getEndpoint().flow(newCredit);
         }
@@ -377,7 +252,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      * @throws Exception if an error occurs while performing the recover.
      */
     public void recover() throws Exception {
-        LOG.debug("Session Recover for consumer: {}", resource.getConsumerId());
+        LOG.debug("Session Recover for consumer: {}", getResourceInfo().getConsumerId());
         Collection<JmsInboundMessageDispatch> values = delivered.keySet();
         ArrayList<JmsInboundMessageDispatch> envelopes = new ArrayList<JmsInboundMessageDispatch>(values);
         ListIterator<JmsInboundMessageDispatch> reverseIterator = envelopes.listIterator(values.size());
@@ -422,7 +297,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                 // try to fulfill the pull request, otherwise we want to drain down
                 // what is there to ensure we consume everything available.
                 if (getEndpoint().getCredit() == 0) {
-                    getEndpoint().drain(resource.getPrefetchSize() > 0 ? resource.getPrefetchSize() : 1);
+                    getEndpoint().drain(getResourceInfo().getPrefetchSize() > 0 ? getResourceInfo().getPrefetchSize() : 1);
                 } else {
                     getEndpoint().drain(0);
                 }
@@ -513,7 +388,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
         JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch(getNextIncomingSequenceNumber());
         envelope.setMessage(message);
-        envelope.setConsumerId(resource.getConsumerId());
+        envelope.setConsumerId(getResourceInfo().getConsumerId());
         // Store link to delivery in the hint for use in acknowledge requests.
         envelope.setProviderHint(incoming);
         envelope.setMessageId(message.getFacade().getProviderMessageIdObject());
@@ -541,7 +416,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     @Override
     protected void doClose() {
-        if (resource.isDurable()) {
+        if (getResourceInfo().isDurable()) {
             getEndpoint().detach();
         } else {
             getEndpoint().close();
@@ -557,11 +432,11 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     public JmsConsumerId getConsumerId() {
-        return this.resource.getConsumerId();
+        return this.getResourceInfo().getConsumerId();
     }
 
     public JmsDestination getDestination() {
-        return this.resource.getDestination();
+        return this.getResourceInfo().getDestination();
     }
 
     public Receiver getProtonReceiver() {
@@ -569,7 +444,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     public boolean isPresettle() {
-        return presettle || resource.isBrowser();
+        return presettle || getResourceInfo().isBrowser();
     }
 
     public boolean isDraining() {
@@ -582,7 +457,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     @Override
     public String toString() {
-        return "AmqpConsumer { " + this.resource.getConsumerId() + " }";
+        return "AmqpConsumer { " + getResourceInfo().getConsumerId() + " }";
     }
 
     protected void deliveryFailed(Delivery incoming) {

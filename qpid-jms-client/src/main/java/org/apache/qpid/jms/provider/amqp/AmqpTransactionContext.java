@@ -31,15 +31,10 @@ import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Rejected;
-import org.apache.qpid.proton.amqp.messaging.Source;
-import org.apache.qpid.proton.amqp.transaction.Coordinator;
 import org.apache.qpid.proton.amqp.transaction.Declare;
 import org.apache.qpid.proton.amqp.transaction.Declared;
 import org.apache.qpid.proton.amqp.transaction.Discharge;
-import org.apache.qpid.proton.amqp.transaction.TxnCapability;
 import org.apache.qpid.proton.amqp.transport.DeliveryState;
-import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
-import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Sender;
 import org.apache.qpid.proton.message.Message;
@@ -68,13 +63,18 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
     private AsyncResult pendingRequest;
 
     /**
-     * Creates a new AmqpTransaction instance.
+     * Creates a new AmqpTransactionContext instance.
      *
      * @param session
-     *        The session that owns this transaction
+     *        The session that owns this transaction context.
+     * @param resourceInfo
+     *        The resourceInfo that defines this transaction context.
+     * @param sender
+     *        The local sender endpoint for this transaction context.
      */
-    public AmqpTransactionContext(AmqpSession session) {
-        super(session.getJmsResource());
+    public AmqpTransactionContext(AmqpSession session, JmsSessionInfo resourceInfo, Sender sender) {
+        super(resourceInfo, sender);
+
         this.session = session;
     }
 
@@ -126,25 +126,6 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
         } catch (Exception e) {
             throw IOExceptionSupport.create(e);
         }
-    }
-
-    @Override
-    protected void doOpen() {
-        Coordinator coordinator = new Coordinator();
-        coordinator.setCapabilities(TxnCapability.LOCAL_TXN);
-        Source source = new Source();
-
-        String coordinatorName = "qpid-jms:coordinator:" + resource.getSessionId().toString();
-
-        Sender sender = session.getProtonSession().sender(coordinatorName);
-        sender.setSource(source);
-        sender.setTarget(coordinator);
-        sender.setSenderSettleMode(SenderSettleMode.UNSETTLED);
-        sender.setReceiverSettleMode(ReceiverSettleMode.FIRST);
-
-        setEndpoint(sender);
-
-        super.doOpen();
     }
 
     public void begin(JmsTransactionId txId, AsyncResult request) throws Exception {

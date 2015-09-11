@@ -23,29 +23,21 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 
-import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
-import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageFacade;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.Binary;
-import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.Outcome;
 import org.apache.qpid.proton.amqp.messaging.Rejected;
-import org.apache.qpid.proton.amqp.messaging.Source;
-import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.transaction.TransactionalState;
 import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
-import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
-import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Sender;
 import org.apache.qpid.proton.message.Message;
@@ -70,6 +62,10 @@ public class AmqpFixedProducer extends AmqpProducer {
 
     public AmqpFixedProducer(AmqpSession session, JmsProducerInfo info) {
         super(session, info);
+    }
+
+    public AmqpFixedProducer(AmqpSession session, JmsProducerInfo info, Sender sender) {
+        super(session, info, sender);
     }
 
     @Override
@@ -247,76 +243,17 @@ public class AmqpFixedProducer extends AmqpProducer {
         super.processDeliveryUpdates(provider);
     }
 
-    @Override
-    protected void doOpen() {
-        JmsDestination destination = resource.getDestination();
-        String targetAddress = AmqpDestinationHelper.INSTANCE.getDestinationAddress(destination, session.getConnection());
-
-        Symbol[] outcomes = new Symbol[]{ Accepted.DESCRIPTOR_SYMBOL, Rejected.DESCRIPTOR_SYMBOL };
-        String sourceAddress = getProducerId().toString();
-        Source source = new Source();
-        source.setAddress(sourceAddress);
-        source.setOutcomes(outcomes);
-        //TODO: default outcome. Accepted normally, Rejected for transaction controller?
-
-        Target target = new Target();
-        target.setAddress(targetAddress);
-        Symbol typeCapability =  AmqpDestinationHelper.INSTANCE.toTypeCapability(destination);
-        if (typeCapability != null) {
-            target.setCapabilities(typeCapability);
-        }
-
-        String senderName = "qpid-jms:sender:" + sourceAddress + ":" + targetAddress;
-
-        Sender sender = session.getProtonSession().sender(senderName);
-        sender.setSource(source);
-        sender.setTarget(target);
-        if (presettle) {
-            sender.setSenderSettleMode(SenderSettleMode.SETTLED);
-        } else {
-            sender.setSenderSettleMode(SenderSettleMode.UNSETTLED);
-        }
-        sender.setReceiverSettleMode(ReceiverSettleMode.FIRST);
-
-        setEndpoint(sender);
-
-        super.doOpen();
-    }
-
-    @Override
-    protected void doOpenCompletion() {
-        // Verify the attach response contained a non-null target
-        org.apache.qpid.proton.amqp.transport.Target target = getEndpoint().getRemoteTarget();
-        if (target != null) {
-            super.doOpenCompletion();
-        } else {
-            // No link terminus was created, the peer will now detach/close us.
-        }
-    }
-
-    @Override
-    protected Exception getOpenAbortException() {
-        // Verify the attach response contained a non-null target
-        org.apache.qpid.proton.amqp.transport.Target target = getEndpoint().getRemoteTarget();
-        if (target != null) {
-            return super.getOpenAbortException();
-        } else {
-            // No link terminus was created, the peer has detach/closed us, create IDE.
-            return new InvalidDestinationException("Link creation was refused");
-        }
-    }
-
     public AmqpSession getSession() {
-        return this.session;
+        return session;
     }
 
     public Sender getProtonSender() {
-        return this.getEndpoint();
+        return getEndpoint();
     }
 
     @Override
     public boolean isAnonymous() {
-        return this.resource.getDestination() == null;
+        return getResourceInfo().getDestination() == null;
     }
 
     @Override
@@ -326,7 +263,7 @@ public class AmqpFixedProducer extends AmqpProducer {
 
     @Override
     public boolean isPresettle() {
-        return this.presettle;
+        return presettle;
     }
 
     @Override

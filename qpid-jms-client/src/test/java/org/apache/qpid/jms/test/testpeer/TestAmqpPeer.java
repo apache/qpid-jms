@@ -18,6 +18,7 @@
  */
 package org.apache.qpid.jms.test.testpeer;
 
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DYNAMIC_NODE_LIFETIME_POLICY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
@@ -38,7 +39,6 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 
 import org.apache.qpid.jms.provider.amqp.AmqpSupport;
-import org.apache.qpid.jms.provider.amqp.AmqpTemporaryDestination;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.test.testpeer.basictypes.ReceiverSettleMode;
 import org.apache.qpid.jms.test.testpeer.basictypes.Role;
@@ -714,7 +714,7 @@ public class TestAmqpPeer implements AutoCloseable
         targetMatcher.withDynamic(equalTo(true));
         targetMatcher.withDurable(equalTo(TerminusDurability.NONE));
         targetMatcher.withExpiryPolicy(equalTo(TerminusExpiryPolicy.LINK_DETACH));
-        targetMatcher.withDynamicNodeProperties(hasEntry(equalTo(AmqpTemporaryDestination.DYNAMIC_NODE_LIFETIME_POLICY), new DeleteOnCloseMatcher()));
+        targetMatcher.withDynamicNodeProperties(hasEntry(equalTo(DYNAMIC_NODE_LIFETIME_POLICY), new DeleteOnCloseMatcher()));
         targetMatcher.withCapabilities(arrayContaining(nodeTypeCapability));
 
         final AttachMatcher attachMatcher = new AttachMatcher()

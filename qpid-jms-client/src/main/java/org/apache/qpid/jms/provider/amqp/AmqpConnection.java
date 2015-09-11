@@ -16,18 +16,13 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SOLE_CONNECTION_CAPABILITY;
-
 import java.net.URI;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import javax.jms.JMSException;
-import javax.jms.JMSSecurityException;
-import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsTemporaryDestination;
@@ -35,15 +30,14 @@ import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.amqp.builders.AmqpSessionBuilder;
+import org.apache.qpid.jms.provider.amqp.builders.AmqpTemporaryDestinationBuilder;
 import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageFactory;
-import org.apache.qpid.jms.util.IOExceptionSupport;
-import org.apache.qpid.jms.util.MetaDataSupport;
-import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.engine.Connection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Connection> {
+public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Connection> implements AmqpResourceParent {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
 
@@ -53,66 +47,34 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     private final Map<JmsSessionId, AmqpSession> sessions = new HashMap<JmsSessionId, AmqpSession>();
     private final Map<JmsDestination, AmqpTemporaryDestination> tempDests = new HashMap<JmsDestination, AmqpTemporaryDestination>();
     private final AmqpProvider provider;
-    private AmqpSaslAuthenticator authenticator;
-    private final AmqpConnectionSession connectionSession;
     private final AmqpConnectionProperties properties;
+    private AmqpConnectionSession connectionSession;
 
     private boolean objectMessageUsesAmqpTypes = false;
     private boolean anonymousProducerCache = false;
     private int anonymousProducerCacheSize = 10;
 
-    public AmqpConnection(AmqpProvider provider, Connection protonConnection, AmqpSaslAuthenticator authenticator, JmsConnectionInfo info) {
+    public AmqpConnection(AmqpProvider provider, JmsConnectionInfo info, Connection protonConnection) {
         super(info, protonConnection);
 
         this.provider = provider;
         this.remoteURI = provider.getRemoteURI();
         this.amqpMessageFactory = new AmqpJmsMessageFactory(this);
-        this.authenticator = authenticator;
 
-        this.resource.getConnectionId().setProviderHint(this);
+        getResourceInfo().getConnectionId().setProviderHint(this);
 
         // Create connection properties initialized with defaults from the JmsConnectionInfo
         this.properties = new AmqpConnectionProperties(info);
-
-        // Create a Session for this connection that is used for Temporary Destinations
-        // and perhaps later on management and advisory monitoring.
-        JmsSessionInfo sessionInfo = new JmsSessionInfo(this.resource, -1);
-        sessionInfo.setAcknowledgementMode(Session.AUTO_ACKNOWLEDGE);
-
-        this.connectionSession = new AmqpConnectionSession(this, sessionInfo);
     }
 
-    @Override
-    protected void doOpen() {
-        String hostname = provider.getVhost();
-        if(hostname == null) {
-            hostname = remoteURI.getHost();
-        } else if (hostname.isEmpty()) {
-            hostname = null;
-        }
-
-        Map<Symbol, Object> props = new LinkedHashMap<Symbol, Object>();
-        props.put(AmqpSupport.PRODUCT, MetaDataSupport.PROVIDER_NAME);
-        props.put(AmqpSupport.VERSION, MetaDataSupport.PROVIDER_VERSION);
-        props.put(AmqpSupport.PLATFORM, MetaDataSupport.PLATFORM_DETAILS);
-
-        Connection conn = getEndpoint();
-        conn.setHostname(hostname);
-        conn.setContainer(resource.getClientId());
-        conn.setDesiredCapabilities(new Symbol[] { SOLE_CONNECTION_CAPABILITY });
-        conn.setProperties(props);
-
-        super.doOpen();
+    public void createSession(JmsSessionInfo sessionInfo, AsyncResult request) {
+        AmqpSessionBuilder builder = new AmqpSessionBuilder(this, sessionInfo);
+        builder.buildResource(request);
     }
 
-    public AmqpSession createSession(JmsSessionInfo sessionInfo) {
-        AmqpSession session = new AmqpSession(this, sessionInfo);
-        return session;
-    }
-
-    public AmqpTemporaryDestination createTemporaryDestination(JmsTemporaryDestination destination) {
-        AmqpTemporaryDestination temporary = new AmqpTemporaryDestination(connectionSession, destination);
-        return temporary;
+    public void createTemporaryDestination(JmsTemporaryDestination destination, AsyncResult request) {
+        AmqpTemporaryDestinationBuilder builder = new AmqpTemporaryDestinationBuilder(connectionSession, destination);
+        builder.buildResource(request);
     }
 
     public AmqpTemporaryDestination getTemporaryDestination(JmsTemporaryDestination destination) {
@@ -132,93 +94,39 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     }
 
     @Override
-    protected void doOpenCompletion() {
-        properties.initialize(getEndpoint().getRemoteOfferedCapabilities(), getEndpoint().getRemoteProperties());
-
-        // If the remote reports that the connection attempt failed then we can assume a
-        // close follows so do nothing and wait so a proper error can be constructed from
-        // the information in the remote close.
-        if (!properties.isConnectionOpenFailed()) {
-            connectionSession.open(new AsyncResult() {
-
-                @Override
-                public boolean isComplete() {
-                    return connectionSession.isOpen();
-                }
-
-                @Override
-                public void onSuccess() {
-                    LOG.debug("{} is now open: ", AmqpConnection.this);
-                    opened();
-                }
-
-                @Override
-                public void onFailure(Throwable result) {
-                    LOG.debug("AMQP Connection Session failed to open.");
-                    failed(IOExceptionSupport.create(result));
-                }
-            });
+    public void addChildResource(AmqpResource resource) {
+        if (resource instanceof AmqpConnectionSession) {
+            connectionSession = (AmqpConnectionSession) resource;
+        } else if (resource instanceof AmqpSession) {
+            AmqpSession session = (AmqpSession) resource;
+            sessions.put(session.getSessionId(), session);
+        } else if (resource instanceof AmqpTemporaryDestination) {
+            AmqpTemporaryDestination tempDest = (AmqpTemporaryDestination) resource;
+            tempDests.put(tempDest.getResourceInfo(), tempDest);
         }
     }
 
-    public void processSaslAuthentication() {
-        if (authenticator == null) {
-            return;
+    @Override
+    public void removeChildResource(AmqpResource resource) {
+        if (resource instanceof AmqpSession) {
+            AmqpSession session = (AmqpSession) resource;
+            sessions.remove(session.getSessionId());
+        } else if (resource instanceof AmqpTemporaryDestination) {
+            AmqpTemporaryDestination tempDest = (AmqpTemporaryDestination) resource;
+            tempDests.remove(tempDest.getResourceInfo());
         }
-
-        try {
-            if (authenticator.authenticate()) {
-                authenticator = null;
-            }
-        } catch (JMSSecurityException ex) {
-            try {
-                // TODO: this is a hack to stop Proton sending the open(+close) frame(s)
-                org.apache.qpid.proton.engine.Transport t = getEndpoint().getTransport();
-                t.close_head();
-            } finally {
-                failed(ex);
-            }
-        }
-    }
-
-    void addTemporaryDestination(AmqpTemporaryDestination destination) {
-        tempDests.put(destination.getJmsDestination(), destination);
-    }
-
-    void removeTemporaryDestination(AmqpTemporaryDestination destination) {
-        tempDests.remove(destination.getJmsDestination());
-    }
-
-    void addSession(AmqpSession session) {
-        this.sessions.put(session.getSessionId(), session);
-    }
-
-    void removeSession(AmqpSession session) {
-        this.sessions.remove(session.getSessionId());
-    }
-
-    public JmsConnectionInfo getConnectionInfo() {
-        return this.resource;
     }
 
     public Connection getProtonConnection() {
-        return this.getEndpoint();
+        return getEndpoint();
     }
 
     public URI getRemoteURI() {
-        return this.remoteURI;
-    }
-
-    public String getUsername() {
-        return this.resource.getUsername();
-    }
-
-    public String getPassword() {
-        return this.resource.getPassword();
+        return remoteURI;
     }
 
     public AmqpProvider getProvider() {
-        return this.provider;
+        return provider;
     }
 
     public String getQueuePrefix() {
@@ -249,7 +157,7 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
         if (sessionId.getProviderHint() instanceof AmqpSession) {
             return (AmqpSession) sessionId.getProviderHint();
         }
-        return this.sessions.get(sessionId);
+        return sessions.get(sessionId);
     }
 
     /**
@@ -318,7 +226,7 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
      * @return the AMQP based JmsMessageFactory for this Connection.
      */
     public AmqpJmsMessageFactory getAmqpMessageFactory() {
-        return this.amqpMessageFactory;
+        return amqpMessageFactory;
     }
 
     /**
@@ -353,6 +261,6 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
 
     @Override
     public String toString() {
-        return "AmqpConnection { " + getConnectionInfo().getConnectionId() + " }";
+        return "AmqpConnection { " + getResourceInfo().getConnectionId() + " }";
     }
 }

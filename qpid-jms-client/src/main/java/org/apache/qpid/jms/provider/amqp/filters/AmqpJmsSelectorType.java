@@ -14,31 +14,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.provider.amqp;
+package org.apache.qpid.jms.provider.amqp.filters;
 
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.UnsignedLong;
 
 /**
- * A Described Type wrapper for JMS no local option for MessageConsumer.
+ * A Described Type wrapper for JMS selector values.
  */
-public class AmqpJmsNoLocalType implements DescribedType {
+public class AmqpJmsSelectorType implements DescribedType {
 
-    public static final AmqpJmsNoLocalType NO_LOCAL = new AmqpJmsNoLocalType();
+    private final String selector;
 
-    private final String noLocal;
-
-    public AmqpJmsNoLocalType() {
-        this.noLocal = "NoLocalFilter{}";
+    public AmqpJmsSelectorType(String selector) {
+        this.selector = selector;
     }
 
     @Override
     public Object getDescriptor() {
-        return UnsignedLong.valueOf(0x0000468C00000003L);
+        return UnsignedLong.valueOf(0x0000468C00000004L);
     }
 
     @Override
     public Object getDescribed() {
-        return this.noLocal;
+        return this.selector;
+    }
+
+    @Override
+    public String toString() {
+        return "AmqpJmsSelectorType{" + selector + "}";
     }
 }

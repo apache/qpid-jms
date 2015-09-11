@@ -14,14 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.provider.amqp;
+package org.apache.qpid.jms.provider.amqp.filters;
+
+import org.apache.qpid.proton.amqp.DescribedType;
+import org.apache.qpid.proton.amqp.UnsignedLong;
 
 /**
- * AmqpResource specification.
- *
- * All AMQP types should implement this interface to allow for control of state
- * and configuration details.
+ * A Described Type wrapper for JMS no local option for MessageConsumer.
  */
-public interface AmqpResource extends AmqpEventSink {
+public class AmqpJmsNoLocalType implements DescribedType {
 
+    public static final AmqpJmsNoLocalType NO_LOCAL = new AmqpJmsNoLocalType();
+
+    private final String noLocal;
+
+    public AmqpJmsNoLocalType() {
+        this.noLocal = "NoLocalFilter{}";
+    }
+
+    @Override
+    public Object getDescriptor() {
+        return UnsignedLong.valueOf(0x0000468C00000003L);
+    }
+
+    @Override
+    public Object getDescribed() {
+        return this.noLocal;
+    }
 }

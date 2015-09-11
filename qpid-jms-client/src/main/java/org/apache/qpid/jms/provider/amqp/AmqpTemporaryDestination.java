@@ -16,23 +16,8 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsTemporaryDestination;
-import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
-import org.apache.qpid.proton.amqp.Symbol;
-import org.apache.qpid.proton.amqp.messaging.DeleteOnClose;
-import org.apache.qpid.proton.amqp.messaging.Source;
-import org.apache.qpid.proton.amqp.messaging.Target;
-import org.apache.qpid.proton.amqp.messaging.TerminusDurability;
-import org.apache.qpid.proton.amqp.messaging.TerminusExpiryPolicy;
-import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
-import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Sender;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Manages a Temporary Destination linked to a given Connection.
@@ -48,116 +33,32 @@ import org.slf4j.LoggerFactory;
  */
 public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsTemporaryDestination, Sender> {
 
-    public static final Symbol DYNAMIC_NODE_LIFETIME_POLICY = Symbol.valueOf("lifetime-policy");
-    private static final String TEMP_QUEUE_CREATOR = "temp-queue-creator:";
-    private static final String TEMP_TOPIC_CREATOR = "temp-topic-creator:";
-
-    private static final Logger LOG = LoggerFactory.getLogger(AmqpTemporaryDestination.class);
-
     private final AmqpConnection connection;
     private final AmqpSession session;
 
-    public AmqpTemporaryDestination(AmqpSession session, JmsTemporaryDestination destination) {
-        super(destination);
+    public AmqpTemporaryDestination(AmqpSession session, JmsTemporaryDestination destination, Sender endpoint) {
+        super(destination, endpoint);
+
         this.session = session;
         this.connection = session.getConnection();
     }
 
     @Override
-    public void opened() {
-
-        // Once our producer is opened we can read the updated name from the target address.
-        String oldDestinationName = resource.getName();
-        String destinationName = getEndpoint().getRemoteTarget().getAddress();
-
-        this.resource.setName(destinationName);
-
-        LOG.trace("Updated temp destination to: {} from: {}", resource, oldDestinationName);
-
-        this.connection.addTemporaryDestination(this);
-
-        super.opened();
-    }
-
-    @Override
-    protected void doOpen() {
-        // Form a link name, use the local generated name with a prefix to aid debugging
-        String localDestinationName = resource.getName();
-        String senderLinkName = null;
-        if (resource.isQueue()) {
-            senderLinkName = "qpid-jms:" + TEMP_QUEUE_CREATOR + localDestinationName;
-        } else {
-            senderLinkName = "qpid-jms:" + TEMP_TOPIC_CREATOR + localDestinationName;
-        }
-
-        // Just use a bare Source, this is a producer which
-        // wont send anything and the link name is unique.
-        Source source = new Source();
-
-        Target target = new Target();
-        target.setDynamic(true);
-        target.setDurable(TerminusDurability.NONE);
-        target.setExpiryPolicy(TerminusExpiryPolicy.LINK_DETACH);
-
-        // Set the dynamic node lifetime-policy
-        Map<Symbol, Object> dynamicNodeProperties = new HashMap<Symbol, Object>();
-        dynamicNodeProperties.put(DYNAMIC_NODE_LIFETIME_POLICY, DeleteOnClose.getInstance());
-        target.setDynamicNodeProperties(dynamicNodeProperties);
-
-        // Set the capability to indicate the node type being created
-        if (resource.isQueue()) {
-            target.setCapabilities(AmqpDestinationHelper.TEMP_QUEUE_CAPABILITY);
-        } else {
-            target.setCapabilities(AmqpDestinationHelper.TEMP_TOPIC_CAPABILITY);
-        }
-
-        Sender sender = session.getProtonSession().sender(senderLinkName);
-        sender.setSource(source);
-        sender.setTarget(target);
-        sender.setSenderSettleMode(SenderSettleMode.UNSETTLED);
-        sender.setReceiverSettleMode(ReceiverSettleMode.FIRST);
-
-        setEndpoint(sender);
-
-        super.doOpen();
-    }
-
-    @Override
-    protected void doOpenCompletion() {
-        // Verify the attach response contained a non-null target
-        org.apache.qpid.proton.amqp.transport.Target target = getEndpoint().getRemoteTarget();
-        if (target != null) {
-            super.doOpenCompletion();
-        } else {
-            // No link terminus was created, the peer will now detach/close us.
-        }
-    }
-
-    @Override
     protected void doClose() {
-        this.connection.removeTemporaryDestination(this);
-
+        connection.removeChildResource(this);
         super.doClose();
     }
 
     public AmqpConnection getConnection() {
-        return this.connection;
+        return connection;
     }
 
     public AmqpSession getSession() {
-        return this.session;
-    }
-
-    public Sender getProtonSender() {
-        return getEndpoint();
-    }
-
-    public JmsDestination getJmsDestination() {
-        return this.resource;
+        return session;
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + " { " + resource + "}";
+        return getClass().getSimpleName() + " { " + getResourceInfo() + "}";
     }
 }

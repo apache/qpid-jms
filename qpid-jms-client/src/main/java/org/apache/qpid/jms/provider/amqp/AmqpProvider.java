@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.JMSException;
+import javax.jms.JMSSecurityException;
 
 import org.apache.qpid.jms.JmsTemporaryDestination;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
@@ -57,6 +58,7 @@ import org.apache.qpid.jms.provider.ProviderClosedException;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
+import org.apache.qpid.jms.provider.amqp.builders.AmqpConnectionBuilder;
 import org.apache.qpid.jms.transports.SSLTransport;
 import org.apache.qpid.jms.transports.TransportFactory;
 import org.apache.qpid.jms.transports.TransportListener;
@@ -87,7 +89,7 @@ import org.slf4j.LoggerFactory;
  * All work within this Provider is serialized to a single Thread.  Any asynchronous exceptions
  * will be dispatched from that Thread and all in-bound requests are handled there as well.
  */
-public class AmqpProvider implements Provider, TransportListener {
+public class AmqpProvider implements Provider, TransportListener , AmqpResourceParent {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpProvider.class);
 
@@ -102,6 +104,7 @@ public class AmqpProvider implements Provider, TransportListener {
 
     private ProviderListener listener;
     private AmqpConnection connection;
+    private AmqpSaslAuthenticator authenticator;
     private org.apache.qpid.jms.transports.Transport transport;
     private String transportType = AmqpProviderFactory.DEFAULT_TRANSPORT_TYPE;
     private String vhost;
@@ -125,6 +128,7 @@ public class AmqpProvider implements Provider, TransportListener {
     private final ScheduledExecutorService serializer;
     private final Transport protonTransport = Transport.Factory.create();
     private final Collector protonCollector = new CollectorImpl();
+    private final Connection protonConnection = Connection.Factory.create();
 
     private AsyncResult connectionOpenRequest;
     private ScheduledFuture<?> nextIdleTimeoutCheck;
@@ -253,22 +257,19 @@ public class AmqpProvider implements Provider, TransportListener {
                     resource.visit(new JmsResourceVistor() {
                         @Override
                         public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
-                            AmqpSession session = connection.createSession(sessionInfo);
-                            session.open(request);
+                            connection.createSession(sessionInfo, request);
                         }
 
                         @Override
                         public void processProducerInfo(JmsProducerInfo producerInfo) throws Exception {
                             AmqpSession session = connection.getSession(producerInfo.getParentId());
-                            AmqpProducer producer = session.createProducer(producerInfo);
-                            producer.open(request);
+                            session.createProducer(producerInfo, request);
                         }
 
                         @Override
                         public void processConsumerInfo(JmsConsumerInfo consumerInfo) throws Exception {
                             AmqpSession session = connection.getSession(consumerInfo.getParentId());
-                            AmqpConsumer consumer = session.createConsumer(consumerInfo);
-                            consumer.open(request);
+                            session.createConsumer(consumerInfo, request);
                         }
 
                         @Override
@@ -278,17 +279,15 @@ public class AmqpProvider implements Provider, TransportListener {
                             sendTimeout = connectionInfo.getSendTimeout();
                             requestTimeout = connectionInfo.getRequestTimeout();
 
-                            Connection protonConnection = Connection.Factory.create();
-
                             if (getMaxFrameSize() > 0) {
                                 protonTransport.setMaxFrameSize(getMaxFrameSize());
                             }
+
                             protonTransport.setChannelMax(getChannelMax());
                             protonTransport.setIdleTimeout(idleTimeout);
                             protonTransport.bind(protonConnection);
                             protonConnection.collect(protonCollector);
 
-                            AmqpSaslAuthenticator authenticator = null;
                             if (saslLayer) {
                                 Sasl sasl = protonTransport.sasl();
                                 sasl.client();
@@ -305,7 +304,7 @@ public class AmqpProvider implements Provider, TransportListener {
                                 authenticator = new AmqpSaslAuthenticator(sasl, connectionInfo, getLocalPrincipal(), saslMechanisms);
                             }
 
-                            connection = new AmqpConnection(AmqpProvider.this, protonConnection, authenticator, connectionInfo);
+                            AmqpConnectionBuilder builder = new AmqpConnectionBuilder(AmqpProvider.this, connectionInfo);
                             AsyncResult wrappedOpenRequest = new AsyncResult() {
                                 @Override
                                 public void onSuccess() {
@@ -326,14 +325,13 @@ public class AmqpProvider implements Provider, TransportListener {
 
                             connectionOpenRequest = wrappedOpenRequest;
 
-                            connection.open(wrappedOpenRequest);
+                            builder.buildResource(wrappedOpenRequest);
                         }
 
                         @Override
                         public void processDestination(JmsTemporaryDestination destination) throws Exception {
                             if (destination.isTemporary()) {
-                                AmqpTemporaryDestination temporary = connection.createTemporaryDestination(destination);
-                                temporary.open(request);
+                                connection.createTemporaryDestination(destination, request);
                             } else {
                                 request.onSuccess();
                             }
@@ -705,6 +703,7 @@ public class AmqpProvider implements Provider, TransportListener {
                 // Process the state changes from the latest data and then answer back
                 // any pending updates to the Broker.
                 processUpdates();
+                LOG.info("Pumping proton transport");
                 pumpToProtonTransport();
             }
         });
@@ -727,7 +726,7 @@ public class AmqpProvider implements Provider, TransportListener {
                     if (!closed.get()) {
                         fireProviderException(error);
                         if (connection != null) {
-                            connection.closed();
+                            connection.resourceClosed();
                         }
                     }
                 }
@@ -752,7 +751,7 @@ public class AmqpProvider implements Provider, TransportListener {
                         fireProviderException(new IOException("Transport connection remotely closed."));
                         //TODO: close the proton transport as well/instead?
                         if (connection != null) {
-                            connection.closed();
+                            connection.resourceClosed();
                         }
                     }
                 }
@@ -768,43 +767,43 @@ public class AmqpProvider implements Provider, TransportListener {
                     LOG.trace("New Proton Event: {}", protonEvent.getType());
                 }
 
-                AmqpResource amqpResource = null;
+                AmqpEventSink amqpEventSink = null;
                 switch (protonEvent.getType()) {
                     case CONNECTION_REMOTE_CLOSE:
-                        amqpResource = (AmqpResource) protonEvent.getConnection().getContext();
-                        amqpResource.processRemoteClose(this);
+                        amqpEventSink = (AmqpEventSink) protonEvent.getConnection().getContext();
+                        amqpEventSink.processRemoteClose(this);
                         break;
                     case CONNECTION_REMOTE_OPEN:
-                        amqpResource = (AmqpResource) protonEvent.getConnection().getContext();
-                        amqpResource.processRemoteOpen(this);
+                        amqpEventSink = (AmqpEventSink) protonEvent.getConnection().getContext();
+                        amqpEventSink.processRemoteOpen(this);
                         break;
                     case SESSION_REMOTE_CLOSE:
-                        amqpResource = (AmqpSession) protonEvent.getSession().getContext();
-                        amqpResource.processRemoteClose(this);
+                        amqpEventSink = (AmqpEventSink) protonEvent.getSession().getContext();
+                        amqpEventSink.processRemoteClose(this);
                         break;
                     case SESSION_REMOTE_OPEN:
-                        amqpResource = (AmqpSession) protonEvent.getSession().getContext();
-                        amqpResource.processRemoteOpen(this);
+                        amqpEventSink = (AmqpEventSink) protonEvent.getSession().getContext();
+                        amqpEventSink.processRemoteOpen(this);
                         break;
                     case LINK_REMOTE_CLOSE:
-                        amqpResource = (AmqpResource) protonEvent.getLink().getContext();
-                        amqpResource.processRemoteClose(this);
+                        amqpEventSink = (AmqpEventSink) protonEvent.getLink().getContext();
+                        amqpEventSink.processRemoteClose(this);
                         break;
                     case LINK_REMOTE_DETACH:
-                        amqpResource = (AmqpResource) protonEvent.getLink().getContext();
-                        amqpResource.processRemoteDetach(this);
+                        amqpEventSink = (AmqpEventSink) protonEvent.getLink().getContext();
+                        amqpEventSink.processRemoteDetach(this);
                         break;
                     case LINK_REMOTE_OPEN:
-                        amqpResource = (AmqpResource) protonEvent.getLink().getContext();
-                        amqpResource.processRemoteOpen(this);
+                        amqpEventSink = (AmqpEventSink) protonEvent.getLink().getContext();
+                        amqpEventSink.processRemoteOpen(this);
                         break;
                     case LINK_FLOW:
-                        amqpResource = (AmqpResource) protonEvent.getLink().getContext();
-                        amqpResource.processFlowUpdates(this);
+                        amqpEventSink = (AmqpEventSink) protonEvent.getLink().getContext();
+                        amqpEventSink.processFlowUpdates(this);
                         break;
                     case DELIVERY:
-                        amqpResource = (AmqpResource) protonEvent.getLink().getContext();
-                        amqpResource.processDeliveryUpdates(this);
+                        amqpEventSink = (AmqpEventSink) protonEvent.getLink().getContext();
+                        amqpEventSink.processDeliveryUpdates(this);
                         break;
                     default:
                         break;
@@ -814,12 +813,29 @@ public class AmqpProvider implements Provider, TransportListener {
             }
 
             // We have to do this to pump SASL bytes in as SASL is not event driven yet.
-            if (connection != null) {
-                connection.processSaslAuthentication();
-            }
+            processSaslAuthentication();
         } catch (Exception ex) {
             LOG.warn("Caught Exception during update processing: {}", ex.getMessage(), ex);
             fireProviderException(ex);
+        }
+    }
+
+    private void processSaslAuthentication() {
+        if (authenticator == null) {
+            return;
+        }
+
+        try {
+            if (authenticator.authenticate()) {
+                authenticator = null;
+            }
+        } catch (JMSSecurityException ex) {
+            try {
+                org.apache.qpid.proton.engine.Transport t = protonConnection.getTransport();
+                t.close_head();
+            } finally {
+                fireProviderException(ex);
+            }
         }
     }
 
@@ -896,6 +912,18 @@ public class AmqpProvider implements Provider, TransportListener {
         if (closed.get()) {
             throw new ProviderClosedException("This Provider is already closed");
         }
+    }
+
+    @Override
+    public void addChildResource(AmqpResource resource) {
+        if (resource instanceof AmqpConnection) {
+            this.connection = (AmqpConnection) resource;
+        }
+    }
+
+    @Override
+    public void removeChildResource(AmqpResource resource) {
+        // No need to remove resources
     }
 
     //---------- Property Setters and Getters --------------------------------//
@@ -1084,6 +1112,14 @@ public class AmqpProvider implements Provider, TransportListener {
     @Override
     public URI getRemoteURI() {
         return remoteURI;
+    }
+
+    public Transport getProtonTransport() {
+        return protonTransport;
+    }
+
+    public Connection getProtonConnection() {
+        return protonConnection;
     }
 
     ScheduledExecutorService getScheduler() {

@@ -37,61 +37,24 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpAbstractResource.class);
 
-    protected AsyncResult openRequest;
     protected AsyncResult closeRequest;
 
-    private E endpoint;
-    protected R resource;
-
-    /**
-     * Creates a new instance with the JmsResource provided, and sets the Endpoint to null.
-     *
-     * @param resource
-     *        The JmsResource instance that this AmqpResource is managing.
-     */
-    public AmqpAbstractResource(R resource) {
-        this(resource, null);
-    }
+    private final E endpoint;
+    private final R resourceInfo;
 
     /**
      * Creates a new instance with the JmsResource provided, and sets the Endpoint to the given value.
      *
-     * @param resource
+     * @param resourceInfo
      *        The JmsResource instance that this AmqpResource is managing.
      * @param endpoint
      *        The Proton Endpoint instance that this object maps to.
      */
-    public AmqpAbstractResource(R resource, E endpoint) {
-        this.resource = resource;
-        setEndpoint(endpoint);
+    public AmqpAbstractResource(R resourceInfo, E endpoint) {
+        this.resourceInfo = resourceInfo;
+        this.endpoint = endpoint;
     }
 
-    @Override
-    public void open(AsyncResult request) {
-        this.openRequest = request;
-        doOpen();
-        getEndpoint().setContext(this);
-    }
-
-    @Override
-    public boolean isOpen() {
-        return getEndpoint().getRemoteState() == EndpointState.ACTIVE;
-    }
-
-    @Override
-    public boolean isAwaitingOpen() {
-        return this.openRequest != null;
-    }
-
-    @Override
-    public void opened() {
-        if (this.openRequest != null) {
-            this.openRequest.onSuccess();
-            this.openRequest = null;
-        }
-    }
-
-    @Override
     public void close(AsyncResult request) {
         // If already closed signal success or else the caller might never get notified.
         if (getEndpoint().getLocalState() == EndpointState.CLOSED ||
@@ -111,18 +74,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
         doClose();
     }
 
-    @Override
-    public boolean isClosed() {
-        return getEndpoint().getLocalState() == EndpointState.CLOSED;
-    }
-
-    @Override
-    public boolean isAwaitingClose() {
-        return this.closeRequest != null;
-    }
-
-    @Override
-    public void closed() {
+    public void resourceClosed() {
         endpoint.close();
         endpoint.free();
 
@@ -132,25 +84,6 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
         }
     }
 
-    @Override
-    public void failed(Exception cause) {
-        if (openRequest != null) {
-            if (endpoint != null) {
-                // TODO: if this is a producer/consumer link then we may only be detached,
-                // rather than fully closed, and should respond appropriately.
-                endpoint.close();
-            }
-            openRequest.onFailure(cause);
-            openRequest = null;
-        }
-
-        if (closeRequest != null) {
-            closeRequest.onFailure(cause);
-            closeRequest = null;
-        }
-    }
-
-    @Override
     public void remotelyClosed(AmqpProvider provider) {
         Exception error = AmqpSupport.convertToException(getEndpoint().getRemoteCondition());
 
@@ -160,25 +93,46 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
             endpoint.close();
         }
 
-        LOG.info("Resource {} was remotely closed", getJmsResource());
+        LOG.info("Resource {} was remotely closed", getResourceInfo());
 
-        if (getJmsResource() instanceof JmsConnectionInfo) {
+        if (getResourceInfo() instanceof JmsConnectionInfo) {
             provider.fireProviderException(error);
         } else {
-            provider.fireResourceRemotelyClosed(getJmsResource(), error);
+            provider.fireResourceRemotelyClosed(getResourceInfo(), error);
         }
     }
+
+    /**
+     * Perform the close operation on the managed endpoint.  A subclass may
+     * override this method to provide additional close actions or alter the
+     * standard close path such as endpoint detach etc.
+     */
+    protected void doClose() {
+        getEndpoint().close();
+    }
+
+    //----- Access methods ---------------------------------------------------//
 
     public E getEndpoint() {
         return this.endpoint;
     }
 
-    public void setEndpoint(E endpoint) {
-        this.endpoint = endpoint;
+    public R getResourceInfo() {
+        return this.resourceInfo;
     }
 
-    public R getJmsResource() {
-        return this.resource;
+    //----- Endpoint state access methods ------------------------------------//
+
+    public boolean isOpen() {
+        return getEndpoint().getRemoteState() == EndpointState.ACTIVE;
+    }
+
+    public boolean isClosed() {
+        return getEndpoint().getLocalState() == EndpointState.CLOSED;
+    }
+
+    public boolean isAwaitingClose() {
+        return this.closeRequest != null;
     }
 
     public EndpointState getLocalState() {
@@ -195,20 +149,18 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
         return getEndpoint().getRemoteState();
     }
 
-    protected boolean hasRemoteError() {
-        return getEndpoint().getRemoteCondition().getCondition() != null;
-    }
+    //----- AmqpResource implementation --------------------------------------//
 
     @Override
-    public void processRemoteOpen(AmqpProvider provider) throws IOException {
-        doOpenCompletion();
+    public final void processRemoteOpen(AmqpProvider provider) throws IOException {
+        // Open is handled by the resource builder
     }
 
     @Override
     public void processRemoteDetach(AmqpProvider provider) throws IOException {
         if (isAwaitingClose()) {
             LOG.debug("{} is now closed: ", this);
-            closed();
+            resourceClosed();
         } else {
             remotelyClosed(provider);
         }
@@ -218,18 +170,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     public void processRemoteClose(AmqpProvider provider) throws IOException {
         if (isAwaitingClose()) {
             LOG.debug("{} is now closed: ", this);
-            closed();
-        } else if (isAwaitingOpen()) {
-            // Error on Open, create exception and signal failure.
-            LOG.warn("Open of {} failed: ", this);
-            Exception openError;
-            if (hasRemoteError()) {
-                openError = AmqpSupport.convertToException(getEndpoint().getRemoteCondition());
-            } else {
-                openError = getOpenAbortException();
-            }
-
-            failed(openError);
+            resourceClosed();
         } else {
             remotelyClosed(provider);
         }
@@ -237,46 +178,11 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
     @Override
     public void processDeliveryUpdates(AmqpProvider provider) throws IOException {
+        // Nothing do be done here, subclasses can override as needed.
     }
 
     @Override
     public void processFlowUpdates(AmqpProvider provider) throws IOException {
-    }
-
-    /**
-     * Perform the open operation on the managed endpoint.  A subclass may
-     * override this method to provide additional open actions or configuration
-     * updates.
-     */
-    protected void doOpen() {
-        getEndpoint().open();
-    }
-
-    /**
-     * Complete the open operation on the managed endpoint. A subclass may
-     * override this method to provide additional verification actions or configuration
-     * updates.
-     */
-    protected void doOpenCompletion() {
-        LOG.debug("{} is now open: ", this);
-        opened();
-    }
-
-    /**
-     * When aborting the open operation, and there isn't an error condition,
-     * provided by the peer, the returned exception will be used instead.
-     * A subclass may override this method to provide alternative behavior.
-     */
-    protected Exception getOpenAbortException() {
-        return new IOException("Open failed unexpectedly.");
-    }
-
-    /**
-     * Perform the close operation on the managed endpoint.  A subclass may
-     * override this method to provide additional close actions or alter the
-     * standard close path such as endpoint detach etc.
-     */
-    protected void doClose() {
-        getEndpoint().close();
+        // Nothing do be done here, subclasses can override as needed.
     }
 }

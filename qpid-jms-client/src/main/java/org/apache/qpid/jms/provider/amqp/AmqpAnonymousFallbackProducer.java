@@ -27,6 +27,7 @@ import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.WrappedAsyncResult;
+import org.apache.qpid.jms.provider.amqp.builders.AmqpProducerBuilder;
 import org.apache.qpid.jms.util.IdGenerator;
 import org.apache.qpid.jms.util.LRUCache;
 import org.apache.qpid.proton.engine.EndpointState;
@@ -81,27 +82,19 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
 
             // We open a Fixed Producer instance with the target destination.  Once it opens
             // it will trigger the open event which will in turn trigger the send event.
-            producer = new AmqpFixedProducer(session, info);
-            producer.setPresettle(isPresettle());
-            AnonymousOpenRequest open = new AnonymousOpenRequest(request, producer, envelope);
-            producer.open(open);
+            // If caching is disabled the created producer will be closed immediately.
+            AmqpProducerBuilder builder = new AmqpProducerBuilder(session, info);
+            builder.buildResource(new AnonymousSendRequest(request, builder, envelope));
 
             if (connection.isAnonymousProducerCache()) {
                 // Cache it in hopes of not needing to create large numbers of producers.
-                producerCache.put(envelope.getDestination(), producer);
+                producerCache.put(envelope.getDestination(), builder.getResource());
             }
 
             return true;
         } else {
             return producer.send(envelope, request);
         }
-    }
-
-    @Override
-    public void open(AsyncResult request) {
-        // Trigger an immediate open, we don't talk to the Broker until
-        // a send occurs so we must not let the client block.
-        request.onSuccess();
     }
 
     @Override
@@ -135,12 +128,10 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
 
     private abstract class AnonymousRequest extends WrappedAsyncResult {
 
-        protected final AmqpProducer producer;
         protected final JmsOutboundMessageDispatch envelope;
 
-        public AnonymousRequest(AsyncResult sendResult, AmqpProducer producer, JmsOutboundMessageDispatch envelope) {
+        public AnonymousRequest(AsyncResult sendResult, JmsOutboundMessageDispatch envelope) {
             super(sendResult);
-            this.producer = producer;
             this.envelope = envelope;
         }
 
@@ -153,36 +144,51 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
             LOG.debug("Send failed during {} step in chain: {}", this.getClass().getName(), getProducerId());
             super.onFailure(result);
         }
+
+        public abstract AmqpProducer getProducer();
     }
 
-    private final class AnonymousOpenRequest extends AnonymousRequest {
+    private final class AnonymousSendRequest extends AnonymousRequest {
 
-        public AnonymousOpenRequest(AsyncResult sendResult, AmqpProducer producer, JmsOutboundMessageDispatch envelope) {
-            super(sendResult, producer, envelope);
+        private final AmqpProducerBuilder producerBuilder;
+
+        public AnonymousSendRequest(AsyncResult sendResult, AmqpProducerBuilder producerBuilder, JmsOutboundMessageDispatch envelope) {
+            super(sendResult, envelope);
+
+            this.producerBuilder = producerBuilder;
         }
 
         @Override
         public void onSuccess() {
             LOG.trace("Open phase of anonymous send complete: {} ", getProducerId());
-            AnonymousSendRequest send = new AnonymousSendRequest(this);
+            AnonymousSendCompleteRequest send = new AnonymousSendCompleteRequest(this);
             try {
-                producer.send(envelope, send);
+                getProducer().send(envelope, send);
             } catch (Exception e) {
                 super.onFailure(e);
             }
         }
+
+        @Override
+        public AmqpProducer getProducer() {
+            return producerBuilder.getResource();
+        }
     }
 
-    private final class AnonymousSendRequest extends AnonymousRequest {
+    private final class AnonymousSendCompleteRequest extends AnonymousRequest {
 
-        public AnonymousSendRequest(AnonymousOpenRequest open) {
-            super(open.getWrappedRequest(), open.producer, open.envelope);
+        private final AmqpProducer producer;
+
+        public AnonymousSendCompleteRequest(AnonymousSendRequest open) {
+            super(open.getWrappedRequest(), open.envelope);
+
+            this.producer = open.getProducer();
         }
 
         @Override
         public void onFailure(Throwable result) {
             // Ensure that cache get purged of any failed producers.
-            AmqpAnonymousFallbackProducer.this.producerCache.remove(producer.getJmsResource().getDestination());
+            AmqpAnonymousFallbackProducer.this.producerCache.remove(producer.getResourceInfo().getDestination());
             super.onFailure(result);
         }
 
@@ -196,18 +202,32 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
                 super.onSuccess();
             }
         }
+
+        @Override
+        public AmqpProducer getProducer() {
+            return producer;
+        }
     }
 
     private final class AnonymousCloseRequest extends AnonymousRequest {
 
-        public AnonymousCloseRequest(AnonymousSendRequest send) {
-            super(send.getWrappedRequest(), send.producer, send.envelope);
+        private final AmqpProducer producer;
+
+        public AnonymousCloseRequest(AnonymousSendCompleteRequest sendComplete) {
+            super(sendComplete.getWrappedRequest(), sendComplete.envelope);
+
+            this.producer = sendComplete.getProducer();
         }
 
         @Override
         public void onSuccess() {
             LOG.trace("Close phase of anonymous send complete: {} ", getProducerId());
             super.onSuccess();
+        }
+
+        @Override
+        public AmqpProducer getProducer() {
+            return producer;
         }
     }
 

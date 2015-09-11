@@ -28,12 +28,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.util.Date;
 
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
 import javax.jms.IllegalStateException;
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
@@ -42,8 +45,12 @@ import javax.jms.Session;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
+import org.apache.qpid.jms.test.testpeer.ListDescribedType;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Modified;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Rejected;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Released;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSectionMatcher;
@@ -52,6 +59,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.hamcrest.Matcher;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class ProducerIntegrationTest extends QpidJmsTestCase {
@@ -587,4 +595,71 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
         }
     }
+
+    @Test(timeout = 20000)
+    public void testSyncSendMessageRejected() throws Exception {
+        doSyncSendMessageNotAcceptedTestImpl(new Rejected());
+    }
+
+    @Ignore // TODO: released state not yet handled correctly for producers
+    @Test(timeout = 20000)
+    public void testSyncSendMessageReleased() throws Exception {
+        doSyncSendMessageNotAcceptedTestImpl(new Released());
+    }
+
+    @Ignore // TODO: modified state not yet handled correctly for producers
+    @Test(timeout = 20000)
+    public void testSyncSendMessageModifiedDeliveryFailed() throws Exception {
+        Modified modified = new Modified();
+        modified.setDeliveryFailed(true);
+
+        doSyncSendMessageNotAcceptedTestImpl(modified);
+    }
+
+    @Ignore // TODO: modified state not yet handled correctly for producers
+    @Test(timeout = 20000)
+    public void testSyncSendMessageModifiedUndeliverable() throws Exception {
+        Modified modified = new Modified();
+        modified.setUndeliverableHere(true);
+
+        doSyncSendMessageNotAcceptedTestImpl(modified);
+    }
+
+    @Ignore // TODO: modified state not yet handled correctly for producers
+    @Test(timeout = 20000)
+    public void testSyncSendMessageModifiedDeliveryFailedUndeliverable() throws Exception {
+        Modified modified = new Modified();
+        modified.setDeliveryFailed(true);
+        modified.setUndeliverableHere(true);
+
+        doSyncSendMessageNotAcceptedTestImpl(modified);
+    }
+
+    private void doSyncSendMessageNotAcceptedTestImpl(ListDescribedType responseState) throws JMSException, InterruptedException, Exception, IOException {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            MessageProducer producer = session.createProducer(queue);
+            Message message = session.createTextMessage("content");
+
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), false, responseState, true);
+
+            assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
+
+            try {
+                producer.send(message);
+                fail("Expected an exception to be thrown");
+            } catch (JMSException e) {
+                //TODO: more explicit exception type?
+                // Expected
+            }
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
 }

@@ -538,7 +538,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 20000)
     public void testRemotelyCloseProducer() throws Exception {
-        final String BREAD_CRUMB = "ErrorMessage";
+        final String BREAD_CRUMB = "ErrorMessageBreadCrumb";
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -576,6 +576,50 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.
             producer.close();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testRemotelyCloseProducerDuringSyncSend() throws Exception {
+        final String BREAD_CRUMB = "ErrorMessageBreadCrumb";
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            // Expect producer creation, give it credit.
+            testPeer.expectSenderAttach();
+
+            String text = "myMessage";
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
+            messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(text));
+
+            // Expect a message to be sent, but don't send a disposition in
+            // response, simply remotely close the producer instead.
+            testPeer.expectTransfer(messageMatcher, nullValue(), false, false, null, false);
+            testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(true, true, AmqpError.RESOURCE_LIMIT_EXCEEDED, BREAD_CRUMB);
+
+            Queue queue = session.createQueue("myQueue");
+            final MessageProducer producer = session.createProducer(queue);
+
+            Message message = session.createTextMessage(text);
+
+            try {
+                producer.send(message);
+                fail("Expected exception to be thrown");
+            } catch (JMSException jmse) {
+                // Expected
+            }
+
+            testPeer.waitForAllHandlersToComplete(3000);
         }
     }
 

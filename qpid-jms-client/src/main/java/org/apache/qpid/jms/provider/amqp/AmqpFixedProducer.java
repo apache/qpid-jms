@@ -27,6 +27,7 @@ import javax.jms.JMSException;
 
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
+import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageFacade;
@@ -287,5 +288,32 @@ public class AmqpFixedProducer extends AmqpProducer {
             this.envelope = envelope;
             this.request = request;
         }
+    }
+
+    public void remotelyClosed(AmqpProvider provider) {
+        super.remotelyClosed(provider);
+
+        Exception ex = AmqpSupport.convertToException(getEndpoint().getRemoteCondition());
+        if(ex == null) {
+            //TODO: create/use a more specific/appropriate exception type?
+            ex = new JMSException("Producer closed remotely before message transfer result was notified");
+        }
+
+        for (Delivery delivery : pending) {
+            try {
+                AsyncResult request = (AsyncResult) delivery.getContext();
+
+                if (request != null && !request.isComplete()) {
+                    request.onFailure(ex);
+                }
+
+                delivery.settle();
+                tagGenerator.returnTag(delivery.getTag());
+            } catch (Exception e) {
+                LOG.debug("Caught exception when failing pending send during remote producer closure: {}", delivery, e);
+            }
+        }
+
+        pending.clear();
     }
 }

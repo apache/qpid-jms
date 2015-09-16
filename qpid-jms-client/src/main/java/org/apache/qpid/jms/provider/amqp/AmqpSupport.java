@@ -85,11 +85,14 @@ public class AmqpSupport {
      * @param errorCondition
      *      The ErrorCondition returned from the remote peer.
      *
+     *
      * @return a new JMSException instance that best matches the ErrorCondition value.
      */
     public static Exception convertToException(ErrorCondition errorCondition) {
+        //TODO: javadoc says we return JMSException, but we return others too
         Exception remoteError = null;
 
+        //TODO: errorCondition could be null.
         Symbol error = errorCondition.getCondition();
         if (error != null) {
             String message = extractErrorMessage(errorCondition);

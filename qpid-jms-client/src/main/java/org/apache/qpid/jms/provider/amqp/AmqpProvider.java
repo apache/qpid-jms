@@ -703,7 +703,6 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 // Process the state changes from the latest data and then answer back
                 // any pending updates to the Broker.
                 processUpdates();
-                LOG.info("Pumping proton transport");
                 pumpToProtonTransport();
             }
         });

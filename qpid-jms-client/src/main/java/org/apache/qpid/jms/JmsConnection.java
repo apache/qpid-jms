@@ -21,6 +21,7 @@ import java.net.URI;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
@@ -64,6 +65,7 @@ import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.meta.JmsTransactionId;
+import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderClosedException;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
@@ -106,6 +108,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private final AtomicLong sessionIdGenerator = new AtomicLong();
     private final AtomicLong tempDestIdGenerator = new AtomicLong();
     private final AtomicLong transactionIdGenerator = new AtomicLong();
+
+    private ConcurrentMap<AsyncResult, AsyncResult> requests = new ConcurrentHashMap<AsyncResult, AsyncResult>();
 
     protected JmsConnection(final String connectionId, Provider provider, IdGenerator clientIdGenerator) throws JMSException {
 
@@ -668,8 +672,13 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         //        this level.
         try {
             ProviderFuture request = new ProviderFuture();
-            provider.send(envelope, request);
-            request.sync();
+            requests.put(request, request);
+            try {
+                provider.send(envelope, request);
+                request.sync();
+            } finally {
+                requests.remove(request);
+            }
         } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);
         }
@@ -1100,17 +1109,37 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     @Override
     public void onConnectionFailure(final IOException ex) {
+        providerFailed(ex);
+
         onProviderException(ex);
+
+        for(AsyncResult request : requests.keySet())
+        {
+            try {
+                request.onFailure(ex);
+            } catch (Exception e) {
+                LOG.debug("Exception during request cleanup", e);
+            }
+        }
+
         if (!closing.get() && !closed.get()) {
             executor.execute(new Runnable() {
                 @Override
                 public void run() {
-                    providerFailed(ex);
                     if (provider != null) {
                         try {
                             provider.close();
                         } catch (Throwable error) {
                             LOG.debug("Error while closing failed Provider: {}", error.getMessage());
+                        }
+                    }
+
+                    for(AsyncResult request : requests.keySet())
+                    {
+                        try {
+                            request.onFailure(ex);
+                        } catch (Exception e) {
+                            LOG.debug("Exception during request cleanup", e);
                         }
                     }
 

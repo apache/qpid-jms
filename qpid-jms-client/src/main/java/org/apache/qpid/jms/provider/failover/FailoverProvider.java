@@ -916,6 +916,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
         public FailoverRequest(AsyncResult watcher) {
             super(watcher);
+            LOG.trace("Created Failover Task: {} ({})", this, id);
         }
 
         @Override
@@ -995,7 +996,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             } else if (succeedsWhenOffline()) {
                 onSuccess();
             } else {
-                LOG.trace("Task {} held until connection recovered:", this);
+                LOG.trace("Failover task held until connection recovered: {} ({})", this, id);
             }
         }
     }

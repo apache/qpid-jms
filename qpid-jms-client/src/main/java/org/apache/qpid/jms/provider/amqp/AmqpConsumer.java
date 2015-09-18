@@ -113,10 +113,12 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     private void stopOnSchedule(long timeout, final AsyncResult request) {
+        LOG.trace("Consumer {} scheduling stop", getConsumerId());
         // We need to drain the credit if no message(s) arrive to use it.
         final ScheduledFuture<?> future = getSession().schedule(new Runnable() {
             @Override
             public void run() {
+                LOG.trace("Consumer {} running scheduled stop", getConsumerId());
                 if (getEndpoint().getRemoteCredit() != 0) {
                     stop(request);
                     // TODO: We close the proton transport head to avoid this doing any writes if

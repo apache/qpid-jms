@@ -926,7 +926,11 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             header.setDeliveryCount(new UnsignedInteger(2));
 
             testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlowRespondWithTransfer(header, null, null, null, new AmqpValueDescribedType("content"), COUNT);
+            // Send some messages that have exceeded the specified re-delivery count
+            testPeer.expectLinkFlowRespondWithTransfer(header, null, null, null, new AmqpValueDescribedType("redelivered-content"), COUNT);
+            // Send a message that has not exceeded the delivery count
+            String expectedContent = "not-redelivered";
+            testPeer.sendTransferToLastOpenedLinkOnLastOpenedSession(null, null, null, null, new AmqpValueDescribedType(expectedContent), COUNT + 1);
 
             for (int i = 0; i < COUNT; i++) {
                 // Then expect an *settled* Modified disposition that rejects each message once
@@ -936,16 +940,17 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 testPeer.expectDisposition(true, modified);
             }
 
+            // Then expect an Accepted disposition for the good message
+            testPeer.expectDisposition(true, new AcceptedMatcher());
+
             final MessageConsumer consumer = session.createConsumer(queue);
 
-            assertTrue("Messages were not rejected as expected",
-                            Wait.waitFor(new Wait.Condition() {
-                                @Override
-                                public boolean isSatisified() throws Exception {
-                                    consumer.receive(20);
-                                    return testPeer.waitForAllHandlersToCompleteNoAssert(10);
-                                }
-                            }, TimeUnit.SECONDS.toMillis(5), TimeUnit.MILLISECONDS.toMillis(2)));
+            Message m = consumer.receive(6000);
+            assertNotNull("Should have reiceved the final message", m);
+            assertTrue("Should have received the final message", m instanceof TextMessage);
+            assertEquals("Unexpected content", expectedContent, ((TextMessage)m).getText());
+
+            testPeer.waitForAllHandlersToComplete(2000);
         }
     }
 

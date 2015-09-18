@@ -63,7 +63,6 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
     private final String selector;
 
     private JmsMessageConsumer consumer;
-    private final AtomicBoolean browseDone = new AtomicBoolean(false);
 
     private Message next;
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -144,7 +143,7 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
                 return true;
             }
 
-            if (browseDone.get() || !session.isStarted()) {
+            if (next == null || !session.isStarted()) {
                 destroyConsumer();
                 return false;
             }
@@ -170,7 +169,7 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
             return message;
         }
 
-        if (browseDone.get() || !session.isStarted()) {
+        if (!session.isStarted()) {
             destroyConsumer();
             return null;
         }
@@ -181,7 +180,6 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
     @Override
     public void close() throws JMSException {
         if (closed.compareAndSet(false, true)) {
-            browseDone.set(true);
             destroyConsumer();
         }
     }
@@ -212,27 +210,11 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
     }
 
     private JmsMessageConsumer createConsumer() throws JMSException {
-        browseDone.set(false);
         JmsMessageConsumer rc = new JmsMessageConsumer(session.getNextConsumerId(), session, destination, selector, false) {
 
             @Override
             public boolean isBrowser() {
                 return true;
-            }
-
-            @Override
-            public boolean isPullConsumer() {
-                return true;
-            }
-
-            @Override
-            public void onInboundMessage(JmsInboundMessageDispatch envelope) {
-                if (envelope.getMessage() == null) {
-                    LOG.trace("Browser {} read browse done.", getConsumerId());
-                    browseDone.set(true);
-                }
-
-                super.onInboundMessage(envelope);
             }
         };
         rc.init();

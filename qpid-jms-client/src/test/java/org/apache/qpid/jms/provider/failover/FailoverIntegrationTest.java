@@ -237,7 +237,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
-    public void testFailoverHandlesDropPullConsumerReceiveNoWait() throws Exception {
+    public void testFailoverHandlesDropZeroPrefetchPullConsumerReceiveNoWait() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
 
@@ -284,11 +284,11 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             // --- Post Failover Expectations of FinalPeer --- //
 
-            // Create session+producer, send a persistent message on auto-ack session for synchronous send
             finalPeer.expectSaslAnonymousConnect();
             finalPeer.expectBegin();
             finalPeer.expectBegin();
             finalPeer.expectReceiverAttach();
+            finalPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.ONE));
             finalPeer.expectDetach(true, true, true);
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -306,7 +306,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
-    public void testFailoverHandlesDropPullConsumerReceiveWithTimeout() throws Exception {
+    public void testFailoverHandlesDropZeroPrefetchPullConsumerReceiveWithTimeout() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
 
@@ -353,23 +353,25 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             // --- Post Failover Expectations of FinalPeer --- //
 
-            // Create session+producer, send a persistent message on auto-ack session for synchronous send
             finalPeer.expectSaslAnonymousConnect();
             finalPeer.expectBegin();
             finalPeer.expectBegin();
             finalPeer.expectReceiverAttach();
-            finalPeer.expectLinkFlow();
+            finalPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(1)));
             finalPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(1)));
+            finalPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(1)));//TODO: why???
             finalPeer.expectDetach(true, true, true);
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
             MessageConsumer consumer = session.createConsumer(queue);
 
-            assertNull(consumer.receive(2000));
+            assertNull(consumer.receive(500));
+            LOG.info("Receive returned");
 
             assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
 
+            LOG.info("Closing consumer");
             consumer.close();
 
             finalPeer.waitForAllHandlersToComplete(1000);
@@ -377,7 +379,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
-    public void testFailoverHandlesDropPullConsumerReceive() throws Exception {
+    public void testFailoverHandlesDropZeroPrefetchPullConsumerReceive() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
 
@@ -426,12 +428,12 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
 
-            // Create session+producer, send a persistent message on auto-ack session for synchronous send
             finalPeer.expectSaslAnonymousConnect();
             finalPeer.expectBegin();
             finalPeer.expectBegin();
             finalPeer.expectReceiverAttach();
             finalPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent);
+            finalPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(1)));//TODO: why???
             finalPeer.expectDispositionThatIsAcceptedAndSettled();
             finalPeer.expectDetach(true, true, true);
 
@@ -440,9 +442,11 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             MessageConsumer consumer = session.createConsumer(queue);
 
             assertNotNull(consumer.receive());
+            LOG.info("Receive returned");
 
             assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
 
+            LOG.info("Closing consumer");
             consumer.close();
 
             finalPeer.waitForAllHandlersToComplete(1000);
@@ -490,7 +494,6 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
 
-            // Create session+producer, send a persistent message on auto-ack session for synchronous send
             originalPeer.expectBegin();
             originalPeer.expectQueueBrowserAttach();
             originalPeer.expectLinkFlow();
@@ -499,7 +502,6 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             // --- Post Failover Expectations of FinalPeer --- //
 
-            // Create session+producer, send a persistent message on auto-ack session for synchronous send
             finalPeer.expectSaslAnonymousConnect();
             finalPeer.expectBegin();
             finalPeer.expectBegin();

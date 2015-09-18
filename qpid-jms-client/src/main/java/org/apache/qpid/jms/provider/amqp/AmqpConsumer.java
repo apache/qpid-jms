@@ -67,7 +67,6 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     protected final Map<JmsInboundMessageDispatch, Delivery> delivered = new LinkedHashMap<JmsInboundMessageDispatch, Delivery>();
     protected boolean presettle;
     protected AsyncResult stopRequest;
-    protected PullRequest pullRequest;
     protected final ByteBuf incomingBuffer = Unpooled.buffer(INITIAL_BUFFER_CAPACITY);
     protected final AtomicLong incomingSequence = new AtomicLong(0);
 
@@ -112,6 +111,23 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         }
     }
 
+    private void stopOnSchedule(long timeout, final AsyncResult request) {
+        // We need to drain the credit if no message(s) arrive to use it.
+        final ScheduledFuture<?> future = getSession().schedule(new Runnable() {
+            @Override
+            public void run() {
+                if (getEndpoint().getRemoteCredit() != 0) {
+                    stop(request);
+                    // TODO: We close the proton transport head to avoid this doing any writes if
+                    // the TCP transport has gone, but it might be good to also avoid trying here.
+                    session.getProvider().pumpToProtonTransport(request);
+                }
+            }
+        }, timeout);
+
+        stopRequest = new ScheduledStopRequest(future, request);
+    }
+
     @Override
     public void processFlowUpdates(AmqpProvider provider) throws IOException {
         // Check if we tried to stop and have now run out of credit, and
@@ -121,14 +137,6 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             if (receiver.getRemoteCredit() <= 0 && receiver.getQueued() == 0) {
                 stopRequest.onSuccess();
                 stopRequest = null;
-            }
-        }
-
-        // Check if we tried to pull some messages and whether we got some or not
-        if (pullRequest != null) {
-            Receiver receiver = getEndpoint();
-            if (receiver.getRemoteCredit() <= 0 && receiver.getQueued() <= 0) {
-                pullRequest.onDrained();
             }
         }
 
@@ -231,10 +239,10 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     /**
      * We only send more credits as the credit window dwindles to a certain point and
      * then we open the window back up to full prefetch size.  If this is a pull consumer
-     * or we are draining then we never send credit here.
+     * or we are stopping then we never send credit here.
      */
     private void sendFlowIfNeeded() {
-        if (getResourceInfo().getPrefetchSize() == 0 || isDraining()) {
+        if (getResourceInfo().getPrefetchSize() == 0 || isStopping()) {
             return;
         }
 
@@ -279,50 +287,45 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      *
      * @param timeout
      *        the amount of time to tell the remote peer to keep this pull request valid.
+     * @param request
+     *        TODO.
      */
-    public void pull(final long timeout) {
+    public void pull(final long timeout, final AsyncResult request) {
         LOG.trace("Pull on consumer {} with timeout = {}", getConsumerId(), timeout);
-        if (getEndpoint().getQueued() != 0) {
-            return;
-        } else if (pullRequest != null) {
-            pullRequest.onChainedPullRequest(timeout);
-        } else {
-            if (timeout < 0) {
-                if (getEndpoint().getCredit() == 0) {
-                    getEndpoint().flow(1);
-                }
-            } else if (timeout == 0) {
-                pullRequest = new DrainingPullRequest();
-                // If we have no credit then we need to issue some so that we can
-                // try to fulfill the pull request, otherwise we want to drain down
-                // what is there to ensure we consume everything available.
-                if (getEndpoint().getCredit() == 0) {
-                    getEndpoint().drain(getResourceInfo().getPrefetchSize() > 0 ? getResourceInfo().getPrefetchSize() : 1);
-                } else {
-                    getEndpoint().drain(0);
-                }
-            } else if (timeout > 0) {
-                // We need to drain the credit if no message arrives. If that
-                // happens, processing completion of the drain attempt will signal
-                // the consumer and clear the pullRequest.
-                final ScheduledFuture<?> future = getSession().schedule(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        if (getEndpoint().getRemoteCredit() != 0) {
-                            getEndpoint().drain(0);
-                            pullRequest = new DrainingPullRequest();
-                            session.getProvider().pumpToProtonTransport();
-                        }
-                    }
-                }, timeout);
-
-                if (getEndpoint().getCredit() == 0) {
-                    getEndpoint().flow(1);
-                }
-
-                pullRequest = new ScheduledPullRequest(future);
+        if (timeout < 0) {
+            // Wait until message arrives. Just give credit if needed.
+            if (getEndpoint().getCredit() == 0) {
+                getEndpoint().flow(1);
             }
+
+            // Can either wait here, or simply return and have it wait on the JmsMessageConsumer internal queue.
+            // Going for the latter right now.
+            // TODO: this complicates failover, since 'completed' pull requests are not replayed.
+            //       ....however, currently we seem to be generating lots of pull requests....??
+            request.onSuccess();
+        } else if (timeout == 0) {
+            // If we have no credit then we need to issue some so that we can
+            // try to fulfill the request, then drain down what is there to
+            // ensure we consume what is available and remove all credit.
+            if(getEndpoint().getCredit() == 0){
+                getEndpoint().flow(1);
+            }
+
+            // Drain immediately and wait for the message(s) to arrive,
+            // or a flow indicating removal of the remaining credit.
+            stop(request);
+        } else if (timeout > 0) {
+            // If we have no credit then we need to issue some so that we can
+            // try to fulfill the request, then drain down what is there to
+            // ensure we consume what is available and remove all credit.
+            if (getEndpoint().getCredit() == 0) {
+                getEndpoint().flow(1);
+            }
+
+            // Wait for the timeout for the message(s) to arrive, then drain if required
+            // and wait for remaining message(s) to arrive or a flow indicating
+            // removal of the remaining credit.
+            stopOnSchedule(timeout, request);
         }
     }
 
@@ -334,10 +337,6 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             if (incoming != null) {
                 if (incoming.isReadable() && !incoming.isPartial()) {
                     LOG.trace("{} has incoming Message(s).", this);
-                    if (pullRequest != null) {
-                        pullRequest.onMessageReceived();
-                    }
-
                     try {
                         processDelivery(incoming);
                     } catch (Exception e) {
@@ -349,7 +348,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                 }
             } else {
                 // We have exhausted the locally queued messages on this link.
-                // Check if we tried to stop/pull and have now run out of credit.
+                // Check if we tried to stop and have now run out of credit.
                 if (getEndpoint().getRemoteCredit() <= 0) {
                     if (stopRequest != null) {
                         stopRequest.onSuccess();
@@ -447,8 +446,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         return presettle || getResourceInfo().isBrowser();
     }
 
-    public boolean isDraining() {
-        return pullRequest != null;
+    public boolean isStopping() {
+        return stopRequest != null;
     }
 
     public void setPresettle(boolean presettle) {
@@ -463,6 +462,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     protected void deliveryFailed(Delivery incoming) {
         incoming.disposition(MODIFIED_UNDELIVERABLE);
         incoming.settle();
+        // TODO: this flows credit, which we might not want, e.g if
+        // a drain was issued to stop the link.
         sendFlowIfNeeded();
     }
 
@@ -519,98 +520,34 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     //----- Inner classes used in message pull operations --------------------//
 
-    protected interface PullRequest {
+    protected class ScheduledStopRequest implements AsyncResult {
 
-        void onMessageReceived();
+        private final ScheduledFuture<?> sheduledStopTask;
+        private AsyncResult origRequest;
 
-        void onDrained();
-
-        void onChainedPullRequest(long timeout);
-
-    }
-
-    protected class DrainingPullRequest implements PullRequest {
-
-        private boolean delivered;
-        private boolean pending;
-        private long pendingTimeout;
+        public ScheduledStopRequest(ScheduledFuture<?> completionTask, AsyncResult origRequest) {
+            this.sheduledStopTask = completionTask;
+            this.origRequest = origRequest;
+        }
 
         @Override
-        public void onDrained() {
-            pullRequest = null;
+        public void onFailure(Throwable t) {
+            sheduledStopTask.cancel(false);
+            origRequest.onFailure(t);
+        }
 
-            // If we delivered a message while the drain was open, then we don't report done
-            // instead allow a new drain request to check for fully drained.
-            if (!delivered && !pending) {
-                // Lack of setMessage on the dispatch is taken as signal no message arrived.
-                JmsInboundMessageDispatch pullDone = new JmsInboundMessageDispatch(getNextIncomingSequenceNumber());
-                pullDone.setConsumerId(getConsumerId());
-                try {
-                    deliver(pullDone);
-                } catch (Exception e) {
-                    getSession().reportError(IOExceptionSupport.create(e));
-                }
-            } else {
-                // TODO - Should we sendFlowIfNeeded here since we delivered once and no new
-                //        pull requests came in to try to avoid pulls when peer might have
-                //        messages to deliver.
-            }
-
-            // A new pull request was initiated while this one was awaiting the drain to
-            // complete.  We need to issue a new drain to check for any additional messages.
-            if (pending) {
-                pull(pendingTimeout);
+        @Override
+        public void onSuccess() {
+            boolean cancelled = sheduledStopTask.cancel(false);
+            if(cancelled) {
+                // Signal completion. Otherwise wait for the scheduled task to do it.
+                origRequest.onSuccess();
             }
         }
 
         @Override
-        public void onMessageReceived() {
-            delivered = true;
-
-            if (getEndpoint().getRemoteCredit() == 0) {
-                // TODO - If we don't get a drained flow we might hang on a call
-                //        to pull since the old request is not cleared.  Do we
-                //        sendFlowIfNeeded here?
-                pullRequest = null;
-            }
-        }
-
-        @Override
-        public void onChainedPullRequest(long timeout) {
-            pending = true;
-            pendingTimeout = timeout;
-        }
-    }
-
-    /*
-     * This request is not an actual pull request but an indicator that one
-     * will be issued after a timeout unless a new message arrives to complete
-     * an timed message pull.
-     */
-    protected class ScheduledPullRequest implements PullRequest {
-
-        private final ScheduledFuture<?> completionTask;
-
-        public ScheduledPullRequest(ScheduledFuture<?> completionTask) {
-            this.completionTask = completionTask;
-        }
-
-        @Override
-        public void onDrained() {
-            // Nothing to do here timer task will replace this with a drain request.
-        }
-
-        @Override
-        public void onMessageReceived() {
-            // Clear pending task to pull since we got a message before the timeout.
-            completionTask.cancel(false);
-            pullRequest = null;
-        }
-
-        @Override
-        public void onChainedPullRequest(long timeout) {
-            // Nothing to do here, this request will be removed before a new
-            // pull request can be set.
+        public boolean isComplete() {
+            return origRequest.isComplete();
         }
     }
 }

@@ -931,7 +931,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 whenOffline(new IOException("Connection failed."));
             } else {
                 try {
-                    LOG.debug("Executing Failover Task: {}", this);
+                    LOG.debug("Executing Failover Task: {} ({})", this, id);
                     doTask();
                 } catch (UnsupportedOperationException e) {
                     requests.remove(id);

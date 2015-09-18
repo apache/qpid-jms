@@ -38,12 +38,14 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
+import org.apache.qpid.jms.JmsPrefetchPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
+import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,7 +93,9 @@ public class MessageExpirationIntegrationTest extends QpidJmsTestCase {
             assertTrue(m instanceof TextMessage);
             assertEquals("Unexpected message content", liveMsgContent, ((TextMessage)m).getText());
 
-            // Verify the other message is not there
+            // Verify the other message is not there. Will drain to be sure there are no messages.
+            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH - 2)));
+
             m = consumer.receive(10);
             assertNull("Message should not have been received", m);
 

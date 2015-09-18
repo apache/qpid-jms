@@ -89,4 +89,38 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(3000);
         }
     }
+
+    @Test(timeout=20000)
+    public void testZeroPrefetchConsumerReceiveNoWaitDrainsWithOneCredit() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Create a connection with zero prefetch
+            Connection connection = testFixture.establishConnecton(testPeer, "?jms.prefetchPolicy.all=0");
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // Expected the consumer to attach but NOT send credit
+            testPeer.expectReceiverAttach();
+
+            final MessageConsumer consumer = session.createConsumer(queue);
+
+            String msgContent = "content";
+            // Expect that once receiveNoWait is called, it drains with 1 credit, then give it a message.
+            testPeer.expectLinkFlow(true, false, equalTo(UnsignedInteger.ONE));
+            testPeer.sendTransferToLastOpenedLinkOnLastOpenedSession(null, null, null, null, new AmqpValueDescribedType(msgContent), 1);
+
+            // Expect it to be accepted.
+            testPeer.expectDisposition(true, new AcceptedMatcher(), 1, 1);
+
+            Message m = consumer.receiveNoWait();
+            assertNotNull("Message should have been received", m);
+            assertTrue(m instanceof TextMessage);
+            assertEquals("Unexpected message content", msgContent, ((TextMessage) m).getText());
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
 }

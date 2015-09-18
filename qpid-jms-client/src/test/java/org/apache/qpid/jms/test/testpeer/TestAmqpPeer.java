@@ -614,10 +614,10 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectBegin()
     {
-        expectBegin(notNullValue());
+        expectBegin(notNullValue(), true);
     }
 
-    public void expectBegin(Matcher<?> outgoingWindowMatcher)
+    public void expectBegin(Matcher<?> outgoingWindowMatcher, boolean sendResponse)
     {
         final BeginMatcher beginMatcher = new BeginMatcher()
                 .withRemoteChannel(nullValue())
@@ -632,29 +632,31 @@ public class TestAmqpPeer implements AutoCloseable
             beginMatcher.withOutgoingWindow(outgoingWindowMatcher);
         }
 
-        // The response will have its remoteChannel field dynamically set based on incoming value
-        final BeginFrame beginResponse = new BeginFrame()
+        if(sendResponse) {
+            // The response will have its remoteChannel field dynamically set based on incoming value
+            final BeginFrame beginResponse = new BeginFrame()
             .setNextOutgoingId(UnsignedInteger.ONE)
             .setIncomingWindow(UnsignedInteger.ZERO)
             .setOutgoingWindow(UnsignedInteger.ZERO);
 
-        // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
-        final FrameSender beginResponseSender = new FrameSender(this, FrameType.AMQP, -1, beginResponse, null);
-        beginResponseSender.setValueProvider(new ValueProvider()
-        {
-            @Override
-            public void setValues()
+            // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+            final FrameSender beginResponseSender = new FrameSender(this, FrameType.AMQP, -1, beginResponse, null);
+            beginResponseSender.setValueProvider(new ValueProvider()
             {
-                int actualChannel = beginMatcher.getActualChannel();
+                @Override
+                public void setValues()
+                {
+                    int actualChannel = beginMatcher.getActualChannel();
 
-                beginResponseSender.setChannel(actualChannel);
-                beginResponse.setRemoteChannel(
-                        UnsignedShort.valueOf((short) actualChannel));
+                    beginResponseSender.setChannel(actualChannel);
+                    beginResponse.setRemoteChannel(
+                            UnsignedShort.valueOf((short) actualChannel));
 
-                _lastInitiatedChannel = actualChannel;
-            }
-        });
-        beginMatcher.onCompletion(beginResponseSender);
+                    _lastInitiatedChannel = actualChannel;
+                }
+            });
+            beginMatcher.onCompletion(beginResponseSender);
+        }
 
         addHandler(beginMatcher);
     }
@@ -1672,17 +1674,14 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER, exitAfterHeader));
     }
 
-    public void expectLinkFlowThenDrop()
-    {
-        AmqpPeerRunnable exitAfterFlow = new AmqpPeerRunnable() {
+    public void dropAfterLastHandler() {
+        AmqpPeerRunnable exitEarly = new AmqpPeerRunnable() {
             @Override
             public void run() {
                 _driverRunnable.exitReadLoopEarly();
             }
         };
 
-        final FlowMatcher flowMatcher = new FlowMatcher().onCompletion(exitAfterFlow);
-
-        addHandler(flowMatcher);
+        runAfterLastHandler(exitEarly);
     }
 }

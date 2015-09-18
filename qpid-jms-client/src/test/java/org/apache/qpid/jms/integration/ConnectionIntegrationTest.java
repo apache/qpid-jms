@@ -27,6 +27,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -113,6 +114,50 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             assertNotNull("Session should not be null", session);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testRemotelyCloseConnectionDuringSessionCreation() throws Exception {
+        final String BREAD_CRUMB = "ErrorMessageBreadCrumb";
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+
+            // Expect the begin, then explicitly close the connection with an error
+            testPeer.expectBegin(notNullValue(), false);
+            testPeer.remotelyCloseConnection(true, AmqpError.NOT_ALLOWED, BREAD_CRUMB);
+
+            try {
+                connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                fail("Expected exception to be thrown");
+            } catch (JMSException jmse) {
+                // Expected
+                assertNotNull("Expected exception to have a message", jmse.getMessage());
+                assertTrue("Expected breadcrumb to be present in message", jmse.getMessage().contains(BREAD_CRUMB));
+            }
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testRemotelyDropConnectionDuringSessionCreation() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+
+            // Expect the begin, then drop connection without without a close frame.
+            testPeer.expectBegin(notNullValue(), false);
+            testPeer.dropAfterLastHandler();
+
+            try {
+                connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                fail("Expected exception to be thrown");
+            } catch (JMSException jmse) {
+                // Expected
+            }
+
+            testPeer.waitForAllHandlersToComplete(3000);
         }
     }
 

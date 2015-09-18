@@ -256,7 +256,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             originalPeer.expectBegin();
             originalPeer.expectBegin();
             originalPeer.expectReceiverAttach();
-            originalPeer.expectLinkFlowThenDrop();
+            originalPeer.expectLinkFlow(true, false, equalTo(UnsignedInteger.ONE));
+            originalPeer.dropAfterLastHandler();
 
             final JmsConnection connection = establishAnonymousConnecton(originalPeer, finalPeer);
             connection.getPrefetchPolicy().setQueuePrefetch(0);
@@ -324,7 +325,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             originalPeer.expectBegin();
             originalPeer.expectBegin();
             originalPeer.expectReceiverAttach();
-            originalPeer.expectLinkFlowThenDrop();
+            originalPeer.expectLinkFlow();
+            originalPeer.dropAfterLastHandler();
 
             final JmsConnection connection = establishAnonymousConnecton(originalPeer, finalPeer);
             connection.getPrefetchPolicy().setQueuePrefetch(0);
@@ -394,7 +396,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             originalPeer.expectBegin();
             originalPeer.expectBegin();
             originalPeer.expectReceiverAttach();
-            originalPeer.expectLinkFlowThenDrop();
+            originalPeer.expectLinkFlow();
+            originalPeer.dropAfterLastHandler();
 
             final JmsConnection connection = establishAnonymousConnecton(originalPeer, finalPeer);
             connection.getPrefetchPolicy().setQueuePrefetch(0);
@@ -491,7 +494,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             originalPeer.expectBegin();
             originalPeer.expectQueueBrowserAttach();
             originalPeer.expectLinkFlow();
-            originalPeer.expectLinkFlowThenDrop();
+            originalPeer.expectLinkFlow(true, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
+            originalPeer.dropAfterLastHandler();
 
             // --- Post Failover Expectations of FinalPeer --- //
 

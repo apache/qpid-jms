@@ -613,8 +613,13 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         try {
             ProviderFuture request = new ProviderFuture();
-            provider.create(resource, request);
-            request.sync();
+            requests.put(request, request);
+            try {
+                provider.create(resource, request);
+                request.sync();
+            } finally {
+                requests.remove(request);
+            }
         } catch (Exception ex) {
             throw JmsExceptionSupport.create(ex);
         }
@@ -625,8 +630,13 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         try {
             ProviderFuture request = new ProviderFuture();
-            provider.start(resource, request);
-            request.sync();
+            requests.put(request, request);
+            try {
+                provider.start(resource, request);
+                request.sync();
+            } finally {
+                requests.remove(request);
+            }
         } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);
         }
@@ -637,8 +647,13 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         try {
             ProviderFuture request = new ProviderFuture();
-            provider.stop(resource, request);
-            request.sync();
+            requests.put(request, request);
+            try {
+                provider.stop(resource, request);
+                request.sync();
+            } finally {
+                requests.remove(request);
+            }
         } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);
         }
@@ -649,8 +664,13 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         try {
             ProviderFuture request = new ProviderFuture();
-            provider.destroy(resource, request);
-            request.sync();
+            requests.put(request, request);
+            try {
+                provider.destroy(resource, request);
+                request.sync();
+            } finally {
+                requests.remove(request);
+            }
         } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);
         }
@@ -716,8 +736,13 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         try {
             ProviderFuture request = new ProviderFuture();
-            provider.unsubscribe(name, request);
-            request.sync();
+            requests.put(request, request);
+            try {
+                provider.unsubscribe(name, request);
+                request.sync();
+            } finally {
+                requests.remove(request);
+            }
         } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);
         }
@@ -729,8 +754,13 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         try {
             ProviderFuture request = new ProviderFuture();
-            provider.commit(sessionId, request);
-            request.sync();
+            requests.put(request, request);
+            try {
+                provider.commit(sessionId, request);
+                request.sync();
+            } finally {
+                requests.remove(request);
+            }
         } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);
         }
@@ -742,8 +772,13 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         try {
             ProviderFuture request = new ProviderFuture();
-            provider.rollback(sessionId, request);
-            request.sync();
+            requests.put(request, request);
+            try {
+                provider.rollback(sessionId, request);
+                request.sync();
+            } finally {
+                requests.remove(request);
+            }
         } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);
         }
@@ -755,8 +790,13 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         try {
             ProviderFuture request = new ProviderFuture();
-            provider.recover(sessionId, request);
-            request.sync();
+            requests.put(request, request);
+            try {
+                provider.recover(sessionId, request);
+                request.sync();
+            } finally {
+                requests.remove(request);
+            }
         } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);
         }
@@ -768,8 +808,13 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         try {
             ProviderFuture request = new ProviderFuture();
-            provider.pull(consumerId, timeout, request);
-            request.sync();
+            requests.put(request, request);
+            try {
+                provider.pull(consumerId, timeout, request);
+                request.sync();
+            } finally {
+                requests.remove(request);
+            }
         } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);
         }

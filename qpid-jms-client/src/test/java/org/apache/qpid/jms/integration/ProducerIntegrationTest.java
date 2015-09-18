@@ -651,7 +651,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             // Expect a message to be sent, but don't send a disposition in
             // response, simply remotely close the connection instead.
             testPeer.expectTransfer(messageMatcher, nullValue(), false, false, null, false);
-            testPeer.remotelyCloseConnection(false, AmqpError.RESOURCE_LIMIT_EXCEEDED, BREAD_CRUMB);
+            testPeer.remotelyCloseConnection(true, AmqpError.RESOURCE_LIMIT_EXCEEDED, BREAD_CRUMB);
 
             Queue queue = session.createQueue("myQueue");
             final MessageProducer producer = session.createProducer(queue);

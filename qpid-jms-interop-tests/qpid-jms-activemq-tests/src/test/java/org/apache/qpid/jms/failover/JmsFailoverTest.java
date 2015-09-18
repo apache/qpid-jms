@@ -345,7 +345,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
             public void run() {
                 started.countDown();
                 try {
-                    Message message = consumer.receive(30000);
+                    Message message = consumer.receive(10000);
                     if (message != null) {
                         received.countDown();
                     } else {

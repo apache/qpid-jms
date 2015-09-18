@@ -302,7 +302,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
             while (true) {
                 JmsInboundMessageDispatch envelope = null;
                 if ((isPullConsumer() || forcePull)) {
-                    // Any waiting was done by the pull request above.
+                    // Any waiting was done by the pull request above, try immediate retrieval from the queue.
                     // TODO: may we need to adjust deadline handling as a result, so that any subsequent pulls (for expired message filtering etc) have the right timeout.
                     envelope = messageQueue.dequeue(0);
                 } else {
@@ -673,17 +673,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         ProviderFuture request = new ProviderFuture();
         provider.start(consumerInfo, request);
         request.sync();
-
-        // For a pull consumer we want to stop the Queue waking an blocked receives and
-        // preventing a new one from blocking until it has reissued a new pull.
-        if (isPullConsumer()) {
-            lock.lock();
-            try {
-                messageQueue.stop();
-            } finally {
-                lock.unlock();
-            }
-        }
     }
 
     protected void onConnectionRestored() {
@@ -705,17 +694,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     protected void sendPullCommandIfNeeded(long timeout, boolean forcePull) throws JMSException {
         if ((isPullConsumer() || forcePull) && !messageQueue.isClosed() && messageQueue.isEmpty()) {
             connection.pull(getConsumerId(), timeout);
-
-            // Once a new pull has gone out check to see if the queue was stopped due to failover
-            // and restart it so that the receive calls can once again start blocking on dequeue.
-            lock.lock();
-            try {
-                if (started) {
-                    messageQueue.start();
-                }
-            } finally {
-                lock.unlock();
-            }
         }
     }
 

@@ -432,8 +432,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             finalPeer.expectBegin();
             finalPeer.expectBegin();
             finalPeer.expectReceiverAttach();
-            finalPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent);
-            finalPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(1)));//TODO: why???
+            finalPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent, 1, false, false, equalTo(UnsignedInteger.ONE), 1, true);
             finalPeer.expectDispositionThatIsAcceptedAndSettled();
             finalPeer.expectDetach(true, true, true);
 

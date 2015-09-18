@@ -711,14 +711,8 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         if (closingConnection.get() || closed.get() || failed.get()) {
             return;
         }
-        serializer.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (!closingConnection.get() && !closed.get() && !failed.get()) {
-                    listener.onInboundMessage(envelope);
-                }
-            }
-        });
+
+        listener.onInboundMessage(envelope);
     }
 
     @Override

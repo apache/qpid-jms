@@ -67,6 +67,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     protected final Map<JmsInboundMessageDispatch, Delivery> delivered = new LinkedHashMap<JmsInboundMessageDispatch, Delivery>();
     protected boolean presettle;
     protected AsyncResult stopRequest;
+    protected AsyncResult pullRequest;
     protected final ByteBuf incomingBuffer = Unpooled.buffer(INITIAL_BUFFER_CAPACITY);
     protected final AtomicLong incomingSequence = new AtomicLong(0);
 
@@ -137,6 +138,14 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             if (receiver.getRemoteCredit() <= 0 && receiver.getQueued() == 0) {
                 stopRequest.onSuccess();
                 stopRequest = null;
+            }
+        }
+
+        if (pullRequest != null) {
+            Receiver receiver = getEndpoint();
+            if (receiver.getRemoteCredit() <= 0 && receiver.getQueued() == 0) {
+                pullRequest.onSuccess();
+                pullRequest = null;
             }
         }
 
@@ -303,11 +312,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                 getEndpoint().flow(1);
             }
 
-            // Can either wait here, or simply return and have it wait on the JmsMessageConsumer internal queue.
-            // Going for the latter right now.
-            // TODO: this complicates failover, since 'completed' pull requests are not replayed.
-            //       ....however, currently we seem to be generating lots of pull requests....??
-            request.onSuccess();
+            // Await the message arrival
+            pullRequest = request;
         } else if (timeout == 0) {
             // If we have no credit then we need to issue some so that we can
             // try to fulfill the request, then drain down what is there to
@@ -345,7 +351,14 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                 if (incoming.isReadable() && !incoming.isPartial()) {
                     LOG.trace("{} has incoming Message(s).", this);
                     try {
-                        processDelivery(incoming);
+                        if(processDelivery(incoming)) {
+                            // We processed a message, signal completion
+                            // of a message pull request if there is one.
+                            if (pullRequest != null) {
+                                pullRequest.onSuccess();
+                                pullRequest = null;
+                            }
+                        }
                     } catch (Exception e) {
                         throw IOExceptionSupport.create(e);
                     }
@@ -368,7 +381,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         super.processDeliveryUpdates(provider);
     }
 
-    private void processDelivery(Delivery incoming) throws Exception {
+    private boolean processDelivery(Delivery incoming) throws Exception {
         setDefaultDeliveryState(incoming, Released.getInstance());
         Message amqpMessage = decodeIncomingMessage(incoming);
         JmsMessage message = null;
@@ -382,7 +395,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             //        able to convert everything to some message even if its just
             //        a bytes messages as a fall back.
             deliveryFailed(incoming);
-            return;
+            return false;
         }
 
         getEndpoint().advance();
@@ -403,6 +416,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         incoming.setContext(envelope);
 
         deliver(envelope);
+
+        return true;
     }
 
     private void setDefaultDeliveryState(Delivery incoming, DeliveryState state) {

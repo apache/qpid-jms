@@ -26,7 +26,6 @@ import javax.jms.Message;
 import javax.jms.Queue;
 import javax.jms.QueueBrowser;
 
-import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -322,7 +322,15 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                         timeout = Math.max(deadline - System.currentTimeMillis(), 0);
                     }
 
-                    sendPullCommandIfNeeded(timeout, forcePull);
+                    //TODO: Special case, if [timeout is 0 now and?] we are a pull consumer, don't do the pull since we just did one that received nothing.
+                    //TODO: Can the 'pull to ensure recieveNoWait and recieve+timeout pick up in-flight message' handling be performed here?
+                    //TODO: seems like it might for recieve+timeout if the forcePull was set true....but that doesnt handle recieveNoWait...as that escapes on the timeout==0 above.
+                    if(!isPullConsumer()) {
+                        //TODO: don't do this if stopped, etc
+
+                        //TODO: make it optional/configurable not to do this at all?
+                        sendPullCommandIfNeeded(timeout, forcePull);
+                    }
                 } else if (envelope.getMessage() == null) {
                     //TODO: do we still need this now?
                     LOG.trace("{} no message was available for this consumer: {}", getConsumerId());

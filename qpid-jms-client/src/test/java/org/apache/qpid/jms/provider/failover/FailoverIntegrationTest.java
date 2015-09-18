@@ -359,7 +359,6 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             finalPeer.expectReceiverAttach();
             finalPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(1)));
             finalPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(1)));
-            finalPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(1)));//TODO: why???
             finalPeer.expectDetach(true, true, true);
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

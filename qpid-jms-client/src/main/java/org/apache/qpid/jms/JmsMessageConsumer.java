@@ -310,7 +310,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                 }
 
                 if (envelope == null) {
-
+                    // TODO: why only if timeout == 0 ?
                     if (failureCause != null && !messageQueue.isClosed() && timeout == 0) {
                         LOG.debug("{} receive failed: {}", getConsumerId(), failureCause.getMessage());
                         throw JmsExceptionSupport.create(failureCause);
@@ -324,6 +324,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
 
                     sendPullCommandIfNeeded(timeout, forcePull);
                 } else if (envelope.getMessage() == null) {
+                    //TODO: do we still need this now?
                     LOG.trace("{} no message was available for this consumer: {}", getConsumerId());
                     return null;
                 } else if (consumeExpiredMessage(envelope)) {

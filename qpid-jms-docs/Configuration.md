@@ -144,11 +144,15 @@ The complete set of SSL Transport options is listed below:
 
 ### Failover Configuration options
 
-With failover enabled the client can reconnect to a different broker automatically when the connection to the current connection is lost for some reason.  The failover URI is always initiated with the *failover* prefix and a list of URIs for the brokers is contained inside a set of parenthesis.
+With failover enabled the client can reconnect to a different broker automatically when the connection to the current connection is lost for some reason.  The failover URI is always initiated with the *failover* prefix and a list of URIs for the brokers is contained inside a set of parentheses. The "jms." options are applied to the overall failover URI, outside the parentheses, and affect the JMS Connection object for its lifetime.
 
 The URI for failover looks something like the following:
 
-    failover:(amqp://broker1:5672,amqp://broker2:5672)?failover.maxReconnectAttempts=20
+    failover:(amqp://host1:5672,amqp://host2:5672)?jms.clientID=foo&failover.maxReconnectAttempts=20
+
+The individual broker details within the parentheses can use the "transport." or "amqp." options defined earlier, with these being applied as each host is connected to:
+
+    failover:(amqp://host1:5672?amqp.option=value,amqp://host2:5672?transport.option=value)?jms.clientID=foo
 
 The complete set of configuration options for failover is listed below:
 
@@ -161,10 +165,9 @@ The complete set of configuration options for failover is listed below:
 + **failover.startupMaxReconnectAttempts** For a client that has never connected to a remote peer before this option control how many attempts are made to connect before reporting the connection as failed.  The default is to use the value of maxReconnectAttempts.
 + **failover.warnAfterReconnectAttempts** Controls how often the client will log a message indicating that failover reconnection is being attempted.  The default is to log every 10 connection attempts.
 
-The failover URI also supports defining 'nested' options. These provide means of specifying global option values applicable to all the individual nested broker URI's, which can be useful to avoid repetition. This is accomplished using the same URI options outlined earlier for the individual broker URI but prefixed with *failover.nested.*. For example, to apply a value for the *jms.clientID* option to every broker URI you could specify:
+The failover URI also supports defining 'nested' options as a means of specifying AMQP and transport option values applicable to all the individual nested broker URI's, which can be useful to avoid repetition. This is accomplished using the same "transport." and "amqp." URI options outlined earlier for a non-failover broker URI but prefixed with *failover.nested.*. For example, to apply the same value for the *amqp.vhost* option to every broker connected to you might have a URI like:
 
-    failover:(amqp://broker1:5672,amqp://broker2:5672)?failover.nested.jms.clientID=foo
-
+    failover:(amqp://host1:5672,amqp://host2:5672)?jms.clientID=foo&failover.nested.amqp.vhost=myhost
 
 ### AMQP Configuration options
 

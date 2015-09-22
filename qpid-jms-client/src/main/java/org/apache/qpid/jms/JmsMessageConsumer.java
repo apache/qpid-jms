@@ -226,22 +226,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
             timeout = -1;
         }
 
-        JmsInboundMessageDispatch envelope = dequeue(timeout);
-        if (envelope == null && !isPullConsumer())
-        {
-            //TODO: don't do this if stopped, etc
-
-            //TODO: make it optional/configurable not to do this at all?
-
-            envelope = dequeue(0, true);
-
-            // TODO: refresh credit if needed, since the above drains it.
-            //       Processing acks can currently reopen the credit window, but if we don't get a message
-            //       here then, it will stay closed for regular prefetching consumers.
-            //       Further receive calls will add and drain credit though.
-        }
-
-        return copy(ackFromReceive(envelope));
+        return copy(ackFromReceive(dequeue(timeout)));
     }
 
     /**
@@ -253,26 +238,8 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     public Message receiveNoWait() throws JMSException {
         checkClosed();
         checkMessageListener();
-        JmsInboundMessageDispatch envelope = dequeue(0);
-        if (envelope == null && !isPullConsumer())
-        {
-            //TODO: don't do this if stopped, etc
 
-            //TODO: make it optional/configurable not to do this at all?
-
-            envelope = dequeue(0, true);
-
-            // TODO: refresh credit if needed, since the above drains it.
-            //       Processing acks can currently reopen the credit window, but if we don't get a message
-            //       here then, it will stay closed for regular prefetching consumers.
-            //       Further receive calls will add and drain credit though.
-        }
-
-        return copy(ackFromReceive(envelope));
-    }
-
-    private JmsInboundMessageDispatch dequeue(long timeout) throws JMSException {
-        return dequeue(timeout, false);
+        return copy(ackFromReceive(dequeue(0)));
     }
 
     /**
@@ -289,7 +256,9 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
      * @throws JMSException
      * @return null if we timeout or if the consumer is closed.
      */
-    private JmsInboundMessageDispatch dequeue(long timeout, boolean forcePull) throws JMSException {
+    private JmsInboundMessageDispatch dequeue(long timeout) throws JMSException {
+        boolean pullConsumer = isPullConsumer();
+        boolean pullForced = pullConsumer;
 
         try {
             long deadline = 0;
@@ -297,13 +266,12 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                 deadline = System.currentTimeMillis() + timeout;
             }
 
-            sendPullCommandIfNeeded(timeout, forcePull);
+            performPullIfRequired(timeout, false);
 
             while (true) {
                 JmsInboundMessageDispatch envelope = null;
-                if ((isPullConsumer() || forcePull)) {
-                    // Any waiting was done by the pull request above, try immediate retrieval from the queue.
-                    // TODO: may we need to adjust deadline handling as a result, so that any subsequent pulls (for expired message filtering etc) have the right timeout.
+                if (pullForced || pullConsumer) {
+                    // Any waiting was done by the pull request, try immediate retrieval from the queue.
                     envelope = messageQueue.dequeue(0);
                 } else {
                     envelope = messageQueue.dequeue(timeout);
@@ -316,21 +284,22 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                         throw JmsExceptionSupport.create(failureCause);
                     }
 
-                    if (timeout == 0 || messageQueue.isClosed()) {
+                    if ((timeout == 0 && pullConsumer) || (timeout == 0 && !pullConsumer && pullForced) || pullConsumer || messageQueue.isClosed()) {
                         return null;
                     } else if (timeout > 0) {
                         timeout = Math.max(deadline - System.currentTimeMillis(), 0);
                     }
 
-                    //TODO: Special case, if [timeout is 0 now and?] we are a pull consumer, don't do the pull since we just did one that received nothing.
-                    //TODO: Can the 'pull to ensure recieveNoWait and recieve+timeout pick up in-flight message' handling be performed here?
-                    //TODO: seems like it might for recieve+timeout if the forcePull was set true....but that doesnt handle recieveNoWait...as that escapes on the timeout==0 above.
-                    if(!isPullConsumer()) {
-                        //TODO: don't do this if stopped, etc
+                    pullForced = true;
+                    //TODO: don't do this if stopped, etc
+                    //TODO: make it optional/configurable not to do this at all?
+                    performPullIfRequired(timeout, true);
+                    //TODO: do we need to reset pullForced, if there are e.g expired etc messages received and then filtered after the pull?
 
-                        //TODO: make it optional/configurable not to do this at all?
-                        sendPullCommandIfNeeded(timeout, forcePull);
-                    }
+                    // TODO: refresh credit if needed, since the above drains it.
+                    //       Processing acks can currently reopen the credit window, but if we don't get a message
+                    //       here then, it will stay closed for regular prefetching consumers.
+                    //       Further receive calls will add and drain credit though.
                 } else if (envelope.getMessage() == null) {
                     //TODO: do we still need this now?
                     LOG.trace("{} no message was available for this consumer: {}", getConsumerId());
@@ -341,14 +310,14 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                     if (timeout > 0) {
                         timeout = Math.max(deadline - System.currentTimeMillis(), 0);
                     }
-                    sendPullCommandIfNeeded(timeout, forcePull);
+                    performPullIfRequired(timeout, false);
                 } else if (redeliveryExceeded(envelope)) {
                     LOG.debug("{} filtered message with excessive redelivery count: {}", getConsumerId(), envelope);
                     doAckUndeliverable(envelope);
                     if (timeout > 0) {
                         timeout = Math.max(deadline - System.currentTimeMillis(), 0);
                     }
-                    sendPullCommandIfNeeded(timeout, forcePull);
+                    performPullIfRequired(timeout, false);
                 } else {
                     if (LOG.isTraceEnabled()) {
                         LOG.trace(getConsumerId() + " received message: " + envelope);
@@ -700,7 +669,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
      *        The amount of time the pull request should remain valid.
      * @param forcePull TODO
      */
-    protected void sendPullCommandIfNeeded(long timeout, boolean forcePull) throws JMSException {
+    protected void performPullIfRequired(long timeout, boolean forcePull) throws JMSException {
         if ((isPullConsumer() || forcePull) && !messageQueue.isClosed() && messageQueue.isEmpty()) {
             connection.pull(getConsumerId(), timeout);
         }

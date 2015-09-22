@@ -237,6 +237,65 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testFailoverHandlesDropWithModifiedInitialReconnectDelay() throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final CountDownLatch originalConnected = new CountDownLatch(1);
+            final CountDownLatch finalConnected = new CountDownLatch(1);
+
+            // Create a peer to connect to, then one to reconnect to
+            final String originalURI = createPeerURI(originalPeer);
+            final String finalURI = createPeerURI(finalPeer);
+
+            LOG.info("Original peer is at: {}", originalURI);
+            LOG.info("Final peer is at: {}", finalURI);
+
+            // Connect to the first peer
+            originalPeer.expectSaslAnonymousConnect();
+            originalPeer.expectBegin();
+            originalPeer.expectBegin();
+            originalPeer.dropAfterLastHandler();
+
+            final JmsConnection connection = establishAnonymousConnecton(
+                "?failover.initialReconnectDelay=1&failover.reconnectDelay=600&failover.maxReconnectAttempts=10",
+                originalPeer, finalPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (originalURI.equals(remoteURI.toString())) {
+                        originalConnected.countDown();
+                    }
+                }
+
+                @Override
+                public void onConnectionRestored(URI remoteURI) {
+                    LOG.info("Connection Restored: {}", remoteURI);
+                    if (finalURI.equals(remoteURI.toString())) {
+                        finalConnected.countDown();
+                    }
+                }
+            });
+            connection.start();
+
+            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+
+            // --- Post Failover Expectations of FinalPeer --- //
+
+            finalPeer.expectSaslAnonymousConnect();
+            finalPeer.expectBegin();
+            finalPeer.expectBegin();
+
+            connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+
+            finalPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
     public void testFailoverHandlesDropZeroPrefetchPullConsumerReceiveNoWait() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -521,6 +580,10 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
     }
 
     private JmsConnection establishAnonymousConnecton(TestAmqpPeer... peers) throws JMSException {
+        return establishAnonymousConnecton(null, peers);
+    }
+
+    private JmsConnection establishAnonymousConnecton(String failoverParams, TestAmqpPeer... peers) throws JMSException {
         if(peers.length == 0) {
             throw new IllegalArgumentException("No test peers were given, at least 1 required");
         }
@@ -534,7 +597,12 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             remoteURI += createPeerURI(peer);
             first = false;
         }
-        remoteURI += ")?failover.maxReconnectAttempts=10";
+
+        if (failoverParams == null) {
+            remoteURI += ")?failover.maxReconnectAttempts=10";
+        } else {
+            remoteURI += ")?" + failoverParams;
+        }
 
         ConnectionFactory factory = new JmsConnectionFactory(remoteURI);
         Connection connection = factory.createConnection();

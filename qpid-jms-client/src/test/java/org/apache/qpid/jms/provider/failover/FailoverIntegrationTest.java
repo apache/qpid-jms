@@ -23,6 +23,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.net.URI;
 import java.util.Enumeration;
@@ -33,6 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
+import javax.jms.JMSSecurityException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -46,6 +48,7 @@ import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.JmsPrefetchPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
+import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
@@ -60,6 +63,26 @@ import org.slf4j.LoggerFactory;
 public class FailoverIntegrationTest extends QpidJmsTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(FailoverIntegrationTest.class);
+
+    @Test(timeout = 20000)
+    public void testConnectSecurityViolation() throws Exception {
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            testPeer.rejectConnect(AmqpError.UNAUTHORIZED_ACCESS, "Anonymous connections not allowed", null);
+
+            final JmsConnection connection = establishAnonymousConnecton(testPeer);
+            try {
+                connection.start();
+                fail("Should have thrown JMSSecurityException");
+            } catch (JMSSecurityException ex) {
+            } catch (Exception ex) {
+                fail("Should have thrown JMSSecurityException: " + ex);
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
 
     @Test(timeout = 20000)
     public void testFailoverHandlesImmediateTransportDropAfterConnect() throws Exception {

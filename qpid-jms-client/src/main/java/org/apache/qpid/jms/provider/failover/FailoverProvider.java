@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.JMSException;
+import javax.jms.JMSSecurityException;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessageFactory;
@@ -501,16 +502,16 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         LOG.debug("handling Provider failure: {}", cause.getMessage());
         LOG.trace("stack", cause);
 
-        this.provider.setProviderListener(closedListener);
+        provider.setProviderListener(closedListener);
         URI failedURI = this.provider.getRemoteURI();
         try {
-            this.provider.close();
+            provider.close();
         } catch (Throwable error) {
             LOG.trace("Caught exception while closing failed provider: {}", error.getMessage());
         }
-        this.provider = null;
+        provider = null;
 
-        if (reconnectAllowed()) {
+        if (reconnectAllowed(cause)) {
 
             if (cause instanceof ProviderRedirectedException) {
                 ProviderRedirectedException redirect = (ProviderRedirectedException) cause;
@@ -669,7 +670,15 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         });
     }
 
-    private boolean reconnectAllowed() {
+    private boolean reconnectAllowed(IOException cause) {
+        // If a connection attempts fail due to Security errors than
+        // we abort reconnection as there is a configuration issue and
+        // we want to avoid a spinning reconnect cycle that can never
+        // complete.
+        if (cause.getCause() instanceof JMSSecurityException) {
+            return false;
+        }
+
         return reconnectAttemptLimit() != 0;
     }
 

@@ -30,6 +30,7 @@ import javax.jms.Connection;
 import javax.jms.DeliveryMode;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
+import javax.jms.JMSSecurityException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -67,6 +68,21 @@ public class JmsFailoverTest extends AmqpTestSupport {
         URI brokerURI = new URI("failover://(amqp://127.0.0.1:5678,amqp://localhost:5777," +
                                 getBrokerAmqpConnectionURI() + ")?failover.useReconnectBackOff=false");
         Connection connection = createAmqpConnection(brokerURI);
+        connection.start();
+        connection.close();
+    }
+
+    @Test(timeout=30000, expected = JMSSecurityException.class)
+    public void testCreateConnectionAsUnknwonUser() throws Exception {
+        URI brokerURI = new URI(getAmqpFailoverURI() +
+            "?failover.maxReconnectAttempts=5");
+
+        JmsConnectionFactory factory = new JmsConnectionFactory(brokerURI);
+        factory.setUsername("unknown");
+        factory.setPassword("unknown");
+
+        connection = factory.createConnection();
+        assertNotNull(connection);
         connection.start();
         connection.close();
     }

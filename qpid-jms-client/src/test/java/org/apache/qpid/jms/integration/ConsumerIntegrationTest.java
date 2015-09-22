@@ -19,11 +19,18 @@
 package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.IllegalStateException;
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
@@ -34,15 +41,22 @@ import javax.jms.Topic;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
+import org.apache.qpid.jms.test.testpeer.AmqpPeerRunnable;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ReleasedMatcher;
 import org.apache.qpid.proton.amqp.DescribedType;
+import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConsumerIntegrationTest extends QpidJmsTestCase {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ConsumerIntegrationTest.class);
+
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
     @Test(timeout = 20000)
@@ -254,6 +268,90 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectClose();
             connection.close();
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testConsumerReceiveThrowsIfConnectionLost() throws Exception {
+        doConsumerReceiveThrowsIfConnectionLostTestImpl(false);
+    }
+
+    @Test(timeout=20000)
+    public void testConsumerTimedReceiveThrowsIfConnectionLost() throws Exception {
+        doConsumerReceiveThrowsIfConnectionLostTestImpl(true);
+    }
+
+    private void doConsumerReceiveThrowsIfConnectionLostTestImpl(boolean useTimeout) throws JMSException, Exception, IOException {
+        final CountDownLatch consumerReady = new CountDownLatch(1);
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+            Queue queue = session.createQueue("queue");
+            connection.start();
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlow();
+            testPeer.runAfterLastHandler(new AmqpPeerRunnable() {
+                @Override
+                public void run() {
+                    try {
+                        consumerReady.await(2000, TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException e) {
+                        LOG.warn("interrupted while waiting");
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            });
+            testPeer.dropAfterLastHandler(10);
+
+            final MessageConsumer consumer = session.createConsumer(queue);
+            consumerReady.countDown();
+
+            try {
+                if (useTimeout) {
+                    consumer.receive(100000);
+                } else {
+                    consumer.receive();
+                }
+
+                fail("An exception should have been thrown");
+            } catch (JMSException jmse) {
+                // Expected
+            }
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testConsumerReceiveNoWaitThrowsIfConnectionLost() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+            Queue queue = session.createQueue("queue");
+            connection.start();
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlow(false, notNullValue(UnsignedInteger.class));
+            testPeer.expectLinkFlow(true, notNullValue(UnsignedInteger.class));
+            testPeer.dropAfterLastHandler();
+
+            final MessageConsumer consumer = session.createConsumer(queue);
+
+            try {
+                consumer.receiveNoWait();
+
+                fail("An exception should have been thrown");
+            } catch (JMSException jmse) {
+                // Expected
+            }
         }
     }
 }

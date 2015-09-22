@@ -62,7 +62,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     protected final Lock lock = new ReentrantLock();
     protected final AtomicBoolean suspendedConnection = new AtomicBoolean();
     protected final AtomicBoolean delivered = new AtomicBoolean();
-    protected Exception failureCause;
+    protected volatile Exception failureCause;
 
     /**
      * Create a non-durable MessageConsumer
@@ -278,8 +278,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                 }
 
                 if (envelope == null) {
-                    // TODO: why only if timeout == 0 ?
-                    if (failureCause != null && !messageQueue.isClosed() && timeout == 0) {
+                    if (failureCause != null) {
                         LOG.debug("{} receive failed: {}", getConsumerId(), failureCause.getMessage());
                         throw JmsExceptionSupport.create(failureCause);
                     }
@@ -290,10 +289,15 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                         timeout = Math.max(deadline - System.currentTimeMillis(), 0);
                     }
 
-                    pullForced = true;
                     //TODO: don't do this if stopped, etc
                     //TODO: make it optional/configurable not to do this at all?
-                    performPullIfRequired(timeout, true);
+                    if(timeout >= 0) {
+                        // We don't do this for receive with no timeout since it
+                        // already occurred for zero-prefetch consumers, and
+                        // the rest block indefinitely on the local messageQueue
+                        pullForced = true;
+                        performPullIfRequired(timeout, true);
+                    }
                     //TODO: do we need to reset pullForced, if there are e.g expired etc messages received and then filtered after the pull?
 
                     // TODO: refresh credit if needed, since the above drains it.

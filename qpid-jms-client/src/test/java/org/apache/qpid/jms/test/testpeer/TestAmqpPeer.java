@@ -1674,10 +1674,24 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER, exitAfterHeader));
     }
 
+
     public void dropAfterLastHandler() {
+        dropAfterLastHandler(0);
+    }
+
+    public void dropAfterLastHandler(final long delay) {
         AmqpPeerRunnable exitEarly = new AmqpPeerRunnable() {
             @Override
             public void run() {
+                if(delay > 0) {
+                    try {
+                        Thread.sleep(delay);
+                    } catch (InterruptedException e) {
+                        LOGGER.warn("Interrupted while delaying before read loop exit");
+                        Thread.currentThread().interrupt();
+                    }
+                }
+
                 _driverRunnable.exitReadLoopEarly();
             }
         };

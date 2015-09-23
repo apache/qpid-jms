@@ -281,7 +281,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             originalPeer.dropAfterLastHandler();
 
             final JmsConnection connection = establishAnonymousConnecton(
-                "?failover.initialReconnectDelay=1&failover.reconnectDelay=600&failover.maxReconnectAttempts=10",
+                "failover.initialReconnectDelay=1&failover.reconnectDelay=600&failover.maxReconnectAttempts=10",
                 originalPeer, finalPeer);
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override

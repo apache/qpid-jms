@@ -604,6 +604,8 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         }
 
         connectionHub.execute(new Runnable() {
+            boolean delayed = false;
+
             @Override
             public void run() {
                 if (provider != null || closingConnection.get() || closed.get() || failed.get()) {
@@ -615,7 +617,8 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     return;
                 }
 
-                if (initialReconnectDelay > 0 && reconnectAttempts == 0) {
+                if (!delayed && initialReconnectDelay > 0 && reconnectAttempts == 0) {
+                    delayed = true;
                     LOG.trace("Delayed initial reconnect attempt will be in {} milliseconds", initialReconnectDelay);
                     connectionHub.schedule(this, initialReconnectDelay, TimeUnit.MILLISECONDS);
                     return;

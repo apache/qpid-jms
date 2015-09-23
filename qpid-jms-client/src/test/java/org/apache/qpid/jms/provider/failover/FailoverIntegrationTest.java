@@ -54,6 +54,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescri
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
+import org.apache.qpid.jms.util.StopWatch;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.junit.Test;
@@ -315,6 +316,33 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
 
             finalPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+
+    @Test(timeout = 30000)
+    public void testFailoverInitialReconnectDelayDoesNotApplyToInitialConnect() throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();) {
+            // Create a peer to connect to
+            final String originalURI = createPeerURI(originalPeer);
+
+            LOG.info("Original peer is at: {}", originalURI);
+
+            // Connect to the first peer
+            originalPeer.expectSaslAnonymousConnect();
+            originalPeer.expectBegin();
+
+            int delay = 20000;
+            StopWatch watch = new StopWatch();
+
+            JmsConnection connection = establishAnonymousConnecton("failover.initialReconnectDelay=" + delay + "&failover.maxReconnectAttempts=1", originalPeer);
+            connection.start();
+
+            long taken = watch.taken();
+
+            String message = "Initial connect should not have delayed for the specified initialReconnectDelay." + "Elapsed=" + taken + ", delay=" + delay;
+            assertTrue(message,  taken < delay);
+            assertTrue("Connection took longer than reasonable: " + taken, taken < 5000);
         }
     }
 

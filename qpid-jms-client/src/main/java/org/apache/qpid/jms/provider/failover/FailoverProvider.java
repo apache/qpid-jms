@@ -91,6 +91,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     private final AtomicReference<JmsMessageFactory> messageFactory = new AtomicReference<JmsMessageFactory>();
 
     // Current state of connection / reconnection
+    private boolean firstAttempt = true;
     private boolean firstConnection = true;
     private long reconnectAttempts;
     private long nextReconnectDelay = -1;
@@ -617,7 +618,10 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     return;
                 }
 
-                if (!delayed && initialReconnectDelay > 0 && reconnectAttempts == 0) {
+                boolean first = firstAttempt;
+                firstAttempt = false;
+
+                if (!delayed && !first && initialReconnectDelay > 0 && reconnectAttempts == 0) {
                     delayed = true;
                     LOG.trace("Delayed initial reconnect attempt will be in {} milliseconds", initialReconnectDelay);
                     connectionHub.schedule(this, initialReconnectDelay, TimeUnit.MILLISECONDS);

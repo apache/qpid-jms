@@ -78,7 +78,6 @@ public class JmsConnectionIdTest {
         JmsConnectionId id = new JmsConnectionId(firstId);
         assertNotNull(id.getValue());
         assertNull(id.getProviderHint());
-        assertNull(id.getProviderId());
     }
 
     @Test
@@ -86,16 +85,12 @@ public class JmsConnectionIdTest {
         JmsConnectionId id = new JmsConnectionId(firstId);
         assertNotNull(id.getValue());
         assertNull(id.getProviderHint());
-        assertNull(id.getProviderId());
 
         String hint = new String("hint");
-        String pid = new String("id");
 
         id.setProviderHint(hint);
-        id.setProviderId(pid);
 
         assertEquals(hint, id.getProviderHint());
-        assertEquals(pid, id.getProviderId());
     }
 
     @Test

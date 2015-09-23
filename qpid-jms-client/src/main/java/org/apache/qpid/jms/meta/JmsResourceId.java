@@ -37,20 +37,4 @@ public interface JmsResourceId {
      */
     Object getProviderHint();
 
-    /**
-     * Allows a provider to set it's own internal Id object for this resource
-     * in the case where the JMS framework Id cannot be used directly by the
-     * Provider implementation.
-     *
-     * @param id
-     */
-    void setProviderId(Object id);
-
-    /**
-     * Returns the previously stored Provider Id value.
-     *
-     * @return the previously stored Provider Id value.
-     */
-    Object getProviderId();
-
 }

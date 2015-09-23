@@ -78,7 +78,6 @@ public class JmsSessionIdTest {
         JmsSessionId id = new JmsSessionId(firstId, 1);
         assertNotNull(id.getValue());
         assertNull(id.getProviderHint());
-        assertNull(id.getProviderId());
     }
 
     @Test

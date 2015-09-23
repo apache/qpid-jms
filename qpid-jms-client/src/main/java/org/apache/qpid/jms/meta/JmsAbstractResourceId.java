@@ -22,7 +22,6 @@ package org.apache.qpid.jms.meta;
 public abstract class JmsAbstractResourceId implements JmsResourceId {
 
     protected transient Object providerHint;
-    protected transient Object providerId;
     protected transient int hashCode;
 
     @Override
@@ -33,15 +32,5 @@ public abstract class JmsAbstractResourceId implements JmsResourceId {
     @Override
     public Object getProviderHint() {
         return providerHint;
-    }
-
-    @Override
-    public void setProviderId(Object id) {
-        this.providerId = id;
-    }
-
-    @Override
-    public Object getProviderId() {
-        return providerId;
     }
 }

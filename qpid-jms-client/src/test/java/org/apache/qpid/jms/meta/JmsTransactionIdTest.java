@@ -54,7 +54,6 @@ public class JmsTransactionIdTest {
         assertEquals(firstId, id.getConnectionId());
         assertNotNull(id.getValue());
         assertNull(id.getProviderHint());
-        assertNull(id.getProviderId());
     }
 
     @Test

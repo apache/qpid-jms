@@ -78,7 +78,6 @@ public class JmsProducerIdTest {
         JmsProducerId id = new JmsProducerId(firstId, 1);
         assertNotNull(id.getValue());
         assertNull(id.getProviderHint());
-        assertNull(id.getProviderId());
     }
 
     @Test

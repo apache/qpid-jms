@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.provider.failover;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -33,6 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
+import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
 import javax.jms.Message;
@@ -41,6 +43,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.QueueBrowser;
 import javax.jms.Session;
+import javax.jms.Topic;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
@@ -49,8 +52,10 @@ import org.apache.qpid.jms.JmsPrefetchPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
+import org.apache.qpid.jms.test.testpeer.basictypes.TerminusDurability;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
+import org.apache.qpid.jms.test.testpeer.matchers.SourceMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
@@ -627,6 +632,52 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             assertFalse(queueView.hasMoreElements());
 
             browser.close();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateConsumerFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
+        doCreateConsumerFailsWhenLinkRefusedTestImpl(false);
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateConsumerFailsWhenLinkRefusedAndAttachResponseWriteIsDeferred() throws Exception {
+        doCreateConsumerFailsWhenLinkRefusedTestImpl(true);
+    }
+
+    private void doCreateConsumerFailsWhenLinkRefusedTestImpl(boolean deferAttachResponseWrite) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectBegin();
+
+            Connection connection = establishAnonymousConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String topicName = "myTopic";
+            Topic dest = session.createTopic(topicName);
+
+            //Expect a link to a topic node, which we will then refuse
+            SourceMatcher targetMatcher = new SourceMatcher();
+            targetMatcher.withAddress(equalTo(topicName));
+            targetMatcher.withDynamic(equalTo(false));
+            targetMatcher.withDurable(equalTo(TerminusDurability.NONE));
+
+            testPeer.expectReceiverAttach(notNullValue(), targetMatcher, true, deferAttachResponseWrite);
+            //Expect the detach response to the test peer closing the consumer link after refusal.
+            testPeer.expectDetach(true, false, false);
+
+            try {
+                //Create a consumer, expect it to throw exception due to the link-refusal
+                session.createConsumer(dest);
+                fail("Consumer creation should have failed when link was refused");
+            } catch(InvalidDestinationException ide) {
+                LOG.info("Test caught expected error: {}", ide.getMessage());
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 

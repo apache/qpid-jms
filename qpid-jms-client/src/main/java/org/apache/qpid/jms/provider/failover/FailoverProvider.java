@@ -960,7 +960,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
         @Override
         public void onFailure(final Throwable result) {
-            if (closingConnection.get() || closed.get() || failed.get()) {
+            if (result instanceof JMSException || closingConnection.get() || closed.get() || failed.get()) {
                 requests.remove(id);
                 super.onFailure(result);
             } else {

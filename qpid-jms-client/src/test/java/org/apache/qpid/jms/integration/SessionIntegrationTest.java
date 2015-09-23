@@ -202,7 +202,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             try {
                 //Create a consumer, expect it to throw exception due to the link-refusal
                 session.createConsumer(dest);
-                fail("Producer creation should have failed when link was refused");
+                fail("Consumer creation should have failed when link was refused");
             } catch(InvalidDestinationException ide) {
                 //Expected
             }

@@ -19,6 +19,7 @@ package org.apache.qpid.jms.provider;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.jms.util.IOExceptionSupport;
 
@@ -27,8 +28,9 @@ import org.apache.qpid.jms.util.IOExceptionSupport;
  */
 public class ProviderFuture extends WrappedAsyncResult {
 
-    protected final CountDownLatch latch = new CountDownLatch(1);
-    protected volatile Throwable error;
+    private final AtomicBoolean completer = new AtomicBoolean();
+    private final CountDownLatch latch = new CountDownLatch(1);
+    private volatile Throwable error;
 
     public ProviderFuture() {
         super(null);
@@ -45,7 +47,7 @@ public class ProviderFuture extends WrappedAsyncResult {
 
     @Override
     public void onFailure(Throwable result) {
-        if (error == null) {
+        if(completer.compareAndSet(false, true)) {
             error = result;
             latch.countDown();
             super.onFailure(result);
@@ -54,8 +56,10 @@ public class ProviderFuture extends WrappedAsyncResult {
 
     @Override
     public void onSuccess() {
-        latch.countDown();
-        super.onSuccess();
+        if(completer.compareAndSet(false, true)) {
+            latch.countDown();
+            super.onSuccess();
+        }
     }
 
     /**

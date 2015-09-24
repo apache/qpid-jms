@@ -21,7 +21,7 @@ package org.apache.qpid.jms.provider;
  */
 public abstract class WrappedAsyncResult implements AsyncResult {
 
-    protected final AsyncResult wrapped;
+    private final AsyncResult wrapped;
 
     /**
      * Create a new WrappedAsyncResult for the target AsyncResult

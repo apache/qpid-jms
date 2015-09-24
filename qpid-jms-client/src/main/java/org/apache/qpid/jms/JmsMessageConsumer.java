@@ -19,6 +19,7 @@ package org.apache.qpid.jms;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -62,7 +63,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     protected final Lock lock = new ReentrantLock();
     protected final AtomicBoolean suspendedConnection = new AtomicBoolean();
     protected final AtomicBoolean delivered = new AtomicBoolean();
-    protected volatile Exception failureCause;
+    protected final AtomicReference<Exception> failureCause = new AtomicReference<>();
 
     /**
      * Create a non-durable MessageConsumer
@@ -194,7 +195,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
 
     protected void shutdown(Exception cause) throws JMSException {
         if (closed.compareAndSet(false, true)) {
-            failureCause = cause;
+            failureCause.set(cause);
             session.remove(this);
             stop(true);
         }
@@ -277,12 +278,12 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                     envelope = messageQueue.dequeue(timeout);
                 }
 
-                if (envelope == null) {
-                    if (failureCause != null) {
-                        LOG.debug("{} receive failed: {}", getConsumerId(), failureCause.getMessage());
-                        throw JmsExceptionSupport.create(failureCause);
-                    }
+                if (failureCause.get() != null) {
+                    LOG.debug("{} receive failed: {}", getConsumerId(), failureCause.get().getMessage());
+                    throw JmsExceptionSupport.create(failureCause.get());
+                }
 
+                if (envelope == null) {
                     if ((timeout == 0 && pullConsumer) || (timeout == 0 && !pullConsumer && pullForced) || pullConsumer || messageQueue.isClosed()) {
                         return null;
                     } else if (timeout > 0) {
@@ -356,11 +357,11 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         if (closed.get()) {
             IllegalStateException jmsEx = null;
 
-            if (failureCause == null) {
+            if (failureCause.get() == null) {
                 jmsEx = new IllegalStateException("The MessageConsumer is closed");
             } else {
                 jmsEx = new IllegalStateException("The MessageConsumer was closed due to an unrecoverable error.");
-                jmsEx.initCause(failureCause);
+                jmsEx.initCause(failureCause.get());
             }
 
             throw jmsEx;

@@ -606,6 +606,39 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testDurableSubscriptionUnsubscribeInUseThrowsJMSEx() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String topicName = "myTopic";
+            Topic dest = session.createTopic(topicName);
+            String subscriptionName = "mySubscription";
+
+            testPeer.expectDurableSubscriberAttach(topicName, subscriptionName);
+            testPeer.expectLinkFlow();
+
+            TopicSubscriber subscriber = session.createDurableSubscriber(dest, subscriptionName);
+            assertNotNull("TopicSubscriber object was null", subscriber);
+
+            try {
+                session.unsubscribe(subscriptionName);
+                fail("Should have thrown a JMSException");
+            } catch (JMSException ex) {
+            }
+
+            testPeer.expectDetach(false, true, false);
+
+            subscriber.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
     public void testCreateDurableTopicSubscriberFailsIfConnectionDoesntHaveExplicitClientID() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Create a connection without an explicit clientId

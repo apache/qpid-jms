@@ -126,32 +126,6 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
     }
 
     @Test(timeout = 60000)
-    public void testDurableSubscriptionUnsubscribeInUseThrowsJMSEx() throws Exception {
-        connection = createAmqpConnection();
-        connection.setClientID("DURABLE-AMQP");
-        connection.start();
-
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        assertNotNull(session);
-        Topic topic = session.createTopic(name.getMethodName());
-        MessageConsumer consumer = session.createDurableSubscriber(topic, getSubscriptionName());
-        assertNotNull(consumer);
-
-        BrokerViewMBean broker = getProxyToBroker();
-        assertEquals(1, broker.getDurableTopicSubscribers().length);
-        assertEquals(0, broker.getInactiveDurableTopicSubscribers().length);
-
-        try {
-            session.unsubscribe(getSubscriptionName());
-            fail("Should have thrown a JMSException");
-        } catch (JMSException ex) {
-        }
-
-        assertEquals(1, broker.getDurableTopicSubscribers().length);
-        assertEquals(0, broker.getInactiveDurableTopicSubscribers().length);
-    }
-
-    @Test(timeout = 60000)
     public void testDurableSubscriptionUnsubscribeInUseThrowsAndRecovers() throws Exception {
         connection = createAmqpConnection();
         connection.setClientID("DURABLE-AMQP");

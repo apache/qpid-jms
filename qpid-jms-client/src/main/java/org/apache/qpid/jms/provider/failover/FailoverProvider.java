@@ -66,9 +66,10 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     private static final Logger LOG = LoggerFactory.getLogger(FailoverProvider.class);
 
     public static final int UNLIMITED = -1;
+    private static final int UNDEFINED = -1;
 
     public static final int DEFAULT_MAX_RECONNECT_ATTEMPTS = UNLIMITED;
-    public static final int DEFAULT_STARTUP_MAX_RECONNECT_ATTEMPTS = UNLIMITED;
+    public static final int DEFAULT_STARTUP_MAX_RECONNECT_ATTEMPTS = UNDEFINED;
     public static final long DEFAULT_INITIAL_RECONNECT_DELAY = 0;
     public static final long DEFAULT_RECONNECT_DELAY = 10;
     public static final long DEFAULT_MAX_RECONNECT_DELAY = TimeUnit.SECONDS.toMillis(30);
@@ -691,7 +692,9 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
     private int reconnectAttemptLimit() {
         int maxReconnectValue = this.maxReconnectAttempts;
-        if (firstConnection && this.startupMaxReconnectAttempts != UNLIMITED) {
+        if (firstConnection && this.startupMaxReconnectAttempts != UNDEFINED) {
+            // If this is the first connection and a specific startup retry limit
+            // is configured then use it, otherwise use the main reconnect limit
             maxReconnectValue = this.startupMaxReconnectAttempts;
         }
         return maxReconnectValue;

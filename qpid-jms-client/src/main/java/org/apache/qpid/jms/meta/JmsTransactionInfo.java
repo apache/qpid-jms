@@ -37,11 +37,8 @@ public final class JmsTransactionInfo implements JmsResource, Comparable<JmsTran
         return new JmsTransactionInfo(sessionId, transactionId);
     }
 
-    public JmsSessionId getSessionId() {
-        return sessionId;
-    }
-
-    public JmsTransactionId getTransactionId() {
+    @Override
+    public JmsTransactionId getId() {
         return transactionId;
     }
 
@@ -69,7 +66,7 @@ public final class JmsTransactionInfo implements JmsResource, Comparable<JmsTran
 
     @Override
     public int compareTo(JmsTransactionInfo other) {
-        return this.transactionId.compareTo(other.transactionId);
+        return transactionId.compareTo(other.transactionId);
     }
 
     @Override

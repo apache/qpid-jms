@@ -100,7 +100,7 @@ public class FailoverProviderClosedTest extends FailoverProviderTestSupport {
     @Test(timeout=30000, expected=IOException.class)
     public void testSessionAcknowledge() throws Exception {
         ProviderFuture request = new ProviderFuture();
-        provider.acknowledge(session.getSessionId(), request);
+        provider.acknowledge(session.getId(), request);
     }
 
     @Test(timeout=30000, expected=IOException.class)
@@ -112,19 +112,19 @@ public class FailoverProviderClosedTest extends FailoverProviderTestSupport {
     @Test(timeout=30000, expected=IOException.class)
     public void testCommit() throws Exception {
         ProviderFuture request = new ProviderFuture();
-        provider.commit(session.getSessionId(), request);
+        provider.commit(session.getId(), request);
     }
 
     @Test(timeout=30000, expected=IOException.class)
     public void testRollback() throws Exception {
         ProviderFuture request = new ProviderFuture();
-        provider.rollback(session.getSessionId(), request);
+        provider.rollback(session.getId(), request);
     }
 
     @Test(timeout=30000, expected=IOException.class)
     public void testRecover() throws Exception {
         ProviderFuture request = new ProviderFuture();
-        provider.recover(session.getSessionId(), request);
+        provider.recover(session.getId(), request);
     }
 
     @Test(timeout=30000, expected=IOException.class)
@@ -136,6 +136,6 @@ public class FailoverProviderClosedTest extends FailoverProviderTestSupport {
     @Test(timeout=30000, expected=IOException.class)
     public void testMessagePull() throws Exception {
         ProviderFuture request = new ProviderFuture();
-        provider.pull(consumer.getConsumerId(), 1, request);
+        provider.pull(consumer.getId(), 1, request);
     }
 }

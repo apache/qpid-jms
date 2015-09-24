@@ -98,11 +98,9 @@ public class AmqpTemporaryDestinationBuilder extends AmqpResourceBuilder<AmqpTem
 
     @Override
     protected boolean isClosePending() {
-        org.apache.qpid.proton.amqp.transport.Target target = getEndpoint().getRemoteTarget();
-
         // When no link terminus was created, the peer will now detach/close us otherwise
         // we need to validate the returned remote source prior to open completion.
-        return target == null;
+        return getEndpoint().getRemoteTarget() == null;
     }
 
     @Override

@@ -37,16 +37,10 @@ public class AmqpTemporaryDestination extends AmqpAbstractResource<JmsTemporaryD
     private final AmqpSession session;
 
     public AmqpTemporaryDestination(AmqpSession session, JmsTemporaryDestination destination, Sender endpoint) {
-        super(destination, endpoint);
+        super(destination, endpoint, session);
 
         this.session = session;
         this.connection = session.getConnection();
-    }
-
-    @Override
-    protected void doClose() {
-        connection.removeChildResource(this);
-        super.doClose();
     }
 
     public AmqpConnection getConnection() {

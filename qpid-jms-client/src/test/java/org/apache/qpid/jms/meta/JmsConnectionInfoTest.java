@@ -52,7 +52,7 @@ public class JmsConnectionInfoTest {
     @Test
     public void testCreate() {
         JmsConnectionInfo info = new JmsConnectionInfo(firstId);
-        assertSame(firstId, info.getConnectionId());
+        assertSame(firstId, info.getId());
         assertNotNull(info.toString());
     }
 

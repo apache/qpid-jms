@@ -40,13 +40,10 @@ public abstract class AmqpProducer extends AmqpAbstractResource<JmsProducerInfo,
     }
 
     public AmqpProducer(AmqpSession session, JmsProducerInfo info, Sender endpoint) {
-        super(info, endpoint);
+        super(info, endpoint, session);
 
         this.session = session;
         this.connection = session.getConnection();
-
-        // Add a shortcut back to this Producer for quicker lookup.
-        getResourceInfo().getProducerId().setProviderHint(this);
     }
 
     /**
@@ -74,7 +71,7 @@ public abstract class AmqpProducer extends AmqpAbstractResource<JmsProducerInfo,
      * @return the JmsProducerId that was assigned to this AmqpProducer.
      */
     public JmsProducerId getProducerId() {
-        return getResourceInfo().getProducerId();
+        return getResourceInfo().getId();
     }
 
     /**

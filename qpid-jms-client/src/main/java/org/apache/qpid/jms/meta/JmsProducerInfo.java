@@ -37,7 +37,7 @@ public final class JmsProducerInfo implements JmsResource, Comparable<JmsProduce
             throw new IllegalArgumentException("Parent Session Info object cannot be null");
         }
 
-        this.producerId = new JmsProducerId(sessionInfo.getSessionId(), producerId);
+        this.producerId = new JmsProducerId(sessionInfo.getId(), producerId);
     }
 
     public JmsProducerInfo copy() {
@@ -50,7 +50,8 @@ public final class JmsProducerInfo implements JmsResource, Comparable<JmsProduce
         info.destination = destination;
     }
 
-    public JmsProducerId getProducerId() {
+    @Override
+    public JmsProducerId getId() {
         return producerId;
     }
 
@@ -94,7 +95,7 @@ public final class JmsProducerInfo implements JmsResource, Comparable<JmsProduce
 
     @Override
     public int compareTo(JmsProducerInfo other) {
-        return this.producerId.compareTo(other.producerId);
+        return producerId.compareTo(other.producerId);
     }
 
     @Override

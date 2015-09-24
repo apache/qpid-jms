@@ -102,7 +102,8 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         this.alwaysSyncSend = alwaysSyncSend;
     }
 
-    public JmsConnectionId getConnectionId() {
+    @Override
+    public JmsConnectionId getId() {
         return connectionId;
     }
 

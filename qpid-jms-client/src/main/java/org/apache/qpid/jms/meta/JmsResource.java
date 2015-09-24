@@ -23,6 +23,13 @@ package org.apache.qpid.jms.meta;
 public interface JmsResource {
 
     /**
+     * Returns the assigned resource ID for this JmsResource instance.
+     *
+     * @return the assigned resource ID for this JmsResource instance.
+     */
+    JmsResourceId getId();
+
+    /**
      * Allows a visitor object to walk the resources and process them.
      *
      * @param visitor

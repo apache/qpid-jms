@@ -83,7 +83,6 @@ public class AmqpFixedProducer extends AmqpProducer {
 
     @Override
     public boolean send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws IOException, JMSException {
-
         // TODO - Handle the case where remote has no credit which means we can't send to it.
         //        We need to hold the send until remote credit becomes available but we should
         //        also have a send timeout option and filter timed out sends.
@@ -289,12 +288,13 @@ public class AmqpFixedProducer extends AmqpProducer {
         }
     }
 
+    @Override
     public void remotelyClosed(AmqpProvider provider) {
         super.remotelyClosed(provider);
 
         Exception ex = AmqpSupport.convertToException(getEndpoint().getRemoteCondition());
-        if(ex == null) {
-            //TODO: create/use a more specific/appropriate exception type?
+        if (ex == null) {
+            // TODO: create/use a more specific/appropriate exception type?
             ex = new JMSException("Producer closed remotely before message transfer result was notified");
         }
 

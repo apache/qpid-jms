@@ -69,8 +69,8 @@ public class JmsTransactionInfoTest {
     @Test
     public void testCreateTransactionInfo() {
         JmsTransactionInfo info = new JmsTransactionInfo(firstSessionId, firstTxId);
-        assertSame(firstSessionId, info.getSessionId());
-        assertSame(firstTxId, info.getTransactionId());
+        assertSame(firstSessionId, info.getParentId());
+        assertSame(firstTxId, info.getId());
         assertSame(firstSessionId, info.getParentId());
         assertNotNull(info.toString());
     }

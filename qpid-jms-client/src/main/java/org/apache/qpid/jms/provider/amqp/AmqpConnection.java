@@ -55,13 +55,11 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     private int anonymousProducerCacheSize = 10;
 
     public AmqpConnection(AmqpProvider provider, JmsConnectionInfo info, Connection protonConnection) {
-        super(info, protonConnection);
+        super(info, protonConnection, provider);
 
         this.provider = provider;
         this.remoteURI = provider.getRemoteURI();
         this.amqpMessageFactory = new AmqpJmsMessageFactory(this);
-
-        getResourceInfo().getConnectionId().setProviderHint(this);
 
         // Create connection properties initialized with defaults from the JmsConnectionInfo
         this.properties = new AmqpConnectionProperties(info);
@@ -261,6 +259,6 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
 
     @Override
     public String toString() {
-        return "AmqpConnection { " + getResourceInfo().getConnectionId() + " }";
+        return "AmqpConnection { " + getResourceInfo().getId() + " }";
     }
 }

@@ -67,7 +67,7 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
 
         configureSource(source);
 
-        String receiverName = "qpid-jms:receiver:" + resourceInfo.getConsumerId() + ":" + subscription;
+        String receiverName = "qpid-jms:receiver:" + resourceInfo.getId() + ":" + subscription;
         if (resourceInfo.getSubscriptionName() != null && !resourceInfo.getSubscriptionName().isEmpty()) {
             // In the case of Durable Topic Subscriptions the client must use the same
             // receiver name which is derived from the subscription name property.
@@ -106,11 +106,9 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
 
     @Override
     protected boolean isClosePending() {
-        org.apache.qpid.proton.amqp.transport.Source source = endpoint.getRemoteSource();
-
         // When no link terminus was created, the peer will now detach/close us otherwise
         // we need to validate the returned remote source prior to open completion.
-        return source == null;
+        return endpoint.getRemoteSource() == null;
     }
 
     //----- Internal implementation ------------------------------------------//

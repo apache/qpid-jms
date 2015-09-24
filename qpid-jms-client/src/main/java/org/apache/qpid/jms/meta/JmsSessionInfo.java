@@ -30,7 +30,7 @@ public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionI
         if (connectionInfo == null) {
             throw new IllegalArgumentException("Connection info object cannot be null");
         }
-        this.sessionId = new JmsSessionId(connectionInfo.getConnectionId(), sessionId);
+        this.sessionId = new JmsSessionId(connectionInfo.getId(), sessionId);
     }
 
     public JmsSessionInfo(JmsSessionId sessionId) {
@@ -52,7 +52,8 @@ public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionI
         copy.sendAcksAsync = sendAcksAsync;
     }
 
-    public JmsSessionId getSessionId() {
+    @Override
+    public JmsSessionId getId() {
         return sessionId;
     }
 
@@ -70,7 +71,7 @@ public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionI
     }
 
     public boolean isTransacted() {
-        return this.acknowledgementMode == Session.SESSION_TRANSACTED;
+        return acknowledgementMode == Session.SESSION_TRANSACTED;
     }
 
     public boolean isSendAcksAsync() {
@@ -109,6 +110,6 @@ public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionI
 
     @Override
     public int compareTo(JmsSessionInfo other) {
-        return this.sessionId.compareTo(other.sessionId);
+        return sessionId.compareTo(other.sessionId);
     }
 }

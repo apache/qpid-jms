@@ -64,7 +64,7 @@ public class JmsConsumerInfoTest {
     @Test
     public void testCreateFromConsumerId() {
         JmsConsumerInfo info = new JmsConsumerInfo(firstId);
-        assertSame(firstId, info.getConsumerId());
+        assertSame(firstId, info.getId());
         assertSame(firstId.getParentId(), info.getParentId());
         assertNotNull(info.toString());
     }

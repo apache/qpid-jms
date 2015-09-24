@@ -197,7 +197,6 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 @Override
                 public void run() {
                     try {
-
                         // If we are not connected then there is nothing we can do now
                         // just signal success.
                         if (transport == null || !transport.isConnected()) {
@@ -340,7 +339,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         @Override
                         public void processTransactionInfo(JmsTransactionInfo transactionInfo) throws Exception {
                             AmqpSession session = connection.getSession(transactionInfo.getParentId());
-                            session.begin(transactionInfo.getTransactionId(), request);
+                            session.begin(transactionInfo.getId(), request);
                         }
                     });
 
@@ -419,7 +418,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
                         @Override
                         public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
-                            AmqpSession session = connection.getSession(sessionInfo.getSessionId());
+                            AmqpSession session = connection.getSession(sessionInfo.getId());
                             session.close(request);
                         }
 

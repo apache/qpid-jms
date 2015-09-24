@@ -41,6 +41,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
     private final E endpoint;
     private final R resourceInfo;
+    private final AmqpResourceParent parent;
 
     /**
      * Creates a new instance with the JmsResource provided, and sets the Endpoint to the given value.
@@ -51,11 +52,31 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
      *        The Proton Endpoint instance that this object maps to.
      */
     public AmqpAbstractResource(R resourceInfo, E endpoint) {
-        this.resourceInfo = resourceInfo;
+        this(resourceInfo, endpoint, null);
+    }
+
+    /**
+     * Creates a new instance with the JmsResource provided, and sets the Endpoint to the given value.
+     *
+     * @param resourceInfo
+     *        The JmsResource instance that this AmqpResource is managing.
+     * @param endpoint
+     *        The Proton Endpoint instance that this object maps to.
+     * @param parent
+     *        The parent of this resource (null if no parent).
+     */
+    public AmqpAbstractResource(R resourceInfo, E endpoint, AmqpResourceParent parent) {
+        this.parent = parent;
         this.endpoint = endpoint;
+        this.resourceInfo = resourceInfo;
+        this.resourceInfo.getId().setProviderHint(this);
     }
 
     public void close(AsyncResult request) {
+        if (parent != null) {
+            parent.removeChildResource(this);
+        }
+
         // If already closed signal success or else the caller might never get notified.
         if (getEndpoint().getLocalState() == EndpointState.CLOSED ||
             getEndpoint().getRemoteState() == EndpointState.CLOSED) {
@@ -70,7 +91,8 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
             return;
         }
 
-        this.closeRequest = request;
+        closeRequest = request;
+
         doClose();
     }
 
@@ -86,6 +108,10 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
     public void remotelyClosed(AmqpProvider provider) {
         Exception error = AmqpSupport.convertToException(getEndpoint().getRemoteCondition());
+
+        if (parent != null) {
+            parent.removeChildResource(this);
+        }
 
         if (endpoint != null) {
             // TODO: if this is a producer/consumer link then we may only be detached,

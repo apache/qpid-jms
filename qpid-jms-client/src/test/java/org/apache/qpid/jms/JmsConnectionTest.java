@@ -110,7 +110,7 @@ public class JmsConnectionTest {
     @Test(timeout=30000)
     public void testGetConnectionId() throws JMSException {
         connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
-        assertEquals("ID:TEST:1", connection.getConnectionId().toString());
+        assertEquals("ID:TEST:1", connection.getId().toString());
     }
 
     @Test(timeout=30000)

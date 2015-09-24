@@ -292,7 +292,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
 
                     //TODO: don't do this if stopped, etc
                     //TODO: make it optional/configurable not to do this at all?
-                    if(timeout >= 0) {
+                    if (timeout >= 0) {
                         // We don't do this for receive with no timeout since it
                         // already occurred for zero-prefetch consumers, and
                         // the rest block indefinitely on the local messageQueue
@@ -549,7 +549,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
      * @return the id
      */
     public JmsConsumerId getConsumerId() {
-        return this.consumerInfo.getConsumerId();
+        return this.consumerInfo.getId();
     }
 
     /**

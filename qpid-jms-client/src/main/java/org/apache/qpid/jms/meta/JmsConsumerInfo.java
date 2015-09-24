@@ -49,7 +49,8 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
         if (sessionInfo == null) {
             throw new IllegalArgumentException("Session info object cannot be null");
         }
-        this.consumerId = new JmsConsumerId(sessionInfo.getSessionId(), consumerId);
+
+        this.consumerId = new JmsConsumerId(sessionInfo.getId(), consumerId);
     }
 
     public JmsConsumerInfo copy() {
@@ -74,7 +75,8 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
         return subscriptionName != null;
     }
 
-    public JmsConsumerId getConsumerId() {
+    @Override
+    public JmsConsumerId getId() {
         return consumerId;
     }
 
@@ -135,7 +137,7 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
     }
 
     public void setLastDeliveredSequenceId(long lastDeliveredSequenceId) {
-        this.lastDeliveredSequenceId  = lastDeliveredSequenceId;
+        this.lastDeliveredSequenceId = lastDeliveredSequenceId;
     }
 
     public long getLastDeliveredSequenceId() {
@@ -198,7 +200,7 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
 
     @Override
     public int compareTo(JmsConsumerInfo other) {
-        return this.consumerId.compareTo(other.consumerId);
+        return consumerId.compareTo(other.consumerId);
     }
 
     @Override

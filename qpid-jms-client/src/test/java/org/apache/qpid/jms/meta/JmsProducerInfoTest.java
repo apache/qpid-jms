@@ -64,7 +64,7 @@ public class JmsProducerInfoTest {
     @Test
     public void testCreateFromProducerId() {
         JmsProducerInfo info = new JmsProducerInfo(firstId);
-        assertSame(firstId, info.getProducerId());
+        assertSame(firstId, info.getId());
         assertSame(firstId.getParentId(), info.getParentId());
         assertNotNull(info.toString());
     }

@@ -278,7 +278,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
         if (resource instanceof JmsConsumerInfo) {
             try {
-                JmsMessageConsumer consumer = consumers.get(((JmsConsumerInfo) resource).getConsumerId());
+                JmsMessageConsumer consumer = consumers.get(resource.getId());
                 if (consumer != null) {
                     consumer.shutdown(cause);
                 }
@@ -287,7 +287,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             }
         } else if (resource instanceof JmsProducerInfo) {
             try {
-                JmsMessageProducer producer = producers.get(((JmsProducerInfo) resource).getProducerId());
+                JmsMessageProducer producer = producers.get(resource.getId());
                 if (producer != null) {
                     producer.shutdown(cause);
                 }
@@ -762,7 +762,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             throw new IllegalStateException("Session acknowledge called inside a transacted Session");
         }
 
-        this.connection.acknowledge(sessionInfo.getSessionId());
+        this.connection.acknowledge(sessionInfo.getId());
     }
 
     public boolean isClosed() {
@@ -885,7 +885,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
                         @Override
                         public Thread newThread(Runnable runner) {
                             Thread executor = new Thread(runner);
-                            executor.setName("JmsSession ["+ sessionInfo.getSessionId() + "] dispatcher");
+                            executor.setName("JmsSession ["+ sessionInfo.getId() + "] dispatcher");
                             executor.setDaemon(true);
                             return executor;
                         }
@@ -904,15 +904,15 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     protected JmsSessionId getSessionId() {
-        return sessionInfo.getSessionId();
+        return sessionInfo.getId();
     }
 
     protected JmsConsumerId getNextConsumerId() {
-        return new JmsConsumerId(sessionInfo.getSessionId(), consumerIdGenerator.incrementAndGet());
+        return new JmsConsumerId(sessionInfo.getId(), consumerIdGenerator.incrementAndGet());
     }
 
     protected JmsProducerId getNextProducerId() {
-        return new JmsProducerId(sessionInfo.getSessionId(), producerIdGenerator.incrementAndGet());
+        return new JmsProducerId(sessionInfo.getId(), producerIdGenerator.incrementAndGet());
     }
 
     protected void setFailureCause(Exception failureCause) {

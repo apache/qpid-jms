@@ -73,7 +73,7 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
      *        The local sender endpoint for this transaction context.
      */
     public AmqpTransactionContext(AmqpSession session, JmsSessionInfo resourceInfo, Sender sender) {
-        super(resourceInfo, sender);
+        super(resourceInfo, sender, session);
 
         this.session = session;
     }

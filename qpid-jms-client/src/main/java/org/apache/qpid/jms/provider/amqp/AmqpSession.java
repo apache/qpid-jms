@@ -47,15 +47,9 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
     private final Map<JmsConsumerId, AmqpConsumer> consumers = new HashMap<JmsConsumerId, AmqpConsumer>();
 
     public AmqpSession(AmqpConnection connection, JmsSessionInfo info, Session session) {
-        super(info, session);
-        this.connection = connection;
-        getResourceInfo().getSessionId().setProviderHint(this);
-    }
+        super(info, session, connection);
 
-    @Override
-    protected void doClose() {
-        connection.removeChildResource(this);
-        super.doClose();
+        this.connection = connection;
     }
 
     /**
@@ -97,7 +91,7 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
     }
 
     public AmqpProducer getProducer(JmsProducerInfo producerInfo) {
-        return getProducer(producerInfo.getProducerId());
+        return getProducer(producerInfo.getId());
     }
 
     public AmqpProducer getProducer(JmsProducerId producerId) {
@@ -114,7 +108,7 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
     }
 
     public AmqpConsumer getConsumer(JmsConsumerInfo consumerInfo) {
-        return getConsumer(consumerInfo.getConsumerId());
+        return getConsumer(consumerInfo.getId());
     }
 
     public AmqpConsumer getConsumer(JmsConsumerId consumerId) {
@@ -261,7 +255,7 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
     }
 
     public JmsSessionId getSessionId() {
-        return getResourceInfo().getSessionId();
+        return getResourceInfo().getId();
     }
 
     public Session getProtonSession() {

@@ -64,14 +64,14 @@ public class JmsSessionInfoTest {
     @Test
     public void testCreateFromSessionId() {
         JmsSessionInfo info = new JmsSessionInfo(firstId);
-        assertSame(firstId, info.getSessionId());
+        assertSame(firstId, info.getId());
         assertNotNull(info.toString());
     }
 
     @Test
     public void testCreateFromConnectionInfo() {
         JmsSessionInfo info = new JmsSessionInfo(connectionInfo, 1);
-        assertEquals(connectionInfo.getConnectionId(), info.getSessionId().getParentId());
+        assertEquals(connectionInfo.getId(), info.getId().getParentId());
     }
 
     @Test

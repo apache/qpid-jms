@@ -18,7 +18,9 @@ package org.apache.qpid.jms;
 
 import javax.jms.JMSException;
 
+import org.apache.qpid.jms.meta.JmsAbstractResourceId;
 import org.apache.qpid.jms.meta.JmsResource;
+import org.apache.qpid.jms.meta.JmsResourceId;
 import org.apache.qpid.jms.meta.JmsResourceVistor;
 
 /**
@@ -27,6 +29,7 @@ import org.apache.qpid.jms.meta.JmsResourceVistor;
 public abstract class JmsTemporaryDestination extends JmsDestination implements JmsResource {
 
     private boolean deleted;
+    private JmsTemporaryDestinationId resourceId;
 
     public JmsTemporaryDestination() {
         this(null, false);
@@ -34,6 +37,15 @@ public abstract class JmsTemporaryDestination extends JmsDestination implements 
 
     public JmsTemporaryDestination(String name, boolean topic) {
         super(name, topic, true);
+    }
+
+    @Override
+    public JmsResourceId getId() {
+        if (resourceId == null) {
+            resourceId = new JmsTemporaryDestinationId();
+        }
+
+        return resourceId;
     }
 
     void setConnection(JmsConnection connection) {
@@ -71,5 +83,17 @@ public abstract class JmsTemporaryDestination extends JmsDestination implements 
     @Override
     public void visit(JmsResourceVistor visitor) throws Exception {
         visitor.processDestination(this);
+    }
+
+    private class JmsTemporaryDestinationId extends JmsAbstractResourceId implements Comparable<JmsTemporaryDestinationId> {
+
+        public String getDestinationName() {
+            return getName();
+        }
+
+        @Override
+        public int compareTo(JmsTemporaryDestinationId otherId) {
+            return getDestinationName().compareTo(otherId.getDestinationName());
+        }
     }
 }

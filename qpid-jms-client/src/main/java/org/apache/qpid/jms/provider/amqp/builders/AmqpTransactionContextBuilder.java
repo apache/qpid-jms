@@ -41,7 +41,7 @@ public class AmqpTransactionContextBuilder extends AmqpResourceBuilder<AmqpTrans
         coordinator.setCapabilities(TxnCapability.LOCAL_TXN);
         Source source = new Source();
 
-        String coordinatorName = "qpid-jms:coordinator:" + resourceInfo.getSessionId().toString();
+        String coordinatorName = "qpid-jms:coordinator:" + resourceInfo.getId().toString();
 
         Sender sender = getParent().getProtonSession().sender(coordinatorName);
         sender.setSource(source);
@@ -59,10 +59,8 @@ public class AmqpTransactionContextBuilder extends AmqpResourceBuilder<AmqpTrans
 
     @Override
     protected boolean isClosePending() {
-        org.apache.qpid.proton.amqp.transport.Target target = getEndpoint().getRemoteTarget();
-
         // When no link terminus was created, the peer will now detach/close us otherwise
         // we need to validate the returned remote source prior to open completion.
-        return target == null;
+        return getEndpoint().getRemoteTarget() == null;
     }
 }

@@ -72,12 +72,9 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     protected final AtomicLong incomingSequence = new AtomicLong(0);
 
     public AmqpConsumer(AmqpSession session, JmsConsumerInfo info, Receiver receiver) {
-        super(info, receiver);
+        super(info, receiver, session);
 
         this.session = session;
-
-        // Add a shortcut back to this Consumer for quicker lookups
-        getResourceInfo().getConsumerId().setProviderHint(this);
     }
 
     /**
@@ -156,12 +153,6 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         super.processFlowUpdates(provider);
     }
 
-    @Override
-    public void resourceClosed() {
-        this.session.removeChildResource(this);
-        super.resourceClosed();
-    }
-
     /**
      * Called to acknowledge all messages that have been marked as delivered but
      * have not yet been marked consumed.  Usually this is called as part of an
@@ -172,7 +163,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      * would already have been given for these so we just need to settle them.
      */
     public void acknowledge() {
-        LOG.trace("Session Acknowledge for consumer: {}", getResourceInfo().getConsumerId());
+        LOG.trace("Session Acknowledge for consumer: {}", getResourceInfo().getId());
         for (Delivery delivery : delivered.values()) {
             delivery.disposition(Accepted.getInstance());
             delivery.settle();
@@ -275,7 +266,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      * @throws Exception if an error occurs while performing the recover.
      */
     public void recover() throws Exception {
-        LOG.debug("Session Recover for consumer: {}", getResourceInfo().getConsumerId());
+        LOG.debug("Session Recover for consumer: {}", getResourceInfo().getId());
         Collection<JmsInboundMessageDispatch> values = delivered.keySet();
         ArrayList<JmsInboundMessageDispatch> envelopes = new ArrayList<JmsInboundMessageDispatch>(values);
         ListIterator<JmsInboundMessageDispatch> reverseIterator = envelopes.listIterator(values.size());
@@ -320,7 +311,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             // If we have no credit then we need to issue some so that we can
             // try to fulfill the request, then drain down what is there to
             // ensure we consume what is available and remove all credit.
-            if(getEndpoint().getCredit() == 0){
+            if (getEndpoint().getCredit() == 0){
                 LOG.trace("Consumer {} granting 1 additional credit for pull.", getConsumerId());
                 getEndpoint().flow(1);
             }
@@ -353,7 +344,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                 if (incoming.isReadable() && !incoming.isPartial()) {
                     LOG.trace("{} has incoming Message(s).", this);
                     try {
-                        if(processDelivery(incoming)) {
+                        if (processDelivery(incoming)) {
                             // We processed a message, signal completion
                             // of a message pull request if there is one.
                             if (pullRequest != null) {
@@ -409,7 +400,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
         JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch(getNextIncomingSequenceNumber());
         envelope.setMessage(message);
-        envelope.setConsumerId(getResourceInfo().getConsumerId());
+        envelope.setConsumerId(getResourceInfo().getId());
         // Store link to delivery in the hint for use in acknowledge requests.
         envelope.setProviderHint(incoming);
         envelope.setMessageId(message.getFacade().getProviderMessageIdObject());
@@ -455,7 +446,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     public JmsConsumerId getConsumerId() {
-        return this.getResourceInfo().getConsumerId();
+        return this.getResourceInfo().getId();
     }
 
     public JmsDestination getDestination() {
@@ -480,7 +471,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     @Override
     public String toString() {
-        return "AmqpConsumer { " + getResourceInfo().getConsumerId() + " }";
+        return "AmqpConsumer { " + getResourceInfo().getId() + " }";
     }
 
     protected void deliveryFailed(Delivery incoming) {
@@ -547,7 +538,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     protected class ScheduledStopRequest implements AsyncResult {
 
         private final ScheduledFuture<?> sheduledStopTask;
-        private AsyncResult origRequest;
+        private final AsyncResult origRequest;
 
         public ScheduledStopRequest(ScheduledFuture<?> completionTask, AsyncResult origRequest) {
             this.sheduledStopTask = completionTask;

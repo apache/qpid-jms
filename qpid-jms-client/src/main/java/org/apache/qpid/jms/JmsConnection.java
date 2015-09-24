@@ -109,7 +109,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private final AtomicLong tempDestIdGenerator = new AtomicLong();
     private final AtomicLong transactionIdGenerator = new AtomicLong();
 
-    private ConcurrentMap<AsyncResult, AsyncResult> requests = new ConcurrentHashMap<AsyncResult, AsyncResult>();
+    private final ConcurrentMap<AsyncResult, AsyncResult> requests = new ConcurrentHashMap<AsyncResult, AsyncResult>();
 
     protected JmsConnection(final String connectionId, Provider provider, IdGenerator clientIdGenerator) throws JMSException {
 
@@ -498,11 +498,11 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     protected void removeSession(JmsSessionInfo sessionInfo) throws JMSException {
-        sessions.remove(sessionInfo.getSessionId());
+        sessions.remove(sessionInfo.getId());
     }
 
     protected void addSession(JmsSessionInfo sessionInfo, JmsSession session) {
-        sessions.put(sessionInfo.getSessionId(), session);
+        sessions.put(sessionInfo.getId(), session);
     }
 
     protected void addDispatcher(JmsConsumerId consumerId, JmsMessageDispatcher dispatcher) {
@@ -532,7 +532,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      * @return a newly initialized TemporaryQueue instance.
      */
     protected TemporaryQueue createTemporaryQueue() throws JMSException {
-        String destinationName = connectionInfo.getConnectionId() + ":" + tempDestIdGenerator.incrementAndGet();
+        String destinationName = connectionInfo.getId() + ":" + tempDestIdGenerator.incrementAndGet();
         JmsTemporaryQueue queue = new JmsTemporaryQueue(destinationName);
         createResource(queue);
         tempDestinations.put(queue, queue);
@@ -544,7 +544,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
      * @return a newly initialized TemporaryTopic instance.
      */
     protected TemporaryTopic createTemporaryTopic() throws JMSException {
-        String destinationName = connectionInfo.getConnectionId() + ":" + tempDestIdGenerator.incrementAndGet();
+        String destinationName = connectionInfo.getId() + ":" + tempDestIdGenerator.incrementAndGet();
         JmsTemporaryTopic topic = new JmsTemporaryTopic(destinationName);
         createResource(topic);
         tempDestinations.put(topic, topic);
@@ -595,11 +595,11 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     protected JmsSessionId getNextSessionId() {
-        return new JmsSessionId(connectionInfo.getConnectionId(), sessionIdGenerator.incrementAndGet());
+        return new JmsSessionId(connectionInfo.getId(), sessionIdGenerator.incrementAndGet());
     }
 
     protected JmsTransactionId getNextTransactionId() {
-        return new JmsTransactionId(connectionInfo.getConnectionId(), transactionIdGenerator.incrementAndGet());
+        return new JmsTransactionId(connectionInfo.getId(), transactionIdGenerator.incrementAndGet());
     }
 
     protected synchronized boolean isExplicitClientID() {
@@ -1001,8 +1001,8 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         return failed.get();
     }
 
-    public JmsConnectionId getConnectionId() {
-        return connectionInfo.getConnectionId();
+    public JmsConnectionId getId() {
+        return connectionInfo.getId();
     }
 
     public JmsMessageFactory getMessageFactory() {
@@ -1087,7 +1087,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     @Override
     public void onConnectionRecovery(Provider provider) throws Exception {
-        LOG.debug("Connection {} is starting recovery.", connectionInfo.getConnectionId());
+        LOG.debug("Connection {} is starting recovery.", connectionInfo.getId());
 
         ProviderFuture request = new ProviderFuture();
         provider.create(connectionInfo, request);
@@ -1104,7 +1104,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     @Override
     public void onConnectionRecovered(Provider provider) throws Exception {
-        LOG.debug("Connection {} is finalizing recovery.", connectionInfo.getConnectionId());
+        LOG.debug("Connection {} is finalizing recovery.", connectionInfo.getId());
 
         setMessageFactory(provider.getMessageFactory());
         setConnectedURI(provider.getRemoteURI());
@@ -1135,7 +1135,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     @Override
     public void onConnectionEstablished(final URI remoteURI) {
-        LOG.info("Connection {} connected to remote Broker: {}", connectionInfo.getConnectionId(), remoteURI);
+        LOG.info("Connection {} connected to remote Broker: {}", connectionInfo.getId(), remoteURI);
         setMessageFactory(provider.getMessageFactory());
         setConnectedURI(provider.getRemoteURI());
 
@@ -1214,7 +1214,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
                 @Override
                 public void run() {
                     if (resource instanceof JmsSessionInfo) {
-                        JmsSession session = sessions.get(((JmsSessionInfo) resource).getSessionId());
+                        JmsSession session = sessions.get(resource.getId());
                         if (session != null) {
                             session.remotelyClosed(cause);
 

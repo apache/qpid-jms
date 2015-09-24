@@ -35,6 +35,7 @@ import org.junit.Test;
 public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     private AmqpMessageIdHelper _messageIdHelper;
 
+    @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();

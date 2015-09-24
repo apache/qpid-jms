@@ -48,7 +48,7 @@ public class AmqpProducerBuilder extends AmqpResourceBuilder<AmqpProducer, AmqpS
         String targetAddress = AmqpDestinationHelper.INSTANCE.getDestinationAddress(destination, getParent().getConnection());
 
         Symbol[] outcomes = new Symbol[]{ Accepted.DESCRIPTOR_SYMBOL, Rejected.DESCRIPTOR_SYMBOL };
-        String sourceAddress = resourceInfo.getProducerId().toString();
+        String sourceAddress = resourceInfo.getId().toString();
         Source source = new Source();
         source.setAddress(sourceAddress);
         source.setOutcomes(outcomes);
@@ -83,11 +83,9 @@ public class AmqpProducerBuilder extends AmqpResourceBuilder<AmqpProducer, AmqpS
 
     @Override
     protected boolean isClosePending() {
-        org.apache.qpid.proton.amqp.transport.Target target = getEndpoint().getRemoteTarget();
-
         // When no link terminus was created, the peer will now detach/close us otherwise
         // we need to validate the returned remote source prior to open completion.
-        return target == null;
+        return getEndpoint().getRemoteTarget() == null;
     }
 
     @Override

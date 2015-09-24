@@ -298,7 +298,7 @@ public class JmsMessageProducer implements MessageProducer {
      * @return the producer's assigned JmsProducerId.
      */
     protected JmsProducerId getProducerId() {
-        return this.producerInfo.getProducerId();
+        return this.producerInfo.getId();
     }
 
     /**

@@ -333,7 +333,7 @@ public class PropertyUtil {
 
         for (Map.Entry<String, String> entry : properties.entrySet()) {
             if (!setProperty(target, entry.getKey(), entry.getValue())) {
-                unmatched.put((String) entry.getKey(), entry.getValue());
+                unmatched.put(entry.getKey(), entry.getValue());
             }
         }
 

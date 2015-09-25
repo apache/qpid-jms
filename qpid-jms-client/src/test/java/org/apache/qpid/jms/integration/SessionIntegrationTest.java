@@ -40,6 +40,7 @@ import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.IllegalStateException;
 import javax.jms.InvalidDestinationException;
+import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
 import javax.jms.Message;
@@ -402,6 +403,53 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectLinkFlow();
 
             session.createConsumer(dest);
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testConsumerNotAuthorized() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String topicName = "myTopic";
+            Topic destination = session.createTopic(topicName);
+
+            testPeer.expectReceiverAttach(notNullValue(), notNullValue(), false, true, false, AmqpError.UNAUTHORIZED_ACCESS, "Destination is not readable");
+            testPeer.expectDetach(true, true, true);
+
+            try {
+                session.createConsumer(destination);
+                fail("Should have thrown a security exception");
+            } catch (JMSSecurityException jmsse) {
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testInvalidSelector() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String topicName = "myTopic";
+            Topic destination = session.createTopic(topicName);
+
+            try {
+                session.createConsumer(destination, "3+5");
+                fail("Should have thrown a invalid selector exception");
+            } catch (InvalidSelectorException jmsse) {
+            }
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

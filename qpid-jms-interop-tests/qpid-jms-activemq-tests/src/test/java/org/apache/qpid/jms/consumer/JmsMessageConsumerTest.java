@@ -28,9 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
-import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
-import javax.jms.JMSSecurityException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
@@ -487,23 +485,5 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertTrue(msg instanceof TextMessage);
         assertEquals("Unexpected JMSType value", type, msg.getJMSType());
         assertEquals("Unexpected message content", "text + type", ((TextMessage) msg).getText());
-    }
-
-    @Test(timeout=90000, expected=JMSSecurityException.class)
-    public void testConsumerNotAuthorized() throws Exception{
-        connection = createAmqpConnection("guest", "password");
-        connection.start();
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue("USERS." + name.getMethodName());
-        session.createConsumer(queue);
-    }
-
-    @Test(timeout=90000, expected=InvalidSelectorException.class)
-    public void testInvalidSelector() throws Exception{
-        connection = createAmqpConnection();
-        connection.start();
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(name.getMethodName());
-        session.createConsumer(queue, "3+5");
     }
 }

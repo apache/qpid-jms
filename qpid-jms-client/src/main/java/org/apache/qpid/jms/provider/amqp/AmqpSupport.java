@@ -79,23 +79,21 @@ public class AmqpSupport {
     //----- Utility Methods --------------------------------------------------//
 
     /**
-     * Given an ErrorCondition instance create a new JMSException that best matches
+     * Given an ErrorCondition instance create a new Exception that best matches
      * the error type.
      *
      * @param errorCondition
      *      The ErrorCondition returned from the remote peer.
      *
-     *
-     * @return a new JMSException instance that best matches the ErrorCondition value.
+     * @return a new Exception instance that best matches the ErrorCondition value.
      */
     public static Exception convertToException(ErrorCondition errorCondition) {
-        //TODO: javadoc says we return JMSException, but we return others too
         Exception remoteError = null;
 
-        //TODO: errorCondition could be null.
-        Symbol error = errorCondition.getCondition();
-        if (error != null) {
+        if (errorCondition != null && errorCondition.getCondition() != null) {
+            Symbol error = errorCondition.getCondition();
             String message = extractErrorMessage(errorCondition);
+
             if (error.equals(AmqpError.UNAUTHORIZED_ACCESS)) {
                 remoteError = new JMSSecurityException(message);
             } else if (error.equals(AmqpError.NOT_FOUND)) {

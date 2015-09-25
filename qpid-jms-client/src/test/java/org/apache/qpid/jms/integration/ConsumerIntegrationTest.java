@@ -405,7 +405,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test //(timeout=20000)
+    @Test(timeout=20000)
     public void testNoReceivedMessagesWhenConnectionNotStarted() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);

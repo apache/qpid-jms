@@ -44,6 +44,8 @@ import javax.jms.TextMessage;
 import javax.jms.Topic;
 
 import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.JmsDefaultConnectionListener;
+import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.testpeer.AmqpPeerRunnable;
@@ -413,7 +415,17 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
     @Test(timeout=20000)
     public void testNoReceivedMessagesWhenConnectionNotStarted() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final CountDownLatch incoming = new CountDownLatch(1);
             Connection connection = testFixture.establishConnecton(testPeer);
+
+            // Allow wait for incoming message before we call receive.
+            ((JmsConnection) connection).addConnectionListener(new JmsDefaultConnectionListener() {
+
+                @Override
+                public void onInboundMessage(JmsInboundMessageDispatch envelope) {
+                    incoming.countDown();
+                }
+            });
 
             testPeer.expectBegin();
 
@@ -425,11 +437,10 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
             MessageConsumer consumer = session.createConsumer(destination);
 
-            // TODO - We can probably shorten this wait by sending the message after the
-            //        consumer create and using the MessageAvailableListener to trigger the
-            //        receive call.
-
-            assertNull(consumer.receive(500));
+            // Wait for a message to arrive then try and receive it, which should not happen
+            // since the connection is not started.
+            assertTrue(incoming.await(10, TimeUnit.SECONDS));
+            assertNull(consumer.receive(100));
 
             testPeer.waitForAllHandlersToComplete(2000);
         }

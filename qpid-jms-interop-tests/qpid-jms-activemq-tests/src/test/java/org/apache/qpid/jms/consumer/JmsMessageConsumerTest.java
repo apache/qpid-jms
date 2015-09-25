@@ -281,45 +281,6 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         }
     }
 
-    @Test(timeout=60000)
-    public void testSetMessageListenerAfterStartAndSend() throws Exception {
-        final int msgCount = 4;
-        final Connection connection = createAmqpConnection();
-        final AtomicInteger counter = new AtomicInteger(0);
-        final CountDownLatch done = new CountDownLatch(1);
-        this.connection = connection;
-
-        connection.start();
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue destination = session.createQueue(name.getMethodName());
-        MessageConsumer consumer = session.createConsumer(destination);
-        sendToAmqQueue(msgCount);
-
-        consumer.setMessageListener(new MessageListener() {
-            @Override
-            public void onMessage(Message m) {
-                LOG.debug("Async consumer got Message: {}", m);
-                counter.incrementAndGet();
-                if (counter.get() == msgCount) {
-                    done.countDown();
-                }
-            }
-        });
-
-        assertTrue(done.await(1000, TimeUnit.MILLISECONDS));
-        assertEquals(msgCount, counter.get());
-    }
-
-    @Test(timeout=60000)
-    public void testNoReceivedMessagesWhenConnectionNotStarted() throws Exception {
-        connection = createAmqpConnection();
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue destination = session.createQueue(name.getMethodName());
-        MessageConsumer consumer = session.createConsumer(destination);
-        sendToAmqQueue(3);
-        assertNull(consumer.receive(2000));
-    }
-
     @Test(timeout = 60000)
     public void testMessagesAreAckedAMQProducer() throws Exception {
         int messagesSent = 3;

@@ -675,7 +675,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
      * @param forcePull TODO
      */
     protected void performPullIfRequired(long timeout, boolean forcePull) throws JMSException {
-        if ((isPullConsumer() || forcePull) && !messageQueue.isClosed() && messageQueue.isEmpty()) {
+        if ((isPullConsumer() || forcePull) && messageQueue.isRunning() && messageQueue.isEmpty()) {
             connection.pull(getConsumerId(), timeout);
         }
     }

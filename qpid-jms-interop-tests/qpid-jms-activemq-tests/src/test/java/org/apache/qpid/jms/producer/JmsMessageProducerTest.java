@@ -133,46 +133,6 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
     }
 
     @Test(timeout = 20000)
-    public void testSendWorksWhenConnectionNotStarted() throws Exception {
-        connection = createAmqpConnection();
-        assertNotNull(connection);
-
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
-        MessageProducer producer = session.createProducer(queue);
-
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
-        assertEquals(0, proxy.getQueueSize());
-
-        Message message = session.createMessage();
-        producer.send(message);
-
-        assertEquals(1, proxy.getQueueSize());
-    }
-
-    @Test(timeout = 20000)
-    public void testSendWorksAfterConnectionStopped() throws Exception {
-        connection = createAmqpConnection();
-        assertNotNull(connection);
-        connection.start();
-
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        assertNotNull(session);
-        Queue queue = session.createQueue(name.getMethodName());
-        MessageProducer producer = session.createProducer(queue);
-
-        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
-        assertEquals(0, proxy.getQueueSize());
-        connection.stop();
-
-        Message message = session.createMessage();
-        producer.send(message);
-
-        assertEquals(1, proxy.getQueueSize());
-    }
-
-    @Test(timeout = 20000)
     public void testPersistentSendsAreMarkedPersistent() throws Exception {
         connection = createAmqpConnection();
         assertNotNull(connection);

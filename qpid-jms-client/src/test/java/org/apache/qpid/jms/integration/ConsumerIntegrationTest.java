@@ -37,11 +37,13 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 
+import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.testpeer.AmqpPeerRunnable;
@@ -51,6 +53,9 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescri
 import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ReleasedMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.junit.Test;
@@ -420,7 +425,138 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
             MessageConsumer consumer = session.createConsumer(destination);
 
+            // TODO - We can probably shorten this wait by sending the message after the
+            //        consumer create and using the MessageAvailableListener to trigger the
+            //        receive call.
+
             assertNull(consumer.receive(500));
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    @Test(timeout=60000)
+    public void testSyncReceiveFailsWhenListenerSet() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue destination = session.createQueue(getTestName());
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlow();
+
+            MessageConsumer consumer = session.createConsumer(destination);
+
+            consumer.setMessageListener(new MessageListener() {
+                @Override
+                public void onMessage(Message m) {
+                    LOG.warn("Async consumer got unexpected Message: {}", m);
+                }
+            });
+
+            try {
+                consumer.receive();
+                fail("Should have thrown an exception.");
+            } catch (JMSException ex) {
+            }
+
+            try {
+                consumer.receive(1000);
+                fail("Should have thrown an exception.");
+            } catch (JMSException ex) {
+            }
+
+            try {
+                consumer.receiveNoWait();
+                fail("Should have thrown an exception.");
+            } catch (JMSException ex) {
+            }
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testCannotUseMessageListener() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            ((JmsConnection)connection).getPrefetchPolicy().setAll(0);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue destination = session.createQueue(getTestName());
+
+            testPeer.expectReceiverAttach();
+
+            MessageConsumer consumer = session.createConsumer(destination);
+            MessageListener listener = new MessageListener() {
+
+                @Override
+                public void onMessage(Message message) {
+                }
+            };
+
+            try {
+                consumer.setMessageListener(listener);
+                fail("Should not allow listener to be set when prefetch is zero.");
+            } catch (JMSException ex) {
+            }
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateProducerInOnMessage() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            final Queue destination = session.createQueue(getTestName());
+            final Queue outboud = session.createQueue(getTestName() + "-FowardDest");
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), 1);
+
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+
+            testPeer.expectSenderAttach();
+            testPeer.expectTransfer(messageMatcher);
+            testPeer.expectDetach(true, true, true);
+
+            testPeer.expectDisposition(true, new AcceptedMatcher());
+
+            MessageConsumer consumer = session.createConsumer(destination);
+
+            consumer.setMessageListener(new MessageListener() {
+                @Override
+                public void onMessage(Message message) {
+                    LOG.debug("Async consumer got Message: {}", message);
+                    try {
+                        LOG.debug("Received async message: {}", message);
+                        MessageProducer producer = session.createProducer(outboud);
+                        producer.send(message);
+                        producer.close();
+                        LOG.debug("forwarded async message: {}", message);
+                    } catch (Throwable e) {
+                        LOG.debug("Caught exception: {}", e);
+                        throw new RuntimeException(e.getMessage());
+                    }
+                }
+            });
 
             testPeer.waitForAllHandlersToComplete(2000);
         }

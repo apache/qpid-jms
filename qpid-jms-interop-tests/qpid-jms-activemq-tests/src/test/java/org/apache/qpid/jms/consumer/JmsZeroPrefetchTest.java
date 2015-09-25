@@ -21,10 +21,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
-import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
@@ -40,25 +38,6 @@ import org.junit.Test;
  * Test for MessageConsumer that has a prefetch value of zero.
  */
 public class JmsZeroPrefetchTest extends AmqpTestSupport {
-
-    @Test(timeout=60000, expected=JMSException.class)
-    public void testCannotUseMessageListener() throws Exception {
-        connection = createAmqpConnection();
-        ((JmsConnection)connection).getPrefetchPolicy().setAll(0);
-        connection.start();
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(getDestinationName());
-        MessageConsumer consumer = session.createConsumer(queue);
-
-        MessageListener listener = new MessageListener() {
-
-            @Override
-            public void onMessage(Message message) {
-            }
-        };
-
-        consumer.setMessageListener(listener);
-    }
 
     @Test(timeout = 60000)
     public void testBlockingReceivesUnBlocksOnMessageSend() throws Exception {
@@ -311,5 +290,4 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
 
         assertNull(message);
     }
-
 }

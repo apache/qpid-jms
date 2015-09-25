@@ -438,11 +438,11 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     public AmqpConnection getConnection() {
-        return this.session.getConnection();
+        return session.getConnection();
     }
 
     public AmqpSession getSession() {
-        return this.session;
+        return session;
     }
 
     public JmsConsumerId getConsumerId() {
@@ -451,10 +451,6 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     public JmsDestination getDestination() {
         return this.getResourceInfo().getDestination();
-    }
-
-    public Receiver getProtonReceiver() {
-        return this.getEndpoint();
     }
 
     public boolean isPresettle() {

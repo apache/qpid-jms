@@ -253,10 +253,6 @@ public class AmqpFixedProducer extends AmqpProducer {
         return session;
     }
 
-    public Sender getProtonSender() {
-        return getEndpoint();
-    }
-
     @Override
     public boolean isAnonymous() {
         return getResourceInfo().getDestination() == null;

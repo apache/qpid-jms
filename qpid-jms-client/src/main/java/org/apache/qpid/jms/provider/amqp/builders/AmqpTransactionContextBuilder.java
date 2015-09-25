@@ -43,7 +43,7 @@ public class AmqpTransactionContextBuilder extends AmqpResourceBuilder<AmqpTrans
 
         String coordinatorName = "qpid-jms:coordinator:" + resourceInfo.getId().toString();
 
-        Sender sender = getParent().getProtonSession().sender(coordinatorName);
+        Sender sender = getParent().getEndpoint().sender(coordinatorName);
         sender.setSource(source);
         sender.setTarget(coordinator);
         sender.setSenderSettleMode(SenderSettleMode.UNSETTLED);

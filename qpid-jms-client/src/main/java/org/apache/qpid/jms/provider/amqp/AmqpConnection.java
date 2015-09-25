@@ -115,10 +115,6 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
         }
     }
 
-    public Connection getProtonConnection() {
-        return getEndpoint();
-    }
-
     public URI getRemoteURI() {
         return remoteURI;
     }

@@ -258,10 +258,6 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
         return getResourceInfo().getId();
     }
 
-    public Session getProtonSession() {
-        return getEndpoint();
-    }
-
     boolean isTransacted() {
         return getResourceInfo().isTransacted();
     }

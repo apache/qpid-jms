@@ -82,7 +82,7 @@ public class AmqpTemporaryDestinationBuilder extends AmqpResourceBuilder<AmqpTem
             target.setCapabilities(AmqpDestinationHelper.TEMP_TOPIC_CAPABILITY);
         }
 
-        Sender sender = getParent().getProtonSession().sender(senderLinkName);
+        Sender sender = getParent().getEndpoint().sender(senderLinkName);
         sender.setSource(source);
         sender.setTarget(target);
         sender.setSenderSettleMode(SenderSettleMode.UNSETTLED);

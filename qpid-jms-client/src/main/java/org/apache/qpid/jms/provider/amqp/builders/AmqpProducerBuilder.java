@@ -63,7 +63,7 @@ public class AmqpProducerBuilder extends AmqpResourceBuilder<AmqpProducer, AmqpS
 
         String senderName = "qpid-jms:sender:" + sourceAddress + ":" + targetAddress;
 
-        Sender sender = getParent().getProtonSession().sender(senderName);
+        Sender sender = getParent().getEndpoint().sender(senderName);
         sender.setSource(source);
         sender.setTarget(target);
         if (getParent().getConnection().isPresettleProducers()) {

@@ -64,7 +64,7 @@ public class AmqpSessionBuilder extends AmqpResourceBuilder<AmqpSession, AmqpCon
     protected Session createEndpoint(JmsSessionInfo resourceInfo) {
         long outgoingWindow = getParent().getProvider().getSessionOutgoingWindow();
 
-        Session session = getParent().getProtonConnection().session();
+        Session session = getParent().getEndpoint().session();
         session.setIncomingCapacity(Integer.MAX_VALUE);
         if (outgoingWindow >= 0) {
             session.setOutgoingWindow(outgoingWindow);

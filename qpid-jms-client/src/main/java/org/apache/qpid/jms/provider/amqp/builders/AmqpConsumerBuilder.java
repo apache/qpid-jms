@@ -74,7 +74,7 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
             receiverName = resourceInfo.getSubscriptionName();
         }
 
-        Receiver receiver = getParent().getProtonSession().receiver(receiverName);
+        Receiver receiver = getParent().getEndpoint().receiver(receiverName);
         receiver.setSource(source);
         receiver.setTarget(target);
         if (getParent().getConnection().isPresettleConsumers() || resourceInfo.isBrowser()) {

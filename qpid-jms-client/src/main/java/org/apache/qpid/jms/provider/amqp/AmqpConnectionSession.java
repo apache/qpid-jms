@@ -98,7 +98,7 @@ public class AmqpConnectionSession extends AmqpSession {
 
         @Override
         protected Receiver createEndpoint(JmsSessionInfo resourceInfo) {
-            Receiver receiver = getParent().getProtonSession().receiver(subscriptionName);
+            Receiver receiver = getParent().getEndpoint().receiver(subscriptionName);
             receiver.setTarget(new Target());
             receiver.setSenderSettleMode(SenderSettleMode.UNSETTLED);
             receiver.setReceiverSettleMode(ReceiverSettleMode.FIRST);

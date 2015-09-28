@@ -112,6 +112,7 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
         } else {
             getEndpoint().close();
             getEndpoint().free();
+            getEndpoint().setContext(null);
 
             // TODO: Perhaps the validate method should thrown an exception so that we
             // can return a specific error message to the create initiator.
@@ -135,6 +136,7 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
         // This resource is now terminated.
         getEndpoint().close();
         getEndpoint().free();
+        getEndpoint().setContext(null);
 
         getRequest().onFailure(openError);
     }

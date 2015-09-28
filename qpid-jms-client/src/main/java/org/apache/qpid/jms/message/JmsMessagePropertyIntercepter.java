@@ -419,7 +419,7 @@ public class JmsMessagePropertyIntercepter {
 
             @Override
             public void clearProperty(JmsMessageFacade message) {
-                message.setDeliveryCount(1);  // TODO - Delivery Count cleanup
+                message.setDeliveryCount(1);
             }
         });
         PROPERTY_INTERCEPTERS.put(JMSX_GROUPID, new PropertyIntercepter() {

@@ -481,14 +481,6 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         setRedeliveryCount(deliveryCount - 1);
     }
 
-    // TODO - We can probably remove these set / get redelivery count and just use
-    //        the delivery count and is / set redelivered bits for the JMS mapping.
-    //
-    // possibly add an increment to make the consumer code more readable when doing
-    // a recover or rollback if we do local redeliveries.
-    //
-    //  public void incrementRedeliveryCount()
-
     @Override
     public int getRedeliveryCount() {
         if (message.getHeader() != null) {

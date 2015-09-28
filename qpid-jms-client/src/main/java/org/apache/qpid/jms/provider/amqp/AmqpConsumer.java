@@ -429,7 +429,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     @Override
-    protected void doClose() {
+    protected void closeOrDetachEndpoint() {
         if (getResourceInfo().isDurable()) {
             getEndpoint().detach();
         } else {

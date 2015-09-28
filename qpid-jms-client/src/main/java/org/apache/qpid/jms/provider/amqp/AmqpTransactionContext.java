@@ -225,12 +225,16 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
         for (AmqpConsumer consumer : txConsumers) {
             consumer.postCommit();
         }
+
+        txConsumers.clear();
     }
 
     private void postRollback() throws Exception {
         for (AmqpConsumer consumer : txConsumers) {
             consumer.postRollback();
         }
+
+        txConsumers.clear();
     }
 
     private void sendTxCommand(Message message) throws IOException {

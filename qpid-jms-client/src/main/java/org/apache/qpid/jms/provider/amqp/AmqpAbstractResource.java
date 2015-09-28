@@ -83,8 +83,9 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
             // Remote already closed this resource, close locally and free.
             if (getEndpoint().getLocalState() != EndpointState.CLOSED) {
-                doClose();
+                getEndpoint().close();
                 getEndpoint().free();
+                getEndpoint().setContext(null);
             }
 
             request.onSuccess();
@@ -93,12 +94,13 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
         closeRequest = request;
 
-        doClose();
+        closeOrDetachEndpoint();
     }
 
     public void resourceClosed() {
-        endpoint.close();
-        endpoint.free();
+        getEndpoint().close();
+        getEndpoint().free();
+        getEndpoint().setContext(null);
 
         if (this.closeRequest != null) {
             this.closeRequest.onSuccess();
@@ -130,10 +132,10 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
     /**
      * Perform the close operation on the managed endpoint.  A subclass may
-     * override this method to provide additional close actions or alter the
-     * standard close path such as endpoint detach etc.
+     * override this method to alter the standard close path such as endpoint
+     * detach etc.
      */
-    protected void doClose() {
+    protected void closeOrDetachEndpoint() {
         getEndpoint().close();
     }
 

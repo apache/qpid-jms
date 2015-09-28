@@ -83,47 +83,6 @@ public class JmsSessionTest extends AmqpTestSupport {
     }
 
     @Test(timeout=30000)
-    public void testSessionDoubleCloseWithoutException() throws Exception {
-        connection = createAmqpConnection();
-        connection.start();
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        session.close();
-        session.close();
-    }
-
-    @Test(timeout=30000)
-    public void testConsumerCreateThrowsWhenBrokerStops() throws Exception {
-        connection = createAmqpConnection();
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(getDestinationName());
-        connection.start();
-
-        stopPrimaryBroker();
-        try {
-            session.createConsumer(queue);
-            fail("Should have thrown an IllegalStateException");
-        } catch (Exception ex) {
-            LOG.info("Caught exception on create consumer: {}", ex);
-        }
-    }
-
-    @Test(timeout=30000)
-    public void testProducerCreateThrowsWhenBrokerStops() throws Exception {
-        connection = createAmqpConnection();
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue(getDestinationName());
-        connection.start();
-
-        stopPrimaryBroker();
-        try {
-            session.createProducer(queue);
-            fail("Should have thrown an IllegalStateException");
-        } catch (Exception ex) {
-            LOG.info("Caught exception on create producer: {}", ex);
-        }
-    }
-
-    @Test(timeout=30000)
     public void testCreateTemporaryQueue() throws Exception {
         connection = createAmqpConnection();
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

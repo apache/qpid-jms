@@ -105,6 +105,9 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             assertNotNull("Session should not be null", session);
             testPeer.expectEnd();
             session.close();
+
+            // Should send nothing and throw no error.
+            session.close();
         }
     }
 

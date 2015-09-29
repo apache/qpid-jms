@@ -72,8 +72,8 @@ public class JmsLargeMessageSendRecvTimedTest extends AmqpTestSupport {
     }
 
     @Test(timeout = 5 * 60 * 1000)
-    public void testSend100MBMessage() throws Exception {
-        doTestSendLargeMessage(1024 * 1024 * 100);
+    public void testSend50MBMessage() throws Exception {
+        doTestSendLargeMessage(1024 * 1024 * 50);
     }
 
     public void doTestSendLargeMessage(int expectedSize) throws Exception{

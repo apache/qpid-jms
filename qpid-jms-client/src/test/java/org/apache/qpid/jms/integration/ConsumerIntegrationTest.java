@@ -367,9 +367,9 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout=20000)
     public void testSetMessageListenerAfterStartAndSend() throws Exception {
-        final AtomicInteger counter = new AtomicInteger(0);
-        final CountDownLatch done = new CountDownLatch(1);
 
+        final int messageCount = 4;
+        final CountDownLatch latch = new CountDownLatch(messageCount);
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
@@ -380,7 +380,6 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             Queue destination = session.createQueue(getTestName());
             connection.start();
 
-            final int messageCount = 4;
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), messageCount);
 
@@ -390,22 +389,20 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
                 testPeer.expectDisposition(true, new AcceptedMatcher());
             }
 
-            testPeer.expectDetach(true, true, true);
-
             consumer.setMessageListener(new MessageListener() {
                 @Override
                 public void onMessage(Message m) {
                     LOG.debug("Async consumer got Message: {}", m);
-                    counter.incrementAndGet();
-                    if (counter.get() == messageCount) {
-                        done.countDown();
-                    }
+                    latch.countDown();
                 }
             });
 
-            assertTrue(done.await(1000, TimeUnit.MILLISECONDS));
-            assertEquals(messageCount, counter.get());
+            boolean await = latch.await(3000, TimeUnit.MILLISECONDS);
+            assertTrue("Messages not received within given timeout. Count remaining: " + latch.getCount(), await);
 
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            testPeer.expectDetach(true, true, true);
             consumer.close();
 
             testPeer.waitForAllHandlersToComplete(2000);

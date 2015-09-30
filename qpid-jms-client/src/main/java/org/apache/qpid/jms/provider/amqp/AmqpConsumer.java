@@ -253,7 +253,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         }
 
         int currentCredit = getEndpoint().getCredit();
-        if (currentCredit <= getResourceInfo().getPrefetchSize() * 0.2) {
+        if (currentCredit <= getResourceInfo().getPrefetchSize() * 0.3) {
             int newCredit = getResourceInfo().getPrefetchSize() - currentCredit;
             LOG.trace("Consumer {} granting additional credit: {}", getConsumerId(), newCredit);
             getEndpoint().flow(newCredit);

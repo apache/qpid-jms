@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.jms.BytesMessage;
 import javax.jms.DeliveryMode;
-import javax.jms.JMSSecurityException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -249,15 +248,6 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         LOG.debug(">>>> Received message of length {}", textMessage.getText().length());
         assertEquals(messageSize, textMessage.getText().length());
         assertEquals(messageText, textMessage.getText());
-    }
-
-    @Test(timeout=90000, expected=JMSSecurityException.class)
-    public void testProducerNotAuthorized() throws Exception{
-        connection = createAmqpConnection("guest", "password");
-        connection.start();
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue queue = session.createQueue("USERS." + name.getMethodName());
-        session.createProducer(queue);
     }
 
     @Test(timeout = 20000)

@@ -43,8 +43,9 @@ public abstract class AbstractMessageQueue implements MessageQueue {
                 if (timeout == -1) {
                     lock.wait();
                 } else {
+                    long start = System.currentTimeMillis();
                     lock.wait(timeout);
-                    break;
+                    timeout = Math.max(timeout + start - System.currentTimeMillis(), 0);
                 }
             }
 

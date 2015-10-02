@@ -278,13 +278,48 @@ public class FifoMessageQueueTest {
     }
 
     @Test(timeout = 10000)
+    public void testDequeueWaitsUntilMessageArrivesWhenLockNotified() throws InterruptedException {
+        doDequeueWaitsUntilMessageArrivesWhenLockNotifiedTestImpl(-1);
+    }
+
+    @Test(timeout = 10000)
+    public void testTimedDequeueWaitsUntilMessageArrivesWhenLockNotified() throws InterruptedException {
+        doDequeueWaitsUntilMessageArrivesWhenLockNotifiedTestImpl(100000);
+    }
+
+    private void doDequeueWaitsUntilMessageArrivesWhenLockNotifiedTestImpl(int timeout) throws InterruptedException {
+        final JmsInboundMessageDispatch message = createEnvelope();
+        Thread runner = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    TimeUnit.MILLISECONDS.sleep(100);
+                } catch (InterruptedException e) {
+                }
+                synchronized (queue.getLock()) {
+                    queue.getLock().notify();
+                }
+                try {
+                    TimeUnit.MILLISECONDS.sleep(100);
+                } catch (InterruptedException e) {
+                }
+                queue.enqueueFirst(message);
+            }
+        });
+        runner.start();
+
+        assertSame(message, queue.dequeue(timeout));
+    }
+
+    @Test(timeout = 10000)
     public void testDequeueReturnsWhenQueueIsStopped() throws InterruptedException {
         Thread runner = new Thread(new Runnable() {
 
             @Override
             public void run() {
                 try {
-                    TimeUnit.MILLISECONDS.sleep(500);
+                    TimeUnit.MILLISECONDS.sleep(100);
                 } catch (InterruptedException e) {
                 }
                 queue.stop();

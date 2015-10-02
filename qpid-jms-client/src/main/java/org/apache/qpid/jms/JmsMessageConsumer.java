@@ -290,7 +290,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                         timeout = Math.max(deadline - System.currentTimeMillis(), 0);
                     }
 
-                    //TODO: don't do this if stopped, etc
                     //TODO: make it optional/configurable not to do this at all?
                     if (timeout >= 0) {
                         // We don't do this for receive with no timeout since it

@@ -364,6 +364,32 @@ public class PriorityMessageQueueTest {
         assertNull(queue.dequeue(-1));
     }
 
+    @Test
+    public void testRestartingClosedQueueHasNoEffect() throws InterruptedException {
+        JmsInboundMessageDispatch message = createEnvelope();
+        queue.enqueueFirst(message);
+
+        assertTrue(queue.isRunning());
+        assertFalse(queue.isClosed());
+
+        queue.stop();
+
+        assertFalse(queue.isRunning());
+        assertFalse(queue.isClosed());
+        assertNull(queue.dequeue(1L));
+
+        queue.close();
+
+        assertTrue(queue.isClosed());
+        assertFalse(queue.isRunning());
+
+        queue.start();
+
+        assertTrue(queue.isClosed());
+        assertFalse(queue.isRunning());
+        assertNull(queue.dequeue(1L));
+    }
+
     private List<JmsInboundMessageDispatch> createFullRangePrioritySet() {
         List<JmsInboundMessageDispatch> messages = new ArrayList<JmsInboundMessageDispatch>();
         for (int i = 0; i < 10; ++i) {

@@ -70,7 +70,9 @@ public abstract class AbstractMessageQueue implements MessageQueue {
     @Override
     public final void start() {
         synchronized (lock) {
-            running = true;
+            if (!closed) {
+                running = true;
+            }
             lock.notifyAll();
         }
     }
@@ -91,10 +93,8 @@ public abstract class AbstractMessageQueue implements MessageQueue {
     @Override
     public final void close() {
         synchronized (lock) {
-            if (!closed) {
-                running = false;
-                closed = true;
-            }
+            running = false;
+            closed = true;
             lock.notifyAll();
         }
     }

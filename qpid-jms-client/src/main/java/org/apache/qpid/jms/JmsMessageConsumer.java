@@ -284,7 +284,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                 }
 
                 if (envelope == null) {
-                    if ((timeout == 0 && pullConsumer) || (timeout == 0 && !pullConsumer && pullForced) || pullConsumer || messageQueue.isClosed()) {
+                    if ((timeout == 0 && pullForced) || pullConsumer || messageQueue.isClosed()) {
                         return null;
                     } else if (timeout > 0) {
                         timeout = Math.max(deadline - System.currentTimeMillis(), 0);

@@ -26,19 +26,11 @@ import org.apache.qpid.jms.util.IOExceptionSupport;
 /**
  * Asynchronous Provider Future class.
  */
-public class ProviderFuture extends WrappedAsyncResult {
+public class ProviderFuture implements AsyncResult {
 
     private final AtomicBoolean completer = new AtomicBoolean();
     private final CountDownLatch latch = new CountDownLatch(1);
     private volatile Throwable error;
-
-    public ProviderFuture() {
-        super(null);
-    }
-
-    public ProviderFuture(AsyncResult watcher) {
-        super(watcher);
-    }
 
     @Override
     public boolean isComplete() {
@@ -50,7 +42,6 @@ public class ProviderFuture extends WrappedAsyncResult {
         if(completer.compareAndSet(false, true)) {
             error = result;
             latch.countDown();
-            super.onFailure(result);
         }
     }
 
@@ -58,7 +49,6 @@ public class ProviderFuture extends WrappedAsyncResult {
     public void onSuccess() {
         if(completer.compareAndSet(false, true)) {
             latch.countDown();
-            super.onSuccess();
         }
     }
 

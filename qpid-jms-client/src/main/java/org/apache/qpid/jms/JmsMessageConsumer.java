@@ -296,13 +296,15 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                         // is redundant: zero-prefetch consumers already pull, and
                         // the rest block indefinitely on the local messageQueue.
                         pullForced = true;
-                        performPullIfRequired(timeout, true);
+                        if(performPullIfRequired(timeout, true)) {
+                            startConsumerResource();
+                            // We refresh credit if it is a prefetching consumer, since the
+                            // pull drained it. Processing acks can open the credit window, but
+                            // not in all cases, and if we didn't get a message it would stay
+                            // closed until future pulls were performed.
+                        }
                     }
 
-                    // TODO: refresh credit if needed, since the above drains it.
-                    //       Processing acks can currently reopen the credit window, but if we don't get a message
-                    //       here then, it will stay closed for regular prefetching consumers.
-                    //       Further receive calls will add and drain credit though.
                 } else if (envelope.getMessage() == null) {
                     //TODO: do we still need this now?
                     LOG.trace("{} no message was available for this consumer: {}", getConsumerId());
@@ -674,11 +676,15 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
      *        The amount of time the pull request should remain valid.
      * @param treatAsPullConsumer
      *        Treat the consumer as if it were a pull consumer, even if it isn't.
+     * @return true if a pull was performed, false if it was not.
      */
-    protected void performPullIfRequired(long timeout, boolean treatAsPullConsumer) throws JMSException {
+    protected boolean performPullIfRequired(long timeout, boolean treatAsPullConsumer) throws JMSException {
         if ((isPullConsumer() || treatAsPullConsumer) && messageQueue.isRunning() && messageQueue.isEmpty()) {
             connection.pull(getConsumerId(), timeout);
+            return true;
         }
+
+        return false;
     }
 
     private int getConfiguredPrefetch(JmsDestination destination, JmsPrefetchPolicy policy) {

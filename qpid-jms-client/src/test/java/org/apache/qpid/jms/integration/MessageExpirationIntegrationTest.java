@@ -95,6 +95,8 @@ public class MessageExpirationIntegrationTest extends QpidJmsTestCase {
 
             // Verify the other message is not there. Will drain to be sure there are no messages.
             testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH - 2)));
+            // Then reopen the credit window afterwards
+            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
 
             m = consumer.receive(10);
             assertNull("Message should not have been received", m);

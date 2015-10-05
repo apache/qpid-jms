@@ -50,6 +50,7 @@ import org.apache.qpid.jms.provider.ProviderFactory;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.ProviderRedirectedException;
+import org.apache.qpid.jms.provider.WrappedAsyncResult;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.jms.util.ThreadPoolUtils;
 import org.slf4j.Logger;
@@ -929,7 +930,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
      * Provider instance an instance of FailoverRequest is used to handle errors that
      * occur during processing of that request and trigger a reconnect.
      */
-    protected abstract class FailoverRequest extends ProviderFuture implements Runnable {
+    protected abstract class FailoverRequest extends WrappedAsyncResult implements Runnable {
 
         private final long id = requestId.incrementAndGet();
 

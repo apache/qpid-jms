@@ -26,7 +26,7 @@ public abstract class AbstractMessageQueue implements MessageQueue {
 
     private volatile boolean closed;
     private volatile boolean running;
-    protected Object lock = new Object();
+    private final Object lock = new Object();
 
     @Override
     public final JmsInboundMessageDispatch peek() {

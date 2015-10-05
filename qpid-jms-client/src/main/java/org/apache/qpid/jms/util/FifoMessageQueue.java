@@ -31,44 +31,44 @@ public final class FifoMessageQueue extends AbstractMessageQueue {
 
     @Override
     public void enqueueFirst(JmsInboundMessageDispatch envelope) {
-        synchronized (lock) {
+        synchronized (getLock()) {
             list.addFirst(envelope);
-            lock.notify();
+            getLock().notify();
         }
     }
 
     @Override
     public void enqueue(JmsInboundMessageDispatch envelope) {
-        synchronized (lock) {
+        synchronized (getLock()) {
             list.addLast(envelope);
-            lock.notify();
+            getLock().notify();
         }
     }
 
     @Override
     public boolean isEmpty() {
-        synchronized (lock) {
+        synchronized (getLock()) {
             return list.isEmpty();
         }
     }
 
     @Override
     public int size() {
-        synchronized (lock) {
+        synchronized (getLock()) {
             return list.size();
         }
     }
 
     @Override
     public void clear() {
-        synchronized (lock) {
+        synchronized (getLock()) {
             list.clear();
         }
     }
 
     @Override
     public List<JmsInboundMessageDispatch> removeAll() {
-        synchronized (lock) {
+        synchronized (getLock()) {
             ArrayList<JmsInboundMessageDispatch> rc = new ArrayList<JmsInboundMessageDispatch>(list.size());
             for (JmsInboundMessageDispatch entry : list) {
                 rc.add(entry);
@@ -80,7 +80,7 @@ public final class FifoMessageQueue extends AbstractMessageQueue {
 
     @Override
     public String toString() {
-        synchronized (lock) {
+        synchronized (getLock()) {
             return list.toString();
         }
     }

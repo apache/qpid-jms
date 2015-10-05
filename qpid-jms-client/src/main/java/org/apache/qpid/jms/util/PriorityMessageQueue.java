@@ -47,39 +47,39 @@ public final class PriorityMessageQueue extends AbstractMessageQueue {
 
     @Override
     public void enqueue(JmsInboundMessageDispatch envelope) {
-        synchronized (lock) {
+        synchronized (getLock()) {
             getList(envelope).addLast(envelope);
             this.size++;
-            lock.notify();
+            getLock().notify();
         }
     }
 
     @Override
     public void enqueueFirst(JmsInboundMessageDispatch envelope) {
-        synchronized (lock) {
+        synchronized (getLock()) {
             getList(MAX_PRIORITY).addFirst(envelope);
             this.size++;
-            lock.notify();
+            getLock().notify();
         }
     }
 
     @Override
     public boolean isEmpty() {
-        synchronized (lock) {
+        synchronized (getLock()) {
             return size == 0;
         }
     }
 
     @Override
     public int size() {
-        synchronized (lock) {
+        synchronized (getLock()) {
             return size;
         }
     }
 
     @Override
     public void clear() {
-        synchronized (lock) {
+        synchronized (getLock()) {
             for (int i = 0; i <= MAX_PRIORITY; i++) {
                 lists[i].clear();
             }
@@ -89,7 +89,7 @@ public final class PriorityMessageQueue extends AbstractMessageQueue {
 
     @Override
     public List<JmsInboundMessageDispatch> removeAll() {
-        synchronized (lock) {
+        synchronized (getLock()) {
             ArrayList<JmsInboundMessageDispatch> result = new ArrayList<JmsInboundMessageDispatch>(size());
             for (int i = MAX_PRIORITY; i >= 0; i--) {
                 List<JmsInboundMessageDispatch> list = lists[i];

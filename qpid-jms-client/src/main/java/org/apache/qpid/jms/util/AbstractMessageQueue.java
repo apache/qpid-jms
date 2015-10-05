@@ -24,8 +24,8 @@ import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
  */
 public abstract class AbstractMessageQueue implements MessageQueue {
 
-    protected boolean closed;
-    protected boolean running;
+    private volatile boolean closed;
+    private volatile boolean running;
     protected Object lock = new Object();
 
     @Override

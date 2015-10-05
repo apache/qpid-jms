@@ -255,7 +255,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
      * delivery count value but will continue to wait for the configured timeout.
      *
      * @throws JMSException
-     * @return null if we timeout or if the consumer is closed.
+     * @return null if we timeout or if the consumer is closed concurrently.
      */
     private JmsInboundMessageDispatch dequeue(long timeout) throws JMSException {
         boolean pullConsumer = isPullConsumer();
@@ -293,8 +293,8 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                     //TODO: make it optional/configurable not to do this at all?
                     if (timeout >= 0) {
                         // We don't do this for receive with no timeout since it
-                        // already occurred for zero-prefetch consumers, and
-                        // the rest block indefinitely on the local messageQueue
+                        // is redundant: zero-prefetch consumers already pull, and
+                        // the rest block indefinitely on the local messageQueue.
                         pullForced = true;
                         performPullIfRequired(timeout, true);
                     }
@@ -660,7 +660,9 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     }
 
     /**
-     * Triggers a pull request from the connected Provider with the given timeout value.
+     * Triggers a pull request from the connected Provider with the given timeout value
+     * if the consumer is a pull consumer or requested to be treated as one, and the
+     * local queue is still running, and is currently empty.
      * <p>
      * The timeout value can be one of:
      * <br>
@@ -670,10 +672,11 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
      *
      * @param timeout
      *        The amount of time the pull request should remain valid.
-     * @param forcePull TODO
+     * @param treatAsPullConsumer
+     *        Treat the consumer as if it were a pull consumer, even if it isn't.
      */
-    protected void performPullIfRequired(long timeout, boolean forcePull) throws JMSException {
-        if ((isPullConsumer() || forcePull) && messageQueue.isRunning() && messageQueue.isEmpty()) {
+    protected void performPullIfRequired(long timeout, boolean treatAsPullConsumer) throws JMSException {
+        if ((isPullConsumer() || treatAsPullConsumer) && messageQueue.isRunning() && messageQueue.isEmpty()) {
             connection.pull(getConsumerId(), timeout);
         }
     }

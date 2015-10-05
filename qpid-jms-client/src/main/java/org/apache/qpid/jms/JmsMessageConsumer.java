@@ -298,7 +298,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                         pullForced = true;
                         performPullIfRequired(timeout, true);
                     }
-                    //TODO: do we need to reset pullForced, if there are e.g expired etc messages received and then filtered after the pull?
 
                     // TODO: refresh credit if needed, since the above drains it.
                     //       Processing acks can currently reopen the credit window, but if we don't get a message

@@ -712,6 +712,15 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         return receiveLocalOnly;
     }
 
+    /**
+     * Controls whether the client only checks its local message buffer when using
+     * receive calls with a timeout, or will instead drain remaining credit from the
+     * remote peer to ensure there are really no messages available if the
+     * timeout expires before a message arrives in the consumers local buffer.
+     *
+     * @param receiveLocalOnly
+     *        true if receive calls with a timeout should only check the local message buffer.
+     */
     public void setReceiveLocalOnly(boolean receiveLocalOnly) {
         this.receiveLocalOnly = receiveLocalOnly;
     }
@@ -720,6 +729,15 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         return receiveNoWaitLocalOnly;
     }
 
+    /**
+     * Controls whether the client only checks its local message buffer when using
+     * receiveNoWait calls, or will instead drain remaining credit from the
+     * remote peer synchronously to ensure there are really no messages available
+     * that have yet to arrive in the consumers local buffer.
+     *
+     * @param receiveNoWaitLocalOnly
+     *        true if receiveNoWait calls should only check the local message buffer.
+     */
     public void setReceiveNoWaitLocalOnly(boolean receiveNoWaitLocalOnly) {
         this.receiveNoWaitLocalOnly = receiveNoWaitLocalOnly;
     }

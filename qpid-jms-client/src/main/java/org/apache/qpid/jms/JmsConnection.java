@@ -915,6 +915,22 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         connectionInfo.setRedeliveryPolicy(redeliveryPolicy);
     }
 
+    public boolean isReceiveLocalOnly() {
+        return connectionInfo.isReceiveLocalOnly();
+    }
+
+    public void setReceiveLocalOnly(boolean receiveLocalOnly) {
+        this.connectionInfo.setReceiveLocalOnly(receiveLocalOnly);
+    }
+
+    public boolean isReceiveNoWaitLocalOnly() {
+        return connectionInfo.isReceiveNoWaitLocalOnly();
+    }
+
+    public void setReceiveNoWaitLocalOnly(boolean receiveNoWaitLocalOnly) {
+        this.connectionInfo.setReceiveNoWaitLocalOnly(receiveNoWaitLocalOnly);
+    }
+
     public boolean isLocalMessagePriority() {
         return connectionInfo.isLocalMessagePriority();
     }

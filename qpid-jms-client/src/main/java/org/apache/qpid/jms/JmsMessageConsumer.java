@@ -227,7 +227,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
             timeout = -1;
         }
 
-        return copy(ackFromReceive(dequeue(timeout)));
+        return copy(ackFromReceive(dequeue(timeout, connection.isReceiveLocalOnly())));
     }
 
     /**
@@ -240,7 +240,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         checkClosed();
         checkMessageListener();
 
-        return copy(ackFromReceive(dequeue(0)));
+        return copy(ackFromReceive(dequeue(0, connection.isReceiveNoWaitLocalOnly())));
     }
 
     /**
@@ -253,11 +253,12 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
      *
      * This method may consume messages that are expired or exceed a configured
      * delivery count value but will continue to wait for the configured timeout.
-     *
+     * @param localCheckOnly
+     *          if false, try pulling a message if a >= 0 timeout expires with no message arriving
      * @throws JMSException
      * @return null if we timeout or if the consumer is closed concurrently.
      */
-    private JmsInboundMessageDispatch dequeue(long timeout) throws JMSException {
+    private JmsInboundMessageDispatch dequeue(long timeout, boolean localCheckOnly) throws JMSException {
         boolean pullConsumer = isPullConsumer();
         boolean pullForced = pullConsumer;
 
@@ -284,14 +285,13 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                 }
 
                 if (envelope == null) {
-                    if ((timeout == 0 && pullForced) || pullConsumer || messageQueue.isClosed()) {
+                    if ((timeout == 0 && (pullForced || localCheckOnly)) || pullConsumer || messageQueue.isClosed()) {
                         return null;
                     } else if (timeout > 0) {
                         timeout = Math.max(deadline - System.currentTimeMillis(), 0);
                     }
 
-                    //TODO: make it optional/configurable not to do this at all?
-                    if (timeout >= 0) {
+                    if (timeout >= 0 && !localCheckOnly) {
                         // We don't do this for receive with no timeout since it
                         // is redundant: zero-prefetch consumers already pull, and
                         // the rest block indefinitely on the local messageQueue.

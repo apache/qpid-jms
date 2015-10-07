@@ -43,6 +43,7 @@ import javax.jms.Topic;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
+import org.apache.qpid.jms.JmsPrefetchPolicy;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
@@ -565,6 +566,75 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             });
 
             testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    @Test(timeout=30000)
+    public void testReceiveWithTimoutDrainsOnNoMessage() throws IOException, Exception {
+        doDrainOnNoMessageTestImpl(false, true);
+    }
+
+    @Test(timeout=30000)
+    public void testReceiveWithTimoutDoesntDrainOnNoMessageWithLocalOnlyOption() throws IOException, Exception {
+        doDrainOnNoMessageTestImpl(true, true);
+    }
+
+    @Test(timeout=30000)
+    public void testReceiveNoWaitDrainsOnNoMessage() throws IOException, Exception {
+        doDrainOnNoMessageTestImpl(false, false);
+    }
+
+    @Test(timeout=30000)
+    public void testReceiveNoWaitDoesntDrainOnNoMessageWithLocalOnlyOption() throws IOException, Exception {
+        doDrainOnNoMessageTestImpl(true, false);
+    }
+
+    private void doDrainOnNoMessageTestImpl(boolean localCheckOnly, boolean noWait) throws JMSException, InterruptedException, Exception, IOException {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = null;
+            if (localCheckOnly) {
+                if (noWait) {
+                    connection = testFixture.establishConnecton(testPeer, "?jms.receiveNoWaitLocalOnly=true");
+                } else {
+                    connection = testFixture.establishConnecton(testPeer, "?jms.receiveLocalOnly=true");
+                }
+            } else {
+                connection = testFixture.establishConnecton(testPeer);
+            }
+
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // Expect receiver link attach and send credit
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
+            if (!localCheckOnly) {
+                // If not doing local-check only, expect the credit to be drained
+                // and then replenished to open the window again
+                testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
+                testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
+            }
+
+            MessageConsumer consumer = session.createConsumer(queue);
+            Message msg = null;
+            if (noWait) {
+                msg = consumer.receiveNoWait();
+            } else {
+                msg = consumer.receive(1);
+            }
+
+            assertNull(msg);
+
+            // Then close the consumer
+            testPeer.expectDetach(true, true, true);
+
+            consumer.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
         }
     }
 }

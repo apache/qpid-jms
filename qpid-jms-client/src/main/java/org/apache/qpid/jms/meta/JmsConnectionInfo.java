@@ -44,6 +44,8 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private boolean forceAsyncSend;
     private boolean alwaysSyncSend;
     private boolean validatePropertyNames = true;
+    private boolean receiveLocalOnly;
+    private boolean receiveNoWaitLocalOnly;
     private boolean localMessagePriority;
     private boolean localMessageExpiry;
     private boolean sendAcksAsync;
@@ -217,6 +219,22 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     public void setSendAcksAsync(boolean sendAcksAsync) {
         this.sendAcksAsync = sendAcksAsync;
+    }
+
+    public boolean isReceiveLocalOnly() {
+        return receiveLocalOnly;
+    }
+
+    public void setReceiveLocalOnly(boolean receiveLocalOnly) {
+        this.receiveLocalOnly = receiveLocalOnly;
+    }
+
+    public boolean isReceiveNoWaitLocalOnly() {
+        return receiveNoWaitLocalOnly;
+    }
+
+    public void setReceiveNoWaitLocalOnly(boolean receiveNoWaitLocalOnly) {
+        this.receiveNoWaitLocalOnly = receiveNoWaitLocalOnly;
     }
 
     public boolean isLocalMessageExpiry() {

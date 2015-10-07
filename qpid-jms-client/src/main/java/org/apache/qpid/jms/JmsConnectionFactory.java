@@ -62,6 +62,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private boolean sendAcksAsync;
     private boolean localMessagePriority;
     private boolean localMessageExpiry = true;
+    private boolean receiveLocalOnly;
+    private boolean receiveNoWaitLocalOnly;
     private String queuePrefix = null;
     private String topicPrefix = null;
     private boolean validatePropertyNames = true;
@@ -704,5 +706,21 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             messageIDBuilder = JmsMessageIDBuilder.Builtins.DEFAULT.createBuilder();
         }
         this.messageIDBuilder = messageIDBuilder;
+    }
+
+    public boolean isReceiveLocalOnly() {
+        return receiveLocalOnly;
+    }
+
+    public void setReceiveLocalOnly(boolean receiveLocalOnly) {
+        this.receiveLocalOnly = receiveLocalOnly;
+    }
+
+    public boolean isReceiveNoWaitLocalOnly() {
+        return receiveNoWaitLocalOnly;
+    }
+
+    public void setReceiveNoWaitLocalOnly(boolean receiveNoWaitLocalOnly) {
+        this.receiveNoWaitLocalOnly = receiveNoWaitLocalOnly;
     }
 }

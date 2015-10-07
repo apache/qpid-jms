@@ -103,9 +103,9 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
             String uri = "amqp://127.0.0.1:" + testPeer.getServerPort() + "?jms.messageIDType=UNKNOWN";
             try {
                 new JmsConnectionFactory(uri);
-                fail("Should not be able to create a factory with invalid option.");
+                fail("Should not be able to create a factory with invalid id type option value.");
             } catch (Exception ex) {
-                LOG.debug("Caught error on invalid message ID format: {}", ex);
+                LOG.debug("Caught expected exception on invalid message ID format: {}", ex);
             }
         }
     }
@@ -119,7 +119,7 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
                 JmsConnectionFactory factory = new JmsConnectionFactory(uri);
                 assertEquals(JmsMessageIDBuilder.BUILTIN.UUID.name(), factory.getMessageIDType());
             } catch (Exception ex) {
-                fail("Should not be able to create a factory with invalid option.");
+                fail("Should have succeeded in creating factory");
             }
 
             try {
@@ -127,7 +127,7 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
                 JmsConnectionFactory factory = new JmsConnectionFactory(uri);
                 assertEquals(JmsMessageIDBuilder.BUILTIN.UUID.name(), factory.getMessageIDType());
             } catch (Exception ex) {
-                fail("Should not be able to create a factory with invalid option.");
+                fail("Should have succeeded in creating factory");
             }
         }
     }

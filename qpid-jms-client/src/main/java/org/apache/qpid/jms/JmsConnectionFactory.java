@@ -32,6 +32,7 @@ import javax.jms.TopicConnectionFactory;
 
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.jndi.JNDIStorable;
+import org.apache.qpid.jms.message.JmsMessageIDBuilder;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderFactory;
@@ -76,6 +77,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
     private JmsRedeliveryPolicy redeliveryPolicy = new JmsRedeliveryPolicy();
+    private JmsMessageIDBuilder messageIDBuilder = JmsMessageIDBuilder.Builtins.DEFAULT.createBuilder();
 
     public JmsConnectionFactory() {
     }
@@ -219,7 +221,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     protected <T extends JmsConnection> T configureConnection(T connection, String username, String password) throws JMSException {
         try {
-
             Map<String, String> properties = PropertyUtil.getProperties(this);
             // We must ensure that we apply the clientID last, since setting it on
             // the Connection object provokes establishing the underlying connection.
@@ -231,10 +232,11 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
             PropertyUtil.setProperties(connection, properties);
             connection.setExceptionListener(exceptionListener);
+            connection.setMessageIDBuilder(messageIDBuilder);
             connection.setUsername(username);
             connection.setPassword(password);
             connection.setConfiguredURI(remoteURI);
-            if (setClientID){
+            if (setClientID) {
                 connection.setClientID(clientID);
             }
 
@@ -666,5 +668,41 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     public void setLocalMessageExpiry(boolean localMessageExpiry) {
         this.localMessageExpiry = localMessageExpiry;
+    }
+
+    /**
+     * Sets the format of the Message IDs used to populate the outgoing Messages
+     *
+     * @param format
+     *      The name of the Message format to use.
+     */
+    public void setMessageIDType(String type) {
+        this.messageIDBuilder = JmsMessageIDBuilder.Builtins.valueOf(type).createBuilder();
+    }
+
+    public String getMessageIDType() {
+        return this.messageIDBuilder.toString();
+    }
+
+    /**
+     * @return the messageIDBuilder currently configured.
+     */
+    public JmsMessageIDBuilder getMessageIDBuilder() {
+        return messageIDBuilder;
+    }
+
+    /**
+     * Allows the owner of this factory to configure a custom Message ID Builder
+     * instance that will be used to create the Message ID values set in outgoing
+     * Messages sent from MessageProducer instances.
+     *
+     * @param messageIDBuilder
+     *      The custom JmsMessageIDBuilder to use to create outgoing Message IDs.
+     */
+    public void setMessageIDBuilder(JmsMessageIDBuilder messageIDBuilder) {
+        if (messageIDBuilder == null) {
+            messageIDBuilder = JmsMessageIDBuilder.Builtins.DEFAULT.createBuilder();
+        }
+        this.messageIDBuilder = messageIDBuilder;
     }
 }

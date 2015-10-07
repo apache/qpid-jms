@@ -28,7 +28,7 @@ public class JmsOutboundMessageDispatch {
     private JmsMessage message;
     private JmsDestination destination;
     private boolean sendAsync;
-    private String dispatchId;
+    private Object dispatchId;
 
     public JmsDestination getDestination() {
         return destination;
@@ -62,18 +62,18 @@ public class JmsOutboundMessageDispatch {
         return sendAsync;
     }
 
-    public String getDispatchId() {
+    public Object getDispatchId() {
         return dispatchId;
     }
 
-    public void setDispatchId(String dispatchId) {
+    public void setDispatchId(Object dispatchId) {
         this.dispatchId = dispatchId;
     }
 
     @Override
     public String toString() {
         String result = "JmsOutboundMessageDispatch {dispatchId = ";
-        String id = dispatchId;
+        Object id = dispatchId;
         if (id == null) {
             result = result + "<null>}";
         } else {

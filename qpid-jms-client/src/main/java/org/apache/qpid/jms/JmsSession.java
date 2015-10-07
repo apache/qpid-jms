@@ -59,6 +59,7 @@ import javax.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
+import org.apache.qpid.jms.message.JmsMessageIDBuilder;
 import org.apache.qpid.jms.message.JmsMessageTransformation;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsConsumerId;
@@ -93,6 +94,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private final LinkedBlockingQueue<JmsInboundMessageDispatch> stoppedMessages =
         new LinkedBlockingQueue<JmsInboundMessageDispatch>(10000);
     private JmsPrefetchPolicy prefetchPolicy;
+    private final JmsMessageIDBuilder messageIDBuilder;
     private final JmsSessionInfo sessionInfo;
     private volatile ExecutorService executor;
     private final ReentrantLock sendLock = new ReentrantLock();
@@ -107,6 +109,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         this.connection = connection;
         this.acknowledgementMode = acknowledgementMode;
         this.prefetchPolicy = new JmsPrefetchPolicy(connection.getPrefetchPolicy());
+        this.messageIDBuilder = connection.getMessageIDBuilder();
 
         if (acknowledgementMode == SESSION_TRANSACTED) {
             setTransactionContext(new JmsLocalTransactionContext(this));
@@ -706,9 +709,9 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
                 original.setJMSExpiration(0);
             }
 
-            String msgId = getNextMessageId(producer);
+            Object msgId = messageIDBuilder.createMessageID(producer.getProducerId().toString(), producer.getNextMessageSequence());
             if (!disableMsgId) {
-                original.setJMSMessageID(msgId);
+                original.setJMSMessageID(msgId.toString());
             }
 
             boolean isJmsMessageType = original instanceof JmsMessage;
@@ -727,7 +730,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
             // We always set these on the copy, broker might require them even if client
             // has asked to not include them.
-            copy.setJMSMessageID(msgId);
+            copy.getFacade().setMessageId(msgId);
             copy.setJMSTimestamp(timeStamp);
 
             boolean sync = connection.isAlwaysSyncSend() ||
@@ -917,10 +920,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     protected void setFailureCause(Exception failureCause) {
         this.failureCause = failureCause;
-    }
-
-    private String getNextMessageId(JmsMessageProducer producer) {
-        return producer.getProducerId().toString() + "-" + producer.getNextMessageSequence();
     }
 
     private <T extends JmsMessage> T init(T message) {

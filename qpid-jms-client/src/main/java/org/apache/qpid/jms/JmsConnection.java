@@ -55,6 +55,7 @@ import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.message.JmsMessageFactory;
+import org.apache.qpid.jms.message.JmsMessageIDBuilder;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsConnectionId;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
@@ -100,6 +101,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private ExceptionListener exceptionListener;
     private JmsMessageFactory messageFactory;
     private Provider provider;
+    private JmsMessageIDBuilder messageIDBuilder;
 
     private final Set<JmsConnectionListener> connectionListeners =
         new CopyOnWriteArraySet<JmsConnectionListener>();
@@ -1030,6 +1032,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     public void setLocalMessageExpiry(boolean localMessageExpiry) {
         connectionInfo.setLocalMessageExpiry(localMessageExpiry);
+    }
+
+    public JmsMessageIDBuilder getMessageIDBuilder() {
+        return messageIDBuilder;
+    }
+
+    void setMessageIDBuilder(JmsMessageIDBuilder messageIDBuilder) {
+        this.messageIDBuilder = messageIDBuilder;
     }
 
     //----- Async event handlers ---------------------------------------------//

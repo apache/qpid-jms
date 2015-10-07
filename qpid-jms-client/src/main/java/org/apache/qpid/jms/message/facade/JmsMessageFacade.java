@@ -186,7 +186,7 @@ public interface JmsMessageFacade {
      *
      * @return the set message ID or null if not set.
      */
-    String getMessageId();
+    Object getMessageId();
 
     /**
      * Returns the underlying providers message ID object for this message if one
@@ -203,7 +203,7 @@ public interface JmsMessageFacade {
      * @param messageId
      *        The message ID to set on this message, or null to clear.
      */
-    void setMessageId(String messageId);
+    void setMessageId(Object messageId);
 
     /**
      * @return true if this message is tagged as being persistent.

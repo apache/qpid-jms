@@ -79,7 +79,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
     private JmsRedeliveryPolicy redeliveryPolicy = new JmsRedeliveryPolicy();
-    private JmsMessageIDBuilder messageIDBuilder = JmsMessageIDBuilder.Builtins.DEFAULT.createBuilder();
+    private JmsMessageIDBuilder messageIDBuilder = JmsMessageIDBuilder.BUILTIN.DEFAULT.createBuilder();
 
     public JmsConnectionFactory() {
     }
@@ -679,7 +679,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      *      The name of the Message format to use.
      */
     public void setMessageIDType(String type) {
-        this.messageIDBuilder = JmsMessageIDBuilder.Builtins.valueOf(type).createBuilder();
+        this.messageIDBuilder = JmsMessageIDBuilder.BUILTIN.create(type);
     }
 
     public String getMessageIDType() {
@@ -703,7 +703,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     public void setMessageIDBuilder(JmsMessageIDBuilder messageIDBuilder) {
         if (messageIDBuilder == null) {
-            messageIDBuilder = JmsMessageIDBuilder.Builtins.DEFAULT.createBuilder();
+            messageIDBuilder = JmsMessageIDBuilder.BUILTIN.DEFAULT.createBuilder();
         }
         this.messageIDBuilder = messageIDBuilder;
     }

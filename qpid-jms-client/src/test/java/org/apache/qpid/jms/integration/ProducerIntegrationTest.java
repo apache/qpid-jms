@@ -537,7 +537,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             assertNotNull("JMSMessageID should be set", jmsMessageID);
             assertTrue("JMS 'ID:' prefix not found", jmsMessageID.startsWith("ID:"));
 
-            //Get the value that was actually transmitted/received, verify it is a string, compare to what we have locally
+            //Get the value that was actually transmitted/received, verify it is a String, compare to what we have locally
             testPeer.waitForAllHandlersToComplete(1000);
 
             Object receivedMessageId = propsMatcher.getReceivedMessageId();
@@ -587,7 +587,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             assertNotNull("JMSMessageID should be set", jmsMessageID);
             assertTrue("JMS 'ID:' prefix not found", jmsMessageID.startsWith("ID:"));
 
-            //Get the value that was actually transmitted/received, verify it is a string, compare to what we have locally
+            //Get the value that was actually transmitted/received, verify it is a UUID, compare to what we have locally
             testPeer.waitForAllHandlersToComplete(1000);
 
             Object receivedMessageId = propsMatcher.getReceivedMessageId();

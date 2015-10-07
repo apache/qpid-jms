@@ -25,7 +25,7 @@ import java.util.Locale;
  */
 public interface JmsMessageIDBuilder {
 
-    public enum Builtins {
+    public enum BUILTIN {
         DEFAULT {
             @Override
             public JmsMessageIDBuilder createBuilder() {
@@ -80,8 +80,18 @@ public interface JmsMessageIDBuilder {
 
         public abstract JmsMessageIDBuilder createBuilder();
 
-        public static Builtins create(String value) {
-            return valueOf(value.toUpperCase(Locale.ENGLISH));
+        /**
+         * Creates a new JmsMessageIDBuilder from the named type (case insensitive).
+         *
+         * @param value
+         *      The name of the builder to create.
+         *
+         * @return a new JmsMessageIDBuilder that matches the named type.
+         *
+         * @throws IllegalArgumentException if the named type is unknown.
+         */
+        public static JmsMessageIDBuilder create(String value) {
+            return valueOf(value.toUpperCase(Locale.ENGLISH)).createBuilder();
         }
     }
 

@@ -23,6 +23,7 @@ package org.apache.qpid.jms.integration;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.net.URI;
 import java.util.UUID;
@@ -32,7 +33,7 @@ import javax.jms.Connection;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.message.JmsMessageIDBuilder;
-import org.apache.qpid.jms.message.JmsMessageIDBuilder.Builtins;
+import org.apache.qpid.jms.message.JmsMessageIDBuilder.BUILTIN;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.junit.Test;
@@ -99,9 +100,10 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
     public void testSetInvalidMessageIDFormatOption() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // DONT create a test fixture, we will drive everything directly.
-            String uri = "amqp://127.0.0.1:" + testPeer.getServerPort() + "?jms.messageIDFormat=UNKNOWN";
+            String uri = "amqp://127.0.0.1:" + testPeer.getServerPort() + "?jms.messageIDType=UNKNOWN";
             try {
                 new JmsConnectionFactory(uri);
+                fail("Should not be able to create a factory with invalid option.");
             } catch (Exception ex) {
                 LOG.debug("Caught error on invalid message ID format: {}", ex);
             }
@@ -109,10 +111,32 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout=20000)
-    public void testMessageIDFormatOptionApplied() throws Exception {
-        Builtins[] formatters = JmsMessageIDBuilder.Builtins.values();
+    public void testSetMessageIDFormatOptionAlteredCase() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // DONT create a test fixture, we will drive everything directly.
+            try {
+                String uri = "amqp://127.0.0.1:" + testPeer.getServerPort() + "?jms.messageIDType=uuid";
+                JmsConnectionFactory factory = new JmsConnectionFactory(uri);
+                assertEquals(JmsMessageIDBuilder.BUILTIN.UUID.name(), factory.getMessageIDType());
+            } catch (Exception ex) {
+                fail("Should not be able to create a factory with invalid option.");
+            }
 
-        for (Builtins formatter : formatters) {
+            try {
+                String uri = "amqp://127.0.0.1:" + testPeer.getServerPort() + "?jms.messageIDType=Uuid";
+                JmsConnectionFactory factory = new JmsConnectionFactory(uri);
+                assertEquals(JmsMessageIDBuilder.BUILTIN.UUID.name(), factory.getMessageIDType());
+            } catch (Exception ex) {
+                fail("Should not be able to create a factory with invalid option.");
+            }
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testMessageIDFormatOptionApplied() throws Exception {
+        BUILTIN[] formatters = JmsMessageIDBuilder.BUILTIN.values();
+
+        for (BUILTIN formatter : formatters) {
             LOG.info("Testing application of Message ID Format: {}", formatter.name());
             try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
                 // DONT create a test fixture, we will drive everything directly.

@@ -88,6 +88,7 @@ The options apply to the behaviour of the JMS objects such as Connection, Sessio
 + **jms.connectTimeout** Timeout value that controls how long the client waits on Connection establishment before returning with an error. (By default the client waits 15 seconds for a connection to be established before failing).
 + **jms.clientIDPrefix** Optional prefix value that is used for generated Client ID values when a new Connection is created for the JMS ConnectionFactory.  The default prefix is 'ID:'.
 + **jms.connectionIDPrefix** Optional prefix value that is used for generated Connection ID values when a new Connection is created for the JMS ConnectionFactory.  This connection ID is used when logging some information from the JMS Connection object so a configurable prefix can make breadcrumbing the logs easier.  The default prefix is 'ID:'.
++ **jms.messageIDType** Controls the type of the Message ID assigned to messages sent from the client.  By default a generated String value is used on outgoing messages, other available types are UUID and UUID_STRING.
 
 These values control how many messages the remote peer can send to the client and be held in a prefetch buffer for each consumer instance.
 

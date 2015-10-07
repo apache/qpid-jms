@@ -673,10 +673,10 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     }
 
     /**
-     * Sets the format of the Message IDs used to populate the outgoing Messages
+     * Sets the type of the Message IDs used to populate the outgoing Messages
      *
-     * @param format
-     *      The name of the Message format to use.
+     * @param type
+     *      The name of the Message type to use when sending a message.
      */
     public void setMessageIDType(String type) {
         this.messageIDBuilder = JmsMessageIDBuilder.BUILTIN.create(type);

@@ -18,7 +18,6 @@ package org.apache.qpid.jms.message;
 
 import java.util.Locale;
 
-
 /**
  * Interface for creating a custom Message ID builder to populate the
  * Message ID field of the outgoing message.

@@ -482,19 +482,17 @@ public class JmsMessage implements javax.jms.Message {
      * ready to be written to the wire.  This processing can include such tasks as ensuring
      * that the proper message headers are set or compressing message bodies etc.
      *
-     * @param disableMessageId
-     *        a hint that the user requested not to sent the MessageID if possible.
-     * @param disableTimestamp
+     * @param messageId
      *        a hint that the user requested not to sent the MessageID if possible.
      * @param producerTtl
      *        the time to live value that the producer was configured with at send time.
      *
      * @throws JMSException if an error occurs while preparing the message for send.
      */
-    public void onSend(boolean disableMessageId, boolean disableTimestamp, long producerTtl) throws JMSException {
+    public void onSend(Object messageId, long producerTtl) throws JMSException {
         setReadOnlyBody(true);
         setReadOnlyProperties(true);
-        facade.onSend(disableMessageId, disableTimestamp, producerTtl);
+        facade.onSend(messageId, producerTtl);
     }
 
     /**

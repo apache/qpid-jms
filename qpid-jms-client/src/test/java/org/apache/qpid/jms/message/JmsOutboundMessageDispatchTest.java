@@ -16,6 +16,7 @@
  */
 package org.apache.qpid.jms.message;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -42,11 +43,11 @@ public class JmsOutboundMessageDispatchTest {
         assertNull(envelope.getDestination());
         assertNull(envelope.getMessage());
         assertNull(envelope.getProducerId());
-        assertNull(envelope.getDispatchId());
+        assertEquals(0, envelope.getDispatchId());
 
         envelope.setDestination(new JmsTopic("test"));
         envelope.setProducerId(new JmsProducerId("ID:test:1:0:1"));
-        envelope.setDispatchId("DispatchId");
+        envelope.setDispatchId(1);
         envelope.setMessage(Mockito.mock(JmsMessage.class));
         envelope.setSendAsync(true);
 
@@ -59,9 +60,9 @@ public class JmsOutboundMessageDispatchTest {
 
     @Test
     public void testToString() {
-        envelope.setDispatchId("TEST:ID");
+        envelope.setDispatchId(42);
         assertTrue(envelope.toString().startsWith("JmsOutboundMessageDispatch"));
-        assertTrue(envelope.toString().contains("TEST:ID"));
+        assertTrue(envelope.toString().contains("42"));
     }
 
     @Test

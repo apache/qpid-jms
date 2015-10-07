@@ -86,16 +86,14 @@ public interface JmsMessageFacade {
      * explicitly mapped into the JMS Message allowing the facade to create the
      * most correct and compact message on the wire.
      *
-     * @param disableMessageId
-     *        a hint that the user requested not to send the MessageID if possible.
-     * @param disableTimestamp
-     *        a hint that the user requested not to send the time stamp if possible.
+     * @param messageId
+     *        the message ID value to assign to the outgoing message.
      * @param producerTtl
      *        the time to live value configured on the producer when sent.
      *
      * @throws JMSException if an error occurs while preparing the message for send.
      */
-    void onSend(boolean disableMessageId, boolean disableTimestamp, long producerTtl) throws JMSException;
+    void onSend(Object messageId, long producerTtl) throws JMSException;
 
     /**
      * Called before a message is dispatched to its intended consumer to allow for
@@ -186,7 +184,7 @@ public interface JmsMessageFacade {
      *
      * @return the set message ID or null if not set.
      */
-    Object getMessageId();
+    String getMessageId();
 
     /**
      * Returns the underlying providers message ID object for this message if one
@@ -203,7 +201,7 @@ public interface JmsMessageFacade {
      * @param messageId
      *        The message ID to set on this message, or null to clear.
      */
-    void setMessageId(Object messageId);
+    void setMessageId(String messageId);
 
     /**
      * @return true if this message is tagged as being persistent.

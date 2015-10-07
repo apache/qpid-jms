@@ -25,8 +25,8 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
@@ -97,7 +97,7 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
     private void doNewMessageToSendHasBodySectionRepresentingNull(boolean amqpTyped) throws Exception {
         AmqpJmsObjectMessageFacade amqpObjectMessageFacade = createNewObjectMessageFacade(amqpTyped);
-        amqpObjectMessageFacade.onSend(false, false, 0);
+        amqpObjectMessageFacade.onSend(null, 0);
 
         Message protonMessage = amqpObjectMessageFacade.getAmqpMessage();
         assertNotNull("Message body should be presents", protonMessage.getBody());

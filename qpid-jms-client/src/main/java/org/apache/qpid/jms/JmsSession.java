@@ -693,6 +693,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             original.setJMSDeliveryMode(deliveryMode);
             original.setJMSPriority(priority);
             original.setJMSRedelivered(false);
+            original.setJMSDestination(destination);
 
             long timeStamp = System.currentTimeMillis();
             boolean hasTTL = timeToLive > 0;
@@ -709,42 +710,34 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
                 original.setJMSExpiration(0);
             }
 
-            Object msgId = messageIDBuilder.createMessageID(producer.getProducerId().toString(), producer.getNextMessageSequence());
+            long messageSequence = producer.getNextMessageSequence();
+            Object messageId = null;
             if (!disableMsgId) {
-                original.setJMSMessageID(msgId.toString());
-            }
-
-            boolean isJmsMessageType = original instanceof JmsMessage;
-            if (isJmsMessageType) {
-                ((JmsMessage) original).setConnection(connection);
-                original.setJMSDestination(destination);
+                messageId = messageIDBuilder.createMessageID(producer.getProducerId().toString(), messageSequence);
             }
 
             JmsMessage copy = JmsMessageTransformation.transformMessage(connection, original);
 
-            // Ensure original message gets the destination as per spec.
-            if (!isJmsMessageType) {
-                original.setJMSDestination(destination);
-                copy.setJMSDestination(destination);
-            }
-
-            // We always set these on the copy, broker might require them even if client
-            // has asked to not include them.
-            copy.getFacade().setMessageId(msgId);
-            copy.setJMSTimestamp(timeStamp);
+            // Update the JmsMessage based copy with the required values.
+            copy.setConnection(connection);
+            copy.setJMSDestination(destination);
 
             boolean sync = connection.isAlwaysSyncSend() ||
                            (!connection.isForceAsyncSend() && deliveryMode == DeliveryMode.PERSISTENT && !getTransacted());
 
-            copy.onSend(disableMsgId, disableTimestamp, timeToLive);
+            copy.onSend(messageId, timeToLive);
+
             JmsOutboundMessageDispatch envelope = new JmsOutboundMessageDispatch();
             envelope.setMessage(copy);
             envelope.setProducerId(producer.getProducerId());
             envelope.setDestination(destination);
             envelope.setSendAsync(!sync);
-            envelope.setDispatchId(msgId);
+            envelope.setDispatchId(messageSequence);
 
             transactionContext.send(connection, envelope);
+
+            // Update the original now with the properly encoded Message ID String.
+            original.setJMSMessageID(copy.getJMSMessageID());
         } finally {
             sendLock.unlock();
         }

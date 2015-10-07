@@ -1184,8 +1184,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
         onProviderException(ex);
 
-        for(AsyncResult request : requests.keySet())
-        {
+        for(AsyncResult request : requests.keySet()) {
             try {
                 request.onFailure(ex);
             } catch (Exception e) {
@@ -1205,8 +1204,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
                         }
                     }
 
-                    for(AsyncResult request : requests.keySet())
-                    {
+                    for(AsyncResult request : requests.keySet()) {
                         try {
                             request.onFailure(ex);
                         } catch (Exception e) {

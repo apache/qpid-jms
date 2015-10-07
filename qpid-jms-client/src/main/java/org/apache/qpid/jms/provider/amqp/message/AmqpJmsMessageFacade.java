@@ -202,7 +202,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public void onSend(boolean disableMsgId, boolean disableTimestamp, long producerTtl) throws JMSException {
+    public void onSend(Object messageId, long producerTtl) throws JMSException {
 
         // Set the ttl field of the Header field if needed, complementing the expiration
         // field of Properties for any peers that only inspect the mutable ttl field.
@@ -222,12 +222,10 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             }
         }
 
-        if (disableMsgId) {
-            setMessageId(null);
-        }
-
-        if (disableTimestamp) {
-            setTimestamp(0);
+        if (messageId instanceof String) {
+            setMessageId((String) messageId);
+        } else {
+            message.setMessageId(messageId);
         }
 
         setMessageAnnotation(JMS_MSG_TYPE, getJmsMsgType());
@@ -332,7 +330,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public Object getMessageId() {
+    public String getMessageId() {
         Object underlying = message.getMessageId();
         AmqpMessageIdHelper helper = AmqpMessageIdHelper.INSTANCE;
         String baseStringId = helper.toBaseMessageIdString(underlying);
@@ -352,17 +350,13 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public void setMessageId(Object messageId) {
+    public void setMessageId(String messageId) {
         if (messageId == null) {
             message.setMessageId(null);
         } else {
-            if (messageId instanceof String) {
-                // Remove the first 'ID:' prefix if present
-                String stripped = AmqpMessageIdHelper.INSTANCE.stripMessageIdPrefix((String) messageId);
-                message.setMessageId(stripped);
-            } else {
-                message.setMessageId(messageId);
-            }
+            // Remove the first 'ID:' prefix if present
+            String stripped = AmqpMessageIdHelper.INSTANCE.stripMessageIdPrefix(messageId);
+            message.setMessageId(stripped);
         }
     }
 

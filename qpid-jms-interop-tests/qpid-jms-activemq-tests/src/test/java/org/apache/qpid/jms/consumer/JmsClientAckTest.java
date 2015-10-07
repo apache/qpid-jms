@@ -294,10 +294,10 @@ public class JmsClientAckTest extends AmqpTestSupport {
         sent1.setText("msg1");
         producer.send(sent1);
         TextMessage sent2 = producerSession.createTextMessage();
-        sent1.setText("msg2");
+        sent2.setText("msg2");
         producer.send(sent2);
         TextMessage sent3 = producerSession.createTextMessage();
-        sent1.setText("msg3");
+        sent3.setText("msg3");
         producer.send(sent3);
 
         consumer.receive(5000);

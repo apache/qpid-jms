@@ -160,7 +160,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         assertEquals("TTL has been unset already", origTtl, message.getTtl());
 
-        amqpMessageFacade.onSend(false, false, 0);
+        amqpMessageFacade.onSend(null, 0);
 
         // check value on underlying TTL field is NOT set
         assertEquals("TTL has not been cleared", 0, message.getTtl());
@@ -178,7 +178,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         assertEquals("TTL has been unset already", origTtl, message.getTtl());
 
-        amqpMessageFacade.onSend(false, false, newTtl);
+        amqpMessageFacade.onSend(null, newTtl);
 
         // check value on underlying TTL field is NOT set
         assertEquals("TTL has not been overriden", newTtl, message.getTtl());
@@ -194,7 +194,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
         amqpMessageFacade.setAmqpTimeToLiveOverride((long) overrideTtl);
 
-        amqpMessageFacade.onSend(false, false, producerTtl);
+        amqpMessageFacade.onSend(null, producerTtl);
 
         // check value on underlying TTL field is set to the override
         assertEquals("TTL has not been overriden", overrideTtl, message.getTtl());
@@ -1848,20 +1848,11 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     // ===============================================
 
     @Test
-    public void testOnSendWithDisableMessageIdClearsMessageID() throws JMSException {
+    public void testOnSendWithNullMessageIdClearsMessageID() throws JMSException {
         Message message = Mockito.mock(Message.class);
         JmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
-        amqpMessageFacade.onSend(true, false, 0);
+        amqpMessageFacade.onSend(null, 0);
         Mockito.verify(message).setMessageId(null);
-    }
-
-    @Test
-    public void testOnSendWithDisableTimestampClearsTimestamp() throws JMSException {
-        AmqpJmsMessageFacade message = createNewMessageFacade();
-        message.setTimestamp(MAX_UINT);
-        assertEquals(MAX_UINT, message.getTimestamp());
-        message.onSend(false, true, 0);
-        assertEquals(0, message.getTimestamp());
     }
 
     @Test

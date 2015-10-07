@@ -28,7 +28,7 @@ public class JmsOutboundMessageDispatch {
     private JmsMessage message;
     private JmsDestination destination;
     private boolean sendAsync;
-    private Object dispatchId;
+    private long dispatchId;
 
     public JmsDestination getDestination() {
         return destination;
@@ -62,24 +62,23 @@ public class JmsOutboundMessageDispatch {
         return sendAsync;
     }
 
-    public Object getDispatchId() {
+    public long getDispatchId() {
         return dispatchId;
     }
 
-    public void setDispatchId(Object dispatchId) {
+    public void setDispatchId(long dispatchId) {
         this.dispatchId = dispatchId;
     }
 
     @Override
     public String toString() {
-        String result = "JmsOutboundMessageDispatch {dispatchId = ";
-        Object id = dispatchId;
-        if (id == null) {
-            result = result + "<null>}";
-        } else {
-            result = result + id + "}";
-        }
+        StringBuilder value = new StringBuilder();
 
-        return result;
+        value.append("JmsOutboundMessageDispatch {dispatchId = ");
+        value.append(getProducerId());
+        value.append("-");
+        value.append(getDispatchId());
+
+        return value.toString();
     }
 }

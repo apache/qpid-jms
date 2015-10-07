@@ -195,7 +195,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
 
     protected void shutdown(Exception cause) throws JMSException {
         if (closed.compareAndSet(false, true)) {
-            failureCause.set(cause);
+            setFailureCause(cause);
             session.remove(this);
             stop(true);
         }
@@ -279,9 +279,9 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
                     envelope = messageQueue.dequeue(timeout);
                 }
 
-                if (failureCause.get() != null) {
-                    LOG.debug("{} receive failed: {}", getConsumerId(), failureCause.get().getMessage());
-                    throw JmsExceptionSupport.create(failureCause.get());
+                if (getFailureCause() != null) {
+                    LOG.debug("{} receive failed: {}", getConsumerId(), getFailureCause().getMessage());
+                    throw JmsExceptionSupport.create(getFailureCause());
                 }
 
                 if (envelope == null) {
@@ -357,15 +357,27 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         if (closed.get()) {
             IllegalStateException jmsEx = null;
 
-            if (failureCause.get() == null) {
+            if (getFailureCause() == null) {
                 jmsEx = new IllegalStateException("The MessageConsumer is closed");
             } else {
                 jmsEx = new IllegalStateException("The MessageConsumer was closed due to an unrecoverable error.");
-                jmsEx.initCause(failureCause.get());
+                jmsEx.initCause(getFailureCause());
             }
 
             throw jmsEx;
         }
+    }
+
+    void setFailureCause(Exception failureCause) {
+        this.failureCause.set(failureCause);
+    }
+
+    Exception getFailureCause() {
+        if (failureCause.get() == null) {
+            return session.getFailureCause();
+        }
+
+        return failureCause.get();
     }
 
     JmsMessage copy(final JmsInboundMessageDispatch envelope) throws JMSException {

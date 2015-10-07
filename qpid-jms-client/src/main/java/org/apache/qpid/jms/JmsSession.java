@@ -27,6 +27,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.jms.BytesMessage;
@@ -103,7 +104,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     private final AtomicLong producerIdGenerator = new AtomicLong();
     private JmsTransactionContext transactionContext;
     private boolean sessionRecovered;
-    private Exception failureCause;
+    private final AtomicReference<Exception> failureCause = new AtomicReference<Exception>();
 
     protected JmsSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) throws JMSException {
         this.connection = connection;
@@ -253,8 +254,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
     protected void shutdown(Exception cause) throws JMSException {
         if (closed.compareAndSet(false, true)) {
+            setFailureCause(cause);
             stop();
-            failureCause = cause;
             for (JmsMessageConsumer consumer : new ArrayList<JmsMessageConsumer>(this.consumers.values())) {
                 consumer.shutdown(cause);
             }
@@ -805,11 +806,11 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         if (closed.get()) {
             IllegalStateException jmsEx = null;
 
-            if (failureCause == null) {
+            if (failureCause.get() == null) {
                 jmsEx = new IllegalStateException("The Session is closed");
             } else {
                 jmsEx = new IllegalStateException("The Session was closed due to an unrecoverable error.");
-                jmsEx.initCause(failureCause);
+                jmsEx.initCause(failureCause.get());
             }
 
             throw jmsEx;
@@ -911,8 +912,12 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
         return new JmsProducerId(sessionInfo.getId(), producerIdGenerator.incrementAndGet());
     }
 
-    protected void setFailureCause(Exception failureCause) {
-        this.failureCause = failureCause;
+    void setFailureCause(Exception failureCause) {
+        this.failureCause.set(failureCause);
+    }
+
+    Exception getFailureCause() {
+        return failureCause.get();
     }
 
     private <T extends JmsMessage> T init(T message) {

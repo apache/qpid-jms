@@ -109,66 +109,66 @@ public final class JmsMessageTransformation {
      * @throws JMSException if an error occurs during the transform.
      */
     public static JmsMessage transformMessage(JmsConnection connection, Message message) throws JMSException {
-            JmsMessage jmsMessage = null;
-            JmsMessageFactory factory = connection.getMessageFactory();
+        JmsMessage jmsMessage = null;
+        JmsMessageFactory factory = connection.getMessageFactory();
 
-            if (message instanceof BytesMessage) {
-                BytesMessage bytesMsg = (BytesMessage) message;
-                bytesMsg.reset();
-                JmsBytesMessage msg = factory.createBytesMessage();
-                try {
-                    for (;;) {
-                        // Reads a byte from the message stream until the stream is empty
-                        msg.writeByte(bytesMsg.readByte());
-                    }
-                } catch (MessageEOFException e) {
-                    // Indicates all the bytes have been read from the source.
+        if (message instanceof BytesMessage) {
+            BytesMessage bytesMsg = (BytesMessage) message;
+            bytesMsg.reset();
+            JmsBytesMessage msg = factory.createBytesMessage();
+            try {
+                for (;;) {
+                    // Reads a byte from the message stream until the stream is empty
+                    msg.writeByte(bytesMsg.readByte());
                 }
-
-                jmsMessage = msg;
-            } else if (message instanceof MapMessage) {
-                MapMessage mapMsg = (MapMessage) message;
-                JmsMapMessage msg = factory.createMapMessage();
-                Enumeration<?> iter = mapMsg.getMapNames();
-
-                while (iter.hasMoreElements()) {
-                    String name = iter.nextElement().toString();
-                    msg.setObject(name, mapMsg.getObject(name));
-                }
-
-                jmsMessage = msg;
-            } else if (message instanceof ObjectMessage) {
-                ObjectMessage objMsg = (ObjectMessage) message;
-                JmsObjectMessage msg = factory.createObjectMessage();
-                msg.setObject(objMsg.getObject());
-                jmsMessage = msg;
-            } else if (message instanceof StreamMessage) {
-                StreamMessage streamMessage = (StreamMessage) message;
-                streamMessage.reset();
-                JmsStreamMessage msg = factory.createStreamMessage();
-                Object obj = null;
-
-                try {
-                    while ((obj = streamMessage.readObject()) != null) {
-                        msg.writeObject(obj);
-                    }
-                } catch (MessageEOFException e) {
-                    // Indicates all the stream values have been read from the source.
-                }
-
-                jmsMessage = msg;
-            } else if (message instanceof TextMessage) {
-                TextMessage textMsg = (TextMessage) message;
-                JmsTextMessage msg = factory.createTextMessage();
-                msg.setText(textMsg.getText());
-                jmsMessage = msg;
-            } else {
-                jmsMessage = factory.createMessage();
+            } catch (MessageEOFException e) {
+                // Indicates all the bytes have been read from the source.
             }
 
-            copyProperties(connection, message, jmsMessage);
+            jmsMessage = msg;
+        } else if (message instanceof MapMessage) {
+            MapMessage mapMsg = (MapMessage) message;
+            JmsMapMessage msg = factory.createMapMessage();
+            Enumeration<?> iter = mapMsg.getMapNames();
 
-            return jmsMessage;
+            while (iter.hasMoreElements()) {
+                String name = iter.nextElement().toString();
+                msg.setObject(name, mapMsg.getObject(name));
+            }
+
+            jmsMessage = msg;
+        } else if (message instanceof ObjectMessage) {
+            ObjectMessage objMsg = (ObjectMessage) message;
+            JmsObjectMessage msg = factory.createObjectMessage();
+            msg.setObject(objMsg.getObject());
+            jmsMessage = msg;
+        } else if (message instanceof StreamMessage) {
+            StreamMessage streamMessage = (StreamMessage) message;
+            streamMessage.reset();
+            JmsStreamMessage msg = factory.createStreamMessage();
+            Object obj = null;
+
+            try {
+                while ((obj = streamMessage.readObject()) != null) {
+                    msg.writeObject(obj);
+                }
+            } catch (MessageEOFException e) {
+                // Indicates all the stream values have been read from the source.
+            }
+
+            jmsMessage = msg;
+        } else if (message instanceof TextMessage) {
+            TextMessage textMsg = (TextMessage) message;
+            JmsTextMessage msg = factory.createTextMessage();
+            msg.setText(textMsg.getText());
+            jmsMessage = msg;
+        } else {
+            jmsMessage = factory.createMessage();
+        }
+
+        copyProperties(connection, message, jmsMessage);
+
+        return jmsMessage;
     }
 
     /**

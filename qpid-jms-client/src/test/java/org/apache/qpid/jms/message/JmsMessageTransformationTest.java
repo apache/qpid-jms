@@ -55,11 +55,6 @@ public class JmsMessageTransformationTest {
 
     private static final String DESTINATION_NAME = "Test-Destination-Name";
 
-    @Test
-    public void testJmsDestinationCreate() throws JMSException {
-        new JmsMessageTransformation();
-    }
-
     //---------- Test Message Transformation ---------------------------------//
 
     @Test

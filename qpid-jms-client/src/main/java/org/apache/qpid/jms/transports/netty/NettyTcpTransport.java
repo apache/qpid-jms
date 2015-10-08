@@ -278,7 +278,9 @@ public class NettyTcpTransport implements Transport {
 
     /**
      * Called when the transport connection failed and an error should be returned.
+     *
      * @param cause
+     *      An IOException that describes the cause of the failed connection.
      */
     protected void connectionFailed(IOException cause) {
         failureCause = IOExceptionSupport.create(cause);

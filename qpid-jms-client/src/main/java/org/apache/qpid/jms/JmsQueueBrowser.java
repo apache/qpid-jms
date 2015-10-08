@@ -70,9 +70,13 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
      * Constructor for an JmsQueueBrowser - used internally
      *
      * @param session
+     *      The Session that owns this instance.
      * @param destination
+     *      The Destination that will be browsed.
      * @param selector
-     * @throws javax.jms.JMSException
+     *      The selector string used to filter the browsed message.
+     *
+     * @throws javax.jms.JMSException if an error occurs while creating this instance.
      */
     protected JmsQueueBrowser(JmsSession session, JmsDestination destination, String selector) throws JMSException {
         this.session = session;

@@ -40,7 +40,7 @@ public class JmsQueueReceiver extends JmsMessageConsumer implements QueueReceive
      * @param selector
      *      The selector used to filter messages for this receiver.
      *
-     * @throws JMSException
+     * @throws JMSException if an error occurs during the creation of the QueueReceiver.
      */
     protected JmsQueueReceiver(JmsConsumerId id, JmsSession session, JmsDestination dest, String selector) throws JMSException {
         super(id, session, dest, selector, false);

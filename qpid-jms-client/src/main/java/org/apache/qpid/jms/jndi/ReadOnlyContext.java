@@ -132,9 +132,13 @@ public class ReadOnlyContext implements Context, Serializable {
      * lopped off).
      *
      * @param name
+     *      the name of the context to bind.
      * @param value
-     * @return
-     * @throws javax.naming.NamingException
+     *      the value to be bound.
+     *
+     * @return a map populated from the previous and current context.
+     *
+     * @throws javax.naming.NamingException if an error occurs during the bind.
      */
     protected Map<String, Object> internalBind(String name, Object value) throws NamingException {
         assert name != null && name.length() > 0;

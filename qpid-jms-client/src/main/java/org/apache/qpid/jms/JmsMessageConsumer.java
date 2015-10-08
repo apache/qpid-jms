@@ -65,32 +65,11 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     protected final AtomicBoolean delivered = new AtomicBoolean();
     protected final AtomicReference<Exception> failureCause = new AtomicReference<>();
 
-    /**
-     * Create a non-durable MessageConsumer
-     *
-     * @param consumerId
-     * @param session
-     * @param destination
-     * @param selector
-     * @param noLocal
-     * @throws JMSException
-     */
     protected JmsMessageConsumer(JmsConsumerId consumerId, JmsSession session, JmsDestination destination,
                                  String selector, boolean noLocal) throws JMSException {
         this(consumerId, session, destination, null, selector, noLocal);
     }
 
-    /**
-     * Create a MessageConsumer which could be durable.
-     *
-     * @param consumerId
-     * @param session
-     * @param destination
-     * @param name
-     * @param selector
-     * @param noLocal
-     * @throws JMSException
-     */
     protected JmsMessageConsumer(JmsConsumerId consumerId, JmsSession session, JmsDestination destination,
                                  String name, String selector, boolean noLocal) throws JMSException {
         this.session = session;
@@ -171,7 +150,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
      * Called to initiate shutdown of Producer resources and request that the remote
      * peer remove the registered producer.
      *
-     * @throws JMSException
+     * @throws JMSException if an error occurs during the consumer close operation.
      */
     protected void doClose() throws JMSException {
         shutdown();

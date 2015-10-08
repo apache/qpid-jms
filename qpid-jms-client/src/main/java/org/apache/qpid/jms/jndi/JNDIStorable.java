@@ -38,6 +38,8 @@ public abstract class JNDIStorable implements Referenceable, Externalizable {
      * Set the properties that will represent the instance in JNDI
      *
      * @param props
+     *      The properties to use when building the new isntance.
+     *
      * @return a new, unmodifiable, map containing any unused properties, or empty if none were.
      */
     protected abstract Map<String, String> buildFromProperties(Map<String, String> props);
@@ -46,6 +48,7 @@ public abstract class JNDIStorable implements Referenceable, Externalizable {
      * Initialize the instance from properties stored in JNDI
      *
      * @param props
+     *      The properties to use when initializing the new instance.
      */
     protected abstract void populateProperties(Map<String, String> props);
 

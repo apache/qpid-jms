@@ -185,9 +185,12 @@ public abstract class ArithmeticExpression extends BinaryExpression {
     }
 
     /**
-     * @param lvalue
-     * @param rvalue
-     * @return
+     * Perform the evaluation.
+     *
+     * @param lvalue the LHS of the evaluation.
+     * @param rvalue the RHS of the evaluation.
+     *
+     * @return the result of the evaluation.
      */
     protected abstract Object evaluate(Object lvalue, Object rvalue);
 

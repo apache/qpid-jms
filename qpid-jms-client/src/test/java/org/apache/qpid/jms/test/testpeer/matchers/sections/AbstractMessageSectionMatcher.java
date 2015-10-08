@@ -66,7 +66,11 @@ public abstract class AbstractMessageSectionMatcher
     }
 
     /**
+     * @param receivedBinary
+     *      The received Binary value that should be validated.
+     *
      * @return the number of bytes consumed from the provided Binary
+     *
      * @throws RuntimeException if the provided Binary does not match expectation in some way
      */
     public int verify(Binary receivedBinary) throws RuntimeException

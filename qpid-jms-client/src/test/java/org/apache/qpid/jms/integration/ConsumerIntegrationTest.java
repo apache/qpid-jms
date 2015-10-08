@@ -135,6 +135,8 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
     /**
      * Test that a message is received when calling receive with a timeout
      * of 0, which means wait indefinitely.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceiveMessageWithReceiveZeroTimeout() throws Exception {
@@ -164,6 +166,8 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
     /**
      * Test that an Ack is not dropped when RTE is thrown from onMessage
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testRuntimeExceptionInOnMessageReleasesInAutoAckMode() throws Exception {
@@ -197,6 +201,8 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
     /**
      * Test that an Ack is not dropped when RTE is thrown from onMessage
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testRuntimeExceptionInOnMessageReleasesInDupsOkAckMode() throws Exception {

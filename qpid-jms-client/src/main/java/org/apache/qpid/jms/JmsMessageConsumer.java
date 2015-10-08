@@ -139,10 +139,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         }
     }
 
-    /**
-     * @throws JMSException
-     * @see javax.jms.MessageConsumer#close()
-     */
     @Override
     public void close() throws JMSException {
         if (!closed.get()) {
@@ -187,7 +183,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
      * to be sent to the remote peer.  This is most commonly needed when the parent
      * Session is closing.
      *
-     * @throws JMSException
+     * @throws JMSException if an error occurs during shutdown.
      */
     protected void shutdown() throws JMSException {
         shutdown(null);
@@ -201,22 +197,11 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         }
     }
 
-    /**
-     * @return a Message or null if closed during the operation
-     * @throws JMSException
-     * @see javax.jms.MessageConsumer#receive()
-     */
     @Override
     public Message receive() throws JMSException {
         return receive(0);
     }
 
-    /**
-     * @param timeout
-     * @return a Message or null
-     * @throws JMSException
-     * @see javax.jms.MessageConsumer#receive(long)
-     */
     @Override
     public Message receive(long timeout) throws JMSException {
         checkClosed();
@@ -230,11 +215,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         return copy(ackFromReceive(dequeue(timeout, connection.isReceiveLocalOnly())));
     }
 
-    /**
-     * @return a Message or null
-     * @throws JMSException
-     * @see javax.jms.MessageConsumer#receiveNoWait()
-     */
     @Override
     public Message receiveNoWait() throws JMSException {
         checkClosed();
@@ -253,10 +233,13 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
      *
      * This method may consume messages that are expired or exceed a configured
      * delivery count value but will continue to wait for the configured timeout.
+     *
      * @param localCheckOnly
      *          if false, try pulling a message if a >= 0 timeout expires with no message arriving
-     * @throws JMSException
+     *
      * @return null if we timeout or if the consumer is closed concurrently.
+     *
+     * @throws JMSException if an error occurs during the dequeue.
      */
     private JmsInboundMessageDispatch dequeue(long timeout, boolean localCheckOnly) throws JMSException {
         boolean pullConsumer = isPullConsumer();
@@ -577,11 +560,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         return this.messageListener;
     }
 
-    /**
-     * @param listener
-     * @throws JMSException
-     * @see javax.jms.MessageConsumer#setMessageListener(javax.jms.MessageListener)
-     */
     @Override
     public void setMessageListener(MessageListener listener) throws JMSException {
         checkClosed();
@@ -593,11 +571,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         drainMessageQueueToListener();
     }
 
-    /**
-     * @return the Message Selector
-     * @throws JMSException
-     * @see javax.jms.MessageConsumer#getMessageSelector()
-     */
     @Override
     public String getMessageSelector() throws JMSException {
         checkClosed();

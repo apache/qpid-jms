@@ -29,20 +29,11 @@ import org.apache.qpid.jms.meta.JmsProducerId;
  */
 public class JmsQueueSender extends JmsMessageProducer implements QueueSender {
 
-    /**
-     * Constructor
-     *
-     * @param id
-     * @param session
-     * @param destination
-     */
     protected JmsQueueSender(JmsProducerId id, JmsSession session, JmsDestination destination) throws JMSException {
         super(id, session, destination);
     }
 
     /**
-     * @return the Queue
-     * @throws IllegalStateException
      * @see javax.jms.QueueSender#getQueue()
      */
     @Override
@@ -52,9 +43,6 @@ public class JmsQueueSender extends JmsMessageProducer implements QueueSender {
     }
 
     /**
-     * @param queue
-     * @param message
-     * @throws JMSException
      * @see javax.jms.QueueSender#send(javax.jms.Queue, javax.jms.Message)
      */
     @Override
@@ -63,12 +51,6 @@ public class JmsQueueSender extends JmsMessageProducer implements QueueSender {
     }
 
     /**
-     * @param queue
-     * @param message
-     * @param deliveryMode
-     * @param priority
-     * @param timeToLive
-     * @throws JMSException
      * @see javax.jms.QueueSender#send(javax.jms.Queue, javax.jms.Message, int, int, long)
      */
     @Override

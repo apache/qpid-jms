@@ -36,7 +36,9 @@ public class InetAddressUtil {
      * from the exception, only then is the <tt>UnknownHostException</tt> thrown.
      *
      * @return The hostname
-     * @throws UnknownHostException
+     *
+     * @throws UnknownHostException if the given host cannot be looked up.
+     *
      * @see java.net.InetAddress#getLocalHost()
      * @see java.net.InetAddress#getHostName()
      */

@@ -61,6 +61,9 @@ public interface MessageQueue {
      * blocks up to timeout amount of time. Expired messages will consumed by
      * this method.
      *
+     * @param timeout
+     *      The amount of time to wait for an entry to be added before returning null.
+     *
      * @return null if we timeout or if the consumer is closed.
      *
      * @throws InterruptedException if the wait is interrupted.

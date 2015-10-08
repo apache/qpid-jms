@@ -47,8 +47,6 @@ public class JmsQueueReceiver extends JmsMessageConsumer implements QueueReceive
     }
 
     /**
-     * @return the Queue
-     * @throws IllegalStateException
      * @see javax.jms.QueueReceiver#getQueue()
      */
     @Override

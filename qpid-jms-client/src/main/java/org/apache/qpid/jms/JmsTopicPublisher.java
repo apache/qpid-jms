@@ -29,19 +29,11 @@ import org.apache.qpid.jms.meta.JmsProducerId;
  */
 public class JmsTopicPublisher extends JmsMessageProducer implements TopicPublisher {
 
-    /**
-     * Constructor
-     *
-     * @param session
-     * @param destination
-     */
     protected JmsTopicPublisher(JmsProducerId id, JmsSession session, JmsDestination destination) throws JMSException {
         super(id, session, destination);
     }
 
     /**
-     * @return the Topic
-     * @throws IllegalStateException
      * @see javax.jms.TopicPublisher#getTopic()
      */
     @Override
@@ -51,8 +43,6 @@ public class JmsTopicPublisher extends JmsMessageProducer implements TopicPublis
     }
 
     /**
-     * @param message
-     * @throws JMSException
      * @see javax.jms.TopicPublisher#publish(javax.jms.Message)
      */
     @Override
@@ -61,9 +51,6 @@ public class JmsTopicPublisher extends JmsMessageProducer implements TopicPublis
     }
 
     /**
-     * @param topic
-     * @param message
-     * @throws JMSException
      * @see javax.jms.TopicPublisher#publish(javax.jms.Topic, javax.jms.Message)
      */
     @Override
@@ -72,11 +59,6 @@ public class JmsTopicPublisher extends JmsMessageProducer implements TopicPublis
     }
 
     /**
-     * @param message
-     * @param deliveryMode
-     * @param priority
-     * @param timeToLive
-     * @throws JMSException
      * @see javax.jms.TopicPublisher#publish(javax.jms.Message, int, int, long)
      */
     @Override
@@ -85,12 +67,6 @@ public class JmsTopicPublisher extends JmsMessageProducer implements TopicPublis
     }
 
     /**
-     * @param topic
-     * @param message
-     * @param deliveryMode
-     * @param priority
-     * @param timeToLive
-     * @throws JMSException
      * @see javax.jms.TopicPublisher#publish(javax.jms.Topic, javax.jms.Message, int, int, long)
      */
     @Override

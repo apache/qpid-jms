@@ -75,6 +75,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
      * Test that a message with the {@value AmqpMessageSupport#JMS_MSG_TYPE}
      * annotation set to  {@value AmqpMessageSupport#JMS_MESSAGE} is
      * treated as a generic {@link JmsMessage} with {@link AmqpJmsMessageFacade}
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(expected = IOException.class)
     public void testCreateMessageFromUnknownMessageTypeAnnotationValueThrows() throws Exception {
@@ -93,6 +95,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
      * Test that a message with the {@value AmqpMessageSupport#JMS_MSG_TYPE}
      * annotation set to  {@value AmqpMessageSupport#JMS_MESSAGE} is
      * treated as a generic {@link JmsMessage} with {@link AmqpJmsMessageFacade}
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCreateGenericMessageFromMessageTypeAnnotation() throws Exception {
@@ -117,6 +121,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
      * Test that a message with the {@value AmqpMessageSupport#JMS_MSG_TYPE}
      * annotation set to  {@value AmqpMessageSupport#JMS_BYTES_MESSAGE} is
      * treated as a {@link JmsBytesMessage} with {@link AmqpJmsBytesMessageFacade}
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCreateBytesMessageFromMessageTypeAnnotation() throws Exception {
@@ -141,6 +147,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
      * Test that a message with the {@value AmqpMessageSupport#JMS_MSG_TYPE}
      * annotation set to  {@value AmqpMessageSupport#JMS_BYTES_MESSAGE} is
      * treated as a {@link JmsTextMessage} with {@link AmqpJmsTextMessageFacade}
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCreateTextMessageFromMessageTypeAnnotation() throws Exception {
@@ -167,6 +175,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
      * content-type set to {@value AmqpMessageSupport#OCTET_STREAM_CONTENT_TYPE} is
      * treated as a {@link JmsObjectMessage} with {@link AmqpJmsObjectMessageFacade}
      * containing a {@link AmqpSerializedObjectDelegate}.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCreateObjectMessageFromMessageTypeAnnotation() throws Exception {
@@ -178,6 +188,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
      * annotation set to  {@value AmqpMessageSupport#JMS_OBJECT_MESSAGE} and
      * content-type not set is treated as a {@link JmsObjectMessage} with
      * {@link AmqpJmsObjectMessageFacade} containing a {@link AmqpTypedObjectDelegate}.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCreateObjectMessageFromMessageTypeAnnotationAnd() throws Exception {
@@ -217,6 +229,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
      * Test that a message with the {@value AmqpMessageSupport#JMS_MSG_TYPE}
      * annotation set to  {@value AmqpMessageSupport#JMS_STREAM_MESSAGE} is
      * treated as a {@link JmsStreamMessage} with {@link AmqpJmsStreamMessageFacade}
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCreateStreamMessageFromMessageTypeAnnotation() throws Exception {
@@ -246,6 +260,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
      * Test that a message with no body section, but with the content type set to
      * {@value AmqpMessageSupport#OCTET_STREAM_CONTENT_TYPE} results in a BytesMessage
      * when not otherwise annotated to indicate the type of JMS message it is.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCreateBytesMessageFromNoBodySectionAndContentType() throws Exception {
@@ -264,6 +280,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
     /**
      * Test that a message with no body section, and no content-type results in a BytesMessage
      * when not otherwise annotated to indicate the type of JMS message it is.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCreateBytesMessageFromNoBodySectionAndNoContentType() throws Exception {
@@ -284,6 +302,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
     * Test that a message with no body section, but with the content type set to
     * {@value AmqpMessageSupport#SERIALIZED_JAVA_OBJECT_CONTENT_TYPE} results in an ObjectMessage
     * when not otherwise annotated to indicate the type of JMS message it is.
+     *
+     * @throws Exception if an error occurs during the test.
     */
     @Test
     public void testCreateObjectMessageFromNoBodySectionAndContentType() throws Exception {
@@ -320,6 +340,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
      * Test that a message with no body section, and with the content type set to
      * an unknown value results in a plain Message when not otherwise annotated to
      * indicate the type of JMS message it is.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     public void testCreateGenericMessageFromNoBodySectionAndUnknownContentType() throws Exception {
         Message message = Proton.message();
@@ -340,6 +362,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
      * Test that a data body containing nothing, but with the content type set to
      * {@value AmqpMessageSupport#OCTET_STREAM_CONTENT_TYPE} results in a BytesMessage when not
      * otherwise annotated to indicate the type of JMS message it is.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCreateBytesMessageFromDataWithEmptyBinaryAndContentType() throws Exception {
@@ -361,6 +385,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
      * Test that a message with an empty data body section, and with the content type
      * set to an unknown value results in a BytesMessage when not otherwise annotated
      * to indicate the type of JMS message it is.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     public void testCreateBytesMessageFromDataWithUnknownContentType() throws Exception {
         Message message = Proton.message();
@@ -381,6 +407,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
      * Test that a receiving a data body containing nothing and no content type being set
      * results in a BytesMessage when not otherwise annotated to indicate the type of
      * JMS message it is.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCreateBytesMessageFromDataWithEmptyBinaryAndNoContentType() throws Exception {
@@ -403,6 +431,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
      * Test that receiving a data body containing nothing, but with the content type set to
      * {@value AmqpMessageSupport#SERIALIZED_JAVA_OBJECT_CONTENT_TYPE} results in an ObjectMessage
      * when not otherwise annotated to indicate the type of JMS message it is.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCreateObjectMessageFromDataWithContentTypeAndEmptyBinary() throws Exception {
@@ -427,6 +457,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
      * Test that receiving a Data body section with the content type set to
      * 'text/plain' results in a TextMessage when not otherwise annotated to
      * indicate the type of JMS message it is.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCreateTextMessageFromDataWithContentTypeTextPlain() throws Exception {
@@ -539,6 +571,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
     /**
      * Test that an amqp-value body containing a string results in a TextMessage
      * when not otherwise annotated to indicate the type of JMS message it is.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCreateTextMessageFromAmqpValueWithString() throws Exception {
@@ -557,6 +591,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
     /**
      * Test that an amqp-value body containing a null results in an TextMessage
      * when not otherwise annotated to indicate the type of JMS message it is.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCreateTextMessageFromAmqpValueWithNull() throws Exception {
@@ -575,6 +611,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
     /**
      * Test that an amqp-value body containing a map results in an ObjectMessage
      * when not otherwise annotated to indicate the type of JMS message it is.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCreateAmqpObjectMessageFromAmqpValueWithMap() throws Exception {
@@ -597,6 +635,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
     /**
      * Test that an amqp-value body containing a list results in an ObjectMessage
      * when not otherwise annotated to indicate the type of JMS message it is.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCreateAmqpObjectMessageFromAmqpValueWithList() throws Exception {
@@ -619,6 +659,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
     /**
      * Test that an amqp-value body containing a binary value results in BytesMessage
      * when not otherwise annotated to indicate the type of JMS message it is.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCreateAmqpBytesMessageFromAmqpValueWithBinary() throws Exception {
@@ -638,6 +680,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
     /**
      * Test that an amqp-value body containing a value which can't be categorised results in
      * an ObjectMessage when not otherwise annotated to indicate the type of JMS message it is.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCreateObjectMessageFromAmqpValueWithUncategorisedContent() throws Exception {
@@ -661,6 +705,8 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
     /**
      * Test that an amqp-sequence body containing a binary value results in an ObjectMessage
      * when not otherwise annotated to indicate the type of JMS message it is.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCreateObjectMessageMessageFromAmqpSequence() throws Exception

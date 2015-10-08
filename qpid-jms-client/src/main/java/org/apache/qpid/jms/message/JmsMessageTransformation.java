@@ -51,13 +51,14 @@ public final class JmsMessageTransformation {
     /**
      * Creates a an available JMS message from another provider.
      *
+     * @param connection
+     *      The Connection instance that is requesting the transformation.
      * @param destination
-     *        - Destination to be converted into Jms's implementation.
-     * @return JmsDestination - Jms's implementation of the
-     *         destination.
-     * @throws JMSException
-     * @throws JMSException
-     *         if an error occurs
+     *      Destination to be converted into Jms's implementation.
+     *
+     * @return JmsDestination - Jms's implementation of the destination.
+     *
+     * @throws JMSException if an error occurs during the transformation.
      */
     public static JmsDestination transformDestination(JmsConnection connection, Destination destination) throws JMSException {
         JmsDestination result = null;
@@ -178,6 +179,8 @@ public final class JmsMessageTransformation {
      * specific to the foreign message may be lost if not returned directly via
      * the <code>propertyNames</code> method.
      *
+     * @param connection
+     *        The Connection instance that is requesting the transformation.
      * @param source
      *        the message to take the properties from
      * @param target

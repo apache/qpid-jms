@@ -60,13 +60,6 @@ public class JmsMessageProducer implements MessageProducer {
         session.getConnection().createResource(producerInfo);
     }
 
-    /**
-     * Close the producer
-     *
-     * @throws JMSException
-     *
-     * @see javax.jms.MessageProducer#close()
-     */
     @Override
     public void close() throws JMSException {
         if (!closed.get()) {
@@ -78,7 +71,7 @@ public class JmsMessageProducer implements MessageProducer {
      * Called to initiate shutdown of Producer resources and request that the remote
      * peer remove the registered producer.
      *
-     * @throws JMSException
+     * @throws JMSException if an internal error occurs during the close operation.
      */
     protected void doClose() throws JMSException {
         shutdown();
@@ -90,7 +83,7 @@ public class JmsMessageProducer implements MessageProducer {
      * to be sent to the remote peer.  This is most commonly needed when the parent
      * Session is closing.
      *
-     * @throws JMSException
+     * @throws JMSException if an internal error occurs during the shutdown operation.
      */
     protected void shutdown() throws JMSException {
         shutdown(null);
@@ -103,90 +96,47 @@ public class JmsMessageProducer implements MessageProducer {
         }
     }
 
-    /**
-     * @return the delivery mode
-     * @throws JMSException
-     * @see javax.jms.MessageProducer#getDeliveryMode()
-     */
     @Override
     public int getDeliveryMode() throws JMSException {
         checkClosed();
         return this.deliveryMode;
     }
 
-    /**
-     * @return the destination
-     * @throws JMSException
-     * @see javax.jms.MessageProducer#getDestination()
-     */
     @Override
     public Destination getDestination() throws JMSException {
         checkClosed();
         return this.producerInfo.getDestination();
     }
 
-    /**
-     * @return true if disableIds is set
-     * @throws JMSException
-     * @see javax.jms.MessageProducer#getDisableMessageID()
-     */
     @Override
     public boolean getDisableMessageID() throws JMSException {
         checkClosed();
         return this.disableMessageId;
     }
 
-    /**
-     * @return true if disable timestamp is set
-     * @throws JMSException
-     * @see javax.jms.MessageProducer#getDisableMessageTimestamp()
-     */
     @Override
     public boolean getDisableMessageTimestamp() throws JMSException {
         checkClosed();
         return this.disableTimestamp;
     }
 
-    /**
-     * @return the priority
-     * @throws JMSException
-     * @see javax.jms.MessageProducer#getPriority()
-     */
     @Override
     public int getPriority() throws JMSException {
         checkClosed();
         return this.priority;
     }
 
-    /**
-     * @return timeToLive
-     * @throws JMSException
-     * @see javax.jms.MessageProducer#getTimeToLive()
-     */
     @Override
     public long getTimeToLive() throws JMSException {
         checkClosed();
         return this.timeToLive;
     }
 
-    /**
-     * @param message
-     * @throws JMSException
-     * @see javax.jms.MessageProducer#send(javax.jms.Message)
-     */
     @Override
     public void send(Message message) throws JMSException {
         send(message, this.deliveryMode, this.priority, this.timeToLive);
     }
 
-    /**
-     * @param message
-     * @param deliveryMode
-     * @param priority
-     * @param timeToLive
-     * @throws JMSException
-     * @see javax.jms.MessageProducer#send(javax.jms.Message, int, int, long)
-     */
     @Override
     public void send(Message message, int deliveryMode, int priority, long timeToLive) throws JMSException {
         checkClosed();
@@ -198,28 +148,11 @@ public class JmsMessageProducer implements MessageProducer {
         sendMessage(producerInfo.getDestination(), message, deliveryMode, priority, timeToLive);
     }
 
-    /**
-     * @param destination
-     * @param message
-     * @throws JMSException
-     * @see javax.jms.MessageProducer#send(javax.jms.Destination,
-     *      javax.jms.Message)
-     */
     @Override
     public void send(Destination destination, Message message) throws JMSException {
         send(destination, message, this.deliveryMode, this.priority, this.timeToLive);
     }
 
-    /**
-     * @param destination
-     * @param message
-     * @param deliveryMode
-     * @param priority
-     * @param timeToLive
-     * @throws JMSException
-     * @see javax.jms.MessageProducer#send(javax.jms.Destination,
-     *      javax.jms.Message, int, int, long)
-     */
     @Override
     public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive) throws JMSException {
         checkClosed();
@@ -239,55 +172,30 @@ public class JmsMessageProducer implements MessageProducer {
         this.session.send(this, destination, message, deliveryMode, priority, timeToLive, disableMessageId, disableTimestamp);
     }
 
-    /**
-     * @param deliveryMode
-     * @throws JMSException
-     * @see javax.jms.MessageProducer#setDeliveryMode(int)
-     */
     @Override
     public void setDeliveryMode(int deliveryMode) throws JMSException {
         checkClosed();
         this.deliveryMode = deliveryMode;
     }
 
-    /**
-     * @param value
-     * @throws JMSException
-     * @see javax.jms.MessageProducer#setDisableMessageID(boolean)
-     */
     @Override
     public void setDisableMessageID(boolean value) throws JMSException {
         checkClosed();
         this.disableMessageId = value;
     }
 
-    /**
-     * @param value
-     * @throws JMSException
-     * @see javax.jms.MessageProducer#setDisableMessageTimestamp(boolean)
-     */
     @Override
     public void setDisableMessageTimestamp(boolean value) throws JMSException {
         checkClosed();
         this.disableTimestamp = value;
     }
 
-    /**
-     * @param defaultPriority
-     * @throws JMSException
-     * @see javax.jms.MessageProducer#setPriority(int)
-     */
     @Override
     public void setPriority(int defaultPriority) throws JMSException {
         checkClosed();
         this.priority = defaultPriority;
     }
 
-    /**
-     * @param timeToLive
-     * @throws JMSException
-     * @see javax.jms.MessageProducer#setTimeToLive(long)
-     */
     @Override
     public void setTimeToLive(long timeToLive) throws JMSException {
         checkClosed();

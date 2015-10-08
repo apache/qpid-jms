@@ -1032,9 +1032,6 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
      */
     protected abstract class CreateConnectionRequest extends FailoverRequest {
 
-        /**
-         * @param watcher
-         */
         public CreateConnectionRequest(AsyncResult watcher) {
             super(watcher);
         }

@@ -449,7 +449,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
      * message and expect to see both again, ensure the third message is not seen
      * until after this.
      *
-     * @throws Exception
+     * @throws Exception on error during test
      */
     @Test(timeout = 60000)
     public void testRecoverInOnMessage() throws Exception {

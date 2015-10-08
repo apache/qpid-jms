@@ -39,9 +39,6 @@ public class JmsTopicSession extends JmsSession {
     }
 
     /**
-     * @param queue
-     * @return the QueueBrowser
-     * @throws JMSException
      * @see javax.jms.Session#createBrowser(javax.jms.Queue)
      */
     @Override
@@ -50,10 +47,6 @@ public class JmsTopicSession extends JmsSession {
     }
 
     /**
-     * @param queue
-     * @param messageSelector
-     * @return the QueueBrowser
-     * @throws JMSException
      * @see javax.jms.Session#createBrowser(javax.jms.Queue, java.lang.String)
      */
     @Override
@@ -62,9 +55,6 @@ public class JmsTopicSession extends JmsSession {
     }
 
     /**
-     * @param destination
-     * @return the MessageConsumer
-     * @throws JMSException
      * @see javax.jms.Session#createConsumer(javax.jms.Destination)
      */
     @Override
@@ -76,12 +66,7 @@ public class JmsTopicSession extends JmsSession {
     }
 
     /**
-     * @param destination
-     * @param messageSelector
-     * @return the MessageConsumer
-     * @throws JMSException
-     * @see javax.jms.Session#createConsumer(javax.jms.Destination,
-     *      java.lang.String)
+     * @see javax.jms.Session#createConsumer(javax.jms.Destination, java.lang.String)
      */
     @Override
     public MessageConsumer createConsumer(Destination destination, String messageSelector) throws JMSException {
@@ -92,13 +77,7 @@ public class JmsTopicSession extends JmsSession {
     }
 
     /**
-     * @param destination
-     * @param messageSelector
-     * @param noLocal
-     * @return the MessageConsumer
-     * @throws JMSException
-     * @see javax.jms.Session#createConsumer(javax.jms.Destination,
-     *      java.lang.String)
+     * @see javax.jms.Session#createConsumer(javax.jms.Destination, java.lang.String)
      */
     @Override
     public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean noLocal) throws JMSException {
@@ -109,9 +88,6 @@ public class JmsTopicSession extends JmsSession {
     }
 
     /**
-     * @param destination
-     * @return the MessageProducer
-     * @throws JMSException
      * @see javax.jms.Session#createProducer(javax.jms.Destination)
      */
     @Override
@@ -123,9 +99,6 @@ public class JmsTopicSession extends JmsSession {
     }
 
     /**
-     * @param queueName
-     * @return the Queue object
-     * @throws JMSException
      * @see javax.jms.Session#createQueue(java.lang.String)
      */
     @Override
@@ -134,8 +107,6 @@ public class JmsTopicSession extends JmsSession {
     }
 
     /**
-     * @return the TemporaryQueue object
-     * @throws JMSException
      * @see javax.jms.Session#createTemporaryQueue()
      */
     @Override
@@ -144,9 +115,6 @@ public class JmsTopicSession extends JmsSession {
     }
 
     /**
-     * @param queue
-     * @return the QueueReceiver
-     * @throws JMSException
      * @see javax.jms.QueueSession#createReceiver(javax.jms.Queue)
      */
     @Override
@@ -155,12 +123,7 @@ public class JmsTopicSession extends JmsSession {
     }
 
     /**
-     * @param queue
-     * @param messageSelector
-     * @return the QueueReceiver
-     * @throws JMSException
-     * @see javax.jms.QueueSession#createReceiver(javax.jms.Queue,
-     *      java.lang.String)
+     * @see javax.jms.QueueSession#createReceiver(javax.jms.Queue, java.lang.String)
      */
     @Override
     public QueueReceiver createReceiver(Queue queue, String messageSelector) throws JMSException {
@@ -168,9 +131,6 @@ public class JmsTopicSession extends JmsSession {
     }
 
     /**
-     * @param queue
-     * @return the QueueSender
-     * @throws JMSException
      * @see javax.jms.QueueSession#createSender(javax.jms.Queue)
      */
     @Override

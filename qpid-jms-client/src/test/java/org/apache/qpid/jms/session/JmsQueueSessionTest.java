@@ -121,6 +121,8 @@ public class JmsQueueSessionTest extends JmsConnectionTestSupport {
      * (see JMS 1.1 specs, table 4-1).
      *
      * @since JMS 1.1
+     *
+     * @throws JMSException if an error occurs during the test.
      */
     @Test(timeout = 30000, expected=IllegalStateException.class)
     public void testCreateDurableSubscriberOnQueueSession() throws JMSException {
@@ -139,6 +141,8 @@ public class JmsQueueSessionTest extends JmsConnectionTestSupport {
      * (see JMS 1.1 specs, table 4-1).
      *
      * @since JMS 1.1
+     *
+     * @throws JMSException if an error occurs during the test.
      */
     @Test(timeout = 30000, expected=IllegalStateException.class)
     public void testCreateTemporaryTopicOnQueueSession() throws JMSException {
@@ -152,6 +156,8 @@ public class JmsQueueSessionTest extends JmsConnectionTestSupport {
      * (see JMS 1.1 specs, table 4-1).
      *
      * @since JMS 1.1
+     *
+     * @throws JMSException if an error occurs during the test.
      */
     @Test(timeout = 30000, expected=IllegalStateException.class)
     public void testCreateTopicOnQueueSession() throws JMSException {
@@ -165,6 +171,8 @@ public class JmsQueueSessionTest extends JmsConnectionTestSupport {
      * (see JMS 1.1 specs, table 4-1).
      *
      * @since JMS 1.1
+     *
+     * @throws JMSException if an error occurs during the test.
      */
     @Test(timeout = 30000, expected=IllegalStateException.class)
     public void testUnsubscribeOnQueueSession() throws JMSException  {

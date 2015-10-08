@@ -37,6 +37,9 @@ public class JmsQueueSession extends JmsSession {
         super(connection, sessionId, acknowledgementMode);
     }
 
+    /**
+     * @see javax.jms.Session#createConsumer(javax.jms.Destination)
+     */
     @Override
     public MessageConsumer createConsumer(Destination destination) throws JMSException {
         if (destination instanceof Topic) {
@@ -46,12 +49,7 @@ public class JmsQueueSession extends JmsSession {
     }
 
     /**
-     * @param destination
-     * @param messageSelector
-     * @return the MessageConsumer
-     * @throws JMSException
-     * @see javax.jms.Session#createConsumer(javax.jms.Destination,
-     *      java.lang.String)
+     * @see javax.jms.Session#createConsumer(javax.jms.Destination, java.lang.String)
      */
     @Override
     public MessageConsumer createConsumer(Destination destination, String messageSelector) throws JMSException {
@@ -62,13 +60,7 @@ public class JmsQueueSession extends JmsSession {
     }
 
     /**
-     * @param destination
-     * @param messageSelector
-     * @param noLocal
-     * @return the MessageConsumer
-     * @throws JMSException
-     * @see javax.jms.Session#createConsumer(javax.jms.Destination,
-     *      java.lang.String, boolean)
+     * @see javax.jms.Session#createConsumer(javax.jms.Destination, java.lang.String, boolean)
      */
     @Override
     public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean noLocal) throws JMSException {
@@ -79,12 +71,7 @@ public class JmsQueueSession extends JmsSession {
     }
 
     /**
-     * @param topic
-     * @param name
-     * @return the durable TopicSubscriber
-     * @throws JMSException
-     * @see javax.jms.Session#createDurableSubscriber(javax.jms.Topic,
-     *      java.lang.String)
+     * @see javax.jms.Session#createDurableSubscriber(javax.jms.Topic, java.lang.String)
      */
     @Override
     public TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException {
@@ -92,14 +79,7 @@ public class JmsQueueSession extends JmsSession {
     }
 
     /**
-     * @param topic
-     * @param name
-     * @param messageSelector
-     * @param noLocal
-     * @return the durable TopicSubscriber
-     * @throws JMSException
-     * @see javax.jms.Session#createDurableSubscriber(javax.jms.Topic,
-     *      java.lang.String, java.lang.String, boolean)
+     * @see javax.jms.Session#createDurableSubscriber(javax.jms.Topic, java.lang.String, java.lang.String, boolean)
      */
     @Override
     public TopicSubscriber createDurableSubscriber(Topic topic, String name, String messageSelector, boolean noLocal) throws JMSException {
@@ -107,9 +87,6 @@ public class JmsQueueSession extends JmsSession {
     }
 
     /**
-     * @param destination
-     * @return the MessageProducer
-     * @throws JMSException
      * @see javax.jms.Session#createProducer(javax.jms.Destination)
      */
     @Override
@@ -121,8 +98,6 @@ public class JmsQueueSession extends JmsSession {
     }
 
     /**
-     * @return the TemporaryTopic object
-     * @throws JMSException
      * @see javax.jms.Session#createTemporaryTopic()
      */
     @Override
@@ -131,9 +106,6 @@ public class JmsQueueSession extends JmsSession {
     }
 
     /**
-     * @param topicName
-     * @return the Topic object
-     * @throws JMSException
      * @see javax.jms.Session#createTopic(java.lang.String)
      */
     @Override
@@ -142,8 +114,6 @@ public class JmsQueueSession extends JmsSession {
     }
 
     /**
-     * @param name
-     * @throws JMSException
      * @see javax.jms.Session#unsubscribe(java.lang.String)
      */
     @Override
@@ -152,9 +122,6 @@ public class JmsQueueSession extends JmsSession {
     }
 
     /**
-     * @param topic
-     * @return  the TopicPublisher
-     * @throws JMSException
      * @see javax.jms.TopicSession#createPublisher(javax.jms.Topic)
      */
     @Override
@@ -163,9 +130,6 @@ public class JmsQueueSession extends JmsSession {
     }
 
     /**
-     * @param topic
-     * @return the TopicSubscriber
-     * @throws JMSException
      * @see javax.jms.TopicSession#createSubscriber(javax.jms.Topic)
      */
     @Override
@@ -174,13 +138,7 @@ public class JmsQueueSession extends JmsSession {
     }
 
     /**
-     * @param topic
-     * @param messageSelector
-     * @param noLocal
-     * @return the TopicSubscriber
-     * @throws JMSException
-     * @see javax.jms.TopicSession#createSubscriber(javax.jms.Topic,
-     *      java.lang.String, boolean)
+     * @see javax.jms.TopicSession#createSubscriber(javax.jms.Topic, java.lang.String, boolean)
      */
     @Override
     public TopicSubscriber createSubscriber(Topic topic, String messageSelector, boolean noLocal) throws JMSException {

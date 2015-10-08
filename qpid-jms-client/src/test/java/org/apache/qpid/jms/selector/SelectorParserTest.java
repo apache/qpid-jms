@@ -20,7 +20,6 @@ import java.util.HashMap;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.jms.selector.SelectorParser;
 import org.apache.qpid.jms.selector.filter.BooleanExpression;
 import org.apache.qpid.jms.selector.filter.ComparisonExpression;
 import org.apache.qpid.jms.selector.filter.Expression;
@@ -235,6 +234,8 @@ public class SelectorParserTest extends TestCase {
 
     /**
      * Test cases from Mats Henricson
+     *
+     * @throws Exception if an error occurs during the test.
      */
     public void testMatsHenricsonUseCases() throws Exception {
         MockMessage message = createMessage();

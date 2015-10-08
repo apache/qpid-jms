@@ -79,6 +79,9 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     /**
      * Starts the consumer by setting the link credit to the given prefetch value.
+     *
+     * @param request
+     *      The request that awaits completion of the consumer start.
      */
     public void start(AsyncResult request) {
         sendFlowIfNeeded();
@@ -87,6 +90,9 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     /**
      * Stops the consumer, using all link credit and waiting for in-flight messages to arrive.
+     *
+     * @param request
+     *      The request that awaits completion of the consumer stop.
      */
     public void stop(AsyncResult request) {
         Receiver receiver = getEndpoint();

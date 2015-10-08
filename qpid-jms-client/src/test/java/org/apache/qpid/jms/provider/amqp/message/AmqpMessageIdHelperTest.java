@@ -20,12 +20,16 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.UUID;
 
 import org.apache.qpid.jms.exceptions.IdConversionException;
-import org.apache.qpid.jms.provider.amqp.message.AmqpMessageIdHelper;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.UnsignedLong;
@@ -287,6 +291,8 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     /**
      * Test that {@link AmqpMessageIdHelper#toIdObject(String)} returns an
      * UnsignedLong when given a string indicating an encoded AMQP ulong id.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testToIdObjectWithEncodedUlong() throws Exception {
@@ -301,6 +307,8 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     /**
      * Test that {@link AmqpMessageIdHelper#toIdObject(String)} returns a Binary
      * when given a string indicating an encoded AMQP binary id, using upper case hex characters
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testToIdObjectWithEncodedBinaryUppercaseHexString() throws Exception {
@@ -317,6 +325,8 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     /**
      * Test that {@link AmqpMessageIdHelper#toIdObject(String)} returns null
      * when given null.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testToIdObjectWithNull() throws Exception {
@@ -326,6 +336,8 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     /**
      * Test that {@link AmqpMessageIdHelper#toIdObject(String)} returns a Binary
      * when given a string indicating an encoded AMQP binary id, using lower case hex characters.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testToIdObjectWithEncodedBinaryLowercaseHexString() throws Exception {
@@ -342,6 +354,8 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     /**
      * Test that {@link AmqpMessageIdHelper#toIdObject(String)} returns a UUID
      * when given a string indicating an encoded AMQP uuid id.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testToIdObjectWithEncodedUuid() throws Exception {
@@ -356,6 +370,8 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     /**
      * Test that {@link AmqpMessageIdHelper#toIdObject(String)} returns a string
      * when given a string without any type encoding prefix.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testToIdObjectWithStringContainingNoEncodingPrefix() throws Exception {
@@ -369,6 +385,8 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
     /**
      * Test that {@link AmqpMessageIdHelper#toIdObject(String)} returns the remainder of the
      * provided string after removing the {@link AmqpMessageIdHelper#AMQP_STRING_PREFIX} prefix.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testToIdObjectWithStringContainingStringEncodingPrefix() throws Exception {
@@ -385,6 +403,8 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
      * and then additionally the {@link AmqpMessageIdHelper#AMQP_UUID_PREFIX}, the
      * {@link AmqpMessageIdHelper#toIdObject(String)} method returns the remainder of the provided string
      *  after removing the {@link AmqpMessageIdHelper#AMQP_STRING_PREFIX} prefix.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testToIdObjectWithStringContainingStringEncodingPrefixAndThenUuidPrefix() throws Exception {

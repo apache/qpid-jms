@@ -32,6 +32,9 @@ import org.slf4j.LoggerFactory;
  * This abstract class wraps up the basic state management bits so that the concrete
  * object don't have to reproduce it.  Provides hooks for the subclasses to initialize
  * and shutdown.
+ *
+ * @param <R> The JmsResource type that describe this resource.
+ * @param <E> The AMQP Endpoint that this resource encapsulates.
  */
 public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endpoint> implements AmqpResource {
 

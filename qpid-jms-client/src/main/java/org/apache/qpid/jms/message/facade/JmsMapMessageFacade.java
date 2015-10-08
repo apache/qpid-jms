@@ -45,6 +45,9 @@ public interface JmsMapMessageFacade extends JmsMessageFacade {
     /**
      * Determines whether an item exists in this Map based message.
      *
+     * @param key
+     *      The entry key that is being searched for.
+     *
      * @return true if the item exists in the Map, false otherwise.
      */
     boolean itemExists(String key);

@@ -134,6 +134,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     /**
      * Add a small delay after the SASL process fails, test peer will throw if
      * any unexpected frames arrive, such as erroneous open+close.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testWaitForUnexpectedFramesAfterSaslFailure() throws Exception {

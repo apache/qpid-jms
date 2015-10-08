@@ -53,8 +53,7 @@ public class JNDIReferenceFactory implements ObjectFactory {
      * @return the instance built from the Reference object
      *
      * @throws Exception
-     *         if building the instance from Reference fails (usually class not
-     *         found)
+     *         if building the instance from Reference fails (usually class not found)
      */
     @Override
     public Object getObjectInstance(Object object, Name name, Context nameCtx, Hashtable<?, ?> environment)
@@ -83,9 +82,13 @@ public class JNDIReferenceFactory implements ObjectFactory {
      * Create a Reference instance from a JNDIStorable object
      *
      * @param instanceClassName
+     *      The name of the class that is being created.
      * @param po
+     *      The properties object to use when configuring the new instance.
+     *
      * @return Reference
-     * @throws NamingException
+     *
+     * @throws NamingException if an error occurs while creating the new instance.
      */
     public static Reference createReference(String instanceClassName, JNDIStorable po) throws NamingException {
         Reference result = new Reference(instanceClassName, JNDIReferenceFactory.class.getName(), null);
@@ -105,9 +108,13 @@ public class JNDIReferenceFactory implements ObjectFactory {
      * Retrieve the class loader for a named class
      *
      * @param thisObj
+     *      Local object to use when doing the lookup.
      * @param className
-     * @return the class
-     * @throws ClassNotFoundException
+     *      The name of the class being loaded.
+     *
+     * @return the class that was requested.
+     *
+     * @throws ClassNotFoundException if a matching class cannot be created.
      */
     public static Class<?> loadClass(Object thisObj, String className) throws ClassNotFoundException {
         // try local ClassLoader first.

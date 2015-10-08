@@ -58,6 +58,13 @@ public class AmqpDestinationHelper {
      * If the address is null then the consumer destination is returned, unless
      * the useConsumerDestForTypeOnly flag is true, in which case null will be
      * returned.
+     *
+     * @param message
+     *      The message that holds the addressing information.
+     * @param consumerDestination
+     *      The destination that the consumer is subscribed to.
+     *
+     * @return a Destination object that describe the original address the message was sent to.
      */
     public JmsDestination getJmsDestination(AmqpJmsMessageFacade message, JmsDestination consumerDestination) {
         String to = message.getToAddress();
@@ -295,6 +302,11 @@ public class AmqpDestinationHelper {
     }
 
     /**
+     * Return the appropriate type capability to describe the given Destination.
+     *
+     * @param destination
+     *      The Destination to examine for the destination type capability.
+     *
      * @return the type capability, or null if the supplied destination is null or can't be classified
      */
     public Symbol toTypeCapability(JmsDestination destination) {

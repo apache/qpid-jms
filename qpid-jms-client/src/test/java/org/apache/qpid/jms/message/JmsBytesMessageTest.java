@@ -58,6 +58,8 @@ public class JmsBytesMessageTest {
     /**
      * Test that calling {@link BytesMessage#getBodyLength()} on a new message which has been
      * populated and {@link BytesMessage#reset()} causes the length to be reported correctly.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testResetOnNewlyPopulatedBytesMessageUpdatesBodyLength() throws Exception {
@@ -71,6 +73,8 @@ public class JmsBytesMessageTest {
     /**
      * Test that attempting to call {@link BytesMessage#getBodyLength()} on a new message causes
      * a {@link MessageNotReadableException} to be thrown due to being write-only.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(expected = MessageNotReadableException.class)
     public void testGetBodyLengthOnNewMessageThrowsMessageNotReadableException() throws Exception {
@@ -109,6 +113,8 @@ public class JmsBytesMessageTest {
     /**
      * Test that attempting to write bytes to a received message (without calling {@link BytesMessage#clearBody()} first)
      * causes a {@link MessageNotWriteableException} to be thrown due to being read-only.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(expected = MessageNotWriteableException.class)
     public void testReceivedBytesMessageThrowsMessageNotWriteableExceptionOnWriteBytes() throws Exception {
@@ -123,6 +129,8 @@ public class JmsBytesMessageTest {
     /**
      * Test that attempting to read bytes from a new message (without calling {@link BytesMessage#reset()} first) causes a
      * {@link MessageNotReadableException} to be thrown due to being write-only.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(expected = MessageNotReadableException.class)
     public void testNewBytesMessageThrowsMessageNotReadableOnReadBytes() throws Exception {
@@ -134,6 +142,8 @@ public class JmsBytesMessageTest {
     /**
      * Test that calling {@link BytesMessage#clearBody()} causes a received
      * message to become writable
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testClearBodyOnReceivedBytesMessageMakesMessageWritable() throws Exception {
@@ -150,6 +160,8 @@ public class JmsBytesMessageTest {
     /**
      * Test that calling {@link BytesMessage#clearBody()} of a received message
      * causes the facade input stream to be empty and body length to return 0.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testClearBodyOnReceivedBytesMessageClearsFacadeInputStream() throws Exception {
@@ -169,6 +181,8 @@ public class JmsBytesMessageTest {
     /**
      * Test that attempting to call {@link BytesMessage#getBodyLength()} on a received message after calling
      * {@link BytesMessage#clearBody()} causes {@link MessageNotReadableException} to be thrown due to being write-only.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testGetBodyLengthOnClearedReceivedMessageThrowsMessageNotReadableException() throws Exception {
@@ -191,6 +205,8 @@ public class JmsBytesMessageTest {
     /**
      * Test that calling {@link BytesMessage#reset()} causes a write-only
      * message to become read-only
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testResetOnReceivedBytesMessageResetsMarker() throws Exception {
@@ -217,6 +233,8 @@ public class JmsBytesMessageTest {
     /**
      * Test that calling {@link BytesMessage#reset()} on a new message which has been populated
      * causes the marker to be reset and makes the message read-only
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testResetOnNewlyPopulatedBytesMessageResetsMarkerAndMakesReadable() throws Exception {
@@ -239,6 +257,8 @@ public class JmsBytesMessageTest {
     /**
      * Verify that nothing is read when {@link BytesMessage#readBytes(byte[])} is
      * called with a zero length destination array.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testReadBytesWithZeroLengthDestination() throws Exception {
@@ -250,6 +270,8 @@ public class JmsBytesMessageTest {
     /**
      * Verify that when {@link BytesMessage#readBytes(byte[], int)} is called
      * with a negative length that an {@link IndexOutOfBoundsException} is thrown.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(expected=IndexOutOfBoundsException.class)
     public void testReadBytesWithNegativeLengthThrowsIOOBE() throws Exception
@@ -263,6 +285,8 @@ public class JmsBytesMessageTest {
      * Verify that when {@link BytesMessage#readBytes(byte[], int)} is called
      * with a length that is greater than the size of the provided array,
      * an {@link IndexOutOfBoundsException} is thrown.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(expected=IndexOutOfBoundsException.class)
     public void testReadBytesWithLengthGreatThanArraySizeThrowsIOOBE() throws Exception {
@@ -274,6 +298,8 @@ public class JmsBytesMessageTest {
     /**
      * Test that writing a null using {@link BytesMessage#writeObject(Object)}
      * results in a NPE being thrown.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(expected=NullPointerException.class)
     public void testWriteObjectWithNullThrowsNPE() throws Exception {
@@ -284,6 +310,8 @@ public class JmsBytesMessageTest {
     /**
      * Test that writing a null using {@link BytesMessage#writeObject(Object)}
      * results in an {@link MessageFormatException} being thrown.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(expected=MessageFormatException.class)
     public void testWriteObjectWithIllegalTypeThrowsMFE() throws Exception {

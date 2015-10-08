@@ -52,7 +52,9 @@ public class DiscoveryProvider extends ProviderWrapper<FailoverProvider> impleme
      * connections to the discovered peers.
      *
      * @param discoveryUri
+     *      The URI that configures the discovery provider.
      * @param next
+     *      The FailoverProvider that will be used to manage connections.
      */
     public DiscoveryProvider(URI discoveryUri, FailoverProvider next) {
         super(next);

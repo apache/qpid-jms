@@ -57,6 +57,8 @@ public class JmsTopicSessionTest extends JmsConnectionTestSupport {
      * (see JMS 1.1 specs, table 4-1).
      *
      * @since JMS 1.1
+     *
+     * @throws JMSException if an error occurs during the test.
      */
     @Test(timeout = 30000, expected=IllegalStateException.class)
     public void testCreateBrowserOnTopicSession() throws JMSException {
@@ -115,6 +117,8 @@ public class JmsTopicSessionTest extends JmsConnectionTestSupport {
      * (see JMS 1.1 specs, table 4-1).
      *
      * @since JMS 1.1
+     *
+     * @throws JMSException if an error occurs during the test.
      */
     @Test(timeout = 30000, expected=IllegalStateException.class)
     public void testCreateQueueOnTopicSession() throws JMSException {
@@ -128,6 +132,8 @@ public class JmsTopicSessionTest extends JmsConnectionTestSupport {
      * (see JMS 1.1 specs, table 4-1).
      *
      * @since JMS 1.1
+     *
+     * @throws JMSException if an error occurs during the test.
      */
     @Test(timeout = 30000, expected=IllegalStateException.class)
     public void testCreateTemporaryQueueOnTopicSession() throws JMSException {

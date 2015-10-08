@@ -194,6 +194,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
     /**
      * Test that when a message is sent the JMSDestination header is set to
      * the Destination used by the producer.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSendingMessageSetsJMSDestination() throws Exception {
@@ -273,6 +275,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
     /**
      * Test that after sending a message with the disableMessageTimestamp hint set, the
      * message object has a 0 JMSTimestamp value, and no creation-time field value was set.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSendingMessageWithDisableMessageTimestampHint() throws Exception {
@@ -415,6 +419,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
     /**
      * Test that when a message is sent with default priority of 4, the emitted AMQP message has no value in the header
      * priority field, since the default for that field is already 4.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testDefaultPriorityProducesMessagesWithoutPriorityField() throws Exception {
@@ -451,6 +457,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
     /**
      * Test that when a message is sent with a non-default priority, the emitted AMQP message has that value in the
      * header priority field, and the JMS message has had JMSPriority set.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testNonDefaultPriorityProducesMessagesWithPriorityFieldAndSetsJMSPriority() throws Exception {
@@ -489,6 +497,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
     /**
      * Test that upon sending a message, the sender sets the JMSMessageID on the Message object,
      * and that the value is included in the AMQP message sent by the client.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSendingMessageSetsJMSMessageID() throws Exception {
@@ -635,6 +645,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
     /**
      * Test that after sending a message with the disableMessageID hint set, the message
      * object has a null JMSMessageID value, and no message-id field value was set.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSendingMessageWithDisableMessageIDHint() throws Exception {
@@ -645,6 +657,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      * Test that after sending a message with the disableMessageID hint set, which already had
      * a JMSMessageID value, that the message object then has a null JMSMessageID value, and no
      * message-id field value was set.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSendingMessageWithDisableMessageIDHintAndExistingMessageID() throws Exception {

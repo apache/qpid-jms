@@ -35,9 +35,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- *
- */
 public class JmsDupsOkTest extends AmqpTestSupport {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsDupsOkTest.class);
@@ -52,7 +49,7 @@ public class JmsDupsOkTest extends AmqpTestSupport {
      * message and expect to see it again, ensure the third message is not seen
      * until after this.
      *
-     * @throws Exception
+     * @throws Exception on error during test.
      */
     @Test(timeout = 60000)
     public void testRecoverInOnMessage() throws Exception {

@@ -141,10 +141,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         this.connectionInfo = new JmsConnectionInfo(new JmsConnectionId(connectionId));
     }
 
-    /**
-     * @throws JMSException
-     * @see javax.jms.Connection#close()
-     */
     @Override
     public void close() throws JMSException {
         boolean interrupted = Thread.interrupted();
@@ -244,13 +240,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         connected.set(false);
     }
 
-    /**
-     * @param transacted
-     * @param acknowledgeMode
-     * @return Session
-     * @throws JMSException
-     * @see javax.jms.Connection#createSession(boolean, int)
-     */
     @Override
     public Session createSession(boolean transacted, int acknowledgeMode) throws JMSException {
         checkClosedOrFailed();
@@ -264,31 +253,18 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         return result;
     }
 
-    /**
-     * @return clientId
-     * @see javax.jms.Connection#getClientID()
-     */
     @Override
     public synchronized String getClientID() throws JMSException {
         checkClosedOrFailed();
         return this.connectionInfo.getClientId();
     }
 
-    /**
-     * @return connectionInfoData
-     * @see javax.jms.Connection#getMetaData()
-     */
     @Override
     public ConnectionMetaData getMetaData() throws JMSException {
         checkClosedOrFailed();
         return JmsConnectionMetaData.INSTANCE;
     }
 
-    /**
-     * @param clientID
-     * @throws JMSException
-     * @see javax.jms.Connection#setClientID(java.lang.String)
-     */
     @Override
     public synchronized void setClientID(String clientID) throws JMSException {
         checkClosedOrFailed();
@@ -311,10 +287,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         connect();
     }
 
-    /**
-     * @throws JMSException
-     * @see javax.jms.Connection#start()
-     */
     @Override
     public void start() throws JMSException {
         checkClosedOrFailed();
@@ -330,16 +302,15 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         }
     }
 
-    /**
-     * @throws JMSException
-     * @see javax.jms.Connection#stop()
-     */
     @Override
     public void stop() throws JMSException {
         doStop(true);
     }
 
     /**
+     * Performs the actual connection stop with the option to disable the close check in cases
+     * where we don't want an exception.
+     *
      * @see #stop()
      * @param checkClosed <tt>true</tt> to check for already closed and throw
      *                    {@link java.lang.IllegalStateException} if already closed,
@@ -359,18 +330,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         }
     }
 
-    /**
-     * @param topic
-     * @param subscriptionName
-     * @param messageSelector
-     * @param sessionPool
-     * @param maxMessages
-     * @return ConnectionConsumer
-     * @throws JMSException
-     *
-     * @see javax.jms.Connection#createDurableConnectionConsumer(javax.jms.Topic,
-     *      java.lang.String, java.lang.String, javax.jms.ServerSessionPool, int)
-     */
     @Override
     public ConnectionConsumer createDurableConnectionConsumer(Topic topic, String subscriptionName,
                                                               String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
@@ -379,16 +338,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         throw new JMSException("Not supported");
     }
 
-    /**
-     * @param destination
-     * @param messageSelector
-     * @param sessionPool
-     * @param maxMessages
-     * @return ConnectionConsumer
-     * @throws JMSException
-     * @see javax.jms.Connection#createConnectionConsumer(javax.jms.Destination,
-     *      java.lang.String, javax.jms.ServerSessionPool, int)
-     */
     @Override
     public ConnectionConsumer createConnectionConsumer(Destination destination, String messageSelector,
                                                        ServerSessionPool sessionPool, int maxMessages) throws JMSException {
@@ -397,16 +346,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         throw new JMSException("Not supported");
     }
 
-    /**
-     * @param topic
-     * @param messageSelector
-     * @param sessionPool
-     * @param maxMessages
-     * @return ConnectionConsumer
-     * @throws JMSException
-     * @see javax.jms.TopicConnection#createConnectionConsumer(javax.jms.Topic,
-     *      java.lang.String, javax.jms.ServerSessionPool, int)
-     */
     @Override
     public ConnectionConsumer createConnectionConsumer(Topic topic, String messageSelector,
                                                        ServerSessionPool sessionPool, int maxMessages) throws JMSException {
@@ -415,16 +354,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         throw new JMSException("Not supported");
     }
 
-    /**
-     * @param queue
-     * @param messageSelector
-     * @param sessionPool
-     * @param maxMessages
-     * @return ConnectionConsumer
-     * @throws JMSException
-     * @see javax.jms.QueueConnection#createConnectionConsumer(javax.jms.Queue,
-     *      java.lang.String, javax.jms.ServerSessionPool, int)
-     */
     @Override
     public ConnectionConsumer createConnectionConsumer(Queue queue, String messageSelector,
                                                        ServerSessionPool sessionPool, int maxMessages) throws JMSException {
@@ -433,13 +362,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         throw new JMSException("Not supported");
     }
 
-    /**
-     * @param transacted
-     * @param acknowledgeMode
-     * @return TopicSession
-     * @throws JMSException
-     * @see javax.jms.TopicConnection#createTopicSession(boolean, int)
-     */
     @Override
     public TopicSession createTopicSession(boolean transacted, int acknowledgeMode) throws JMSException {
         checkClosedOrFailed();
@@ -453,13 +375,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         return result;
     }
 
-    /**
-     * @param transacted
-     * @param acknowledgeMode
-     * @return QueueSession
-     * @throws JMSException
-     * @see javax.jms.QueueConnection#createQueueSession(boolean, int)
-     */
     @Override
     public QueueSession createQueueSession(boolean transacted, int acknowledgeMode) throws JMSException {
         checkClosedOrFailed();

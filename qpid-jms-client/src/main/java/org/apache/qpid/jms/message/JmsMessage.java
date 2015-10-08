@@ -286,7 +286,8 @@ public class JmsMessage implements javax.jms.Message {
      * properties
      *
      * @return Enumeration of all property names on this message
-     * @throws JMSException
+     *
+     * @throws JMSException if an error occurs while reading the properties from the Message.
      */
     public Enumeration<?> getAllPropertyNames() throws JMSException {
         Set<String> result = new HashSet<String>();

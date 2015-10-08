@@ -178,7 +178,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
      * want to test the short poll and retry case here since that's not what we are
      * testing.
      *
-     * @throws Exception
+     * @throws Exception on error found during test run.
      */
     @Test(timeout=60000)
     public void testConsumerReceiveBeforeMessageDispatched() throws Exception {

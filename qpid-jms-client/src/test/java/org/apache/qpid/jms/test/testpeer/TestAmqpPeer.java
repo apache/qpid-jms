@@ -548,6 +548,9 @@ public class TestAmqpPeer implements AutoCloseable
      * Expect a connection that does not use a SASL layer, but proceeds straight
      * to the AMQP connection (useful to skip a stage for connections that don't
      * require SASL, e.g. because of anonymous or client certificate authentication).
+     *
+     * @param maxFrameSizeMatcher
+     *      The Matcher used to validate the maxFrameSize setting.
      */
     public void expectSaslLayerDisabledConnect(Matcher<?> maxFrameSizeMatcher)
     {

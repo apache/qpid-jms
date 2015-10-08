@@ -28,38 +28,15 @@ import org.apache.qpid.jms.meta.JmsConsumerId;
  */
 public class JmsTopicSubscriber extends JmsMessageConsumer implements TopicSubscriber {
 
-    /**
-     * Creates a non-durable TopicSubscriber
-     *
-     * @param id
-     * @param s
-     * @param destination
-     * @param noLocal
-     * @param selector
-     * @throws JMSException
-     */
     JmsTopicSubscriber(JmsConsumerId id, JmsSession s, JmsDestination destination, boolean noLocal, String selector) throws JMSException {
         super(id, s, destination, selector, noLocal);
     }
 
-    /**
-     * Creates a TopicSubscriber that is durable.
-     *
-     * @param id
-     * @param s
-     * @param destination
-     * @param name
-     * @param noLocal
-     * @param selector
-     * @throws JMSException
-     */
     JmsTopicSubscriber(JmsConsumerId id, JmsSession s, JmsDestination destination, String name, boolean noLocal, String selector) throws JMSException {
         super(id, s, destination, name, selector, noLocal);
     }
 
     /**
-     * @return the Topic
-     * @throws IllegalStateException
      * @see javax.jms.TopicSubscriber#getTopic()
      */
     @Override
@@ -68,6 +45,9 @@ public class JmsTopicSubscriber extends JmsMessageConsumer implements TopicSubsc
         return (Topic) this.getDestination();
     }
 
+    /**
+     * @see javax.jms.TopicSubscriber#getNoLocal()
+     */
     @Override
     public boolean getNoLocal() throws JMSException {
         checkClosed();

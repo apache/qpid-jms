@@ -19,8 +19,8 @@
 package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -117,6 +117,8 @@ public class ForeignMessageIntegrationTest extends QpidJmsTestCase {
      * Test that after sending a message with the disableMessageID hint set, which already had
      * a JMSMessageID value, that the message object then has a null JMSMessageID value, and no
      * message-id field value was set.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSendForeignMessageWithDisableMessageIDHintAndExistingMessageID() throws Exception {

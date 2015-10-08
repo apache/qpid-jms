@@ -48,9 +48,6 @@ import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Properties;
 import org.apache.qpid.proton.message.Message;
 
-/**
- *
- */
 public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     private static final int DEFAULT_PRIORITY = javax.jms.Message.DEFAULT_PRIORITY;
@@ -606,7 +603,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
      * @param ttl
      *        the value to use, in range {@literal 0 <= x <= 2^32 - 1}
      *
-     * @throws MessageFormatException
+     * @throws MessageFormatException if the TTL value is not in the allowed range.
      */
     public void setAmqpTimeToLiveOverride(Long ttl) throws MessageFormatException {
         if (ttl != null) {

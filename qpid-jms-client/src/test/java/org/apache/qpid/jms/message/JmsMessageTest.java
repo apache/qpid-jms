@@ -1169,6 +1169,8 @@ public class JmsMessageTest {
      * When a property is not set, the behaviour of JMS specifies that it is equivalent to a null value,
      * and the primitive property accessors should behave in the same fashion as <primitive>.valueOf(String).
      * Test that this is the case.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testGetMissingPrimitivePropertyResultsInExpectedBehaviour() throws Exception {
@@ -1206,6 +1208,8 @@ public class JmsMessageTest {
      * {@link Character#isJavaLetter(char)} is true, as described in
      * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
      * beginning with a non-letter character.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetPropertyWithNonLetterAsFirstCharacterThrowsIAE() throws Exception {
@@ -1223,6 +1227,8 @@ public class JmsMessageTest {
      * for which {@link Character#isJavaLetterOrDigit(char)} is true, as
      * described in {@link javax.jms.Message}. Verify an IAE is thrown if
      * setting a property continuing with a non-letter-or-digit character.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetPropertyWithNonLetterOrDigitCharacterThrowsIAE() throws Exception {
@@ -1259,6 +1265,8 @@ public class JmsMessageTest {
      * Property 'identifiers' (i.e. names) are not allowed to be NULL, TRUE, or
      * FALSE, as described in {@link javax.jms.Message}. Verify an IAE is thrown
      * if setting a property with these values.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetPropertyWithNameNULL() throws Exception {
@@ -1274,6 +1282,8 @@ public class JmsMessageTest {
      * Property 'identifiers' (i.e. names) are not allowed to be NULL, TRUE, or
      * FALSE, as described in {@link javax.jms.Message}. Verify an IAE is thrown
      * if setting a property with these values.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetPropertyWithNameTRUE() throws Exception {
@@ -1289,6 +1299,8 @@ public class JmsMessageTest {
      * Property 'identifiers' (i.e. names) are not allowed to be NULL, TRUE, or
      * FALSE, as described in {@link javax.jms.Message}. Verify an IAE is thrown
      * if setting a property with these values.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetPropertyWithNameFALSE() throws Exception {
@@ -1305,6 +1317,8 @@ public class JmsMessageTest {
      * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
      * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
      * with these values.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetPropertyWithNameNOT() throws Exception {
@@ -1321,6 +1335,8 @@ public class JmsMessageTest {
      * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
      * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
      * with these values.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetPropertyWithNameAND() throws Exception {
@@ -1337,6 +1353,8 @@ public class JmsMessageTest {
      * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
      * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
      * with these values.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetPropertyWithNameOR() throws Exception {
@@ -1353,6 +1371,8 @@ public class JmsMessageTest {
      * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
      * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
      * with these values.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetPropertyWithNameBETWEEN() throws Exception {
@@ -1369,6 +1389,8 @@ public class JmsMessageTest {
      * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
      * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
      * with these values.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetPropertyWithNameLIKE() throws Exception {
@@ -1385,6 +1407,8 @@ public class JmsMessageTest {
      * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
      * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
      * with these values.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetPropertyWithNameIN() throws Exception {
@@ -1401,6 +1425,8 @@ public class JmsMessageTest {
      * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
      * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
      * with these values.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetPropertyWithNameIS() throws Exception {
@@ -1417,6 +1443,8 @@ public class JmsMessageTest {
      * BETWEEN, LIKE, IN, IS, or ESCAPE, as described in
      * {@link javax.jms.Message}. Verify an IAE is thrown if setting a property
      * with these values.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetPropertyWithNameESCAPE() throws Exception {

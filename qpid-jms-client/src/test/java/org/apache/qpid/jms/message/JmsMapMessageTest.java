@@ -63,6 +63,8 @@ public class JmsMapMessageTest {
     /**
      * Test that we are able to retrieve the names and values of map entries on a received
      * message
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testGetMapNamesUsingReceivedMessageReturnsExpectedEnumeration() throws Exception {
@@ -89,6 +91,8 @@ public class JmsMapMessageTest {
     /**
      * Test that we enforce the requirement that map message key names not be null or the empty
      * string.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetObjectWithNullOrEmptyKeyNameThrowsIAE() throws Exception {
@@ -111,6 +115,8 @@ public class JmsMapMessageTest {
     /**
      * Test that we are not able to write to a received message without calling
      * {@link JmsMapMessage#clearBody()}
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testReceivedMessageIsReadOnlyAndThrowsMNWE() throws Exception {
@@ -130,6 +136,8 @@ public class JmsMapMessageTest {
 
     /**
      * Test that calling {@link JmsMapMessage#clearBody()} makes a received message writable
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testClearBodyMakesReceivedMessageWritable() throws Exception {
@@ -149,6 +157,8 @@ public class JmsMapMessageTest {
     /**
      * Test that calling {@link JmsMapMessage#clearBody()} clears the underlying message body
      * map.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testClearBodyClearsUnderlyingMessageMap() throws Exception {
@@ -169,6 +179,8 @@ public class JmsMapMessageTest {
      * fashion as <primitive>.valueOf(String).
      *
      * Test that this is the case.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testGetMissingMapEntryResultsInExpectedBehaviour() throws Exception {
@@ -201,6 +213,8 @@ public class JmsMapMessageTest {
     /**
      * Test that the {@link JmsMapMessage#setObject(String, Object)} method rejects Objects of
      * unexpected types
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(expected=MessageFormatException.class)
     public void testSetObjectWithIllegalTypeThrowsMFE() throws Exception {
@@ -288,6 +302,8 @@ public class JmsMapMessageTest {
     /**
      * Set a String, then retrieve it as all of the legal type combinations to verify it is
      * parsed correctly
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetStringGetLegal() throws Exception {
@@ -335,6 +351,8 @@ public class JmsMapMessageTest {
     /**
      * Set a String, then retrieve it as all of the illegal type combinations to verify it fails
      * as expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetStringGetIllegal() throws Exception {
@@ -354,6 +372,8 @@ public class JmsMapMessageTest {
     /**
      * Set a boolean, then retrieve it as all of the legal type combinations to verify it is
      * parsed correctly
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetBooleanGetLegal() throws Exception {
@@ -376,6 +396,8 @@ public class JmsMapMessageTest {
     /**
      * Set a boolean, then retrieve it as all of the illegal type combinations to verify it
      * fails as expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetBooleanGetIllegal() throws Exception {
@@ -401,6 +423,8 @@ public class JmsMapMessageTest {
     /**
      * Set a byte, then retrieve it as all of the legal type combinations to verify it is parsed
      * correctly
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetByteGetLegalProperty() throws Exception {
@@ -421,6 +445,8 @@ public class JmsMapMessageTest {
     /**
      * Set a byte, then retrieve it as all of the illegal type combinations to verify it is
      * fails as expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetByteGetIllegal() throws Exception {
@@ -443,6 +469,8 @@ public class JmsMapMessageTest {
     /**
      * Set a short, then retrieve it as all of the legal type combinations to verify it is
      * parsed correctly
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetShortGetLegal() throws Exception {
@@ -462,6 +490,8 @@ public class JmsMapMessageTest {
     /**
      * Set a short, then retrieve it as all of the illegal type combinations to verify it fails
      * as expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetShortGetIllegal() throws Exception {
@@ -485,6 +515,8 @@ public class JmsMapMessageTest {
     /**
      * Set an int, then retrieve it as all of the legal type combinations to verify it is parsed
      * correctly
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetIntGetLegal() throws Exception {
@@ -503,6 +535,8 @@ public class JmsMapMessageTest {
     /**
      * Set an int, then retrieve it as all of the illegal type combinations to verify it fails
      * as expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetIntGetIllegal() throws Exception {
@@ -527,6 +561,8 @@ public class JmsMapMessageTest {
     /**
      * Set a long, then retrieve it as all of the legal type combinations to verify it is parsed
      * correctly
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetLongGetLegal() throws Exception {
@@ -544,6 +580,8 @@ public class JmsMapMessageTest {
     /**
      * Set an long, then retrieve it as all of the illegal type combinations to verify it fails
      * as expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetLongGetIllegal() throws Exception {
@@ -569,6 +607,8 @@ public class JmsMapMessageTest {
     /**
      * Set a float, then retrieve it as all of the legal type combinations to verify it is
      * parsed correctly
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetFloatGetLegal() throws Exception {
@@ -587,6 +627,8 @@ public class JmsMapMessageTest {
     /**
      * Set a float, then retrieve it as all of the illegal type combinations to verify it fails
      * as expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetFloatGetIllegal() throws Exception {
@@ -611,6 +653,8 @@ public class JmsMapMessageTest {
     /**
      * Set a double, then retrieve it as all of the legal type combinations to verify it is
      * parsed correctly
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetDoubleGetLegal() throws Exception {
@@ -628,6 +672,8 @@ public class JmsMapMessageTest {
     /**
      * Set a double, then retrieve it as all of the illegal type combinations to verify it fails
      * as expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetDoubleGetIllegal() throws Exception {
@@ -653,6 +699,8 @@ public class JmsMapMessageTest {
     /**
      * Set a char, then retrieve it as all of the legal type combinations to verify it is parsed
      * correctly
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetCharGetLegal() throws Exception {
@@ -670,6 +718,8 @@ public class JmsMapMessageTest {
     /**
      * Set a char, then retrieve it as all of the illegal type combinations to verify it fails
      * as expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetCharGetIllegal() throws Exception {
@@ -695,6 +745,8 @@ public class JmsMapMessageTest {
     /**
      * Set bytes, then retrieve it as all of the legal type combinations to verify it is parsed
      * correctly
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetBytesGetLegal() throws Exception {
@@ -710,6 +762,8 @@ public class JmsMapMessageTest {
     /**
      * Set bytes, then retrieve it as all of the illegal type combinations to verify it fails as
      * expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetBytesGetIllegal() throws Exception {
@@ -773,6 +827,8 @@ public class JmsMapMessageTest {
     /**
      * Verify that setting bytes takes a copy of the array. Set bytes, then modify them, then
      * retrieve the map entry and verify the two differ.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetBytesTakesSnapshot() throws Exception {
@@ -797,6 +853,8 @@ public class JmsMapMessageTest {
     /**
      * Verify that getting bytes returns a copy of the array. Set bytes, then get them, modify
      * the retrieved value, then get them again and verify the two differ.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testGetBytesReturnsSnapshot() throws Exception {
@@ -825,6 +883,8 @@ public class JmsMapMessageTest {
     /**
      * Verify that setting bytes takes a copy of the array. Set bytes, then modify them, then
      * retrieve the map entry and verify the two differ.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetBytesWithOffsetAndLength() throws Exception {

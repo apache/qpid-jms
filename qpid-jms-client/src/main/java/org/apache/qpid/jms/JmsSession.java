@@ -221,7 +221,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      * Shutdown the Session and release all resources.  Once completed the Session can
      * request that the Provider destroy the Session and it's child resources.
      *
-     * @throws JMSException
+     * @throws JMSException if an internal error occurs during the close operation.
      */
     protected void doClose() throws JMSException {
         boolean interrupted = Thread.interrupted();
@@ -306,9 +306,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     //////////////////////////////////////////////////////////////////////////
 
     /**
-     * @param destination
-     * @return a MessageConsumer
-     * @throws JMSException
      * @see javax.jms.Session#createConsumer(javax.jms.Destination)
      */
     @Override
@@ -317,12 +314,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     /**
-     * @param destination
-     * @param messageSelector
-     * @return MessageConsumer
-     * @throws JMSException
-     * @see javax.jms.Session#createConsumer(javax.jms.Destination,
-     *      java.lang.String)
+     * @see javax.jms.Session#createConsumer(javax.jms.Destination, java.lang.String)
      */
     @Override
     public MessageConsumer createConsumer(Destination destination, String messageSelector) throws JMSException {
@@ -330,13 +322,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     /**
-     * @param destination
-     * @param messageSelector
-     * @param noLocal
-     * @return the MessageConsumer
-     * @throws JMSException
-     * @see javax.jms.Session#createConsumer(javax.jms.Destination,
-     *      java.lang.String, boolean)
+     * @see javax.jms.Session#createConsumer(javax.jms.Destination, java.lang.String, boolean)
      */
     @Override
     public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean noLocal) throws JMSException {
@@ -350,9 +336,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     /**
-     * @param queue
-     * @return QueueRecevier
-     * @throws JMSException
      * @see javax.jms.QueueSession#createReceiver(javax.jms.Queue)
      */
     @Override
@@ -366,12 +349,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     /**
-     * @param queue
-     * @param messageSelector
-     * @return QueueReceiver
-     * @throws JMSException
-     * @see javax.jms.QueueSession#createReceiver(javax.jms.Queue,
-     *      java.lang.String)
+     * @see javax.jms.QueueSession#createReceiver(javax.jms.Queue, java.lang.String)
      */
     @Override
     public QueueReceiver createReceiver(Queue queue, String messageSelector) throws JMSException {
@@ -385,9 +363,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     /**
-     * @param destination
-     * @return QueueBrowser
-     * @throws JMSException
      * @see javax.jms.Session#createBrowser(javax.jms.Queue)
      */
     @Override
@@ -396,10 +371,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     /**
-     * @param destination
-     * @param messageSelector
-     * @return QueueBrowser
-     * @throws JMSException
      * @see javax.jms.Session#createBrowser(javax.jms.Queue, java.lang.String)
      */
     @Override
@@ -413,9 +384,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     /**
-     * @param topic
-     * @return TopicSubscriber
-     * @throws JMSException
      * @see javax.jms.TopicSession#createSubscriber(javax.jms.Topic)
      */
     @Override
@@ -424,13 +392,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     /**
-     * @param topic
-     * @param messageSelector
-     * @param noLocal
-     * @return TopicSubscriber
-     * @throws JMSException
-     * @see javax.jms.TopicSession#createSubscriber(javax.jms.Topic,
-     *      java.lang.String, boolean)
+     * @see javax.jms.TopicSession#createSubscriber(javax.jms.Topic, java.lang.String, boolean)
      */
     @Override
     public TopicSubscriber createSubscriber(Topic topic, String messageSelector, boolean noLocal) throws JMSException {
@@ -444,12 +406,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     /**
-     * @param topic
-     * @param name
-     * @return a TopicSubscriber
-     * @throws JMSException
-     * @see javax.jms.Session#createDurableSubscriber(javax.jms.Topic,
-     *      java.lang.String)
+     * @see javax.jms.Session#createDurableSubscriber(javax.jms.Topic, java.lang.String)
      */
     @Override
     public TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException {
@@ -457,14 +414,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     /**
-     * @param topic
-     * @param name
-     * @param messageSelector
-     * @param noLocal
-     * @return TopicSubscriber
-     * @throws JMSException
-     * @see javax.jms.Session#createDurableSubscriber(javax.jms.Topic,
-     *      java.lang.String, java.lang.String, boolean)
+     * @see javax.jms.Session#createDurableSubscriber(javax.jms.Topic, java.lang.String, java.lang.String, boolean)
      */
     @Override
     public TopicSubscriber createDurableSubscriber(Topic topic, String name, String messageSelector, boolean noLocal) throws JMSException {
@@ -485,8 +435,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     /**
-     * @param name
-     * @throws JMSException
      * @see javax.jms.Session#unsubscribe(java.lang.String)
      */
     @Override
@@ -500,9 +448,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     //////////////////////////////////////////////////////////////////////////
 
     /**
-     * @param destination
-     * @return MessageProducer
-     * @throws JMSException
      * @see javax.jms.Session#createProducer(javax.jms.Destination)
      */
     @Override
@@ -515,9 +460,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     /**
-     * @param queue
-     * @return QueueSender
-     * @throws JMSException
      * @see javax.jms.QueueSession#createSender(javax.jms.Queue)
      */
     @Override
@@ -530,9 +472,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     /**
-     * @param topic
-     * @return TopicPublisher
-     * @throws JMSException
      * @see javax.jms.TopicSession#createPublisher(javax.jms.Topic)
      */
     @Override
@@ -601,9 +540,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     //////////////////////////////////////////////////////////////////////////
 
     /**
-     * @param queueName
-     * @return Queue
-     * @throws JMSException
      * @see javax.jms.Session#createQueue(java.lang.String)
      */
     @Override
@@ -613,9 +549,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     /**
-     * @param topicName
-     * @return Topic
-     * @throws JMSException
      * @see javax.jms.Session#createTopic(java.lang.String)
      */
     @Override
@@ -625,8 +558,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     /**
-     * @return TemporaryQueue
-     * @throws JMSException
      * @see javax.jms.Session#createTemporaryQueue()
      */
     @Override
@@ -636,8 +567,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     }
 
     /**
-     * @return TemporaryTopic
-     * @throws JMSException
      * @see javax.jms.Session#createTemporaryTopic()
      */
     @Override
@@ -779,7 +708,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     /**
      * Checks whether the session uses transactions.
      *
-     * @return true - if the session uses transactions.
+     * @return true if the session uses transactions.
      */
     public boolean isTransacted() {
         return acknowledgementMode == Session.SESSION_TRANSACTED;
@@ -788,7 +717,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     /**
      * Checks whether the session used client acknowledgment.
      *
-     * @return true - if the session uses client acknowledgment.
+     * @return true if the session uses client acknowledgment.
      */
     public boolean isClientAcknowledge() {
         return acknowledgementMode == Session.CLIENT_ACKNOWLEDGE;
@@ -797,7 +726,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     /**
      * Checks whether the session used auto acknowledgment.
      *
-     * @return true - if the session uses client acknowledgment.
+     * @return true if the session uses client acknowledgment.
      */
     public boolean isAutoAcknowledge() {
         return acknowledgementMode == Session.AUTO_ACKNOWLEDGE;
@@ -806,7 +735,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
     /**
      * Checks whether the session used dup ok acknowledgment.
      *
-     * @return true - if the session uses client acknowledgment.
+     * @return true if the session uses client acknowledgment.
      */
     public boolean isDupsOkAcknowledge() {
         return acknowledgementMode == Session.DUPS_OK_ACKNOWLEDGE;

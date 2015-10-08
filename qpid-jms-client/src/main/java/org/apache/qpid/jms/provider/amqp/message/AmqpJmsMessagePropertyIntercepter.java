@@ -279,6 +279,9 @@ public class AmqpJmsMessagePropertyIntercepter {
      * manipulated by the receiver without impacting the facade, and an empty set
      * will be returned if there are no matching properties.
      *
+     * @param message
+     *      The message being enumerated.
+     *
      * @return a {@code Set<String>} containing the names of all intercepted properties with a value.
      */
     public static Set<String> getPropertyNames(AmqpJmsMessageFacade message) {

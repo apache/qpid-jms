@@ -52,6 +52,8 @@ public class JmsObjectMessageTest {
     /**
      * Test that attempting to write bytes to a received message (without calling {@link ObjectMessage#clearBody()} first)
      * causes a {@link MessageNotWriteableException} to be thrown due to being read-only.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testReceivedObjectMessageThrowsMessageNotWriteableExceptionOnSetObject() throws Exception {
@@ -71,6 +73,8 @@ public class JmsObjectMessageTest {
 
     /**
      * Test that calling {@link ObjectMessage#toString()} returns a meaningful value
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testToString() throws Exception {
@@ -86,6 +90,8 @@ public class JmsObjectMessageTest {
     /**
      * Test that calling {@link ObjectMessage#clearBody()} causes a received
      * message to become writable
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testClearBodyOnReceivedObjectMessageMakesMessageWritable() throws Exception {
@@ -103,6 +109,8 @@ public class JmsObjectMessageTest {
     /**
      * Test that calling {@link ObjectMessage#clearBody()} of a received message
      * causes the body of the underlying message facade to be emptied.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testClearBodyOnReceivedObjectMessageClearsUnderlyingMessageBody() throws Exception {
@@ -125,6 +133,8 @@ public class JmsObjectMessageTest {
     /**
      * Test that setting an object on a new message and later getting the value, returns an
      * equal but different object that does not pick up intermediate changes to the set object.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetThenGetObjectReturnsSnapshot() throws Exception
@@ -162,6 +172,8 @@ public class JmsObjectMessageTest {
     /**
      * Test that setting an object on a new message which contains non-serializable content results
      * in an {@link MessageFormatException} being thrown due to failure to encode the object.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetObjectWithNonSerializableThrowsJMSMFE() throws Exception {
@@ -179,17 +191,16 @@ public class JmsObjectMessageTest {
         }
     }
 
-    //Test class
-    private static class NotSerializable
-    {
-        public NotSerializable()
-        {
-        }
+    // Test class
+    private static class NotSerializable {
+        public NotSerializable() {}
     }
 
     /**
      * Test that failure during deserialization of an object in a message results
      * in an {@link MessageFormatException} being throw.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(expected=MessageFormatException.class)
     public void testGetObjectWithFailedDeserialisationThrowsJMSMFE() throws Exception {

@@ -25,17 +25,6 @@ import org.apache.qpid.jms.meta.JmsConsumerId;
  */
 public class JmsDurableTopicSubscriber extends JmsTopicSubscriber {
 
-    /**
-     * Creates a durable TopicSubscriber
-     *
-     * @param id
-     * @param s
-     * @param destination
-     * @param name
-     * @param noLocal
-     * @param selector
-     * @throws JMSException
-     */
     public JmsDurableTopicSubscriber(JmsConsumerId id, JmsSession s, JmsDestination destination, String name, boolean noLocal, String selector) throws JMSException {
         super(id, s, destination, name, noLocal, selector);
     }

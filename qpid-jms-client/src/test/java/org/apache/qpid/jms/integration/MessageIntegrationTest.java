@@ -332,6 +332,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that the lack of a 'to' in the Properties section of the incoming message (e.g
      * one sent by a non-JMS client) is handled by making the JMSDestination method simply
      * return the Queue Destination used to create the consumer that received the message.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageFromQueueWithoutToResultsInUseOfConsumerDestinationQueue() throws Exception {
@@ -342,6 +344,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that the lack of a 'to' in the Properties section of the incoming message (e.g
      * one sent by a non-JMS client) is handled by making the JMSDestination method simply
      * return the Topic Destination used to create the consumer that received the message.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageFromQueueWithoutToResultsInUseOfConsumerDestinationTopic() throws Exception {
@@ -397,6 +401,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that lack of the reply-to set on a message results in it returning null for JMSReplyTo
      * and not the consumer destination as happens for JMSDestination.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageFromQueueWithNoReplyToReturnsNull() throws Exception {
@@ -432,6 +438,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that the a connection with a 'topic prefix' set on it strips the
      * prefix from the content of the to/reply-to fields for incoming messages.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithTopicDestinationsOnConnectionWithTopicPrefix() throws Exception {
@@ -455,6 +463,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that the a connection with a 'topic prefix' set on it strips the
      * prefix from the content of the to/reply-to fields for incoming messages
      * if they don't have the 'destination type annotation' set.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithNoTypeAnnotationAndTopicDestinationsOnConnectionWithTopicPrefix() throws Exception {
@@ -477,6 +487,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that the a connection with a 'queue prefix' set on it strips the
      * prefix from the content of the to/reply-to fields for incoming messages.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithQueueDestinationsOnConnectionWithQueuePrefix() throws Exception {
@@ -500,6 +512,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that the a connection with a 'queue prefix' set on it strips the
      * prefix from the content of the to/reply-to fields for incoming messages
      * if they don't have the 'destination type annotation' set.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithNoTypeAnnotationAndQueueDestinationsOnConnectionWithQueuePrefix() throws Exception {
@@ -522,6 +536,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that a connection with a 'prefixes' set on its does not alter the
      * address for a temporary queue in the to/reply-to fields for incoming messages.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithTemporaryQueueDestinationsOnConnectionWithPrefixes() throws Exception {
@@ -544,6 +560,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that a connection with a 'prefixes' set on its does not alter the
      * address for a temporary queue in the to/reply-to fields for incoming messages.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithTemporaryTopicDestinationsOnConnectionWithPrefixes() throws Exception {
@@ -671,6 +689,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that the a connection with a 'topic prefix' set on it adds the
      * prefix to the content of the to/reply-to fields for outgoing messages.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSendMessageWithTopicDestinationsOnConnectionWithTopicPrefix() throws Exception {
@@ -686,6 +706,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that the a connection with a 'queue prefix' set on it adds the
      * prefix to the content of the to/reply-to fields for outgoing messages.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSendMessageWithQueueDestinationsOnConnectionWithQueuePrefix() throws Exception {
@@ -701,6 +723,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that the a connection with 'destination prefixes' set on it does not add
      * the prefix to the content of the to/reply-to fields for TemporaryQueues.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSendMessageWithTemporaryQueueDestinationsOnConnectionWithDestinationPrefixes() throws Exception {
@@ -716,6 +740,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that the a connection with 'destination prefixes' set on it does not add
      * the prefix to the content of the to/reply-to fields for TemporaryTopics.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSendMessageWithTemporaryTopicDestinationsOnConnectionWithDestinationPrefixes() throws Exception {
@@ -807,6 +833,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that a connection with 'prefixes' set on it via broker-provided connection properties
      * strips the prefix from the to/reply-to fields for incoming messages with Topic destinations.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithTopicDestinationsOnConnectionWithBrokerDefinedPrefixProperties() throws Exception {
@@ -829,6 +857,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that a connection with 'prefixes' set on it via broker-provided connection properties
      * strips the prefix from the to/reply-to fields for incoming messages with Queue destinations.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithQueueDestinationsOnConnectionWithBrokerDefinedPrefixProperties() throws Exception {
@@ -936,6 +966,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that the a connection with a 'queue prefix' set on it via broker-provided connection
      * properties adds the prefix to the content of the to/reply-to fields for outgoing messages.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSendMessageWithQueueDestinationsOnConnectionWithBrokerDefinedPrefixProperties() throws Exception {
@@ -951,6 +983,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that the a connection with a 'topic prefix' set on it via broker-provided connection
      * properties adds the prefix to the content of the to/reply-to fields for outgoing messages.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSendMessageWithTopicDestinationsOnConnectionWithBrokerDefinedPrefixProperties() throws Exception {
@@ -1033,6 +1067,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * or {@link AmqpMessageSupport#LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME}) set
      * on a message to indicate type of its 'reply-to' address results in it
      * being classed as the same type as the consumer destination.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageFromTopicWithReplyToWithoutTypeAnnotationResultsInUseOfConsumerDestinationType() throws Exception {
@@ -1074,6 +1110,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that the {@link AmqpDestinationHelper#JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME} is set as a byte on
      * a sent message to indicate its 'to' address represents a Topic JMSDestination.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSentMessageContainsToTypeAnnotationByte() throws Exception {
@@ -1111,6 +1149,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that the {@link AmqpDestinationHelper#JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME} is set as a byte on
      * a sent message to indicate its 'reply-to' address represents a Topic JMSDestination.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSentMessageContainsReplyToTypeAnnotationByte() throws Exception {
@@ -1156,6 +1196,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that the {@link AmqpMessageSupport#LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME} set on a message to
      * indicate its 'to' address represents a Topic results in the JMSDestination object being a
      * Topic. Ensure the consumers destination is not used by consuming from a Queue.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageFromQueueWithToLegacyTypeAnnotationForTopic() throws Exception {
@@ -1198,6 +1240,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that the {@link AmqpMessageSupport#LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME} set on a message to
      * indicate its 'reply-to' address represents a Topic results in the JMSReplyTo object being a
      * Topic. Ensure the consumers destination is not used by consuming from a Queue.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageFromQueueWithLegacyReplyToTypeAnnotationForTopic() throws Exception {
@@ -1241,6 +1285,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that lack of the absolute-expiry-time and ttl fields on a message results
      * in it returning 0 for for JMSExpiration
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageFromQueueWithNoAbsoluteExpiryOrTtlReturnsJMSExpirationZero() throws Exception {
@@ -1274,6 +1320,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that setting a non-zero value in the absolute-expiry-time field on a
      * message results in it returning this value for JMSExpiration
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageFromQueueWithAbsoluteExpiryReturnsJMSExpirationNonZero() throws Exception {
@@ -1339,6 +1387,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that receiving a message with a string typed message-id results in returning the
      * expected value for JMSMessageId where the JMS "ID:" prefix has been added.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithStringMessageIdReturnsExpectedJMSMessageID() throws Exception {
@@ -1348,6 +1398,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that receiving a message with a UUID typed message-id results in returning the
      * expected value for JMSMessageId where the JMS "ID:" prefix has been added to the UUID.tostring()
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithUUIDMessageIdReturnsExpectedJMSMessageID() throws Exception {
@@ -1357,6 +1409,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that receiving a message with a ulong typed message-id results in returning the
      * expected value for JMSMessageId where the JMS "ID:" prefix has been added to the UnsignedLong.tostring()
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithUnsignedLongMessageIdReturnsExpectedJMSMessageID() throws Exception {
@@ -1366,6 +1420,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that receiving a message with a binary typed message-id results in returning the
      * expected value for JMSMessageId where the JMS "ID:" prefix has been added to the hex representation of the binary.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithBinaryMessageIdReturnsExpectedJMSMessageID() throws Exception {
@@ -1405,6 +1461,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that receiving a message with a string typed correlation-id results in returning the
      * expected value for JMSCorrelationID where the JMS "ID:" prefix has been added.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithStringCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception {
@@ -1415,6 +1473,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that receiving a message with a string typed correlation-id, which is indicated to be an
      * application-specific value, results in returning the expected value for JMSCorrelationID
      * where the JMS "ID:" prefix has NOT been added.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithAppSpecificStringCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception {
@@ -1424,6 +1484,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that receiving a message with a UUID typed correlation-id results in returning the
      * expected value for JMSCorrelationID where the JMS "ID:" prefix has been added to the UUID.tostring()
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithUUIDCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception {
@@ -1433,6 +1495,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     /**
      * Tests that receiving a message with a UUID typed correlation-id results in returning the
      * expected value for JMSCorrelationID where the JMS "ID:" prefix has been added to the UUID.tostring()
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithLongCorrelationIdReturnsExpectedJMSCorrelationID() throws Exception {
@@ -1484,6 +1548,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * message-id results in an AMQP message with the expected encoding of the correlation-id,
      * where the type is uuid, the "ID:" prefix of the JMSCorrelationID value is (obviously) not present, and there is
      * no presence of the message annotation to indicate an app-specific correlation-id.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSentMessageWithUUIDCorrelationId() throws Exception {
@@ -1497,6 +1563,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * message-id results in an AMQP message with the expected encoding of the correlation-id,
      * where the type is binary, the "ID:" prefix of the JMSCorrelationID value is (obviously) not present, and there is
      * no presence of the message annotation to indicate an app-specific correlation-id.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSentMessageWithBinaryCorrelationId() throws Exception
@@ -1511,6 +1579,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * message-id results in an AMQP message with the expected encoding of the correlation-id,
      * where the type is ulong, the "ID:" prefix of the JMSCorrelationID value is (obviously) not present, and there is
      * no presence of the message annotation to indicate an app-specific correlation-id.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSentMessageWithUlongCorrelationId() throws Exception {
@@ -1524,6 +1594,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * message-id results in an AMQP message with the expected encoding of the correlation-id,
      * where the "ID:" prefix of the JMSCorrelationID value is not present, and there is
      * no presence of the message annotation to indicate an app-specific correlation-id.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSentMessageWithStringCorrelationId() throws Exception {
@@ -1536,6 +1608,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that sending a message with a string typed correlation-id value which is a
      * app-specific results in an AMQP message with the expected encoding of the correlation-id,
      * and the presence of the message annotation to indicate an app-specific correlation-id.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSentMessageWithAppSpecificStringCorrelationId() throws Exception {
@@ -1590,6 +1664,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that receiving a message with a string typed message-id, and then sending a message which
      * uses the result of calling getJMSMessageID as the value for setJMSCorrelationId results in
      * transmission of the expected AMQP message content.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithStringMessageIdAndSendValueAsCorrelationId() throws Exception {
@@ -1600,6 +1676,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that receiving a message with a UUID typed message-id, and then sending a message which
      * uses the result of calling getJMSMessageID as the value for setJMSCorrelationId results in
      * transmission of the expected AMQP message content.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithUUIDMessageIdAndSendValueAsCorrelationId() throws Exception {
@@ -1610,6 +1688,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that receiving a message with a ulong typed message-id, and then sending a message which
      * uses the result of calling getJMSMessageID as the value for setJMSCorrelationId results in
      * transmission of the expected AMQP message content.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithUlongMessageIdAndSendValueAsCorrelationId() throws Exception {
@@ -1620,6 +1700,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that receiving a message with a binary typed message-id, and then sending a message which
      * uses the result of calling getJMSMessageID as the value for setJMSCorrelationId results in
      * transmission of the expected AMQP message content.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithBinaryMessageIdAndSendValueAsCorrelationId() throws Exception {
@@ -1691,6 +1773,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that when receiving a message with the group-id, reply-to-group-id, and group-sequence
      * fields of the AMQP properties section set, that the expected JMSX or JMS_AMQP properties
      * are present, and the expected values are returned when retrieved from the JMS message.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceivedMessageWithGroupRelatedPropertiesSet() throws Exception {
@@ -1766,6 +1850,8 @@ public class MessageIntegrationTest extends QpidJmsTestCase
      * Tests that when sending a message with the JMSXGroupID, JMSXGroupSeq, and JMS_AMQP_REPLY_TO_GROUP_ID
      * properties of the JMS message set, that the expected values are included in the fields of
      * the AMQP message emitted.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testSendMessageWithGroupRelatedPropertiesSet() throws Exception {

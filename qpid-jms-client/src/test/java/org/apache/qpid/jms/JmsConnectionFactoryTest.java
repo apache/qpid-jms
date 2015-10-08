@@ -319,6 +319,8 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
      * The prefetch policy is maintained in a child-object, which we extract the properties from
      * when serializing the factory. Ensure this functions by doing a round trip on a factory
      * configured with some new prefetch configuration via the URI.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSerializeThenDeserializeMaintainsPrefetchPolicy() throws Exception {
@@ -348,6 +350,8 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
      * The redelivery policy is maintained in a child-object, which we extract the properties from
      * when serializing the factory. Ensure this functions by doing a round trip on a factory
      * configured with some new redelivery configuration via the URI.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSerializeThenDeserializeMaintainsRedeliveryPolicy() throws Exception {
@@ -405,6 +409,8 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
     /**
      * Verify that the 'global' exception listener set on the connection factory
      * is ignored when the factory gets serialized.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSerializeThenDeserializeIgnoresGlobalExceptionListener() throws Exception {

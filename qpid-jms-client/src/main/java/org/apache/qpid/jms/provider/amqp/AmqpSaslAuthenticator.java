@@ -36,7 +36,7 @@ public class AmqpSaslAuthenticator {
     private final Sasl sasl;
     private final JmsConnectionInfo info;
     private Mechanism mechanism;
-    private Principal localPrincipal;
+    private final Principal localPrincipal;
     private Set<String> mechanismsRestriction;
 
     /**
@@ -77,7 +77,9 @@ public class AmqpSaslAuthenticator {
      * successful authentication or a JMSSecurityException is thrown indicating that the
      * handshake failed.
      *
-     * @throws JMSSecurityException
+     * @return true if the SASL handshake completes successfully.
+     *
+     * @throws JMSSecurityException if a security violation is detected during the handshake.
      */
     public boolean authenticate() throws JMSSecurityException {
         switch (sasl.getState()) {

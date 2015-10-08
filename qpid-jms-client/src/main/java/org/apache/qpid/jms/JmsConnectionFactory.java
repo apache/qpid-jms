@@ -132,24 +132,11 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         }
     }
 
-    /**
-     * @return a TopicConnection
-     * @throws JMSException
-     * @see javax.jms.TopicConnectionFactory#createTopicConnection()
-     */
     @Override
     public TopicConnection createTopicConnection() throws JMSException {
         return createTopicConnection(getUsername(), getPassword());
     }
 
-    /**
-     * @param username
-     * @param password
-     * @return a TopicConnection
-     * @throws JMSException
-     * @see javax.jms.TopicConnectionFactory#createTopicConnection(java.lang.String,
-     *      java.lang.String)
-     */
     @Override
     public TopicConnection createTopicConnection(String username, String password) throws JMSException {
         try {
@@ -162,23 +149,11 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         }
     }
 
-    /**
-     * @return a Connection
-     * @throws JMSException
-     * @see javax.jms.ConnectionFactory#createConnection()
-     */
     @Override
     public Connection createConnection() throws JMSException {
         return createConnection(getUsername(), getPassword());
     }
 
-    /**
-     * @param username
-     * @param password
-     * @return Connection
-     * @throws JMSException
-     * @see javax.jms.ConnectionFactory#createConnection(java.lang.String, java.lang.String)
-     */
     @Override
     public Connection createConnection(String username, String password) throws JMSException {
         try {
@@ -191,24 +166,11 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         }
     }
 
-    /**
-     * @return a QueueConnection
-     * @throws JMSException
-     * @see javax.jms.QueueConnectionFactory#createQueueConnection()
-     */
     @Override
     public QueueConnection createQueueConnection() throws JMSException {
         return createQueueConnection(getUsername(), getPassword());
     }
 
-    /**
-     * @param username
-     * @param password
-     * @return a QueueConnection
-     * @throws JMSException
-     * @see javax.jms.QueueConnectionFactory#createQueueConnection(java.lang.String,
-     *      java.lang.String)
-     */
     @Override
     public QueueConnection createQueueConnection(String username, String password) throws JMSException {
         try {
@@ -574,6 +536,9 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      * It is possible to set the clientID on the Connection itself immediately after
      * creation if no value has been set via the factory that created it, which will
      * allow the factory to create multiple open connections at a time.
+     *
+     * @param clientID
+     *      The clientID to assign when creating a new connection.
      */
     public void setClientID(String clientID) {
         this.clientID = clientID;

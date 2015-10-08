@@ -53,6 +53,8 @@ public abstract class JNDIStorable implements Referenceable, Externalizable {
      * set the properties for this instance as retrieved from JNDI
      *
      * @param props
+     *      The properties to apply to this instance.
+     *
      * @return a new, unmodifiable, map containing any unused properties, or empty if none were.
      */
     public synchronized Map<String, String> setProperties(Map<String, String> props) {
@@ -83,9 +85,6 @@ public abstract class JNDIStorable implements Referenceable, Externalizable {
     }
 
     /**
-     * @param in
-     * @throws IOException
-     * @throws ClassNotFoundException
      * @see java.io.Externalizable#readExternal(java.io.ObjectInput)
      */
     @SuppressWarnings("unchecked")
@@ -98,8 +97,6 @@ public abstract class JNDIStorable implements Referenceable, Externalizable {
     }
 
     /**
-     * @param out
-     * @throws IOException
      * @see java.io.Externalizable#writeExternal(java.io.ObjectOutput)
      */
     @Override

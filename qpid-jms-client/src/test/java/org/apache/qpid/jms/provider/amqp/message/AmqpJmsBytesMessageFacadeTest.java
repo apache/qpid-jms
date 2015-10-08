@@ -137,6 +137,8 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
     /**
      * Test that copying a new messages which has been written to creates the
      * non-empty data section of the underlying message.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCopyOnPopulatedNewMessageCreatesDataSection() throws Exception {
@@ -159,6 +161,8 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
     /**
      * Test that copying a new messages which has not been written to creates the
      * (empty) data section of the underlying message on the copy.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testCopyOfNewMessageDoesNotCreateDataSection() throws Exception {
@@ -399,6 +403,8 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
     /**
      * Test that setting bytes on a received message results in the expected content in the body section
      * of the underlying message and returned by a new InputStream requested from the message.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetGetBodyOnReceivedMessage() throws Exception {

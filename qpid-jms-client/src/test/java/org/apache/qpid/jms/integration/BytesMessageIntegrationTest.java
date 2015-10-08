@@ -157,6 +157,8 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
      * gives the expected data values when read, and when reset and left mid-stream before being
      * resent that it results in the expected AMQP data body section and properties content type
      * being received by the test peer.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceiveBytesMessageAndResendAfterResetAndPartialRead() throws Exception {
@@ -265,6 +267,8 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
      * expected data values when read, and when sent to the test peer it results in an
      * AMQP message containing a data body section and content type of
      * {@link AmqpMessageSupport#OCTET_STREAM_CONTENT_TYPE}
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceiveBytesMessageWithAmqpValueAndResendResultsInData() throws Exception {

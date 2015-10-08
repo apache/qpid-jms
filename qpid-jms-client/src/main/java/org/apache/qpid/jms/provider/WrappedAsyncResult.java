@@ -25,6 +25,9 @@ public abstract class WrappedAsyncResult implements AsyncResult {
 
     /**
      * Create a new WrappedAsyncResult for the target AsyncResult
+     *
+     * @param wrapped
+     *      The AsyncResult to be wrapped by this AsyncResult instance.
      */
     public WrappedAsyncResult(AsyncResult wrapped) {
         this.wrapped = wrapped;

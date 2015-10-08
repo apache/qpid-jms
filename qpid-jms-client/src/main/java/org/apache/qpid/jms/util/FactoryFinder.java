@@ -26,6 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * A Factory finding helper class used to locate objects that serve as Factories for
  * other Object types.  The search an instantiate mechanism is configurable so that
  * in a non-stand-alone environment such as OSGI the finder and be configured to work.
+ *
+ * @param <T> The type of the object Factory to locate.
  */
 public class FactoryFinder<T extends Object> {
 
@@ -68,6 +70,8 @@ public class FactoryFinder<T extends Object> {
     /**
      * Creates a new instance of the FactoryFinder using the given search path.
      *
+     * @param factoryType
+     *        The Class that defines what this finder is searching for.
      * @param path
      *        The path to use when searching for the factory definitions.
      */

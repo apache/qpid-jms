@@ -288,7 +288,8 @@ public interface Provider {
      *   {@literal timeout > 0} then it should remain open for timeout amount of time.
      *
      * The timeout value when positive is given in milliseconds.
-     *
+     * @param consumerId
+     *        the ID of the Consumer instance that is attempt to pull a message from the remote.
      * @param timeout
      *        the amount of time to tell the remote peer to keep this pull request valid.
      * @param request

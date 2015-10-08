@@ -31,6 +31,11 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Base for all AmqpResource builders.
+ *
+ * @param <TARGET> The Type of resource that will be created.
+ * @param <PARENT> The Type of this resource's parent.
+ * @param <INFO> The Type of JmsResource used to describe the target resource.
+ * @param <ENDPOINT> The AMQP Endpoint that the target resource encapsulates.
  */
 public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT extends AmqpResourceParent, INFO extends JmsResource, ENDPOINT extends Endpoint> implements AmqpEventSink {
 

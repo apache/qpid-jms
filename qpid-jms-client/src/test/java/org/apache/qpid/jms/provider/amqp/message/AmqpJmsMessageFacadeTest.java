@@ -525,6 +525,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
      * Check that setting GroupId null on a new message does not cause creation of the underlying properties
      * section. New messages lack the properties section section,
      * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetGroupIdNullOnNewMessageDoesNotCreatePropertiesSection() throws Exception {
@@ -539,6 +541,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
      * Check that setting GroupId on the message causes creation of the underlying properties
      * section with the expected value. New messages lack the properties section section,
      * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetGroupIdOnNewMessage() throws Exception {
@@ -555,6 +559,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
     /**
      * Check that setting UserId null on the message causes any existing value to be cleared
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetGroupIdNullOnMessageWithExistingGroupId() throws Exception {
@@ -598,6 +604,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
      * Check that setting ReplyToGroupId null on a new message does not cause creation of the
      * underlying properties section. New messages lack the properties section,
      * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetReplyToGroupIdNullOnNewMessageDoesNotCreatePropertiesSection() throws Exception {
@@ -1388,6 +1396,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
      * Check that setting UserId on the message causes creation of the underlying properties
      * section with the expected value. New messages lack the properties section section,
      * as tested by {@link #testNewMessageHasNoUnderlyingPropertiesSection()}.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetUserIdOnNewMessage() throws Exception {
@@ -1404,6 +1414,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
     /**
      * Check that setting UserId null on the message causes any existing value to be cleared
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetUserIdNullOnMessageWithExistingUserId() throws Exception {
@@ -1603,6 +1615,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     /**
      * Test that {@link AmqpJmsMessageFacade#getType()} returns the expected value
      * for a message received with the message Subject set.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testGetJMSTypeWithReceivedMessage() throws Exception {

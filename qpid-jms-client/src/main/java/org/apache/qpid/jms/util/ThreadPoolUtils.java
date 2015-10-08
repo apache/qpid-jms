@@ -36,6 +36,9 @@ public final class ThreadPoolUtils {
     /**
      * Shutdown the given executor service only (ie not graceful shutdown).
      *
+     * @param executorService
+     *        The ExecutorService that is being shutdown.
+     *
      * @see java.util.concurrent.ExecutorService#shutdown()
      */
     public static void shutdown(ExecutorService executorService) {
@@ -47,7 +50,9 @@ public final class ThreadPoolUtils {
      *
      * @param executorService
      *        the executor service to shutdown now
+     *
      * @return list of tasks that never commenced execution
+     *
      * @see java.util.concurrent.ExecutorService#shutdownNow()
      */
     public static List<Runnable> shutdownNow(ExecutorService executorService) {
@@ -77,6 +82,9 @@ public final class ThreadPoolUtils {
      * This implementation invokes the
      * {@link #shutdownGraceful(java.util.concurrent.ExecutorService, long)} with a timeout
      * value of {@link #DEFAULT_SHUTDOWN_AWAIT_TERMINATION} millis.
+     *
+     * @param executorService
+     *        The ExecutorService that is being shutdown.
      */
     public static void shutdownGraceful(ExecutorService executorService) {
         doShutdown(executorService, DEFAULT_SHUTDOWN_AWAIT_TERMINATION);

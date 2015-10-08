@@ -130,12 +130,21 @@ public interface JmsTransactionContext {
      */
     boolean isInTransaction();
 
+    /**
+     * Signals that the connection that was previously established has been lost and the
+     * listener should alter its state to reflect the fact that there is no active connection.
+     */
     void onConnectionInterrupted();
 
     /**
      * Called when the connection to the remote peer has been lost and then a new
      * connection established.  The context should perform any necessary processing
      * recover and reset its internal state.
+     *
+     * @param provider
+     *      A reference to the provider that manages the new connection.
+     *
+     * @throws Exception if an error occurs while rebuilding against the new provider.
      */
     void onConnectionRecovery(Provider provider) throws Exception;
 

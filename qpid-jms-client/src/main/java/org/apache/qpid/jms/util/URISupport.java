@@ -110,7 +110,8 @@ public class URISupport {
      *        The target URI that should be parsed.
      *
      * @return a new CompsiteData instance representing the parsed composite URI.
-     * @throws URISyntaxException
+     *
+     * @throws URISyntaxException if the given URI is invalid.
      */
     public static CompositeData parseComposite(URI uri) throws URISyntaxException {
 
@@ -336,7 +337,8 @@ public class URISupport {
      *        The URI whose query value is to be removed.
      *
      * @return a new URI that does not contain a query value.
-     * @throws URISyntaxException
+     *
+     * @throws URISyntaxException if the given URI is invalid.
      */
     public static URI removeQuery(URI uri) throws URISyntaxException {
         return PropertyUtil.replaceQuery(uri, (String) null);
@@ -353,7 +355,8 @@ public class URISupport {
      *        The URI whose query should be extracted and processed.
      *
      * @return A Mapping of the URI options.
-     * @throws URISyntaxException
+     *
+     * @throws URISyntaxException if the given URI is invalid.
      */
     public static Map<String, String> parseParameters(URI uri) throws URISyntaxException {
         if (!isCompositeURI(uri)) {
@@ -389,7 +392,8 @@ public class URISupport {
      *        The Key / Value mapping that will be transformed into a URI query string.
      *
      * @return A new URI value that combines the given URI and the constructed query string.
-     * @throws URISyntaxException
+     *
+     * @throws URISyntaxException if the given URI is invalid.
      */
     public static URI applyParameters(URI uri, Map<String, String> queryParameters) throws URISyntaxException {
         return applyParameters(uri, queryParameters, "");
@@ -410,7 +414,8 @@ public class URISupport {
      *        key.
      *
      * @return A new URI value that combines the given URI and the constructed query string.
-     * @throws URISyntaxException
+     *
+     * @throws URISyntaxException if the given URI is invalid.
      */
     public static URI applyParameters(URI uri, Map<String, String> queryParameters, String optionPrefix) throws URISyntaxException {
         if (queryParameters != null && !queryParameters.isEmpty()) {

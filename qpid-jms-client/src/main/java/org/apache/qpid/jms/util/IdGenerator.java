@@ -98,6 +98,9 @@ public class IdGenerator {
 
     /**
      * Construct an IdGenerator
+     *
+     * @param prefix
+     *      The prefix value that is applied to all generated IDs.
      */
     public IdGenerator(String prefix) {
         synchronized (UNIQUE_STUB) {
@@ -189,7 +192,9 @@ public class IdGenerator {
      * From a generated id - return the generator count
      *
      * @param id
-     * @return the count
+     *      The ID that will be parsed for a sequence number.
+     *
+     * @return the sequence value parsed from the given ID.
      */
     public static long getSequenceFromId(String id) {
         long result = -1;
@@ -207,8 +212,9 @@ public class IdGenerator {
     /**
      * Does a proper compare on the Id's
      *
-     * @param id1
-     * @param id2
+     * @param id1 the lhs of the comparison.
+     * @param id2 the rhs of the comparison.
+     *
      * @return 0 if equal else a positive if {@literal id1 > id2} ...
      */
     public static int compare(String id1, String id2) {

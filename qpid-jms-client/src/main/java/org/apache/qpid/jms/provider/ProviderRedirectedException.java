@@ -30,9 +30,6 @@ public class ProviderRedirectedException extends IOException {
     private final String networkHost;
     private final int port;
 
-    /**
-     * @param reason
-     */
     public ProviderRedirectedException(String reason, String hostname, String networkHost, int port) {
         super(reason);
 

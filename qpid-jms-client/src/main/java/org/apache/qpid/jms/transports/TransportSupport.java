@@ -55,6 +55,8 @@ public class TransportSupport {
      * Creates a Netty SslHandler instance for use in Transports that require
      * an SSL encoder / decoder.
      *
+     * @param remote
+     *        The URI of the remote peer that the SslHandler will be used against.
      * @param options
      *        The SSL options object to build the SslHandler instance from.
      *

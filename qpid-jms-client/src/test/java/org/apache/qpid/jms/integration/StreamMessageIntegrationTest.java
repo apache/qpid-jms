@@ -57,6 +57,8 @@ public class StreamMessageIntegrationTest extends QpidJmsTestCase {
      * Test that a message received from the test peer with an AmqpValue section containing
      * a list which holds entries of the various supported entry types is returned as a
      * {@link StreamMessage}, and verify the values can all be retrieved as expected.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
     public void testReceiveBasicMapMessage() throws Exception {

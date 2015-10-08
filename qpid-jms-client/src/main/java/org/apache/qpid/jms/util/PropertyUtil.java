@@ -52,7 +52,7 @@ public class PropertyUtil {
      * @return a new URI that matches the original one but has its query options replaced with
      *         the given ones.
      *
-     * @throws URISyntaxException
+     * @throws URISyntaxException if the given URI is invalid.
      */
     public static URI replaceQuery(URI originalURI, Map<String, String> params) throws URISyntaxException {
         String s = createQueryString(params);
@@ -71,7 +71,8 @@ public class PropertyUtil {
      *        The new URI query string that should be appended to the given URI.
      *
      * @return a new URI that is a combination of the original URI and the given query string.
-     * @throws URISyntaxException
+     *
+     * @throws URISyntaxException if the given URI is invalid.
      */
     public static URI replaceQuery(URI uri, String query) throws URISyntaxException {
         String schemeSpecificPart = uri.getRawSchemeSpecificPart();
@@ -97,7 +98,8 @@ public class PropertyUtil {
      *        The source URI whose existing query is replaced with the newly supplied one.
      *
      * @return a new URI that is a combination of the original URI and the given query string.
-     * @throws URISyntaxException
+     *
+     * @throws URISyntaxException if the given URI is invalid.
      */
     public static URI eraseQuery(URI uri) throws URISyntaxException {
         return replaceQuery(uri, (String) null);
@@ -112,7 +114,7 @@ public class PropertyUtil {
      *
      * @return a URI formatted query string.
      *
-     * @throws URISyntaxException
+     * @throws URISyntaxException if the given URI is invalid.
      */
     public static String createQueryString(Map<String, ? extends Object> options) throws URISyntaxException {
         try {

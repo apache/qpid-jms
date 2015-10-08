@@ -36,6 +36,8 @@ import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
  * This wrapper is meant primarily for Providers that are adding some additional feature
  * on-top of an existing provider such as a discovery based provider that only needs to
  * pass along discovered remote peer information.
+ *
+ * @param <E> the Type of the Provider instance being wrapped.
  */
 public class ProviderWrapper<E extends Provider> implements Provider, ProviderListener {
 

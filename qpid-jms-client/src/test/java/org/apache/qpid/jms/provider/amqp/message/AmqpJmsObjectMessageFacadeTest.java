@@ -113,6 +113,8 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
     /**
      * Test that setting an object on a new message results in the expected
      * content in the body section of the underlying message.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetObjectOnNewMessage() throws Exception {
@@ -140,6 +142,8 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
     /**
      * Test that setting an object on a new message results in the expected
      * content in the body section of the underlying message.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetObjectOnNewAmqpTypedMessage() throws Exception {
@@ -158,9 +162,11 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
     }
 
     /**
-    * Test that setting a null object on a message results in the underlying body
-    * section being set with the null object body, ensuring getObject returns null.
-    */
+     * Test that setting a null object on a message results in the underlying body
+     * section being set with the null object body, ensuring getObject returns null.
+     *
+     * @throws Exception if an error occurs during the test.
+     */
     @Test
     public void testSetObjectWithNullClearsExistingBodySection() throws Exception {
         Message protonMessage = Message.Factory.create();
@@ -176,9 +182,11 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
     }
 
     /**
-    * Test that clearing the body on a message results in the underlying body
-    * section being set with the null object body, ensuring getObject returns null.
-    */
+     * Test that clearing the body on a message results in the underlying body
+     * section being set with the null object body, ensuring getObject returns null.
+     *
+     * @throws Exception if an error occurs during the test.
+     */
     @Test
     public void testClearBodyWithExistingSerializedBodySection() throws Exception {
         Message protonMessage = Message.Factory.create();
@@ -194,9 +202,11 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
     }
 
     /**
-    * Test that setting an object on a new message and later getting the value, returns an
-    * equal but different object that does not pick up intermediate changes to the set object.
-    */
+     * Test that setting an object on a new message and later getting the value, returns an
+     * equal but different object that does not pick up intermediate changes to the set object.
+     *
+     * @throws Exception if an error occurs during the test.
+     */
     @Test
     public void testSetThenGetObjectOnSerializedMessageReturnsSnapshot() throws Exception {
         HashMap<String, String> origMap = new HashMap<String, String>();

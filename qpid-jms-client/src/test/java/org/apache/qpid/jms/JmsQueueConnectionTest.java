@@ -61,9 +61,11 @@ public class JmsQueueConnectionTest extends JmsConnectionTestSupport {
      * (see JMS 1.1 specs, table 4-1).
      *
      * @since JMS 1.1
+     *
+     * @throws JMSException if an error occurs during the test.
      */
     @Test(timeout = 30000, expected=IllegalStateException.class)
-    public void testCreateDurableConnectionConsumerOnQueueConnection() throws JMSException{
+    public void testCreateDurableConnectionConsumerOnQueueConnection() throws JMSException {
         queueConnection.createDurableConnectionConsumer(new JmsTopic(), "subscriptionName", "", (ServerSessionPool)null, 1);
     }
 }

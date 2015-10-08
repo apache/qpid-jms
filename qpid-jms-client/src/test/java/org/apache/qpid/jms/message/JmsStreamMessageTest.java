@@ -107,6 +107,8 @@ public class JmsStreamMessageTest {
      *
      * Write bytes, then deliberately try to retrieve them as illegal types, then check they can
      * be successfully read.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testIllegalTypeConvesionFailureDoesNotIncrementPosition1() throws Exception {
@@ -142,6 +144,8 @@ public class JmsStreamMessageTest {
      *
      * Write String, then deliberately try illegal retrieval as bytes, then check it can be
      * successfully read.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testIllegalTypeConvesionFailureDoesNotIncrementPosition2() throws Exception {
@@ -164,6 +168,8 @@ public class JmsStreamMessageTest {
      * Test that this is the case, and in doing show demonstrate that primitive type conversion
      * failure does not increment the stream position, as shown by not hitting the end of the
      * stream unexpectedly.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testNullStreamEntryResultsInExpectedBehaviour() throws Exception {
@@ -198,7 +204,6 @@ public class JmsStreamMessageTest {
         assertFalse(streamMessage.readBoolean());
         streamMessage.reset(); // need to reset as read was a success
     }
-
 
     @Test
     public void testClearBodyAppliesCorrectState() throws JMSException {
@@ -300,6 +305,8 @@ public class JmsStreamMessageTest {
 
     /**
      * Write bytes, then retrieve them as all of the legal type combinations
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteBytesReadLegal() throws Exception {
@@ -320,6 +327,8 @@ public class JmsStreamMessageTest {
     /**
      * Write bytes, then retrieve them as all of the illegal type combinations to verify it
      * fails as expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteBytesReadIllegal() throws Exception {
@@ -470,6 +479,8 @@ public class JmsStreamMessageTest {
      *
      * Test that these restrictions are met, and don't interfere with completing the readBytes
      * usage.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testReadObjectAfterPartialReadBytesThrowsMFE() throws Exception {
@@ -506,6 +517,8 @@ public class JmsStreamMessageTest {
     /**
      * Verify that setting bytes takes a copy of the array. Set bytes subset, then retrieve the
      * entry and verify the are different arrays and the subsets are equal.
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteBytesWithOffsetAndLength() throws Exception {
@@ -547,6 +560,8 @@ public class JmsStreamMessageTest {
     /**
      * Set a boolean, then retrieve it as all of the legal type combinations to verify it is
      * parsed correctly
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteBooleanReadLegal() throws Exception {
@@ -564,6 +579,8 @@ public class JmsStreamMessageTest {
     /**
      * Set a boolean, then retrieve it as all of the illegal type combinations to verify it
      * fails as expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testSetBooleanGetIllegal() throws Exception {
@@ -601,6 +618,8 @@ public class JmsStreamMessageTest {
     /**
      * Set a string, then retrieve it as all of the legal type combinations to verify it is
      * parsed correctly
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteStringReadLegal() throws Exception {
@@ -647,6 +666,8 @@ public class JmsStreamMessageTest {
     /**
      * Set a string, then retrieve it as all of the illegal type combinations to verify it fails
      * as expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteStringReadIllegal() throws Exception {
@@ -693,6 +714,8 @@ public class JmsStreamMessageTest {
     /**
      * Set a byte, then retrieve it as all of the legal type combinations to verify it is parsed
      * correctly
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteByteReadLegal() throws Exception {
@@ -713,6 +736,8 @@ public class JmsStreamMessageTest {
     /**
      * Set a byte, then retrieve it as all of the illegal type combinations to verify it fails
      * as expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteByteReadIllegal() throws Exception {
@@ -747,6 +772,8 @@ public class JmsStreamMessageTest {
     /**
      * Set a short, then retrieve it as all of the legal type combinations to verify it is
      * parsed correctly
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteShortReadLegal() throws Exception {
@@ -766,6 +793,8 @@ public class JmsStreamMessageTest {
     /**
      * Set a short, then retrieve it as all of the illegal type combinations to verify it fails
      * as expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteShortReadIllegal() throws Exception {
@@ -801,6 +830,8 @@ public class JmsStreamMessageTest {
     /**
      * Set a char, then retrieve it as all of the legal type combinations to verify it is parsed
      * correctly
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteCharReadLegal() throws Exception {
@@ -818,6 +849,8 @@ public class JmsStreamMessageTest {
     /**
      * Set a char, then retrieve it as all of the illegal type combinations to verify it fails
      * as expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteCharReadIllegal() throws Exception {
@@ -855,6 +888,8 @@ public class JmsStreamMessageTest {
     /**
      * Set an int, then retrieve it as all of the legal type combinations to verify it is parsed
      * correctly
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteIntReadLegal() throws Exception {
@@ -873,6 +908,8 @@ public class JmsStreamMessageTest {
     /**
      * Set an int, then retrieve it as all of the illegal type combinations to verify it fails
      * as expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteIntReadIllegal() throws Exception {
@@ -909,6 +946,8 @@ public class JmsStreamMessageTest {
     /**
      * Set a long, then retrieve it as all of the legal type combinations to verify it is parsed
      * correctly
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteLongReadLegal() throws Exception {
@@ -926,6 +965,8 @@ public class JmsStreamMessageTest {
     /**
      * Set a long, then retrieve it as all of the illegal type combinations to verify it fails
      * as expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteLongReadIllegal() throws Exception {
@@ -963,6 +1004,8 @@ public class JmsStreamMessageTest {
     /**
      * Set a float, then retrieve it as all of the legal type combinations to verify it is
      * parsed correctly
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteFloatReadLegal() throws Exception {
@@ -981,6 +1024,8 @@ public class JmsStreamMessageTest {
     /**
      * Set a float, then retrieve it as all of the illegal type combinations to verify it fails
      * as expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteFloatReadIllegal() throws Exception {
@@ -1017,6 +1062,8 @@ public class JmsStreamMessageTest {
     /**
      * Set a double, then retrieve it as all of the legal type combinations to verify it is
      * parsed correctly
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteDoubleReadLegal() throws Exception {
@@ -1034,6 +1081,8 @@ public class JmsStreamMessageTest {
     /**
      * Set a double, then retrieve it as all of the illegal type combinations to verify it fails
      * as expected
+     *
+     * @throws Exception if an error occurs during the test.
      */
     @Test
     public void testWriteDoubleReadIllegal() throws Exception {

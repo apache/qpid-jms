@@ -48,6 +48,9 @@ public interface JmsMessageFacade {
     public Set<String> getPropertyNames() throws JMSException;
 
     /**
+     * @param key
+     *      The property name that is being searched for.
+     *
      * @return true if the given property exists within the message.
      *
      * @throws JMSException if an error occurs while accessing the Message properties.
@@ -59,6 +62,8 @@ public interface JmsMessageFacade {
      *
      * @param key
      *        the key used to access the given property.
+     *
+     * @return the object that is stored under the given key or null if none found.
      *
      * @throws JMSException if an error occurs while accessing the Message properties.
      */
@@ -115,6 +120,8 @@ public interface JmsMessageFacade {
     /**
      * Create a new instance and perform a deep copy of this object's
      * contents.
+     *
+     * @return a copy of this JmsMessageFacade instance.
      *
      * @throws JMSException if an error occurs while copying the message.
      */

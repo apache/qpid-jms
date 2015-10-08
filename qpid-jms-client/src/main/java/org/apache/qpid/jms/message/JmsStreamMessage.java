@@ -47,8 +47,8 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
     }
 
     @Override
-    public void onSend(Object messageId, long producerTtl) throws JMSException {
-        super.onSend(messageId, producerTtl);
+    public void onSend(long producerTtl) throws JMSException {
+        super.onSend(producerTtl);
         reset();
     }
 

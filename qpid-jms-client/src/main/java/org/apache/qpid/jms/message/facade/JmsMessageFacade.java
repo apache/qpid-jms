@@ -85,15 +85,12 @@ public interface JmsMessageFacade {
      * The method allows for passing through producer configuration details not
      * explicitly mapped into the JMS Message allowing the facade to create the
      * most correct and compact message on the wire.
-     *
-     * @param messageId
-     *        the message ID value to assign to the outgoing message.
      * @param producerTtl
      *        the time to live value configured on the producer when sent.
      *
      * @throws JMSException if an error occurs while preparing the message for send.
      */
-    void onSend(Object messageId, long producerTtl) throws JMSException;
+    void onSend(long producerTtl) throws JMSException;
 
     /**
      * Called before a message is dispatched to its intended consumer to allow for

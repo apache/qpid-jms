@@ -202,7 +202,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public void onSend(Object messageId, long producerTtl) throws JMSException {
+    public void onSend(long producerTtl) throws JMSException {
 
         // Set the ttl field of the Header field if needed, complementing the expiration
         // field of Properties for any peers that only inspect the mutable ttl field.
@@ -220,12 +220,6 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             if (hdr != null) {
                 hdr.setTtl(null);
             }
-        }
-
-        if (messageId instanceof String) {
-            setMessageId((String) messageId);
-        } else {
-            message.setMessageId(messageId);
         }
 
         setMessageAnnotation(JMS_MSG_TYPE, getJmsMsgType());

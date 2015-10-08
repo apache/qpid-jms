@@ -20,7 +20,9 @@ package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import javax.jms.Connection;
@@ -29,6 +31,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.message.foreign.ForeignJmsBytesMessage;
+import org.apache.qpid.jms.message.foreign.ForeignJmsTextMessage;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -75,6 +78,38 @@ public class ForeignMessageIntegrationTest extends QpidJmsTestCase {
             foreign.writeBytes(content);
 
             producer.send(foreign);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testSentForeignMessageHasMessageId() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            MessageProducer producer = session.createProducer(queue);
+
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            MessagePropertiesSectionMatcher propertiesMatcher = new MessagePropertiesSectionMatcher(true);
+            propertiesMatcher.withMessageId(notNullValue(String.class));
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propertiesMatcher);
+
+            testPeer.expectTransfer(messageMatcher);
+
+            ForeignJmsTextMessage foreign = new ForeignJmsTextMessage();
+
+            producer.send(foreign);
+
+            assertNotNull("JMSMessageID should not be null", foreign.getJMSMessageID());
+
+            testPeer.waitForAllHandlersToComplete(2000);
         }
     }
 

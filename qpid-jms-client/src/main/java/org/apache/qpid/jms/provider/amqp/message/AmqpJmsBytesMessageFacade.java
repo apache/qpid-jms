@@ -216,8 +216,8 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
     }
 
     @Override
-    public void onSend(Object messageId, long producerTtl) throws JMSException {
-        super.onSend(messageId, producerTtl);
+    public void onSend(long producerTtl) throws JMSException {
+        super.onSend(producerTtl);
 
         reset();
     }

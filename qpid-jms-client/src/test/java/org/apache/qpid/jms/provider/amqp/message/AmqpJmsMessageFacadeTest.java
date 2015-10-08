@@ -160,7 +160,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         assertEquals("TTL has been unset already", origTtl, message.getTtl());
 
-        amqpMessageFacade.onSend(null, 0);
+        amqpMessageFacade.onSend(0);
 
         // check value on underlying TTL field is NOT set
         assertEquals("TTL has not been cleared", 0, message.getTtl());
@@ -178,7 +178,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         assertEquals("TTL has been unset already", origTtl, message.getTtl());
 
-        amqpMessageFacade.onSend(null, newTtl);
+        amqpMessageFacade.onSend(newTtl);
 
         // check value on underlying TTL field is NOT set
         assertEquals("TTL has not been overriden", newTtl, message.getTtl());
@@ -194,7 +194,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
         amqpMessageFacade.setAmqpTimeToLiveOverride((long) overrideTtl);
 
-        amqpMessageFacade.onSend(null, producerTtl);
+        amqpMessageFacade.onSend(producerTtl);
 
         // check value on underlying TTL field is set to the override
         assertEquals("TTL has not been overriden", overrideTtl, message.getTtl());
@@ -1846,14 +1846,6 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
     // ====== AMQP Message Facade misc tests =========
     // ===============================================
-
-    @Test
-    public void testOnSendWithNullMessageIdClearsMessageID() throws JMSException {
-        Message message = Mockito.mock(Message.class);
-        JmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
-        amqpMessageFacade.onSend(null, 0);
-        Mockito.verify(message).setMessageId(null);
-    }
 
     @Test
     public void testClearBodyRemoveMessageBody() {

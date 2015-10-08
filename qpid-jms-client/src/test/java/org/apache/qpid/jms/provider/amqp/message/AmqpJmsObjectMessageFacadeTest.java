@@ -97,7 +97,7 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
     private void doNewMessageToSendHasBodySectionRepresentingNull(boolean amqpTyped) throws Exception {
         AmqpJmsObjectMessageFacade amqpObjectMessageFacade = createNewObjectMessageFacade(amqpTyped);
-        amqpObjectMessageFacade.onSend(null, 0);
+        amqpObjectMessageFacade.onSend(0);
 
         Message protonMessage = amqpObjectMessageFacade.getAmqpMessage();
         assertNotNull("Message body should be presents", protonMessage.getBody());

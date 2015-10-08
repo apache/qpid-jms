@@ -128,7 +128,7 @@ public class JmsTestMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public void onSend(Object messageId, long producerTtl) throws JMSException {
+    public void onSend(long producerTtl) throws JMSException {
     }
 
     @Override

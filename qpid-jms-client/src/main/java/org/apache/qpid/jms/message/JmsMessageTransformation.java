@@ -95,25 +95,21 @@ public final class JmsMessageTransformation {
     }
 
     /**
-     * Creates a fast shallow copy of the current JmsMessage or creates a
-     * whole new message instance from an available JMS message from another
-     * provider.
+     * Creates a new JmsMessage object and populates it using the details of
+     * the given Message.
      *
-     * @param message
-     *        Message to be converted into Jms's implementation.
      * @param connection
      *        The JmsConnection where this transformation is being initiated.
+     * @param message
+     *        Message to be converted into the clients implementation.
      *
      * @return JmsMessage
      *         The client's implementation object for the incoming message.
      *
-     * @throws JMSException if an error occurs during the copy.
+     * @throws JMSException if an error occurs during the transform.
      */
     public static JmsMessage transformMessage(JmsConnection connection, Message message) throws JMSException {
-        if (message instanceof JmsMessage) {
-            return ((JmsMessage) message).copy();
-        } else {
-            JmsMessage activeMessage = null;
+            JmsMessage jmsMessage = null;
             JmsMessageFactory factory = connection.getMessageFactory();
 
             if (message instanceof BytesMessage) {
@@ -129,7 +125,7 @@ public final class JmsMessageTransformation {
                     // Indicates all the bytes have been read from the source.
                 }
 
-                activeMessage = msg;
+                jmsMessage = msg;
             } else if (message instanceof MapMessage) {
                 MapMessage mapMsg = (MapMessage) message;
                 JmsMapMessage msg = factory.createMapMessage();
@@ -140,12 +136,12 @@ public final class JmsMessageTransformation {
                     msg.setObject(name, mapMsg.getObject(name));
                 }
 
-                activeMessage = msg;
+                jmsMessage = msg;
             } else if (message instanceof ObjectMessage) {
                 ObjectMessage objMsg = (ObjectMessage) message;
                 JmsObjectMessage msg = factory.createObjectMessage();
                 msg.setObject(objMsg.getObject());
-                activeMessage = msg;
+                jmsMessage = msg;
             } else if (message instanceof StreamMessage) {
                 StreamMessage streamMessage = (StreamMessage) message;
                 streamMessage.reset();
@@ -160,20 +156,19 @@ public final class JmsMessageTransformation {
                     // Indicates all the stream values have been read from the source.
                 }
 
-                activeMessage = msg;
+                jmsMessage = msg;
             } else if (message instanceof TextMessage) {
                 TextMessage textMsg = (TextMessage) message;
                 JmsTextMessage msg = factory.createTextMessage();
                 msg.setText(textMsg.getText());
-                activeMessage = msg;
+                jmsMessage = msg;
             } else {
-                activeMessage = factory.createMessage();
+                jmsMessage = factory.createMessage();
             }
 
-            copyProperties(connection, message, activeMessage);
+            copyProperties(connection, message, jmsMessage);
 
-            return activeMessage;
-        }
+            return jmsMessage;
     }
 
     /**

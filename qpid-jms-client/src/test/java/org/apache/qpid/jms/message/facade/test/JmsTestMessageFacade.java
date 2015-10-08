@@ -58,7 +58,7 @@ public class JmsTestMessageFacade implements JmsMessageFacade {
     protected int priority = javax.jms.Message.DEFAULT_PRIORITY;
     protected String groupId;
     protected int groupSequence;
-    protected String messageId;
+    protected Object messageId;
     protected long expiration;
     protected long timestamp;
     protected String correlationId;
@@ -146,7 +146,12 @@ public class JmsTestMessageFacade implements JmsMessageFacade {
 
     @Override
     public String getMessageId() {
-        return messageId;
+        return messageId == null ? null : String.valueOf(messageId);
+    }
+
+    @Override
+    public void setMessageId(String messageId) {
+        this.messageId = messageId;
     }
 
     @Override
@@ -155,7 +160,7 @@ public class JmsTestMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public void setMessageId(String messageId) {
+    public void setProviderMessageIdObject(Object messageId) {
         this.messageId = messageId;
     }
 

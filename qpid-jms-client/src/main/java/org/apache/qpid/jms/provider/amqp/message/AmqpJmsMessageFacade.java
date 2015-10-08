@@ -350,6 +350,11 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     @Override
+    public void setProviderMessageIdObject(Object messageId) {
+            message.setMessageId(messageId);
+    }
+
+    @Override
     public void setMessageId(String messageId) {
         if (messageId == null) {
             message.setMessageId(null);

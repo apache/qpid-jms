@@ -711,13 +711,22 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
                 original.setJMSExpiration(0);
             }
 
+            boolean isJmsMessage = original instanceof JmsMessage;
+
             long messageSequence = producer.getNextMessageSequence();
             Object messageId = null;
             if (!disableMsgId) {
                 messageId = messageIDBuilder.createMessageID(producer.getProducerId().toString(), messageSequence);
             }
 
-            JmsMessage copy = JmsMessageTransformation.transformMessage(connection, original);
+            JmsMessage copy = null;
+            if(isJmsMessage) {
+                JmsMessage jmsMessage = (JmsMessage) original;
+                jmsMessage.getFacade().setProviderMessageIdObject(messageId);
+                copy = jmsMessage.copy();
+            } else {
+                copy = JmsMessageTransformation.transformMessage(connection, original);
+            }
 
             // Update the JmsMessage based copy with the required values.
             copy.setConnection(connection);
@@ -728,6 +737,12 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
             copy.onSend(messageId, timeToLive);
 
+            if(!isJmsMessage) {
+                // If the original was a foreign message, we still need to update it
+                // with the properly encoded Message ID String, get it from the copy.
+                original.setJMSMessageID(copy.getJMSMessageID());
+            }
+
             JmsOutboundMessageDispatch envelope = new JmsOutboundMessageDispatch();
             envelope.setMessage(copy);
             envelope.setProducerId(producer.getProducerId());
@@ -736,9 +751,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             envelope.setDispatchId(messageSequence);
 
             transactionContext.send(connection, envelope);
-
-            // Update the original now with the properly encoded Message ID String.
-            original.setJMSMessageID(copy.getJMSMessageID());
         } finally {
             sendLock.unlock();
         }

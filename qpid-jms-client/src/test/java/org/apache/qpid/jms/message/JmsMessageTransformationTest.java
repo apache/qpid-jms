@@ -63,15 +63,15 @@ public class JmsMessageTransformationTest {
     //---------- Test Message Transformation ---------------------------------//
 
     @Test
-    public void testTransformJmsMessageCopies() throws JMSException {
-        JmsMessage source = new JmsMessage(new JmsTestMessageFacade());
+    public void testTransformJmsMessage() throws JMSException {
+        JmsMessage orig = new JmsMessage(new JmsTestMessageFacade());
 
-        source.setJMSMessageID("ID:CONNECTION:1:1");
+        orig.setJMSMessageID("ID:CONNECTION:1:1");
 
-        JmsMessage copy = JmsMessageTransformation.transformMessage(createMockJmsConnection(), source);
-        assertNotNull(copy.getJMSMessageID());
-        assertEquals(source, copy);
-        assertNotSame(source, copy);
+        JmsMessage transformed = JmsMessageTransformation.transformMessage(createMockJmsConnection(), orig);
+        assertNotNull(transformed.getJMSMessageID());
+        assertEquals(orig, transformed);
+        assertNotSame(orig, transformed);
     }
 
     @Test

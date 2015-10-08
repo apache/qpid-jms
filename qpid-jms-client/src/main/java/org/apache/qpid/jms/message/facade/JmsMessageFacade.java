@@ -187,15 +187,6 @@ public interface JmsMessageFacade {
     String getMessageId();
 
     /**
-     * Returns the underlying providers message ID object for this message if one
-     * exists, null otherwise. In the case the returned value is a String, it is not
-     * defined whether the JMS mandated 'ID:' prefix will be present.
-     *
-     * @return the set provider message ID or null if not set.
-     */
-    Object getProviderMessageIdObject();
-
-    /**
      * Sets the message ID for this message.
      *
      * @param messageId
@@ -394,4 +385,21 @@ public interface JmsMessageFacade {
      */
     void setGroupSequence(int groupSequence);
 
+    /**
+     * Returns the underlying providers message ID object for this message if one
+     * exists, null otherwise. In the case the returned value is a String, it is not
+     * defined whether the JMS mandated 'ID:' prefix will be present.
+     *
+     * @return the set provider message ID or null if not set.
+     */
+    Object getProviderMessageIdObject();
+
+    /**
+     * Sets the underlying providers message ID object for this message, or
+     * clears it if the provided value is null.
+     *
+     * @param messageId
+     *        The message ID to set on this message, or null to clear.
+     */
+    void setProviderMessageIdObject(Object messageId);
 }

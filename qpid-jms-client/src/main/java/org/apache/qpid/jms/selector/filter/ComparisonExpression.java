@@ -24,14 +24,11 @@ import java.util.regex.Pattern;
 /**
  * A filter performing a comparison of two objects
  */
+@SuppressWarnings({ "rawtypes", "unchecked" })
 public abstract class ComparisonExpression extends BinaryExpression implements BooleanExpression {
 
     private static final Set<Character> REGEXP_CONTROL_CHARS = new HashSet<Character>();
 
-    /**
-     * @param left
-     * @param right
-     */
     public ComparisonExpression(Expression left, Expression right) {
         super(left, right);
     }
@@ -71,8 +68,6 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
 
         Pattern likePattern;
 
-        /**
-         */
         public LikeExpression(Expression right, String like, int escape) {
             super(right);
 
@@ -297,6 +292,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
      * Only Numeric expressions can be used in {@literal >, >=, < or <=} expressions.
      *
      * @param expr
+     *      The expression to evaluate.
      */
     public static void checkLessThanOperand(Expression expr) {
         if (expr instanceof ConstantExpression) {
@@ -318,6 +314,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
      * not be NULL TRUE or FALSE literals.
      *
      * @param expr
+     *      The expression to evaluate.
      */
     public static void checkEqualOperand(Expression expr) {
         if (expr instanceof ConstantExpression) {
@@ -328,10 +325,6 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         }
     }
 
-    /**
-     * @param left
-     * @param right
-     */
     private static void checkEqualOperandCompatability(Expression left, Expression right) {
         if (left instanceof ConstantExpression && right instanceof ConstantExpression) {
             if (left instanceof BooleanExpression && !(right instanceof BooleanExpression)) {

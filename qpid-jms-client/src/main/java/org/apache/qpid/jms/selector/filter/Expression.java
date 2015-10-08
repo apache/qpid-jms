@@ -22,7 +22,12 @@ package org.apache.qpid.jms.selector.filter;
 public interface Expression {
 
     /**
+     * @param message
+     *      The message that is being selected against.
+     *
      * @return the value of this expression
+     *
+     * @throws FilterException if an error occurs during evaluation.
      */
     Object evaluate(Filterable message) throws FilterException;
 

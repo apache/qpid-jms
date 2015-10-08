@@ -21,10 +21,6 @@ package org.apache.qpid.jms.selector.filter;
  */
 public abstract class LogicExpression extends BinaryExpression implements BooleanExpression {
 
-    /**
-     * @param left
-     * @param right
-     */
     public LogicExpression(BooleanExpression left, BooleanExpression right) {
         super(left, right);
     }

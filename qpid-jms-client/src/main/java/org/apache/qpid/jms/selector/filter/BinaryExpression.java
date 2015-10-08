@@ -78,14 +78,14 @@ public abstract class BinaryExpression implements Expression {
     public abstract String getExpressionSymbol();
 
     /**
-     * @param expression
+     * @param expression the RHS.
      */
     public void setRight(Expression expression) {
         right = expression;
     }
 
     /**
-     * @param expression
+     * @param expression the LHS
      */
     public void setLeft(Expression expression) {
         left = expression;

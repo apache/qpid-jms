@@ -25,10 +25,6 @@ public abstract class ArithmeticExpression extends BinaryExpression {
     protected static final int LONG = 2;
     protected static final int DOUBLE = 3;
 
-    /**
-     * @param left
-     * @param right
-     */
     public ArithmeticExpression(Expression left, Expression right) {
         super(left, right);
     }

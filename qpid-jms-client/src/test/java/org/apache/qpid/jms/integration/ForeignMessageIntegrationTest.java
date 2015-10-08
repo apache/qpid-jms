@@ -19,6 +19,9 @@
 package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import javax.jms.Connection;
 import javax.jms.MessageProducer;
@@ -72,6 +75,55 @@ public class ForeignMessageIntegrationTest extends QpidJmsTestCase {
             foreign.writeBytes(content);
 
             producer.send(foreign);
+        }
+    }
+
+    /**
+     * Test that after sending a message with the disableMessageID hint set, which already had
+     * a JMSMessageID value, that the message object then has a null JMSMessageID value, and no
+     * message-id field value was set.
+     */
+    @Test(timeout = 20000)
+    public void testSendForeignMessageWithDisableMessageIDHintAndExistingMessageID() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            MessageProducer producer = session.createProducer(queue);
+
+            byte[] content = "myBytes".getBytes();
+
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            MessagePropertiesSectionMatcher propertiesMatcher = new MessagePropertiesSectionMatcher(true);
+            propertiesMatcher.withMessageId(nullValue()); // Check there is no message-id value;
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propertiesMatcher);
+            messageMatcher.setMessageContentMatcher(new EncodedDataMatcher(new Binary(content)));
+
+            testPeer.expectTransfer(messageMatcher);
+
+            // Create a foreign message, [erroneously] set a JMSMessageID value
+            ForeignJmsBytesMessage foreign = new ForeignJmsBytesMessage();
+            foreign.writeBytes(content);
+
+            assertNull("JMSMessageID should not yet be set", foreign.getJMSMessageID());
+            String existingMessageId = "ID:this-should-be-overwritten-in-send";
+            foreign.setJMSMessageID(existingMessageId);
+            assertEquals("JMSMessageID should now be set", existingMessageId, foreign.getJMSMessageID());
+
+            // Toggle the DisableMessageID hint, then send it
+            producer.setDisableMessageID(true);
+            producer.send(foreign);
+
+            assertNull("JMSMessageID should now be null", foreign.getJMSMessageID());
+
+            testPeer.waitForAllHandlersToComplete(2000);
         }
     }
 }

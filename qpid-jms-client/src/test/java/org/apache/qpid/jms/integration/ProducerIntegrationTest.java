@@ -638,6 +638,20 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
      */
     @Test(timeout = 20000)
     public void testSendingMessageWithDisableMessageIDHint() throws Exception {
+        doSendingMessageWithDisableMessageIDHintTestImpl(false);
+    }
+
+    /**
+     * Test that after sending a message with the disableMessageID hint set, which already had
+     * a JMSMessageID value, that the message object then has a null JMSMessageID value, and no
+     * message-id field value was set.
+     */
+    @Test(timeout = 20000)
+    public void testSendingMessageWithDisableMessageIDHintAndExistingMessageID() throws Exception {
+        doSendingMessageWithDisableMessageIDHintTestImpl(true);
+    }
+
+    private void doSendingMessageWithDisableMessageIDHintTestImpl(boolean existingId) throws JMSException, InterruptedException, Exception, IOException {
         try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin();
@@ -664,12 +678,19 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             assertNull("JMSMessageID should not yet be set", message.getJMSMessageID());
 
+            if (existingId) {
+                // [erroneously] set a JMSMessageID value
+                String existingMessageId = "ID:this-should-be-overwritten-in-send";
+                message.setJMSMessageID(existingMessageId);
+                assertEquals("JMSMessageID should now be set", existingMessageId, message.getJMSMessageID());
+            }
+
             producer.setDisableMessageID(true);
-
             producer.send(message);
-            testPeer.waitForAllHandlersToComplete(1000);
 
-            assertNull("JMSMessageID should still not yet be set", message.getJMSMessageID());
+            assertNull("JMSMessageID should be null", message.getJMSMessageID());
+
+            testPeer.waitForAllHandlersToComplete(2000);
         }
     }
 

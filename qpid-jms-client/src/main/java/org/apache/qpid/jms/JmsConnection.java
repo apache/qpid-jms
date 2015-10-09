@@ -431,6 +431,10 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     private void connect() throws JMSException {
+        if (isConnected() || closed.get()) {
+            return;
+        }
+
         synchronized(this.connectionInfo) {
             if (isConnected() || closed.get()) {
                 return;
@@ -441,7 +445,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
             }
 
             createResource(connectionInfo);
-            this.connected.set(true);
+            connected.set(true);
         }
     }
 

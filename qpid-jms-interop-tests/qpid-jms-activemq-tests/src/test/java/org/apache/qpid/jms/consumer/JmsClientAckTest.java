@@ -266,7 +266,13 @@ public class JmsClientAckTest extends AmqpTestSupport {
 
         assertTrue("Failed to consume all messages.", done.await(20, TimeUnit.SECONDS));
         assertNotNull(lastMessage.get());
-        assertEquals(MSG_COUNT, proxy.getInFlightCount());
+        assertTrue("Not all messages appear as in-flight.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return proxy.getInFlightCount() == MSG_COUNT;
+            }
+        }));
 
         lastMessage.get().acknowledge();
 
@@ -388,7 +394,9 @@ public class JmsClientAckTest extends AmqpTestSupport {
                         redelivery.countDown();
                     }
                     LOG.info("calling recover() on the session to force redelivery.");
-                    session.recover();
+                    if (redelivery.getCount() != 0) {
+                        session.recover();
+                    }
                 } catch (JMSException e) {
                     e.printStackTrace();
                 }

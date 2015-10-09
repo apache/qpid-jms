@@ -57,6 +57,10 @@ public class AmqpTestSupport extends QpidJmsTestSupport {
         return false;
     }
 
+    protected boolean isFrameTracingEnabled() {
+        return false;
+    }
+
     @Override
     public URI getBrokerActiveMQClientConnectionURI() {
         if (isAddOpenWireConnector()) {
@@ -77,8 +81,10 @@ public class AmqpTestSupport extends QpidJmsTestSupport {
             port = portMap.get("amqp");
         }
         TransportConnector connector = brokerService.addConnector(
-            "amqp://0.0.0.0:" + port + "?transport.transformer=" + getAmqpTransformer() +
-            "&transport.socketBufferSize=" + getSocketBufferSize() + "&ioBufferSize=" + getIOBufferSize());
+            "amqp://0.0.0.0:" + port +
+            "?transport.transformer=" + getAmqpTransformer() +
+            "&transport.socketBufferSize=" + getSocketBufferSize() +
+            "&ioBufferSize=" + getIOBufferSize());
         connector.setName("amqp");
         if (isAmqpDiscovery()) {
             String uriString = "multicast://default";
@@ -114,7 +120,9 @@ public class AmqpTestSupport extends QpidJmsTestSupport {
                 brokerService.getTransportConnectorByName("amqp").getPublishableConnectURI().getPort();
 
             if (!getAmqpConnectionURIOptions().isEmpty()) {
-                uri = uri + "?" + getAmqpConnectionURIOptions();
+                uri = uri + "?amqp.traceFrames=" + isFrameTracingEnabled() + "&" + getAmqpConnectionURIOptions();
+            } else {
+                uri = uri + "?amqp.traceFrames=" + isFrameTracingEnabled();
             }
 
             return new URI(uri);

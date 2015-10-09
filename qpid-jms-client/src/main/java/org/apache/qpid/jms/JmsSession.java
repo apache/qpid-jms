@@ -649,13 +649,15 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             }
 
             JmsMessage copy = null;
-            if(isJmsMessage) {
+            if (isJmsMessage) {
                 JmsMessage jmsMessage = (JmsMessage) original;
                 jmsMessage.getFacade().setProviderMessageIdObject(messageId);
                 copy = jmsMessage.copy();
             } else {
                 copy = JmsMessageTransformation.transformMessage(connection, original);
                 copy.getFacade().setProviderMessageIdObject(messageId);
+                copy.setJMSDestination(destination);
+
                 // If the original was a foreign message, we still need to update it
                 // with the properly encoded Message ID String, get it from the copy.
                 original.setJMSMessageID(copy.getJMSMessageID());
@@ -663,7 +665,6 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
 
             // Update the JmsMessage based copy with the required values.
             copy.setConnection(connection);
-            copy.setJMSDestination(destination);
 
             boolean sync = connection.isAlwaysSyncSend() ||
                            (!connection.isForceAsyncSend() && deliveryMode == DeliveryMode.PERSISTENT && !getTransacted());

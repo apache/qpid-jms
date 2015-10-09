@@ -53,6 +53,23 @@ public class AmqpTestSupport extends QpidJmsTestSupport {
         return 8 * 1024;
     }
 
+    protected boolean isAddOpenWireConnector() {
+        return false;
+    }
+
+    @Override
+    public URI getBrokerActiveMQClientConnectionURI() {
+        if (isAddOpenWireConnector()) {
+            try {
+                return brokerService.getTransportConnectorByName("openwire").getPublishableConnectURI();
+            } catch (Exception e) {
+                throw new RuntimeException();
+            }
+        } else {
+            return super.getBrokerActiveMQClientConnectionURI();
+        }
+    }
+
     @Override
     protected void addAdditionalConnectors(BrokerService brokerService, Map<String, Integer> portMap) throws Exception {
         int port = PORT;
@@ -72,6 +89,19 @@ public class AmqpTestSupport extends QpidJmsTestSupport {
         }
         port = connector.getPublishableConnectURI().getPort();
         LOG.debug("Using amqp port: {}", port);
+
+        if (isAddOpenWireConnector()) {
+            if (portMap.containsKey("openwire")) {
+                port = portMap.get("openwire");
+            } else {
+                port = 0;
+            }
+
+            connector = brokerService.addConnector("tcp://0.0.0.0:" + port);
+            connector.setName("openwire");
+
+            LOG.debug("Using openwire port: {}", port);
+        }
     }
 
     public String getAmqpConnectionURIOptions() {

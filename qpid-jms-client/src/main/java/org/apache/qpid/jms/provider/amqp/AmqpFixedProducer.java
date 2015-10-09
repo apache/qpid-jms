@@ -104,12 +104,12 @@ public class AmqpFixedProducer extends AmqpProducer {
 
         LOG.trace("Producer sending message: {}", envelope);
 
-        byte[] tag = tagGenerator.getNextTag();
         Delivery delivery = null;
 
         if (presettle) {
             delivery = getEndpoint().delivery(EMPTY_BYTE_ARRAY, 0, 0);
         } else {
+            byte[] tag = tagGenerator.getNextTag();
             delivery = getEndpoint().delivery(tag, 0, tag.length);
         }
 

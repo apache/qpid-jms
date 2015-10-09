@@ -54,6 +54,8 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
     private static final Boolean ROLLBACK_MARKER = Boolean.FALSE;
     private static final Boolean COMMIT_MARKER = Boolean.TRUE;
 
+    private final byte[] OUTBOUND_BUFFER = new byte[64];
+
     private final AmqpSession session;
     private JmsTransactionId current;
     private final AmqpTransferTagGenerator tagGenerator = new AmqpTransferTagGenerator();
@@ -239,7 +241,7 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
 
     private void sendTxCommand(Message message) throws IOException {
         int encodedSize = 0;
-        byte[] buffer = new byte[4 * 1024];
+        byte[] buffer = OUTBOUND_BUFFER;
         while (true) {
             try {
                 encodedSize = message.encode(buffer, 0, buffer.length);

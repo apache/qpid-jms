@@ -305,7 +305,13 @@ public class TestAmqpPeer implements AutoCloseable
     {
         boolean countedDownOk =  waitForAllHandlersToCompleteNoAssert(timeoutMillis);
 
-        Assert.assertTrue("All handlers should have completed within the " + timeoutMillis + "ms timeout", countedDownOk);
+        String message = "All handlers did not complete within the " + timeoutMillis + "ms timeout.";
+        Throwable t = getThrowable();
+        if(t != null){
+            message += System.lineSeparator() + "A *potential* reason, peer caught throwable: " + t;
+        }
+
+        Assert.assertTrue(message, countedDownOk);
     }
 
     public boolean waitForAllHandlersToCompleteNoAssert(int timeoutMillis) throws InterruptedException

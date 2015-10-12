@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.MessageConsumer;
 import javax.jms.Queue;
 import javax.jms.QueueBrowser;
 
@@ -61,7 +62,7 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
     private final JmsDestination destination;
     private final String selector;
 
-    private JmsMessageConsumer consumer;
+    private volatile JmsMessageConsumer consumer;
 
     private Message next;
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -84,18 +85,6 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
         this.selector = selector;
     }
 
-    private void destroyConsumer() {
-        if (consumer == null) {
-            return;
-        }
-        try {
-            consumer.close();
-            consumer = null;
-        } catch (JMSException e) {
-            e.printStackTrace();
-        }
-    }
-
     /**
      * Gets an enumeration for browsing the current queue messages in the order they would be
      * received.
@@ -108,16 +97,9 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
     @Override
     public Enumeration<Message> getEnumeration() throws JMSException {
         checkClosed();
-        if (consumer == null) {
-            consumer = createConsumer();
-        }
-        return this;
-    }
+        createConsumer();
 
-    private void checkClosed() throws IllegalStateException {
-        if (closed.get()) {
-            throw new IllegalStateException("The Consumer is closed");
-        }
+        return this;
     }
 
     /**
@@ -126,10 +108,9 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
     @Override
     public boolean hasMoreElements() {
         while (true) {
-            synchronized (this) {
-                if (consumer == null) {
-                    return false;
-                }
+            MessageConsumer consumer = this.consumer;
+            if (consumer == null) {
+                return false;
             }
 
             if (next == null) {
@@ -160,11 +141,6 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
      */
     @Override
     public Message nextElement() {
-        synchronized (this) {
-            if (consumer == null) {
-                return null;
-            }
-        }
 
         if (hasMoreElements()) {
             Message message = next;
@@ -195,7 +171,6 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
      *         if the JMS provider fails to get the queue associated with this browser due to
      *         some internal error.
      */
-
     @Override
     public Queue getQueue() throws JMSException {
         return (Queue) destination;
@@ -212,15 +187,38 @@ public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
         return "JmsQueueBrowser { value=" + (consumer != null ? consumer.getConsumerId() : "null") + " }";
     }
 
-    private JmsMessageConsumer createConsumer() throws JMSException {
-        JmsMessageConsumer rc = new JmsMessageConsumer(session.getNextConsumerId(), session, destination, selector, false) {
+    private void checkClosed() throws IllegalStateException {
+        if (closed.get()) {
+            throw new IllegalStateException("The Consumer is closed");
+        }
+    }
 
-            @Override
-            public boolean isBrowser() {
-                return true;
+    private synchronized void destroyConsumer() {
+        synchronized (this) {
+            try {
+                if (consumer != null) {
+                    consumer.close();
+                    consumer = null;
+                }
+            } catch (JMSException e) {
+                LOG.warn("Error closing down internal consumer: ", e);
             }
-        };
-        rc.init();
-        return rc;
+        }
+    }
+
+    private synchronized void createConsumer() throws JMSException {
+        if (consumer == null) {
+            JmsMessageConsumer result = new JmsMessageConsumer(session.getNextConsumerId(), session, destination, selector, false) {
+
+                @Override
+                public boolean isBrowser() {
+                    return true;
+                }
+            };
+            result.init();
+
+            // Assign only after fully created and initialized.
+            consumer = result;
+        }
     }
 }

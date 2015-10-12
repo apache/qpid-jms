@@ -280,7 +280,8 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
 
         // Create a new consumer
         consumer = session.createConsumer(queue);
-        message = (TextMessage) consumer.receive(3000);
+        message = (TextMessage) consumer.receive(5000);
+        assertNotNull(message);
         session.commit();
 
         assertEquals(0, proxy.getQueueSize());

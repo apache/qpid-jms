@@ -64,6 +64,10 @@ public class JmsNoTxTransactionContext implements JmsTransactionContext {
     }
 
     @Override
+    public void shutdown() throws JMSException {
+    }
+
+    @Override
     public void commit() throws JMSException {
     }
 

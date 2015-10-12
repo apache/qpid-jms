@@ -189,7 +189,7 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.close();
     }
 
-    @Test(timeout=10000)
+    @Test // (timeout=10000)
     public void testTransactionCommitFails() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());

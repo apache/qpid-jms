@@ -87,8 +87,7 @@ public interface JmsTransactionContext {
     /**
      * Rolls back any work done in this transaction and releases any locks
      * currently held.  If the current transaction is in a failed state this
-     * resets that state and prepares the context for a new transaction to be
-     * stated via a call to <code>begin</code>.
+     * resets that state and initiates a new transaction via a begin call.
      *
      * @throws JMSException
      *         if the JMS provider fails to roll back the transaction due to some internal error.
@@ -99,12 +98,22 @@ public interface JmsTransactionContext {
      * Commits all work done in this transaction and releases any locks
      * currently held.  If the transaction is in a failed state this method
      * throws an exception to indicate that the transaction has failed and
-     * will be rolled back.
+     * will be rolled back a new transaction is started via a begin call.
      *
      * @throws JMSException
      *         if the commit fails to roll back the transaction due to some internal error.
      */
     void commit() throws JMSException;
+
+    /**
+     * Rolls back any work done in this transaction and releases any locks
+     * currently held.  This method will not start a new transaction and no new
+     * transacted work should be done using this transaction.
+     *
+     * @throws JMSException
+     *         if the JMS provider fails to roll back the transaction due to some internal error.
+     */
+    void shutdown() throws JMSException;
 
     /**
      * @return the transaction ID of the currently active TX or null if none active.

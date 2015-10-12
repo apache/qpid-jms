@@ -970,18 +970,18 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
             testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
 
-            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-            Queue queue = session.createQueue("myQueue");
-
-            testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), transferCount);
-
             // First expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.
             Binary txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
             TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
             declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
             testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            Queue queue = session.createQueue("myQueue");
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), transferCount);
 
             for (int i = 1; i <= consumeCount; i++) {
                 // Then expect an *settled* TransactionalState disposition for each message once received by the consumer
@@ -1009,6 +1009,13 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
             dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
             testPeer.expectTransfer(dischargeMatcher, nullValue(), false, new Accepted(), true);
+
+            // Then expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a declared disposition state containing the txnId.
+            txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
+            declareMatcher = new TransferPayloadCompositeMatcher();
+            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
+            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
 
             session.commit();
 
@@ -1073,19 +1080,19 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
             testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
 
-            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-            Queue queue = session.createQueue("myQueue");
-
-            // Create a producer to use in provoking creation of the AMQP transaction
-            testPeer.expectSenderAttach();
-            MessageProducer producer  = session.createProducer(queue);
-
             // First expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a Declared disposition state containing the txnId.
             Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
             TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
             declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
             testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            Queue queue = session.createQueue("myQueue");
+
+            // Create a producer to use in provoking creation of the AMQP transaction
+            testPeer.expectSenderAttach();
+            MessageProducer producer  = session.createProducer(queue);
 
             // Expect the message which provoked creating the transaction. Check it carries
             // TransactionalState with the above txnId but has no outcome. Respond with a
@@ -1129,18 +1136,18 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
             testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
 
-            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-            Queue queue = session.createQueue("myQueue");
-
-            testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), transferCount);
-
             // First expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.
             Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
             TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
             declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
             testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            Queue queue = session.createQueue("myQueue");
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), transferCount);
 
             for (int i = 1; i <= consumeCount; i++) {
                 // Then expect a *settled* TransactionalState disposition for each message once received by the consumer
@@ -1172,6 +1179,13 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
             testPeer.expectTransfer(dischargeMatcher, nullValue(), false, new Accepted(), true);
 
+            // Then expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a declared disposition state containing the txnId.
+            txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            declareMatcher = new TransferPayloadCompositeMatcher();
+            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
+            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+
             // Expect the messages that were not consumed to be released
             int unconsumed = transferCount - consumeCount;
             for (int i = 1; i <= unconsumed; i++) {
@@ -1199,6 +1213,13 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
             testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
 
+            // First expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a declared disposition state containing the txnId.
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
+            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
+            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
 
@@ -1211,13 +1232,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             // Create a producer to use in provoking creation of the AMQP transaction
             testPeer.expectSenderAttach();
             MessageProducer producer  = session.createProducer(queue);
-
-            // First expect an unsettled 'declare' transfer to the txn coordinator, and
-            // reply with a declared disposition state containing the txnId.
-            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
 
             // Expect the message which provoked creating the transaction
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
@@ -1247,6 +1261,13 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
             testPeer.expectTransfer(dischargeMatcher, nullValue(), false, new Accepted(), true);
 
+            // Now expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a declared disposition state containing the txnId.
+            txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            declareMatcher = new TransferPayloadCompositeMatcher();
+            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
+            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+
             // Expect the messages that were not consumed to be released
             for (int i = 1; i <= messageCount; i++) {
                 testPeer.expectDisposition(true, new ReleasedMatcher());
@@ -1273,6 +1294,13 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
             testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
 
+            // First expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a declared disposition state containing the txnId.
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
+            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
+            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
 
@@ -1285,13 +1313,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             // Create a producer to use in provoking creation of the AMQP transaction
             testPeer.expectSenderAttach();
             MessageProducer producer  = session.createProducer(queue);
-
-            // First expect an unsettled 'declare' transfer to the txn coordinator, and
-            // reply with a declared disposition state containing the txnId.
-            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
 
             // Expect the message which provoked creating the transaction
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
@@ -1326,6 +1347,13 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
             testPeer.expectTransfer(dischargeMatcher, nullValue(), false, new Accepted(), true);
 
+            // Then expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a declared disposition state containing the txnId.
+            txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            declareMatcher = new TransferPayloadCompositeMatcher();
+            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
+            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+
             // Expect the messages that were not consumed to be released
             for (int i = 1; i <= messageCount; i++) {
                 testPeer.expectDisposition(true, new ReleasedMatcher());
@@ -1349,6 +1377,13 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin();
             CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
             testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+
+            // First expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a declared disposition state containing the txnId.
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
+            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
+            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             String queueName = "myQueue";
@@ -1591,6 +1626,13 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
             testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
 
+            // First expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a declared disposition state containing the txnId.
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
+            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
+            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
 
             // Create a consumer, don't expect any flow as the connection is stopped
@@ -1604,13 +1646,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             MessageConsumer consumer = session.createConsumer(queue);
 
             testPeer.waitForAllHandlersToComplete(3000);
-
-            // First expect an unsettled 'declare' transfer to the txn coordinator, and
-            // reply with a declared disposition state containing the txnId.
-            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
 
             for (int i = 1; i <= messageCount; i++) {
                 // Then expect an *settled* TransactionalState disposition for each message once received by the consumer

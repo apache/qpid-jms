@@ -72,6 +72,7 @@ import org.apache.qpid.jms.provider.ProviderClosedException;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
+import org.apache.qpid.jms.provider.ProviderSynchronization;
 import org.apache.qpid.jms.util.IdGenerator;
 import org.apache.qpid.jms.util.ThreadPoolUtils;
 import org.slf4j.Logger;
@@ -529,10 +530,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     //----- Provider interface methods ---------------------------------------//
 
     void createResource(JmsResource resource) throws JMSException {
+        createResource(resource, null);
+    }
+
+    void createResource(JmsResource resource, ProviderSynchronization synchronization) throws JMSException {
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture();
+            ProviderFuture request = new ProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.create(resource, request);
@@ -546,10 +551,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     void startResource(JmsResource resource) throws JMSException {
+        startResource(resource, null);
+    }
+
+    void startResource(JmsResource resource, ProviderSynchronization synchronization) throws JMSException {
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture();
+            ProviderFuture request = new ProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.start(resource, request);
@@ -563,10 +572,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     void stopResource(JmsResource resource) throws JMSException {
+        stopResource(resource, null);
+    }
+
+    void stopResource(JmsResource resource, ProviderSynchronization synchronization) throws JMSException {
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture();
+            ProviderFuture request = new ProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.stop(resource, request);
@@ -580,10 +593,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     void destroyResource(JmsResource resource) throws JMSException {
+        destroyResource(resource, null);
+    }
+
+    void destroyResource(JmsResource resource, ProviderSynchronization synchronization) throws JMSException {
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture();
+            ProviderFuture request = new ProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.destroy(resource, request);
@@ -597,6 +614,10 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     void send(JmsOutboundMessageDispatch envelope) throws JMSException {
+        send(envelope, null);
+    }
+
+    void send(JmsOutboundMessageDispatch envelope, ProviderSynchronization synchronization) throws JMSException {
         checkClosedOrFailed();
 
         // TODO - We don't currently have a way to say that an operation
@@ -610,7 +631,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         //        we can manage order of callback events to async senders at
         //        this level.
         try {
-            ProviderFuture request = new ProviderFuture();
+            ProviderFuture request = new ProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.send(envelope, request);
@@ -624,10 +645,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws JMSException {
+        acknowledge(envelope, ackType, null);
+    }
+
+    void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType, ProviderSynchronization synchronization) throws JMSException {
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture();
+            ProviderFuture request = new ProviderFuture(synchronization);
             provider.acknowledge(envelope, ackType, request);
             request.sync();
         } catch (Exception ioe) {
@@ -636,10 +661,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     void acknowledge(JmsSessionId sessionId) throws JMSException {
+        acknowledge(sessionId, null);
+    }
+
+    void acknowledge(JmsSessionId sessionId, ProviderSynchronization synchronization) throws JMSException {
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture();
+            ProviderFuture request = new ProviderFuture(synchronization);
             provider.acknowledge(sessionId, request);
             request.sync();
         } catch (Exception ioe) {
@@ -648,10 +677,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     void unsubscribe(String name) throws JMSException {
+        unsubscribe(name, null);
+    }
+
+    void unsubscribe(String name, ProviderSynchronization synchronization) throws JMSException {
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture();
+            ProviderFuture request = new ProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.unsubscribe(name, request);
@@ -665,10 +698,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     void commit(JmsSessionId sessionId) throws JMSException {
+        commit(sessionId, null);
+    }
+
+    void commit(JmsSessionId sessionId, ProviderSynchronization synchronization) throws JMSException {
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture();
+            ProviderFuture request = new ProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.commit(sessionId, request);
@@ -682,10 +719,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     void rollback(JmsSessionId sessionId) throws JMSException {
+        rollback(sessionId, null);
+    }
+
+    void rollback(JmsSessionId sessionId, ProviderSynchronization synchronization) throws JMSException {
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture();
+            ProviderFuture request = new ProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.rollback(sessionId, request);
@@ -699,10 +740,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     void recover(JmsSessionId sessionId) throws JMSException {
+        recover(sessionId, null);
+    }
+
+    void recover(JmsSessionId sessionId, ProviderSynchronization synchronization) throws JMSException {
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture();
+            ProviderFuture request = new ProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.recover(sessionId, request);
@@ -716,10 +761,14 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     void pull(JmsConsumerId consumerId, long timeout) throws JMSException {
+        pull(consumerId, timeout, null);
+    }
+
+    void pull(JmsConsumerId consumerId, long timeout, ProviderSynchronization synchronization) throws JMSException {
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture();
+            ProviderFuture request = new ProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.pull(consumerId, timeout, request);

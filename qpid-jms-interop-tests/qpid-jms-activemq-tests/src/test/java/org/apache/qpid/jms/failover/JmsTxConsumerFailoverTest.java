@@ -128,6 +128,7 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
         assertEquals(MSG_COUNT, proxy.getQueueSize());
 
         try {
+            LOG.info("Session commit firing after connection failed.");
             session.commit();
             fail("Session commit should have failed with TX rolled back.");
         } catch (TransactionRolledBackException rb) {
@@ -168,8 +169,9 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
         assertEquals(MSG_COUNT, proxy.getQueueSize());
 
         try {
+            LOG.info("Transacted being rolled back after failover");
             session.rollback();
-            LOG.info("Transacted rollback after failover ok");
+            LOG.info("Transacted rollback after failover");
         } catch (JMSException ex) {
             fail("Session rollback should not have failed.");
         }

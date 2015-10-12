@@ -42,6 +42,7 @@ import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsSessionId;
+import org.apache.qpid.jms.meta.JmsTransactionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.DefaultProviderListener;
 import org.apache.qpid.jms.provider.Provider;
@@ -241,6 +242,15 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 }
 
                 @Override
+                public boolean succeedsWhenOffline() {
+                    if (resource instanceof JmsTransactionInfo) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+
+                @Override
                 public String toString() {
                     return "create -> " + resource;
                 }
@@ -412,7 +422,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             }
 
             @Override
-            public boolean failureWhenOffline() {
+            public boolean succeedsWhenOffline() {
                 return true;
             }
 

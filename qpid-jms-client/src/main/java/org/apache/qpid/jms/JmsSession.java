@@ -118,11 +118,14 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             setTransactionContext(new JmsNoTxTransactionContext());
         }
 
-        this.sessionInfo = new JmsSessionInfo(sessionId);
-        this.sessionInfo.setAcknowledgementMode(acknowledgementMode);
-        this.sessionInfo.setSendAcksAsync(connection.isSendAcksAsync());
+        sessionInfo = new JmsSessionInfo(sessionId);
+        sessionInfo.setAcknowledgementMode(acknowledgementMode);
+        sessionInfo.setSendAcksAsync(connection.isSendAcksAsync());
 
         connection.createResource(sessionInfo);
+
+        // We always keep an open TX so start now.
+        getTransactionContext().begin();
     }
 
     int acknowledgementMode() {
@@ -263,6 +266,8 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             for (JmsMessageProducer producer : new ArrayList<JmsMessageProducer>(this.producers.values())) {
                 producer.shutdown(cause);
             }
+
+            transactionContext.shutdown();
         }
     }
 

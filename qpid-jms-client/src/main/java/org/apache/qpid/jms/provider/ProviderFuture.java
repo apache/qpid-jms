@@ -30,7 +30,16 @@ public class ProviderFuture implements AsyncResult {
 
     private final AtomicBoolean completer = new AtomicBoolean();
     private final CountDownLatch latch = new CountDownLatch(1);
+    private final ProviderSynchronization synchronization;
     private volatile Throwable error;
+
+    public ProviderFuture() {
+        this(null);
+    }
+
+    public ProviderFuture(ProviderSynchronization synchronization) {
+        this.synchronization = synchronization;
+    }
 
     @Override
     public boolean isComplete() {
@@ -39,15 +48,21 @@ public class ProviderFuture implements AsyncResult {
 
     @Override
     public void onFailure(Throwable result) {
-        if(completer.compareAndSet(false, true)) {
+        if (completer.compareAndSet(false, true)) {
             error = result;
+            if (synchronization != null) {
+                synchronization.onPendingFailure(error);
+            }
             latch.countDown();
         }
     }
 
     @Override
     public void onSuccess() {
-        if(completer.compareAndSet(false, true)) {
+        if (completer.compareAndSet(false, true)) {
+            if (synchronization != null) {
+                synchronization.onPendingSuccess();
+            }
             latch.countDown();
         }
     }

@@ -276,6 +276,10 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         }
         this.remoteURI = createURI(remoteURI);
 
+        if (this.remoteURI.getRawUserInfo() != null) {
+            throw new IllegalArgumentException("The supplied URI cannot contain a User-Info section");
+        }
+
         try {
             if (this.remoteURI.getQuery() != null) {
                 Map<String, String> map = PropertyUtil.parseQuery(this.remoteURI.getQuery());

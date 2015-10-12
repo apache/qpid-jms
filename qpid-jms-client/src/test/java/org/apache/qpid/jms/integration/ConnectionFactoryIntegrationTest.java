@@ -97,6 +97,20 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout=20000)
+    public void testCreateAmqpConnectionWithUserInfoThrowsJMSEx() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // DONT create a test fixture, we will drive everything directly.
+            String uri = "amqp://user:pass@127.0.0.1:" + testPeer.getServerPort();
+            try {
+                new JmsConnectionFactory(uri);
+                fail("Should not be able to create a factory with user info value set.");
+            } catch (Exception ex) {
+                LOG.debug("Caught expected exception on invalid message ID format: {}", ex);
+            }
+        }
+    }
+
+    @Test(timeout=20000)
     public void testSetInvalidMessageIDFormatOption() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // DONT create a test fixture, we will drive everything directly.

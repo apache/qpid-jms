@@ -581,18 +581,10 @@ public class TestAmqpPeer implements AutoCloseable
         expectSaslAnonymousConnect(null, null, null, serverProperties);
 
         // Now generate the Close frame with the supplied error
-        final CloseFrame closeFrame = new CloseFrame();
-        if (errorType != null) {
-            org.apache.qpid.jms.test.testpeer.describedtypes.Error detachError = new org.apache.qpid.jms.test.testpeer.describedtypes.Error();
-            detachError.setCondition(errorType);
-            detachError.setDescription(errorMessage);
-            detachError.setInfo(errorInfo);
-            closeFrame.setError(detachError);
-        }
+        final FrameSender closeSender = createCloseFrameSender(errorType, errorMessage, errorInfo);
 
         // Update the handler to send the Close frame after the Open frame.
         CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
-        final FrameSender closeSender = new FrameSender(this, FrameType.AMQP, CONNECTION_CHANNEL, closeFrame, null);
         comp.add(closeSender);
 
         addHandler(new CloseMatcher().withError(Matchers.nullValue()));
@@ -1527,18 +1519,9 @@ public class TestAmqpPeer implements AutoCloseable
             CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
 
             // Now generate the Close
-            final CloseFrame closeFrame = new CloseFrame();
-            if (errorType != null) {
-                org.apache.qpid.jms.test.testpeer.describedtypes.Error detachError = new org.apache.qpid.jms.test.testpeer.describedtypes.Error();
-                detachError.setCondition(errorType);
-                detachError.setDescription(errorMessage);
-                detachError.setInfo(info);
-                closeFrame.setError(detachError);
-            }
+            final FrameSender closeSender = createCloseFrameSender(errorType, errorMessage, info);
 
-            final FrameSender frameSender = new FrameSender(this, FrameType.AMQP, CONNECTION_CHANNEL, closeFrame, null);
-
-            comp.add(frameSender);
+            comp.add(closeSender);
 
             if (expectCloseResponse) {
                 // Expect a response to our Close.
@@ -1546,6 +1529,25 @@ public class TestAmqpPeer implements AutoCloseable
                 addHandler(closeMatcher);
             }
         }
+    }
+
+    private FrameSender createCloseFrameSender(Symbol errorType, String errorMessage, Map<Symbol, Object> info) {
+        final CloseFrame closeFrame = new CloseFrame();
+        if (errorType != null) {
+            org.apache.qpid.jms.test.testpeer.describedtypes.Error closeError = new org.apache.qpid.jms.test.testpeer.describedtypes.Error();
+            closeError.setCondition(errorType);
+            closeError.setDescription(errorMessage);
+            closeError.setInfo(info);
+
+            closeFrame.setError(closeError);
+        }
+
+        return new FrameSender(this, FrameType.AMQP, CONNECTION_CHANNEL, closeFrame, null);
+    }
+
+    void sendConnectionCloseImmediately(Symbol errorType, String errorMessage) {
+        FrameSender closeSender = createCloseFrameSender(errorType, errorMessage, null);
+        closeSender.run();
     }
 
     public void remotelyDetachLastOpenedLinkOnLastOpenedSession(boolean expectDetachResponse, boolean closed) {

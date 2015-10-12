@@ -29,6 +29,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 
+import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.proton.amqp.Binary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +47,7 @@ class TestAmqpPeerRunner implements Runnable
     private OutputStream _networkOutputStream;
 
     private final Object _inputHandlingLock = new Object();
+    private final TestAmqpPeer _peer;
     private final TestFrameParser _testFrameParser;
     private volatile boolean _suppressReadExceptionOnClose;
     private volatile boolean _exitReadLoopEarly;
@@ -76,6 +78,7 @@ class TestAmqpPeerRunner implements Runnable
         }
 
         _testFrameParser = new TestFrameParser(peer);
+        _peer = peer;
     }
 
     @Override
@@ -107,7 +110,17 @@ class TestAmqpPeerRunner implements Runnable
 
                     LOGGER.debug("Read: {}", new Binary(networkInputBytes, 0, bytesRead));
 
-                    _testFrameParser.input(networkInputByteBuffer);
+                    try {
+                        _testFrameParser.input(networkInputByteBuffer);
+                    } catch (Exception ex) {
+                        try {
+                            _peer.sendConnectionCloseImmediately(AmqpError.INTERNAL_ERROR, "Problem in peer: " + ex);
+                        } catch (Exception ex2) {
+                            LOGGER.debug("Exception while sending close frame during handling of previous exception", ex2);
+                        }
+
+                        throw ex;
+                    }
                 }
 
                 if(_exitReadLoopEarly)

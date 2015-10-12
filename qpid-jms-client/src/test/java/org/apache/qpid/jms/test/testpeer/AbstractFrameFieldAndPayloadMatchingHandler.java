@@ -20,6 +20,7 @@ package org.apache.qpid.jms.test.testpeer;
 
 import java.util.List;
 
+import org.apache.qpid.jms.test.testpeer.describedtypes.FrameDescriptorMapping;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
@@ -95,12 +96,15 @@ public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends Abstra
         }
         else
         {
+            Object actualDescriptor = dt.getDescriptor();
+            Object mappedDescriptor = FrameDescriptorMapping.lookupMapping(actualDescriptor);
+
             throw new IllegalArgumentException(String.format(
                     "Frame was not as expected. Expected: " +
                     "type=%s, channel=%s, descriptor=%s/%s but got: " +
-                    "type=%s, channel=%s, descriptor=%s",
-                    _frameType.ordinal(), expectedChannelString(), getSymbolicDescriptor(), getNumericDescriptor(),
-                    type, ch, dt.getDescriptor()));
+                    "type=%s, channel=%s, descriptor=%s(%s)",
+                    _frameType.ordinal(), expectedChannelString(), getNumericDescriptor(), getSymbolicDescriptor(),
+                    type, ch, actualDescriptor, mappedDescriptor));
         }
     }
 

@@ -475,7 +475,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     protected void deleteTemporaryDestination(JmsTemporaryDestination destination) throws JMSException {
         checkClosedOrFailed();
-        connect();
 
         try {
             for (JmsSession session : sessions.values()) {
@@ -547,7 +546,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     void startResource(JmsResource resource) throws JMSException {
-        connect();
+        checkClosedOrFailed();
 
         try {
             ProviderFuture request = new ProviderFuture();
@@ -564,7 +563,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     void stopResource(JmsResource resource) throws JMSException {
-        connect();
+        checkClosedOrFailed();
 
         try {
             ProviderFuture request = new ProviderFuture();
@@ -581,7 +580,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     void destroyResource(JmsResource resource) throws JMSException {
-        connect();
+        checkClosedOrFailed();
 
         try {
             ProviderFuture request = new ProviderFuture();
@@ -599,7 +598,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     void send(JmsOutboundMessageDispatch envelope) throws JMSException {
         checkClosedOrFailed();
-        connect();
 
         // TODO - We don't currently have a way to say that an operation
         //        should be done asynchronously.  A send can be done async
@@ -627,7 +625,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws JMSException {
         checkClosedOrFailed();
-        connect();
 
         try {
             ProviderFuture request = new ProviderFuture();
@@ -640,7 +637,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     void acknowledge(JmsSessionId sessionId) throws JMSException {
         checkClosedOrFailed();
-        connect();
 
         try {
             ProviderFuture request = new ProviderFuture();
@@ -653,7 +649,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     void unsubscribe(String name) throws JMSException {
         checkClosedOrFailed();
-        connect();
 
         try {
             ProviderFuture request = new ProviderFuture();
@@ -671,7 +666,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     void commit(JmsSessionId sessionId) throws JMSException {
         checkClosedOrFailed();
-        connect();
 
         try {
             ProviderFuture request = new ProviderFuture();
@@ -689,7 +683,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     void rollback(JmsSessionId sessionId) throws JMSException {
         checkClosedOrFailed();
-        connect();
 
         try {
             ProviderFuture request = new ProviderFuture();
@@ -707,7 +700,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     void recover(JmsSessionId sessionId) throws JMSException {
         checkClosedOrFailed();
-        connect();
 
         try {
             ProviderFuture request = new ProviderFuture();
@@ -725,7 +717,6 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
 
     void pull(JmsConsumerId consumerId, long timeout) throws JMSException {
         checkClosedOrFailed();
-        connect();
 
         try {
             ProviderFuture request = new ProviderFuture();

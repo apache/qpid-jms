@@ -98,8 +98,8 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
                     LOG.debug("Last TX request failed: {}", current.getProviderHint());
                     pendingDelivery.settle();
                     Rejected rejected = (Rejected) state;
-                    TransactionRolledBackException ex =
-                        new TransactionRolledBackException(rejected.getError().getDescription());
+                    Exception cause = AmqpSupport.convertToException(rejected.getError());
+                    TransactionRolledBackException ex = new TransactionRolledBackException(cause.getMessage());
                     AsyncResult request = this.pendingRequest;
                     this.current = null;
                     this.pendingRequest = null;

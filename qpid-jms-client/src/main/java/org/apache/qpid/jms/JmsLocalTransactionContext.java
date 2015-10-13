@@ -183,6 +183,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
 
                         @Override
                         public void onPendingFailure(Throwable cause) {
+                            reset();
                         }
                     });
 
@@ -235,6 +236,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
 
                     @Override
                     public void onPendingFailure(Throwable cause) {
+                        reset();
                     }
                 });
 

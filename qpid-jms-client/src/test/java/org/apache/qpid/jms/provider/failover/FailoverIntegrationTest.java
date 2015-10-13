@@ -54,12 +54,18 @@ import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.basictypes.TerminusDurability;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Declare;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Declared;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Discharge;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
+import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.SourceMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.jms.util.StopWatch;
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.junit.Test;
@@ -85,6 +91,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             } catch (Exception ex) {
                 fail("Should have thrown JMSSecurityException: " + ex);
             }
+
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
@@ -148,7 +156,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
 
-            //Shut it down
+            // Shut it down
             finalPeer.expectClose();
             connection.close();
             finalPeer.waitForAllHandlersToComplete(1000);
@@ -258,7 +266,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             Throwable t = problem.get();
             assertTrue("Sender thread should have completed. Problem: " + t, await);
 
-            //Shut it down
+            // Shut it down
             finalPeer.expectClose();
             connection.close();
             finalPeer.waitForAllHandlersToComplete(1000);
@@ -320,6 +328,10 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
 
+            // Shut it down
+            finalPeer.expectClose();
+            connection.close();
+
             finalPeer.waitForAllHandlersToComplete(1000);
         }
     }
@@ -348,6 +360,12 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             String message = "Initial connect should not have delayed for the specified initialReconnectDelay." + "Elapsed=" + taken + ", delay=" + delay;
             assertTrue(message,  taken < delay);
             assertTrue("Connection took longer than reasonable: " + taken, taken < 5000);
+
+            // Shut it down
+            originalPeer.expectClose();
+            connection.close();
+
+            originalPeer.waitForAllHandlersToComplete(2000);
         }
     }
 
@@ -415,6 +433,10 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
 
             consumer.close();
+
+            // Shut it down
+            finalPeer.expectClose();
+            connection.close();
 
             finalPeer.waitForAllHandlersToComplete(1000);
         }
@@ -487,6 +509,10 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             LOG.info("Closing consumer");
             consumer.close();
+
+            // Shut it down
+            finalPeer.expectClose();
+            connection.close();
 
             finalPeer.waitForAllHandlersToComplete(1000);
         }
@@ -562,6 +588,10 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             LOG.info("Closing consumer");
             consumer.close();
 
+            // Shut it down
+            finalPeer.expectClose();
+            connection.close();
+
             finalPeer.waitForAllHandlersToComplete(1000);
         }
     }
@@ -633,6 +663,12 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             assertFalse(queueView.hasMoreElements());
 
             browser.close();
+
+            // Shut it down
+            finalPeer.expectClose();
+            connection.close();
+
+            finalPeer.waitForAllHandlersToComplete(1000);
         }
     }
 
@@ -678,7 +714,97 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 LOG.info("Test caught expected error: {}", ide.getMessage());
             }
 
+            // Shut it down
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testTxRecreatedAfterConnectionFailsOver() throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+            TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final CountDownLatch originalConnected = new CountDownLatch(1);
+            final CountDownLatch finalConnected = new CountDownLatch(1);
+
+            // Create a peer to connect to, then one to reconnect to
+            final String originalURI = createPeerURI(originalPeer);
+            final String finalURI = createPeerURI(finalPeer);
+
+            LOG.info("Original peer is at: {}", originalURI);
+            LOG.info("Final peer is at: {}", finalURI);
+
+            originalPeer.expectSaslAnonymousConnect();
+            originalPeer.expectBegin();
+
+            final JmsConnection connection = establishAnonymousConnecton(originalPeer, finalPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (originalURI.equals(remoteURI.toString())) {
+                        originalConnected.countDown();
+                    }
+                }
+
+                @Override
+                public void onConnectionRestored(URI remoteURI) {
+                    LOG.info("Connection Restored: {}", remoteURI);
+                    if (finalURI.equals(remoteURI.toString())) {
+                        finalConnected.countDown();
+                    }
+                }
+            });
+            connection.start();
+
+            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+
+            originalPeer.expectBegin();
+            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
+            originalPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+
+            // First expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a Declared disposition state containing the txnId.
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
+            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
+            originalPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+
+            originalPeer.dropAfterLastHandler();
+
+            // --- Post Failover Expectations of FinalPeer --- //
+
+            finalPeer.expectSaslAnonymousConnect();
+            finalPeer.expectBegin();
+            finalPeer.expectBegin();
+            finalPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+            finalPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+
+            // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
+            // and reply with accepted and settled disposition to indicate the rollback succeeded.
+            Discharge discharge = new Discharge();
+            discharge.setFail(true);
+            discharge.setTxnId(txnId);
+            TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
+            dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
+            finalPeer.expectTransfer(dischargeMatcher, nullValue(), false, new Accepted(), true);
+            finalPeer.expectEnd();
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+
+            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+
+            session.close();
+
+            // Shut it down
+            finalPeer.expectClose();
+            connection.close();
+
+            originalPeer.waitForAllHandlersToComplete(2000);
+            finalPeer.waitForAllHandlersToComplete(1000);
         }
     }
 

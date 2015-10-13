@@ -269,7 +269,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     public void onConnectionInterrupted() {
         lock.writeLock().tryLock();
         try {
-            failed = true;
+            failed = hasWork;
         } finally {
             if (lock.writeLock().isHeldByCurrentThread()) {
                 lock.writeLock().unlock();

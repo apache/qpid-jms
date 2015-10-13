@@ -161,7 +161,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
     @Test(expected = IOException.class)
     public void testCreateSslContextIncorrectStoreType() throws Exception {
         TransportSslOptions options = createPkcs12SslOptions();
-        options.setStoreType(KEYSTORE_JKS_TYPE);
+        options.setStoreType(KEYSTORE_JCEKS_TYPE);
         TransportSupport.createSslContext(options);
     }
 

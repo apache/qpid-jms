@@ -151,7 +151,7 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
      */
     public void commit(AsyncResult request) throws Exception {
         if (!getResourceInfo().isTransacted()) {
-            throw new IllegalStateException("Non-transacted Session cannot start a TX.");
+            throw new IllegalStateException("Non-transacted Session cannot commit a TX.");
         }
 
         getTransactionContext().commit(request);
@@ -167,7 +167,7 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
      */
     public void rollback(AsyncResult request) throws Exception {
         if (!getResourceInfo().isTransacted()) {
-            throw new IllegalStateException("Non-transacted Session cannot start a TX.");
+            throw new IllegalStateException("Non-transacted Session cannot rollback a TX.");
         }
 
         getTransactionContext().rollback(request);

@@ -45,7 +45,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     private final List<JmsTxSynchronization> synchronizations = new ArrayList<JmsTxSynchronization>();
     private final JmsSession session;
     private final JmsConnection connection;
-    private JmsTransactionId transactionId;
+    private volatile JmsTransactionId transactionId;
     private volatile boolean failed;
     private volatile boolean hasWork;
     private JmsTransactionListener listener;
@@ -70,11 +70,13 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
 
                 @Override
                 public void onPendingSuccess() {
+                    LOG.trace("TX:{} has performed a send.", getTransactionId());
                     hasWork = true;
                 }
 
                 @Override
                 public void onPendingFailure(Throwable cause) {
+                    LOG.trace("TX:{} has a failed send.", getTransactionId());
                     hasWork = true;
                 }
             });
@@ -93,11 +95,13 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
 
                     @Override
                     public void onPendingSuccess() {
+                        LOG.trace("TX:{} has performed a acknowledge.", getTransactionId());
                         hasWork = true;
                     }
 
                     @Override
                     public void onPendingFailure(Throwable cause) {
+                        LOG.trace("TX:{} has failed a acknowledge.", getTransactionId());
                         hasWork = true;
                     }
                 });
@@ -221,27 +225,27 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
         try {
             LOG.debug("Rollback: {} syncCount: {}", transactionId,
                       (synchronizations != null ? synchronizations.size() : 0));
-            connection.rollback(session.getSessionId(), new ProviderSynchronization() {
-
-                @Override
-                public void onPendingSuccess() {
-                    reset();
-                }
-
-                @Override
-                public void onPendingFailure(Throwable cause) {
-                }
-            });
-
-            if (listener != null) {
-                try {
-                    listener.onTransactionRolledBack();
-                } catch (Throwable error) {
-                    LOG.trace("Local TX listener error ignored: {}", error);
-                }
-            }
-
             try {
+                connection.rollback(session.getSessionId(), new ProviderSynchronization() {
+
+                    @Override
+                    public void onPendingSuccess() {
+                        reset();
+                    }
+
+                    @Override
+                    public void onPendingFailure(Throwable cause) {
+                    }
+                });
+
+                if (listener != null) {
+                    try {
+                        listener.onTransactionRolledBack();
+                    } catch (Throwable error) {
+                        LOG.trace("Local TX listener error ignored: {}", error);
+                    }
+                }
+
                 afterRollback();
             } finally {
                 if (startNewTx) {
@@ -273,37 +277,28 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
 
     @Override
     public void onConnectionRecovery(Provider provider) throws Exception {
-        if (lock.writeLock().tryLock()) {
-            try {
-                if (isInTransaction()) {
-                    LOG.info("onConnectionRecovery starting new transaction to replace old one.");
+        // Attempt to hold the write lock so that new work gets blocked while we take
+        // care of the recovery, if we can't get it not critical but this prevents
+        // work from getting queued on the provider needlessly.
+        lock.writeLock().tryLock();
+        try {
+            LOG.info("onConnectionRecovery starting new transaction to replace old one.");
 
-                    // On connection recover we open a new TX to replace the existing one.
-                    transactionId = connection.getNextTransactionId();
-                    JmsTransactionInfo transaction = new JmsTransactionInfo(session.getSessionId(), transactionId);
-                    ProviderFuture request = new ProviderFuture();
-                    provider.create(transaction, request);
-                    request.sync();
+            // On connection recover we open a new TX to replace the existing one.
+            transactionId = connection.getNextTransactionId();
+            JmsTransactionInfo transaction = new JmsTransactionInfo(session.getSessionId(), transactionId);
+            ProviderFuture request = new ProviderFuture();
+            provider.create(transaction, request);
+            request.sync();
 
-                    LOG.info("onConnectionRecovery started new transaction to replace old one.");
+            LOG.info("onConnectionRecovery started new transaction to replace old one.");
 
-                    // It is ok to use the newly created TX from here if the TX never had any
-                    // work done within it.
-                    if (!hasWork) {
-                        failed = false;
-                    }
-                }
-            } finally {
-                if (lock.writeLock().isHeldByCurrentThread()) {
-                    lock.writeLock().unlock();
-                }
-            }
-        } else {
-            // Some transaction work was pending since we could not lock, mark the TX
-            // as failed so that future calls will fail.
-            if (transactionId != null) {
-                LOG.info("onConnectionRecovery TX work pending, marking TX as failed.");
-                failed = true;
+            // It is ok to use the newly created TX from here if the TX never had any
+            // work done within it otherwise we want the next commit to fail.
+            failed = hasWork;
+        } finally {
+            if (lock.writeLock().isHeldByCurrentThread()) {
+                lock.writeLock().unlock();
             }
         }
     }

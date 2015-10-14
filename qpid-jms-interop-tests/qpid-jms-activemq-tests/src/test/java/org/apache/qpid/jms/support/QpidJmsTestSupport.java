@@ -139,6 +139,14 @@ public class QpidJmsTestSupport {
         return false;
     }
 
+    protected boolean isConcurrentStoreAndDispatchQueues() {
+        return false;
+    }
+
+    protected boolean isConcurrentStoreAndDispatchTopics() {
+        return false;
+    }
+
     protected boolean isAdvisorySupport() {
         return false;
     }
@@ -169,6 +177,8 @@ public class QpidJmsTestSupport {
         if (isPersistent()) {
             KahaDBStore kaha = new KahaDBStore();
             kaha.setDirectory(new File(KAHADB_DIRECTORY + "/" + name));
+            kaha.setConcurrentStoreAndDispatchQueues(isConcurrentStoreAndDispatchQueues());
+            kaha.setConcurrentStoreAndDispatchTopics(isConcurrentStoreAndDispatchTopics());
             brokerService.setPersistenceAdapter(kaha);
         }
 

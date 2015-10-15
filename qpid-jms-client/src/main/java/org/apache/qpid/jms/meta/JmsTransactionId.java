@@ -21,8 +21,6 @@ public final class JmsTransactionId extends JmsAbstractResourceId implements Com
     private final JmsConnectionId connectionId;
     private final long value;
 
-    private transient String transactionKey;
-
     public JmsTransactionId(JmsConnectionId connectionId, long transactionId) {
         if (connectionId == null) {
             throw new IllegalArgumentException("Connection ID cannot be null");
@@ -32,16 +30,9 @@ public final class JmsTransactionId extends JmsAbstractResourceId implements Com
         this.value = transactionId;
     }
 
-    public String getTransactionKey() {
-        if (transactionKey == null) {
-            transactionKey = "TX:" + connectionId + ":" + value;
-        }
-        return transactionKey;
-    }
-
     @Override
     public String toString() {
-        return getTransactionKey();
+        return "TX:" + connectionId + ":" + value;
     }
 
     @Override

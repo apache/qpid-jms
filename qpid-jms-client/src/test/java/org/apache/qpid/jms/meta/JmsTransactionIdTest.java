@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import org.apache.qpid.jms.util.IdGenerator;
@@ -54,15 +53,6 @@ public class JmsTransactionIdTest {
         assertEquals(firstId, id.getConnectionId());
         assertNotNull(id.getValue());
         assertNull(id.getProviderHint());
-    }
-
-    @Test
-    public void testGetTXKey() {
-        JmsTransactionId id = new JmsTransactionId(firstId, 1);
-        String txKey = id.getTransactionKey();
-        assertNotNull(txKey);
-        assertTrue(txKey.startsWith("TX:"));
-        assertSame(txKey, id.getTransactionKey());
     }
 
     @Test

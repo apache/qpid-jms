@@ -249,6 +249,7 @@ public class JmsMessage implements javax.jms.Message {
     @Override
     public void clearProperties() throws JMSException {
         JmsMessagePropertyIntercepter.clearProperties(facade, true);
+        setReadOnlyProperties(false);
     }
 
     @Override

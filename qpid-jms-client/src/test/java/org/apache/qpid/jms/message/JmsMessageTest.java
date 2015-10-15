@@ -350,6 +350,27 @@ public class JmsMessageTest {
     }
 
     @Test
+    public void testClearPropertiesClearsReadOnly() throws Exception {
+        JmsMessage msg = factory.createMessage();
+        msg.onDispatch();
+
+        try {
+            msg.setObjectProperty("test", "value");
+            fail("should throw exception");
+        } catch (MessageNotWriteableException e) {
+            // Expected
+        }
+
+        assertTrue(msg.isReadOnlyProperties());
+
+        msg.clearProperties();
+
+        msg.setObjectProperty("test", "value");
+
+        assertFalse(msg.isReadOnlyProperties());
+    }
+
+    @Test
     public void testClearPropertiesClearsFacadeGroupSequence() throws JMSException {
         JmsMessageFacade facade = Mockito.mock(JmsMessageFacade.class);
         JmsMessage msg = new JmsMessage(facade);

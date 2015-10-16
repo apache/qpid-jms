@@ -50,8 +50,6 @@ public class JmsMessageTest {
 
     private final JmsMessageFactory factory = new JmsTestMessageFactory();
 
-    protected boolean readOnlyMessage;
-
     private String jmsMessageID;
     private String jmsCorrelationID;
     private JmsDestination jmsDestination;
@@ -76,7 +74,6 @@ public class JmsMessageTest {
         this.jmsExpiration = 100000;
         this.jmsPriority = 5;
         this.jmsTimestamp = System.currentTimeMillis();
-        this.readOnlyMessage = false;
         this.consumerIDs = new long[3];
         for (int i = 0; i < this.consumerIDs.length; i++) {
             this.consumerIDs[i] = i;
@@ -195,7 +192,6 @@ public class JmsMessageTest {
         this.jmsExpiration = 100000;
         this.jmsPriority = 5;
         this.jmsTimestamp = System.currentTimeMillis();
-        this.readOnlyMessage = false;
 
         JmsConnection connection = Mockito.mock(JmsConnection.class);
 

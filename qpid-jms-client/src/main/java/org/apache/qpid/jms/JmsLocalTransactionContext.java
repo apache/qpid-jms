@@ -284,7 +284,6 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
         // work from getting queued on the provider needlessly.
         lock.writeLock().tryLock();
         try {
-            LOG.info("onConnectionRecovery starting new transaction to replace old one.");
 
             // On connection recover we open a new TX to replace the existing one.
             transactionId = connection.getNextTransactionId();
@@ -292,8 +291,6 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
             ProviderFuture request = new ProviderFuture();
             provider.create(transaction, request);
             request.sync();
-
-            LOG.info("onConnectionRecovery started new transaction to replace old one.");
 
             // It is ok to use the newly created TX from here if the TX never had any
             // work done within it otherwise we want the next commit to fail.

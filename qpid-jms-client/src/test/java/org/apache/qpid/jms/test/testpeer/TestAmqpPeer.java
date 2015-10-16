@@ -45,12 +45,16 @@ import org.apache.qpid.jms.test.testpeer.basictypes.Role;
 import org.apache.qpid.jms.test.testpeer.basictypes.SenderSettleMode;
 import org.apache.qpid.jms.test.testpeer.basictypes.TerminusDurability;
 import org.apache.qpid.jms.test.testpeer.basictypes.TerminusExpiryPolicy;
+import org.apache.qpid.jms.test.testpeer.basictypes.TransactionError;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
 import org.apache.qpid.jms.test.testpeer.describedtypes.AttachFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.BeginFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.CloseFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Coordinator;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Declare;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Declared;
 import org.apache.qpid.jms.test.testpeer.describedtypes.DetachFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Discharge;
 import org.apache.qpid.jms.test.testpeer.describedtypes.DispositionFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.EndFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.FlowFrame;
@@ -68,6 +72,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescr
 import org.apache.qpid.jms.test.testpeer.matchers.AttachMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.BeginMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.CloseMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.DeleteOnCloseMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.DetachMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.DispositionMatcher;
@@ -78,6 +83,8 @@ import org.apache.qpid.jms.test.testpeer.matchers.SaslInitMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.SourceMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.TargetMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.TransferMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
@@ -124,6 +131,7 @@ public class TestAmqpPeer implements AutoCloseable
     private byte[] _deferredBytes;
     private int _lastInitiatedChannel = -1;
     private UnsignedInteger _lastInitiatedLinkHandle = null;
+    private UnsignedInteger _lastInitiatedCoordinatorLinkHandle = null;
     private int advertisedIdleTimeout = 0;
     private int _emptyFrameCount = 0;
 
@@ -877,6 +885,11 @@ public class TestAmqpPeer implements AutoCloseable
                 }
 
                 _lastInitiatedLinkHandle = (UnsignedInteger) receivedHandle;
+
+                if (targetMatcher instanceof CoordinatorMatcher)
+                {
+                    _lastInitiatedCoordinatorLinkHandle = (UnsignedInteger) receivedHandle;
+                }
             }
         });
 
@@ -939,6 +952,21 @@ public class TestAmqpPeer implements AutoCloseable
         attachMatcher.onCompletion(composite);
 
         addHandler(attachMatcher);
+    }
+
+    public void expectCoordinatorAttach()
+    {
+        expectCoordinatorAttach(false, false, null, null);
+    }
+
+    public void expectCoordinatorAttach(boolean refuseLink, boolean deferAttachResponseWrite)
+    {
+        expectCoordinatorAttach(refuseLink, deferAttachResponseWrite, null, null);
+    }
+
+    public void expectCoordinatorAttach(final boolean refuseLink, boolean deferAttachResponseWrite, Symbol errorType, String errorMessage)
+    {
+        expectSenderAttach(notNullValue(), new CoordinatorMatcher(), refuseLink, deferAttachResponseWrite, 0, errorType, errorMessage);
     }
 
     public void expectQueueBrowserAttach()
@@ -1390,6 +1418,109 @@ public class TestAmqpPeer implements AutoCloseable
         }
 
         addHandler(transferMatcher);
+    }
+
+    public void expectDeclare(Binary txnId)
+    {
+        TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
+        declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
+
+        expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+    }
+
+    public void expectDischarge(Binary txnId, boolean dischargeState) {
+        expectDischarge(txnId, dischargeState, new Accepted());
+    }
+
+    public void expectDischarge(Binary txnId, boolean dischargeState, ListDescribedType responseState) {
+        // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
+        // and reply with given response and settled disposition to indicate the outcome.
+        Discharge discharge = new Discharge();
+        discharge.setFail(dischargeState);
+        discharge.setTxnId(txnId);
+
+        TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
+        dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
+
+        expectTransfer(dischargeMatcher, nullValue(), false, responseState, true);
+    }
+
+    public void remotelyCloseLastCoordinatorLink()
+    {
+        remotelyCloseLastCoordinatorLink(true, true, TransactionError.TRANSACTION_ROLLBACK, "Discharge of TX failed.");
+    }
+
+    public void remotelyCloseLastCoordinatorLink(Symbol errorType, String errorMessage)
+    {
+        remotelyCloseLastCoordinatorLink(true, true, errorType, errorMessage);
+    }
+
+    public void remotelyCloseLastCoordinatorLink(boolean expectDetachResponse, boolean closed, Symbol errorType, String errorMessage)
+    {
+        // Now remotely end the last attached transaction coordinator
+        synchronized (_handlersLock) {
+            CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
+
+            // Now generate the Detach for the appropriate link on the appropriate session
+            final DetachFrame detachFrame = new DetachFrame();
+            detachFrame.setClosed(true);
+            if (errorType != null) {
+                org.apache.qpid.jms.test.testpeer.describedtypes.Error detachError = new org.apache.qpid.jms.test.testpeer.describedtypes.Error();
+                detachError.setCondition(errorType);
+                detachError.setDescription(errorMessage);
+                detachFrame.setError(detachError);
+            }
+
+            // The response frame channel will be dynamically set based on the previous frames. Using the -1 is an illegal placeholder.
+            final FrameSender frameSender = new FrameSender(this, FrameType.AMQP, -1, detachFrame, null);
+            frameSender.setValueProvider(new ValueProvider() {
+                @Override
+                public void setValues() {
+                    frameSender.setChannel(_lastInitiatedChannel);
+                    detachFrame.setHandle(_lastInitiatedCoordinatorLinkHandle);
+                }
+            });
+            comp.add(frameSender);
+
+            if (expectDetachResponse) {
+                Matcher<Boolean> closeMatcher = null;
+                if (closed) {
+                    closeMatcher = equalTo(true);
+                } else {
+                    closeMatcher = Matchers.anyOf(equalTo(false), nullValue());
+                }
+
+                // Expect a response to our Detach.
+                final DetachMatcher detachMatcher = new DetachMatcher().withClosed(closeMatcher);
+                // TODO: enable matching on the channel number of the response.
+                addHandler(detachMatcher);
+            }
+        }
+    }
+
+    public void remotelyCloseLastCoordinatorLinkOnDischarge(Binary txnId, boolean dischargeState)
+    {
+        remotelyCloseLastCoordinatorLinkOnDischarge(txnId, dischargeState, true, true, TransactionError.TRANSACTION_ROLLBACK, "Discharge of TX failed.");
+    }
+
+    public void remotelyCloseLastCoordinatorLinkOnDischarge(Binary txnId, boolean dischargeState, Symbol errorType, String errorMessage)
+    {
+        remotelyCloseLastCoordinatorLinkOnDischarge(txnId, dischargeState, true, true, errorType, errorMessage);
+    }
+
+    public void remotelyCloseLastCoordinatorLinkOnDischarge(Binary txnId, boolean dischargeState, boolean expectDetachResponse, boolean closed, Symbol errorType, String errorMessage) {
+        // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
+        // and reply with given response and settled disposition to indicate the outcome.
+        Discharge discharge = new Discharge();
+        discharge.setFail(dischargeState);
+        discharge.setTxnId(txnId);
+
+        TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
+        dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
+
+        expectTransfer(dischargeMatcher, nullValue(), false, false, null, false);
+
+        remotelyCloseLastCoordinatorLink(expectDetachResponse, closed, errorType, errorMessage);
     }
 
     public void expectDispositionThatIsAcceptedAndSettled()

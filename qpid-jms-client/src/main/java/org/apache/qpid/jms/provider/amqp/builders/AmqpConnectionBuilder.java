@@ -37,7 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Resource builder responsible for creating and opening an AmqpConnectionSession instance.
+ * Resource builder responsible for creating and opening an AmqpConnection instance.
  */
 public class AmqpConnectionBuilder extends AmqpResourceBuilder<AmqpConnection, AmqpProvider, JmsConnectionInfo, Connection> {
 

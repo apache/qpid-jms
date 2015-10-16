@@ -69,7 +69,6 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.Rejected;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.HeaderDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
-import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.SourceMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.TargetMatcher;
@@ -1211,8 +1210,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             connection.start();
 
             testPeer.expectBegin();
-            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
-            testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+            testPeer.expectCoordinatorAttach();
 
             // First expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.

@@ -17,8 +17,8 @@
 package org.apache.qpid.jms.provider.amqp.builders;
 
 import org.apache.qpid.jms.meta.JmsSessionInfo;
-import org.apache.qpid.jms.provider.amqp.AmqpSession;
 import org.apache.qpid.jms.provider.amqp.AmqpTransactionContext;
+import org.apache.qpid.jms.provider.amqp.AmqpTransactionCoordinator;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.transaction.Coordinator;
 import org.apache.qpid.proton.amqp.transaction.TxnCapability;
@@ -27,11 +27,11 @@ import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Sender;
 
 /**
- * Resource builder responsible for creating and opening an AmqpTemporaryDestination instance.
+ * Resource builder responsible for creating and opening an AmqpTransactionCoordinator instance.
  */
-public class AmqpTransactionContextBuilder extends AmqpResourceBuilder<AmqpTransactionContext, AmqpSession, JmsSessionInfo, Sender> {
+public class AmqpTransactionCoordinatorBuilder extends AmqpResourceBuilder<AmqpTransactionCoordinator, AmqpTransactionContext, JmsSessionInfo, Sender> {
 
-    public AmqpTransactionContextBuilder(AmqpSession parent, JmsSessionInfo resourceInfo) {
+    public AmqpTransactionCoordinatorBuilder(AmqpTransactionContext parent, JmsSessionInfo resourceInfo) {
         super(parent, resourceInfo);
     }
 
@@ -43,7 +43,7 @@ public class AmqpTransactionContextBuilder extends AmqpResourceBuilder<AmqpTrans
 
         String coordinatorName = "qpid-jms:coordinator:" + resourceInfo.getId().toString();
 
-        Sender sender = getParent().getEndpoint().sender(coordinatorName);
+        Sender sender = getParent().getSession().getEndpoint().sender(coordinatorName);
         sender.setSource(source);
         sender.setTarget(coordinator);
         sender.setSenderSettleMode(SenderSettleMode.UNSETTLED);
@@ -53,8 +53,8 @@ public class AmqpTransactionContextBuilder extends AmqpResourceBuilder<AmqpTrans
     }
 
     @Override
-    protected AmqpTransactionContext createResource(AmqpSession parent, JmsSessionInfo resourceInfo, Sender endpoint) {
-        return new AmqpTransactionContext(parent, resourceInfo, endpoint);
+    protected AmqpTransactionCoordinator createResource(AmqpTransactionContext parent, JmsSessionInfo resourceInfo, Sender endpoint) {
+        return new AmqpTransactionCoordinator(resourceInfo, endpoint, parent);
     }
 
     @Override

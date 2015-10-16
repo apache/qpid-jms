@@ -40,7 +40,6 @@ import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Declare;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Declared;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
-import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.Binary;
@@ -262,8 +261,7 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             connection.start();
 
             testPeer.expectBegin();
-            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
-            testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+            testPeer.expectCoordinatorAttach();
 
             // First expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.

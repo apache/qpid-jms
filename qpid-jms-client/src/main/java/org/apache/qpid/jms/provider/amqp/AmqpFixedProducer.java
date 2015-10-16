@@ -100,6 +100,13 @@ public class AmqpFixedProducer extends AmqpProducer {
     }
 
     private void doSend(JmsOutboundMessageDispatch envelope, AsyncResult request) throws IOException, JMSException {
+        // If the transaction has failed due to remote termination etc then we just indicate
+        // the send has succeeded until the a new transaction is started.
+        if (session.isTransacted() && session.isTransactionFailed()) {
+            request.onSuccess();
+            return;
+        }
+
         JmsMessageFacade facade = envelope.getMessage().getFacade();
 
         LOG.trace("Producer sending message: {}", envelope);

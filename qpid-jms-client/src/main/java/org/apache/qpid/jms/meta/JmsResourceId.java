@@ -37,4 +37,20 @@ public interface JmsResourceId {
      */
     Object getProviderHint();
 
+    /**
+     * Allows a Provider to embed a bit of Context for later use.  The context
+     * can be some state data needed between asynchronous requests etc.
+     *
+     * @param value
+     *      The value to add as context for this Id.
+     */
+    void setProviderContext(Object value);
+
+    /**
+     * Return the previously stored Provider context object.
+     *
+     * @return the previously stored Provider context object.
+     */
+    Object getProviderContext();
+
 }

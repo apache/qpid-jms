@@ -523,16 +523,10 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     public void preRollback() {
     }
 
-    /**
-     * @throws Exception if an error occurs while performing this action.
-     */
-    public void postCommit() throws Exception {
+    public void postCommit() {
     }
 
-    /**
-     * @throws Exception if an error occurs while performing this action.
-     */
-    public void postRollback() throws Exception {
+    public void postRollback() {
     }
 
     //----- Inner classes used in message pull operations --------------------//

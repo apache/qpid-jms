@@ -105,9 +105,9 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
         getEndpoint().free();
         getEndpoint().setContext(null);
 
-        if (this.closeRequest != null) {
-            this.closeRequest.onSuccess();
-            this.closeRequest = null;
+        if (closeRequest != null) {
+            closeRequest.onSuccess();
+            closeRequest = null;
         }
     }
 
@@ -145,11 +145,15 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     //----- Access methods ---------------------------------------------------//
 
     public E getEndpoint() {
-        return this.endpoint;
+        return endpoint;
     }
 
     public R getResourceInfo() {
-        return this.resourceInfo;
+        return resourceInfo;
+    }
+
+    public AmqpResourceParent getParent() {
+        return parent;
     }
 
     //----- Endpoint state access methods ------------------------------------//
@@ -163,7 +167,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     }
 
     public boolean isAwaitingClose() {
-        return this.closeRequest != null;
+        return closeRequest != null;
     }
 
     public EndpointState getLocalState() {

@@ -42,7 +42,7 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
     private static final Logger LOG = LoggerFactory.getLogger(AmqpSession.class);
 
     private final AmqpConnection connection;
-    private AmqpTransactionContext txContext;
+    private final AmqpTransactionContext txContext;
 
     private final Map<JmsConsumerId, AmqpConsumer> consumers = new HashMap<JmsConsumerId, AmqpConsumer>();
 
@@ -50,6 +50,12 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
         super(info, session, connection);
 
         this.connection = connection;
+
+        if (info.isTransacted()) {
+            txContext = new AmqpTransactionContext(this, info);
+        } else {
+            txContext = null;
+        }
     }
 
     /**
@@ -198,8 +204,6 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
         if (resource instanceof AmqpConsumer) {
             AmqpConsumer consumer = (AmqpConsumer) resource;
             consumers.put(consumer.getConsumerId(), consumer);
-        } else if (resource instanceof AmqpTransactionContext) {
-            txContext = (AmqpTransactionContext) resource;
         } else {
             connection.addChildResource(resource);
         }
@@ -260,6 +264,10 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
 
     boolean isTransacted() {
         return getResourceInfo().isTransacted();
+    }
+
+    public boolean isTransactionFailed() {
+        return txContext == null ? false : txContext.isTransactionFailed();
     }
 
     boolean isAsyncAck() {

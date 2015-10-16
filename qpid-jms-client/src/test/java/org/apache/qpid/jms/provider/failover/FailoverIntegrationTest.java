@@ -54,16 +54,11 @@ import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.basictypes.TerminusDurability;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
-import org.apache.qpid.jms.test.testpeer.describedtypes.Declare;
-import org.apache.qpid.jms.test.testpeer.describedtypes.Declared;
-import org.apache.qpid.jms.test.testpeer.describedtypes.Discharge;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
-import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.SourceMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
-import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.jms.util.StopWatch;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
@@ -763,15 +758,12 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
 
             originalPeer.expectBegin();
-            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
-            originalPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+            originalPeer.expectCoordinatorAttach();
 
             // First expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a Declared disposition state containing the txnId.
             Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            originalPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            originalPeer.expectDeclare(txnId);
 
             originalPeer.dropAfterLastHandler();
 
@@ -780,17 +772,12 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             finalPeer.expectSaslAnonymousConnect();
             finalPeer.expectBegin();
             finalPeer.expectBegin();
-            finalPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
-            finalPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            finalPeer.expectCoordinatorAttach();
+            finalPeer.expectDeclare(txnId);
 
             // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
             // and reply with accepted and settled disposition to indicate the rollback succeeded.
-            Discharge discharge = new Discharge();
-            discharge.setFail(true);
-            discharge.setTxnId(txnId);
-            TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
-            dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
-            finalPeer.expectTransfer(dischargeMatcher, nullValue(), false, new Accepted(), true);
+            finalPeer.expectDischarge(txnId, true);
             finalPeer.expectEnd();
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);

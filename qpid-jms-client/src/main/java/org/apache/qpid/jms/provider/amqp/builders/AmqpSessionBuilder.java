@@ -17,7 +17,6 @@
 package org.apache.qpid.jms.provider.amqp.builders;
 
 import org.apache.qpid.jms.meta.JmsSessionInfo;
-import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpSession;
 import org.apache.qpid.proton.engine.Session;
@@ -29,35 +28,6 @@ public class AmqpSessionBuilder extends AmqpResourceBuilder<AmqpSession, AmqpCon
 
     public AmqpSessionBuilder(AmqpConnection parent, JmsSessionInfo resourceInfo) {
         super(parent, resourceInfo);
-    }
-
-    @Override
-    public void buildResource(final AsyncResult request) {
-
-        AsyncResult opened = request;
-
-        if (getResourceInfo().isTransacted()) {
-            opened = new AsyncResult() {
-
-                @Override
-                public void onSuccess() {
-                    AmqpTransactionContextBuilder builder = new AmqpTransactionContextBuilder(getResource(), getResourceInfo());
-                    builder.buildResource(request);
-                }
-
-                @Override
-                public void onFailure(Throwable result) {
-                    request.onFailure(result);
-                }
-
-                @Override
-                public boolean isComplete() {
-                    return request.isComplete();
-                }
-            };
-        }
-
-        super.buildResource(opened);
     }
 
     @Override

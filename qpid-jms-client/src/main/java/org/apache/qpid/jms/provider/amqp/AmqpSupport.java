@@ -23,10 +23,12 @@ import javax.jms.InvalidClientIDException;
 import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
+import javax.jms.TransactionRolledBackException;
 
 import org.apache.qpid.jms.provider.ProviderRedirectedException;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Modified;
+import org.apache.qpid.proton.amqp.transaction.TransactionErrors;
 import org.apache.qpid.proton.amqp.transport.AmqpError;
 import org.apache.qpid.proton.amqp.transport.ConnectionError;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
@@ -98,6 +100,8 @@ public class AmqpSupport {
                 remoteError = new JMSSecurityException(message);
             } else if (error.equals(AmqpError.NOT_FOUND)) {
                 remoteError = new InvalidDestinationException(message);
+            } else if (error.equals(TransactionErrors.TRANSACTION_ROLLBACK)) {
+                remoteError = new TransactionRolledBackException(message);
             } else if (error.equals(ConnectionError.REDIRECT)) {
                 remoteError = createRedirectException(error, message, errorCondition);
             } else if (error.equals(AmqpError.INVALID_FIELD)) {

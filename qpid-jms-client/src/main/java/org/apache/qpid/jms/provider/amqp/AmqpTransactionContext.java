@@ -17,27 +17,16 @@
 package org.apache.qpid.jms.provider.amqp;
 
 import java.io.IOException;
-import java.nio.BufferOverflowException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 import javax.jms.IllegalStateException;
-import javax.jms.TransactionRolledBackException;
 
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.provider.AsyncResult;
-import org.apache.qpid.jms.util.IOExceptionSupport;
+import org.apache.qpid.jms.provider.amqp.builders.AmqpTransactionCoordinatorBuilder;
 import org.apache.qpid.proton.amqp.Binary;
-import org.apache.qpid.proton.amqp.messaging.AmqpValue;
-import org.apache.qpid.proton.amqp.messaging.Rejected;
-import org.apache.qpid.proton.amqp.transaction.Declare;
-import org.apache.qpid.proton.amqp.transaction.Declared;
-import org.apache.qpid.proton.amqp.transaction.Discharge;
-import org.apache.qpid.proton.amqp.transport.DeliveryState;
-import org.apache.qpid.proton.engine.Delivery;
-import org.apache.qpid.proton.engine.Sender;
-import org.apache.qpid.proton.message.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,22 +36,15 @@ import org.slf4j.LoggerFactory;
  * The Transaction will carry a JmsTransactionId while the Transaction is open, once a
  * transaction has been committed or rolled back the Transaction Id is cleared.
  */
-public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo, Sender> {
+public class AmqpTransactionContext implements AmqpResourceParent {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpTransactionContext.class);
 
-    private static final Boolean ROLLBACK_MARKER = Boolean.FALSE;
-    private static final Boolean COMMIT_MARKER = Boolean.TRUE;
-
-    private final byte[] OUTBOUND_BUFFER = new byte[64];
-
     private final AmqpSession session;
-    private JmsTransactionId current;
-    private final AmqpTransferTagGenerator tagGenerator = new AmqpTransferTagGenerator();
     private final Set<AmqpConsumer> txConsumers = new LinkedHashSet<AmqpConsumer>();
 
-    private Delivery pendingDelivery;
-    private AsyncResult pendingRequest;
+    private JmsTransactionId current;
+    private AmqpTransactionCoordinator coordinator;
 
     /**
      * Creates a new AmqpTransactionContext instance.
@@ -71,131 +53,146 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
      *        The session that owns this transaction context.
      * @param resourceInfo
      *        The resourceInfo that defines this transaction context.
-     * @param sender
-     *        The local sender endpoint for this transaction context.
      */
-    public AmqpTransactionContext(AmqpSession session, JmsSessionInfo resourceInfo, Sender sender) {
-        super(resourceInfo, sender, session);
-
+    public AmqpTransactionContext(AmqpSession session, JmsSessionInfo resourceInfo) {
         this.session = session;
     }
 
-    @Override
-    public void processDeliveryUpdates(AmqpProvider provider) throws IOException {
-        try {
-            if (pendingDelivery != null && pendingDelivery.remotelySettled()) {
-                DeliveryState state = pendingDelivery.getRemoteState();
-                if (state instanceof Declared) {
-                    Declared declared = (Declared) state;
-                    current.setProviderHint(declared.getTxnId());
-                    pendingDelivery.settle();
-                    LOG.debug("New TX started: {}", current.getProviderHint());
-                    AsyncResult request = this.pendingRequest;
-                    this.pendingRequest = null;
-                    this.pendingDelivery = null;
-                    request.onSuccess();
-                } else if (state instanceof Rejected) {
-                    LOG.debug("Last TX request failed: {}", current.getProviderHint());
-                    pendingDelivery.settle();
-                    Rejected rejected = (Rejected) state;
-                    Exception cause = AmqpSupport.convertToException(rejected.getError());
-                    TransactionRolledBackException ex = new TransactionRolledBackException(cause.getMessage());
-                    AsyncResult request = this.pendingRequest;
-                    this.current = null;
-                    this.pendingRequest = null;
-                    this.pendingDelivery = null;
-                    postRollback();
-                    request.onFailure(ex);
-                } else {
-                    LOG.debug("Last TX request succeeded: {}", current.getProviderHint());
-                    pendingDelivery.settle();
-                    AsyncResult request = this.pendingRequest;
-                    if (pendingDelivery.getContext() != null) {
-                        if (pendingDelivery.getContext().equals(COMMIT_MARKER)) {
-                            postCommit();
-                        } else {
-                            postRollback();
-                        }
-                    }
-                    this.current = null;
-                    this.pendingRequest = null;
-                    this.pendingDelivery = null;
-                    request.onSuccess();
-                }
-            }
-
-            super.processDeliveryUpdates(provider);
-        } catch (Exception e) {
-            throw IOExceptionSupport.create(e);
-        }
-    }
-
-    public void begin(JmsTransactionId txId, AsyncResult request) throws Exception {
+    public void begin(final JmsTransactionId txId, final AsyncResult request) throws Exception {
         if (current != null) {
             throw new IOException("Begin called while a TX is still Active.");
         }
 
-        Message message = Message.Factory.create();
-        Declare declare = new Declare();
-        message.setBody(new AmqpValue(declare));
+        final AsyncResult declareCompletion = new AsyncResult() {
 
-        pendingDelivery = getEndpoint().delivery(tagGenerator.getNextTag());
-        pendingRequest = request;
-        current = txId;
+            @Override
+            public void onSuccess() {
+                current = txId;
+                request.onSuccess();
+            }
 
-        sendTxCommand(message);
+            @Override
+            public void onFailure(Throwable result) {
+                current = null;
+                request.onFailure(result);
+            }
+
+            @Override
+            public boolean isComplete() {
+                return current != null;
+            }
+        };
+
+
+        if (coordinator == null || coordinator.isClosed()) {
+            AmqpTransactionCoordinatorBuilder builder =
+                new AmqpTransactionCoordinatorBuilder(this, session.getResourceInfo());
+            builder.buildResource(new AsyncResult() {
+
+                @Override
+                public void onSuccess() {
+                    try {
+                        coordinator.declare(txId, declareCompletion);
+                    } catch (Exception e) {
+                        request.onFailure(e);
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable result) {
+                    request.onFailure(result);
+                }
+
+                @Override
+                public boolean isComplete() {
+                    return request.isComplete();
+                }
+            });
+        } else {
+            coordinator.declare(txId, declareCompletion);
+        }
     }
 
-    public void commit(AsyncResult request) throws Exception {
+    public void commit(final AsyncResult request) throws Exception {
         if (current == null) {
             throw new IllegalStateException("Commit called with no active Transaction.");
         }
 
         preCommit();
 
-        Message message = Message.Factory.create();
-        Discharge discharge = new Discharge();
-        discharge.setFail(false);
-        discharge.setTxnId((Binary) current.getProviderHint());
-        message.setBody(new AmqpValue(discharge));
+        LOG.trace("TX Context[{}] committing current TX[[]]", this, current);
+        coordinator.discharge(current, new AsyncResult() {
 
-        pendingDelivery = getEndpoint().delivery(tagGenerator.getNextTag());
-        pendingDelivery.setContext(COMMIT_MARKER);
-        pendingRequest = request;
+            @Override
+            public void onSuccess() {
+                current = null;
+                postCommit();
+                request.onSuccess();
+            }
 
-        sendTxCommand(message);
+            @Override
+            public void onFailure(Throwable result) {
+                current = null;
+                postCommit();
+                request.onFailure(result);
+            }
+
+            @Override
+            public boolean isComplete() {
+                return current == null;
+            }
+
+        }, true);
     }
 
-    public void rollback(AsyncResult request) throws Exception {
+    public void rollback(final AsyncResult request) throws Exception {
         if (current == null) {
             throw new IllegalStateException("Rollback called with no active Transaction.");
         }
 
         preRollback();
 
-        Message message = Message.Factory.create();
-        Discharge discharge = new Discharge();
-        discharge.setFail(true);
-        discharge.setTxnId((Binary) current.getProviderHint());
-        message.setBody(new AmqpValue(discharge));
+        LOG.trace("TX Context[{}] rolling back current TX[[]]", this, current);
+        coordinator.discharge(current, new AsyncResult() {
 
-        pendingDelivery = getEndpoint().delivery(tagGenerator.getNextTag());
-        pendingDelivery.setContext(ROLLBACK_MARKER);
-        pendingRequest = request;
+            @Override
+            public void onSuccess() {
+                current = null;
+                postRollback();
+                request.onSuccess();
+            }
 
-        sendTxCommand(message);
+            @Override
+            public void onFailure(Throwable result) {
+                current = null;
+                postRollback();
+                request.onFailure(result);
+            }
+
+            @Override
+            public boolean isComplete() {
+                return current == null;
+            }
+
+        }, false);
     }
 
+    //----- Context utility methods ------------------------------------------//
+
     public void registerTxConsumer(AmqpConsumer consumer) {
-        this.txConsumers.add(consumer);
+        txConsumers.add(consumer);
     }
 
     public AmqpSession getSession() {
-        return this.session;
+        return session;
     }
 
     public JmsTransactionId getTransactionId() {
-        return this.current;
+        return current;
+    }
+
+    public boolean isTransactionFailed() {
+        return coordinator == null ? false : coordinator.isClosed();
     }
 
     public Binary getAmqpTransactionId() {
@@ -211,19 +208,21 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
         return this.session.getSessionId() + ": txContext";
     }
 
-    private void preCommit() throws Exception {
+    //----- Transaction pre / post completion --------------------------------//
+
+    private void preCommit() {
         for (AmqpConsumer consumer : txConsumers) {
             consumer.preCommit();
         }
     }
 
-    private void preRollback() throws Exception {
+    private void preRollback() {
         for (AmqpConsumer consumer : txConsumers) {
             consumer.preRollback();
         }
     }
 
-    private void postCommit() throws Exception {
+    private void postCommit() {
         for (AmqpConsumer consumer : txConsumers) {
             consumer.postCommit();
         }
@@ -231,7 +230,7 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
         txConsumers.clear();
     }
 
-    private void postRollback() throws Exception {
+    private void postRollback() {
         for (AmqpConsumer consumer : txConsumers) {
             consumer.postRollback();
         }
@@ -239,20 +238,19 @@ public class AmqpTransactionContext extends AmqpAbstractResource<JmsSessionInfo,
         txConsumers.clear();
     }
 
-    private void sendTxCommand(Message message) throws IOException {
-        int encodedSize = 0;
-        byte[] buffer = OUTBOUND_BUFFER;
-        while (true) {
-            try {
-                encodedSize = message.encode(buffer, 0, buffer.length);
-                break;
-            } catch (BufferOverflowException e) {
-                buffer = new byte[buffer.length * 2];
-            }
-        }
+    //----- Resource Parent event handlers -----------------------------------//
 
-        Sender sender = getEndpoint();
-        sender.send(buffer, 0, encodedSize);
-        sender.advance();
+    @Override
+    public void addChildResource(AmqpResource resource) {
+        if (resource instanceof AmqpTransactionCoordinator) {
+            coordinator = (AmqpTransactionCoordinator) resource;
+        }
+    }
+
+    @Override
+    public void removeChildResource(AmqpResource resource) {
+        // We don't clear the coordinator link so that we can refer to it
+        // to check if the current TX has failed due to link closed during
+        // normal operations.
     }
 }

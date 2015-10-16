@@ -41,9 +41,6 @@ import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
-import org.apache.qpid.jms.test.testpeer.describedtypes.Declare;
-import org.apache.qpid.jms.test.testpeer.describedtypes.Declared;
-import org.apache.qpid.jms.test.testpeer.describedtypes.Discharge;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Error;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Modified;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Rejected;
@@ -51,7 +48,6 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.Released;
 import org.apache.qpid.jms.test.testpeer.describedtypes.TransactionalState;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
-import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ReleasedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.SourceMatcher;
@@ -59,16 +55,19 @@ import org.apache.qpid.jms.test.testpeer.matchers.TransactionalStateMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
-import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Tests for behavior of Transacted Session operations.
  */
 public class TransactionsIntegrationTest extends QpidJmsTestCase {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TransactionsIntegrationTest.class);
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
@@ -79,24 +78,13 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             connection.start();
 
             testPeer.expectBegin();
-            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
-            testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+            testPeer.expectCoordinatorAttach();
 
-            // First expect an unsettled 'declare' transfer to the txn coordinator, and
-            // reply with a Declared disposition state containing the txnId.
             Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            testPeer.expectDeclare(txnId);
 
-            // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
-            // and reply with accepted and settled disposition to indicate the rollback succeeded.
-            Discharge discharge = new Discharge();
-            discharge.setFail(true);
-            discharge.setTxnId(txnId);
-            TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
-            dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
-            testPeer.expectTransfer(dischargeMatcher, nullValue(), false, new Accepted(), true);
+            // Closed session should roll-back the TX with a failed discharge
+            testPeer.expectDischarge(txnId, true);
             testPeer.expectEnd();
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
@@ -114,22 +102,19 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             connection.start();
 
             testPeer.expectBegin();
-            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
-            testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+            testPeer.expectCoordinatorAttach();
 
             // First expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a Declared disposition state containing the txnId.
             Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            testPeer.expectDeclare(txnId);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
 
             // Create a producer to use in provoking creation of the AMQP transaction
             testPeer.expectSenderAttach();
-            MessageProducer producer  = session.createProducer(queue);
+            MessageProducer producer = session.createProducer(queue);
 
             // Expect the message which was sent under the current transaction. Check it carries
             // TransactionalState with the above txnId but has no outcome. Respond with a
@@ -152,19 +137,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
             // and reply with rejected and settled disposition to indicate the commit failed
-            Discharge discharge = new Discharge();
-            discharge.setFail(false);
-            discharge.setTxnId(txnId);
-            TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
-            dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
-            testPeer.expectTransfer(dischargeMatcher, nullValue(), false, new Rejected(), true);
+            testPeer.expectDischarge(txnId, false, new Rejected());
 
             // Then expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.
             txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
-            declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            testPeer.expectDeclare(txnId);
 
             try {
                 session.commit();
@@ -183,22 +161,19 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             connection.start();
 
             testPeer.expectBegin();
-            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
-            testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+            testPeer.expectCoordinatorAttach();
 
             // First expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a Declared disposition state containing the txnId.
             Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            testPeer.expectDeclare(txnId);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
 
             // Create a producer to use in provoking creation of the AMQP transaction
             testPeer.expectSenderAttach();
-            MessageProducer producer  = session.createProducer(queue);
+            MessageProducer producer = session.createProducer(queue);
 
             // Expect the message which was sent under the current transaction. Check it carries
             // TransactionalState with the above txnId but has no outcome. Respond with a
@@ -221,20 +196,13 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
             // and reply with rejected and settled disposition to indicate the commit failed
-            Discharge discharge = new Discharge();
-            discharge.setFail(false);
-            discharge.setTxnId(txnId);
-            TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
-            dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
             Rejected commitFailure = new Rejected(new Error(Symbol.valueOf("failed"), "Unknown error"));
-            testPeer.expectTransfer(dischargeMatcher, nullValue(), false, commitFailure, true);
+            testPeer.expectDischarge(txnId, false, commitFailure);
 
             // Then expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.
             txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
-            declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            testPeer.expectDeclare(txnId);
 
             try {
                 session.commit();
@@ -268,22 +236,19 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             connection.start();
 
             testPeer.expectBegin();
-            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
-            testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+            testPeer.expectCoordinatorAttach();
 
             // First expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a Declared disposition state containing the txnId.
             Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            testPeer.expectDeclare(txnId);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
 
             // Create a producer to use in provoking creation of the AMQP transaction
             testPeer.expectSenderAttach();
-            MessageProducer producer  = session.createProducer(queue);
+            MessageProducer producer = session.createProducer(queue);
 
             // Expect the message which was sent under the current transaction. Check it carries
             // TransactionalState with the above txnId but has no outcome. Respond with a
@@ -306,20 +271,13 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
             // and reply with rejected and settled disposition to indicate the rollback failed
-            Discharge discharge = new Discharge();
-            discharge.setFail(true);
-            discharge.setTxnId(txnId);
-            TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
-            dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
             Rejected commitFailure = new Rejected(new Error(Symbol.valueOf("failed"), "Unknown error"));
-            testPeer.expectTransfer(dischargeMatcher, nullValue(), false, commitFailure, true);
+            testPeer.expectDischarge(txnId, true, commitFailure);
 
             // Then expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.
             txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
-            declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            testPeer.expectDeclare(txnId);
 
             try {
                 session.rollback();
@@ -362,15 +320,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             connection.start();
 
             testPeer.expectBegin();
-            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
-            testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+            testPeer.expectCoordinatorAttach();
 
             // First expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.
             Binary txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
-            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            testPeer.expectDeclare(txnId);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
@@ -398,19 +353,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
             // and reply with accepted and settled disposition to indicate the commit succeeded
-            Discharge discharge = new Discharge();
-            discharge.setFail(false);
-            discharge.setTxnId(txnId);
-            TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
-            dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
-            testPeer.expectTransfer(dischargeMatcher, nullValue(), false, new Accepted(), true);
+            testPeer.expectDischarge(txnId, false);
 
             // Then expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.
             txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
-            declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            testPeer.expectDeclare(txnId);
 
             session.commit();
 
@@ -425,22 +373,19 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             connection.start();
 
             testPeer.expectBegin();
-            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
-            testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+            testPeer.expectCoordinatorAttach();
 
             // First expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a Declared disposition state containing the txnId.
             Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            testPeer.expectDeclare(txnId);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
 
             // Create a producer to use in provoking creation of the AMQP transaction
             testPeer.expectSenderAttach();
-            MessageProducer producer  = session.createProducer(queue);
+            MessageProducer producer = session.createProducer(queue);
 
             // Expect the message which was sent under the current transaction. Check it carries
             // TransactionalState with the above txnId but has no outcome. Respond with a
@@ -481,15 +426,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             connection.start();
 
             testPeer.expectBegin();
-            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
-            testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+            testPeer.expectCoordinatorAttach();
 
             // First expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.
             Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            testPeer.expectDeclare(txnId);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
@@ -520,19 +462,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
             // and reply with accepted and settled disposition to indicate the rollback succeeded
-            Discharge discharge = new Discharge();
-            discharge.setFail(true);
-            discharge.setTxnId(txnId);
-            TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
-            dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
-            testPeer.expectTransfer(dischargeMatcher, nullValue(), false, new Accepted(), true);
+            testPeer.expectDischarge(txnId, true);
 
             // Then expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.
             txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            testPeer.expectDeclare(txnId);
 
             // Expect the messages that were not consumed to be released
             int unconsumed = transferCount - consumeCount;
@@ -558,15 +493,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             connection.start();
 
             testPeer.expectBegin();
-            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
-            testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+            testPeer.expectCoordinatorAttach();
 
             // First expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.
             Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            testPeer.expectDeclare(txnId);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
@@ -579,7 +511,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             // Create a producer to use in provoking creation of the AMQP transaction
             testPeer.expectSenderAttach();
-            MessageProducer producer  = session.createProducer(queue);
+            MessageProducer producer = session.createProducer(queue);
 
             // Expect the message which provoked creating the transaction
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
@@ -602,19 +534,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
             // and reply with accepted and settled disposition to indicate the rollback succeeded
-            Discharge discharge = new Discharge();
-            discharge.setFail(true);
-            discharge.setTxnId(txnId);
-            TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
-            dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
-            testPeer.expectTransfer(dischargeMatcher, nullValue(), false, new Accepted(), true);
+            testPeer.expectDischarge(txnId, true);
 
             // Now expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.
             txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            testPeer.expectDeclare(txnId);
 
             // Expect the messages that were not consumed to be released
             for (int i = 1; i <= messageCount; i++) {
@@ -639,15 +564,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             connection.start();
 
             testPeer.expectBegin();
-            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
-            testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+            testPeer.expectCoordinatorAttach();
 
             // First expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.
             Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            testPeer.expectDeclare(txnId);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
@@ -660,7 +582,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             // Create a producer to use in provoking creation of the AMQP transaction
             testPeer.expectSenderAttach();
-            MessageProducer producer  = session.createProducer(queue);
+            MessageProducer producer = session.createProducer(queue);
 
             // Expect the message which provoked creating the transaction
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
@@ -688,19 +610,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
             // and reply with accepted and settled disposition to indicate the rollback succeeded
-            Discharge discharge = new Discharge();
-            discharge.setFail(true);
-            discharge.setTxnId(txnId);
-            TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
-            dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
-            testPeer.expectTransfer(dischargeMatcher, nullValue(), false, new Accepted(), true);
+            testPeer.expectDischarge(txnId, true);
 
             // Then expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.
             txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            testPeer.expectDeclare(txnId);
 
             // Expect the messages that were not consumed to be released
             for (int i = 1; i <= messageCount; i++) {
@@ -723,15 +638,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             connection.start();
 
             testPeer.expectBegin();
-            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
-            testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+            testPeer.expectCoordinatorAttach();
 
             // First expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.
             Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
-            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            testPeer.expectDeclare(txnId);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             String queueName = "myQueue";
@@ -748,6 +660,106 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.expectLinkFlow();
 
             session.createConsumer(queue);
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testRollbackErrorCoordinatorClosedOnCommit() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            testPeer.expectDeclare(txnId);
+            testPeer.remotelyCloseLastCoordinatorLinkOnDischarge(txnId, false);
+            testPeer.expectCoordinatorAttach();
+            testPeer.expectDeclare(txnId);
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+
+            try {
+                session.commit();
+                fail("Transaction should have rolled back");
+            } catch (TransactionRolledBackException ex) {
+                LOG.info("Caught expected TransactionRolledBackException");
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testJMSErrorCoordinatorClosedOnRollback() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            testPeer.expectDeclare(txnId);
+            testPeer.remotelyCloseLastCoordinatorLinkOnDischarge(txnId, true);
+            testPeer.expectCoordinatorAttach();
+            testPeer.expectDeclare(txnId);
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+
+            try {
+                session.rollback();
+                fail("Transaction should have rolled back");
+            } catch (JMSException ex) {
+                LOG.info("Caught expected JMSException");
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test // (timeout=20000)
+    public void testSendAfterCoordinatorLinkClosedDuringTX() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+
+            // First expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a Declared disposition state containing the txnId.
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            testPeer.expectDeclare(txnId);
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            Queue queue = session.createQueue("myQueue");
+
+            // Create a producer to use in provoking creation of the AMQP transaction
+            testPeer.expectSenderAttach();
+
+            // Close the link, the messages should now just get dropped on the floor.
+            testPeer.remotelyCloseLastCoordinatorLink();
+
+            MessageProducer producer = session.createProducer(queue);
+
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            producer.send(session.createMessage());
+
+            // Expect that a new link will be created in order to start the next TX.
+            txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
+            testPeer.expectCoordinatorAttach();
+            testPeer.expectDeclare(txnId);
+
+            try {
+                session.commit();
+                fail("Commit operation should have failed.");
+            } catch (TransactionRolledBackException jmsTxRb) {
+            }
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

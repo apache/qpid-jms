@@ -218,6 +218,12 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             LOG.debug("Consumed Ack of message: {}", envelope);
             if (!delivery.isSettled()) {
                 if (session.isTransacted() && !getResourceInfo().isBrowser()) {
+
+                    if (session.isTransactionFailed()) {
+                        LOG.trace("Skipping ack of message {} in failed transaction.", envelope);
+                        return;
+                    }
+
                     Binary txnId = session.getTransactionContext().getAmqpTransactionId();
                     if (txnId != null) {
                         TransactionalState txState = new TransactionalState();

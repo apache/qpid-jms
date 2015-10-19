@@ -56,6 +56,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSec
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.junit.Test;
@@ -721,7 +722,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test // (timeout=20000)
+    @Test(timeout=20000)
     public void testSendAfterCoordinatorLinkClosedDuringTX() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -749,6 +750,55 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(2000);
 
             producer.send(session.createMessage());
+
+            // Expect that a new link will be created in order to start the next TX.
+            txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
+            testPeer.expectCoordinatorAttach();
+            testPeer.expectDeclare(txnId);
+
+            try {
+                session.commit();
+                fail("Commit operation should have failed.");
+            } catch (TransactionRolledBackException jmsTxRb) {
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testReceiveAfterCoordinatorLinkClosedDuringTX() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+
+            // First expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a Declared disposition state containing the txnId.
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            testPeer.expectDeclare(txnId);
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            Queue queue = session.createQueue("myQueue");
+
+            // Create a consumer and send it an initial message for receive to process.
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent);
+
+            // Close the link, the messages should now just get dropped on the floor.
+            testPeer.remotelyCloseLastCoordinatorLink();
+
+            MessageConsumer consumer = session.createConsumer(queue);
+
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            // receiving the message would normally ack it, since the TX is failed this
+            // should not result in a disposition going out.
+            Message received = consumer.receive();
+            assertNotNull(received);
 
             // Expect that a new link will be created in order to start the next TX.
             txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});

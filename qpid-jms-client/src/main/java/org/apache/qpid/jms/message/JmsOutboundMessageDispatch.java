@@ -28,6 +28,7 @@ public class JmsOutboundMessageDispatch {
     private JmsMessage message;
     private JmsDestination destination;
     private boolean sendAsync;
+    private boolean presettle;
     private long dispatchId;
 
     public JmsDestination getDestination() {
@@ -68,6 +69,14 @@ public class JmsOutboundMessageDispatch {
 
     public void setDispatchId(long dispatchId) {
         this.dispatchId = dispatchId;
+    }
+
+    public boolean isPresettle() {
+        return presettle;
+    }
+
+    public void setPresettle(boolean presettle) {
+        this.presettle = presettle;
     }
 
     @Override

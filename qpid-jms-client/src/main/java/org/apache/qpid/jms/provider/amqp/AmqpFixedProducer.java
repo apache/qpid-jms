@@ -107,10 +107,10 @@ public class AmqpFixedProducer extends AmqpProducer {
             return;
         }
 
-        JmsMessageFacade facade = envelope.getMessage().getFacade();
-
         LOG.trace("Producer sending message: {}", envelope);
 
+        JmsMessageFacade facade = envelope.getMessage().getFacade();
+        boolean presettle = envelope.isPresettle() || isPresettle();
         Delivery delivery = null;
 
         if (presettle) {

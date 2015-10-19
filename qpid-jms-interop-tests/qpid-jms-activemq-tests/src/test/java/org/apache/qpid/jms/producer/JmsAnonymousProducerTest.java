@@ -19,10 +19,13 @@ package org.apache.qpid.jms.producer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.jms.JMSException;
+import javax.jms.JMSSecurityException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -148,4 +151,23 @@ public class JmsAnonymousProducerTest extends AmqpTestSupport {
             }
         }
     }
+
+    // TODO - Should only get JMSSecurityException on ActiveMQ 5.12.2+
+    @Test(timeout = 30000)
+    public void testAnonymousProducerNotAuthorized() throws Exception {
+        connection = createAmqpConnection("guest", "password");
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue("USERS.txQueue");
+        MessageProducer producer = session.createProducer(null);
+
+        try {
+            producer.send(queue, session.createTextMessage());
+            fail("Should not be able to produce here.");
+        } catch (JMSSecurityException jmsSE) {
+            LOG.info("Caught expected exception");
+        } catch (JMSException jms) {
+            LOG.info("Caught expected exception");
+        }
+    }
+
 }

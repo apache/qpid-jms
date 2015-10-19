@@ -23,6 +23,7 @@ import javax.jms.InvalidClientIDException;
 import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
+import javax.jms.ResourceAllocationException;
 import javax.jms.TransactionRolledBackException;
 
 import org.apache.qpid.jms.provider.ProviderRedirectedException;
@@ -98,6 +99,8 @@ public class AmqpSupport {
 
             if (error.equals(AmqpError.UNAUTHORIZED_ACCESS)) {
                 remoteError = new JMSSecurityException(message);
+            } else if (error.equals(AmqpError.RESOURCE_LIMIT_EXCEEDED)) {
+                remoteError = new ResourceAllocationException(message);
             } else if (error.equals(AmqpError.NOT_FOUND)) {
                 remoteError = new InvalidDestinationException(message);
             } else if (error.equals(TransactionErrors.TRANSACTION_ROLLBACK)) {

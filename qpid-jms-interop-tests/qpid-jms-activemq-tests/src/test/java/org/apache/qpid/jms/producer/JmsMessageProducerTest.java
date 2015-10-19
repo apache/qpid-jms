@@ -20,12 +20,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import javax.jms.BytesMessage;
 import javax.jms.DeliveryMode;
+import javax.jms.JMSSecurityException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -57,6 +59,19 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
 
         QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
         assertEquals(0, proxy.getQueueSize());
+    }
+
+    @Test(timeout = 30000)
+    public void testProducerNotAuthorized() throws Exception {
+        connection = createAmqpConnection("guest", "password");
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue("USERS.txQueue");
+        try {
+            session.createProducer(queue);
+            fail("Should not be able to produce here.");
+        } catch (JMSSecurityException jmsSE) {
+            LOG.info("Caught expected exception");
+        }
     }
 
     @Test(timeout = 20000)

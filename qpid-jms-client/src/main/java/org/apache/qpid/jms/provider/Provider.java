@@ -187,29 +187,31 @@ public interface Provider {
      * Called to acknowledge all messages that have been delivered in a given session.
      *
      * This method is typically used by a Session that is configured for client acknowledge
-     * mode.  The acknowledgment should only be applied to Messages that have been marked
+     * mode.  The acknowledgement should only be applied to Messages that have been marked
      * as delivered and not those still awaiting dispatch.
      *
      * @param sessionId
      *        the ID of the Session whose delivered messages should be acknowledged.
+     * @param ackType
+     *        The type of acknowledgement being done.
      * @param request
      *        The request object that should be signaled when this operation completes.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      * @throws JMSException if an error occurs due to JMS violation such as unmatched ack.
      */
-    void acknowledge(JmsSessionId sessionId, AsyncResult request) throws IOException, JMSException;
+    void acknowledge(JmsSessionId sessionId, ACK_TYPE ackType, AsyncResult request) throws IOException, JMSException;
 
     /**
      * Called to acknowledge a JmsMessage has been delivered, consumed, re-delivered...etc.
      *
-     * The provider should perform an acknowledgment for the message based on the configured
+     * The provider should perform an acknowledgement for the message based on the configured
      * mode of the consumer that it was dispatched to and the capabilities of the protocol.
      *
      * @param envelope
      *        The message dispatch envelope containing the Message delivery information.
      * @param ackType
-     *        The type of acknowledgment being done.
+     *        The type of acknowledgement being done.
      * @param request
      *        The request object that should be signaled when this operation completes.
      *

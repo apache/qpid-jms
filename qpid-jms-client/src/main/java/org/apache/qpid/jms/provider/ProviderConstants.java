@@ -24,20 +24,14 @@ public final class ProviderConstants {
     private ProviderConstants() {}
 
     public enum ACK_TYPE {
-        DELIVERED(0),
-        CONSUMED(1),
-        POISONED(2),
-        EXPIRED(3),
-        RELEASED(4);
-
-        private final int value;
-
-        private ACK_TYPE(int value) {
-            this.value = value;
-        }
-
-        public int getValue() {
-            return value;
-        }
+        // Aligned with AMQP dispositions
+        ACCEPTED,
+        RELEASED,
+        REJECTED,
+        MODIFIED_FAILED,
+        MODIFIED_FAILED_UNDELIVERABLE,
+        // Conceptual
+        DELIVERED,
+        EXPIRED;
     }
 }

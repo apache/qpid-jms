@@ -660,16 +660,16 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         }
     }
 
-    void acknowledge(JmsSessionId sessionId) throws JMSException {
-        acknowledge(sessionId, null);
+    void acknowledge(JmsSessionId sessionId, ACK_TYPE ackType) throws JMSException {
+        acknowledge(sessionId, ackType, null);
     }
 
-    void acknowledge(JmsSessionId sessionId, ProviderSynchronization synchronization) throws JMSException {
+    void acknowledge(JmsSessionId sessionId, ACK_TYPE ackType, ProviderSynchronization synchronization) throws JMSException {
         checkClosedOrFailed();
 
         try {
             ProviderFuture request = new ProviderFuture(synchronization);
-            provider.acknowledge(sessionId, request);
+            provider.acknowledge(sessionId, ackType, request);
             request.sync();
         } catch (Exception ioe) {
             throw JmsExceptionSupport.create(ioe);

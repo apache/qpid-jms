@@ -20,6 +20,7 @@ import static org.apache.qpid.jms.message.JmsMessageSupport.JMSX_DELIVERY_COUNT;
 import static org.apache.qpid.jms.message.JmsMessageSupport.JMSX_GROUPID;
 import static org.apache.qpid.jms.message.JmsMessageSupport.JMSX_GROUPSEQ;
 import static org.apache.qpid.jms.message.JmsMessageSupport.JMSX_USERID;
+import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_AMQP_ACK_TYPE;
 import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_CORRELATIONID;
 import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_DELIVERY_MODE;
 import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_DESTINATION;
@@ -41,9 +42,9 @@ import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.MessageFormatException;
 
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
-import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 import org.apache.qpid.jms.util.TypeConversionSupport;
 
 /**
@@ -55,6 +56,7 @@ public class JmsMessagePropertyIntercepter {
     private static final Map<String, PropertyIntercepter> PROPERTY_INTERCEPTERS =
         new HashMap<String, PropertyIntercepter>();
     private static final Set<String> STANDARD_HEADERS = new HashSet<String>();
+    private static final Set<String> VENDOR_PROPERTIES = new HashSet<String>();
 
     /**
      * Interface for a Property intercepter object used to write JMS style
@@ -75,7 +77,7 @@ public class JmsMessagePropertyIntercepter {
          *
          * @throws JMSException if an error occurs while accessing the property
          */
-        Object getProperty(JmsMessageFacade message) throws JMSException;
+        Object getProperty(JmsMessage message) throws JMSException;
 
         /**
          * Called when the names property is assigned from an JMS Message object.
@@ -87,7 +89,7 @@ public class JmsMessagePropertyIntercepter {
          *
          * @throws JMSException if an error occurs writing the property.
          */
-        void setProperty(JmsMessageFacade message, Object value) throws JMSException;
+        void setProperty(JmsMessage message, Object value) throws JMSException;
 
         /**
          * Indicates if the intercepted property has a value currently assigned.
@@ -97,7 +99,7 @@ public class JmsMessagePropertyIntercepter {
          *
          * @return true if the intercepted property has a value assigned to it.
          */
-        boolean propertyExists(JmsMessageFacade message);
+        boolean propertyExists(JmsMessage message);
 
         /**
          * Request that the intercepted property be cleared.  For properties that
@@ -109,7 +111,16 @@ public class JmsMessagePropertyIntercepter {
          *
          * @throws JMSException if an error occurs clearing the property.
          */
-        void clearProperty(JmsMessageFacade message) throws JMSException;
+        void clearProperty(JmsMessage message) throws JMSException;
+
+        /**
+         * Return true if the intercepter can bypass the read-only state of a Message
+         * and its properties.
+         *
+         * @return true if the intercepter is immune to read-only state checks.
+         */
+        boolean isAlwaysWritable();
+
     }
 
     static {
@@ -124,15 +135,17 @@ public class JmsMessagePropertyIntercepter {
         STANDARD_HEADERS.add(JMS_EXPIRATION);
         STANDARD_HEADERS.add(JMS_PRIORITY);
 
+        VENDOR_PROPERTIES.add(JMS_AMQP_ACK_TYPE);
+
         PROPERTY_INTERCEPTERS.put(JMS_DESTINATION, new PropertyIntercepter() {
             @Override
-            public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
+            public void setProperty(JmsMessage message, Object value) throws JMSException {
                 throw new JMSException("Cannot set JMS Destination as a property, use setJMSDestination() instead");
             }
 
             @Override
-            public Object getProperty(JmsMessageFacade message) throws JMSException {
-                Destination dest = message.getDestination();
+            public Object getProperty(JmsMessage message) throws JMSException {
+                Destination dest = message.getFacade().getDestination();
                 if (dest == null) {
                     return null;
                 }
@@ -140,72 +153,87 @@ public class JmsMessagePropertyIntercepter {
             }
 
             @Override
-            public boolean propertyExists(JmsMessageFacade message) {
-                return message.getDestination() != null;
+            public boolean propertyExists(JmsMessage message) {
+                return message.getFacade().getDestination() != null;
             }
 
             @Override
-            public void clearProperty(JmsMessageFacade message) {
-                message.setDestination(null);
+            public void clearProperty(JmsMessage message) {
+                message.getFacade().setDestination(null);
+            }
+
+            @Override
+            public boolean isAlwaysWritable() {
+                return false;
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_REPLYTO, new PropertyIntercepter() {
             @Override
-            public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
+            public void setProperty(JmsMessage message, Object value) throws JMSException {
                 throw new JMSException("Cannot set JMS ReplyTo as a property, use setJMSReplTo() instead");
             }
 
             @Override
-            public Object getProperty(JmsMessageFacade message) throws JMSException {
-                if (message.getReplyTo() == null) {
+            public Object getProperty(JmsMessage message) throws JMSException {
+                if (message.getFacade().getReplyTo() == null) {
                     return null;
                 }
-                return message.getReplyTo().toString();
+                return message.getFacade().getReplyTo().toString();
             }
 
             @Override
-            public boolean propertyExists(JmsMessageFacade message) {
-                return message.getReplyTo() != null;
+            public boolean propertyExists(JmsMessage message) {
+                return message.getFacade().getReplyTo() != null;
             }
 
             @Override
-            public void clearProperty(JmsMessageFacade message) {
-                message.setReplyTo(null);
+            public void clearProperty(JmsMessage message) {
+                message.getFacade().setReplyTo(null);
+            }
+
+            @Override
+            public boolean isAlwaysWritable() {
+                return false;
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_TYPE, new PropertyIntercepter() {
             @Override
-            public Object getProperty(JmsMessageFacade message) throws JMSException {
-                return message.getType();
+            public Object getProperty(JmsMessage message) throws JMSException {
+                return message.getFacade().getType();
             }
 
             @Override
-            public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
+            public void setProperty(JmsMessage message, Object value) throws JMSException {
                 String rc = (String) TypeConversionSupport.convert(value, String.class);
                 if (rc == null) {
                     throw new JMSException("Property JMSType cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setType(rc);
+                message.getFacade().setType(rc);
             }
 
             @Override
-            public boolean propertyExists(JmsMessageFacade message) {
-                return message.getType() != null;
+            public boolean propertyExists(JmsMessage message) {
+                return message.getFacade().getType() != null;
             }
 
             @Override
-            public void clearProperty(JmsMessageFacade message) {
-                message.setType(null);
+            public void clearProperty(JmsMessage message) {
+                message.getFacade().setType(null);
+            }
+
+            @Override
+            public boolean isAlwaysWritable() {
+                return false;
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_DELIVERY_MODE, new PropertyIntercepter() {
             @Override
-            public Object getProperty(JmsMessageFacade message) throws JMSException {
-                return message.isPersistent() ? "PERSISTENT" : "NON_PERSISTENT";
+            public Object getProperty(JmsMessage message) throws JMSException {
+                return message.getFacade().isPersistent() ? "PERSISTENT" : "NON_PERSISTENT";
             }
 
             @Override
-            public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
+            public void setProperty(JmsMessage message, Object value) throws JMSException {
                 Integer rc = null;
                 try {
                     rc = (Integer) TypeConversionSupport.convert(value, Integer.class);
@@ -227,258 +255,308 @@ public class JmsMessagePropertyIntercepter {
                     if (bool == null) {
                         throw new JMSException("Property JMSDeliveryMode cannot be set from a " + value.getClass().getName() + ".");
                     } else {
-                        message.setPersistent(bool.booleanValue());
+                        message.getFacade().setPersistent(bool.booleanValue());
                     }
                 } else {
-                    message.setPersistent(rc == DeliveryMode.PERSISTENT);
+                    message.getFacade().setPersistent(rc == DeliveryMode.PERSISTENT);
                 }
             }
 
             @Override
-            public boolean propertyExists(JmsMessageFacade message) {
+            public boolean propertyExists(JmsMessage message) {
                 return true;
             }
 
             @Override
-            public void clearProperty(JmsMessageFacade message) {
-                message.setPersistent(true); // Default value
+            public void clearProperty(JmsMessage message) {
+                message.getFacade().setPersistent(true); // Default value
+            }
+
+            @Override
+            public boolean isAlwaysWritable() {
+                return false;
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_PRIORITY, new PropertyIntercepter() {
             @Override
-            public Object getProperty(JmsMessageFacade message) throws JMSException {
-                return Integer.valueOf(message.getPriority());
+            public Object getProperty(JmsMessage message) throws JMSException {
+                return Integer.valueOf(message.getFacade().getPriority());
             }
 
             @Override
-            public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
+            public void setProperty(JmsMessage message, Object value) throws JMSException {
                 Integer rc = (Integer) TypeConversionSupport.convert(value, Integer.class);
                 if (rc == null) {
                     throw new JMSException("Property JMSPriority cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setPriority(rc.byteValue());
+                message.getFacade().setPriority(rc.byteValue());
             }
 
             @Override
-            public boolean propertyExists(JmsMessageFacade message) {
+            public boolean propertyExists(JmsMessage message) {
                 return true;
             }
 
             @Override
-            public void clearProperty(JmsMessageFacade message) {
-                message.setPriority(Message.DEFAULT_PRIORITY);
+            public void clearProperty(JmsMessage message) {
+                message.getFacade().setPriority(Message.DEFAULT_PRIORITY);
+            }
+
+            @Override
+            public boolean isAlwaysWritable() {
+                return false;
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_MESSAGEID, new PropertyIntercepter() {
             @Override
-            public Object getProperty(JmsMessageFacade message) throws JMSException {
-                if (message.getMessageId() == null) {
+            public Object getProperty(JmsMessage message) throws JMSException {
+                if (message.getFacade().getMessageId() == null) {
                     return null;
                 }
-                return message.getMessageId();
+                return message.getFacade().getMessageId();
             }
 
             @Override
-            public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
+            public void setProperty(JmsMessage message, Object value) throws JMSException {
                 String rc = (String) TypeConversionSupport.convert(value, String.class);
                 if (rc == null) {
                     throw new JMSException("Property JMSMessageID cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setMessageId(rc);
+                message.getFacade().setMessageId(rc);
             }
 
             @Override
-            public boolean propertyExists(JmsMessageFacade message) {
-                return message.getMessageId() != null;
+            public boolean propertyExists(JmsMessage message) {
+                return message.getFacade().getMessageId() != null;
             }
 
             @Override
-            public void clearProperty(JmsMessageFacade message) {
-                message.setMessageId(null);
+            public void clearProperty(JmsMessage message) {
+                message.getFacade().setMessageId(null);
+            }
+
+            @Override
+            public boolean isAlwaysWritable() {
+                return false;
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_TIMESTAMP, new PropertyIntercepter() {
             @Override
-            public Object getProperty(JmsMessageFacade message) throws JMSException {
-                return Long.valueOf(message.getTimestamp());
+            public Object getProperty(JmsMessage message) throws JMSException {
+                return Long.valueOf(message.getFacade().getTimestamp());
             }
 
             @Override
-            public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
+            public void setProperty(JmsMessage message, Object value) throws JMSException {
                 Long rc = (Long) TypeConversionSupport.convert(value, Long.class);
                 if (rc == null) {
                     throw new JMSException("Property JMSTimestamp cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setTimestamp(rc.longValue());
+                message.getFacade().setTimestamp(rc.longValue());
             }
 
             @Override
-            public boolean propertyExists(JmsMessageFacade message) {
-                return message.getTimestamp() > 0;
+            public boolean propertyExists(JmsMessage message) {
+                return message.getFacade().getTimestamp() > 0;
             }
 
             @Override
-            public void clearProperty(JmsMessageFacade message) {
-                message.setTimestamp(0);
+            public void clearProperty(JmsMessage message) {
+                message.getFacade().setTimestamp(0);
+            }
+
+            @Override
+            public boolean isAlwaysWritable() {
+                return false;
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_CORRELATIONID, new PropertyIntercepter() {
             @Override
-            public Object getProperty(JmsMessageFacade message) throws JMSException {
-                return message.getCorrelationId();
+            public Object getProperty(JmsMessage message) throws JMSException {
+                return message.getFacade().getCorrelationId();
             }
 
             @Override
-            public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
+            public void setProperty(JmsMessage message, Object value) throws JMSException {
                 String rc = (String) TypeConversionSupport.convert(value, String.class);
                 if (rc == null) {
                     throw new JMSException("Property JMSCorrelationID cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setCorrelationId(rc);
+                message.getFacade().setCorrelationId(rc);
             }
 
             @Override
-            public boolean propertyExists(JmsMessageFacade message) {
-                return message.getCorrelationId() != null;
+            public boolean propertyExists(JmsMessage message) {
+                return message.getFacade().getCorrelationId() != null;
             }
 
             @Override
-            public void clearProperty(JmsMessageFacade message) throws JMSException {
-                message.setCorrelationId(null);
+            public void clearProperty(JmsMessage message) throws JMSException {
+                message.getFacade().setCorrelationId(null);
+            }
+
+            @Override
+            public boolean isAlwaysWritable() {
+                return false;
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_EXPIRATION, new PropertyIntercepter() {
             @Override
-            public Object getProperty(JmsMessageFacade message) throws JMSException {
-                return Long.valueOf(message.getExpiration());
+            public Object getProperty(JmsMessage message) throws JMSException {
+                return Long.valueOf(message.getFacade().getExpiration());
             }
 
             @Override
-            public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
+            public void setProperty(JmsMessage message, Object value) throws JMSException {
                 Long rc = (Long) TypeConversionSupport.convert(value, Long.class);
                 if (rc == null) {
                     throw new JMSException("Property JMSExpiration cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setExpiration(rc.longValue());
+                message.getFacade().setExpiration(rc.longValue());
             }
 
             @Override
-            public boolean propertyExists(JmsMessageFacade message) {
-                return message.getExpiration() > 0;
+            public boolean propertyExists(JmsMessage message) {
+                return message.getFacade().getExpiration() > 0;
             }
 
             @Override
-            public void clearProperty(JmsMessageFacade message) {
-                message.setExpiration(0);
+            public void clearProperty(JmsMessage message) {
+                message.getFacade().setExpiration(0);
+            }
+
+            @Override
+            public boolean isAlwaysWritable() {
+                return false;
             }
         });
         PROPERTY_INTERCEPTERS.put(JMS_REDELIVERED, new PropertyIntercepter() {
             @Override
-            public Object getProperty(JmsMessageFacade message) throws JMSException {
-                return Boolean.valueOf(message.isRedelivered());
+            public Object getProperty(JmsMessage message) throws JMSException {
+                return Boolean.valueOf(message.getFacade().isRedelivered());
             }
 
             @Override
-            public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
+            public void setProperty(JmsMessage message, Object value) throws JMSException {
                 Boolean rc = (Boolean) TypeConversionSupport.convert(value, Boolean.class);
                 if (rc == null) {
                     throw new JMSException("Property JMSRedelivered cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setRedelivered(rc.booleanValue());
+                message.getFacade().setRedelivered(rc.booleanValue());
             }
 
             @Override
-            public boolean propertyExists(JmsMessageFacade message) {
-                return message.isRedelivered();
+            public boolean propertyExists(JmsMessage message) {
+                return message.getFacade().isRedelivered();
             }
 
             @Override
-            public void clearProperty(JmsMessageFacade message) {
-                message.setRedelivered(false);
+            public void clearProperty(JmsMessage message) {
+                message.getFacade().setRedelivered(false);
+            }
+
+            @Override
+            public boolean isAlwaysWritable() {
+                return false;
             }
         });
         PROPERTY_INTERCEPTERS.put(JMSX_DELIVERY_COUNT, new PropertyIntercepter() {
             @Override
-            public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
+            public void setProperty(JmsMessage message, Object value) throws JMSException {
                 Integer rc = (Integer) TypeConversionSupport.convert(value, Integer.class);
                 if (rc == null) {
                     throw new JMSException("Property JMSXDeliveryCount cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setDeliveryCount(rc.intValue());
+                message.getFacade().setDeliveryCount(rc.intValue());
             }
 
             @Override
-            public Object getProperty(JmsMessageFacade message) throws JMSException {
-                return Integer.valueOf(message.getDeliveryCount());
+            public Object getProperty(JmsMessage message) throws JMSException {
+                return Integer.valueOf(message.getFacade().getDeliveryCount());
             }
 
             @Override
-            public boolean propertyExists(JmsMessageFacade message) {
+            public boolean propertyExists(JmsMessage message) {
                 return true;
             }
 
             @Override
-            public void clearProperty(JmsMessageFacade message) {
-                message.setDeliveryCount(1);
+            public void clearProperty(JmsMessage message) {
+                message.getFacade().setDeliveryCount(1);
+            }
+
+            @Override
+            public boolean isAlwaysWritable() {
+                return false;
             }
         });
         PROPERTY_INTERCEPTERS.put(JMSX_GROUPID, new PropertyIntercepter() {
             @Override
-            public Object getProperty(JmsMessageFacade message) throws JMSException {
-                return message.getGroupId();
+            public Object getProperty(JmsMessage message) throws JMSException {
+                return message.getFacade().getGroupId();
             }
 
             @Override
-            public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
+            public void setProperty(JmsMessage message, Object value) throws JMSException {
                 String rc = (String) TypeConversionSupport.convert(value, String.class);
                 if (rc == null) {
                     throw new JMSException("Property JMSXGroupID cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setGroupId(rc);
+                message.getFacade().setGroupId(rc);
             }
 
             @Override
-            public boolean propertyExists(JmsMessageFacade message) {
-                return message.getGroupId() != null;
+            public boolean propertyExists(JmsMessage message) {
+                return message.getFacade().getGroupId() != null;
             }
 
             @Override
-            public void clearProperty(JmsMessageFacade message) {
-                message.setGroupId(null);
+            public void clearProperty(JmsMessage message) {
+                message.getFacade().setGroupId(null);
+            }
+
+            @Override
+            public boolean isAlwaysWritable() {
+                return false;
             }
         });
         PROPERTY_INTERCEPTERS.put(JMSX_GROUPSEQ, new PropertyIntercepter() {
             @Override
-            public Object getProperty(JmsMessageFacade message) throws JMSException {
-                return message.getGroupSequence();
+            public Object getProperty(JmsMessage message) throws JMSException {
+                return message.getFacade().getGroupSequence();
             }
 
             @Override
-            public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
+            public void setProperty(JmsMessage message, Object value) throws JMSException {
                 Integer rc = (Integer) TypeConversionSupport.convert(value, Integer.class);
                 if (rc == null) {
                     throw new JMSException("Property JMSXGroupSeq cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setGroupSequence(rc.intValue());
+                message.getFacade().setGroupSequence(rc.intValue());
             }
 
             @Override
-            public boolean propertyExists(JmsMessageFacade message) {
-                return message.getGroupSequence() != 0;
+            public boolean propertyExists(JmsMessage message) {
+                return message.getFacade().getGroupSequence() != 0;
             }
 
             @Override
-            public void clearProperty(JmsMessageFacade message) {
-                message.setGroupSequence(0);
+            public void clearProperty(JmsMessage message) {
+                message.getFacade().setGroupSequence(0);
+            }
+
+            @Override
+            public boolean isAlwaysWritable() {
+                return false;
             }
         });
         PROPERTY_INTERCEPTERS.put(JMSX_USERID, new PropertyIntercepter() {
             @Override
-            public Object getProperty(JmsMessageFacade message) throws JMSException {
-                Object userId = message.getUserId();
+            public Object getProperty(JmsMessage message) throws JMSException {
+                Object userId = message.getFacade().getUserId();
                 if (userId == null) {
                     try {
-                        userId = message.getProperty("JMSXUserID");
+                        userId = message.getFacade().getProperty("JMSXUserID");
                     } catch (Exception e) {
                         throw JmsExceptionSupport.create(e);
                     }
@@ -488,21 +566,75 @@ public class JmsMessagePropertyIntercepter {
             }
 
             @Override
-            public void setProperty(JmsMessageFacade message, Object value) throws JMSException {
+            public void setProperty(JmsMessage message, Object value) throws JMSException {
                 if (!(value instanceof String)) {
                     throw new JMSException("Property JMSXUserID cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setUserId((String) value);
+                message.getFacade().setUserId((String) value);
             }
 
             @Override
-            public boolean propertyExists(JmsMessageFacade message) {
-                return message.getUserId() != null;
+            public boolean propertyExists(JmsMessage message) {
+                return message.getFacade().getUserId() != null;
             }
 
             @Override
-            public void clearProperty(JmsMessageFacade message) {
-                message.setUserId(null);
+            public void clearProperty(JmsMessage message) {
+                message.getFacade().setUserId(null);
+            }
+
+            @Override
+            public boolean isAlwaysWritable() {
+                return false;
+            }
+        });
+        PROPERTY_INTERCEPTERS.put(JMS_AMQP_ACK_TYPE, new PropertyIntercepter() {
+            @Override
+            public Object getProperty(JmsMessage message) throws JMSException {
+                Object ackType = null;
+
+                if (message.getAcknowledgeCallback() != null &&
+                    message.getAcknowledgeCallback().isAckTypeSet()) {
+
+                    ackType = message.getAcknowledgeCallback().getAckType();
+                }
+
+                return ackType;
+            }
+
+            @Override
+            public void setProperty(JmsMessage message, Object value) throws JMSException {
+                if (message.getAcknowledgeCallback() == null) {
+                    throw new JMSException("Session Acknoewledgement Mode does not allow setting: " + JMS_AMQP_ACK_TYPE);
+                }
+
+                Integer ackType = (Integer) TypeConversionSupport.convert(value, Integer.class);
+                if (ackType == null) {
+                    throw new JMSException("Property " + JMS_AMQP_ACK_TYPE + " cannot be set from a " + value.getClass().getName() + ".");
+                }
+
+                message.getAcknowledgeCallback().setAckType(ackType);
+            }
+
+            @Override
+            public boolean propertyExists(JmsMessage message) {
+                if (message.getAcknowledgeCallback() != null) {
+                    return message.getAcknowledgeCallback().isAckTypeSet();
+                }
+
+                return false;
+            }
+
+            @Override
+            public void clearProperty(JmsMessage message) throws JMSException {
+                if (message.getAcknowledgeCallback() != null) {
+                    message.getAcknowledgeCallback().clearAckType();
+                }
+            }
+
+            @Override
+            public boolean isAlwaysWritable() {
+                return true;
             }
         });
     }
@@ -513,7 +645,7 @@ public class JmsMessagePropertyIntercepter {
      * method.
      *
      * @param message
-     *        the JmsMessageFacade instance to read from
+     *        the JmsMessage instance to read from
      * @param name
      *        the property name that is being requested.
      *
@@ -521,14 +653,16 @@ public class JmsMessagePropertyIntercepter {
      *
      * @throws JMSException if an error occurs while reading the defined property.
      */
-    public static Object getProperty(JmsMessageFacade message, String name) throws JMSException {
+    public static Object getProperty(JmsMessage message, String name) throws JMSException {
         Object value = null;
+
+        checkPropertyNameIsValid(name, message.isValidatePropertyNames());
 
         PropertyIntercepter jmsPropertyExpression = PROPERTY_INTERCEPTERS.get(name);
         if (jmsPropertyExpression != null) {
             value = jmsPropertyExpression.getProperty(message);
         } else {
-            value = message.getProperty(name);
+            value = message.getFacade().getProperty(name);
         }
 
         return value;
@@ -540,7 +674,7 @@ public class JmsMessagePropertyIntercepter {
      * method.
      *
      * @param message
-     *        the JmsMessageFacade instance to write to.
+     *        the JmsMessage instance to write to.
      * @param name
      *        the property name that is being written.
      * @param value
@@ -548,12 +682,19 @@ public class JmsMessagePropertyIntercepter {
      *
      * @throws JMSException if an error occurs while writing the defined property.
      */
-    public static void setProperty(JmsMessageFacade message, String name, Object value) throws JMSException {
+    public static void setProperty(JmsMessage message, String name, Object value) throws JMSException {
         PropertyIntercepter jmsPropertyExpression = PROPERTY_INTERCEPTERS.get(name);
+
+        if (jmsPropertyExpression == null || !jmsPropertyExpression.isAlwaysWritable()) {
+            message.checkReadOnlyProperties();
+        }
+        checkPropertyNameIsValid(name, message.isValidatePropertyNames());
+        checkValidObject(value);
+
         if (jmsPropertyExpression != null) {
             jmsPropertyExpression.setProperty(message, value);
         } else {
-            message.setProperty(name, value);
+            message.getFacade().setProperty(name, value);
         }
     }
 
@@ -561,7 +702,7 @@ public class JmsMessagePropertyIntercepter {
      * Static inspection method to determine if a named property exists for a given message.
      *
      * @param message
-     *        the JmsMessageFacade instance to read from
+     *        the JmsMessage instance to read from
      * @param name
      *        the property name that is being inspected.
      *
@@ -569,12 +710,18 @@ public class JmsMessagePropertyIntercepter {
      *
      * @throws JMSException if an error occurs while validating the defined property.
      */
-    public static boolean propertyExists(JmsMessageFacade message, String name) throws JMSException {
+    public static boolean propertyExists(JmsMessage message, String name) throws JMSException {
+        try {
+            checkPropertyNameIsValid(name, message.isValidatePropertyNames());
+        } catch (IllegalArgumentException iae) {
+            return false;
+        }
+
         PropertyIntercepter jmsPropertyExpression = PROPERTY_INTERCEPTERS.get(name);
         if (jmsPropertyExpression != null) {
             return jmsPropertyExpression.propertyExists(message);
         } else {
-            return message.propertyExists(name);
+            return message.getFacade().propertyExists(name);
         }
     }
 
@@ -584,13 +731,13 @@ public class JmsMessagePropertyIntercepter {
      * message facade to clear any message properties that might have been set.
      *
      * @param message
-     *        the JmsMessageFacade instance to read from
+     *        the JmsMessage instance to read from
      * @param excludeStandardJMSHeaders
      *        whether the standard JMS header names should be excluded from the returned set
      *
      * @throws JMSException if an error occurs while validating the defined property.
      */
-    public static void clearProperties(JmsMessageFacade message, boolean excludeStandardJMSHeaders) throws JMSException {
+    public static void clearProperties(JmsMessage message, boolean excludeStandardJMSHeaders) throws JMSException {
         for (Entry<String, PropertyIntercepter> entry : PROPERTY_INTERCEPTERS.entrySet()) {
             if (excludeStandardJMSHeaders && STANDARD_HEADERS.contains(entry.getKey())) {
                 continue;
@@ -599,7 +746,8 @@ public class JmsMessagePropertyIntercepter {
             entry.getValue().clearProperty(message);
         }
 
-        message.clearProperties();
+        message.getFacade().clearProperties();
+        message.setReadOnlyProperties(false);
     }
 
     /**
@@ -607,15 +755,15 @@ public class JmsMessagePropertyIntercepter {
      * string key value is inserted into an Set and returned.
      *
      * @param message
-     *        the JmsMessageFacade instance to read property names from.
+     *        the JmsMessage instance to read property names from.
      *
      * @return a {@code Set<String>} containing the names of all intercepted properties.
      *
      * @throws JMSException if an error occurs while gathering the message property names.
      */
-    public static Set<String> getAllPropertyNames(JmsMessageFacade message) throws JMSException {
+    public static Set<String> getAllPropertyNames(JmsMessage message) throws JMSException {
         Set<String> names = new HashSet<String>(PROPERTY_INTERCEPTERS.keySet());
-        names.addAll(message.getPropertyNames());
+        names.addAll(message.getFacade().getPropertyNames());
         return names;
     }
 
@@ -627,7 +775,7 @@ public class JmsMessagePropertyIntercepter {
      * will be returned if there are no matching properties.
      *
      * @param message
-     *        the JmsMessageFacade instance to read from
+     *        the JmsMessage instance to read from
      * @param excludeStandardJMSHeaders
      *        whether the standard JMS header names should be excluded from the returned set
      *
@@ -635,7 +783,7 @@ public class JmsMessagePropertyIntercepter {
      *
      * @throws JMSException if an error occurs while gathering the message property names.
      */
-    public static Set<String> getPropertyNames(JmsMessageFacade message, boolean excludeStandardJMSHeaders) throws JMSException {
+    public static Set<String> getPropertyNames(JmsMessage message, boolean excludeStandardJMSHeaders) throws JMSException {
         Set<String> names = new HashSet<String>();
         for (Entry<String, PropertyIntercepter> entry : PROPERTY_INTERCEPTERS.entrySet()) {
             if (excludeStandardJMSHeaders && STANDARD_HEADERS.contains(entry.getKey())) {
@@ -647,8 +795,87 @@ public class JmsMessagePropertyIntercepter {
             }
         }
 
-        names.addAll(message.getPropertyNames());
+        for (String name : message.getFacade().getPropertyNames()) {
+            try {
+                checkPropertyNameIsValid(name, message.isValidatePropertyNames());
+            } catch (IllegalArgumentException iae) {
+                // Don't add the name
+                continue;
+            }
+
+            names.add(name);
+        }
 
         return names;
+    }
+
+    //----- Property Validation Methods --------------------------------------//
+
+    private static void checkPropertyNameIsValid(String propertyName, boolean validateNames) throws IllegalArgumentException {
+        if (propertyName == null) {
+            throw new IllegalArgumentException("Property name must not be null");
+        } else if (propertyName.length() == 0) {
+            throw new IllegalArgumentException("Property name must not be the empty string");
+        }
+
+        if (validateNames) {
+            checkIdentifierLetterAndDigitRequirements(propertyName);
+            checkIdentifierIsntNullTrueFalse(propertyName);
+            checkIdentifierIsntLogicOperator(propertyName);
+        }
+    }
+
+    private static void checkIdentifierIsntLogicOperator(String identifier) {
+        // Identifiers cannot be NOT, AND, OR, BETWEEN, LIKE, IN, IS, or ESCAPE.
+        if ("NOT".equals(identifier) || "AND".equals(identifier) || "OR".equals(identifier) ||
+            "BETWEEN".equals(identifier) || "LIKE".equals(identifier) || "IN".equals(identifier) ||
+            "IS".equals(identifier) || "ESCAPE".equals(identifier)) {
+
+            throw new IllegalArgumentException("Identifier not allowed in JMS: '" + identifier + "'");
+        }
+    }
+
+    private static void checkIdentifierIsntNullTrueFalse(String identifier) {
+        // Identifiers cannot be the names NULL, TRUE, and FALSE.
+        if ("NULL".equals(identifier) || "TRUE".equals(identifier) || "FALSE".equals(identifier)) {
+            throw new IllegalArgumentException("Identifier not allowed in JMS: '" + identifier + "'");
+        }
+    }
+
+    private static void checkIdentifierLetterAndDigitRequirements(String identifier) {
+        // An identifier is an unlimited-length sequence of letters and digits, the first of
+        // which must be a letter.  A letter is any character for which the method
+        // Character.isJavaLetter returns true.  This includes '_' and '$'.  A letter or digit
+        // is any character for which the method Character.isJavaLetterOrDigit returns true.
+        char startChar = identifier.charAt(0);
+        if (!(Character.isJavaIdentifierStart(startChar))) {
+            throw new IllegalArgumentException("Identifier does not begin with a valid JMS identifier start character: '" + identifier + "' ");
+        }
+
+        // JMS part character
+        int length = identifier.length();
+        for (int i = 1; i < length; i++) {
+            char ch = identifier.charAt(i);
+            if (!(Character.isJavaIdentifierPart(ch))) {
+                throw new IllegalArgumentException("Identifier contains invalid JMS identifier character '" + ch + "': '" + identifier + "' ");
+            }
+        }
+    }
+
+    private static void checkValidObject(Object value) throws MessageFormatException {
+        boolean valid = value instanceof Boolean ||
+                        value instanceof Byte ||
+                        value instanceof Short ||
+                        value instanceof Integer ||
+                        value instanceof Long ||
+                        value instanceof Float ||
+                        value instanceof Double ||
+                        value instanceof Character ||
+                        value instanceof String ||
+                        value == null;
+
+        if (!valid) {
+            throw new MessageFormatException("Only objectified primitive objects and String types are allowed but was: " + value + " type: " + value.getClass());
+        }
     }
 }

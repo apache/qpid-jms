@@ -98,8 +98,8 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
     }
 
     @Override
-    public void acknowledge(JmsSessionId sessionId, AsyncResult request) throws IOException, JMSException {
-        next.acknowledge(sessionId, request);
+    public void acknowledge(JmsSessionId sessionId, ACK_TYPE ackType, AsyncResult request) throws IOException, JMSException {
+        next.acknowledge(sessionId, ackType, request);
     }
 
     @Override

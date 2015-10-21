@@ -275,11 +275,7 @@ public class JmsMapMessage extends JmsMessage implements MapMessage {
 
     @Override
     public void setObject(String name, Object value) throws JMSException {
-        // byte[] not allowed on properties so cover that here.
-        if (!(value instanceof byte[])) {
-            checkValidObject(value);
-        }
-
+        checkValidObject(value);
         put(name, value);
     }
 
@@ -314,6 +310,24 @@ public class JmsMapMessage extends JmsMessage implements MapMessage {
             throw new IllegalArgumentException("Map key name must not be null");
         } else if (name.length() == 0) {
             throw new IllegalArgumentException("Map key name must not be the empty string");
+        }
+    }
+
+    private void checkValidObject(Object value) throws MessageFormatException {
+        boolean valid = value instanceof Boolean ||
+                        value instanceof Byte ||
+                        value instanceof Short ||
+                        value instanceof Integer ||
+                        value instanceof Long ||
+                        value instanceof Float ||
+                        value instanceof Double ||
+                        value instanceof Character ||
+                        value instanceof String ||
+                        value instanceof byte[] ||
+                        value == null;
+
+        if (!valid) {
+            throw new MessageFormatException("Only objectified primitive objects and String types are allowed but was: " + value + " type: " + value.getClass());
         }
     }
 }

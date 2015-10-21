@@ -17,7 +17,8 @@
 package org.apache.qpid.jms.provider.amqp;
 
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.MODIFIED_FAILED;
-import static org.apache.qpid.jms.provider.amqp.AmqpSupport.MODIFIED_UNDELIVERABLE;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.MODIFIED_FAILED_UNDELIVERABLE;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.REJECTED;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -167,13 +168,35 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      * Only messages that have already been acknowledged as delivered by the JMS
      * framework will be in the delivered Map.  This means that the link credit
      * would already have been given for these so we just need to settle them.
+     *
+     * @param ackType the type of acknowledgement to perform
      */
-    public void acknowledge() {
-        LOG.trace("Session Acknowledge for consumer: {}", getResourceInfo().getId());
+    public void acknowledge(ACK_TYPE ackType) {
+        LOG.trace("Session Acknowledge for consumer {} with ack type {}", getResourceInfo().getId(), ackType);
         for (Delivery delivery : delivered.values()) {
-            delivery.disposition(Accepted.getInstance());
+            switch (ackType) {
+                case ACCEPTED:
+                    delivery.disposition(Accepted.getInstance());
+                    break;
+                case RELEASED:
+                    delivery.disposition(Released.getInstance());
+                    break;
+                case REJECTED:
+                    delivery.disposition(REJECTED);
+                    break;
+                case MODIFIED_FAILED:
+                    delivery.disposition(MODIFIED_FAILED);
+                    break;
+                case MODIFIED_FAILED_UNDELIVERABLE:
+                    delivery.disposition(MODIFIED_FAILED_UNDELIVERABLE);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid acknowledgement type specified: " + ackType);
+            }
+
             delivery.settle();
         }
+
         delivered.clear();
     }
 
@@ -209,13 +232,13 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             }
             setDefaultDeliveryState(delivery, MODIFIED_FAILED);
             sendFlowIfNeeded();
-        } else if (ackType.equals(ACK_TYPE.CONSUMED)) {
+        } else if (ackType.equals(ACK_TYPE.ACCEPTED)) {
             // A Consumer may not always send a DELIVERED ack so we need to
             // check to ensure we don't add too much credit to the link.
             if (isPresettle() || delivered.remove(envelope) == null) {
                 sendFlowIfNeeded();
             }
-            LOG.debug("Consumed Ack of message: {}", envelope);
+            LOG.debug("Accepted Ack of message: {}", envelope);
             if (!delivery.isSettled()) {
                 if (session.isTransacted() && !getResourceInfo().isBrowser()) {
 
@@ -238,10 +261,10 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                     delivery.settle();
                 }
             }
-        } else if (ackType.equals(ACK_TYPE.POISONED)) {
-            deliveryFailed(delivery);
+        } else if (ackType.equals(ACK_TYPE.MODIFIED_FAILED_UNDELIVERABLE)) {
+            deliveryFailedUndeliverable(delivery);
         } else if (ackType.equals(ACK_TYPE.EXPIRED)) {
-            deliveryFailed(delivery);
+            deliveryFailedUndeliverable(delivery);
         } else if (ackType.equals(ACK_TYPE.RELEASED)) {
             delivery.disposition(Released.getInstance());
             delivery.settle();
@@ -399,7 +422,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             //        In the future once the JMS mapping is complete we should be
             //        able to convert everything to some message even if its just
             //        a bytes messages as a fall back.
-            deliveryFailed(incoming);
+            deliveryFailedUndeliverable(incoming);
             return false;
         }
 
@@ -482,8 +505,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         return "AmqpConsumer { " + getResourceInfo().getId() + " }";
     }
 
-    protected void deliveryFailed(Delivery incoming) {
-        incoming.disposition(MODIFIED_UNDELIVERABLE);
+    protected void deliveryFailedUndeliverable(Delivery incoming) {
+        incoming.disposition(MODIFIED_FAILED_UNDELIVERABLE);
         incoming.settle();
         // TODO: this flows credit, which we might not want, e.g if
         // a drain was issued to stop the link.

@@ -693,14 +693,16 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
      * Acknowledge all previously delivered messages in this Session as consumed.  This
      * method is usually only called when the Session is in the CLIENT_ACKNOWLEDGE mode.
      *
+     * @param ackType
+     *        The type of acknowledgement being done.
      * @throws JMSException if an error occurs while the acknowledge is processed.
      */
-    void acknowledge() throws JMSException {
+    void acknowledge(ACK_TYPE ackType) throws JMSException {
         if (isTransacted()) {
             throw new IllegalStateException("Session acknowledge called inside a transacted Session");
         }
 
-        this.connection.acknowledge(sessionInfo.getId());
+        this.connection.acknowledge(sessionInfo.getId(), ackType);
     }
 
     public boolean isClosed() {

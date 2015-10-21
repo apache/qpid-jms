@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
@@ -29,6 +28,7 @@ import javax.jms.MessageFormatException;
 import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 
+import org.apache.qpid.jms.JmsAcknowledgeCallback;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
@@ -37,7 +37,7 @@ import org.apache.qpid.jms.util.TypeConversionSupport;
 public class JmsMessage implements javax.jms.Message {
 
     private static final String ID_PREFIX = "ID:";
-    protected transient Callable<Void> acknowledgeCallback;
+    protected transient JmsAcknowledgeCallback acknowledgeCallback;
     protected transient JmsConnection connection;
 
     protected final JmsMessageFacade facade;
@@ -94,7 +94,8 @@ public class JmsMessage implements javax.jms.Message {
     public void acknowledge() throws JMSException {
         if (acknowledgeCallback != null) {
             try {
-                acknowledgeCallback.call();
+                acknowledgeCallback.acknowledge();
+                acknowledgeCallback = null;
             } catch (Throwable e) {
                 throw JmsExceptionSupport.create(e);
             }
@@ -248,38 +249,17 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void clearProperties() throws JMSException {
-        JmsMessagePropertyIntercepter.clearProperties(facade, true);
-        setReadOnlyProperties(false);
+        JmsMessagePropertyIntercepter.clearProperties(this, true);
     }
 
     @Override
     public boolean propertyExists(String name) throws JMSException {
-        try {
-            checkPropertyNameIsValid(name);
-        } catch (IllegalArgumentException iae) {
-            return false;
-        }
-
-        return JmsMessagePropertyIntercepter.propertyExists(facade, name);
+        return JmsMessagePropertyIntercepter.propertyExists(this, name);
     }
 
     @Override
     public Enumeration<?> getPropertyNames() throws JMSException {
-        Set<String> result = new HashSet<String>();
-
-        Set<String> propertyNames = JmsMessagePropertyIntercepter.getPropertyNames(facade, true);
-        for (String name : propertyNames) {
-            try {
-                checkPropertyNameIsValid(name);
-            } catch (IllegalArgumentException iae) {
-                // Don't add the name
-                continue;
-            }
-
-            result.add(name);
-        }
-
-        return Collections.enumeration(result);
+        return Collections.enumeration(JmsMessagePropertyIntercepter.getPropertyNames(this, true));
     }
 
     /**
@@ -292,39 +272,18 @@ public class JmsMessage implements javax.jms.Message {
      */
     public Enumeration<?> getAllPropertyNames() throws JMSException {
         Set<String> result = new HashSet<String>();
-        result.addAll(JmsMessagePropertyIntercepter.getAllPropertyNames(facade));
+        result.addAll(JmsMessagePropertyIntercepter.getAllPropertyNames(this));
         return Collections.enumeration(result);
     }
 
     @Override
     public void setObjectProperty(String name, Object value) throws JMSException {
-        checkReadOnlyProperties();
-        checkPropertyNameIsValid(name);
-        checkValidObject(value);
-        JmsMessagePropertyIntercepter.setProperty(facade, name, value);
-    }
-
-    protected void checkValidObject(Object value) throws MessageFormatException {
-        boolean valid = value instanceof Boolean ||
-                        value instanceof Byte ||
-                        value instanceof Short ||
-                        value instanceof Integer ||
-                        value instanceof Long ||
-                        value instanceof Float ||
-                        value instanceof Double ||
-                        value instanceof Character ||
-                        value instanceof String ||
-                        value == null;
-
-        if (!valid) {
-            throw new MessageFormatException("Only objectified primitive objects and String types are allowed but was: " + value + " type: " + value.getClass());
-        }
+        JmsMessagePropertyIntercepter.setProperty(this, name, value);
     }
 
     @Override
     public Object getObjectProperty(String name) throws JMSException {
-        checkPropertyNameIsValid(name);
-        return JmsMessagePropertyIntercepter.getProperty(facade, name);
+        return JmsMessagePropertyIntercepter.getProperty(this, name);
     }
 
     @Override
@@ -471,12 +430,12 @@ public class JmsMessage implements javax.jms.Message {
         setObjectProperty(name, value);
     }
 
-    public Callable<Void> getAcknowledgeCallback() {
+    public JmsAcknowledgeCallback getAcknowledgeCallback() {
         return acknowledgeCallback;
     }
 
-    public void setAcknowledgeCallback(Callable<Void> acknowledgeCallback) {
-        this.acknowledgeCallback = acknowledgeCallback;
+    public void setAcknowledgeCallback(JmsAcknowledgeCallback jmsAcknowledgeCallback) {
+        this.acknowledgeCallback = jmsAcknowledgeCallback;
     }
 
     /**
@@ -530,6 +489,8 @@ public class JmsMessage implements javax.jms.Message {
         return "JmsMessage { " + facade + " }";
     }
 
+    //----- State validation methods -----------------------------------------//
+
     protected void checkReadOnlyProperties() throws MessageNotWriteableException {
         if (readOnlyProperties) {
             throw new MessageNotWriteableException("Message properties are read-only");
@@ -545,57 +506,6 @@ public class JmsMessage implements javax.jms.Message {
     protected void checkWriteOnlyBody() throws MessageNotReadableException {
         if (!readOnlyBody) {
             throw new MessageNotReadableException("Message body is write-only");
-        }
-    }
-
-    private void checkPropertyNameIsValid(String propertyName) throws IllegalArgumentException {
-        if (propertyName == null) {
-            throw new IllegalArgumentException("Property name must not be null");
-        } else if (propertyName.length() == 0) {
-            throw new IllegalArgumentException("Property name must not be the empty string");
-        }
-
-        if (isValidatePropertyNames()) {
-            checkIdentifierLetterAndDigitRequirements(propertyName);
-            checkIdentifierIsntNullTrueFalse(propertyName);
-            checkIdentifierIsntLogicOperator(propertyName);
-        }
-    }
-
-    private void checkIdentifierIsntLogicOperator(String identifier) {
-        // Identifiers cannot be NOT, AND, OR, BETWEEN, LIKE, IN, IS, or ESCAPE.
-        if ("NOT".equals(identifier) || "AND".equals(identifier) || "OR".equals(identifier) ||
-            "BETWEEN".equals(identifier) || "LIKE".equals(identifier) || "IN".equals(identifier) ||
-            "IS".equals(identifier) || "ESCAPE".equals(identifier)) {
-
-            throw new IllegalArgumentException("Identifier not allowed in JMS: '" + identifier + "'");
-        }
-    }
-
-    private void checkIdentifierIsntNullTrueFalse(String identifier) {
-        // Identifiers cannot be the names NULL, TRUE, and FALSE.
-        if ("NULL".equals(identifier) || "TRUE".equals(identifier) || "FALSE".equals(identifier)) {
-            throw new IllegalArgumentException("Identifier not allowed in JMS: '" + identifier + "'");
-        }
-    }
-
-    private void checkIdentifierLetterAndDigitRequirements(String identifier) {
-        // An identifier is an unlimited-length sequence of letters and digits, the first of
-        // which must be a letter.  A letter is any character for which the method
-        // Character.isJavaLetter returns true.  This includes '_' and '$'.  A letter or digit
-        // is any character for which the method Character.isJavaLetterOrDigit returns true.
-        char startChar = identifier.charAt(0);
-        if (!(Character.isJavaIdentifierStart(startChar))) {
-            throw new IllegalArgumentException("Identifier does not begin with a valid JMS identifier start character: '" + identifier + "' ");
-        }
-
-        // JMS part character
-        int length = identifier.length();
-        for (int i = 1; i < length; i++) {
-            char ch = identifier.charAt(i);
-            if (!(Character.isJavaIdentifierPart(ch))) {
-                throw new IllegalArgumentException("Identifier contains invalid JMS identifier character '" + ch + "': '" + identifier + "' ");
-            }
         }
     }
 }

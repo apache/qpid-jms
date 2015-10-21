@@ -342,12 +342,12 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     }
 
     @Override
-    public void acknowledge(final JmsSessionId sessionId, AsyncResult request) throws IOException, JMSException {
+    public void acknowledge(final JmsSessionId sessionId, final ACK_TYPE ackType, AsyncResult request) throws IOException, JMSException {
         checkClosed();
         final FailoverRequest pending = new FailoverRequest(request) {
             @Override
             public void doTask() throws Exception {
-                provider.acknowledge(sessionId, this);
+                provider.acknowledge(sessionId, ackType, this);
             }
 
             @Override

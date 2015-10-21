@@ -282,7 +282,7 @@ public class MockProvider implements Provider {
     }
 
     @Override
-    public void acknowledge(final JmsSessionId sessionId, final AsyncResult request) throws IOException, JMSException {
+    public void acknowledge(final JmsSessionId sessionId, final ACK_TYPE ackType, final AsyncResult request) throws IOException, JMSException {
         checkClosed();
         serializer.execute(new Runnable() {
 

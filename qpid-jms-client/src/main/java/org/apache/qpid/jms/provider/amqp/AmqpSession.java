@@ -31,6 +31,7 @@ import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpConsumerBuilder;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpProducerBuilder;
 import org.apache.qpid.proton.engine.Session;
@@ -61,10 +62,13 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
     /**
      * Perform an acknowledge of all delivered messages for all consumers active in this
      * Session.
+     *
+     * @param ackType
+     *      controls the acknowledgement that is applied to each message.
      */
-    public void acknowledge() {
+    public void acknowledge(final ACK_TYPE ackType) {
         for (AmqpConsumer consumer : consumers.values()) {
-            consumer.acknowledge();
+            consumer.acknowledge(ackType);
         }
     }
 

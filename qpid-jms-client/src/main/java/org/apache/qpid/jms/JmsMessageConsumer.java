@@ -17,7 +17,6 @@
 package org.apache.qpid.jms;
 
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -369,7 +368,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     private JmsInboundMessageDispatch doAckConsumed(final JmsInboundMessageDispatch envelope) throws JMSException {
         checkClosed();
         try {
-            session.acknowledge(envelope, ACK_TYPE.CONSUMED);
+            session.acknowledge(envelope, ACK_TYPE.ACCEPTED);
         } catch (JMSException ex) {
             session.onException(ex);
             throw ex;
@@ -398,7 +397,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
 
     private void doAckUndeliverable(final JmsInboundMessageDispatch envelope) throws JMSException {
         try {
-            session.acknowledge(envelope, ACK_TYPE.POISONED);
+            session.acknowledge(envelope, ACK_TYPE.MODIFIED_FAILED_UNDELIVERABLE);
         } catch (JMSException ex) {
             session.onException(ex);
             throw ex;
@@ -426,17 +425,7 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
         lock.lock();
         try {
             if (acknowledgementMode == Session.CLIENT_ACKNOWLEDGE) {
-                envelope.getMessage().setAcknowledgeCallback(new Callable<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        if (session.isClosed()) {
-                            throw new javax.jms.IllegalStateException("Session closed.");
-                        }
-                        session.acknowledge();
-                        envelope.getMessage().setAcknowledgeCallback(null);
-                        return null;
-                    }
-                });
+                envelope.getMessage().setAcknowledgeCallback(new JmsAcknowledgeCallback(session));
             }
 
             if (envelope.isEnqueueFirst()) {

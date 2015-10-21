@@ -88,7 +88,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     @Override
     public void acknowledge(JmsConnection connection, JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws JMSException {
         // Consumed or delivered messages fall into a transaction otherwise just pass it in.
-        if (ackType == ACK_TYPE.CONSUMED || ackType == ACK_TYPE.DELIVERED) {
+        if (ackType == ACK_TYPE.ACCEPTED || ackType == ACK_TYPE.DELIVERED) {
             lock.readLock().lock();
             try {
                 connection.acknowledge(envelope, ackType, new ProviderSynchronization() {

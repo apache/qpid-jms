@@ -494,7 +494,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     }
 
     @Override
-    public void acknowledge(final JmsSessionId sessionId, final AsyncResult request) throws IOException {
+    public void acknowledge(final JmsSessionId sessionId, final ACK_TYPE ackType, final AsyncResult request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -503,7 +503,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 try {
                     checkClosed();
                     AmqpSession amqpSession = connection.getSession(sessionId);
-                    amqpSession.acknowledge();
+                    amqpSession.acknowledge(ackType);
                     pumpToProtonTransport(request);
                     request.onSuccess();
                 } catch (Exception error) {

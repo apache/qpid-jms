@@ -24,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Enumeration;
-import java.util.concurrent.Callable;
 
 import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
@@ -32,8 +31,10 @@ import javax.jms.Message;
 import javax.jms.MessageFormatException;
 import javax.jms.MessageNotWriteableException;
 
+import org.apache.qpid.jms.JmsAcknowledgeCallback;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.JmsSession;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 import org.apache.qpid.jms.message.facade.test.JmsTestMessageFacade;
@@ -1155,21 +1156,19 @@ public class JmsMessageTest {
         msg.acknowledge();
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testAcknowledgeWitCallback() throws Exception {
-        Callable<Void> callback = Mockito.mock(Callable.class);
+        JmsSession session = Mockito.mock(JmsSession.class);
+        JmsAcknowledgeCallback callback = new JmsAcknowledgeCallback(session);
         JmsMessage msg = factory.createMessage();
         msg.setAcknowledgeCallback(callback);
         msg.acknowledge();
-        Mockito.verify(callback).call();
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testAcknowledgeWitCallbackThatThrows() throws Exception {
-        Callable<Void> callback = Mockito.mock(Callable.class);
-        Mockito.doThrow(new Exception()).when(callback).call();
+        JmsAcknowledgeCallback callback = Mockito.mock(JmsAcknowledgeCallback.class);
+        Mockito.doThrow(new JMSException("expected")).when(callback).acknowledge();
         JmsMessage msg = factory.createMessage();
         msg.setAcknowledgeCallback(callback);
         assertEquals(callback, msg.getAcknowledgeCallback());

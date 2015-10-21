@@ -100,13 +100,13 @@ public class FailoverProviderClosedTest extends FailoverProviderTestSupport {
     @Test(timeout=30000, expected=IOException.class)
     public void testSessionAcknowledge() throws Exception {
         ProviderFuture request = new ProviderFuture();
-        provider.acknowledge(session.getId(), request);
+        provider.acknowledge(session.getId(), ACK_TYPE.ACCEPTED, request);
     }
 
     @Test(timeout=30000, expected=IOException.class)
     public void testAcknowledgeMessage() throws Exception {
         ProviderFuture request = new ProviderFuture();
-        provider.acknowledge(new JmsInboundMessageDispatch(1), ACK_TYPE.CONSUMED, request);
+        provider.acknowledge(new JmsInboundMessageDispatch(1), ACK_TYPE.ACCEPTED, request);
     }
 
     @Test(timeout=30000, expected=IOException.class)

@@ -406,4 +406,5 @@ public interface JmsMessageFacade {
      *        The message ID to set on this message, or null to clear.
      */
     void setProviderMessageIdObject(Object messageId);
+
 }

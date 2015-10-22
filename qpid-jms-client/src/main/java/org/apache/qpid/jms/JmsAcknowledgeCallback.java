@@ -23,7 +23,7 @@ import javax.jms.JMSException;
 import org.apache.qpid.jms.message.JmsMessageSupport;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 
-public class JmsAcknowledgeCallback {
+public final class JmsAcknowledgeCallback {
 
     private final JmsSession session;
     private int ackType;

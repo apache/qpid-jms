@@ -31,10 +31,8 @@ import javax.jms.Message;
 import javax.jms.MessageFormatException;
 import javax.jms.MessageNotWriteableException;
 
-import org.apache.qpid.jms.JmsAcknowledgeCallback;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDestination;
-import org.apache.qpid.jms.JmsSession;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 import org.apache.qpid.jms.message.facade.test.JmsTestMessageFacade;
@@ -1154,29 +1152,6 @@ public class JmsMessageTest {
     public void testAcknowledgeWitNoCallback() throws JMSException {
         JmsMessage msg = factory.createMessage();
         msg.acknowledge();
-    }
-
-    @Test
-    public void testAcknowledgeWitCallback() throws Exception {
-        JmsSession session = Mockito.mock(JmsSession.class);
-        JmsAcknowledgeCallback callback = new JmsAcknowledgeCallback(session);
-        JmsMessage msg = factory.createMessage();
-        msg.setAcknowledgeCallback(callback);
-        msg.acknowledge();
-    }
-
-    @Test
-    public void testAcknowledgeWitCallbackThatThrows() throws Exception {
-        JmsAcknowledgeCallback callback = Mockito.mock(JmsAcknowledgeCallback.class);
-        Mockito.doThrow(new JMSException("expected")).when(callback).acknowledge();
-        JmsMessage msg = factory.createMessage();
-        msg.setAcknowledgeCallback(callback);
-        assertEquals(callback, msg.getAcknowledgeCallback());
-        try {
-            msg.acknowledge();
-            fail("Should have thrown.");
-        } catch (JMSException e) {
-        }
     }
 
     //---- Test that message property getters throw expected exceptions ------//

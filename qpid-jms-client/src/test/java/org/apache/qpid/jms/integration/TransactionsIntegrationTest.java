@@ -313,13 +313,18 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout=20000)
+    public void testCommitTransactedSessionWithConsumerReceivingAllMessagesAndClose() throws Exception {
+        doCommitTransactedSessionWithConsumerTestImpl(1, 1, true);
+    }
+
+    @Test(timeout=20000)
     public void testCommitTransactedSessionWithConsumerReceivingSomeMessages() throws Exception {
         doCommitTransactedSessionWithConsumerTestImpl(5, 2, false);
     }
 
     @Test(timeout=20000)
-    public void testCommitTransactedSessionWithConsumerReceivingAllMessagesAndClose() throws Exception {
-        doCommitTransactedSessionWithConsumerTestImpl(1, 1, true);
+    public void testCommitTransactedSessionWithConsumerReceivingSomeMessagesAndCloses() throws Exception {
+        doCommitTransactedSessionWithConsumerTestImpl(5, 2, true);
     }
 
     private void doCommitTransactedSessionWithConsumerTestImpl(int transferCount, int consumeCount, boolean closeConsumer) throws Exception {
@@ -366,6 +371,13 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             // Expect the consumer to close now
             if (closeConsumer) {
                 testPeer.expectDetach(true, true, true);
+
+                // Expect the messages that were not consumed to be released
+                int unconsumed = transferCount - consumeCount;
+                for (int i = 1; i <= unconsumed; i++) {
+                    testPeer.expectDispositionThatIsReleasedAndSettled();
+                }
+
                 messageConsumer.close();
             }
 
@@ -525,6 +537,11 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
         doRollbackTransactedSessionWithConsumerTestImpl(5, 2, false);
     }
 
+    @Test(timeout=20000)
+    public void testRollbackTransactedSessionWithConsumerReceivingSomeMessagesThenCloses() throws Exception {
+        doRollbackTransactedSessionWithConsumerTestImpl(5, 2, true);
+    }
+
     private void doRollbackTransactedSessionWithConsumerTestImpl(int transferCount, int consumeCount, boolean closeConsumer) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -571,6 +588,11 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             if (closeConsumer) {
                 testPeer.expectDetach(true, true, true);
+                int unconsumed = transferCount - consumeCount;
+                for (int i = 1; i <= unconsumed; i++) {
+                    testPeer.expectDisposition(true, new ReleasedMatcher());
+                }
+
                 messageConsumer.close();
             }
 
@@ -579,13 +601,13 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
             testPeer.expectDeclare(txnId);
 
-            // Expect the messages that were not consumed to be released
-            int unconsumed = transferCount - consumeCount;
-            for (int i = 1; i <= unconsumed; i++) {
-                testPeer.expectDisposition(true, new ReleasedMatcher());
-            }
-
             if (!closeConsumer) {
+                // Expect the messages that were not consumed to be released
+                int unconsumed = transferCount - consumeCount;
+                for (int i = 1; i <= unconsumed; i++) {
+                    testPeer.expectDisposition(true, new ReleasedMatcher());
+                }
+
                 // Expect the consumer to be 'started' again as rollback completes
                 testPeer.expectLinkFlow(false, false, greaterThan(UnsignedInteger.ZERO));
             }

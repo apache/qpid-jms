@@ -490,4 +490,38 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
 
         session.close();
     }
+
+    @Test(timeout = 60000)
+    public void testConsumerClosesAfterItsTXCommits() throws Exception {
+        connection = createAmqpConnection();
+        connection.start();
+
+        Session mgmtSession = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = mgmtSession.createQueue(name.getMethodName());
+
+        // Send a message that will be rolled back.
+        Session senderSession = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+        MessageProducer producer = senderSession.createProducer(queue);
+        producer.send(senderSession.createMessage());
+        senderSession.commit();
+        senderSession.close();
+
+        // Consumer the message in a transaction and then roll it back
+        Session txSession = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+        MessageConsumer consumer = txSession.createConsumer(queue);
+        Message received = consumer.receive(1000);
+        assertNotNull("Consumer didn't receive the message", received);
+        txSession.rollback();
+        consumer.close();
+
+        // Create an auto acknowledge session and consumer normally.
+        Session nonTxSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        consumer = nonTxSession.createConsumer(queue);
+        received = consumer.receive(1000);
+        assertNotNull("receiver3 didn't received the message", received);
+        consumer.close();
+
+        connection.close();
+    }
 }
+

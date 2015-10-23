@@ -61,7 +61,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     protected final MessageQueue messageQueue;
     protected final Lock lock = new ReentrantLock();
     protected final AtomicBoolean suspendedConnection = new AtomicBoolean();
-    protected final AtomicBoolean delivered = new AtomicBoolean();
     protected final AtomicReference<Exception> failureCause = new AtomicReference<>();
 
     protected JmsMessageConsumer(JmsConsumerId consumerId, JmsSession session, JmsDestination destination,
@@ -120,11 +119,11 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
     @Override
     public void close() throws JMSException {
         if (!closed.get()) {
-            session.getTransactionContext().addSynchronization(new JmsTxSynchronization() {
+            session.getTransactionContext().addSynchronization(new JmsTransactionSynchronization() {
 
                 @Override
                 public boolean validate(JmsTransactionContext context) throws Exception {
-                    if (!context.isInTransaction() || !delivered.get() || isBrowser()) {
+                    if (isBrowser() || !context.isActiveInThisContext(getConsumerId())) {
                         doClose();
                         return false;
                     }
@@ -358,9 +357,6 @@ public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableC
             } else {
                 doAckConsumed(envelope);
             }
-
-            // Tags that we have delivered and can't close if in a TX Session.
-            delivered.set(true);
         }
         return envelope;
     }

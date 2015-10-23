@@ -20,6 +20,7 @@ import javax.jms.JMSException;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
+import org.apache.qpid.jms.meta.JmsResourceId;
 import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
@@ -70,7 +71,7 @@ public interface JmsTransactionContext {
      *
      * @throws JMSException if an error occurs during the send.
      */
-    void addSynchronization(JmsTxSynchronization sync) throws JMSException;
+    void addSynchronization(JmsTransactionSynchronization sync) throws JMSException;
 
     /**
      * @return if the currently transaction has been marked as being failed.
@@ -138,6 +139,23 @@ public interface JmsTransactionContext {
      * @return true if there is a transaction in progress even if the current is failed.
      */
     boolean isInTransaction();
+
+    /**
+     * Allows a resource to query the transaction context to determine if it has pending
+     * work in the current transaction.
+     *
+     * Callers should use caution with this method as it is only a view into the current
+     * state without blocking ongoing transaction operations.  The best use of this method is
+     * in the validation method of a JmsTransactionSynchronization to determine if the
+     * synchronization needs to be added based on whether to requesting resource has any
+     * pending operations.
+     *
+     * @param resouceId
+     *      The JmsResourceId of the resource making this query.
+     *
+     * @return true if the resource has pending work in the current transaction.
+     */
+    boolean isActiveInThisContext(JmsResourceId resouceId);
 
     /**
      * Signals that the connection that was previously established has been lost and the

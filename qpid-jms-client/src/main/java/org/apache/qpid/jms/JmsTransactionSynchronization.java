@@ -26,7 +26,7 @@ package org.apache.qpid.jms;
  * transaction.  The Consumer can close itself following the commit or rollback
  * of the running Transaction.
  */
-public abstract class JmsTxSynchronization {
+public abstract class JmsTransactionSynchronization {
 
     /**
      * Called once before the synchronization is added to the set

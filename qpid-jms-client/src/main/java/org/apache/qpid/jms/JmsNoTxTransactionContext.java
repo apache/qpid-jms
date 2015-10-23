@@ -21,6 +21,7 @@ import javax.jms.JMSException;
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
+import org.apache.qpid.jms.meta.JmsResourceId;
 import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
@@ -42,7 +43,7 @@ public class JmsNoTxTransactionContext implements JmsTransactionContext {
     }
 
     @Override
-    public void addSynchronization(JmsTxSynchronization sync) throws JMSException {
+    public void addSynchronization(JmsTransactionSynchronization sync) throws JMSException {
         try {
             sync.validate(this);
         } catch (Exception e) {
@@ -87,6 +88,11 @@ public class JmsNoTxTransactionContext implements JmsTransactionContext {
 
     @Override
     public boolean isInTransaction() {
+        return false;
+    }
+
+    @Override
+    public boolean isActiveInThisContext(JmsResourceId resouceId) {
         return false;
     }
 

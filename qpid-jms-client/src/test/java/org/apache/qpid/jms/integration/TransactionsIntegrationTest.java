@@ -309,25 +309,35 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout=20000)
     public void testCommitTransactedSessionWithConsumerReceivingAllMessages() throws Exception {
-        doCommitTransactedSessionWithConsumerTestImpl(1, 1, false);
+        doCommitTransactedSessionWithConsumerTestImpl(1, 1, false, false);
     }
 
     @Test(timeout=20000)
-    public void testCommitTransactedSessionWithConsumerReceivingAllMessagesAndClose() throws Exception {
-        doCommitTransactedSessionWithConsumerTestImpl(1, 1, true);
+    public void testCommitTransactedSessionWithConsumerReceivingAllMessagesAndCloseBefore() throws Exception {
+        doCommitTransactedSessionWithConsumerTestImpl(1, 1, true, true);
+    }
+
+    @Test(timeout=20000)
+    public void testCommitTransactedSessionWithConsumerReceivingAllMessagesAndCloseAfter() throws Exception {
+        doCommitTransactedSessionWithConsumerTestImpl(1, 1, true, false);
     }
 
     @Test(timeout=20000)
     public void testCommitTransactedSessionWithConsumerReceivingSomeMessages() throws Exception {
-        doCommitTransactedSessionWithConsumerTestImpl(5, 2, false);
+        doCommitTransactedSessionWithConsumerTestImpl(5, 2, false, false);
     }
 
     @Test(timeout=20000)
-    public void testCommitTransactedSessionWithConsumerReceivingSomeMessagesAndCloses() throws Exception {
-        doCommitTransactedSessionWithConsumerTestImpl(5, 2, true);
+    public void testCommitTransactedSessionWithConsumerReceivingSomeMessagesAndClosesBefore() throws Exception {
+        doCommitTransactedSessionWithConsumerTestImpl(5, 2, true, true);
     }
 
-    private void doCommitTransactedSessionWithConsumerTestImpl(int transferCount, int consumeCount, boolean closeConsumer) throws Exception {
+    @Test(timeout=20000)
+    public void testCommitTransactedSessionWithConsumerReceivingSomeMessagesAndClosesAfter() throws Exception {
+        doCommitTransactedSessionWithConsumerTestImpl(5, 2, true, false);
+    }
+
+    private void doCommitTransactedSessionWithConsumerTestImpl(int transferCount, int consumeCount, boolean closeConsumer, boolean closeBeforeCommit) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
@@ -369,7 +379,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.expectDischarge(txnId, false);
 
             // Expect the consumer to close now
-            if (closeConsumer) {
+            if (closeConsumer && closeBeforeCommit) {
                 testPeer.expectDetach(true, true, true);
 
                 // Expect the messages that were not consumed to be released
@@ -387,6 +397,11 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.expectDeclare(txnId);
 
             session.commit();
+
+            if (closeConsumer && !closeBeforeCommit) {
+                testPeer.expectDetach(true, true, true);
+                messageConsumer.close();
+            }
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

@@ -17,7 +17,9 @@
 package org.apache.qpid.jms;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.jms.JMSException;
@@ -26,6 +28,7 @@ import javax.jms.TransactionRolledBackException;
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
+import org.apache.qpid.jms.meta.JmsResourceId;
 import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.meta.JmsTransactionInfo;
 import org.apache.qpid.jms.provider.Provider;
@@ -42,12 +45,12 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsLocalTransactionContext.class);
 
-    private final List<JmsTxSynchronization> synchronizations = new ArrayList<JmsTxSynchronization>();
+    private final List<JmsTransactionSynchronization> synchronizations = new ArrayList<JmsTransactionSynchronization>();
+    private final Map<JmsResourceId, JmsResourceId> participants = new HashMap<JmsResourceId, JmsResourceId>();
     private final JmsSession session;
     private final JmsConnection connection;
     private volatile JmsTransactionId transactionId;
     private volatile boolean failed;
-    private volatile boolean hasWork;
     private JmsTransactionListener listener;
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -58,7 +61,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     }
 
     @Override
-    public void send(JmsConnection connection, JmsOutboundMessageDispatch envelope) throws JMSException {
+    public void send(JmsConnection connection, final JmsOutboundMessageDispatch envelope) throws JMSException {
         lock.readLock().lock();
         try {
             if (isFailed()) {
@@ -71,13 +74,13 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                 @Override
                 public void onPendingSuccess() {
                     LOG.trace("TX:{} has performed a send.", getTransactionId());
-                    hasWork = true;
+                    participants.put(envelope.getProducerId(), envelope.getProducerId());
                 }
 
                 @Override
                 public void onPendingFailure(Throwable cause) {
                     LOG.trace("TX:{} has a failed send.", getTransactionId());
-                    hasWork = true;
+                    participants.put(envelope.getProducerId(), envelope.getProducerId());
                 }
             });
         } finally {
@@ -86,7 +89,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     }
 
     @Override
-    public void acknowledge(JmsConnection connection, JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws JMSException {
+    public void acknowledge(JmsConnection connection, final JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws JMSException {
         // Consumed or delivered messages fall into a transaction otherwise just pass it in.
         if (ackType == ACK_TYPE.ACCEPTED || ackType == ACK_TYPE.DELIVERED) {
             lock.readLock().lock();
@@ -96,13 +99,13 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                     @Override
                     public void onPendingSuccess() {
                         LOG.trace("TX:{} has performed a acknowledge.", getTransactionId());
-                        hasWork = true;
+                        participants.put(envelope.getConsumerId(), envelope.getConsumerId());
                     }
 
                     @Override
                     public void onPendingFailure(Throwable cause) {
                         LOG.trace("TX:{} has failed a acknowledge.", getTransactionId());
-                        hasWork = true;
+                        participants.put(envelope.getConsumerId(), envelope.getConsumerId());
                     }
                 });
             } finally {
@@ -114,8 +117,8 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     }
 
     @Override
-    public void addSynchronization(JmsTxSynchronization sync) throws JMSException {
-        lock.readLock().lock();
+    public void addSynchronization(JmsTransactionSynchronization sync) throws JMSException {
+        lock.writeLock().lock();
         try {
             if (sync.validate(this)) {
                 synchronizations.add(sync);
@@ -123,7 +126,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);
         } finally {
-            lock.readLock().unlock();
+            lock.writeLock().unlock();
         }
     }
 
@@ -269,7 +272,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     public void onConnectionInterrupted() {
         lock.writeLock().tryLock();
         try {
-            failed = hasWork;
+            failed = !participants.isEmpty();
         } finally {
             if (lock.writeLock().isHeldByCurrentThread()) {
                 lock.writeLock().unlock();
@@ -294,7 +297,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
 
             // It is ok to use the newly created TX from here if the TX never had any
             // work done within it otherwise we want the next commit to fail.
-            failed = hasWork;
+            failed = !participants.isEmpty();
         } finally {
             if (lock.writeLock().isHeldByCurrentThread()) {
                 lock.writeLock().unlock();
@@ -334,6 +337,16 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
         }
     }
 
+    @Override
+    public boolean isActiveInThisContext(JmsResourceId resouceId) {
+        lock.readLock().lock();
+        try {
+            return participants.containsKey(resouceId);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
     //------------- Implementation methods -----------------------------------//
 
     /*
@@ -343,7 +356,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     private void reset() {
         transactionId = null;
         failed = false;
-        hasWork = false;
+        participants.clear();
     }
 
     /*
@@ -356,7 +369,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
         }
 
         Throwable firstException = null;
-        for (JmsTxSynchronization sync : synchronizations) {
+        for (JmsTransactionSynchronization sync : synchronizations) {
             try {
                 sync.afterRollback();
             } catch (Throwable thrown) {
@@ -366,6 +379,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                 }
             }
         }
+
         synchronizations.clear();
         if (firstException != null) {
             throw JmsExceptionSupport.create(firstException);
@@ -382,7 +396,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
         }
 
         Throwable firstException = null;
-        for (JmsTxSynchronization sync : synchronizations) {
+        for (JmsTransactionSynchronization sync : synchronizations) {
             try {
                 sync.afterCommit();
             } catch (Throwable thrown) {

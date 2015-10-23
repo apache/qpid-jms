@@ -605,7 +605,7 @@ public class JmsMessagePropertyIntercepter {
             @Override
             public void setProperty(JmsMessage message, Object value) throws JMSException {
                 if (message.getAcknowledgeCallback() == null) {
-                    throw new JMSException("Session Acknoewledgement Mode does not allow setting: " + JMS_AMQP_ACK_TYPE);
+                    throw new JMSException("Session Acknowledgement Mode does not allow setting: " + JMS_AMQP_ACK_TYPE);
                 }
 
                 Integer ackType = (Integer) TypeConversionSupport.convert(value, Integer.class);

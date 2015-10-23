@@ -16,6 +16,9 @@
  */
 package org.apache.qpid.jms.message;
 
+import static org.apache.qpid.jms.message.JmsMessageSupport.ACCEPTED;
+import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_AMQP_ACK_TYPE;
+import static org.apache.qpid.jms.message.JmsMessageSupport.RELEASED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -31,8 +34,10 @@ import javax.jms.Message;
 import javax.jms.MessageFormatException;
 import javax.jms.MessageNotWriteableException;
 
+import org.apache.qpid.jms.JmsAcknowledgeCallback;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.JmsSession;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 import org.apache.qpid.jms.message.facade.test.JmsTestMessageFacade;
@@ -1149,7 +1154,7 @@ public class JmsMessageTest {
     }
 
     @Test
-    public void testAcknowledgeWitNoCallback() throws JMSException {
+    public void testAcknowledgeWithNoCallbackDoesNotThrow() throws JMSException {
         JmsMessage msg = factory.createMessage();
         msg.acknowledge();
     }
@@ -1467,6 +1472,29 @@ public class JmsMessageTest {
     @Test
     public void testPropertyExistsWithInvalidNameAndValidationDisabled() throws JMSException {
         doPropertyExistsWithInvalidNameTestImpl(true);
+    }
+
+    //---------- Test ack type modifier property -------------//
+
+    /**
+     * Basic test that the JMS_AMQP_ACK_TYPE property is intercepted and has
+     * effect on messages with an acknowledgement callback. More detailed tests
+     * of usage and effect of this property is performed elsewhere.
+     *
+     * @throws Exception if an error occurs during the test.
+     */
+    @Test
+    public void testSetPropertyJMS_AMQP_ACK_TYPE() throws Exception {
+        JmsMessage message = factory.createMessage();
+        JmsSession session = Mockito.mock(JmsSession.class);
+        JmsAcknowledgeCallback callback = new JmsAcknowledgeCallback(session);
+        message.setAcknowledgeCallback(callback);
+
+        assertEquals("Unexpected ack type value", ACCEPTED, callback.getAckType());
+
+        message.setIntProperty(JMS_AMQP_ACK_TYPE, RELEASED);
+
+        assertEquals("Unexpected ack type value after setting prop", RELEASED, callback.getAckType());
     }
 
     //--------- Test support method ------------------------------------------//

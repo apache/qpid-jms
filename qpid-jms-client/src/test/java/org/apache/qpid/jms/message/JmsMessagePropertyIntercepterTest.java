@@ -1678,6 +1678,19 @@ public class JmsMessagePropertyIntercepterTest {
     }
 
     @Test
+    public void testJMS_AMQP_ACK_TYPEInGetPropertyNamesWhenSet() throws JMSException {
+        JmsSession session = Mockito.mock(JmsSession.class);
+        JmsAcknowledgeCallback callback = new JmsAcknowledgeCallback(session);
+        callback.setAckType(RELEASED);
+        JmsMessageFacade facade = Mockito.mock(JmsMessageFacade.class);
+        JmsMessage message = Mockito.mock(JmsMapMessage.class);
+        Mockito.when(message.getAcknowledgeCallback()).thenReturn(callback);
+        Mockito.when(message.getFacade()).thenReturn(facade);
+
+        assertTrue(JmsMessagePropertyIntercepter.getPropertyNames(message, false).contains(JMS_AMQP_ACK_TYPE));
+    }
+
+    @Test
     public void testJMS_AMQP_ACK_TYPENotInGetPropertyNamesWhenNotSet() throws JMSException {
         JmsSession session = Mockito.mock(JmsSession.class);
         JmsAcknowledgeCallback callback = new JmsAcknowledgeCallback(session);

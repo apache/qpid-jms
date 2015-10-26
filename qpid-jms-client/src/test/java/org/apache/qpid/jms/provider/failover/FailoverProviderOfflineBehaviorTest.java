@@ -65,7 +65,7 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         super.tearDown();
     }
 
-    @Test(timeout=10000)
+    @Test(timeout=20000)
     public void testConnectionCloseDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());
@@ -75,7 +75,7 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.close();
     }
 
-    @Test(timeout=10000)
+    @Test(timeout=20000)
     public void testSessionCloseDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());
@@ -87,7 +87,7 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.close();
     }
 
-    @Test(timeout=10000)
+    @Test(timeout=20000)
     public void testProducerCloseDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());
@@ -104,7 +104,7 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.close();
     }
 
-    @Test(timeout=10000)
+    @Test(timeout=20000)
     public void testConsumerCloseDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());
@@ -121,7 +121,7 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.close();
     }
 
-    @Test(timeout=10000)
+    @Test(timeout=20000)
     public void testSessionCloseWhenDestroyCallFailsDoesNotBlock() throws Exception {
         mockPeer.setResourceDestroyFilter(new ResourceLifecycleFilter() {
 
@@ -144,7 +144,7 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.close();
     }
 
-    @Test(timeout=10000)
+    @Test(timeout=20000)
     public void testSessionCloseWhenProviderSuddenlyClosesDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());
@@ -157,7 +157,7 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         session.close();
     }
 
-    @Test(timeout=10000)
+    @Test(timeout=20000)
     public void testSessionCloseWithOpenResourcesDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());
@@ -175,7 +175,7 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.close();
     }
 
-    @Test(timeout=10000)
+    @Test(timeout=20000)
     public void testSessionRecoverDoesNotBlock() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());
@@ -189,7 +189,7 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.close();
     }
 
-    @Test // (timeout=10000)
+    @Test(timeout=20000)
     public void testTransactionCommitFails() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());
@@ -211,7 +211,7 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.close();
     }
 
-    @Test(timeout=10000)
+    @Test(timeout=20000)
     public void testTransactionRollbackSucceeds() throws Exception {
         connection = (JmsConnection) factory.createConnection();
         connection.addConnectionListener(new ConnectionInterruptionListener());

@@ -18,8 +18,9 @@ package org.apache.qpid.jms.meta;
 
 public final class JmsTransactionInfo implements JmsResource, Comparable<JmsTransactionInfo> {
 
-    protected final JmsSessionId sessionId;
-    protected JmsTransactionId transactionId;
+    private final JmsSessionId sessionId;
+    private final JmsTransactionId transactionId;
+    private boolean inDoubt;
 
     public JmsTransactionInfo(JmsSessionId sessionId, JmsTransactionId transactionId) {
         if (sessionId == null) {
@@ -42,8 +43,25 @@ public final class JmsTransactionInfo implements JmsResource, Comparable<JmsTran
         return transactionId;
     }
 
-    public JmsSessionId getParentId() {
+    /**
+     * @return the JmsSessionId of the Session that this transaction is owned by.
+     */
+    public JmsSessionId getSessionId() {
         return this.sessionId;
+    }
+
+    /**
+     * @return the inDoubt
+     */
+    public boolean isInDoubt() {
+        return inDoubt;
+    }
+
+    /**
+     * @param inDoubt the inDoubt to set
+     */
+    public void setInDoubt(boolean inDoubt) {
+        this.inDoubt = inDoubt;
     }
 
     @Override

@@ -21,8 +21,8 @@ import org.apache.qpid.jms.util.ToStringSupport;
 
 public final class JmsProducerInfo implements JmsResource, Comparable<JmsProducerInfo> {
 
-    protected final JmsProducerId producerId;
-    protected JmsDestination destination;
+    private final JmsProducerId producerId;
+    private JmsDestination destination;
 
     public JmsProducerInfo(JmsProducerId producerId) {
         if (producerId == null) {

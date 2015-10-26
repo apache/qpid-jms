@@ -21,9 +21,11 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import javax.jms.IllegalStateException;
+import javax.jms.TransactionRolledBackException;
 
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.meta.JmsTransactionId;
+import org.apache.qpid.jms.meta.JmsTransactionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpTransactionCoordinatorBuilder;
 import org.apache.qpid.proton.amqp.Binary;
@@ -113,9 +115,15 @@ public class AmqpTransactionContext implements AmqpResourceParent {
         }
     }
 
-    public void commit(final AsyncResult request) throws Exception {
-        if (current == null) {
-            throw new IllegalStateException("Commit called with no active Transaction.");
+    public void commit(JmsTransactionInfo transactionInfo, final AsyncResult request) throws Exception {
+        if (!transactionInfo.getId().equals(current)) {
+            if (!transactionInfo.isInDoubt() && current == null) {
+                throw new IllegalStateException("Commit called with no active Transaction.");
+            } else if (!transactionInfo.isInDoubt() && current != null) {
+                throw new IllegalStateException("Attempt to Commit a transaction other than the current one");
+            } else {
+                throw new TransactionRolledBackException("Transaction in doubt and cannot be committed.");
+            }
         }
 
         preCommit();
@@ -145,9 +153,16 @@ public class AmqpTransactionContext implements AmqpResourceParent {
         }, true);
     }
 
-    public void rollback(final AsyncResult request) throws Exception {
-        if (current == null) {
-            throw new IllegalStateException("Rollback called with no active Transaction.");
+    public void rollback(JmsTransactionInfo transactionInfo, final AsyncResult request) throws Exception {
+        if (!transactionInfo.getId().equals(current)) {
+            if (!transactionInfo.isInDoubt() && current == null) {
+                throw new IllegalStateException("Rollback called with no active Transaction.");
+            } else if (!transactionInfo.isInDoubt() && current != null) {
+                throw new IllegalStateException("Attempt to rollback a transaction other than the current one");
+            } else {
+                request.onSuccess();
+                return;
+            }
         }
 
         preRollback();

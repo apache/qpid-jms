@@ -24,6 +24,8 @@ import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
+import org.apache.qpid.jms.meta.JmsTransactionId;
+import org.apache.qpid.jms.meta.JmsTransactionInfo;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.junit.Before;
@@ -112,13 +114,17 @@ public class FailoverProviderClosedTest extends FailoverProviderTestSupport {
     @Test(timeout=30000, expected=IOException.class)
     public void testCommit() throws Exception {
         ProviderFuture request = new ProviderFuture();
-        provider.commit(session.getId(), request);
+        JmsTransactionId txId = new JmsTransactionId(connection.getId(), 1);
+        JmsTransactionInfo txInfo = new JmsTransactionInfo(session.getId(), txId);
+        provider.commit(txInfo, request);
     }
 
     @Test(timeout=30000, expected=IOException.class)
     public void testRollback() throws Exception {
         ProviderFuture request = new ProviderFuture();
-        provider.rollback(session.getId(), request);
+        JmsTransactionId txId = new JmsTransactionId(connection.getId(), 1);
+        JmsTransactionInfo txInfo = new JmsTransactionInfo(session.getId(), txId);
+        provider.rollback(txInfo, request);
     }
 
     @Test(timeout=30000, expected=IOException.class)

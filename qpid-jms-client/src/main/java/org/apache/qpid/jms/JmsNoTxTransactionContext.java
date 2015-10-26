@@ -52,7 +52,7 @@ public class JmsNoTxTransactionContext implements JmsTransactionContext {
     }
 
     @Override
-    public boolean isFailed() {
+    public boolean isInDoubt() {
         return false;
     }
 

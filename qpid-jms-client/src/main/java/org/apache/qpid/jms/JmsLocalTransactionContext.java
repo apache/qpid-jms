@@ -49,8 +49,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     private final Map<JmsResourceId, JmsResourceId> participants = new HashMap<JmsResourceId, JmsResourceId>();
     private final JmsSession session;
     private final JmsConnection connection;
-    private volatile JmsTransactionId transactionId;
-    private volatile boolean failed;
+    private JmsTransactionInfo transactionInfo;
     private JmsTransactionListener listener;
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -64,7 +63,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     public void send(JmsConnection connection, final JmsOutboundMessageDispatch envelope) throws JMSException {
         lock.readLock().lock();
         try {
-            if (isFailed()) {
+            if (isInDoubt()) {
                 return;
             }
 
@@ -131,30 +130,39 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     }
 
     @Override
-    public boolean isFailed() {
-        return failed;
+    public boolean isInDoubt() {
+        return transactionInfo != null ? transactionInfo.isInDoubt() : false;
     }
 
     @Override
     public void begin() throws JMSException {
         lock.writeLock().lock();
         try {
-            if (!isInTransaction()) {
-                reset();
-                transactionId = connection.getNextTransactionId();
-                JmsTransactionInfo transaction = new JmsTransactionInfo(session.getSessionId(), transactionId);
-                connection.createResource(transaction);
+            reset();
+            final JmsTransactionInfo transactionInfo = getNextTransactionInfo();
+            connection.createResource(transactionInfo, new ProviderSynchronization() {
 
-                if (listener != null) {
-                    try {
-                        listener.onTransactionStarted();
-                    } catch (Throwable error) {
-                        LOG.trace("Local TX listener error ignored: {}", error);
-                    }
+                @Override
+                public void onPendingSuccess() {
+                    JmsLocalTransactionContext.this.transactionInfo = transactionInfo;
                 }
 
-                LOG.debug("Begin: {}", transactionId);
+                @Override
+                public void onPendingFailure(Throwable cause) {
+                    JmsLocalTransactionContext.this.transactionInfo = transactionInfo;
+                    transactionInfo.setInDoubt(true);
+                }
+            });
+
+            if (listener != null) {
+                try {
+                    listener.onTransactionStarted();
+                } catch (Throwable error) {
+                    LOG.trace("Local TX listener error ignored: {}", error);
+                }
             }
+
+            LOG.debug("Begin: {}", transactionInfo.getId());
         } finally {
             lock.writeLock().unlock();
         }
@@ -164,7 +172,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     public void commit() throws JMSException {
         lock.writeLock().lock();
         try {
-            if (isFailed()) {
+            if (isInDoubt()) {
                 try {
                     rollback();
                 } catch (Exception e) {
@@ -172,12 +180,12 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                 }
                 throw new TransactionRolledBackException("Transaction failed and has been rolled back.");
             } else {
-                LOG.debug("Commit: {} syncCount: {}", transactionId,
+                LOG.debug("Commit: {} syncCount: {}", transactionInfo.getId(),
                           (synchronizations != null ? synchronizations.size() : 0));
 
-                JmsTransactionId oldTransactionId = this.transactionId;
+                JmsTransactionId oldTransactionId = transactionInfo.getId();
                 try {
-                    connection.commit(session.getSessionId(), new ProviderSynchronization() {
+                    connection.commit(transactionInfo, new ProviderSynchronization() {
 
                         @Override
                         public void onPendingSuccess() {
@@ -210,7 +218,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                     afterRollback();
                     throw cause;
                 } finally {
-                    LOG.debug("Commit starting new TX after commit completed.");
+                    LOG.trace("Commit starting new TX after commit completed.");
                     begin();
                 }
             }
@@ -227,10 +235,10 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     private void doRollback(boolean startNewTx) throws JMSException {
         lock.writeLock().lock();
         try {
-            LOG.debug("Rollback: {} syncCount: {}", transactionId,
+            LOG.debug("Rollback: {} syncCount: {}", transactionInfo.getId(),
                       (synchronizations != null ? synchronizations.size() : 0));
             try {
-                connection.rollback(session.getSessionId(), new ProviderSynchronization() {
+                connection.rollback(transactionInfo, new ProviderSynchronization() {
 
                     @Override
                     public void onPendingSuccess() {
@@ -254,7 +262,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                 afterRollback();
             } finally {
                 if (startNewTx) {
-                    LOG.debug("Rollback starting new TX after rollback completed.");
+                    LOG.trace("Rollback starting new TX after rollback completed.");
                     begin();
                 }
             }
@@ -272,7 +280,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     public void onConnectionInterrupted() {
         lock.writeLock().tryLock();
         try {
-            failed = !participants.isEmpty();
+            transactionInfo.setInDoubt(true);
         } finally {
             if (lock.writeLock().isHeldByCurrentThread()) {
                 lock.writeLock().unlock();
@@ -282,26 +290,37 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
 
     @Override
     public void onConnectionRecovery(Provider provider) throws Exception {
-        // Attempt to hold the write lock so that new work gets blocked while we take
-        // care of the recovery, if we can't get it not critical but this prevents
-        // work from getting queued on the provider needlessly.
-        lock.writeLock().tryLock();
-        try {
+        // If we get the lock then no TX commit / rollback / begin is in progress
+        // otherwise one is and we can only assume that it should fail given the
+        // connection was dropped.
+        if (lock.writeLock().tryLock()) {
+            try {
+                // If we got the lock then there is no pending commit / rollback / begin so
+                // we can safely create a new transaction, if there is work pending on the
+                // current transaction we must mark it as in-doubt so that a commit attempt
+                // will then roll it back.
+                transactionInfo = getNextTransactionInfo();
+                ProviderFuture request = new ProviderFuture(new ProviderSynchronization() {
 
-            // On connection recover we open a new TX to replace the existing one.
-            transactionId = connection.getNextTransactionId();
-            JmsTransactionInfo transaction = new JmsTransactionInfo(session.getSessionId(), transactionId);
-            ProviderFuture request = new ProviderFuture();
-            provider.create(transaction, request);
-            request.sync();
+                    @Override
+                    public void onPendingSuccess() {
+                        transactionInfo.setInDoubt(!participants.isEmpty());
+                    }
 
-            // It is ok to use the newly created TX from here if the TX never had any
-            // work done within it otherwise we want the next commit to fail.
-            failed = !participants.isEmpty();
-        } finally {
-            if (lock.writeLock().isHeldByCurrentThread()) {
+                    @Override
+                    public void onPendingFailure(Throwable cause) {
+                        transactionInfo.setInDoubt(true);
+                    }
+                });
+                provider.create(transactionInfo, request);
+                request.sync();
+            } finally {
                 lock.writeLock().unlock();
             }
+        } else {
+            // We did not get the lock so there is an operation in progress and our only
+            // option is to mark the state as failed so a commit will roll back.
+            transactionInfo.setInDoubt(true);
         }
     }
 
@@ -314,7 +333,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
 
     @Override
     public JmsTransactionId getTransactionId() {
-        return transactionId;
+        return transactionInfo.getId();
     }
 
     @Override
@@ -329,12 +348,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
 
     @Override
     public boolean isInTransaction() {
-        lock.readLock().lock();
-        try {
-            return transactionId != null;
-        } finally {
-            lock.readLock().unlock();
-        }
+        return true;
     }
 
     @Override
@@ -354,9 +368,12 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
      * can be safely cleared.
      */
     private void reset() {
-        transactionId = null;
-        failed = false;
         participants.clear();
+    }
+
+    private JmsTransactionInfo getNextTransactionInfo() {
+        JmsTransactionId transactionId = connection.getNextTransactionId();
+        return new JmsTransactionInfo(session.getSessionId(), transactionId);
     }
 
     /*

@@ -244,6 +244,10 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 @Override
                 public boolean succeedsWhenOffline() {
                     if (resource instanceof JmsTransactionInfo) {
+                        // Tag as in-doubt and let recovery on reconnect sort it out.
+                        JmsTransactionInfo transactionInfo = (JmsTransactionInfo) resource;
+                        transactionInfo.setInDoubt(true);
+
                         return true;
                     } else {
                         return false;
@@ -390,12 +394,12 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     }
 
     @Override
-    public void commit(final JmsSessionId sessionId, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
+    public void commit(final JmsTransactionInfo transactionInfo, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
         checkClosed();
         final FailoverRequest pending = new FailoverRequest(request) {
             @Override
             public void doTask() throws Exception {
-                provider.commit(sessionId, this);
+                provider.commit(transactionInfo, this);
             }
 
             @Override
@@ -405,7 +409,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
             @Override
             public String toString() {
-                return "TX commit -> " + sessionId;
+                return "TX commit -> " + transactionInfo.getId();
             }
         };
 
@@ -413,12 +417,12 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     }
 
     @Override
-    public void rollback(final JmsSessionId sessionId, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
+    public void rollback(final JmsTransactionInfo transactionInfo, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
         checkClosed();
         final FailoverRequest pending = new FailoverRequest(request) {
             @Override
             public void doTask() throws Exception {
-                provider.rollback(sessionId, this);
+                provider.rollback(transactionInfo, this);
             }
 
             @Override
@@ -428,7 +432,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
             @Override
             public String toString() {
-                return "TX rollback -> " + sessionId;
+                return "TX rollback -> " + transactionInfo.getId();
             }
         };
 

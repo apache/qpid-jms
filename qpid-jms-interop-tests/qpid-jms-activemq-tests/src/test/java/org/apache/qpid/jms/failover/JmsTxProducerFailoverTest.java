@@ -31,6 +31,7 @@ import javax.jms.Session;
 import javax.jms.TransactionRolledBackException;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
+import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
 import org.junit.Test;
@@ -152,6 +153,9 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
         connection = createAmqpConnection(brokerURI);
         connection.start();
 
+        JmsConnection jmsConnection = (JmsConnection) connection;
+        jmsConnection.setAlwaysSyncSend(true);
+
         final int MSG_COUNT = 5;
         final Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
         Queue queue = session.createQueue(name.getMethodName());
@@ -178,7 +182,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
             session.rollback();
             LOG.info("Transacted rollback after failover ok");
         } catch (JMSException ex) {
-            fail("Session rollback should not have failed.");
+            fail("Session rollback should not have failed: " + ex.getMessage());
         }
 
         assertEquals(0, proxy.getQueueSize());

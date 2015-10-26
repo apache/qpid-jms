@@ -66,6 +66,7 @@ import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.meta.JmsTransactionId;
+import org.apache.qpid.jms.meta.JmsTransactionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderClosedException;
@@ -697,18 +698,18 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         }
     }
 
-    void commit(JmsSessionId sessionId) throws JMSException {
-        commit(sessionId, null);
+    void commit(JmsTransactionInfo transactionInfo) throws JMSException {
+        commit(transactionInfo, null);
     }
 
-    void commit(JmsSessionId sessionId, ProviderSynchronization synchronization) throws JMSException {
+    void commit(JmsTransactionInfo transactionInfo, ProviderSynchronization synchronization) throws JMSException {
         checkClosedOrFailed();
 
         try {
             ProviderFuture request = new ProviderFuture(synchronization);
             requests.put(request, request);
             try {
-                provider.commit(sessionId, request);
+                provider.commit(transactionInfo, request);
                 request.sync();
             } finally {
                 requests.remove(request);
@@ -718,18 +719,18 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         }
     }
 
-    void rollback(JmsSessionId sessionId) throws JMSException {
-        rollback(sessionId, null);
+    void rollback(JmsTransactionInfo transactionInfo) throws JMSException {
+        rollback(transactionInfo, null);
     }
 
-    void rollback(JmsSessionId sessionId, ProviderSynchronization synchronization) throws JMSException {
+    void rollback(JmsTransactionInfo transactionInfo, ProviderSynchronization synchronization) throws JMSException {
         checkClosedOrFailed();
 
         try {
             ProviderFuture request = new ProviderFuture(synchronization);
             requests.put(request, request);
             try {
-                provider.rollback(sessionId, request);
+                provider.rollback(transactionInfo, request);
                 request.sync();
             } finally {
                 requests.remove(request);

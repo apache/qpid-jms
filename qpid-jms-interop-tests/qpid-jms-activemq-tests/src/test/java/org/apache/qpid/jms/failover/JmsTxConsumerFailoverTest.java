@@ -173,6 +173,7 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
             session.rollback();
             LOG.info("Transacted rollback after failover");
         } catch (JMSException ex) {
+            LOG.info("Caught unexpected error: {}", ex.getMessage());
             fail("Session rollback should not have failed.");
         }
 

@@ -21,8 +21,8 @@ public final class JmsSessionId extends JmsAbstractResourceId implements Compara
     private final String connectionId;
     private final long value;
 
-    protected transient String key;
-    protected transient JmsConnectionId parentId;
+    private transient String key;
+    private transient JmsConnectionId parentId;
 
     public JmsSessionId(String connectionId, long value) {
         if (connectionId == null || connectionId.isEmpty()) {

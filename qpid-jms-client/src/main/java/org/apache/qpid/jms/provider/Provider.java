@@ -27,6 +27,7 @@ import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsSessionId;
+import org.apache.qpid.jms.meta.JmsTransactionInfo;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 
 /**
@@ -228,28 +229,28 @@ public interface Provider {
      * UnsupportedOperationException to indicate this.  The Provider may also throw a
      * JMSException to indicate a transaction was already rolled back etc.
      *
-     * @param sessionId
-     *        the Id of the JmsSession that is committing the current transaction.
+     * @param transactionInfo
+     *        the transaction info that describes the transaction being committed.
      * @param request
      *        The request object that should be signaled when this operation completes.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      * @throws JMSException if an error occurs due to JMS violation such not authorized.
      */
-    void commit(JmsSessionId sessionId, AsyncResult request) throws IOException, JMSException;
+    void commit(JmsTransactionInfo transactionInfo, AsyncResult request) throws IOException, JMSException;
 
     /**
      * Called to roll back an open transaction.
      *
-     * @param sessionId
-     *        the Id of the JmsSession that is rolling back the current transaction.
+     * @param transactionInfo
+     *        the transaction info that describes the transaction being rolled back.
      * @param request
      *        The request object that should be signaled when this operation completes.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      * @throws JMSException if an error occurs due to JMS violation such not authorized.
      */
-    void rollback(JmsSessionId sessionId, AsyncResult request) throws IOException, JMSException;
+    void rollback(JmsTransactionInfo transactionInfo, AsyncResult request) throws IOException, JMSException;
 
     /**
      * Called to recover all unacknowledged messages for a Session in client Ack mode.

@@ -27,6 +27,7 @@ import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsSessionId;
+import org.apache.qpid.jms.meta.JmsTransactionInfo;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 
 /**
@@ -108,13 +109,13 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
     }
 
     @Override
-    public void commit(JmsSessionId sessionId, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
-        next.commit(sessionId, request);
+    public void commit(JmsTransactionInfo transactionInfo, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
+        next.commit(transactionInfo, request);
     }
 
     @Override
-    public void rollback(JmsSessionId sessionId, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
-        next.rollback(sessionId, request);
+    public void rollback(JmsTransactionInfo transactionInfo, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
+        next.rollback(transactionInfo, request);
     }
 
     @Override

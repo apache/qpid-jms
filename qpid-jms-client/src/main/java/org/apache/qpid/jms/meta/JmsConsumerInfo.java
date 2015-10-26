@@ -22,18 +22,18 @@ import org.apache.qpid.jms.util.ToStringSupport;
 
 public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsumerInfo> {
 
-    protected final JmsConsumerId consumerId;
-    protected JmsDestination destination;
-    protected int prefetchSize;
-    protected boolean browser;
-    protected String selector;
-    protected String clientId;
-    protected String subscriptionName;
-    protected boolean noLocal;
-    protected int acknowledgementMode;
-    protected boolean localMessageExpiry;
+    private final JmsConsumerId consumerId;
+    private JmsDestination destination;
+    private int prefetchSize;
+    private boolean browser;
+    private String selector;
+    private String clientId;
+    private String subscriptionName;
+    private boolean noLocal;
+    private int acknowledgementMode;
+    private boolean localMessageExpiry;
 
-    protected JmsRedeliveryPolicy redeliveryPolicy;
+    private JmsRedeliveryPolicy redeliveryPolicy;
 
     // Can be used to track the last consumed message.
     private transient long lastDeliveredSequenceId;

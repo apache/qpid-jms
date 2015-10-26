@@ -36,6 +36,7 @@ import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsSessionId;
+import org.apache.qpid.jms.meta.JmsTransactionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderClosedException;
@@ -318,7 +319,7 @@ public class MockProvider implements Provider {
     }
 
     @Override
-    public void commit(final JmsSessionId sessionId, final AsyncResult request) throws IOException, JMSException {
+    public void commit(final JmsTransactionInfo transactionInfo, final AsyncResult request) throws IOException, JMSException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -336,7 +337,7 @@ public class MockProvider implements Provider {
     }
 
     @Override
-    public void rollback(final JmsSessionId sessionId, final AsyncResult request) throws IOException, JMSException {
+    public void rollback(final JmsTransactionInfo transactionInfo, final AsyncResult request) throws IOException, JMSException {
         checkClosed();
         serializer.execute(new Runnable() {
 

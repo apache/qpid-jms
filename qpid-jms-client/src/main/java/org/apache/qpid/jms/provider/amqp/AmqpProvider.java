@@ -338,7 +338,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
                         @Override
                         public void processTransactionInfo(JmsTransactionInfo transactionInfo) throws Exception {
-                            AmqpSession session = connection.getSession(transactionInfo.getParentId());
+                            AmqpSession session = connection.getSession(transactionInfo.getSessionId());
                             session.begin(transactionInfo.getId(), request);
                         }
                     });
@@ -550,7 +550,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     }
 
     @Override
-    public void commit(final JmsSessionId sessionId, final AsyncResult request) throws IOException {
+    public void commit(final JmsTransactionInfo transactionInfo, final AsyncResult request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -558,8 +558,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
             public void run() {
                 try {
                     checkClosed();
-                    AmqpSession session = connection.getSession(sessionId);
-                    session.commit(request);
+                    AmqpSession session = connection.getSession(transactionInfo.getSessionId());
+                    session.commit(transactionInfo, request);
                     pumpToProtonTransport(request);
                 } catch (Exception error) {
                     request.onFailure(error);
@@ -569,7 +569,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     }
 
     @Override
-    public void rollback(final JmsSessionId sessionId, final AsyncResult request) throws IOException {
+    public void rollback(final JmsTransactionInfo transactionInfo, final AsyncResult request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -577,8 +577,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
             public void run() {
                 try {
                     checkClosed();
-                    AmqpSession session = connection.getSession(sessionId);
-                    session.rollback(request);
+                    AmqpSession session = connection.getSession(transactionInfo.getSessionId());
+                    session.rollback(transactionInfo, request);
                     pumpToProtonTransport(request);
                 } catch (Exception error) {
                     request.onFailure(error);

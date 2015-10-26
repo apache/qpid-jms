@@ -74,9 +74,9 @@ public interface JmsTransactionContext {
     void addSynchronization(JmsTransactionSynchronization sync) throws JMSException;
 
     /**
-     * @return if the currently transaction has been marked as being failed.
+     * @return if the currently transaction has been marked as being in an unknown state.
      */
-    boolean isFailed();
+    boolean isInDoubt();
 
     /**
      * Start a transaction if none is currently active.

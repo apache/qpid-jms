@@ -58,6 +58,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.Discharge;
 import org.apache.qpid.jms.test.testpeer.describedtypes.DispositionFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.EndFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.FlowFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.FrameDescriptorMapping;
 import org.apache.qpid.jms.test.testpeer.describedtypes.OpenFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Released;
 import org.apache.qpid.jms.test.testpeer.describedtypes.SaslMechanismsFrame;
@@ -246,6 +247,14 @@ public class TestAmqpPeer implements AutoCloseable
     void receiveFrame(int type, int channel, DescribedType describedType, Binary payload)
     {
         Handler handler = getFirstHandler();
+        if(handler == null)
+        {
+            Object actualDescriptor = describedType.getDescriptor();
+            Object mappedDescriptor = FrameDescriptorMapping.lookupMapping(actualDescriptor);
+
+            throw new IllegalStateException("No handler! Received frame, descriptor=" + actualDescriptor + "/" + mappedDescriptor);
+        }
+
         if(handler instanceof FrameHandler)
         {
             ((FrameHandler)handler).frame(type, channel, describedType, payload, this);
@@ -291,7 +300,7 @@ public class TestAmqpPeer implements AutoCloseable
         {
             if(_handlers.isEmpty())
             {
-                throw new IllegalStateException("No handlers");
+                return null;
             }
             return _handlers.get(0);
         }

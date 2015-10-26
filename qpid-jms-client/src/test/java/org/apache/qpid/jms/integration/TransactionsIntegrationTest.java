@@ -400,6 +400,13 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             if (closeConsumer && !closeBeforeCommit) {
                 testPeer.expectDetach(true, true, true);
+
+                // Expect the messages that were not consumed to be released
+                int unconsumed = transferCount - consumeCount;
+                for (int i = 1; i <= unconsumed; i++) {
+                    testPeer.expectDispositionThatIsReleasedAndSettled();
+                }
+
                 messageConsumer.close();
             }
 

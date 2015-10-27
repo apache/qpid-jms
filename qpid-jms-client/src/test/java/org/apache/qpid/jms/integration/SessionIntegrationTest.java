@@ -1050,7 +1050,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                     }
                     return false;
                 }
-            }, 10000, 10));
+            }, 15000, 10));
 
             // Verify the session is now marked closed
             try {
@@ -1104,7 +1104,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                     }
                     return false;
                 }
-            }, 10000, 10));
+            }, 15000, 10));
 
             // Verify the session is now marked closed
             try {

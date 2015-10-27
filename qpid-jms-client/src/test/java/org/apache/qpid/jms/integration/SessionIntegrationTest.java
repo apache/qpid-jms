@@ -77,14 +77,19 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSec
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
+import org.apache.qpid.jms.util.QPidJMSTestRunner;
+import org.apache.qpid.jms.util.Repeat;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@RunWith(QPidJMSTestRunner.class)
 public class SessionIntegrationTest extends QpidJmsTestCase {
+
     private static final Logger LOG = LoggerFactory.getLogger(SessionIntegrationTest.class);
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
@@ -1015,6 +1020,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    @Repeat(repetitions = 1)
     public void testRemotelyEndSessionWithProducer() throws Exception {
         final String BREAD_CRUMB = "ErrorMessage";
 

@@ -98,7 +98,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     private final JmsConnectionInfo connectionInfo;
     private final ThreadPoolExecutor executor;
 
-    private IOException firstFailureError;
+    private volatile IOException firstFailureError;
     private boolean clientIdSet;
     private ExceptionListener exceptionListener;
     private JmsMessageFactory messageFactory;
@@ -395,9 +395,9 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
     }
 
     public void onException(JMSException ex) {
-        ExceptionListener l = this.exceptionListener;
-        if (l != null) {
-            l.onException(JmsExceptionSupport.create(ex));
+        ExceptionListener listener = this.exceptionListener;
+        if (listener != null) {
+            listener.onException(JmsExceptionSupport.create(ex));
         }
     }
 
@@ -1154,7 +1154,7 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
                         }
                     }
 
-                    for(AsyncResult request : requests.keySet()) {
+                    for (AsyncResult request : requests.keySet()) {
                         try {
                             request.onFailure(ex);
                         } catch (Exception e) {

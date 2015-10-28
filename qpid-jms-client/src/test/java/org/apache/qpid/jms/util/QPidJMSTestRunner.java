@@ -58,18 +58,27 @@ public class QPidJMSTestRunner extends BlockJUnit4ClassRunner {
     @SuppressWarnings("deprecation")
     @Override
     protected Statement withPotentialTimeout(FrameworkMethod frameworkMethod, Object testInstance, Statement next) {
-        long originalTimeout = getOriginalTimeout(frameworkMethod);
+        long testTimeout = getOriginalTimeout(frameworkMethod);
 
-        if (originalTimeout > 0) {
-            long additionalTimeUnderCI = Long.getLong("org.apache.qpid.jms.testTimeoutIncrement", 0);
+        if (testTimeout > 0) {
+            String multiplierString = System.getProperty("org.apache.qpid.jms.testTimeoutMultiplier");
+            double multiplier = 0.0;
 
-            if (additionalTimeUnderCI > 0) {
-                LOG.info("Adding additional time {}ms to test timeout {}ms", additionalTimeUnderCI, originalTimeout);
-                originalTimeout += additionalTimeUnderCI;
+            try {
+                multiplier = Double.parseDouble(multiplierString);
+            } catch (NullPointerException npe) {
+            } catch (NumberFormatException nfe) {
+                LOG.warn("Ignoring testTimeoutMultiplier not set to a valid value: " + multiplierString);
+            }
+
+            if (multiplier > 0.0) {
+                LOG.info("Test timeout multiple {} applied to test timeout {}ms: new timeout = {}",
+                    multiplier, testTimeout, (long) (testTimeout * multiplier));
+                testTimeout = (long) (testTimeout * multiplier);
             }
 
             next = FailOnTimeout.builder().
-                withTimeout(originalTimeout, TimeUnit.MILLISECONDS).build(next);
+                withTimeout(testTimeout, TimeUnit.MILLISECONDS).build(next);
         } else {
             next = super.withPotentialTimeout(frameworkMethod, testInstance, next);
         }

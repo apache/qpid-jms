@@ -77,7 +77,7 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         factory.setQueuePrefix(QUEUE_PREFIX_PROP);
         factory.setClientID(CLIENT_ID_PROP);
 
-        factory.setAlwaysSyncSend(!factory.isAlwaysSyncSend());
+        factory.setForceSyncSend(!factory.isForceSyncSend());
         factory.setForceAsyncSend(!factory.isForceAsyncSend());
         factory.setLocalMessagePriority(!factory.isLocalMessagePriority());
         factory.setSendAcksAsync(!factory.isSendAcksAsync());
@@ -95,7 +95,7 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         assertEquals(TOPIC_PREFIX_PROP, connection.getTopicPrefix());
         assertEquals(QUEUE_PREFIX_PROP, connection.getQueuePrefix());
 
-        assertEquals(factory.isAlwaysSyncSend(), connection.isAlwaysSyncSend());
+        assertEquals(factory.isForceSyncSend(), connection.isForceSyncSend());
         assertEquals(factory.isForceAsyncSend(), connection.isForceAsyncSend());
         assertEquals(factory.isLocalMessagePriority(), connection.isLocalMessagePriority());
         assertEquals(factory.isSendAcksAsync(), connection.isSendAcksAsync());

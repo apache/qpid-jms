@@ -817,12 +817,12 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         connectionInfo.setForceAsyncSends(forceAsyncSend);
     }
 
-    public boolean isAlwaysSyncSend() {
-        return connectionInfo.isAlwaysSyncSend();
+    public boolean isForceSyncSend() {
+        return connectionInfo.isForceSyncSend();
     }
 
-    public void setAlwaysSyncSend(boolean alwaysSyncSend) {
-        connectionInfo.setAlwaysSyncSend(alwaysSyncSend);
+    public void setForceSyncSend(boolean alwaysSyncSend) {
+        connectionInfo.setForceSyncSend(alwaysSyncSend);
     }
 
     public String getTopicPrefix() {

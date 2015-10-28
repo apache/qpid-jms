@@ -58,7 +58,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private String password;
     private String clientID;
     private boolean forceAsyncSend;
-    private boolean alwaysSyncSend;
+    private boolean forceSyncSend;
     private boolean sendAcksAsync;
     private boolean localMessagePriority;
     private boolean localMessageExpiry = true;
@@ -346,6 +346,27 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         this.password = password;
     }
 
+    /**
+     * Returns true if the client should always send messages using a synchronous
+     * send operation regardless of persistence mode, or inside a transaction.
+     *
+     * @return true if sends should always be done synchronously.
+     */
+    public boolean isForceSyncSend() {
+        return forceSyncSend;
+    }
+
+    /**
+     * Configures whether or not the client will always send messages synchronously or not
+     * regardless of other factors that might result in an asynchronous send.
+     *
+     * @param forceSyncSend
+     *        if true sends are always done synchronously.
+     */
+    public void setForceSyncSend(boolean forceSyncSend) {
+        this.forceSyncSend = forceSyncSend;
+    }
+
     public boolean isForceAsyncSend() {
         return forceAsyncSend;
     }
@@ -586,9 +607,12 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      * send operation regardless of persistence mode, or inside a transaction.
      *
      * @return true if sends should always be done synchronously.
+     *
+     * @deprecated  As of release 0.7.0, replaced by {@link #isForceSyncSend()}
      */
+    @Deprecated
     public boolean isAlwaysSyncSend() {
-        return alwaysSyncSend;
+        return forceSyncSend;
     }
 
     /**
@@ -597,9 +621,12 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      *
      * @param alwaysSyncSend
      *        if true sends are always done synchronously.
+     *
+     * @deprecated  As of release 0.7.0, replaced by {@link #setForceSyncSend(boolean)}
      */
+    @Deprecated
     public void setAlwaysSyncSend(boolean alwaysSyncSend) {
-        this.alwaysSyncSend = alwaysSyncSend;
+        this.forceSyncSend = alwaysSyncSend;
     }
 
     /**

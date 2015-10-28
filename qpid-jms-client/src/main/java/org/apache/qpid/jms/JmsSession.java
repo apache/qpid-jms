@@ -667,7 +667,7 @@ public class JmsSession implements Session, QueueSession, TopicSession, JmsMessa
             // Update the JmsMessage based copy with the required values.
             copy.setConnection(connection);
 
-            boolean sync = connection.isAlwaysSyncSend() ||
+            boolean sync = connection.isForceSyncSend() ||
                            (!connection.isForceAsyncSend() && deliveryMode == DeliveryMode.PERSISTENT && !getTransacted());
 
             copy.onSend(timeToLive);

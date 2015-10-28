@@ -42,7 +42,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private String username;
     private String password;
     private boolean forceAsyncSend;
-    private boolean alwaysSyncSend;
+    private boolean forceSyncSend;
     private boolean validatePropertyNames = true;
     private boolean receiveLocalOnly;
     private boolean receiveNoWaitLocalOnly;
@@ -78,7 +78,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         copy.username = username;
         copy.password = password;
         copy.forceAsyncSend = forceAsyncSend;
-        copy.alwaysSyncSend = alwaysSyncSend;
+        copy.forceSyncSend = forceSyncSend;
         copy.sendTimeout = sendTimeout;
         copy.requestTimeout = requestTimeout;
         copy.closeTimeout = closeTimeout;
@@ -96,12 +96,12 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         this.forceAsyncSend = forceAsyncSend;
     }
 
-    public boolean isAlwaysSyncSend() {
-        return alwaysSyncSend;
+    public boolean isForceSyncSend() {
+        return forceSyncSend;
     }
 
-    public void setAlwaysSyncSend(boolean alwaysSyncSend) {
-        this.alwaysSyncSend = alwaysSyncSend;
+    public void setForceSyncSend(boolean forceSyncSend) {
+        this.forceSyncSend = forceSyncSend;
     }
 
     @Override

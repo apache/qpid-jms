@@ -79,7 +79,7 @@ public class JmsProducerFlowControlFailIfNoSpaceTest extends AmqpTestSupport {
         connection = createAmqpConnection();
 
         JmsConnection jmsConnection = (JmsConnection) connection;
-        jmsConnection.setAlwaysSyncSend(true);
+        jmsConnection.setForceSyncSend(true);
 
         connection.setExceptionListener(new TestExceptionListener());
         connection.start();
@@ -105,7 +105,7 @@ public class JmsProducerFlowControlFailIfNoSpaceTest extends AmqpTestSupport {
         connection = createAmqpConnection();
 
         JmsConnection jmsConnection = (JmsConnection) connection;
-        jmsConnection.setAlwaysSyncSend(false);
+        jmsConnection.setForceSyncSend(false);
 
         connection.setExceptionListener(new TestExceptionListener());
         connection.start();

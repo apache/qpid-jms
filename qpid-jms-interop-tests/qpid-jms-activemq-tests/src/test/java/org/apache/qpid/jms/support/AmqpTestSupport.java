@@ -178,7 +178,7 @@ public class AmqpTestSupport extends QpidJmsTestSupport {
     public ConnectionFactory createAmqpConnectionFactory(URI brokerURI, String username, String password) throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(brokerURI);
         factory.setForceAsyncSend(isForceAsyncSends());
-        factory.setAlwaysSyncSend(isAlwaysSyncSend());
+        factory.setForceSyncSend(isForceSyncSends());
         factory.setSendAcksAsync(isSendAcksAsync());
         if (username != null) {
             factory.setUsername(username);

@@ -470,7 +470,7 @@ public class QpidJmsTestSupport {
         return false;
     }
 
-    protected boolean isAlwaysSyncSend() {
+    protected boolean isForceSyncSends() {
         return false;
     }
 

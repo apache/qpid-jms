@@ -166,7 +166,7 @@ public class ProducerAndConsumerBench extends AmqpTestSupport  {
     }
 
     @Override
-    protected boolean isAlwaysSyncSend() {
+    protected boolean isForceSyncSends() {
         return false;
     }
 

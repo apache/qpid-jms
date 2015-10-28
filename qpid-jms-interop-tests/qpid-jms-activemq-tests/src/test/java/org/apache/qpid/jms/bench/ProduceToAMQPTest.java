@@ -52,7 +52,7 @@ public class ProduceToAMQPTest extends AmqpTestSupport {
     }
 
     @Override
-    protected boolean isAlwaysSyncSend() {
+    protected boolean isForceSyncSends() {
         return false;
     }
 

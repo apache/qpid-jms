@@ -60,7 +60,7 @@ public class JmsConnectionInfoTest {
     public void testCopy() {
         JmsConnectionInfo info = new JmsConnectionInfo(firstId);
 
-        info.setAlwaysSyncSend(true);
+        info.setForceSyncSend(true);
         info.setClientId("test");
         info.setCloseTimeout(100);
         info.setConnectTimeout(200);
@@ -76,7 +76,7 @@ public class JmsConnectionInfoTest {
 
         JmsConnectionInfo copy = info.copy();
 
-        assertEquals(true, copy.isAlwaysSyncSend());
+        assertEquals(true, copy.isForceSyncSend());
         assertEquals("test", copy.getClientId());
         assertEquals(100, copy.getCloseTimeout());
         assertEquals(200, copy.getConnectTimeout());

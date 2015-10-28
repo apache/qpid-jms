@@ -59,7 +59,7 @@ public class ConsumeFromAMQPTest extends AmqpTestSupport {
     }
 
     @Override
-    protected boolean isAlwaysSyncSend() {
+    protected boolean isForceSyncSends() {
         return false;
     }
 

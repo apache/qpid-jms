@@ -154,7 +154,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
         connection.start();
 
         JmsConnection jmsConnection = (JmsConnection) connection;
-        jmsConnection.setAlwaysSyncSend(true);
+        jmsConnection.setForceSyncSend(true);
 
         final int MSG_COUNT = 5;
         final Session session = connection.createSession(true, Session.SESSION_TRANSACTED);

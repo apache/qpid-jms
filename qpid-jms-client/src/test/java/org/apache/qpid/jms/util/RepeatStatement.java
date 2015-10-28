@@ -17,8 +17,12 @@
 package org.apache.qpid.jms.util;
 
 import org.junit.runners.model.Statement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class RepeatStatement extends Statement {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RepeatStatement.class);
 
     private final int repetitions;
     private final boolean untilFailure;
@@ -43,6 +47,11 @@ public final class RepeatStatement extends Statement {
     @Override
     public void evaluate() throws Throwable {
         for (int i = 0; i < repetitions && !untilFailure; i++) {
+            if (untilFailure) {
+                LOG.info("Running test iteration: {}.", i + 1);
+            } else {
+                LOG.info("Running test iteration: {} of configured repetitions: {}", i + 1, repetitions);
+            }
             statement.evaluate();
         }
     }

@@ -176,7 +176,7 @@ public class ProducerAndConsumerBench extends AmqpTestSupport  {
     }
 
     @Override
-    protected boolean isSendAcksAsync() {
+    protected boolean isForceAsyncAcks() {
         return true;
     }
 

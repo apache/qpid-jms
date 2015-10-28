@@ -59,7 +59,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private String clientID;
     private boolean forceAsyncSend;
     private boolean forceSyncSend;
-    private boolean sendAcksAsync;
+    private boolean forceAsyncAcks;
     private boolean localMessagePriority;
     private boolean localMessageExpiry = true;
     private boolean receiveLocalOnly;
@@ -632,8 +632,31 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     /**
      * @return true if consumer acknowledgments are sent asynchronously or not.
      */
+    public boolean isForceAsyncAcks() {
+        return forceAsyncAcks;
+    }
+
+    /**
+     * Should the message acknowledgments from a consumer be sent synchronously or
+     * asynchronously.  Sending the acknowledgments asynchronously can increase the
+     * performance of a consumer but opens up the possibility of a missed message
+     * acknowledge should the connection be unstable.
+     *
+     * @param forceAsyncAcks
+     *        true to have the client send all message acknowledgments asynchronously.
+     */
+    public void setForceAsyncAcks(boolean forceAsyncAcks) {
+        this.forceAsyncAcks = forceAsyncAcks;
+    }
+
+    /**
+     * @return true if consumer acknowledgments are sent asynchronously or not.
+     *
+     * @deprecated As of release 0.7.0, replaced by {@link #isForceAsyncAcks()}
+     */
+    @Deprecated
     public boolean isSendAcksAsync() {
-        return sendAcksAsync;
+        return forceAsyncAcks;
     }
 
     /**
@@ -644,9 +667,12 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      *
      * @param sendAcksAsync
      *        true to have the client send all message acknowledgments asynchronously.
+     *
+     * @deprecated As of release 0.7.0, replaced by {@link #setForceAsyncAcks(boolean)}
      */
+    @Deprecated
     public void setSendAcksAsync(boolean sendAcksAsync) {
-        this.sendAcksAsync = sendAcksAsync;
+        this.forceAsyncAcks = sendAcksAsync;
     }
 
     /**

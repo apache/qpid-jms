@@ -43,12 +43,12 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private String password;
     private boolean forceAsyncSend;
     private boolean forceSyncSend;
+    private boolean forceAsyncAcks;
     private boolean validatePropertyNames = true;
     private boolean receiveLocalOnly;
     private boolean receiveNoWaitLocalOnly;
     private boolean localMessagePriority;
     private boolean localMessageExpiry;
-    private boolean sendAcksAsync;
     private long sendTimeout = DEFAULT_SEND_TIMEOUT;
     private long requestTimeout = DEFAULT_REQUEST_TIMEOUT;
     private long connectTimeout = DEFAULT_CONNECT_TIMEOUT;
@@ -213,12 +213,12 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         this.localMessagePriority = localMessagePriority;
     }
 
-    public boolean isSendAcksAsync() {
-        return sendAcksAsync;
+    public boolean isForceAsyncAcks() {
+        return forceAsyncAcks;
     }
 
-    public void setSendAcksAsync(boolean sendAcksAsync) {
-        this.sendAcksAsync = sendAcksAsync;
+    public void setForceAsyncAcks(boolean forceAsyncAcks) {
+        this.forceAsyncAcks = forceAsyncAcks;
     }
 
     public boolean isReceiveLocalOnly() {

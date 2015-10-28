@@ -179,7 +179,7 @@ public class AmqpTestSupport extends QpidJmsTestSupport {
         JmsConnectionFactory factory = new JmsConnectionFactory(brokerURI);
         factory.setForceAsyncSend(isForceAsyncSends());
         factory.setForceSyncSend(isForceSyncSends());
-        factory.setSendAcksAsync(isSendAcksAsync());
+        factory.setForceAsyncAcks(isForceAsyncAcks());
         if (username != null) {
             factory.setUsername(username);
         }

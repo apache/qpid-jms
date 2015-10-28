@@ -69,7 +69,7 @@ public class ConsumeFromAMQPTest extends AmqpTestSupport {
     }
 
     @Override
-    protected boolean isSendAcksAsync() {
+    protected boolean isForceAsyncAcks() {
         return true;
     }
 

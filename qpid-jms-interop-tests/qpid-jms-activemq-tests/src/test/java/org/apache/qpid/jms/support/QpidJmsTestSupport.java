@@ -474,7 +474,7 @@ public class QpidJmsTestSupport {
         return false;
     }
 
-    protected boolean isSendAcksAsync() {
+    protected boolean isForceAsyncAcks() {
         return false;
     }
 

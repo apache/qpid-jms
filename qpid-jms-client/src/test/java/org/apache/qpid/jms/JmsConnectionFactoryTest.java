@@ -80,7 +80,7 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         factory.setForceSyncSend(!factory.isForceSyncSend());
         factory.setForceAsyncSend(!factory.isForceAsyncSend());
         factory.setLocalMessagePriority(!factory.isLocalMessagePriority());
-        factory.setSendAcksAsync(!factory.isSendAcksAsync());
+        factory.setForceAsyncAcks(!factory.isForceAsyncAcks());
         factory.setConnectTimeout(TimeUnit.SECONDS.toMillis(30));
         factory.setCloseTimeout(TimeUnit.SECONDS.toMillis(45));
 
@@ -98,7 +98,7 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         assertEquals(factory.isForceSyncSend(), connection.isForceSyncSend());
         assertEquals(factory.isForceAsyncSend(), connection.isForceAsyncSend());
         assertEquals(factory.isLocalMessagePriority(), connection.isLocalMessagePriority());
-        assertEquals(factory.isSendAcksAsync(), connection.isSendAcksAsync());
+        assertEquals(factory.isForceAsyncAcks(), connection.isForceAsyncAcks());
 
         assertEquals(TimeUnit.SECONDS.toMillis(30), connection.getConnectTimeout());
         assertEquals(TimeUnit.SECONDS.toMillis(45), connection.getCloseTimeout());

@@ -984,12 +984,12 @@ public class JmsConnection implements Connection, TopicConnection, QueueConnecti
         messageFactory = factory;
     }
 
-    public boolean isSendAcksAsync() {
-        return connectionInfo.isSendAcksAsync();
+    public boolean isForceAsyncAcks() {
+        return connectionInfo.isForceAsyncAcks();
     }
 
-    public void setSendAcksAsync(boolean sendAcksAsync) {
-        connectionInfo.setSendAcksAsync(sendAcksAsync);
+    public void setForceAsyncAcks(boolean forceAsyncAcks) {
+        connectionInfo.setForceAsyncAcks(forceAsyncAcks);
     }
 
     public boolean isLocalMessageExpiry() {

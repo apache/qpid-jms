@@ -46,7 +46,7 @@ import org.slf4j.LoggerFactory;
 /**
  * implementation of a JMS Message Consumer
  */
-public class JmsMessageConsumer implements MessageConsumer, JmsMessageAvailableConsumer, JmsMessageDispatcher {
+public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMessageAvailableConsumer, JmsMessageDispatcher {
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsMessageConsumer.class);
 

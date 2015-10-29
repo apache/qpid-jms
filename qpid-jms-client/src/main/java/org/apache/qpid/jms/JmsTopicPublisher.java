@@ -27,7 +27,7 @@ import org.apache.qpid.jms.meta.JmsProducerId;
 /**
  * Implementation of a TopicPublisher
  */
-public class JmsTopicPublisher extends JmsMessageProducer implements TopicPublisher {
+public class JmsTopicPublisher extends JmsMessageProducer implements AutoCloseable, TopicPublisher {
 
     protected JmsTopicPublisher(JmsProducerId id, JmsSession session, JmsDestination destination) throws JMSException {
         super(id, session, destination);

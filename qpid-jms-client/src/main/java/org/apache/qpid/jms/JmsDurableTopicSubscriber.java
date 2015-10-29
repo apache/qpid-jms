@@ -23,7 +23,7 @@ import org.apache.qpid.jms.meta.JmsConsumerId;
 /**
  * Implementation of a TopicSubscriber that is Durable
  */
-public class JmsDurableTopicSubscriber extends JmsTopicSubscriber {
+public class JmsDurableTopicSubscriber extends JmsTopicSubscriber implements AutoCloseable {
 
     public JmsDurableTopicSubscriber(JmsConsumerId id, JmsSession s, JmsDestination destination, String name, boolean noLocal, String selector) throws JMSException {
         super(id, s, destination, name, noLocal, selector);

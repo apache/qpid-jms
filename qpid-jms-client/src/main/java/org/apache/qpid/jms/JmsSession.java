@@ -81,7 +81,7 @@ import org.slf4j.LoggerFactory;
 /**
  * JMS Session implementation
  */
-public class JmsSession implements Session, QueueSession, TopicSession, JmsMessageDispatcher {
+public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSession, JmsMessageDispatcher {
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsSession.class);
 

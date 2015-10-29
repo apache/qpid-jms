@@ -25,7 +25,7 @@ import javax.jms.ServerSessionPool;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.util.IdGenerator;
 
-public class JmsTopicConnection extends JmsConnection {
+public class JmsTopicConnection extends JmsConnection implements AutoCloseable {
 
     public JmsTopicConnection(String connectionId, Provider provider, IdGenerator clientIdGenerator) throws JMSException {
         super(connectionId, provider, clientIdGenerator);

@@ -27,7 +27,7 @@ import org.apache.qpid.jms.meta.JmsProducerId;
 /**
  * Implementation of a Queue Sender
  */
-public class JmsQueueSender extends JmsMessageProducer implements QueueSender {
+public class JmsQueueSender extends JmsMessageProducer implements AutoCloseable, QueueSender {
 
     protected JmsQueueSender(JmsProducerId id, JmsSession session, JmsDestination destination) throws JMSException {
         super(id, session, destination);

@@ -35,7 +35,7 @@ import org.apache.qpid.jms.provider.ProviderFuture;
 /**
  * Implementation of a JMS MessageProducer
  */
-public class JmsMessageProducer implements MessageProducer {
+public class JmsMessageProducer implements AutoCloseable, MessageProducer {
 
     protected final JmsSession session;
     protected final JmsConnection connection;

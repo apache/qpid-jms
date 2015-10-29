@@ -54,7 +54,7 @@ import org.slf4j.LoggerFactory;
  * @see javax.jms.QueueBrowser
  * @see javax.jms.QueueReceiver
  */
-public class JmsQueueBrowser implements QueueBrowser, Enumeration<Message> {
+public class JmsQueueBrowser implements AutoCloseable, QueueBrowser, Enumeration<Message> {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsQueueBrowser.class);
 

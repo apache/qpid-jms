@@ -82,7 +82,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Implementation of a JMS Connection
  */
-public class JmsConnection implements Connection, TopicConnection, QueueConnection, ProviderListener {
+public class JmsConnection implements AutoCloseable, Connection, TopicConnection, QueueConnection, ProviderListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsConnection.class);
 

@@ -26,7 +26,7 @@ import org.apache.qpid.jms.meta.JmsConsumerId;
 /**
  * Implementation of a JMS QueueReceiver
  */
-public class JmsQueueReceiver extends JmsMessageConsumer implements QueueReceiver {
+public class JmsQueueReceiver extends JmsMessageConsumer implements AutoCloseable, QueueReceiver {
 
     /**
      * Constructor

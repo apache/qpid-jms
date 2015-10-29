@@ -31,7 +31,7 @@ import org.apache.qpid.jms.meta.JmsSessionId;
 /**
  * JMS QueueSession implementation
  */
-public class JmsQueueSession extends JmsSession {
+public class JmsQueueSession extends JmsSession implements AutoCloseable {
 
     protected JmsQueueSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) throws JMSException {
         super(connection, sessionId, acknowledgementMode);

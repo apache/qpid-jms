@@ -32,7 +32,7 @@ import org.apache.qpid.jms.meta.JmsSessionId;
 /**
  * Implementation of a TopicSession
  */
-public class JmsTopicSession extends JmsSession {
+public class JmsTopicSession extends JmsSession implements AutoCloseable {
 
     protected JmsTopicSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) throws JMSException {
         super(connection, sessionId, acknowledgementMode);

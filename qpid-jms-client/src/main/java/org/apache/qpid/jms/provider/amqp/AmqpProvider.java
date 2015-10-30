@@ -875,7 +875,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         // The request onSuccess calls this method
         connectionOpenRequest = null;
 
-        long now = System.currentTimeMillis();
+        // Using nano time since it is not related to the wall clock, which may change
+        long now = TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
         long deadline = protonTransport.tick(now);
         if (deadline > 0) {
             long delay = deadline - now;
@@ -1139,7 +1140,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
             boolean checkScheduled = false;
 
             if (connection.getLocalState() == EndpointState.ACTIVE) {
-                long now = System.currentTimeMillis();
+                // Using nano time since it is not related to the wall clock, which may change
+                long now = TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
                 long deadline = protonTransport.tick(now);
 
                 boolean pumpSucceeded = pumpToProtonTransport();

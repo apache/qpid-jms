@@ -18,7 +18,6 @@ package org.apache.qpid.jms.provider.amqp.builders;
 
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SOLE_CONNECTION_CAPABILITY;
 
-import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -96,16 +95,6 @@ public class AmqpConnectionBuilder extends AmqpResourceBuilder<AmqpConnection, A
     }
 
     @Override
-    protected void handleOpened(AmqpProvider provider) throws IOException {
-        // Initialize the connection properties so that the state of the remote can
-        // be determined, this allows us to check for close pending.
-        getResource().getProperties().initialize(
-            getEndpoint().getRemoteOfferedCapabilities(), getEndpoint().getRemoteProperties());
-
-        super.handleOpened(provider);
-    }
-
-    @Override
     protected Connection createEndpoint(JmsConnectionInfo resourceInfo) {
         String hostname = getParent().getVhost();
         if (hostname == null) {
@@ -131,6 +120,14 @@ public class AmqpConnectionBuilder extends AmqpResourceBuilder<AmqpConnection, A
     @Override
     protected AmqpConnection createResource(AmqpProvider parent, JmsConnectionInfo resourceInfo, Connection endpoint) {
         return new AmqpConnection(parent, resourceInfo, endpoint);
+    }
+
+    @Override
+    protected void afterOpened() {
+        // Initialize the connection properties so that the state of the remote can
+        // be determined, this allows us to check for close pending.
+        getResource().getProperties().initialize(
+            getEndpoint().getRemoteOfferedCapabilities(), getEndpoint().getRemoteProperties());
     }
 
     @Override

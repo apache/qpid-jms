@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.provider.amqp.builders;
 
 import java.io.IOException;
+import java.util.concurrent.ScheduledFuture;
 
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.provider.AsyncResult;
@@ -42,6 +43,7 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
     private static final Logger LOG = LoggerFactory.getLogger(AmqpResourceBuilder.class);
 
     protected AsyncResult request;
+    protected ScheduledFuture<?> requestTimeoutTask;
     protected TARGET resource;
     protected ENDPOINT endpoint;
     protected final PARENT parent;
@@ -61,7 +63,7 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
      * @param request
      *      The request that initiated the resource creation.
      */
-    public void buildResource(AsyncResult request) {
+    public void buildResource(final AsyncResult request) {
         this.request = request;
 
         // Create the local end of the manage resource.
@@ -71,6 +73,32 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
 
         // Create the resource object now
         resource = createResource(parent, resourceInfo, endpoint);
+
+        if (parent.getProvider().getRequestTimeout() > 0) {
+
+            // Attempt to schedule a cancellation of the pending open request, can return
+            // null if there is no configured request timeout.
+            requestTimeoutTask = parent.getProvider().scheduleRequestTimeout(new AsyncResult() {
+
+                @Override
+                public void onSuccess() {
+                    // Nothing to do here.
+                }
+
+                @Override
+                public void onFailure(Throwable result) {
+                    // We ignore the default error and attempt to coerce a more
+                    // meaningful error from the endpoint.
+                    handleClosed(parent.getProvider());
+                }
+
+                @Override
+                public boolean isComplete() {
+                    return request.isComplete();
+                }
+
+            }, null);
+        }
     }
 
     //----- Event handlers ---------------------------------------------------//
@@ -102,15 +130,20 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
 
     //----- Standard open and close handlers ---------------------------------//
 
-    protected void handleOpened(AmqpProvider provider) throws IOException {
+    protected final void handleOpened(AmqpProvider provider) {
+
+        // perform any post open processing prior to opened state inspection.
+        afterOpened();
 
         if (isClosePending()) {
             return;
         }
 
-        if (isOpenedEndpointValid()) {
-            afterOpened();
+        if (requestTimeoutTask != null) {
+            requestTimeoutTask.cancel(false);
+        }
 
+        if (isOpenedEndpointValid()) {
             getEndpoint().setContext(resource);
             getParent().addChildResource(resource);
             getRequest().onSuccess();
@@ -125,7 +158,7 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
         }
     }
 
-    protected void handleClosed(AmqpProvider provider) throws IOException {
+    protected final void handleClosed(AmqpProvider provider) {
         // If the resource being built is closed during the creation process
         // then this is always an error.
 
@@ -134,6 +167,10 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
             openError = AmqpSupport.convertToException(getEndpoint().getRemoteCondition());
         } else {
             openError = getOpenAbortException();
+        }
+
+        if (requestTimeoutTask != null) {
+            requestTimeoutTask.cancel(false);
         }
 
         LOG.warn("Open of resource:({}) failed: {}", resourceInfo, openError.getMessage());
@@ -193,7 +230,7 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
     /**
      * Called once an endpoint has been opened and validated to give the subclasses a
      * place to perform any follow-on processing or setup steps before the operation
-     * is deemed to have been completed and success is signalled.
+     * is deemed to have been completed and success is signaled.
      */
     protected void afterOpened() {
         // Nothing to do here.

@@ -105,12 +105,14 @@ public class AmqpTemporaryDestinationBuilder extends AmqpResourceBuilder<AmqpTem
 
     @Override
     protected void afterOpened() {
-        // Once our sender is opened we can read the updated name from the target address.
-        String oldDestinationName = resourceInfo.getName();
-        String destinationName = getEndpoint().getRemoteTarget().getAddress();
+        if (!isClosePending()) {
+            // Once our sender is opened we can read the updated name from the target address.
+            String oldDestinationName = resourceInfo.getName();
+            String destinationName = getEndpoint().getRemoteTarget().getAddress();
 
-        resourceInfo.setName(destinationName);
+            resourceInfo.setName(destinationName);
 
-        LOG.trace("Updated temp destination to: {} from: {}", destinationName, oldDestinationName);
+            LOG.trace("Updated temp destination to: {} from: {}", destinationName, oldDestinationName);
+        }
     }
 }

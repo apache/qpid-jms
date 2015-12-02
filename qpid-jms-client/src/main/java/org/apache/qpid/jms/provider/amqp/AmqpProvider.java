@@ -26,6 +26,7 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.security.Principal;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
@@ -116,8 +117,6 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private boolean presettleProducers;
     private long connectTimeout = JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT;
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
-    private long requestTimeout = JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
-    private long sendTimeout = JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
     private int channelMax = DEFAULT_CHANNEL_MAX;
     private int idleTimeout = 60000;
     private long sessionOutoingWindow = -1; //Use proton default
@@ -275,8 +274,6 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
                             closeTimeout = connectionInfo.getCloseTimeout();
                             connectTimeout = connectionInfo.getConnectTimeout();
-                            sendTimeout = connectionInfo.getSendTimeout();
-                            requestTimeout = connectionInfo.getRequestTimeout();
 
                             if (getMaxFrameSize() > 0) {
                                 protonTransport.setMaxFrameSize(getMaxFrameSize());
@@ -916,12 +913,6 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         }
     }
 
-    private void checkClosed() throws ProviderClosedException {
-        if (closed.get()) {
-            throw new ProviderClosedException("This Provider is already closed");
-        }
-    }
-
     @Override
     public void addChildResource(AmqpResource resource) {
         if (resource instanceof AmqpConnection) {
@@ -1058,11 +1049,11 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     }
 
     public long getRequestTimeout() {
-        return requestTimeout;
+        return connection != null ? connection.getResourceInfo().getRequestTimeout() : JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
     }
 
     public long getSendTimeout() {
-        return sendTimeout;
+        return connection != null ? connection.getResourceInfo().getSendTimeout() : JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
     }
 
     public void setPresettle(boolean presettle) {
@@ -1134,6 +1125,55 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         return this.serializer;
     }
 
+    @Override
+    public AmqpProvider getProvider() {
+        return this;
+    }
+
+    /**
+     * Allows a resource to request that its parent resource schedule a future
+     * cancellation of a request and return it a {@link Future} instance that
+     * can be used to cancel the scheduled automatic failure of the request.
+     *
+     * @param request
+     *      The request that should be marked as failed based on configuration.
+     * @param error
+     *      The error to use when failing the pending request.
+     *
+     * @return a {@link ScheduledFuture} that can be stored by the caller.
+     */
+    public ScheduledFuture<?> scheduleRequestTimeout(final AsyncResult request, final Exception error) {
+        if (getRequestTimeout() != JmsConnectionInfo.INFINITE) {
+            return serializer.schedule(new Runnable() {
+
+                @Override
+                public void run() {
+                    request.onFailure(error);
+                    pumpToProtonTransport();
+                }
+
+            }, getRequestTimeout(), TimeUnit.MILLISECONDS);
+        }
+
+        return null;
+    }
+
+    Principal getLocalPrincipal() {
+        if (transport instanceof SSLTransport) {
+            return ((SSLTransport) transport).getLocalPrincipal();
+        }
+
+        return null;
+    }
+
+    //----- Internal implementation ------------------------------------------//
+
+    private void checkClosed() throws ProviderClosedException {
+        if (closed.get()) {
+            throw new ProviderClosedException("This Provider is already closed");
+        }
+    }
+
     private final class IdleTimeoutCheck implements Runnable {
         @Override
         public void run() {
@@ -1168,14 +1208,6 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 LOG.trace("IdleTimeoutCheck exiting");
             }
         }
-    }
-
-    Principal getLocalPrincipal() {
-        if (transport instanceof SSLTransport) {
-            return ((SSLTransport) transport).getLocalPrincipal();
-        }
-
-        return null;
     }
 
     private static void setHostname(Sasl sasl, String hostname) {

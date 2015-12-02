@@ -253,7 +253,7 @@ public class AmqpTransactionContext implements AmqpResourceParent {
         txConsumers.clear();
     }
 
-    //----- Resource Parent event handlers -----------------------------------//
+    //----- Resource Parent implementation -----------------------------------//
 
     @Override
     public void addChildResource(AmqpResource resource) {
@@ -267,5 +267,10 @@ public class AmqpTransactionContext implements AmqpResourceParent {
         // We don't clear the coordinator link so that we can refer to it
         // to check if the current TX has failed due to link closed during
         // normal operations.
+    }
+
+    @Override
+    public AmqpProvider getProvider() {
+        return session.getProvider();
     }
 }

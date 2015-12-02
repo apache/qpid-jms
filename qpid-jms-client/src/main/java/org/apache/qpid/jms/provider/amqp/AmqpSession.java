@@ -259,6 +259,7 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
         getConnection().getProvider().fireProviderException(error);
     }
 
+    @Override
     public AmqpProvider getProvider() {
         return connection.getProvider();
     }

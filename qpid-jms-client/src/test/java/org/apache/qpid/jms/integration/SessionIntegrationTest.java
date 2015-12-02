@@ -47,6 +47,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
+import javax.jms.QueueBrowser;
 import javax.jms.Session;
 import javax.jms.TemporaryQueue;
 import javax.jms.TemporaryTopic;
@@ -207,6 +208,77 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 fail("Consumer creation should have failed when link was refused");
             } catch(InvalidDestinationException ide) {
                 //Expected
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateConsumerFailsWhenLinkRefusalResponseNotSent() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+
+            ((JmsConnection) connection).setRequestTimeout(500);
+
+            connection.start();
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String topicName = "myTopic";
+            Topic dest = session.createTopic(topicName);
+
+            // Expect a link to a topic node, which we will then refuse
+            SourceMatcher targetMatcher = new SourceMatcher();
+            targetMatcher.withAddress(equalTo(topicName));
+            targetMatcher.withDynamic(equalTo(false));
+            targetMatcher.withDurable(equalTo(TerminusDurability.NONE));
+
+            testPeer.expectReceiverAttach(notNullValue(), targetMatcher, false, true, true, false, null, null);
+            testPeer.expectDetach(true, false, false);
+
+            try {
+                // Create a consumer, expect it to throw exception due to the link-refusal
+                // even though there is no detach response.
+                session.createConsumer(dest);
+                fail("Consumer creation should have failed when link was refused");
+            } catch(JMSException ex) {
+                // Expected
+                LOG.info("Caught expected error on consumer create: {}", ex.getMessage());
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateBrowserFailsWhenLinkRefusalResponseNotSent() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+
+            ((JmsConnection) connection).setRequestTimeout(500);
+
+            connection.start();
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String queueName = "myQueue";
+            Queue dest = session.createQueue(queueName);
+
+            testPeer.expectReceiverAttach(notNullValue(), notNullValue(), true, true, true, false, null, null);
+            testPeer.expectDetach(true, false, false);
+
+            try {
+                // Create a QueueBrowser, expect it to throw exception due to the link-refusal
+                // even though there is no detach response.
+                QueueBrowser browser = session.createBrowser(dest);
+                browser.getEnumeration();
+                fail("Consumer creation should have failed when link was refused");
+            } catch(JMSException ex) {
+                // Expected
+                LOG.info("Caught expected error on browser create: {}", ex.getMessage());
             }
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -421,7 +493,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             String topicName = "myTopic";
             Topic destination = session.createTopic(topicName);
 
-            testPeer.expectReceiverAttach(notNullValue(), notNullValue(), false, true, false, AmqpError.UNAUTHORIZED_ACCESS, "Destination is not readable");
+            testPeer.expectReceiverAttach(notNullValue(), notNullValue(), false, true, false, false, AmqpError.UNAUTHORIZED_ACCESS, "Destination is not readable");
             testPeer.expectDetach(true, true, true);
 
             try {
@@ -446,7 +518,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             String topicName = "myTopic";
             Topic destination = session.createTopic(topicName);
 
-            testPeer.expectSenderAttach(notNullValue(), notNullValue(), true, true, 0L, AmqpError.UNAUTHORIZED_ACCESS, "Destination is not readable");
+            testPeer.expectSenderAttach(notNullValue(), notNullValue(), true, false, true, 0L, AmqpError.UNAUTHORIZED_ACCESS, "Destination is not readable");
             testPeer.expectDetach(true, true, true);
 
             try {
@@ -890,6 +962,42 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 fail("Producer creation should have failed when link was refused");
             } catch(InvalidDestinationException ide) {
                 //Expected
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateProducerFailsWhenLinkRefusedNoDetachSent() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            ((JmsConnection) connection).setRequestTimeout(500);
+            connection.start();
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String topicName = "myTopic";
+            Topic dest = session.createTopic(topicName);
+
+            // Expect a link to a topic node, which we will then refuse
+            TargetMatcher targetMatcher = new TargetMatcher();
+            targetMatcher.withAddress(equalTo(topicName));
+            targetMatcher.withDynamic(equalTo(false));
+            targetMatcher.withDurable(equalTo(TerminusDurability.NONE));
+
+            testPeer.expectSenderAttach(notNullValue(), targetMatcher, true, true, false, 0, null, null);
+            // Expect the detach response to the test peer closing the producer link after refusal.
+            testPeer.expectDetach(true, false, false);
+
+            try {
+                // Create a producer, expect it to throw exception due to the link-refusal
+                session.createProducer(dest);
+                fail("Producer creation should have failed when link was refused");
+            } catch(JMSException ex) {
+                // Expected
+                LOG.info("Caught expected exception on create: {}", ex.getMessage());
             }
 
             testPeer.waitForAllHandlersToComplete(1000);

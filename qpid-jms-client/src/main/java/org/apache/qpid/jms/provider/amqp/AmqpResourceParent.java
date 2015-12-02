@@ -40,4 +40,9 @@ public interface AmqpResourceParent {
      */
     void removeChildResource(AmqpResource resource);
 
+    /**
+     * @return a reference to the root AmqpProvider.
+     */
+    AmqpProvider getProvider();
+
 }

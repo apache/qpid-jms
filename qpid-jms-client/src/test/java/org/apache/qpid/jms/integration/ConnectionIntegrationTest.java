@@ -124,6 +124,31 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testCreateTransactedSessionFailsWhenNoDetachResponseSent() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            ((JmsConnection) connection).setRequestTimeout(500);
+
+            testPeer.expectBegin();
+            // Expect the session, with an immediate link to the transaction coordinator
+            // using a target with the expected capabilities only.
+            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
+            txCoordinatorMatcher.withCapabilities(arrayContaining(TxnCapability.LOCAL_TXN));
+            testPeer.expectSenderAttach(notNullValue(), txCoordinatorMatcher, true, true, false, 0, null, null);
+            testPeer.expectDetach(true, false, false);
+
+            try {
+                connection.createSession(true, Session.SESSION_TRANSACTED);
+                fail("Session create should have failed.");
+            } catch (JMSException ex) {
+                // Expected
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
     public void testRemotelyCloseConnectionDuringSessionCreation() throws Exception {
         final String BREAD_CRUMB = "ErrorMessageBreadCrumb";
 

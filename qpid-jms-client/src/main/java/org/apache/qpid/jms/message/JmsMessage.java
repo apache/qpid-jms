@@ -57,7 +57,7 @@ public class JmsMessage implements javax.jms.Message {
 
     protected void copy(JmsMessage other) {
         this.readOnlyBody = other.readOnlyBody;
-        this.readOnlyProperties = other.readOnlyBody;
+        this.readOnlyProperties = other.readOnlyProperties;
         this.acknowledgeCallback = other.acknowledgeCallback;
         this.connection = other.connection;
         this.validatePropertyNames = other.validatePropertyNames;

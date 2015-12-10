@@ -216,6 +216,7 @@ public class JmsMessageTest {
         msg1.setValidatePropertyNames(isValidate);
         JmsMessage msg2 = msg1.copy();
         assertEquals(msg1.getJMSMessageID(), msg2.getJMSMessageID());
+        assertTrue(msg2.isReadOnlyProperties());
         assertTrue(msg1.getJMSCorrelationID().equals(msg2.getJMSCorrelationID()));
         assertTrue(msg1.getJMSDestination().equals(msg2.getJMSDestination()));
         assertTrue(msg1.getJMSReplyTo().equals(msg2.getJMSReplyTo()));

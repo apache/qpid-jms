@@ -20,6 +20,7 @@ package org.apache.qpid.jms.test.testpeer;
 
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DYNAMIC_NODE_LIFETIME_POLICY;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
@@ -66,6 +67,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.SaslOutcomeFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Source;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Target;
 import org.apache.qpid.jms.test.testpeer.describedtypes.TransferFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.ApplicationPropertiesDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.HeaderDescribedType;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.MessageAnnotationsDescribedType;
@@ -1329,11 +1331,108 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(flowMatcher);
     }
 
+    public void expectLinkFlowThenPerformUnexpectedDeliveryCountAdvanceThenCreditTopupThenTransfers(final int prefetch, final int topUp, final int messageCount)
+    {
+        final FlowMatcher flowMatcher = new FlowMatcher()
+                        .withHandle(notNullValue())
+                        .withLinkCredit(equalTo(UnsignedInteger.valueOf(prefetch)))
+                        .withDrain(Matchers.anyOf(equalTo(false), nullValue()));
+
+        final FlowFrame advancingFlowResponse = new FlowFrame();
+        advancingFlowResponse.setOutgoingWindow(UnsignedInteger.MAX_VALUE);
+        advancingFlowResponse.setIncomingWindow(UnsignedInteger.valueOf(Integer.MAX_VALUE));
+
+        // The flow frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+        final FrameSender advancingFlowResponseSender = new FrameSender(this, FrameType.AMQP, -1, advancingFlowResponse, null);
+        advancingFlowResponseSender.setValueProvider(new ValueProvider()
+        {
+            @Override
+            public void setValues()
+            {
+                advancingFlowResponseSender.setChannel(flowMatcher.getActualChannel());
+                advancingFlowResponse.setHandle(flowMatcher.getReceivedHandle());
+                advancingFlowResponse.setDeliveryCount(calculateNewDeliveryCount(flowMatcher, prefetch - topUp));
+                advancingFlowResponse.setLinkCredit(UnsignedInteger.ZERO);
+                advancingFlowResponse.setNextOutgoingId(flowMatcher.getReceivedNextIncomingId());
+                advancingFlowResponse.setNextIncomingId(flowMatcher.getReceivedNextOutgoingId());
+            }
+        });
+
+        final FlowFrame topUpFlowResponse = new FlowFrame();
+        topUpFlowResponse.setOutgoingWindow(UnsignedInteger.MAX_VALUE);
+        topUpFlowResponse.setIncomingWindow(UnsignedInteger.valueOf(Integer.MAX_VALUE));
+
+        // The flow frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+        final FrameSender topUpFlowResponseSender = new FrameSender(this, FrameType.AMQP, -1, topUpFlowResponse, null);
+        topUpFlowResponseSender.setValueProvider(new ValueProvider()
+        {
+            @Override
+            public void setValues()
+            {
+                topUpFlowResponseSender.setChannel(flowMatcher.getActualChannel());
+                topUpFlowResponse.setHandle(flowMatcher.getReceivedHandle());
+                topUpFlowResponse.setDeliveryCount(calculateNewDeliveryCount(flowMatcher, prefetch - topUp));
+                topUpFlowResponse.setLinkCredit(UnsignedInteger.valueOf(topUp));
+                topUpFlowResponse.setNextOutgoingId(flowMatcher.getReceivedNextIncomingId());
+                topUpFlowResponse.setNextIncomingId(flowMatcher.getReceivedNextOutgoingId());
+            }
+        });
+
+        CompositeAmqpPeerRunnable composite = new CompositeAmqpPeerRunnable();
+        composite.add(advancingFlowResponseSender);
+        advancingFlowResponseSender.setDeferWrite(true);
+        composite.add(topUpFlowResponseSender);
+
+        final Integer remoteNextIncomingId = 0; //TODO: make configurable
+        for(int i = 0; i < messageCount; i++)
+        {
+            final int nextId = remoteNextIncomingId + i;
+
+            String tagString = "theDeliveryTag" + nextId;
+            Binary dtag = new Binary(tagString.getBytes());
+
+            final TransferFrame transferResponse = new TransferFrame()
+            .setDeliveryId(UnsignedInteger.valueOf(nextId))
+            .setDeliveryTag(dtag)
+            .setMessageFormat(UnsignedInteger.ZERO)
+            .setSettled(false);
+
+            Binary payload = prepareTransferPayload(null, null, null, null, new AmqpValueDescribedType("content"));
+
+            // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+            final FrameSender transferResponseSender = new FrameSender(this, FrameType.AMQP, -1, transferResponse, payload);
+            transferResponseSender.setValueProvider(new ValueProvider()
+            {
+                @Override
+                public void setValues()
+                {
+                    transferResponse.setHandle(flowMatcher.getReceivedHandle());
+                    transferResponseSender.setChannel(flowMatcher.getActualChannel());
+                }
+            });
+
+            composite.add(transferResponseSender);
+        }
+
+        flowMatcher.onCompletion(composite);
+
+        addHandler(flowMatcher);
+    }
+
     private UnsignedInteger calculateNewDeliveryCount(FlowMatcher flowMatcher) {
         UnsignedInteger dc = (UnsignedInteger) flowMatcher.getReceivedDeliveryCount();
         UnsignedInteger lc = (UnsignedInteger) flowMatcher.getReceivedLinkCredit();
 
         return dc.add(lc);
+    }
+
+    private UnsignedInteger calculateNewDeliveryCount(FlowMatcher flowMatcher, int creditToConsume) {
+        UnsignedInteger dc = (UnsignedInteger) flowMatcher.getReceivedDeliveryCount();
+        UnsignedInteger lc = (UnsignedInteger) flowMatcher.getReceivedLinkCredit();
+
+        assertThat(UnsignedInteger.valueOf(creditToConsume), lessThan(lc));
+
+        return dc.add(UnsignedInteger.valueOf(creditToConsume));
     }
 
     private UnsignedInteger calculateNewOutgoingId(FlowMatcher flowMatcher, int sentCount) {

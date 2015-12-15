@@ -643,4 +643,57 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(3000);
         }
     }
+
+    /* Check the clients view of the remaining credit stays in sync with the transports
+     * even in the face of the remote peer advancing the delivery count unexpectedly,
+     * ensuring the client doesn't later think there is credit when there is none.
+     *
+     * QPIDJMS-139 / QPID-6947 / PROTON-1077
+     *
+     * Expect receiver link to attach and send credit, then:
+     * - Have test peer sender pretend it got multiple flows, and only some of the credit had previously arrived.
+     * - Unexpectedly advance delivery count and use up some of credit, set a 0 link credit.
+     * - Top up the link credit with the remainder as if it had just arrived, not advancing delivery count.
+     * - Send messages using up the remaining credit.
+     * - Check when the consumer tops the credit back up to the initial value that the
+     *   value of link-credit on the wire is actually as expected.
+     */
+    @Test(timeout=30000)
+    public void testCreditReplenishmentWhenSenderAdvancesDeliveryCountUnexpectedly() throws Exception {
+        int prefetch = 4;
+        int topUp = 2;
+        int messageCount = prefetch - topUp;
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer, "?jms.prefetchPolicy.all=" + prefetch);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowThenPerformUnexpectedDeliveryCountAdvanceThenCreditTopupThenTransfers(prefetch, topUp, messageCount);
+
+            // Expect consumer to top up the credit window to <prefetch> when accepting the messages
+            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(prefetch)));
+            testPeer.expectDisposition(true, new AcceptedMatcher(), 0, 0);
+            testPeer.expectDisposition(true, new AcceptedMatcher(), 1, 1);
+
+            // First timeout used is large to ensure the client sees the
+            // delivery count advancement without trying to drain first.
+            MessageConsumer consumer = session.createConsumer(queue);
+            Message msg = consumer.receive(10000);
+            assertNotNull("Should have received message 1", msg);
+            msg = consumer.receive(1);
+            assertNotNull("Should have received message 2", msg);
+
+            // Then close the consumer
+            testPeer.expectDetach(true, true, true);
+
+            consumer.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
 }

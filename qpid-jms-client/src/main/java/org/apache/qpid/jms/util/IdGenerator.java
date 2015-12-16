@@ -99,7 +99,7 @@ public class IdGenerator {
      * @return a newly generated unique id value.
      */
     public synchronized String generateId() {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(64);
 
         sb.append(prefix);
         sb.append(UUID.randomUUID());

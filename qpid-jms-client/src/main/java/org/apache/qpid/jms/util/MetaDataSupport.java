@@ -77,11 +77,12 @@ public class MetaDataSupport {
         PROVIDER_MINOR_VERSION = minor;
     }
 
-    private static String buildPlatformDetails()
-    {
+    private static String buildPlatformDetails() {
         String details = "unknown";
         try {
-            StringBuilder platformInfo = new StringBuilder("JVM: ");
+            StringBuilder platformInfo = new StringBuilder(128);
+
+            platformInfo.append("JVM: ");
             platformInfo.append(System.getProperty("java.version"));
             platformInfo.append(", ");
             platformInfo.append(System.getProperty("java.vm.version"));

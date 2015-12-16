@@ -38,8 +38,10 @@ public class JmsTransactionIdTest {
     public void setUp() {
         IdGenerator generator = new IdGenerator();
 
-        firstId = new JmsConnectionId(generator.generateId());
-        secondId = new JmsConnectionId(generator.generateId());
+        String rootId = generator.generateId();
+
+        firstId = new JmsConnectionId(rootId);
+        secondId = new JmsConnectionId(rootId);
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -66,7 +68,7 @@ public class JmsTransactionIdTest {
     @Test
     public void testCompareTo() {
         JmsTransactionId id1 = new JmsTransactionId(firstId, 1);
-        JmsTransactionId id2 = new JmsTransactionId(secondId, 1);
+        JmsTransactionId id2 = new JmsTransactionId(secondId, 2);
 
         assertEquals(-1, id1.compareTo(id2));
         assertEquals(0, id1.compareTo(id1));
@@ -76,7 +78,7 @@ public class JmsTransactionIdTest {
     @Test
     public void testEquals() {
         JmsTransactionId id1 = new JmsTransactionId(firstId, 1);
-        JmsTransactionId id2 = new JmsTransactionId(secondId, 1);
+        JmsTransactionId id2 = new JmsTransactionId(secondId, 2);
 
         assertTrue(id1.equals(id1));
         assertTrue(id2.equals(id2));
@@ -97,7 +99,7 @@ public class JmsTransactionIdTest {
     @Test
     public void testHashCode() {
         JmsTransactionId id1 = new JmsTransactionId(firstId, 1);
-        JmsTransactionId id2 = new JmsTransactionId(secondId, 1);
+        JmsTransactionId id2 = new JmsTransactionId(secondId, 2);
 
         assertEquals(id1.hashCode(), id1.hashCode());
         assertEquals(id2.hashCode(), id2.hashCode());

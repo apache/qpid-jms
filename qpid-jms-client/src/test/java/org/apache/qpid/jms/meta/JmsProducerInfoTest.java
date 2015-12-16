@@ -44,8 +44,10 @@ public class JmsProducerInfoTest {
     public void setUp() {
         IdGenerator generator = new IdGenerator();
 
-        firstSessionId = new JmsSessionId(generator.generateId(), 1);
-        secondSessionId = new JmsSessionId(generator.generateId(), 2);
+        String rootId = generator.generateId();
+
+        firstSessionId = new JmsSessionId(rootId, 1);
+        secondSessionId = new JmsSessionId(rootId, 2);
 
         firstId = new JmsProducerId(firstSessionId, 1);
         secondId = new JmsProducerId(secondSessionId, 2);

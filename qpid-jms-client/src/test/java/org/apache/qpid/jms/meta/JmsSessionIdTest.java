@@ -39,8 +39,10 @@ public class JmsSessionIdTest {
     public void setUp() {
         IdGenerator generator = new IdGenerator();
 
-        firstId = new JmsConnectionId(generator.generateId());
-        secondId = new JmsConnectionId(generator.generateId());
+        String rootId = generator.generateId();
+
+        firstId = new JmsConnectionId(rootId);
+        secondId = new JmsConnectionId(rootId);
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -122,7 +124,7 @@ public class JmsSessionIdTest {
     @Test
     public void testCompareTo() {
         JmsSessionId id1 = new JmsSessionId(firstId, 1);
-        JmsSessionId id2 = new JmsSessionId(secondId, 1);
+        JmsSessionId id2 = new JmsSessionId(secondId, 2);
 
         assertEquals(-1, id1.compareTo(id2));
         assertEquals(0, id1.compareTo(id1));
@@ -132,7 +134,7 @@ public class JmsSessionIdTest {
     @Test
     public void testEquals() {
         JmsSessionId id1 = new JmsSessionId(firstId, 1);
-        JmsSessionId id2 = new JmsSessionId(secondId, 1);
+        JmsSessionId id2 = new JmsSessionId(secondId, 2);
 
         assertTrue(id1.equals(id1));
         assertTrue(id2.equals(id2));
@@ -153,7 +155,7 @@ public class JmsSessionIdTest {
     @Test
     public void testHashCode() {
         JmsSessionId id1 = new JmsSessionId(firstId, 1);
-        JmsSessionId id2 = new JmsSessionId(secondId, 1);
+        JmsSessionId id2 = new JmsSessionId(secondId, 2);
 
         assertEquals(id1.hashCode(), id1.hashCode());
         assertEquals(id2.hashCode(), id2.hashCode());

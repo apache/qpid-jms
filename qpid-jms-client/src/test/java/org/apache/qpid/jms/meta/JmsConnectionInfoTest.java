@@ -97,9 +97,7 @@ public class JmsConnectionInfoTest {
         JmsConnectionInfo first = new JmsConnectionInfo(firstId);
         JmsConnectionInfo second = new JmsConnectionInfo(secondId);
 
-        assertEquals(-1, first.compareTo(second));
-        assertEquals(0, first.compareTo(first));
-        assertEquals(1, second.compareTo(first));
+        assertFalse(first.compareTo(second) == 0);
     }
 
     @Test

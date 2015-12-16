@@ -87,9 +87,8 @@ public class JmsTransactionInfoTest {
         JmsTransactionInfo first = new JmsTransactionInfo(firstSessionId, firstTxId);
         JmsTransactionInfo second = new JmsTransactionInfo(secondSessionId, secondTxId);
 
-        assertEquals(-1, first.compareTo(second));
         assertEquals(0, first.compareTo(first));
-        assertEquals(1, second.compareTo(first));
+        assertFalse(second.compareTo(first) == 0);
     }
 
     @Test

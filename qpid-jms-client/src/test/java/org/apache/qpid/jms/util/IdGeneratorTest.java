@@ -17,9 +17,9 @@
 package org.apache.qpid.jms.util;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -41,74 +41,28 @@ public class IdGeneratorTest {
     }
 
     @Test
-    public void testGetHostName() {
-        assertNotNull(IdGenerator.getHostName());
-    }
+    public void testIdIndexIncrements() throws Exception {
 
-    @Test
-    public void testGenerateSanitizedId() {
-        IdGenerator generator = new IdGenerator("A:B.C");
-        assertNotNull(generator.generateSanitizedId());
-        String newId = generator.generateSanitizedId();
-        assertFalse(newId.contains(":"));
-        assertFalse(newId.contains("."));
-    }
+        final int COUNT = 5;
 
-    @Test
-    public void testGetSequenceFromId() {
-        assertNotNull(IdGenerator.getSequenceFromId(generator.generateId()));
-    }
+        ArrayList<String> ids = new ArrayList<String>(COUNT);
+        ArrayList<Integer> sequences = new ArrayList<Integer>();
 
-    @Test
-    public void testGetSequenceFromNullId() {
-        assertEquals(-1, IdGenerator.getSequenceFromId(null));
-    }
+        for (int i = 0; i < COUNT; ++i) {
+            ids.add(generator.generateId());
+        }
 
-    @Test
-    public void testGetSequenceFromNonConformingId() {
-        assertEquals(-1, IdGenerator.getSequenceFromId("SomeIdValue"));
-    }
+        for (String id : ids) {
+            String[] components = id.split(":");
+            sequences.add(Integer.parseInt(components[components.length - 1]));
+        }
 
-    @Test
-    public void testGetSequenceFromNonConformingId2() {
-        assertEquals(-1, IdGenerator.getSequenceFromId("SomeIdValue:"));
-    }
-
-    @Test
-    public void testGetSeedFromId() {
-        assertNotNull(IdGenerator.getSeedFromId(generator.generateId()));
-    }
-
-    @Test
-    public void testGetSeedFromNullId() {
-        assertNull(IdGenerator.getSeedFromId(null));
-    }
-
-    @Test
-    public void testGetSeedFromNonConformingId() {
-        assertEquals("SomeIdValue", IdGenerator.getSeedFromId("SomeIdValue"));
-    }
-
-    @Test
-    public void testGetSeedFromNonConformingId2() {
-        assertEquals("SomeIdValue:", IdGenerator.getSeedFromId("SomeIdValue:"));
-    }
-
-    @Test
-    public void testCompareIds() {
-        IdGenerator gen = new IdGenerator();
-
-        String id1 = generator.generateId();
-        String id2 = generator.generateId();
-        String id3 = generator.generateId();
-
-        assertEquals(0, IdGenerator.compare(id1, id1));
-        assertEquals(1, IdGenerator.compare(id2, id1));
-        assertEquals(-1, IdGenerator.compare(id2, id3));
-        assertEquals(-1, IdGenerator.compare(id2, null));
-        assertEquals(-1, IdGenerator.compare(null, id3));
-
-        String idg1 = gen.generateId();
-        assertEquals(1, IdGenerator.compare(idg1, id3));
+        Integer lastValue = null;
+        for (Integer sequence : sequences) {
+            if (lastValue != null) {
+                assertTrue(sequence > lastValue);
+            }
+            lastValue = sequence;
+        }
     }
 }

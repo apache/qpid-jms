@@ -44,8 +44,10 @@ public class JmsSessionInfoTest {
     public void setUp() {
         IdGenerator generator = new IdGenerator();
 
-        firstId = new JmsSessionId(generator.generateId(), 1);
-        secondId = new JmsSessionId(generator.generateId(), 2);
+        String rootId = generator.generateId();
+
+        firstId = new JmsSessionId(rootId, 1);
+        secondId = new JmsSessionId(rootId, 2);
 
         JmsConnectionId connectionId = new JmsConnectionId(generator.generateId());
         connectionInfo = new JmsConnectionInfo(connectionId);

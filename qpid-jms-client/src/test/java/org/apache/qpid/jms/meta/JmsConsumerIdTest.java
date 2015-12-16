@@ -39,8 +39,10 @@ public class JmsConsumerIdTest {
     public void setUp() {
         IdGenerator generator = new IdGenerator();
 
-        firstId = new JmsSessionId(generator.generateId(), 1);
-        secondId = new JmsSessionId(generator.generateId(), 2);
+        String rootId = generator.generateId();
+
+        firstId = new JmsSessionId(rootId, 1);
+        secondId = new JmsSessionId(rootId, 2);
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -145,7 +147,7 @@ public class JmsConsumerIdTest {
 
         assertFalse(id3.equals(id4));
         assertTrue(id3.equals(id5));
-        assertFalse(id3.equals(id6));
+        assertTrue(id3.equals(id6));
     }
 
     @Test

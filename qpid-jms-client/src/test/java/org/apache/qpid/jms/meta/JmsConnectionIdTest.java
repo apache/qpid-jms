@@ -131,9 +131,7 @@ public class JmsConnectionIdTest {
         JmsConnectionId id1 = new JmsConnectionId(firstId);
         JmsConnectionId id2 = new JmsConnectionId(secondId);
 
-        assertEquals(-1, id1.compareTo(id2));
-        assertEquals(0, id1.compareTo(id1));
-        assertEquals(1, id2.compareTo(id1));
+        assertFalse(id1.compareTo(id2) == 0);
     }
 
     @Test

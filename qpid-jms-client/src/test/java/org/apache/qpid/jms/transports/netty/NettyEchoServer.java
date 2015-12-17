@@ -153,6 +153,7 @@ public class NettyEchoServer implements AutoCloseable {
 
         @Override
         public void channelActive(final ChannelHandlerContext ctx) {
+            LOG.info("New active channel: {}", ctx.channel());
             SslHandler handler = ctx.pipeline().get(SslHandler.class);
             if (handler != null) {
                 handler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
@@ -170,6 +171,7 @@ public class NettyEchoServer implements AutoCloseable {
 
         @Override
         public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+            LOG.info("channel has gone inactive: {}", ctx.channel());
             ctx.close();
         }
 
@@ -185,6 +187,7 @@ public class NettyEchoServer implements AutoCloseable {
 
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+            LOG.info("Exception caught on channel: {}", ctx.channel());
             // Close the connection when an exception is raised.
             cause.printStackTrace();
             ctx.close();

@@ -124,9 +124,9 @@ public class NettyTcpTransport implements Transport {
                 if (future.isSuccess()) {
                     handleConnected(future.channel());
                 } else if (future.isCancelled()) {
-                    connectionFailed(new IOException("Connection attempt was cancelled"));
+                    connectionFailed(future.channel(), new IOException("Connection attempt was cancelled"));
                 } else {
-                    connectionFailed(IOExceptionSupport.create(future.cause()));
+                    connectionFailed(future.channel(), IOExceptionSupport.create(future.cause()));
                 }
             }
         });
@@ -142,7 +142,7 @@ public class NettyTcpTransport implements Transport {
         if (failureCause != null) {
             // Close out any Netty resources now as they are no longer needed.
             if (channel != null) {
-                channel.close();
+                channel.close().syncUninterruptibly();
                 channel = null;
             }
             if (group != null) {
@@ -279,11 +279,14 @@ public class NettyTcpTransport implements Transport {
     /**
      * Called when the transport connection failed and an error should be returned.
      *
+     * @param failedChannel
+     *      The Channel instance that failed.
      * @param cause
      *      An IOException that describes the cause of the failed connection.
      */
-    protected void connectionFailed(IOException cause) {
+    protected void connectionFailed(Channel failedChannel, IOException cause) {
         failureCause = IOExceptionSupport.create(cause);
+        channel = failedChannel;
         connected.set(false);
         connectLatch.countDown();
     }

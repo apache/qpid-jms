@@ -59,7 +59,7 @@ public class NettyEchoServer implements AutoCloseable {
     private Channel serverChannel;
     private final TransportOptions options;
     private int serverPort;
-    private boolean needClientAuth;
+    private final boolean needClientAuth;
     private volatile SslHandler sslHandler;
 
     private final AtomicBoolean started = new AtomicBoolean();
@@ -158,10 +158,19 @@ public class NettyEchoServer implements AutoCloseable {
                 handler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
                     @Override
                     public void operationComplete(Future<Channel> future) throws Exception {
-                        LOG.info("SSL handshake completed. Succeeded: " + future.isSuccess());
+                        LOG.info("SSL handshake completed. Succeeded: {}", future.isSuccess());
+                        if (!future.isSuccess()) {
+                            sslHandler.close();
+                            ctx.close();
+                        }
                     }
                 });
             }
+        }
+
+        @Override
+        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+            ctx.close();
         }
 
         @Override

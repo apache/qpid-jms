@@ -1104,7 +1104,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-
     @Test(timeout=20000)
     public void testPrefetchPolicyInfluencesCreditFlow() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {

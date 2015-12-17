@@ -85,7 +85,7 @@ public class NettySslTransport extends NettyTcpTransport implements SSLTransport
                     connectionEstablished(channel);
                 } else {
                     LOG.trace("SSL Handshake has failed: {}", channel);
-                    connectionFailed(IOExceptionSupport.create(future.cause()));
+                    connectionFailed(channel, IOExceptionSupport.create(future.cause()));
                 }
             }
         });

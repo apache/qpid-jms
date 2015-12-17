@@ -32,13 +32,17 @@ import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportSslOptions;
+import org.apache.qpid.jms.util.QpidJMSTestRunner;
+import org.apache.qpid.jms.util.Repeat;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Test basic functionality of the Netty based SSL Transport.
  */
+@RunWith(QpidJMSTestRunner.class)
 public class NettySslTransportTest extends NettyTcpTransportTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(NettySslTransportTest.class);
@@ -95,6 +99,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     }
 
     @Test(timeout = 60 * 1000)
+    @Repeat(repetitions = 1)
     public void testConnectToServerUsingUntrustedKeyFails() throws Exception {
         try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
             server.start();

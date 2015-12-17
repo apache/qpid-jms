@@ -98,7 +98,7 @@ public class IdGenerator {
      *
      * @return a newly generated unique id value.
      */
-    public synchronized String generateId() {
+    public String generateId() {
         StringBuilder sb = new StringBuilder(64);
 
         sb.append(prefix);

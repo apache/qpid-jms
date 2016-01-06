@@ -23,6 +23,11 @@ build_script:
 test_script:
   - mvn clean install -B
 
+on_failure:
+  - ps: |
+      7z a -r surefire-reports.zip '**\target\surefire-reports\*'
+      Push-AppveyorArtifact surefire-reports.zip -DeploymentName 'Surefire Reports'
+
 on_finish:
   - ps: |
       $url = "https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)"
@@ -36,8 +41,6 @@ on_finish:
           $wc.UploadFile($url, (Resolve-Path $file.FullName))
         }
       }
-      7z a -r surefire-reports.zip '**\target\surefire-reports\*'
-      Push-AppveyorArtifact surefire-reports.zip -DeploymentName 'Surefire Reports'
 
 cache:
   - C:\maven\apache-maven-3.3.3

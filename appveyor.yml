@@ -25,6 +25,17 @@ test_script:
 
 on_finish:
   - ps: |
+      $url = "https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)"
+      $wc = New-Object 'System.Net.WebClient'
+      $dirs = Get-ChildItem -Filter surefire-reports -Recurse
+      ForEach ($dir in $dirs)
+      {
+        $files = Get-ChildItem -Path $dir.FullName -Filter TEST-*.xml
+        ForEach ($file in $files)
+        {
+          $wc.UploadFile($url, (Resolve-Path $file.FullName))
+        }
+      }
       7z a -r surefire-reports.zip '**\target\surefire-reports\*'
       Push-AppveyorArtifact surefire-reports.zip -DeploymentName 'Surefire Reports'
 

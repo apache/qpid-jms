@@ -67,17 +67,9 @@ public class NettySslTransport extends NettyTcpTransport implements SSLTransport
     }
 
     @Override
-    protected void configureChannel(Channel channel) throws Exception {
-        channel.pipeline().addLast(TransportSupport.createSslHandler(getRemoteLocation(), getSslOptions()));
-        super.configureChannel(channel);
-    }
-
-    @Override
-    protected void handleConnected(final Channel channel) throws Exception {
-        SslHandler sslHandler = channel.pipeline().get(SslHandler.class);
-
-        Future<Channel> channelFuture = sslHandler.handshakeFuture();
-        channelFuture.addListener(new GenericFutureListener<Future<Channel>>() {
+    protected void configureChannel(final Channel channel) throws Exception {
+        SslHandler sslHandler = TransportSupport.createSslHandler(getRemoteLocation(), getSslOptions());
+        sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
             @Override
             public void operationComplete(Future<Channel> future) throws Exception {
                 if (future.isSuccess()) {
@@ -89,6 +81,16 @@ public class NettySslTransport extends NettyTcpTransport implements SSLTransport
                 }
             }
         });
+
+        channel.pipeline().addLast(sslHandler);
+
+        super.configureChannel(channel);
+    }
+
+    @Override
+    protected void handleConnected(final Channel channel) throws Exception {
+        // In this transport, the next step is taken by the handshake future
+        // completion listener added when configuring the channel above
     }
 
     @Override

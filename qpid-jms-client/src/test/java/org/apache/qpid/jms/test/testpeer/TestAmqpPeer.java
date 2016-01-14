@@ -88,7 +88,6 @@ import org.apache.qpid.jms.test.testpeer.matchers.TargetMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.TransferMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
-import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
@@ -1447,7 +1446,7 @@ public class TestAmqpPeer implements AutoCloseable
                                           final ApplicationPropertiesDescribedType appPropertiesDescribedType,
                                           final DescribedType content)
     {
-        Data payloadData = Proton.data(1024);
+        Data payloadData = Data.Factory.create();
 
         if(headerDescribedType != null)
         {

@@ -21,7 +21,6 @@ package org.apache.qpid.jms.test.testpeer;
 
 import java.nio.ByteBuffer;
 
-import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.codec.Data;
@@ -41,7 +40,7 @@ public class AmqpDataFramer
         buffer.position(8); // leave hole for frame header
 
         if (describedType != null) {
-            Data frameBody = Proton.data(CAPACITY);
+            Data frameBody = Data.Factory.create();
             frameBody.putDescribedType(describedType);
             frameBody.encode(buffer);
         }

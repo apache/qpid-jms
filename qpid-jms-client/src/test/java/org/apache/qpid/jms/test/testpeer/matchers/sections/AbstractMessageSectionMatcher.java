@@ -22,7 +22,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Map;
 
-import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
@@ -76,7 +75,7 @@ public abstract class AbstractMessageSectionMatcher
     public int verify(Binary receivedBinary) throws RuntimeException
     {
         int length = receivedBinary.getLength();
-        Data data = Proton.data(length);
+        Data data = Data.Factory.create();
         long decoded = data.decode(receivedBinary.asByteBuffer());
         if(decoded > Integer.MAX_VALUE)
         {

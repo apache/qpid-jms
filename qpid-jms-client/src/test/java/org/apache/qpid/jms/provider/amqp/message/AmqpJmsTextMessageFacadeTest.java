@@ -38,7 +38,6 @@ import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
-import org.apache.qpid.proton.codec.impl.DataImpl;
 import org.apache.qpid.proton.message.Message;
 import org.junit.Test;
 
@@ -174,7 +173,7 @@ public class AmqpJmsTextMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
 
     @Test
     public void testGetTextUsingReceivedMessageWithZeroLengthDataSectionReturnsEmptyString() throws Exception {
-        org.apache.qpid.proton.codec.Data payloadData = new DataImpl();
+        org.apache.qpid.proton.codec.Data payloadData = org.apache.qpid.proton.codec.Data.Factory.create();
         payloadData.putDescribedType(new DataDescribedType(new Binary(new byte[0])));
         Binary b = payloadData.encode();
 
@@ -191,7 +190,7 @@ public class AmqpJmsTextMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         String encodedString = "myEncodedString";
         byte[] encodedBytes = encodedString.getBytes(Charset.forName("UTF-8"));
 
-        org.apache.qpid.proton.codec.Data payloadData = new DataImpl();
+        org.apache.qpid.proton.codec.Data payloadData = org.apache.qpid.proton.codec.Data.Factory.create();
         payloadData.putDescribedType(new DataDescribedType(new Binary(encodedBytes)));
         Binary b = payloadData.encode();
 

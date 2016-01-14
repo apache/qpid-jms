@@ -56,7 +56,7 @@ import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
 import org.apache.qpid.proton.amqp.messaging.Header;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Properties;
-import org.apache.qpid.proton.codec.impl.DataImpl;
+import org.apache.qpid.proton.codec.Data;
 import org.apache.qpid.proton.message.Message;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -1057,7 +1057,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         Binary testCorrelationId = createBinaryId();
         byte[] bytes = testCorrelationId.getArray();
 
-        org.apache.qpid.proton.codec.Data payloadData = new DataImpl();
+        Data payloadData = Data.Factory.create();
         PropertiesDescribedType props = new PropertiesDescribedType();
         props.setCorrelationId(new Binary(bytes));
         payloadData.putDescribedType(props);

@@ -18,7 +18,6 @@
  */
 package org.apache.qpid.jms.test.testpeer.matchers.types;
 
-import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
@@ -58,7 +57,7 @@ public abstract class EncodedAmqpTypeMatcher extends TypeSafeMatcher<Binary>
     protected boolean matchesSafely(Binary receivedBinary)
     {
         int length = receivedBinary.getLength();
-        Data data = Proton.data(length);
+        Data data = Data.Factory.create();
         long decoded = data.decode(receivedBinary.asByteBuffer());
         _decodedDescribedType = data.getDescribedType();
         Object descriptor = _decodedDescribedType.getDescriptor();

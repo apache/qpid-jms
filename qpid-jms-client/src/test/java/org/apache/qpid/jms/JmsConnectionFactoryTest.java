@@ -35,7 +35,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.ExceptionListener;
-import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -58,6 +57,7 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JmsConnectionFactory factory = new JmsConnectionFactory();
         assertNull(factory.getUsername());
         assertNull(factory.getPassword());
+        assertNotNull(factory.getRemoteURI());
     }
 
     @Test
@@ -166,17 +166,6 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
     @Test(expected=IllegalArgumentException.class)
     public void testBadUriOptionCausesFail() throws Exception {
         new JmsConnectionFactory("amqp://localhost:1234?jms.badOption=true");
-    }
-
-    @Test
-    public void testCreateConnectionWithoutUriThrowsJMSISE() throws Exception {
-        JmsConnectionFactory cf = new JmsConnectionFactory();
-        try {
-            cf.createConnection();
-            fail("Should have thrown exception");
-        } catch (IllegalStateException jmsise){
-            // expected
-        }
     }
 
     @Test

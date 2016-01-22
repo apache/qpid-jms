@@ -18,12 +18,13 @@ package org.apache.qpid.jms;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Map;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.ExceptionListener;
-import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
@@ -49,9 +50,14 @@ import org.slf4j.LoggerFactory;
 public class JmsConnectionFactory extends JNDIStorable implements ConnectionFactory, QueueConnectionFactory, TopicConnectionFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsConnectionFactory.class);
+
     private static final String CLIENT_ID_PROP = "clientID";
+    private static final String DEFAULT_REMOTE_HOST = "localhost";
+    private static final String DEFAULT_REMOTE_PORT = "5672";
 
     public static final String REMOTE_URI_PROP = "remoteURI";
+
+    private static String DEFAULT_REMOTE_URI;
 
     private URI remoteURI;
     private String username;
@@ -211,8 +217,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     }
 
     protected Provider createProvider(URI remoteURI) throws Exception {
-        if(remoteURI == null) {
-            throw new IllegalStateException("No remoteURI has been provided");
+        if (remoteURI == null) {
+            remoteURI = new URI(getDefaultRemoteAddress());
         }
 
         Provider result = null;
@@ -263,7 +269,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      * @return the remoteURI
      */
     public String getRemoteURI() {
-        return this.remoteURI != null ? this.remoteURI.toString() : "";
+        return this.remoteURI != null ? this.remoteURI.toString() : getDefaultRemoteAddress();
     }
 
     /**
@@ -762,5 +768,71 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     public void setReceiveNoWaitLocalOnly(boolean receiveNoWaitLocalOnly) {
         this.receiveNoWaitLocalOnly = receiveNoWaitLocalOnly;
+    }
+
+    //----- Static Methods ---------------------------------------------------//
+
+    /**
+     * @return the default remote address to connect to in the event that none was set.
+     */
+    public static String getDefaultRemoteAddress() {
+
+        if (DEFAULT_REMOTE_URI != null) {
+            return DEFAULT_REMOTE_URI;
+        }
+
+        synchronized (JmsConnectionFactory.class) {
+
+            if (DEFAULT_REMOTE_URI != null) {
+                return DEFAULT_REMOTE_URI;
+            }
+
+            String host = null;
+            String port = null;
+            String remoteAddress = null;
+
+            try {
+                host = AccessController.doPrivileged(new PrivilegedAction<String>() {
+                    @Override
+                    public String run() {
+                        String result = System.getProperty("org.apache.qpid.jms.REMOTE_HOST", DEFAULT_REMOTE_HOST);
+                        result = (result == null || result.isEmpty()) ? DEFAULT_REMOTE_HOST : result;
+                        return result;
+                    }
+                });
+                port = AccessController.doPrivileged(new PrivilegedAction<String>() {
+                    @Override
+                    public String run() {
+                        String result = System.getProperty("org.apache.qpid.jms.REMOTE_PORT", DEFAULT_REMOTE_PORT);
+                        result = (result == null || result.isEmpty()) ? DEFAULT_REMOTE_PORT : result;
+                        return result;
+                    }
+                });
+            } catch (Throwable e) {
+                LOG.debug("Failed to look up System properties for remote host and port", e);
+            }
+
+            host = (host == null || host.isEmpty()) ? DEFAULT_REMOTE_HOST : host;
+            port = (port == null || port.isEmpty()) ? DEFAULT_REMOTE_PORT : port;
+
+            final String defaultURL = "amqp://" + DEFAULT_REMOTE_HOST + ":" + DEFAULT_REMOTE_PORT;
+
+            try {
+                remoteAddress = AccessController.doPrivileged(new PrivilegedAction<String>() {
+                    @Override
+                    public String run() {
+                        String result = System.getProperty("org.apache.qpid.jms.REMOTE_URI", defaultURL);
+                        result = (result == null || result.isEmpty()) ? defaultURL : result;
+                        return result;
+                    }
+                });
+            } catch (Throwable e) {
+                LOG.debug("Failed to look up System property for remote URI", e);
+            }
+
+            DEFAULT_REMOTE_URI = (remoteAddress == null || remoteAddress.isEmpty()) ? defaultURL : remoteAddress;
+        }
+
+        return DEFAULT_REMOTE_URI;
     }
 }

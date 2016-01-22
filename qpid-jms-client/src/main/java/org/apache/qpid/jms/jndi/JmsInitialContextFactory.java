@@ -58,8 +58,6 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     static final String[] DEFAULT_CONNECTION_FACTORY_NAMES = {
         "ConnectionFactory", "QueueConnectionFactory", "TopicConnectionFactory" };
 
-    static final String DEFAULT_REMOTE_URI = "amqp://localhost:5672";
-
     static final String CONNECTION_FACTORY_KEY_PREFIX = "connectionfactory.";
     static final String QUEUE_KEY_PREFIX = "queue.";
     static final String TOPIC_KEY_PREFIX = "topic.";
@@ -209,7 +207,7 @@ public class JmsInitialContextFactory implements InitialContextFactory {
 
     protected Map<String, String> getConnectionFactoryDefaults(Map<Object, Object> environment) {
         Map<String, String> map = new LinkedHashMap<String, String>();
-        map.put(JmsConnectionFactory.REMOTE_URI_PROP, DEFAULT_REMOTE_URI);
+        map.put(JmsConnectionFactory.REMOTE_URI_PROP, JmsConnectionFactory.getDefaultRemoteAddress());
 
         for (Iterator<Entry<Object, Object>> iter = environment.entrySet().iterator(); iter.hasNext();) {
             Map.Entry<Object, Object> entry = iter.next();

@@ -16,7 +16,10 @@
  */
 package org.apache.qpid.jms.jndi;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -61,7 +64,7 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
 
             assertNotNull("No object returned", o);
             assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
-            assertEquals("Unexpected URI for returned factory", JmsInitialContextFactory.DEFAULT_REMOTE_URI, ((JmsConnectionFactory) o).getRemoteURI());
+            assertEquals("Unexpected URI for returned factory", JmsConnectionFactory.getDefaultRemoteAddress(), ((JmsConnectionFactory) o).getRemoteURI());
         }
     }
 
@@ -193,7 +196,7 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
 
         assertNotNull("No object returned", o);
         assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
-        assertEquals("Unexpected URI for returned factory", JmsInitialContextFactory.DEFAULT_REMOTE_URI, ((JmsConnectionFactory) o).getRemoteURI());
+        assertEquals("Unexpected URI for returned factory", JmsConnectionFactory.getDefaultRemoteAddress(), ((JmsConnectionFactory) o).getRemoteURI());
     }
 
     @Test

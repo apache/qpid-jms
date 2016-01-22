@@ -815,7 +815,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             host = (host == null || host.isEmpty()) ? DEFAULT_REMOTE_HOST : host;
             port = (port == null || port.isEmpty()) ? DEFAULT_REMOTE_PORT : port;
 
-            final String defaultURL = "amqp://" + DEFAULT_REMOTE_HOST + ":" + DEFAULT_REMOTE_PORT;
+            final String defaultURL = "amqp://" + host + ":" + port;
 
             try {
                 remoteAddress = AccessController.doPrivileged(new PrivilegedAction<String>() {

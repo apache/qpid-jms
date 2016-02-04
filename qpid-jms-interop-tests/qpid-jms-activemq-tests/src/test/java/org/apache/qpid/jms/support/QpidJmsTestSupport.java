@@ -187,12 +187,12 @@ public class QpidJmsTestSupport {
         ArrayList<BrokerPlugin> plugins = new ArrayList<BrokerPlugin>();
         BrokerPlugin authenticationPlugin = configureAuthentication();
         if (authenticationPlugin != null) {
-            plugins.add(configureAuthorization());
+            plugins.add(authenticationPlugin);
         }
 
         BrokerPlugin authorizationPlugin = configureAuthorization();
         if (authorizationPlugin != null) {
-            plugins.add(configureAuthentication());
+            plugins.add(authorizationPlugin);
         }
 
         addAdditionalBrokerPlugins(plugins);

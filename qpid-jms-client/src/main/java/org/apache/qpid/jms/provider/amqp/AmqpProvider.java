@@ -297,7 +297,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                                     hostname = null;
                                 }
 
-                                setHostname(sasl, hostname);
+                                sasl.setRemoteHostname(hostname);
 
                                 authenticator = new AmqpSaslAuthenticator(sasl, connectionInfo, getLocalPrincipal(), saslMechanisms);
                             }
@@ -1209,17 +1209,6 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 nextIdleTimeoutCheck = null;
                 LOG.trace("IdleTimeoutCheck exiting");
             }
-        }
-    }
-
-    private static void setHostname(Sasl sasl, String hostname) {
-        // TODO: this is a hack until Proton 0.10+ is available with sasl#setHostname method.
-        try {
-            Field field = sasl.getClass().getDeclaredField("_hostname");
-            field.setAccessible(true);
-            field.set(sasl, hostname);
-        } catch (Exception e) {
-            LOG.trace("Failed to set SASL hostname", e);
         }
     }
 }

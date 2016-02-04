@@ -275,6 +275,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                             closeTimeout = connectionInfo.getCloseTimeout();
                             connectTimeout = connectionInfo.getConnectTimeout();
 
+                            protonTransport.setEmitFlowEventOnSend(false);
+
                             if (getMaxFrameSize() > 0) {
                                 protonTransport.setMaxFrameSize(getMaxFrameSize());
                             }

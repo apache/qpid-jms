@@ -21,7 +21,6 @@ import io.netty.buffer.ByteBufUtil;
 import io.netty.util.ReferenceCountUtil;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.security.Principal;

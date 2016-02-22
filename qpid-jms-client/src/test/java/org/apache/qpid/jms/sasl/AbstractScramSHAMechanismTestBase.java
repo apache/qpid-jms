@@ -16,12 +16,12 @@
  */
 package org.apache.qpid.jms.sasl;
 
-import org.junit.Test;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.fail;
 
 import javax.security.sasl.SaslException;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.fail;
+import org.junit.Test;
 
 /**
  * The quoted text in the test method javadoc is taken from RFC 5802.
@@ -77,6 +77,8 @@ abstract class AbstractScramSHAMechanismTestBase {
      * version of SCRAM, its presence in a client or a server message
      * MUST cause authentication failure when the attribute is parsed by
      * the other end."
+     *
+     * @throws Exception if an unexpected exception is thrown.
      */
     @Test
     public void testServerFirstMessageMandatoryExtensionRejected() throws Exception {
@@ -96,6 +98,8 @@ abstract class AbstractScramSHAMechanismTestBase {
      * "In [the server first] response, the server sends a "server-first-message" containing the
      * user's iteration count i and the user's salt, and appends its own
      * nonce to the client-specified one."
+     *
+     * @throws Exception if an unexpected exception is thrown.
      */
     @Test
     public void testServerFirstMessageInvalidNonceRejected() throws Exception {
@@ -117,6 +121,8 @@ abstract class AbstractScramSHAMechanismTestBase {
      * the two are different, the client MUST consider the authentication
      * exchange to be unsuccessful, and it might have to drop the
      * connection."
+     *
+     * @throws Exception if an unexpected exception is thrown.
      */
     @Test
     public void testServerSignatureDiffer() throws Exception {

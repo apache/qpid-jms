@@ -42,6 +42,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     private static final Symbol ANONYMOUS = Symbol.valueOf("ANONYMOUS");
     private static final Symbol PLAIN = Symbol.valueOf("PLAIN");
     private static final Symbol CRAM_MD5 = Symbol.valueOf("CRAM-MD5");
+    private static final Symbol SCRAM_SHA_1 = Symbol.valueOf("SCRAM-SHA-1");
+    private static final Symbol SCRAM_SHA_256 = Symbol.valueOf("SCRAM-SHA-256");
     private static final Symbol EXTERNAL = Symbol.valueOf("EXTERNAL");
 
     private static final String BROKER_JKS_KEYSTORE = "src/test/resources/broker-jks.keystore";
@@ -157,6 +159,16 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         doMechanismSelectedTestImpl("username", "password", CRAM_MD5, new Symbol[] {CRAM_MD5, PLAIN, ANONYMOUS}, false);
     }
 
+    @Test(timeout = 20000)
+    public void testScramSha1SelectedWhenCredentialsPresent() throws Exception {
+        doMechanismSelectedTestImpl("username", "password", SCRAM_SHA_1, new Symbol[] {SCRAM_SHA_1, CRAM_MD5, PLAIN, ANONYMOUS}, false);
+    }
+
+    @Test(timeout = 20000)
+    public void testScramSha256SelectedWhenCredentialsPresent() throws Exception {
+        doMechanismSelectedTestImpl("username", "password", SCRAM_SHA_256, new Symbol[] {SCRAM_SHA_256, SCRAM_SHA_1, CRAM_MD5, PLAIN, ANONYMOUS}, false);
+    }
+
     private void doMechanismSelectedTestImpl(String username, String password, Symbol clientSelectedMech, Symbol[] serverMechs, boolean wait) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -182,12 +194,12 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 20000)
     public void testExternalSelectedWhenLocalPrincipalPresent() throws Exception {
-        doMechanismSelectedExternalTestImpl(true, EXTERNAL, new Symbol[] {EXTERNAL, ANONYMOUS});
+        doMechanismSelectedExternalTestImpl(true, EXTERNAL, new Symbol[] {EXTERNAL, SCRAM_SHA_256, SCRAM_SHA_1, CRAM_MD5, PLAIN, ANONYMOUS});
     }
 
     @Test(timeout = 20000)
     public void testExternalNotSelectedWhenLocalPrincipalMissing() throws Exception {
-        doMechanismSelectedExternalTestImpl(false, ANONYMOUS, new Symbol[] {EXTERNAL, ANONYMOUS});
+        doMechanismSelectedExternalTestImpl(false, ANONYMOUS, new Symbol[] {EXTERNAL, SCRAM_SHA_256, SCRAM_SHA_1, CRAM_MD5, PLAIN, ANONYMOUS});
     }
 
     private void doMechanismSelectedExternalTestImpl(boolean requireClientCert, Symbol clientSelectedMech, Symbol[] serverMechs) throws Exception {

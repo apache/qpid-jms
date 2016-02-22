@@ -37,7 +37,8 @@ public interface Mechanism extends Comparable<Mechanism> {
         MEDIUM(3),
         HIGH(4),
         HIGHER(5),
-        HIGHEST(6);
+        HIGHER_STILL(6),
+        HIGHEST(7);
 
         private final int value;
 

@@ -38,7 +38,7 @@ public class CramMD5Mechanism extends AbstractMechanism {
 
     @Override
     public int getPriority() {
-        return PRIORITY.MEDIUM.getValue();
+        return PRIORITY.LOW.getValue();
     }
 
     @Override

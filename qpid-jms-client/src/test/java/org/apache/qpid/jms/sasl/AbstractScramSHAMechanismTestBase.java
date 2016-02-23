@@ -26,7 +26,7 @@ import org.junit.Test;
 /**
  * The quoted text in the test method javadoc is taken from RFC 5802.
  */
-abstract class AbstractScramSHAMechanismTestBase {
+public abstract class AbstractScramSHAMechanismTestBase {
     private final byte[] expectedClientInitialResponse;
     private final byte[] serverFirstMessage;
     private final byte[] expectedClientFinalMessage;

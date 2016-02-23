@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms.sasl;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
@@ -66,22 +65,16 @@ abstract class AbstractScramSHAMechanism extends AbstractMechanism {
 
     @Override
     public byte[] getInitialResponse() throws SaslException {
-        try {
-            if (state != State.INITIAL) {
-                throw new SaslException("Request for initial response not expected in state " + state);
-            }
-            StringBuilder buf = new StringBuilder("n=");
-            buf.append(saslPrep(getUsername()));
-            buf.append(",r=");
-            buf.append(clientNonce);
-            clientFirstMessageBare = buf.toString();
-            state = State.CLIENT_FIRST_SENT;
-            return (GS2_HEADER + clientFirstMessageBare).getBytes(StandardCharsets.US_ASCII);
-        } catch (SaslException e) {
-            throw e;
-        } catch (IOException e) {
-            throw new SaslException(e.getMessage(), e);
+        if (state != State.INITIAL) {
+            throw new SaslException("Request for initial response not expected in state " + state);
         }
+        StringBuilder buf = new StringBuilder("n=");
+        buf.append(saslPrep(getUsername()));
+        buf.append(",r=");
+        buf.append(clientNonce);
+        clientFirstMessageBare = buf.toString();
+        state = State.CLIENT_FIRST_SENT;
+        return (GS2_HEADER + clientFirstMessageBare).getBytes(StandardCharsets.US_ASCII);
     }
 
     @Override
@@ -158,9 +151,7 @@ abstract class AbstractScramSHAMechanism extends AbstractMechanism {
             String finalMessageWithProof = clientFinalMessageWithoutProof
                     + ",p=" + DatatypeConverter.printBase64Binary(clientProof);
             return finalMessageWithProof.getBytes();
-        } catch (SaslException e) {
-            throw e;
-        } catch (NoSuchAlgorithmException | IOException e) {
+        } catch (NoSuchAlgorithmException e) {
             throw new SaslException(e.getMessage(), e);
         }
     }

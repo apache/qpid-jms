@@ -198,10 +198,11 @@ public class JmsQueueBrowser implements AutoCloseable, QueueBrowser, Enumeration
             try {
                 if (consumer != null) {
                     consumer.close();
-                    consumer = null;
                 }
             } catch (JMSException e) {
-                LOG.warn("Error closing down internal consumer: ", e);
+                LOG.trace("Error closing down internal consumer: ", e);
+            } finally {
+                consumer = null;
             }
         }
     }

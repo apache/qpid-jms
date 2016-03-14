@@ -94,6 +94,46 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testFailoverHandlesConnectErrorNotFound() throws Exception {
+
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final CountDownLatch finalConnected = new CountDownLatch(1);
+            final String finalURI = createPeerURI(finalPeer);
+
+            originalPeer.rejectConnect(AmqpError.NOT_FOUND, "Resource could not be located", null);
+
+            finalPeer.expectSaslAnonymousConnect();
+            finalPeer.expectBegin();
+
+            final JmsConnection connection = establishAnonymousConnecton(originalPeer, finalPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (finalURI.equals(remoteURI.toString())) {
+                        finalConnected.countDown();
+                    }
+                }
+            });
+
+            try {
+                connection.start();
+            } catch (Exception ex) {
+                fail("Should not have thrown an Exception: " + ex);
+            }
+
+            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+
+            // Shut it down
+            finalPeer.expectClose();
+            connection.close();
+            finalPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
     public void testFailoverHandlesImmediateTransportDropAfterConnect() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer rejectingPeer = new TestAmqpPeer();

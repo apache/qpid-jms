@@ -946,7 +946,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
      */
     protected abstract class FailoverRequest extends WrappedAsyncResult implements Runnable {
 
-        private final long id = requestId.incrementAndGet();
+        protected final long id = requestId.incrementAndGet();
 
         public FailoverRequest(AsyncResult watcher) {
             super(watcher);
@@ -1067,6 +1067,22 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     CreateConnectionRequest.this.signalConnected();
                 }
             });
+        }
+
+        @Override
+        public void onFailure(final Throwable result) {
+            if (closingConnection.get() || closed.get() || failed.get()) {
+                requests.remove(id);
+                super.onFailure(result);
+            } else {
+                LOG.debug("Request received error: {}", result.getMessage());
+                serializer.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        handleProviderFailure(IOExceptionSupport.create(result));
+                    }
+                });
+            }
         }
 
         public void signalConnected() {

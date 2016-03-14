@@ -26,6 +26,7 @@ import javax.jms.JMSSecurityException;
 import javax.jms.ResourceAllocationException;
 import javax.jms.TransactionRolledBackException;
 
+import org.apache.qpid.jms.JmsResourceNotFoundException;
 import org.apache.qpid.jms.provider.ProviderRedirectedException;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Modified;
@@ -34,6 +35,8 @@ import org.apache.qpid.proton.amqp.transaction.TransactionErrors;
 import org.apache.qpid.proton.amqp.transport.AmqpError;
 import org.apache.qpid.proton.amqp.transport.ConnectionError;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
+import org.apache.qpid.proton.engine.Connection;
+import org.apache.qpid.proton.engine.Endpoint;
 
 public class AmqpSupport {
 
@@ -89,12 +92,14 @@ public class AmqpSupport {
      * Given an ErrorCondition instance create a new Exception that best matches
      * the error type.
      *
+     * @param endpoint
+     *      The target of the error.
      * @param errorCondition
      *      The ErrorCondition returned from the remote peer.
      *
      * @return a new Exception instance that best matches the ErrorCondition value.
      */
-    public static Exception convertToException(ErrorCondition errorCondition) {
+    public static Exception convertToException(Endpoint endpoint, ErrorCondition errorCondition) {
         Exception remoteError = null;
 
         if (errorCondition != null && errorCondition.getCondition() != null) {
@@ -106,7 +111,11 @@ public class AmqpSupport {
             } else if (error.equals(AmqpError.RESOURCE_LIMIT_EXCEEDED)) {
                 remoteError = new ResourceAllocationException(message);
             } else if (error.equals(AmqpError.NOT_FOUND)) {
-                remoteError = new InvalidDestinationException(message);
+                if (endpoint instanceof Connection) {
+                    remoteError = new JmsResourceNotFoundException(message);
+                } else {
+                    remoteError = new InvalidDestinationException(message);
+                }
             } else if (error.equals(TransactionErrors.TRANSACTION_ROLLBACK)) {
                 remoteError = new TransactionRolledBackException(message);
             } else if (error.equals(ConnectionError.REDIRECT)) {

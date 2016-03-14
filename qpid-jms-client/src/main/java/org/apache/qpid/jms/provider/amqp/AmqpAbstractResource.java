@@ -112,7 +112,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     }
 
     public void remotelyClosed(AmqpProvider provider) {
-        Exception error = AmqpSupport.convertToException(getEndpoint().getRemoteCondition());
+        Exception error = AmqpSupport.convertToException(getEndpoint(), getEndpoint().getRemoteCondition());
 
         if (parent != null) {
             parent.removeChildResource(this);

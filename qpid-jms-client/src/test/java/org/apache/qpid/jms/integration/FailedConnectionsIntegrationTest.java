@@ -30,6 +30,7 @@ import java.util.Map;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.InvalidClientIDException;
+import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
@@ -41,12 +42,16 @@ import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.basictypes.ConnectionError;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test the handling of various error on connection that should return
  * specific error types to the JMS client.
  */
 public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
+
+    private static final Logger LOG = LoggerFactory.getLogger(FailedConnectionsIntegrationTest.class);
 
     @Test(timeout = 20000)
     public void testConnectWithInvalidClientIdThrowsJMSEWhenInvalidContainerHintNotPresent() throws Exception {
@@ -56,6 +61,26 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
                 establishAnonymousConnecton(testPeer, true);
                 fail("Should have thrown JMSException");
             } catch (JMSException jmsEx) {
+                // Expected
+            } catch (Exception ex) {
+                fail("Should have thrown JMSException: " + ex);
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testConnectWithNotFoundErrorThrowsJMSEWhenInvalidContainerHintNotPresent() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            testPeer.rejectConnect(AmqpError.NOT_FOUND, "Virtual Host does not exist", null);
+            try {
+                establishAnonymousConnecton(testPeer, true);
+                fail("Should have thrown JMSException");
+            } catch (InvalidDestinationException destEx) {
+                fail("Should not convert to destination exception for this case.");
+            } catch (JMSException jmsEx) {
+                LOG.info("Caught expected Exception: {}", jmsEx.getMessage(), jmsEx);
                 // Expected
             } catch (Exception ex) {
                 fail("Should have thrown JMSException: " + ex);

@@ -164,7 +164,7 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
 
         Exception openError;
         if (hasRemoteError()) {
-            openError = AmqpSupport.convertToException(getEndpoint().getRemoteCondition());
+            openError = AmqpSupport.convertToException(getEndpoint(), getEndpoint().getRemoteCondition());
         } else {
             openError = getOpenAbortException();
         }

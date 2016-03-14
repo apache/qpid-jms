@@ -76,7 +76,7 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
                 } else if (state instanceof Rejected) {
                     LOG.debug("Last TX request failed: {}", txId);
                     Rejected rejected = (Rejected) state;
-                    Exception cause = AmqpSupport.convertToException(rejected.getError());
+                    Exception cause = AmqpSupport.convertToException(getEndpoint(), rejected.getError());
                     JMSException failureCause = null;
                     if (txId.getProviderContext() == COMMIT_MARKER) {
                         failureCause = new TransactionRolledBackException(cause.getMessage());
@@ -162,7 +162,7 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
     @Override
     public void remotelyClosed(AmqpProvider provider) {
 
-        Exception txnError = AmqpSupport.convertToException(getEndpoint().getRemoteCondition());
+        Exception txnError = AmqpSupport.convertToException(getEndpoint(), getEndpoint().getRemoteCondition());
 
         // Alert any pending operation that the link failed to complete the pending
         // begin / commit / rollback operation.

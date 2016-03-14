@@ -229,7 +229,7 @@ public class AmqpFixedProducer extends AmqpProducer {
                     remoteError = getEndpoint().getRemoteCondition();
                 }
 
-                deliveryError = AmqpSupport.convertToException(remoteError);
+                deliveryError = AmqpSupport.convertToException(getEndpoint(), remoteError);
             } else if (outcome instanceof Released) {
                 LOG.trace("Outcome of delivery was released: {}", delivery);
                 deliveryError = new JMSException("Delivery failed: released by receiver");
@@ -295,7 +295,7 @@ public class AmqpFixedProducer extends AmqpProducer {
     public void remotelyClosed(AmqpProvider provider) {
         super.remotelyClosed(provider);
 
-        Exception ex = AmqpSupport.convertToException(getEndpoint().getRemoteCondition());
+        Exception ex = AmqpSupport.convertToException(getEndpoint(), getEndpoint().getRemoteCondition());
         if (ex == null) {
             // TODO: create/use a more specific/appropriate exception type?
             ex = new JMSException("Producer closed remotely before message transfer result was notified");

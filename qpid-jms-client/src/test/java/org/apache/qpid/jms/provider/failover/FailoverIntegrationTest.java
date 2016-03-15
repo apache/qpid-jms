@@ -93,7 +93,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test //(timeout = 20000)
     public void testFailoverHandlesConnectErrorNotFound() throws Exception {
 
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
@@ -101,6 +101,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             final CountDownLatch finalConnected = new CountDownLatch(1);
             final String finalURI = createPeerURI(finalPeer);
+            final DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
 
             originalPeer.rejectConnect(AmqpError.NOT_FOUND, "Resource could not be located", null);
 
@@ -125,6 +126,18 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             }
 
             assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+
+            finalPeer.expectBegin();
+            finalPeer.expectReceiverAttach();
+            finalPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent);
+            finalPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            MessageConsumer consumer = session.createConsumer(queue);
+            Message message = consumer.receive(2000);
+
+            assertNotNull(message);
 
             // Shut it down
             finalPeer.expectClose();

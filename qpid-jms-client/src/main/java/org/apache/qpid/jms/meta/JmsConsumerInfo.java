@@ -18,7 +18,6 @@ package org.apache.qpid.jms.meta;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsRedeliveryPolicy;
-import org.apache.qpid.jms.util.ToStringSupport;
 
 public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsumerInfo> {
 
@@ -174,7 +173,7 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
 
     @Override
     public String toString() {
-        return ToStringSupport.toString(this);
+        return "JmsConsumerInfo: { " + getId() + " }";
     }
 
     @Override

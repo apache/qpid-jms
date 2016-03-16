@@ -173,7 +173,7 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
 
     @Override
     public String toString() {
-        return "JmsConsumerInfo: { " + getId() + " }";
+        return "JmsConsumerInfo: { " + getId() + ", destination = " + getDestination() + " }";
     }
 
     @Override

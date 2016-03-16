@@ -20,7 +20,6 @@ import java.net.URI;
 
 import org.apache.qpid.jms.JmsPrefetchPolicy;
 import org.apache.qpid.jms.JmsRedeliveryPolicy;
-import org.apache.qpid.jms.util.ToStringSupport;
 
 /**
  * Meta object that contains the JmsConnection identification and configuration
@@ -263,7 +262,9 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     @Override
     public String toString() {
-        return ToStringSupport.toString(this);
+        return "JmsConnectionInfo { " + getId() +
+               ", configuredURI = " + getConfiguredURI() +
+               ", connectedURI = " + getConnectedURI() + " }";
     }
 
     @Override

@@ -17,7 +17,6 @@
 package org.apache.qpid.jms.meta;
 
 import org.apache.qpid.jms.JmsDestination;
-import org.apache.qpid.jms.util.ToStringSupport;
 
 public final class JmsProducerInfo implements JmsResource, Comparable<JmsProducerInfo> {
 
@@ -69,7 +68,7 @@ public final class JmsProducerInfo implements JmsResource, Comparable<JmsProduce
 
     @Override
     public String toString() {
-        return ToStringSupport.toString(this);
+        return "JmsProducerInfo { " + getId() + ", destination = " + getDestination() + " }";
     }
 
     @Override

@@ -18,8 +18,6 @@ package org.apache.qpid.jms.meta;
 
 import javax.jms.Session;
 
-import org.apache.qpid.jms.util.ToStringSupport;
-
 public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionInfo> {
 
     private final JmsSessionId sessionId;
@@ -84,7 +82,7 @@ public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionI
 
     @Override
     public String toString() {
-        return ToStringSupport.toString(this);
+        return "JmsSessionInfo { " + getId() + " }";
     }
 
     @Override

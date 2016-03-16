@@ -93,7 +93,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test //(timeout = 20000)
+    @Test(timeout = 20000)
     public void testFailoverHandlesConnectErrorNotFound() throws Exception {
 
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();

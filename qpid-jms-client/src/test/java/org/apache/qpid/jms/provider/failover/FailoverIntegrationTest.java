@@ -48,7 +48,9 @@ import javax.jms.Topic;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
+import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.JmsPrefetchPolicy;
+import org.apache.qpid.jms.JmsSendTimedOutException;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
@@ -383,7 +385,6 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             finalPeer.waitForAllHandlersToComplete(1000);
         }
     }
-
 
     @Test(timeout = 30000)
     public void testFailoverInitialReconnectDelayDoesNotApplyToInitialConnect() throws Exception {
@@ -773,7 +774,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
     @Test(timeout=20000)
     public void testTxRecreatedAfterConnectionFailsOver() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
-            TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
 
             final CountDownLatch originalConnected = new CountDownLatch(1);
             final CountDownLatch finalConnected = new CountDownLatch(1);
@@ -848,22 +849,211 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Test(timeout = 20000)
+    public void testFailoverEnforcesRequestTimeoutSession() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+
+            final CountDownLatch connected = new CountDownLatch(1);
+            final CountDownLatch disconnected = new CountDownLatch(1);
+
+            // Create a peer to connect to so we can get to a state where we
+            // can try to send when offline.
+            final String peerURI = createPeerURI(testPeer);
+
+            LOG.info("Original peer is at: {}", peerURI);
+
+            // Connect to the test peer
+            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectBegin();
+            testPeer.dropAfterLastHandler();
+
+            final JmsConnection connection = establishAnonymousConnecton(
+                "jms.requestTimeout=2000&failover.reconnectDelay=2000&failover.maxReconnectAttempts=60",
+                testPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+
+                @Override
+                public void onConnectionInterrupted(URI remoteURI) {
+                    LOG.info("Connection Interrupted: {}", remoteURI);
+                    disconnected.countDown();
+                }
+
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    connected.countDown();
+                }
+            });
+            connection.start();
+
+            assertTrue("Should connect to peer", connected.await(5, TimeUnit.SECONDS));
+            assertTrue("Should lose connection to peer", disconnected.await(5, TimeUnit.SECONDS));
+
+            try {
+                connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                fail("Should have thrown an exception");
+            } catch (JmsOperationTimedOutException jmsEx) {
+                LOG.info("Caught timed out exception from send:", jmsEx);
+            } catch (Exception ex) {
+                fail("Should have caught a timed out exception");
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverEnforcesSendTimeout() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+
+            final CountDownLatch connected = new CountDownLatch(1);
+            final CountDownLatch disconnected = new CountDownLatch(1);
+
+            // Create a peer to connect to so we can get to a state where we
+            // can try to send when offline.
+            final String peerURI = createPeerURI(testPeer);
+
+            LOG.info("Original peer is at: {}", peerURI);
+
+            // Connect to the test peer
+            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+            testPeer.dropAfterLastHandler();
+
+            final JmsConnection connection = establishAnonymousConnecton(
+                "jms.sendTimeout=2000&failover.reconnectDelay=2000&failover.maxReconnectAttempts=60",
+                testPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+
+                @Override
+                public void onConnectionInterrupted(URI remoteURI) {
+                    LOG.info("Connection Interrupted: {}", remoteURI);
+                    disconnected.countDown();
+                }
+
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    connected.countDown();
+                }
+            });
+            connection.start();
+
+            assertTrue("Should connect to peer", connected.await(5, TimeUnit.SECONDS));
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            MessageProducer producer = session.createProducer(queue);
+
+            assertTrue("Should lose connection to peer", disconnected.await(5, TimeUnit.SECONDS));
+
+            try {
+                producer.send(session.createMessage());
+                fail("Should have thrown an exception");
+            } catch (JmsSendTimedOutException jmsEx) {
+                LOG.info("Caught timed out exception from send:", jmsEx);
+            } catch (Exception ex) {
+                fail("Should have caught a timed out exception");
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverEnforcesRequestTimeoutCreateTenpDestination() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+
+            final CountDownLatch connected = new CountDownLatch(1);
+            final CountDownLatch disconnected = new CountDownLatch(1);
+
+            // Create a peer to connect to so we can get to a state where we
+            // can try to send when offline.
+            final String peerURI = createPeerURI(testPeer);
+
+            LOG.info("Original peer is at: {}", peerURI);
+
+            // Connect to the test peer
+            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+            testPeer.dropAfterLastHandler();
+
+            final JmsConnection connection = establishAnonymousConnecton(
+                "jms.requestTimeout=2000&failover.reconnectDelay=2000&failover.maxReconnectAttempts=60",
+                testPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+
+                @Override
+                public void onConnectionInterrupted(URI remoteURI) {
+                    LOG.info("Connection Interrupted: {}", remoteURI);
+                    disconnected.countDown();
+                }
+
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    connected.countDown();
+                }
+            });
+            connection.start();
+
+            assertTrue("Should connect to peer", connected.await(5, TimeUnit.SECONDS));
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            assertTrue("Should lose connection to peer", disconnected.await(5, TimeUnit.SECONDS));
+
+            try {
+                session.createTemporaryQueue();
+                fail("Should have thrown an exception");
+            } catch (JmsOperationTimedOutException jmsEx) {
+                LOG.info("Caught timed out exception from send:", jmsEx);
+            } catch (Exception ex) {
+                fail("Should have caught a timed out exception");
+            }
+
+            try {
+                session.createTemporaryTopic();
+                fail("Should have thrown an exception");
+            } catch (JmsOperationTimedOutException jmsEx) {
+                LOG.info("Caught timed out exception from send:", jmsEx);
+            } catch (Exception ex) {
+                fail("Should have caught a timed out exception");
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
     private JmsConnection establishAnonymousConnecton(TestAmqpPeer... peers) throws JMSException {
-        return establishAnonymousConnecton(null, peers);
+        return establishAnonymousConnecton(null, null, peers);
     }
 
     private JmsConnection establishAnonymousConnecton(String failoverParams, TestAmqpPeer... peers) throws JMSException {
-        if(peers.length == 0) {
+        return establishAnonymousConnecton(null, failoverParams, peers);
+    }
+
+    private JmsConnection establishAnonymousConnecton(String connectionParams, String failoverParams, TestAmqpPeer... peers) throws JMSException {
+        if (peers.length == 0) {
             throw new IllegalArgumentException("No test peers were given, at least 1 required");
         }
 
         String remoteURI = "failover:(";
         boolean first = true;
-        for(TestAmqpPeer peer : peers) {
+        for (TestAmqpPeer peer : peers) {
             if (!first) {
                 remoteURI += ",";
             }
-            remoteURI += createPeerURI(peer);
+            remoteURI += createPeerURI(peer, connectionParams);
             first = false;
         }
 
@@ -880,6 +1070,10 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
     }
 
     private String createPeerURI(TestAmqpPeer peer) {
-        return "amqp://localhost:" + peer.getServerPort();
+        return createPeerURI(peer, null);
+    }
+
+    private String createPeerURI(TestAmqpPeer peer, String params) {
+        return "amqp://localhost:" + peer.getServerPort() + (params != null ? "?" + params : "");
     }
 }

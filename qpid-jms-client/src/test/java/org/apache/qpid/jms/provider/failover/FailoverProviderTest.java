@@ -406,7 +406,6 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         provider.create(connectionInfo, request);
         request.sync();
 
-        assertEquals(CONNECT_TIMEOUT, provider.getConnectTimeout());
         assertEquals(CLOSE_TIMEOUT, provider.getCloseTimeout());
         assertEquals(SEND_TIMEOUT, provider.getSendTimeout());
         assertEquals(REQUEST_TIMEOUT, provider.getRequestTimeout());

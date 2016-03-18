@@ -226,8 +226,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     request.sync(closeTimeout, TimeUnit.MILLISECONDS);
                 }
             } catch (IOException e) {
-                LOG.warn("Error caught while closing Provider: ", e.getMessage());
-                // TODO: message can be / seemingly usually is empty
+                LOG.warn("Error caught while closing Provider: {}", e.getMessage() != null ? e.getMessage() : "<Unknown Error>");
             } finally {
                 if (transport != null) {
                     try {

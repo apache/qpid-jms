@@ -39,6 +39,7 @@ import javax.jms.TextMessage;
 import javax.jms.TransactionRolledBackException;
 
 import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.JmsPrefetchPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -146,12 +147,16 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             // reply with a declared disposition state containing the txnId.
             txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
             testPeer.expectDeclare(txnId);
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
 
             try {
                 session.commit();
                 fail("Commit operation should have failed.");
             } catch (TransactionRolledBackException jmsTxRb) {
             }
+
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
@@ -225,8 +230,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             txState.setOutcome(new Accepted());
 
             testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
 
             producer.send(session.createMessage());
+
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
@@ -300,8 +309,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             txState.setOutcome(new Accepted());
 
             testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
 
             producer.send(session.createMessage());
+
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
@@ -410,6 +423,11 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                 messageConsumer.close();
             }
 
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
+
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(1000);
         }
     }
@@ -450,8 +468,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             // reply with a declared disposition state containing the txnId.
             txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
             testPeer.expectDeclare(txnId);
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
 
             session.commit();
+
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
@@ -493,8 +515,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             // reply with a declared disposition state containing the txnId.
             txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
             testPeer.expectDeclare(txnId);
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
 
             session.rollback();
+
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
@@ -537,8 +563,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             txState.setOutcome(new Accepted());
 
             testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
 
             producer.send(session.createMessage());
+
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
@@ -634,7 +664,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                 testPeer.expectLinkFlow(false, false, greaterThan(UnsignedInteger.ZERO));
             }
 
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
+
             session.rollback();
+
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
@@ -705,7 +740,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             // Expect the consumer to be 'started' again as rollback completes
             testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(messageCount)));
 
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
+
             session.rollback();
+
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
@@ -780,8 +820,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             // Expect the consumer to be 'started' again as rollback completes
             testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(messageCount)));
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
 
             session.rollback();
+
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
@@ -814,8 +858,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectReceiverAttach(notNullValue(), sourceMatcher);
             testPeer.expectLinkFlow();
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
 
             session.createConsumer(queue);
+
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
@@ -835,6 +883,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.remotelyCloseLastCoordinatorLinkOnDischarge(txnId, false);
             testPeer.expectCoordinatorAttach();
             testPeer.expectDeclare(txnId);
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
 
@@ -844,6 +894,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             } catch (TransactionRolledBackException ex) {
                 LOG.info("Caught expected TransactionRolledBackException");
             }
+
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
@@ -863,6 +915,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.remotelyCloseLastCoordinatorLinkOnDischarge(txnId, true);
             testPeer.expectCoordinatorAttach();
             testPeer.expectDeclare(txnId);
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
 
@@ -872,6 +926,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             } catch (JMSException ex) {
                 LOG.info("Caught expected JMSException");
             }
+
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
@@ -911,11 +967,17 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.expectCoordinatorAttach();
             testPeer.expectDeclare(txnId);
 
+            // Expect that the session TX will rollback on close.
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
+
             try {
                 session.commit();
                 fail("Commit operation should have failed.");
             } catch (TransactionRolledBackException jmsTxRb) {
             }
+
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
@@ -960,11 +1022,191 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.expectCoordinatorAttach();
             testPeer.expectDeclare(txnId);
 
+            // Expect that the session TX will rollback on close.
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
+
             try {
                 session.commit();
                 fail("Commit operation should have failed.");
             } catch (TransactionRolledBackException jmsTxRb) {
             }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testSessionCreateFailsOnDeclareTimeout() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setRequestTimeout(500);
+            connection.start();
+
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+            testPeer.expectDeclareButDoNotRespond();
+            testPeer.expectClose();
+
+            try {
+                connection.createSession(true, Session.SESSION_TRANSACTED);
+                fail("Should have timed out waiting for declare.");
+            } catch (JmsOperationTimedOutException jmsEx) {
+            } catch (Throwable error) {
+                fail("Should have caught an timed out exception:");
+                LOG.error("Caught -> ", error);
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testTransactionRolledBackOnSessionCloseTimesOut() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setRequestTimeout(500);
+            connection.start();
+
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            testPeer.expectDeclare(txnId);
+
+            // Closed session should roll-back the TX with a failed discharge
+            testPeer.expectDischargeButDoNotRespond(txnId, true);
+            testPeer.expectClose();
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+
+            try {
+                session.close();
+                fail("Should have timed out waiting for declare.");
+            } catch (JmsOperationTimedOutException jmsEx) {
+            } catch (Throwable error) {
+                fail("Should have caught an timed out exception:");
+                LOG.error("Caught -> ", error);
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testTransactionRolledBackTimesOut() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setRequestTimeout(500);
+            connection.start();
+
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            testPeer.expectDeclare(txnId);
+
+            // Closed session should roll-back the TX with a failed discharge
+            testPeer.expectDischargeButDoNotRespond(txnId, true);
+
+            // Session should throw from the rollback and then try and recover.
+            testPeer.expectDeclare(txnId);
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+
+            try {
+                session.rollback();
+                fail("Should have timed out waiting for declare.");
+            } catch (JmsOperationTimedOutException jmsEx) {
+            } catch (Throwable error) {
+                fail("Should have caught an timed out exception:");
+                LOG.error("Caught -> ", error);
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testTransactionCommitTimesOut() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setRequestTimeout(500);
+            connection.start();
+
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            testPeer.expectDeclare(txnId);
+
+            // Closed session should roll-back the TX with a failed discharge
+            testPeer.expectDischargeButDoNotRespond(txnId, false);
+
+            // Session should throw from the commit and then try and recover.
+            testPeer.expectDeclare(txnId);
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+
+            try {
+                session.commit();
+                fail("Should have timed out waiting for declare.");
+            } catch (JmsOperationTimedOutException jmsEx) {
+            } catch (Throwable error) {
+                fail("Should have caught an timed out exception:");
+                LOG.error("Caught -> ", error);
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testTransactionCommitTimesOutAndNoNextBeginTimesOut() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setRequestTimeout(500);
+            connection.start();
+
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            testPeer.expectDeclare(txnId);
+
+            // Closed session should roll-back the TX with a failed discharge
+            testPeer.expectDischargeButDoNotRespond(txnId, false);
+
+            // Session should throw from the commit and then try and recover.
+            testPeer.expectDeclareButDoNotRespond();
+            testPeer.expectClose();
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+
+            try {
+                session.commit();
+                fail("Should have timed out waiting for declare.");
+            } catch (JmsOperationTimedOutException jmsEx) {
+            } catch (Throwable error) {
+                fail("Should have caught an timed out exception:");
+                LOG.error("Caught -> ", error);
+            }
+
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

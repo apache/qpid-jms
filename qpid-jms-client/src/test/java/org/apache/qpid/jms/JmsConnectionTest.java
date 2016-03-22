@@ -68,7 +68,7 @@ public class JmsConnectionTest {
     @Test(timeout=30000, expected=JMSException.class)
     public void testJmsConnectionThrowsJMSExceptionProviderStartFails() throws JMSException, IllegalStateException, IOException {
         provider.getConfiguration().setFailOnStart(true);
-        new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        try (JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);) {}
     }
 
     @Test(timeout=30000)

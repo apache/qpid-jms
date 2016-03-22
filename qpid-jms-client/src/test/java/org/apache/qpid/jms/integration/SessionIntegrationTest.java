@@ -56,6 +56,7 @@ import javax.jms.Topic;
 import javax.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.JmsPrefetchPolicy;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -243,7 +244,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 // even though there is no detach response.
                 session.createConsumer(dest);
                 fail("Consumer creation should have failed when link was refused");
-            } catch(JMSException ex) {
+            } catch(JmsOperationTimedOutException ex) {
                 // Expected
                 LOG.info("Caught expected error on consumer create: {}", ex.getMessage());
             }
@@ -276,7 +277,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 QueueBrowser browser = session.createBrowser(dest);
                 browser.getEnumeration();
                 fail("Consumer creation should have failed when link was refused");
-            } catch(JMSException ex) {
+            } catch(JmsOperationTimedOutException ex) {
                 // Expected
                 LOG.info("Caught expected error on browser create: {}", ex.getMessage());
             }
@@ -995,7 +996,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 // Create a producer, expect it to throw exception due to the link-refusal
                 session.createProducer(dest);
                 fail("Producer creation should have failed when link was refused");
-            } catch(JMSException ex) {
+            } catch(JmsOperationTimedOutException ex) {
                 // Expected
                 LOG.info("Caught expected exception on create: {}", ex.getMessage());
             }

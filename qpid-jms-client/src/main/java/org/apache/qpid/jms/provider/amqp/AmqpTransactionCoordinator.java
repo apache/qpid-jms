@@ -18,11 +18,14 @@ package org.apache.qpid.jms.provider.amqp;
 
 import java.io.IOException;
 import java.nio.BufferOverflowException;
+import java.util.concurrent.ScheduledFuture;
 
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 import javax.jms.TransactionRolledBackException;
 
+import org.apache.qpid.jms.JmsOperationTimedOutException;
+import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.provider.AsyncResult;
@@ -57,6 +60,7 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
 
     private Delivery pendingDelivery;
     private AsyncResult pendingRequest;
+    private ScheduledFuture<?> pendingTimeout;
 
     public AmqpTransactionCoordinator(JmsSessionInfo resourceInfo, Sender endpoint, AmqpResourceParent parent) {
         super(resourceInfo, endpoint, parent);
@@ -94,6 +98,11 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
                 pendingDelivery.settle();
                 pendingRequest = null;
                 pendingDelivery = null;
+
+                if (pendingTimeout != null) {
+                    pendingTimeout.cancel(false);
+                    pendingTimeout = null;
+                }
             }
 
             super.processDeliveryUpdates(provider);
@@ -119,6 +128,8 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
         pendingDelivery = getEndpoint().delivery(tagGenerator.getNextTag());
         pendingDelivery.setContext(txId);
         pendingRequest = request;
+
+        scheduleTimeoutIfNeeded("Timed out waiting for declare of new TX.");
 
         sendTxCommand(message);
     }
@@ -153,6 +164,8 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
         pendingDelivery = getEndpoint().delivery(tagGenerator.getNextTag());
         pendingDelivery.setContext(txId);
         pendingRequest = request;
+
+        scheduleTimeoutIfNeeded("Timed out waiting for discharge of TX.");
 
         sendTxCommand(message);
     }
@@ -189,6 +202,13 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
     }
 
     //----- Internal implementation ------------------------------------------//
+
+    private void scheduleTimeoutIfNeeded(String cause) {
+        AmqpProvider provider = getParent().getProvider();
+        if (provider.getRequestTimeout() != JmsConnectionInfo.INFINITE) {
+            provider.scheduleRequestTimeout(pendingRequest, provider.getRequestTimeout(), new JmsOperationTimedOutException(cause));
+        }
+    }
 
     private void sendTxCommand(Message message) throws IOException {
         int encodedSize = 0;

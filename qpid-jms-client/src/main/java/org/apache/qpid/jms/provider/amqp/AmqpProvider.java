@@ -768,39 +768,57 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 switch (protonEvent.getType()) {
                     case CONNECTION_REMOTE_CLOSE:
                         amqpEventSink = (AmqpEventSink) protonEvent.getConnection().getContext();
-                        amqpEventSink.processRemoteClose(this);
+                        if (amqpEventSink != null) {
+                            amqpEventSink.processRemoteClose(this);
+                        }
                         break;
                     case CONNECTION_REMOTE_OPEN:
                         amqpEventSink = (AmqpEventSink) protonEvent.getConnection().getContext();
-                        amqpEventSink.processRemoteOpen(this);
+                        if (amqpEventSink != null) {
+                            amqpEventSink.processRemoteOpen(this);
+                        }
                         break;
                     case SESSION_REMOTE_CLOSE:
                         amqpEventSink = (AmqpEventSink) protonEvent.getSession().getContext();
-                        amqpEventSink.processRemoteClose(this);
+                        if (amqpEventSink != null) {
+                            amqpEventSink.processRemoteClose(this);
+                        }
                         break;
                     case SESSION_REMOTE_OPEN:
                         amqpEventSink = (AmqpEventSink) protonEvent.getSession().getContext();
-                        amqpEventSink.processRemoteOpen(this);
+                        if (amqpEventSink != null) {
+                            amqpEventSink.processRemoteOpen(this);
+                        }
                         break;
                     case LINK_REMOTE_CLOSE:
                         amqpEventSink = (AmqpEventSink) protonEvent.getLink().getContext();
-                        amqpEventSink.processRemoteClose(this);
+                        if (amqpEventSink != null) {
+                            amqpEventSink.processRemoteClose(this);
+                        }
                         break;
                     case LINK_REMOTE_DETACH:
                         amqpEventSink = (AmqpEventSink) protonEvent.getLink().getContext();
-                        amqpEventSink.processRemoteDetach(this);
+                        if (amqpEventSink != null) {
+                            amqpEventSink.processRemoteDetach(this);
+                        }
                         break;
                     case LINK_REMOTE_OPEN:
                         amqpEventSink = (AmqpEventSink) protonEvent.getLink().getContext();
-                        amqpEventSink.processRemoteOpen(this);
+                        if (amqpEventSink != null) {
+                            amqpEventSink.processRemoteOpen(this);
+                        }
                         break;
                     case LINK_FLOW:
                         amqpEventSink = (AmqpEventSink) protonEvent.getLink().getContext();
-                        amqpEventSink.processFlowUpdates(this);
+                        if (amqpEventSink != null) {
+                            amqpEventSink.processFlowUpdates(this);
+                        }
                         break;
                     case DELIVERY:
                         amqpEventSink = (AmqpEventSink) protonEvent.getLink().getContext();
-                        amqpEventSink.processDeliveryUpdates(this);
+                        if (amqpEventSink != null) {
+                            amqpEventSink.processDeliveryUpdates(this);
+                        }
                         break;
                     default:
                         break;
@@ -1137,13 +1155,15 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
      *
      * @param request
      *      The request that should be marked as failed based on configuration.
+     * @param timeout
+     *      The time to wait before marking the request as failed.
      * @param error
      *      The error to use when failing the pending request.
      *
      * @return a {@link ScheduledFuture} that can be stored by the caller.
      */
-    public ScheduledFuture<?> scheduleRequestTimeout(final AsyncResult request, final Exception error) {
-        if (getRequestTimeout() != JmsConnectionInfo.INFINITE) {
+    public ScheduledFuture<?> scheduleRequestTimeout(final AsyncResult request, long timeout, final Exception error) {
+        if (timeout != JmsConnectionInfo.INFINITE) {
             return serializer.schedule(new Runnable() {
 
                 @Override
@@ -1152,7 +1172,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     pumpToProtonTransport();
                 }
 
-            }, getRequestTimeout(), TimeUnit.MILLISECONDS);
+            }, timeout, TimeUnit.MILLISECONDS);
         }
 
         return null;

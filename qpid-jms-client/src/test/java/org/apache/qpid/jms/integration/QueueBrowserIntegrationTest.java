@@ -146,11 +146,10 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
         final DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
             connection.start();
 
-            JmsConnection jmsConnection = (JmsConnection) connection;
-            jmsConnection.getPrefetchPolicy().setAll(1);
+            connection.getPrefetchPolicy().setAll(1);
 
             testPeer.expectBegin();
 
@@ -305,11 +304,10 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
     @Test(timeout=30000)
     public void testCreateQueueBrowserAndEnumerationZeroPrefetch() throws IOException, Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
             connection.start();
 
-            JmsConnection jmsConnection = (JmsConnection) connection;
-            jmsConnection.getPrefetchPolicy().setAll(0);
+            connection.getPrefetchPolicy().setAll(0);
 
             testPeer.expectBegin();
 
@@ -333,11 +331,10 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
     @Test(timeout=30000)
     public void testQueueBrowserHasMoreElementsZeroPrefetchNoMessage() throws IOException, Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
             connection.start();
 
-            JmsConnection jmsConnection = (JmsConnection) connection;
-            jmsConnection.getPrefetchPolicy().setAll(0);
+            connection.getPrefetchPolicy().setAll(0);
 
             testPeer.expectBegin();
 
@@ -365,11 +362,10 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
         DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
             connection.start();
 
-            JmsConnection jmsConnection = (JmsConnection) connection;
-            jmsConnection.getPrefetchPolicy().setAll(0);
+            connection.getPrefetchPolicy().setAll(0);
 
             testPeer.expectBegin();
 

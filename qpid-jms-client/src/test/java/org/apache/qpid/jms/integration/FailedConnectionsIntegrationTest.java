@@ -34,6 +34,7 @@ import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
+import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.provider.ProviderRedirectedException;
 import org.apache.qpid.jms.provider.amqp.AmqpSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -61,6 +62,24 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
                 establishAnonymousConnecton(testPeer, true);
                 fail("Should have thrown JMSException");
             } catch (JMSException jmsEx) {
+                // Expected
+            } catch (Exception ex) {
+                fail("Should have thrown JMSException: " + ex);
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testConnectThrowsTimedOutExceptioWhenResponseNotSent() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            testPeer.expectSaslAnonymousConnect(true);
+            testPeer.expectClose();
+            try {
+                establishAnonymousConnecton(testPeer, true, "jms.connectTimeout=500");
+                fail("Should have thrown JmsOperationTimedOutException");
+            } catch (JmsOperationTimedOutException jmsEx) {
                 // Expected
             } catch (Exception ex) {
                 fail("Should have thrown JMSException: " + ex);
@@ -158,8 +177,16 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
     }
 
     Connection establishAnonymousConnecton(TestAmqpPeer testPeer, boolean setClientId) throws JMSException {
+        return establishAnonymousConnecton(testPeer, setClientId, null);
+    }
 
-        final String remoteURI = "amqp://localhost:" + testPeer.getServerPort();
+    Connection establishAnonymousConnecton(TestAmqpPeer testPeer, boolean setClientId, String connectionQuery) throws JMSException {
+
+        String remoteURI = "amqp://localhost:" + testPeer.getServerPort();
+
+        if (connectionQuery != null && !connectionQuery.isEmpty()) {
+            remoteURI += "?" + connectionQuery;
+        }
 
         ConnectionFactory factory = new JmsConnectionFactory(remoteURI);
         Connection connection = factory.createConnection();

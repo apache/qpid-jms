@@ -20,11 +20,11 @@ package org.apache.qpid.jms.test.testpeer;
 
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DYNAMIC_NODE_LIFETIME_POLICY;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -419,7 +419,8 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     public void expectSaslConnect(Symbol mechanism, Matcher<Binary> initialResponseMatcher, Symbol[] desiredCapabilities, Symbol[] serverCapabilities,
-                                    Matcher<?> clientPropertiesMatcher, Map<Symbol, Object> serverProperties, Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher)
+                                  Matcher<?> clientPropertiesMatcher, Map<Symbol, Object> serverProperties, Matcher<?> idleTimeoutMatcher,
+                                  Matcher<?> hostnameMatcher, boolean deferOpened)
     {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(mechanism);
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
@@ -467,12 +468,10 @@ public class TestAmqpPeer implements AutoCloseable
             open.setProperties(serverProperties);
         }
 
-        OpenMatcher openMatcher = new OpenMatcher()
-            .withContainerId(notNullValue(String.class))
-            .onCompletion(new FrameSender(
-                    this, FrameType.AMQP, 0,
-                    open,
-                    null));
+        OpenMatcher openMatcher = new OpenMatcher().withContainerId(notNullValue(String.class));
+        if (!deferOpened) {
+            openMatcher.onCompletion(new FrameSender(this, FrameType.AMQP, 0, open, null));
+        }
 
         if (desiredCapabilities != null)
         {
@@ -515,7 +514,7 @@ public class TestAmqpPeer implements AutoCloseable
 
         Matcher<Binary> initialResponseMatcher = equalTo(new Binary(data));
 
-        expectSaslConnect(PLAIN, initialResponseMatcher, desiredCapabilities, serverCapabilities, null, serverProperties, null, null);
+        expectSaslConnect(PLAIN, initialResponseMatcher, desiredCapabilities, serverCapabilities, null, serverProperties, null, null, false);
     }
 
     public void expectSaslExternalConnect()
@@ -525,12 +524,17 @@ public class TestAmqpPeer implements AutoCloseable
             throw new IllegalStateException("need-client-cert must be enabled on the test peer");
         }
 
-        expectSaslConnect(EXTERNAL, equalTo(new Binary(new byte[0])), new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, null, null, null, null);
+        expectSaslConnect(EXTERNAL, equalTo(new Binary(new byte[0])), new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, null, null, null, null, false);
     }
 
     public void expectSaslAnonymousConnect()
     {
         expectSaslAnonymousConnect(null, null);
+    }
+
+    public void expectSaslAnonymousConnect(boolean deferOpened)
+    {
+        expectSaslConnect(ANONYMOUS, equalTo(new Binary(new byte[0])), new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, null, null, null, null, deferOpened);
     }
 
     public void expectSaslAnonymousConnect(Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher)
@@ -540,7 +544,7 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectSaslAnonymousConnect(Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher, Matcher<?> propertiesMatcher, Map<Symbol, Object> serverProperties)
     {
-        expectSaslConnect(ANONYMOUS, equalTo(new Binary(new byte[0])), new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, propertiesMatcher, serverProperties, idleTimeoutMatcher, hostnameMatcher);
+        expectSaslConnect(ANONYMOUS, equalTo(new Binary(new byte[0])), new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, propertiesMatcher, serverProperties, idleTimeoutMatcher, hostnameMatcher, false);
     }
 
     public void expectFailingSaslConnect(Symbol[] serverMechs, Symbol clientSelectedMech)
@@ -844,9 +848,14 @@ public class TestAmqpPeer implements AutoCloseable
         expectSenderAttach(notNullValue(), false, false);
     }
 
+    public void expectSenderAttachWithoutGrantingCredit()
+    {
+        expectSenderAttach(notNullValue(), notNullValue(), false, false, false, 0, 0, null, null);
+    }
+
     public void expectSenderAttach(long creditFlowDelay)
     {
-        expectSenderAttach(notNullValue(), notNullValue(), false, false, false, creditFlowDelay, null, null);
+        expectSenderAttach(notNullValue(), notNullValue(), false, false, false, creditFlowDelay, 100, null, null);
     }
 
     public void expectSenderAttach(final Matcher<?> targetMatcher, final boolean refuseLink, boolean deferAttachResponseWrite)
@@ -860,6 +869,11 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     public void expectSenderAttach(final Matcher<?> sourceMatcher, final Matcher<?> targetMatcher, final boolean refuseLink, boolean omitDetach, boolean deferAttachResponseWrite, long creditFlowDelay, Symbol errorType, String errorMessage)
+    {
+        expectSenderAttach(sourceMatcher, targetMatcher, refuseLink, omitDetach, deferAttachResponseWrite, creditFlowDelay, 100, errorType, errorMessage);
+    }
+
+    public void expectSenderAttach(final Matcher<?> sourceMatcher, final Matcher<?> targetMatcher, final boolean refuseLink, boolean omitDetach, boolean deferAttachResponseWrite, long creditFlowDelay, int creditAmount, Symbol errorType, String errorMessage)
     {
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())
@@ -942,7 +956,7 @@ public class TestAmqpPeer implements AutoCloseable
                 .setIncomingWindow(UnsignedInteger.valueOf(2048))
                 .setNextOutgoingId(UnsignedInteger.ONE) //TODO: shouldnt be hard coded
                 .setOutgoingWindow(UnsignedInteger.valueOf(2048))
-                .setLinkCredit(UnsignedInteger.valueOf(100));
+                .setLinkCredit(UnsignedInteger.valueOf(creditAmount));
 
             // The flow frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
             final FrameSender flowFrameSender = new FrameSender(this, FrameType.AMQP, -1, flowFrame, null);
@@ -1476,6 +1490,11 @@ public class TestAmqpPeer implements AutoCloseable
         return payloadData.encode();
     }
 
+    public void expectTransferButDoNotRespond(Matcher<Binary> expectedPayloadMatcher)
+    {
+        expectTransfer(expectedPayloadMatcher, nullValue(), false, false, null, false);
+    }
+
     public void expectTransfer(Matcher<Binary> expectedPayloadMatcher)
     {
         expectTransfer(expectedPayloadMatcher, nullValue(), false, true, new Accepted(), true);
@@ -1538,6 +1557,14 @@ public class TestAmqpPeer implements AutoCloseable
         expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
     }
 
+    public void expectDeclareButDoNotRespond()
+    {
+        TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
+        declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
+
+        expectTransfer(declareMatcher, nullValue(), false, false, null, false);
+    }
+
     public void expectDischarge(Binary txnId, boolean dischargeState) {
         expectDischarge(txnId, dischargeState, new Accepted());
     }
@@ -1553,6 +1580,19 @@ public class TestAmqpPeer implements AutoCloseable
         dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
 
         expectTransfer(dischargeMatcher, nullValue(), false, responseState, true);
+    }
+
+    public void expectDischargeButDoNotRespond(Binary txnId, boolean dischargeState) {
+        // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
+        // and reply with given response and settled disposition to indicate the outcome.
+        Discharge discharge = new Discharge();
+        discharge.setFail(dischargeState);
+        discharge.setTxnId(txnId);
+
+        TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
+        dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
+
+        expectTransfer(dischargeMatcher, nullValue(), false, false, null, true);
     }
 
     public void remotelyCloseLastCoordinatorLink()

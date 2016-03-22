@@ -19,6 +19,8 @@ package org.apache.qpid.jms.provider.amqp.builders;
 import java.io.IOException;
 import java.util.concurrent.ScheduledFuture;
 
+import org.apache.qpid.jms.JmsOperationTimedOutException;
+import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.amqp.AmqpEventSink;
@@ -74,7 +76,7 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
         // Create the resource object now
         resource = createResource(parent, resourceInfo, endpoint);
 
-        if (parent.getProvider().getRequestTimeout() > 0) {
+        if (getRequestTimeout() > JmsConnectionInfo.INFINITE) {
 
             // Attempt to schedule a cancellation of the pending open request, can return
             // null if there is no configured request timeout.
@@ -87,9 +89,7 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
 
                 @Override
                 public void onFailure(Throwable result) {
-                    // We ignore the default error and attempt to coerce a more
-                    // meaningful error from the endpoint.
-                    handleClosed(parent.getProvider());
+                    handleClosed(parent.getProvider(), result);
                 }
 
                 @Override
@@ -97,7 +97,7 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
                     return request.isComplete();
                 }
 
-            }, null);
+            }, getRequestTimeout(), new JmsOperationTimedOutException("Request to open resource " + getResource() + " timed out"));
         }
     }
 
@@ -110,7 +110,7 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
 
     @Override
     public void processRemoteClose(AmqpProvider provider) throws IOException {
-        handleClosed(provider);
+        handleClosed(provider, null);
     }
 
     @Override
@@ -158,13 +158,15 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
         }
     }
 
-    protected final void handleClosed(AmqpProvider provider) {
+    protected final void handleClosed(AmqpProvider provider, Throwable cause) {
         // If the resource being built is closed during the creation process
         // then this is always an error.
 
-        Exception openError;
+        Throwable openError;
         if (hasRemoteError()) {
             openError = AmqpSupport.convertToException(getEndpoint(), getEndpoint().getRemoteCondition());
+        } else if (cause != null) {
+            openError = cause;
         } else {
             openError = getOpenAbortException();
         }
@@ -244,9 +246,22 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
      * When aborting the open operation, and there isn't an error condition,
      * provided by the peer, the returned exception will be used instead.
      * A subclass may override this method to provide alternative behavior.
+     *
+     * @return an Exception to describes the open failure for this resource.
      */
     protected Exception getOpenAbortException() {
         return new IOException("Open failed unexpectedly.");
+    }
+
+    /**
+     * Returns the configured time before the open of the resource is considered
+     * to have failed.  Subclasses can override this method to provide a value more
+     * appropriate to the resource being built.
+     *
+     * @return the configured timeout before the open of the resource fails.
+     */
+    protected long getRequestTimeout() {
+        return getParent().getProvider().getRequestTimeout();
     }
 
     //----- Public access methods for the managed resources ------------------//

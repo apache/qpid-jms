@@ -868,7 +868,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             testPeer.dropAfterLastHandler();
 
             final JmsConnection connection = establishAnonymousConnecton(
-                "jms.requestTimeout=2000&failover.reconnectDelay=2000&failover.maxReconnectAttempts=60",
+                "jms.requestTimeout=1000&failover.reconnectDelay=2000&failover.maxReconnectAttempts=60",
                 testPeer);
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
 
@@ -925,7 +925,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             testPeer.dropAfterLastHandler();
 
             final JmsConnection connection = establishAnonymousConnecton(
-                "jms.sendTimeout=2000&failover.reconnectDelay=2000&failover.maxReconnectAttempts=60",
+                "jms.sendTimeout=1000&failover.reconnectDelay=2000&failover.maxReconnectAttempts=60",
                 testPeer);
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
 
@@ -986,7 +986,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             testPeer.dropAfterLastHandler();
 
             final JmsConnection connection = establishAnonymousConnecton(
-                "jms.requestTimeout=2000&failover.reconnectDelay=2000&failover.maxReconnectAttempts=60",
+                "jms.requestTimeout=1000&failover.reconnectDelay=2000&failover.maxReconnectAttempts=60",
                 testPeer);
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
 

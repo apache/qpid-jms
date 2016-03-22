@@ -134,4 +134,9 @@ public class AmqpConnectionBuilder extends AmqpResourceBuilder<AmqpConnection, A
     protected boolean isClosePending() {
         return getResource().getProperties().isConnectionOpenFailed();
     }
+
+    @Override
+    protected long getRequestTimeout() {
+        return getParent().getProvider().getConnectTimeout();
+    }
 }

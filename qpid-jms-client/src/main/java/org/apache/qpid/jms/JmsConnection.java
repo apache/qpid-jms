@@ -130,6 +130,14 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
             }
         });
 
+        // We need to start the core thread in order for it to prevent JVM shutdown as our
+        // single non-daemon thread.
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+            }
+        });
+
         this.provider = provider;
         this.provider.setProviderListener(this);
         try {

@@ -49,6 +49,7 @@ import javax.jms.TextMessage;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
+import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.JmsSendTimedOutException;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -92,6 +93,34 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             testPeer.expectClose();
 
             producer.close();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testCloseSenderTimesOut() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setRequestTimeout(500);
+
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+            testPeer.expectDetach(true, false, true);
+            testPeer.expectClose();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            MessageProducer producer = session.createProducer(queue);
+
+            try {
+                producer.close();
+                fail("Should have thrown a timed out exception");
+            } catch (JmsOperationTimedOutException jmsEx) {
+                LOG.info("Caught excpected exception", jmsEx);
+            }
+
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);

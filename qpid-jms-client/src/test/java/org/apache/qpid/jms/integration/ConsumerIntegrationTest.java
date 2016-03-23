@@ -43,6 +43,7 @@ import javax.jms.Topic;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
+import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.JmsPrefetchPolicy;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -83,6 +84,35 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectDetach(true, true, true);
             consumer.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testCloseConsumerTimesOut() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setRequestTimeout(500);
+
+            testPeer.expectBegin();
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlow();
+            testPeer.expectDetach(true, false, true);
+            testPeer.expectClose();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            MessageConsumer consumer = session.createConsumer(queue);
+
+            try {
+                consumer.close();
+                fail("Should have thrown a timed out exception");
+            } catch (JmsOperationTimedOutException jmsEx) {
+                LOG.info("Caught excpected exception", jmsEx);
+            }
+
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

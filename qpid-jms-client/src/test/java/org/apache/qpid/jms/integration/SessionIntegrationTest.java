@@ -112,6 +112,32 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testCloseSessionTimesOut() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setRequestTimeout(500);
+
+            testPeer.expectBegin();
+            testPeer.expectEnd(false);
+            testPeer.expectClose();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            assertNotNull("Session should not be null", session);
+
+            try {
+                session.close();
+                fail("Should have thrown an timed out exception");
+            } catch (JmsOperationTimedOutException jmsEx) {
+                LOG.info("Caught exception: {}", jmsEx.getMessage());
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
     public void testCreateProducer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);

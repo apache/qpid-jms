@@ -77,8 +77,8 @@ public class AmqpConnectionSession extends AmqpSession {
 
     private class DurableSubscriptionReattach extends AmqpAbstractResource<JmsSessionInfo, Receiver> {
 
-        public DurableSubscriptionReattach(JmsSessionInfo resource, Receiver receiver) {
-            super(resource, receiver);
+        public DurableSubscriptionReattach(JmsSessionInfo resource, Receiver receiver, AmqpResourceParent parent) {
+            super(resource, receiver, parent);
         }
 
         public String getSubscriptionName() {
@@ -108,7 +108,7 @@ public class AmqpConnectionSession extends AmqpSession {
 
         @Override
         protected DurableSubscriptionReattach createResource(AmqpSession parent, JmsSessionInfo resourceInfo, Receiver endpoint) {
-            return new DurableSubscriptionReattach(resourceInfo, endpoint);
+            return new DurableSubscriptionReattach(resourceInfo, endpoint, getProvider());
         }
 
         @Override

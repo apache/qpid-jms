@@ -194,7 +194,7 @@ public class AmqpFixedProducer extends AmqpProducer {
                 LOG.trace("Dispatching previously held send");
                 InFlightSend held = blocked.pop();
                 try {
-                    doSend(held.envelope, held);  // TODO - Cancel timeout and reset after dispatch ?
+                    doSend(held.envelope, held);
                 } catch (JMSException e) {
                     throw IOExceptionSupport.create(e);
                 }
@@ -202,7 +202,7 @@ public class AmqpFixedProducer extends AmqpProducer {
         }
 
         // Once the pending sends queue is drained we can propagate the close request.
-        if (blocked.isEmpty() && isAwaitingClose()) {
+        if (blocked.isEmpty() && isAwaitingClose() && !isClosed()) {
             super.close(closeRequest);
         }
 

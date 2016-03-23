@@ -17,7 +17,9 @@
 package org.apache.qpid.jms.provider.amqp;
 
 import java.io.IOException;
+import java.util.concurrent.ScheduledFuture;
 
+import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.provider.AsyncResult;
@@ -41,6 +43,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     private static final Logger LOG = LoggerFactory.getLogger(AmqpAbstractResource.class);
 
     protected AsyncResult closeRequest;
+    protected ScheduledFuture<?> closeTimeoutTask;
 
     private final E endpoint;
     private final R resourceInfo;
@@ -97,6 +100,35 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
         closeRequest = request;
 
+        long closeTimeout = getParent().getProvider().getRequestTimeout();
+        if (closeTimeout != JmsConnectionInfo.INFINITE) {
+            closeTimeoutTask = getParent().getProvider().scheduleRequestTimeout(
+                new AsyncResult() {
+
+                    @Override
+                    public void onSuccess() {
+                        // Not called in this context.
+                    }
+
+                    @Override
+                    public void onFailure(Throwable result) {
+                        closeRequest.onFailure(result);
+                        closeRequest = null;
+
+                        // This ensures that the resource gets properly cleaned
+                        // up, the request will have already completed so there
+                        // won't be multiple events fired.
+                        resourceClosed();
+                    }
+
+                    @Override
+                    public boolean isComplete() {
+                        return closeRequest != null ? closeRequest.isComplete() : true;
+                    }
+
+                }, closeTimeout, new JmsOperationTimedOutException("Timed Out Waiting for close response: " + this));
+        }
+
         closeOrDetachEndpoint();
     }
 
@@ -123,8 +155,6 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
             // rather than fully closed, and should respond appropriately.
             endpoint.close();
         }
-
-        LOG.info("Resource {} was remotely closed", getResourceInfo());
 
         if (getResourceInfo() instanceof JmsConnectionInfo) {
             provider.fireProviderException(error);

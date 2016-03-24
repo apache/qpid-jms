@@ -1549,6 +1549,60 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(transferMatcher);
     }
 
+    public void expectTransferRespondWithDrain(Matcher<Binary> expectedPayloadMatcher, int drainAmount)
+    {
+        Matcher<Boolean> settledMatcher = Matchers.anyOf(equalTo(false), nullValue());
+
+        final TransferMatcher transferMatcher = new TransferMatcher();
+        transferMatcher.setPayloadMatcher(expectedPayloadMatcher);
+        transferMatcher.withSettled(settledMatcher);
+        transferMatcher.withState(nullValue());
+
+        CompositeAmqpPeerRunnable composite = new CompositeAmqpPeerRunnable();
+        final DispositionFrame dispositionResponse = new DispositionFrame().setRole(Role.RECEIVER).setSettled(true).setState(new Accepted());
+
+        // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+        final FrameSender dispositionFrameSender = new FrameSender(this, FrameType.AMQP, -1, dispositionResponse, null);
+        dispositionFrameSender.setValueProvider(new ValueProvider()
+        {
+            @Override
+            public void setValues()
+            {
+                dispositionFrameSender.setChannel(transferMatcher.getActualChannel());
+                dispositionResponse.setFirst(transferMatcher.getReceivedDeliveryId());
+            }
+        });
+
+        final FlowFrame flowFrame = new FlowFrame().setNextIncomingId(UnsignedInteger.ONE) //TODO: shouldnt be hard coded
+            .setIncomingWindow(UnsignedInteger.valueOf(2048))
+            .setNextOutgoingId(UnsignedInteger.ONE) //TODO: shouldnt be hard coded
+            .setOutgoingWindow(UnsignedInteger.valueOf(2048))
+            .setLinkCredit(UnsignedInteger.valueOf(drainAmount));
+
+        // The flow frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+        final FrameSender flowFrameSender = new FrameSender(this, FrameType.AMQP, -1, flowFrame, null);
+        flowFrameSender.setValueProvider(new ValueProvider()
+        {
+            @Override
+            public void setValues()
+            {
+                flowFrameSender.setChannel(transferMatcher.getActualChannel());
+                flowFrame.setHandle(transferMatcher.getReceivedHandle());
+                flowFrame.setDeliveryCount(UnsignedInteger.ONE);
+                flowFrame.setDrain(true);
+            }
+        });
+
+        flowFrameSender.setSendDelay(0);
+
+        composite.add(flowFrameSender);
+        composite.add(dispositionFrameSender);
+
+        transferMatcher.onCompletion(composite);
+
+        addHandler(transferMatcher);
+    }
+
     public void expectDeclare(Binary txnId)
     {
         TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();

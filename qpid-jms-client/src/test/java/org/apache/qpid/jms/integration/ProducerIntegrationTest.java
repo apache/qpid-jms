@@ -68,6 +68,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1243,6 +1244,51 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             testPeer.expectClose();
 
             producer.close();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testCreditDrainedAfterSend() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setSendTimeout(500);
+
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue destination = session.createQueue(getTestName());
+            MessageProducer producer = session.createProducer(destination);
+
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+
+            // After the first send lets drain off the credit from the sender asking for one
+            // more message if it has one.
+            testPeer.expectTransferRespondWithDrain(messageMatcher, 1);
+            testPeer.expectLinkFlow(true, false, Matchers.equalTo(UnsignedInteger.ZERO));
+            testPeer.expectDetach(true, true, true);
+            testPeer.expectClose();
+
+            producer.send(session.createMessage());
+
+            // We don't have any credit now since we were drained, so the send should
+            // block until more credit is issued.
+            try {
+                producer.send(session.createMessage());
+                fail("Should have timed out waiting for credit to send.");
+            } catch (JmsSendTimedOutException jmsEx) {
+                LOG.info("Caught expected send timeout.");
+            }
+
+            producer.close();
+
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);

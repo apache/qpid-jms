@@ -201,6 +201,11 @@ public class AmqpFixedProducer extends AmqpProducer {
             }
         }
 
+        // If a drain was requested, we just sent what we had so respond with drained
+        if (getEndpoint().getDrain()) {
+            getEndpoint().drained();
+        }
+
         // Once the pending sends queue is drained we can propagate the close request.
         if (blocked.isEmpty() && isAwaitingClose() && !isClosed()) {
             super.close(closeRequest);

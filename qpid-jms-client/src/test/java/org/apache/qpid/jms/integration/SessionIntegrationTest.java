@@ -385,6 +385,29 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testCreateTemporaryQueueTimesOut() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setRequestTimeout(500);
+            connection.start();
+
+            testPeer.expectBegin();
+            testPeer.expectTempQueueCreationAttach(null, false);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            try {
+                session.createTemporaryQueue();
+                fail("Should have timed out on create.");
+            } catch (JmsOperationTimedOutException jmsEx) {
+                LOG.info("Caught expected exception: {}", jmsEx.getMessage());
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
     public void testCreateAndDeleteTemporaryQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -400,6 +423,35 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             // Deleting the TemporaryQueue will be achieved by closing its creating link.
             testPeer.expectDetach(true, true, true);
             tempQueue.delete();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testDeleteTemporaryQueueTimesOut() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setRequestTimeout(500);
+
+            connection.start();
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String dynamicAddress = "myTempQueueAddress";
+            testPeer.expectTempQueueCreationAttach(dynamicAddress);
+            TemporaryQueue tempQueue = session.createTemporaryQueue();
+
+            // Deleting the TemporaryQueue will be achieved by closing its creating link.
+            testPeer.expectDetach(true, false, true);
+
+            try {
+                tempQueue.delete();
+                fail("Should have timed out waiting to delete.");
+            } catch (JmsOperationTimedOutException jmsEx) {
+                LOG.info("Caught expected exception: {}", jmsEx.getMessage());
+            }
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
@@ -427,6 +479,29 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testCreateTemporaryTopicTimesOut() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setRequestTimeout(500);
+            connection.start();
+
+            testPeer.expectBegin();
+            testPeer.expectTempTopicCreationAttach(null, false);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            try {
+                session.createTemporaryTopic();
+                fail("Should have timed out on create.");
+            } catch (JmsOperationTimedOutException jmsEx) {
+                LOG.info("Caught expected exception: {}", jmsEx.getMessage());
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
     public void testCreateAndDeleteTemporaryTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -442,6 +517,35 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             // Deleting the TemporaryTopic will be achieved by closing its creating link.
             testPeer.expectDetach(true, true, true);
             tempTopic.delete();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testDeleteTemporaryTopicTimesOut() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setRequestTimeout(500);
+
+            connection.start();
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String dynamicAddress = "myTempTopicAddress";
+            testPeer.expectTempTopicCreationAttach(dynamicAddress);
+            TemporaryTopic tempTopic = session.createTemporaryTopic();
+
+            // Deleting the TemporaryTopic will be achieved by closing its creating link.
+            testPeer.expectDetach(true, false, true);
+
+            try {
+                tempTopic.delete();
+                fail("Should have timed out waiting to delete.");
+            } catch (JmsOperationTimedOutException jmsEx) {
+                LOG.info("Caught expected exception: {}", jmsEx.getMessage());
+            }
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

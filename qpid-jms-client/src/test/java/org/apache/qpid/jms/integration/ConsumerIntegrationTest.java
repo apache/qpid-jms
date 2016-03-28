@@ -190,6 +190,9 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
             assertNotNull("A message should have been recieved", receivedMessage);
 
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(2000);
         }
     }
@@ -226,6 +229,11 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             });
 
             testPeer.waitForAllHandlersToComplete(2000);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(2000);
         }
     }
 
@@ -259,6 +267,11 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
                     throw new RuntimeException();
                 }
             });
+
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(2000);
         }
@@ -440,6 +453,9 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             testPeer.expectDetach(true, true, true);
             consumer.close();
 
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(2000);
         }
     }
@@ -473,6 +489,9 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             // since the connection is not started.
             assertTrue(incoming.await(10, TimeUnit.SECONDS));
             assertNull(consumer.receive(100));
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(2000);
         }
@@ -519,6 +538,9 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             } catch (JMSException ex) {
             }
 
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(2000);
         }
     }
@@ -550,6 +572,9 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
                 fail("Should not allow listener to be set when prefetch is zero.");
             } catch (JMSException ex) {
             }
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(2000);
         }
@@ -600,6 +625,11 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
                     }
                 }
             });
+
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(2000);
         }
@@ -670,6 +700,9 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
             consumer.close();
 
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(3000);
         }
     }
@@ -722,6 +755,9 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             testPeer.expectDetach(true, true, true);
 
             consumer.close();
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
         }

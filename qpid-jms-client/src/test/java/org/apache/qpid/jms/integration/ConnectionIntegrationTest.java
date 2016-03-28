@@ -98,6 +98,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             assertNotNull("Session should not be null", session);
+            testPeer.expectClose();
+            connection.close();
         }
     }
 
@@ -117,9 +119,13 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             // reply with a declared disposition state containing the txnId.
             Binary txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
             testPeer.expectDeclare(txnId);
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             assertNotNull("Session should not be null", session);
+
+            connection.close();
         }
     }
 
@@ -143,6 +149,9 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             } catch (JMSException ex) {
                 // Expected
             }
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }
@@ -199,6 +208,9 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             ConnectionMetaData meta = connection.getMetaData();
             int result = meta.getProviderMajorVersion() + meta.getProviderMinorVersion();
             assertTrue("Expected non-zero provider major / minor version", result != 0);
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

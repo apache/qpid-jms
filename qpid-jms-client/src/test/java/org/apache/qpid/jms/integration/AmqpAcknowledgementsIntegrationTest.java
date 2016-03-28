@@ -119,6 +119,9 @@ public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
 
             lastReceivedMessage.acknowledge();
 
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(3000);
         }
     }
@@ -199,6 +202,9 @@ public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
             }
 
             lastReceivedMessage.get().acknowledge();
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
         }

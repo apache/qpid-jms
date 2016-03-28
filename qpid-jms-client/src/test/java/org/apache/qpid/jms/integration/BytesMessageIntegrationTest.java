@@ -87,6 +87,11 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
             message.writeBytes(content);
 
             producer.send(message);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
         }
     }
 
@@ -148,6 +153,11 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
             int readBytes = bytesMessage.readBytes(recievedContent);
             assertEquals(recievedContent.length, readBytes);
             assertTrue(Arrays.equals(expectedContent, recievedContent));
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
         }
     }
 
@@ -257,6 +267,9 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
 
             producer.send(receivedBytesMessage);
 
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(3000);
         }
     }
@@ -363,6 +376,9 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
             testPeer.expectTransfer(messageMatcher);
 
             producer.send(receivedBytesMessage);
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
         }

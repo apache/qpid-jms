@@ -133,11 +133,10 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
         startNewBroker();
 
         URI brokerURI = new URI(getAmqpFailoverURI() + "failover.randomize=false");
-        Connection connection = createAmqpConnection(brokerURI);
+        final JmsConnection connection = (JmsConnection) createAmqpConnection(brokerURI);
         connection.start();
 
-        final JmsConnection jmsConnection = (JmsConnection) connection;
-        URI connectedURI = jmsConnection.getConnectedURI();
+        URI connectedURI = connection.getConnectedURI();
         assertNotNull(connectedURI);
 
         final List<URI> brokers = getBrokerURIs();
@@ -149,7 +148,7 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
 
             @Override
             public boolean isSatisified() throws Exception {
-                URI current = jmsConnection.getConnectedURI();
+                URI current = connection.getConnectedURI();
                 if (current != null && current.equals(brokers.get(1))) {
                     return true;
                 }

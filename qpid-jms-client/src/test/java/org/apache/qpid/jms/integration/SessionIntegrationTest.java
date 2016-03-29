@@ -393,6 +393,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectBegin();
             testPeer.expectTempQueueCreationAttach(null, false);
+            testPeer.expectDetach(true, false, true);
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -487,6 +488,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectBegin();
             testPeer.expectTempTopicCreationAttach(null, false);
+            testPeer.expectDetach(true, false, true);
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 

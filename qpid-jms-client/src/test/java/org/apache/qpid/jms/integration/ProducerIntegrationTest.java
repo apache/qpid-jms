@@ -1005,7 +1005,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             // Expect the producer to attach and grant it some credit, it should send
             // a transfer which we will not send any response for which should cause the
             // send operation to time out.
-            testPeer.expectSenderAttach(100);
+            testPeer.expectSenderAttach();
             testPeer.expectTransferButDoNotRespond(messageMatcher);
             testPeer.expectClose();
 

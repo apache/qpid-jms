@@ -1269,8 +1269,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             messageMatcher.setHeadersMatcher(headersMatcher);
             messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
 
-            // After the first send lets drain off the credit from the sender asking for one
-            // more message if it has one.
+            // After the first send lets drain off the remaining credit from the sender
             testPeer.expectTransferRespondWithDrain(messageMatcher, 1);
             testPeer.expectLinkFlow(true, false, Matchers.equalTo(UnsignedInteger.ZERO));
             testPeer.expectDetach(true, true, true);

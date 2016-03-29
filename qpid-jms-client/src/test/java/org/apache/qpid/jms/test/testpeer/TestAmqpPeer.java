@@ -114,6 +114,7 @@ public class TestAmqpPeer implements AutoCloseable
     private static final UnsignedByte SASL_OK = UnsignedByte.valueOf((byte)0);
     private static final UnsignedByte SASL_FAIL_AUTH = UnsignedByte.valueOf((byte)1);
     private static final int CONNECTION_CHANNEL = 0;
+    private static final int DEFAULT_PRODUCER_CREDIT = 100;
 
     private volatile AssertionError _firstAssertionError = null;
     private final TestAmqpPeerRunner _driverRunnable;
@@ -873,7 +874,7 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectSenderAttach(long creditFlowDelay)
     {
-        expectSenderAttach(notNullValue(), notNullValue(), false, false, false, creditFlowDelay, 100, null, null);
+        expectSenderAttach(notNullValue(), notNullValue(), false, false, false, creditFlowDelay, DEFAULT_PRODUCER_CREDIT, null, null);
     }
 
     public void expectSenderAttach(final Matcher<?> targetMatcher, final boolean refuseLink, boolean deferAttachResponseWrite)
@@ -888,7 +889,7 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectSenderAttach(final Matcher<?> sourceMatcher, final Matcher<?> targetMatcher, final boolean refuseLink, boolean omitDetach, boolean deferAttachResponseWrite, long creditFlowDelay, Symbol errorType, String errorMessage)
     {
-        expectSenderAttach(sourceMatcher, targetMatcher, refuseLink, omitDetach, deferAttachResponseWrite, creditFlowDelay, 100, errorType, errorMessage);
+        expectSenderAttach(sourceMatcher, targetMatcher, refuseLink, omitDetach, deferAttachResponseWrite, creditFlowDelay, DEFAULT_PRODUCER_CREDIT, errorType, errorMessage);
     }
 
     public void expectSenderAttach(final Matcher<?> sourceMatcher, final Matcher<?> targetMatcher, final boolean refuseLink, boolean omitDetach, boolean deferAttachResponseWrite, long creditFlowDelay, int creditAmount, Symbol errorType, String errorMessage)
@@ -1567,7 +1568,12 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(transferMatcher);
     }
 
-    public void expectTransferRespondWithDrain(Matcher<Binary> expectedPayloadMatcher, int drainAmount)
+    public void expectTransferRespondWithDrain(Matcher<Binary> expectedPayloadMatcher, int sentMessages)
+    {
+        expectTransferRespondWithDrain(expectedPayloadMatcher, DEFAULT_PRODUCER_CREDIT, sentMessages);
+    }
+
+    public void expectTransferRespondWithDrain(Matcher<Binary> expectedPayloadMatcher, int originalCredit, int sentMessages)
     {
         Matcher<Boolean> settledMatcher = Matchers.anyOf(equalTo(false), nullValue());
 
@@ -1591,11 +1597,13 @@ public class TestAmqpPeer implements AutoCloseable
             }
         });
 
-        final FlowFrame flowFrame = new FlowFrame().setNextIncomingId(UnsignedInteger.ONE) //TODO: shouldnt be hard coded
+        final FlowFrame flowFrame = new FlowFrame().setNextIncomingId(UnsignedInteger.ONE.add(UnsignedInteger.valueOf(sentMessages))) //TODO: start point shouldnt be hard coded
             .setIncomingWindow(UnsignedInteger.valueOf(2048))
             .setNextOutgoingId(UnsignedInteger.ONE) //TODO: shouldnt be hard coded
             .setOutgoingWindow(UnsignedInteger.valueOf(2048))
-            .setLinkCredit(UnsignedInteger.valueOf(drainAmount));
+            .setDeliveryCount(UnsignedInteger.valueOf(sentMessages))
+            .setLinkCredit(UnsignedInteger.valueOf(originalCredit - sentMessages))
+            .setDrain(true);
 
         // The flow frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
         final FrameSender flowFrameSender = new FrameSender(this, FrameType.AMQP, -1, flowFrame, null);
@@ -1606,12 +1614,8 @@ public class TestAmqpPeer implements AutoCloseable
             {
                 flowFrameSender.setChannel(transferMatcher.getActualChannel());
                 flowFrame.setHandle(transferMatcher.getReceivedHandle());
-                flowFrame.setDeliveryCount(UnsignedInteger.ONE);
-                flowFrame.setDrain(true);
             }
         });
-
-        flowFrameSender.setSendDelay(0);
 
         composite.add(flowFrameSender);
         composite.add(dispositionFrameSender);

@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.meta;
 
 import java.net.URI;
+import java.nio.charset.Charset;
 
 import org.apache.qpid.jms.JmsPrefetchPolicy;
 import org.apache.qpid.jms.JmsRedeliveryPolicy;
@@ -48,6 +49,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private boolean receiveNoWaitLocalOnly;
     private boolean localMessagePriority;
     private boolean localMessageExpiry;
+    private boolean populateJMSXUserID;
     private long sendTimeout = DEFAULT_SEND_TIMEOUT;
     private long requestTimeout = DEFAULT_REQUEST_TIMEOUT;
     private long connectTimeout = DEFAULT_CONNECT_TIMEOUT;
@@ -57,6 +59,8 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
     private JmsRedeliveryPolicy redeliveryPolicy = new JmsRedeliveryPolicy();
+
+    private volatile byte[] encodedUserId;
 
     public JmsConnectionInfo(JmsConnectionId connectionId) {
         if (connectionId == null) {
@@ -258,6 +262,22 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     public void setRedeliveryPolicy(JmsRedeliveryPolicy redeliveryPolicy) {
         this.redeliveryPolicy = redeliveryPolicy.copy();
+    }
+
+    public boolean isPopulateJMSXUserID() {
+        return populateJMSXUserID;
+    }
+
+    public void setPopulateJMSXUserID(boolean populateMessageUserID) {
+        this.populateJMSXUserID = populateMessageUserID;
+    }
+
+    public byte[] getEncodedUsername() {
+        if (encodedUserId == null && username != null) {
+            encodedUserId = username.getBytes(Charset.forName("UTF-8"));
+        }
+
+        return encodedUserId;
     }
 
     @Override

@@ -313,6 +313,20 @@ public class JmsTestMessageFacade implements JmsMessageFacade {
     }
 
     @Override
+    public byte[] getUserIdBytes() throws JMSException {
+        return userId != null ? userId.getBytes(Charset.forName("UTF-8")) : null;
+    }
+
+    @Override
+    public void setUserIdBytes(byte[] userId) {
+        if (userId != null) {
+            this.userId = new String(userId, Charset.forName("UTF-8"));
+        } else {
+            this.userId = null;
+        }
+    }
+
+    @Override
     public String getGroupId() {
         return this.groupId;
     }

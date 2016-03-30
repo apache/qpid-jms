@@ -653,11 +653,26 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             if (isJmsMessage) {
                 JmsMessage jmsMessage = (JmsMessage) original;
                 jmsMessage.getFacade().setProviderMessageIdObject(messageId);
+
+                if (connection.isPopulateJMSXUserID()) {
+                    jmsMessage.getFacade().setUserIdBytes(connection.getEncodedUsername());
+                } else {
+                    // Prevent user spoofing the user ID value.
+                    jmsMessage.getFacade().setUserId(null);
+                }
+
                 copy = jmsMessage.copy();
             } else {
                 copy = JmsMessageTransformation.transformMessage(connection, original);
                 copy.getFacade().setProviderMessageIdObject(messageId);
                 copy.setJMSDestination(destination);
+
+                if (connection.isPopulateJMSXUserID()) {
+                    copy.getFacade().setUserIdBytes(connection.getEncodedUsername());
+                } else {
+                    // Prevent user spoofing the user ID value.
+                    copy.getFacade().setUserId(null);
+                }
 
                 // If the original was a foreign message, we still need to update it
                 // with the properly encoded Message ID String, get it from the copy.

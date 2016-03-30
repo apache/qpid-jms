@@ -342,7 +342,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public void setProviderMessageIdObject(Object messageId) {
-            message.setMessageId(messageId);
+        message.setMessageId(messageId);
     }
 
     @Override
@@ -684,7 +684,29 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             bytes = userId.getBytes(UTF8);
         }
 
-        message.setUserId(bytes);
+        if (bytes == null) {
+            if (message.getProperties() != null) {
+                message.getProperties().setUserId(null);
+            }
+        } else {
+            message.setUserId(bytes);
+        }
+    }
+
+    @Override
+    public byte[] getUserIdBytes() {
+        return message.getUserId();
+    }
+
+    @Override
+    public void setUserIdBytes(byte[] userId) {
+        if (userId == null || userId.length == 0) {
+            if (message.getProperties() != null) {
+                message.getProperties().setUserId(null);
+            }
+        } else {
+            message.setUserId(userId);
+        }
     }
 
     @Override

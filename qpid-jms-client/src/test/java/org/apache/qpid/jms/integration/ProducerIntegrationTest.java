@@ -31,7 +31,12 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -51,6 +56,7 @@ import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.JmsSendTimedOutException;
+import org.apache.qpid.jms.message.foreign.ForeignJmsMessage;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
@@ -65,6 +71,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionM
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.hamcrest.Matcher;
@@ -1288,6 +1295,297 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             producer.close();
 
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testUserIdSetWhenConfiguredForInclusion() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            // Expect a PLAIN connection
+            String user = "user";
+            String pass = "qwerty123456";
+
+            testPeer.expectSaslPlainConnect(user, pass, null, null);
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            JmsConnectionFactory factory = new JmsConnectionFactory(
+                "amqp://localhost:" + testPeer.getServerPort());
+            factory.setPopulateJMSXUserID(true);
+
+            Connection connection = factory.createConnection(user, pass);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("TestQueue");
+            MessageProducer producer = session.createProducer(queue);
+
+            Binary binaryUserId = new Binary(user.getBytes(Charset.forName("UTF-8")));
+            MessagePropertiesSectionMatcher propertiesMatcher = new MessagePropertiesSectionMatcher(true);
+            propertiesMatcher.withUserId(equalTo(binaryUserId));
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setPropertiesMatcher(propertiesMatcher);
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+
+            testPeer.expectTransfer(messageMatcher);
+
+            producer.send(session.createMessage());
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testUserIdNotSetWhenNotConfiguredForInclusion() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            // Expect a PLAIN connection
+            String user = "user";
+            String pass = "qwerty123456";
+
+            testPeer.expectSaslPlainConnect(user, pass, null, null);
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            JmsConnectionFactory factory = new JmsConnectionFactory(
+                "amqp://localhost:" + testPeer.getServerPort());
+            factory.setPopulateJMSXUserID(false);
+
+            Connection connection = factory.createConnection(user, pass);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("TestQueue");
+            MessageProducer producer = session.createProducer(queue);
+
+            MessagePropertiesSectionMatcher propertiesMatcher = new MessagePropertiesSectionMatcher(true);
+            propertiesMatcher.withUserId(nullValue());
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setPropertiesMatcher(propertiesMatcher);
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+
+            testPeer.expectTransfer(messageMatcher);
+
+            producer.send(session.createMessage());
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testUserIdNotSpoofedWhenConfiguredForInclusion() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            // Expect a PLAIN connection
+            String user = "user";
+            String pass = "qwerty123456";
+
+            testPeer.expectSaslPlainConnect(user, pass, null, null);
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            JmsConnectionFactory factory = new JmsConnectionFactory(
+                "amqp://localhost:" + testPeer.getServerPort());
+            factory.setPopulateJMSXUserID(true);
+
+            Connection connection = factory.createConnection(user, pass);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("TestQueue");
+            MessageProducer producer = session.createProducer(queue);
+
+            Binary binaryUserId = new Binary(user.getBytes(Charset.forName("UTF-8")));
+            MessagePropertiesSectionMatcher propertiesMatcher = new MessagePropertiesSectionMatcher(true);
+            propertiesMatcher.withUserId(equalTo(binaryUserId));
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setPropertiesMatcher(propertiesMatcher);
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createMessage();
+            message.setStringProperty("JMSXUserID", "spoofed");
+
+            producer.send(message);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testUserIdNotSpoofedWhenNotConfiguredForInclusion() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            // Expect a PLAIN connection
+            String user = "user";
+            String pass = "qwerty123456";
+
+            testPeer.expectSaslPlainConnect(user, pass, null, null);
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            JmsConnectionFactory factory = new JmsConnectionFactory(
+                "amqp://localhost:" + testPeer.getServerPort());
+            factory.setPopulateJMSXUserID(false);
+
+            Connection connection = factory.createConnection(user, pass);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("TestQueue");
+            MessageProducer producer = session.createProducer(queue);
+
+            MessagePropertiesSectionMatcher propertiesMatcher = new MessagePropertiesSectionMatcher(true);
+            propertiesMatcher.withUserId(nullValue());
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setPropertiesMatcher(propertiesMatcher);
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createMessage();
+            message.setStringProperty("JMSXUserID", "spoofed");
+
+            producer.send(message);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    private class CustomForeignMessage extends ForeignJmsMessage {
+
+        @Override
+        public Enumeration<?> getPropertyNames() throws JMSException {
+            Enumeration<?> properties = super.getPropertyNames();
+
+            Set<Object> names = new HashSet<Object>();
+            while (properties.hasMoreElements()) {
+                names.add(properties.nextElement());
+            }
+
+            names.add("JMSXUserID");
+
+            return Collections.enumeration(names);
+        }
+
+        @Override
+        public Object getObjectProperty(String name) throws JMSException {
+            if (name.equals("JMSXUserID")) {
+                return "spoofed";
+            }
+
+            return message.getObjectProperty(name);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testUserIdNotSpoofedWhenConfiguredForInclusionWithForgeinMessage() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            // Expect a PLAIN connection
+            String user = "user";
+            String pass = "qwerty123456";
+
+            testPeer.expectSaslPlainConnect(user, pass, null, null);
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            JmsConnectionFactory factory = new JmsConnectionFactory(
+                "amqp://localhost:" + testPeer.getServerPort());
+            factory.setPopulateJMSXUserID(true);
+
+            Connection connection = factory.createConnection(user, pass);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("TestQueue");
+            MessageProducer producer = session.createProducer(queue);
+
+            Binary binaryUserId = new Binary(user.getBytes(Charset.forName("UTF-8")));
+            MessagePropertiesSectionMatcher propertiesMatcher = new MessagePropertiesSectionMatcher(true);
+            propertiesMatcher.withUserId(equalTo(binaryUserId));
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setPropertiesMatcher(propertiesMatcher);
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = new CustomForeignMessage();
+            message.setStringProperty("JMSXUserID", "spoofed");
+
+            producer.send(message);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testUserIdNotSpoofedWhenNotConfiguredForInclusionWithForeignMessage() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            // Expect a PLAIN connection
+            String user = "user";
+            String pass = "qwerty123456";
+
+            testPeer.expectSaslPlainConnect(user, pass, null, null);
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            JmsConnectionFactory factory = new JmsConnectionFactory(
+                "amqp://localhost:" + testPeer.getServerPort());
+            factory.setPopulateJMSXUserID(false);
+
+            Connection connection = factory.createConnection(user, pass);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("TestQueue");
+            MessageProducer producer = session.createProducer(queue);
+
+            MessagePropertiesSectionMatcher propertiesMatcher = new MessagePropertiesSectionMatcher(true);
+            propertiesMatcher.withUserId(nullValue());
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setPropertiesMatcher(propertiesMatcher);
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = new CustomForeignMessage();
+            producer.send(message);
+
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);

@@ -567,7 +567,7 @@ public class JmsMessagePropertyIntercepter {
 
             @Override
             public void setProperty(JmsMessage message, Object value) throws JMSException {
-                if (!(value instanceof String)) {
+                if (value != null && !(value instanceof String)) {
                     throw new JMSException("Property JMSXUserID cannot be set from a " + value.getClass().getName() + ".");
                 }
                 message.getFacade().setUserId((String) value);

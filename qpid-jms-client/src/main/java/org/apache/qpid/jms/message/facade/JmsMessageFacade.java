@@ -360,6 +360,27 @@ public interface JmsMessageFacade {
     void setUserId(String userId);
 
     /**
+     * Gets the set user ID of the message in raw bytes form.  If no ID was
+     * set then this method may return null or an empty byte array.
+     *
+     * @return a byte array containing the user ID value in raw form.
+     *
+     * @throws JMSException if an error occurs while accessing the property.
+     */
+    byte[] getUserIdBytes() throws JMSException;
+
+    /**
+     * Sets the user ID of the message in raw byte form.  Setting the value
+     * as null or an empty byte array will clear any previously set value.  If the
+     * underlying protocol cannot convert or map the given byte value to it's own
+     * internal representation it should throw a JMSException indicating the error.
+     *
+     * @param userId
+     *        the byte array to use to set the message user ID.
+     */
+    void setUserIdBytes(byte[] userId);
+
+    /**
      * Gets the Group ID that this message is assigned to.
      *
      * @return the Group ID this message was sent in.

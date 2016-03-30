@@ -447,4 +447,17 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
             LOG.debug("Caught Ex -> ", jmse);
         }
     }
+
+    @Test(timeout = 5000)
+    public void testURIOptionPopulateJMSXUserID() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(
+            "amqp://127.0.0.1:5672?jms.populateJMSXUserID=true");
+
+        assertTrue(factory.isPopulateJMSXUserID());
+
+        factory = new JmsConnectionFactory(
+            "amqp://127.0.0.1:5672?jms.populateJMSXUserID=false");
+
+        assertFalse(factory.isPopulateJMSXUserID());
+    }
 }

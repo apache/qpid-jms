@@ -953,6 +953,10 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         connectionInfo.setUsername(username);;
     }
 
+    byte[] getEncodedUsername() {
+        return connectionInfo.getEncodedUsername();
+    }
+
     public String getPassword() {
         return connectionInfo.getPassword();
     }
@@ -1014,6 +1018,14 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
     void setMessageIDBuilder(JmsMessageIDBuilder messageIDBuilder) {
         this.messageIDBuilder = messageIDBuilder;
+    }
+
+    public boolean isPopulateJMSXUserID() {
+        return connectionInfo.isPopulateJMSXUserID();
+    }
+
+    public void setPopulateJMSXUserID(boolean populateJMSXUserID) {
+        connectionInfo.setPopulateJMSXUserID(populateJMSXUserID);
     }
 
     //----- Async event handlers ---------------------------------------------//

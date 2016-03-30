@@ -70,6 +70,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private boolean localMessageExpiry = true;
     private boolean receiveLocalOnly;
     private boolean receiveNoWaitLocalOnly;
+    private boolean populateJMSXUserID;
     private String queuePrefix = null;
     private String topicPrefix = null;
     private boolean validatePropertyNames = true;
@@ -768,6 +769,24 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     public void setReceiveNoWaitLocalOnly(boolean receiveNoWaitLocalOnly) {
         this.receiveNoWaitLocalOnly = receiveNoWaitLocalOnly;
+    }
+
+    public boolean isPopulateJMSXUserID() {
+        return populateJMSXUserID;
+    }
+
+    /**
+     * Controls whether message sent from the Connection will have the JMSXUserID message
+     * property populated with the authenticated user ID of the Connection.  When false all
+     * messages sent from the Connection will not carry any value in the JMSXUserID property
+     * regardless of it being manually set on the Message to prevent a client spoofing the
+     * JMSXUserID value.
+     *
+     * @param populateJMSXUserID
+     *      true if message sent from this connection should have the JMSXUserID value populated.
+     */
+    public void setPopulateJMSXUserID(boolean populateJMSXUserID) {
+        this.populateJMSXUserID = populateJMSXUserID;
     }
 
     //----- Static Methods ---------------------------------------------------//

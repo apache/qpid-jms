@@ -85,6 +85,7 @@
 
   <modules>
     <module>qpid-jms-client</module>
+    <module>qpid-jms-client-osgi</module>
     <module>qpid-jms-discovery</module>
     <module>qpid-jms-interop-tests</module>
     <module>qpid-jms-examples</module>

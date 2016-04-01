@@ -65,7 +65,12 @@ These objects could then be looked up from a Context as follows:
 
 The basic format of the clients Connection URI is as follows:
 
-      amqp://hostname:port[?option=value[&option2=value...]]
+      amqp[s]://hostname:port[?option=value[&option2=value...]]
+
+Where the *amqps* scheme is specified to use SSL/TLS, the hostname segment from the URI can be used by the JVM for the
+TLS SNI (Server Name Indication) extension in order to communicate the desired server hostname during a TLS handshake.
+The SNI extension will be automatically included if a Fully Qualified name (e.g myhost.mydomain) is specified, but not
+when an unqualified name (e.g myhost) or bare IP address are used.
 
 The client can be configured with a number of different settings using the URI while defining the ConnectionFactory, these are detailed in the following sections.
 

@@ -134,9 +134,10 @@ The complete set of TCP Transport options is listed below:
 
 The SSL Transport extends the TCP Transport and is enabled using the *amqps* URI scheme.  Because the SSL Transport extends the functionality of the TCP based Transport all the TCP Transport options are valid on an SSL Transport URI.
 
-A simple SSL based client URI is shown below:
+A simple SSL/TLS based client URI is shown below:
 
-    amqps://localhost:5673
+    amqps://myhost.mydomain:5671
+
 
 The complete set of SSL Transport options is listed below:
 

@@ -116,13 +116,11 @@ public class AmqpSaslAuthenticator {
                         sasl.send(response, 0, response.length);
                     }
                 } else {
-                    // TODO - Better error message.
                     throw new JMSSecurityException("Could not find a suitable SASL mechanism for the remote peer using the available credentials.");
                 }
             }
         } catch (SaslException se) {
-            // TODO - Better error message.
-            JMSSecurityException jmsse = new JMSSecurityException("Exception while processing SASL init.");
+            JMSSecurityException jmsse = new JMSSecurityException("Exception while processing SASL init: " + se.getMessage());
             jmsse.setLinkedException(se);
             jmsse.initCause(se);
             throw jmsse;
@@ -138,8 +136,7 @@ public class AmqpSaslAuthenticator {
                 sasl.send(response, 0, response.length);
             }
         } catch (SaslException se) {
-            // TODO - Better error message.
-            JMSSecurityException jmsse = new JMSSecurityException("Exception while processing SASL step.");
+            JMSSecurityException jmsse = new JMSSecurityException("Exception while processing SASL step: " + se.getMessage());
             jmsse.setLinkedException(se);
             jmsse.initCause(se);
             throw jmsse;
@@ -147,7 +144,10 @@ public class AmqpSaslAuthenticator {
     }
 
     private void handleSaslFail() throws JMSSecurityException {
-        // TODO - Better error message.
-        throw new JMSSecurityException("Client failed to authenticate");
+        if (mechanism != null) {
+            throw new JMSSecurityException("Client failed to authenticate using SASL: " + mechanism.getName());
+        } else {
+            throw new JMSSecurityException("Client failed to authenticate");
+        }
     }
 }

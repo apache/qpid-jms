@@ -80,7 +80,6 @@ public class AmqpJmsMessageBuilder {
             return result;
         }
 
-        // TODO
         throw new IOException("Could not create a JMS message from incoming message");
     }
 

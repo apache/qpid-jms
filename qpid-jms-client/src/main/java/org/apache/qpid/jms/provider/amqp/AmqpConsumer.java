@@ -329,7 +329,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      * @param timeout
      *        the amount of time to tell the remote peer to keep this pull request valid.
      * @param request
-     *        TODO.
+     *        the asynchronous request object waiting to be notified of the pull having completed.
      */
     public void pull(final long timeout, final AsyncResult request) {
         LOG.trace("Pull on consumer {} with timeout = {}", getConsumerId(), timeout);

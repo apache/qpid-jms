@@ -78,8 +78,6 @@ public class AmqpConnectionProperties {
         if (list.contains(ANONYMOUS_RELAY)) {
             anonymousRelaySupported = true;
         }
-
-        // TODO - Inspect capabilities for any other configuration options
     }
 
     protected void processProperties(Map<Symbol, Object> properties) {
@@ -103,8 +101,6 @@ public class AmqpConnectionProperties {
             LOG.trace("Remote sent Connection Establishment Failed marker.");
             connectionOpenFailed = true;
         }
-
-        // TODO - Inspect properties for any other configuration options
     }
 
     /**

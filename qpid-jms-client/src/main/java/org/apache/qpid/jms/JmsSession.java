@@ -914,8 +914,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
     @Override
     public void onInboundMessage(JmsInboundMessageDispatch envelope) {
-        // TODO: is onInboundMessage ever called on the Session?
-        // Seems like we might only call it on consumers from within the connection.
         if (started.get()) {
             deliver(envelope);
         } else {

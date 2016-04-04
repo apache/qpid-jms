@@ -280,7 +280,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      */
     private void sendFlowIfNeeded() {
         if (getResourceInfo().getPrefetchSize() == 0 || isStopping()) {
-            // TODO: isStopping isnt effective when this method is called following
+            // TODO: isStopping isn't effective when this method is called following
             // processing the last of any messages received while stopping, since that
             // happens just after we stopped. That may be ok in some situations however, and
             // if will only happen if prefetchSize != 0.

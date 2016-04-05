@@ -696,7 +696,9 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                         LOG.info("Connection attempt:[{}] to: {} failed", reconnectAttempts, target);
                         failure = e;
                         try {
-                            provider.close();
+                            if (provider != null) {
+                                provider.close();
+                            }
                         } catch (Throwable ex) {}
                     }
                 } else {

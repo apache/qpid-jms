@@ -547,7 +547,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     //----- Inner classes used in message pull operations --------------------//
 
-    protected class ScheduledStopRequest implements AsyncResult {
+    protected static final class ScheduledStopRequest implements AsyncResult {
 
         private final ScheduledFuture<?> sheduledStopTask;
         private final AsyncResult origRequest;

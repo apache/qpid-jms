@@ -75,7 +75,7 @@ public class AmqpConnectionSession extends AmqpSession {
         builder.buildResource(subscribeRequest);
     }
 
-    private class DurableSubscriptionReattach extends AmqpAbstractResource<JmsSessionInfo, Receiver> {
+    private static final class DurableSubscriptionReattach extends AmqpAbstractResource<JmsSessionInfo, Receiver> {
 
         public DurableSubscriptionReattach(JmsSessionInfo resource, Receiver receiver, AmqpResourceParent parent) {
             super(resource, receiver, parent);
@@ -119,7 +119,7 @@ public class AmqpConnectionSession extends AmqpSession {
         }
     }
 
-    private class DurableSubscriptionReattachRequest extends WrappedAsyncResult {
+    private final class DurableSubscriptionReattachRequest extends WrappedAsyncResult {
 
         private final DurableSubscriptionReattachBuilder subscriberBuilder;
 

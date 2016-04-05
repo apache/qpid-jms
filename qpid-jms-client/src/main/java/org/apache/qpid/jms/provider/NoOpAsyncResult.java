@@ -21,7 +21,7 @@ package org.apache.qpid.jms.provider;
  */
 public class NoOpAsyncResult implements AsyncResult {
 
-    public static NoOpAsyncResult INSTANCE = new NoOpAsyncResult();
+    public final static NoOpAsyncResult INSTANCE = new NoOpAsyncResult();
 
     @Override
     public void onFailure(Throwable result) {

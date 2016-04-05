@@ -19,7 +19,7 @@ package org.apache.qpid.jms.transports;
 /**
  * Encapsulates all the TCP Transport options in one configuration object.
  */
-public class TransportOptions {
+public class TransportOptions implements Cloneable {
 
     public static final int DEFAULT_SEND_BUFFER_SIZE = 64 * 1024;
     public static final int DEFAULT_RECEIVE_BUFFER_SIZE = DEFAULT_SEND_BUFFER_SIZE;

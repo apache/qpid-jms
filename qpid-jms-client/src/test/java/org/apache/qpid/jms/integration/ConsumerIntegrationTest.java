@@ -507,6 +507,43 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Test(timeout=20000)
+    public void testNoReceivedNoWaitMessagesWhenConnectionNotStarted() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final CountDownLatch incoming = new CountDownLatch(1);
+            Connection connection = testFixture.establishConnecton(testPeer);
+
+            // Allow wait for incoming message before we call receive.
+            ((JmsConnection) connection).addConnectionListener(new JmsDefaultConnectionListener() {
+
+                @Override
+                public void onInboundMessage(JmsInboundMessageDispatch envelope) {
+                    incoming.countDown();
+                }
+            });
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue destination = session.createQueue(getTestName());
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), 3);
+
+            MessageConsumer consumer = session.createConsumer(destination);
+
+            // Wait for a message to arrive then try and receive it, which should not happen
+            // since the connection is not started.
+            assertTrue(incoming.await(10, TimeUnit.SECONDS));
+            assertNull(consumer.receiveNoWait());
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
     @Test(timeout=60000)
     public void testSyncReceiveFailsWhenListenerSet() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {

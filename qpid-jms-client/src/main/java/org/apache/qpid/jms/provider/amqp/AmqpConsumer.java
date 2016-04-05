@@ -23,7 +23,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -48,7 +47,6 @@ import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.Released;
 import org.apache.qpid.proton.amqp.transaction.TransactionalState;
-import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Receiver;
 import org.apache.qpid.proton.message.Message;
@@ -230,7 +228,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             if (!isPresettle()) {
                 delivered.put(envelope, delivery);
             }
-            setDefaultDeliveryState(delivery, MODIFIED_FAILED);
+            delivery.setDefaultDeliveryState(MODIFIED_FAILED);
             sendFlowIfNeeded();
         } else if (ackType.equals(ACK_TYPE.ACCEPTED)) {
             // A Consumer may not always send a DELIVERED ack so we need to
@@ -410,7 +408,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     private boolean processDelivery(Delivery incoming) throws Exception {
-        setDefaultDeliveryState(incoming, Released.getInstance());
+        incoming.setDefaultDeliveryState(Released.getInstance());
         Message amqpMessage = decodeIncomingMessage(incoming);
         JmsMessage message = null;
         try {
@@ -446,17 +444,6 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         deliver(envelope);
 
         return true;
-    }
-
-    private void setDefaultDeliveryState(Delivery incoming, DeliveryState state) {
-        // TODO: temporary to maintain runtime compatibility with older
-        // Proton releases. Replace with direct invocation in future.
-        try {
-            Method m = incoming.getClass().getMethod("setDefaultDeliveryState", DeliveryState.class);
-            m.invoke(incoming, state);
-        } catch (Exception e) {
-            LOG.trace("Exception while setting defaultDeliveryState", e);
-        }
     }
 
     protected long getNextIncomingSequenceNumber() {

@@ -82,7 +82,7 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
                     Rejected rejected = (Rejected) state;
                     Exception cause = AmqpSupport.convertToException(getEndpoint(), rejected.getError());
                     JMSException failureCause = null;
-                    if (txId.getProviderContext() == COMMIT_MARKER) {
+                    if (txId.getProviderContext().equals(COMMIT_MARKER)) {
                         failureCause = new TransactionRolledBackException(cause.getMessage());
                     } else {
                         failureCause = new JMSException(cause.getMessage());

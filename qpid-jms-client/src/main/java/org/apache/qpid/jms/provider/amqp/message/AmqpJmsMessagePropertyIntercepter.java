@@ -112,7 +112,7 @@ public class AmqpJmsMessagePropertyIntercepter {
                 if (rc == null) {
                     throw new JMSException("Property " + JMS_AMQP_TTL + " cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.setAmqpTimeToLiveOverride(rc.longValue());
+                message.setAmqpTimeToLiveOverride(rc);
             }
 
             @Override

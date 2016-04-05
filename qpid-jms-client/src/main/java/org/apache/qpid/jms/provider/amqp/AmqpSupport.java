@@ -100,7 +100,24 @@ public class AmqpSupport {
      * @return a new Exception instance that best matches the ErrorCondition value.
      */
     public static Exception convertToException(Endpoint endpoint, ErrorCondition errorCondition) {
-        Exception remoteError = null;
+        return convertToException(endpoint, errorCondition, null);
+    }
+
+    /**
+     * Given an ErrorCondition instance create a new Exception that best matches
+     * the error type.
+     *
+     * @param endpoint
+     *      The target of the error.
+     * @param errorCondition
+     *      The ErrorCondition returned from the remote peer.
+     * @param defaultException
+     *      The default exception to throw if no error information is provided from the remote.
+     *
+     * @return a new Exception instance that best matches the ErrorCondition value.
+     */
+    public static Exception convertToException(Endpoint endpoint, ErrorCondition errorCondition, Exception defaultException) {
+        Exception remoteError = defaultException;
 
         if (errorCondition != null && errorCondition.getCondition() != null) {
             Symbol error = errorCondition.getCondition();
@@ -130,7 +147,7 @@ public class AmqpSupport {
             } else {
                 remoteError = new JMSException(message);
             }
-        } else {
+        } else if (remoteError == null) {
             remoteError = new JMSException("Unknown error from remote peer");
         }
 

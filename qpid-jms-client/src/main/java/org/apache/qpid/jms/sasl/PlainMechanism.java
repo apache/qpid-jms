@@ -16,6 +16,7 @@
  */
 package org.apache.qpid.jms.sasl;
 
+import java.nio.charset.Charset;
 import java.security.Principal;
 
 /**
@@ -49,8 +50,8 @@ public class PlainMechanism extends AbstractMechanism {
             password = "";
         }
 
-        byte[] usernameBytes = username.getBytes();
-        byte[] passwordBytes = password.getBytes();
+        byte[] usernameBytes = username.getBytes(Charset.forName("UTF-8"));
+        byte[] passwordBytes = password.getBytes(Charset.forName("UTF-8"));
         byte[] data = new byte[usernameBytes.length + passwordBytes.length + 2];
         System.arraycopy(usernameBytes, 0, data, 1, usernameBytes.length);
         System.arraycopy(passwordBytes, 0, data, 2 + usernameBytes.length, passwordBytes.length);

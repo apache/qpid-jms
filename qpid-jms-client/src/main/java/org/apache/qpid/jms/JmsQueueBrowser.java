@@ -122,14 +122,12 @@ public class JmsQueueBrowser implements AutoCloseable, QueueBrowser, Enumeration
 
                 if (next != null) {
                     return true;
+                } else {
+                    destroyConsumer();
+                    return false;
                 }
             } else {
                 return true;
-            }
-
-            if (next == null || !session.isStarted()) {
-                destroyConsumer();
-                return false;
             }
         }
     }

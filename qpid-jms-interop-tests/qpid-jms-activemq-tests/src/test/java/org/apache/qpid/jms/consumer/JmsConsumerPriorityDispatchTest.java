@@ -75,6 +75,18 @@ public class JmsConsumerPriorityDispatchTest extends AmqpTestSupport {
             @Override
             public void onConnectionEstablished(URI remoteURI) {
             }
+
+            @Override
+            public void onSessionRemotelyClosed(Session session, Exception exception) {
+            }
+
+            @Override
+            public void onConsumerRemotelyClosed(MessageConsumer consumer, Exception cause) {
+            }
+
+            @Override
+            public void onProducerRemotelyClosed(MessageProducer producer, Exception cause) {
+            }
         });
 
         connection.start();
@@ -130,6 +142,18 @@ public class JmsConsumerPriorityDispatchTest extends AmqpTestSupport {
 
             @Override
             public void onConnectionEstablished(URI remoteURI) {
+            }
+
+            @Override
+            public void onSessionRemotelyClosed(Session session, Exception exception) {
+            }
+
+            @Override
+            public void onConsumerRemotelyClosed(MessageConsumer consumer, Exception cause) {
+            }
+
+            @Override
+            public void onProducerRemotelyClosed(MessageProducer producer, Exception cause) {
             }
         });
 

@@ -35,7 +35,6 @@ import javax.jms.Session;
 import javax.jms.TemporaryQueue;
 import javax.jms.TemporaryTopic;
 
-import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.provider.mock.MockProvider;
 import org.apache.qpid.jms.provider.mock.MockProviderFactory;
 import org.apache.qpid.jms.util.IdGenerator;
@@ -116,29 +115,7 @@ public class JmsConnectionTest {
     @Test(timeout=30000)
     public void testAddConnectionListener() throws JMSException {
         connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
-        JmsConnectionListener listener = new JmsConnectionListener() {
-
-            @Override
-            public void onInboundMessage(JmsInboundMessageDispatch envelope) {
-            }
-
-            @Override
-            public void onConnectionRestored(URI remoteURI) {
-            }
-
-            @Override
-            public void onConnectionInterrupted(URI remoteURI) {
-            }
-
-            @Override
-            public void onConnectionFailure(Throwable error) {
-            }
-
-            @Override
-            public void onConnectionEstablished(URI remoteURI) {
-            }
-        };
-
+        JmsConnectionListener listener = new JmsDefaultConnectionListener();
         assertFalse(connection.removeConnectionListener(listener));
         connection.addConnectionListener(listener);
         assertTrue(connection.removeConnectionListener(listener));

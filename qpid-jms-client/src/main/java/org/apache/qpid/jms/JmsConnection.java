@@ -1211,24 +1211,31 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
                         JmsSession session = sessions.get(resource.getId());
                         if (session != null) {
                             session.remotelyClosed(cause);
-
-                            // TODO: exception listener?
+                            for (JmsConnectionListener listener : connectionListeners) {
+                                listener.onSessionRemotelyClosed(session, cause);
+                            }
                         }
                     } else if (resource instanceof JmsProducerInfo) {
                         JmsSessionId parentId = ((JmsProducerInfo) resource).getParentId();
                         JmsSession session = sessions.get(parentId);
                         if (session != null) {
-                            session.resourceRemotelyClosed(resource, cause);
-
-                            // TODO: exception listener?
+                            JmsMessageProducer producer = session.producerRemotelyClosed((JmsProducerInfo) resource, cause);
+                            if (producer != null) {
+                                for (JmsConnectionListener listener : connectionListeners) {
+                                    listener.onProducerRemotelyClosed(producer, cause);
+                                }
+                            }
                         }
                     } else if (resource instanceof JmsConsumerInfo) {
                         JmsSessionId parentId = ((JmsConsumerInfo) resource).getParentId();
                         JmsSession session = sessions.get(parentId);
                         if (session != null) {
-                            session.resourceRemotelyClosed(resource, cause);
-
-                            // TODO: exception listener?
+                            JmsMessageConsumer consumer = session.consumerRemotelyClosed((JmsConsumerInfo) resource, cause);
+                            if (consumer != null) {
+                                for (JmsConnectionListener listener : connectionListeners) {
+                                    listener.onConsumerRemotelyClosed(consumer, cause);
+                                }
+                            }
                         }
                     } else {
                         LOG.info("A JMS resource has been remotely closed: {}", resource);

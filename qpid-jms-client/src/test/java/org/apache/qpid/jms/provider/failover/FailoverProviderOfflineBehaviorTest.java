@@ -31,8 +31,7 @@ import javax.jms.TransactionRolledBackException;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
-import org.apache.qpid.jms.JmsConnectionListener;
-import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
+import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.mock.ResourceLifecycleFilter;
@@ -234,26 +233,11 @@ public class FailoverProviderOfflineBehaviorTest extends FailoverProviderTestSup
         connection.close();
     }
 
-    private class ConnectionInterruptionListener implements JmsConnectionListener {
+    private class ConnectionInterruptionListener extends JmsDefaultConnectionListener {
+
         @Override
         public void onConnectionInterrupted(URI remoteURI) {
             connectionInterrupted.countDown();
-        }
-
-        @Override
-        public void onConnectionEstablished(URI remoteURI) {
-        }
-
-        @Override
-        public void onConnectionFailure(Throwable error) {
-        }
-
-        @Override
-        public void onConnectionRestored(URI remoteURI) {
-        }
-
-        @Override
-        public void onInboundMessage(JmsInboundMessageDispatch envelope) {
         }
     }
 }

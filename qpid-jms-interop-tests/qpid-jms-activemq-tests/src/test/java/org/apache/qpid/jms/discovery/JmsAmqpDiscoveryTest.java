@@ -26,6 +26,9 @@ import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
@@ -218,5 +221,17 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
 
     @Override
     public void onInboundMessage(JmsInboundMessageDispatch envelope) {
+    }
+
+    @Override
+    public void onSessionRemotelyClosed(Session session, Exception exception) {
+    }
+
+    @Override
+    public void onConsumerRemotelyClosed(MessageConsumer consumer, Exception cause) {
+    }
+
+    @Override
+    public void onProducerRemotelyClosed(MessageProducer producer, Exception cause) {
     }
 }

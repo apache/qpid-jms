@@ -67,7 +67,6 @@ import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
-import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.Provider;
@@ -275,31 +274,36 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         }
     }
 
-    /*
-     * Called to indicate that a session resource was closed by the remote peer.
-     */
-    void resourceRemotelyClosed(JmsResource resource, Exception cause) {
-        LOG.info("A JMS resource has been remotely closed: {}", resource);
+    JmsMessageConsumer consumerRemotelyClosed(JmsConsumerInfo resource, Exception cause) {
+        LOG.info("A JMS MessageConsumer has been remotely closed: {}", resource);
 
-        if (resource instanceof JmsConsumerInfo) {
-            try {
-                JmsMessageConsumer consumer = consumers.get(resource.getId());
-                if (consumer != null) {
-                    consumer.shutdown(cause);
-                }
-            } catch (Throwable error) {
-                LOG.trace("Ignoring exception thrown during cleanup of remotely closed consumer", error);
+        JmsMessageConsumer consumer = consumers.get(resource.getId());
+
+        try {
+            if (consumer != null) {
+                consumer.shutdown(cause);
             }
-        } else if (resource instanceof JmsProducerInfo) {
-            try {
-                JmsMessageProducer producer = producers.get(resource.getId());
-                if (producer != null) {
-                    producer.shutdown(cause);
-                }
-            } catch (Throwable error) {
-                LOG.trace("Ignoring exception thrown during cleanup of remotely closed producer", error);
-            }
+        } catch (Throwable error) {
+            LOG.trace("Ignoring exception thrown during cleanup of remotely closed consumer", error);
         }
+
+        return consumer;
+    }
+
+    JmsMessageProducer producerRemotelyClosed(JmsProducerInfo resource, Exception cause) {
+        LOG.info("A JMS MessageProducer has been remotely closed: {}", resource);
+
+        JmsMessageProducer producer = producers.get(resource.getId());
+
+        try {
+            if (producer != null) {
+                producer.shutdown(cause);
+            }
+        } catch (Throwable error) {
+            LOG.trace("Ignoring exception thrown during cleanup of remotely closed producer", error);
+        }
+
+        return producer;
     }
 
     //////////////////////////////////////////////////////////////////////////

@@ -28,6 +28,7 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.jms.Connection;
 import javax.jms.IllegalStateException;
@@ -123,7 +124,14 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
         final String BREAD_CRUMB = "ErrorMessage";
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
+            final AtomicBoolean consumerClosed = new AtomicBoolean();
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConsumerRemotelyClosed(MessageConsumer consumer, Exception exception) {
+                    consumerClosed.set(true);
+                }
+            });
 
             testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -155,6 +163,8 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
                     return false;
                 }
             }, 10000, 10));
+
+            assertTrue("Consumer closed callback didn't trigger", consumerClosed.get());
 
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.

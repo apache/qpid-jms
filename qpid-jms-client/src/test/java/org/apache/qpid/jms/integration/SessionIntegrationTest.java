@@ -33,6 +33,7 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.Connection;
@@ -56,6 +57,7 @@ import javax.jms.Topic;
 import javax.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.JmsPrefetchPolicy;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
@@ -1265,7 +1267,14 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         final String BREAD_CRUMB = "ErrorMessage";
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
+            final AtomicBoolean sessionClosed = new AtomicBoolean();
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onSessionRemotelyClosed(Session session, Exception exception) {
+                    sessionClosed.set(true);
+                }
+            });
 
             testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -1308,6 +1317,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 assertTrue(message.contains(BREAD_CRUMB));
             }
 
+            assertTrue("Session closed callback didn't trigger", sessionClosed.get());
+
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.
             producer.close();
@@ -1319,7 +1330,14 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         final String BREAD_CRUMB = "ErrorMessage";
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
+            final AtomicBoolean sessionClosed = new AtomicBoolean();
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onSessionRemotelyClosed(Session session, Exception exception) {
+                    sessionClosed.set(true);
+                }
+            });
 
             testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -1361,6 +1379,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 assertTrue(message.contains(AmqpError.RESOURCE_DELETED.toString()));
                 assertTrue(message.contains(BREAD_CRUMB));
             }
+
+            assertTrue("Session closed callback didn't trigger", sessionClosed.get());
 
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.

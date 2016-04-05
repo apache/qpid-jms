@@ -18,6 +18,10 @@ package org.apache.qpid.jms;
 
 import java.net.URI;
 
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 
 /**
@@ -69,5 +73,35 @@ public interface JmsConnectionListener {
      *        The envelope that contains the incoming message and it's delivery information.
      */
     void onInboundMessage(JmsInboundMessageDispatch envelope);
+
+    /**
+     * Called when the remote peer closes a session.
+     *
+     * @param session
+     *      The session that was closed on the remote end.
+     * @param cause
+     *      The exception that provides additional context on the remote closure.
+     */
+    void onSessionRemotelyClosed(Session session, Exception cause);
+
+    /**
+     * Called when the remote peer closes a MessageConsumer.
+     *
+     * @param consumer
+     *      The consumer that was closed on the remote end.
+     * @param cause
+     *      The exception that provides additional context on the remote closure.
+     */
+    void onConsumerRemotelyClosed(MessageConsumer consumer, Exception cause);
+
+    /**
+     * Called when the remote peer closes a MessageProducer.
+     *
+     * @param producer
+     *      The producer that was closed on the remote end.
+     * @param cause
+     *      The exception that provides additional context on the remote closure.
+     */
+    void onProducerRemotelyClosed(MessageProducer producer, Exception cause);
 
 }

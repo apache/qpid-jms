@@ -20,6 +20,10 @@ package org.apache.qpid.jms;
 
 import java.net.URI;
 
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 
 public class JmsDefaultConnectionListener implements JmsConnectionListener {
@@ -42,5 +46,17 @@ public class JmsDefaultConnectionListener implements JmsConnectionListener {
 
     @Override
     public void onInboundMessage(JmsInboundMessageDispatch envelope) {
+    }
+
+    @Override
+    public void onSessionRemotelyClosed(Session session, Exception exception) {
+    }
+
+    @Override
+    public void onConsumerRemotelyClosed(MessageConsumer consumer, Exception cause) {
+    }
+
+    @Override
+    public void onProducerRemotelyClosed(MessageProducer producer, Exception cause) {
     }
 }

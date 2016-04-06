@@ -88,8 +88,6 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
     private final IdGenerator clientIdGenerator;
     private final Map<JmsSessionId, JmsSession> sessions = new ConcurrentHashMap<JmsSessionId, JmsSession>();
-    private final Map<JmsConsumerId, JmsMessageDispatcher> dispatchers =
-        new ConcurrentHashMap<JmsConsumerId, JmsMessageDispatcher>();
     private final AtomicBoolean connected = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean closing = new AtomicBoolean();
@@ -430,14 +428,6 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
     protected void addSession(JmsSessionInfo sessionInfo, JmsSession session) {
         sessions.put(sessionInfo.getId(), session);
-    }
-
-    protected void addDispatcher(JmsConsumerId consumerId, JmsMessageDispatcher dispatcher) {
-        dispatchers.put(consumerId, dispatcher);
-    }
-
-    protected void removeDispatcher(JmsConsumerId consumerId) {
-        dispatchers.remove(consumerId);
     }
 
     private void connect() throws JMSException {
@@ -1042,7 +1032,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
             incoming.setValidatePropertyNames(isValidatePropertyNames());
         }
 
-        JmsMessageDispatcher dispatcher = dispatchers.get(envelope.getConsumerId());
+        JmsMessageDispatcher dispatcher = sessions.get(envelope.getConsumerId().getParentId());
         if (dispatcher != null) {
             dispatcher.onInboundMessage(envelope);
         }

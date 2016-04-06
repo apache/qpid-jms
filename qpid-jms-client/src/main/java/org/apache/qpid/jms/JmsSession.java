@@ -584,7 +584,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
     protected void add(JmsMessageConsumer consumer) throws JMSException {
         consumers.put(consumer.getConsumerId(), consumer);
-        connection.addDispatcher(consumer.getConsumerId(), this);
 
         if (started.get()) {
             consumer.start();
@@ -592,7 +591,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     }
 
     protected void remove(JmsMessageConsumer consumer) throws JMSException {
-        connection.removeDispatcher(consumer.getConsumerId());
         consumers.remove(consumer.getConsumerId());
     }
 

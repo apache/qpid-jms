@@ -264,11 +264,6 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                             // closed until future pulls were performed.
                         }
                     }
-
-                } else if (envelope.getMessage() == null) {
-                    //TODO: do we still need this now?
-                    LOG.trace("{} no message was available for this consumer: {}", getConsumerId());
-                    return null;
                 } else if (consumeExpiredMessage(envelope)) {
                     LOG.trace("{} filtered expired message: {}", getConsumerId(), envelope);
                     doAckExpired(envelope);
@@ -695,10 +690,10 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                         }
                     }
                 } catch (Exception e) {
-                    // TODO - We need to handle exception of on message with some other
-                    //        ack such as rejected and consider adding a redlivery policy
-                    //        to control when we might just poison the message with an ack
-                    //        of modified set to not deliverable here.
+                    // TODO - There are two cases where we can get an error here, one being
+                    //        and error returned from the attempted ACK that was sent and the
+                    //        other being an error while attempting to copy the incoming message.
+                    //        We need to decide how to respond to these.
                     session.getConnection().onException(e);
                 }
             }

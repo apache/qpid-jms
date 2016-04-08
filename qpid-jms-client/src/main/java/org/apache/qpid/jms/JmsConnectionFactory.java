@@ -610,33 +610,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     }
 
     /**
-     * Returns true if the client should always send messages using a synchronous
-     * send operation regardless of persistence mode, or inside a transaction.
-     *
-     * @return true if sends should always be done synchronously.
-     *
-     * @deprecated  As of release 0.7.0, replaced by {@link #isForceSyncSend()}
-     */
-    @Deprecated
-    public boolean isAlwaysSyncSend() {
-        return forceSyncSend;
-    }
-
-    /**
-     * Configures whether or not the client will always send messages synchronously or not
-     * regardless of other factors that might result in an asynchronous send.
-     *
-     * @param alwaysSyncSend
-     *        if true sends are always done synchronously.
-     *
-     * @deprecated  As of release 0.7.0, replaced by {@link #setForceSyncSend(boolean)}
-     */
-    @Deprecated
-    public void setAlwaysSyncSend(boolean alwaysSyncSend) {
-        this.forceSyncSend = alwaysSyncSend;
-    }
-
-    /**
      * @return true if consumer acknowledgments are sent asynchronously or not.
      */
     public boolean isForceAsyncAcks() {
@@ -654,32 +627,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     public void setForceAsyncAcks(boolean forceAsyncAcks) {
         this.forceAsyncAcks = forceAsyncAcks;
-    }
-
-    /**
-     * @return true if consumer acknowledgments are sent asynchronously or not.
-     *
-     * @deprecated As of release 0.7.0, replaced by {@link #isForceAsyncAcks()}
-     */
-    @Deprecated
-    public boolean isSendAcksAsync() {
-        return forceAsyncAcks;
-    }
-
-    /**
-     * Should the message acknowledgments from a consumer be sent synchronously or
-     * asynchronously.  Sending the acknowledgments asynchronously can increase the
-     * performance of a consumer but opens up the possibility of a missed message
-     * acknowledge should the connection be unstable.
-     *
-     * @param sendAcksAsync
-     *        true to have the client send all message acknowledgments asynchronously.
-     *
-     * @deprecated As of release 0.7.0, replaced by {@link #setForceAsyncAcks(boolean)}
-     */
-    @Deprecated
-    public void setSendAcksAsync(boolean sendAcksAsync) {
-        this.forceAsyncAcks = sendAcksAsync;
     }
 
     /**

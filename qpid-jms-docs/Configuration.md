@@ -84,8 +84,6 @@ The options apply to the behaviour of the JMS objects such as Connection, Sessio
 + **jms.forceAsyncSend** Configures whether all Messages sent from a MessageProducer are sent asynchronously or only those Message that qualify such as Messages inside a transaction or non-persistent messages.
 + **jms.forceSyncSend** Override all asynchronous send conditions and always sends every Message from a MessageProducer synchronously.
 + **jms.forceAsyncAcks** Causes all Message acknowledgments to be sent asynchronously.
-+ **jms.alwaysSyncSend** Override all asynchronous send conditions and always sends every Message from a MessageProducer synchronously.  **This option is deprecated in 0.7.0 and will be removed in a future release.**
-+ **jms.sendAcksAsync** Causes all Message acknowledgments to be sent asynchronously.  **This option is deprecated in 0.7.0 and will be removed in a future release.**
 + **jms.localMessageExpiry** Controls whether MessageConsumer instances will locally filter expired Messages or deliver them.  By default this value is set to true and expired messages will be filtered.
 + **jms.localMessagePriority** If enabled prefetched messages are reordered locally based on their given Message priority value. Default is false.
 + **jms.validatePropertyNames** If message property names should be validated as valid Java identifiers. Default is true.

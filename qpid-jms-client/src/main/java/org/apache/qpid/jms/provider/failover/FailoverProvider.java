@@ -532,49 +532,51 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
      *        the error that triggered the failure of the provider.
      */
     private void handleProviderFailure(final IOException cause) {
-        LOG.debug("handling Provider failure: {}", cause.getMessage());
-        LOG.trace("stack", cause);
+        if (provider != null) {
+            LOG.debug("handling Provider failure: {}", cause.getMessage());
+            LOG.trace("stack", cause);
 
-        provider.setProviderListener(closedListener);
-        URI failedURI = this.provider.getRemoteURI();
-        try {
-            provider.close();
-        } catch (Throwable error) {
-            LOG.trace("Caught exception while closing failed provider: {}", error.getMessage());
-        }
-        provider = null;
+            provider.setProviderListener(closedListener);
+            URI failedURI = this.provider.getRemoteURI();
+            try {
+                provider.close();
+            } catch (Throwable error) {
+                LOG.trace("Caught exception while closing failed provider: {}", error.getMessage());
+            }
+            provider = null;
 
-        if (reconnectAllowed(cause)) {
+            if (reconnectAllowed(cause)) {
 
-            if (cause instanceof ProviderRedirectedException) {
-                ProviderRedirectedException redirect = (ProviderRedirectedException) cause;
-                try {
-                    uris.addFirst(new URI(failedURI.getScheme() + "://" + redirect.getNetworkHost() + ":" + redirect.getPort()));
-                } catch (URISyntaxException ex) {
-                    LOG.warn("Could not construct redirection URI from remote provided information");
+                if (cause instanceof ProviderRedirectedException) {
+                    ProviderRedirectedException redirect = (ProviderRedirectedException) cause;
+                    try {
+                        uris.addFirst(new URI(failedURI.getScheme() + "://" + redirect.getNetworkHost() + ":" + redirect.getPort()));
+                    } catch (URISyntaxException ex) {
+                        LOG.warn("Could not construct redirection URI from remote provided information");
+                    }
                 }
-            }
 
-            ProviderListener listener = this.listener;
-            if (listener != null) {
-                listener.onConnectionInterrupted(failedURI);
-            }
-
-            // Start watching for request timeouts while we are offline, unless we already are.
-            if (requestTimeoutTask == null) {
-                long sweeperInterval = getRequestSweeperInterval();
-                if (sweeperInterval > 0) {
-                    LOG.trace("Request timeout monitoring enabled: interval = {}ms", sweeperInterval);
-                    requestTimeoutTask = serializer.scheduleWithFixedDelay(
-                        new FailoverRequestSweeper(), sweeperInterval, sweeperInterval, TimeUnit.MILLISECONDS);
+                ProviderListener listener = this.listener;
+                if (listener != null) {
+                    listener.onConnectionInterrupted(failedURI);
                 }
-            }
 
-            triggerReconnectionAttempt();
-        } else {
-            ProviderListener listener = this.listener;
-            if (listener != null) {
-                listener.onConnectionFailure(cause);
+                // Start watching for request timeouts while we are offline, unless we already are.
+                if (requestTimeoutTask == null) {
+                    long sweeperInterval = getRequestSweeperInterval();
+                    if (sweeperInterval > 0) {
+                        LOG.trace("Request timeout monitoring enabled: interval = {}ms", sweeperInterval);
+                        requestTimeoutTask = serializer.scheduleWithFixedDelay(
+                            new FailoverRequestSweeper(), sweeperInterval, sweeperInterval, TimeUnit.MILLISECONDS);
+                    }
+                }
+
+                triggerReconnectionAttempt();
+            } else {
+                ProviderListener listener = this.listener;
+                if (listener != null) {
+                    listener.onConnectionFailure(cause);
+                }
             }
         }
     }

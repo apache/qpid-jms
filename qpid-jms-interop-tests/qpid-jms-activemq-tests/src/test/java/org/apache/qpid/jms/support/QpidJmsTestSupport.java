@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -179,6 +180,7 @@ public class QpidJmsTestSupport {
             kaha.setDirectory(new File(KAHADB_DIRECTORY + "/" + name));
             kaha.setConcurrentStoreAndDispatchQueues(isConcurrentStoreAndDispatchQueues());
             kaha.setConcurrentStoreAndDispatchTopics(isConcurrentStoreAndDispatchTopics());
+            kaha.setCheckpointInterval(TimeUnit.MINUTES.toMillis(5));
             brokerService.setPersistenceAdapter(kaha);
         }
 

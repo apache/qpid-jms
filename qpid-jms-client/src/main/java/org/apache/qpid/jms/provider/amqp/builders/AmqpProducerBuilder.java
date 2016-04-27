@@ -78,7 +78,13 @@ public class AmqpProducerBuilder extends AmqpResourceBuilder<AmqpProducer, AmqpS
 
     @Override
     protected AmqpProducer createResource(AmqpSession parent, JmsProducerInfo resourceInfo, Sender endpoint) {
-        return new AmqpFixedProducer(getParent(), getResourceInfo(), endpoint);
+        AmqpProducer producer = new AmqpFixedProducer(getParent(), getResourceInfo(), endpoint);
+
+        if (getParent().getConnection().isPresettleProducers()) {
+            producer.setPresettle(true);
+        }
+
+        return producer;
     }
 
     @Override

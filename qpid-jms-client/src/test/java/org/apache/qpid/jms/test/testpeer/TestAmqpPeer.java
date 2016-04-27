@@ -867,6 +867,11 @@ public class TestAmqpPeer implements AutoCloseable
         expectSenderAttach(notNullValue(), false, false);
     }
 
+    public void expectSettledSenderAttach()
+    {
+        expectSenderAttach(notNullValue(), notNullValue(), true, false, false, false, 0, DEFAULT_PRODUCER_CREDIT, null, null);
+    }
+
     public void expectSenderAttachWithoutGrantingCredit()
     {
         expectSenderAttach(notNullValue(), notNullValue(), false, false, false, 0, 0, null, null);
@@ -894,18 +899,23 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectSenderAttach(final Matcher<?> sourceMatcher, final Matcher<?> targetMatcher, final boolean refuseLink, boolean omitDetach, boolean deferAttachResponseWrite, long creditFlowDelay, int creditAmount, Symbol errorType, String errorMessage)
     {
+        expectSenderAttach(sourceMatcher, targetMatcher, false, refuseLink, omitDetach, deferAttachResponseWrite, creditFlowDelay, creditAmount, errorType, errorMessage);
+    }
+
+    public void expectSenderAttach(final Matcher<?> sourceMatcher, final Matcher<?> targetMatcher, final boolean senderSettled, final boolean refuseLink, boolean omitDetach, boolean deferAttachResponseWrite, long creditFlowDelay, int creditAmount, Symbol errorType, String errorMessage)
+    {
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())
                 .withHandle(notNullValue())
                 .withRole(equalTo(Role.SENDER))
-                .withSndSettleMode(equalTo(SenderSettleMode.UNSETTLED))
+                .withSndSettleMode(equalTo(senderSettled ? SenderSettleMode.SETTLED : SenderSettleMode.UNSETTLED))
                 .withRcvSettleMode(equalTo(ReceiverSettleMode.FIRST))
                 .withSource(sourceMatcher)
                 .withTarget(targetMatcher);
 
         final AttachFrame attachResponse = new AttachFrame()
                             .setRole(Role.RECEIVER)
-                            .setSndSettleMode(SenderSettleMode.UNSETTLED)
+                            .setSndSettleMode(senderSettled ? SenderSettleMode.SETTLED : SenderSettleMode.UNSETTLED)
                             .setRcvSettleMode(ReceiverSettleMode.FIRST);
 
         // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.

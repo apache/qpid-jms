@@ -45,7 +45,7 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
     private static final Logger LOG = LoggerFactory.getLogger(AmqpAnonymousFallbackProducer.class);
     private static final IdGenerator producerIdGenerator = new IdGenerator();
 
-    private final AnonymousProducerCache producerCache = new AnonymousProducerCache(10);
+    private final AnonymousProducerCache producerCache;
     private final String producerIdKey = producerIdGenerator.generateId();
     private long producerIdCount;
 
@@ -61,7 +61,10 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
         super(session, info);
 
         if (connection.isAnonymousProducerCache()) {
+            producerCache = new AnonymousProducerCache(10);
             producerCache.setMaxCacheSize(connection.getAnonymousProducerCacheSize());
+        } else {
+            producerCache = null;
         }
     }
 
@@ -79,6 +82,7 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
             // send to the given AMQP target.
             JmsProducerInfo info = new JmsProducerInfo(getNextProducerId());
             info.setDestination(envelope.getDestination());
+            info.setPresettle(this.getResourceInfo().isPresettle());
 
             // We open a Fixed Producer instance with the target destination.  Once it opens
             // it will trigger the open event which will in turn trigger the send event.

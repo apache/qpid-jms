@@ -93,7 +93,8 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     private final AtomicBoolean started = new AtomicBoolean();
     private final LinkedBlockingQueue<JmsInboundMessageDispatch> stoppedMessages =
         new LinkedBlockingQueue<JmsInboundMessageDispatch>(10000);
-    private JmsPrefetchPolicy prefetchPolicy;
+    private final JmsPrefetchPolicy prefetchPolicy;
+    private final JmsPresettlePolicy presettlePolicy;
     private final JmsMessageIDBuilder messageIDBuilder;
     private final JmsSessionInfo sessionInfo;
     private volatile ExecutorService executor;
@@ -108,7 +109,8 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     protected JmsSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) throws JMSException {
         this.connection = connection;
         this.acknowledgementMode = acknowledgementMode;
-        this.prefetchPolicy = new JmsPrefetchPolicy(connection.getPrefetchPolicy());
+        this.prefetchPolicy = connection.getPrefetchPolicy().copy();
+        this.presettlePolicy = connection.getPresettlePolicy().copy();
         this.messageIDBuilder = connection.getMessageIDBuilder();
 
         if (acknowledgementMode == SESSION_TRANSACTED) {
@@ -696,6 +698,10 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             envelope.setSendAsync(!sync);
             envelope.setDispatchId(messageSequence);
 
+            if (producer.isAnonymous()) {
+                envelope.setPresettle(presettlePolicy.isSendPresttled(destination, this));
+            }
+
             transactionContext.send(connection, envelope);
         } finally {
             sendLock.unlock();
@@ -910,8 +916,8 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         return prefetchPolicy;
     }
 
-    public void setPrefetchPolicy(JmsPrefetchPolicy prefetchPolicy) {
-        this.prefetchPolicy = prefetchPolicy;
+    public JmsPresettlePolicy getPresettlePolicy() {
+        return presettlePolicy;
     }
 
     @Override

@@ -59,4 +59,34 @@ public class JmsRedeliveryPolicy {
     public void setMaxRedeliveries(int maxRedeliveries) {
         this.maxRedeliveries = maxRedeliveries;
     }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + maxRedeliveries;
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+
+        if (obj == null) {
+            return false;
+        }
+
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+
+        JmsRedeliveryPolicy other = (JmsRedeliveryPolicy) obj;
+        if (maxRedeliveries != other.maxRedeliveries) {
+            return false;
+        }
+
+        return true;
+    }
 }

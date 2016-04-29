@@ -101,7 +101,6 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     private ExceptionListener exceptionListener;
     private JmsMessageFactory messageFactory;
     private Provider provider;
-    private JmsMessageIDBuilder messageIDBuilder;
 
     private final Set<JmsConnectionListener> connectionListeners =
         new CopyOnWriteArraySet<JmsConnectionListener>();
@@ -863,6 +862,14 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         connectionInfo.setRedeliveryPolicy(redeliveryPolicy);
     }
 
+    public JmsPresettlePolicy getPresettlePolicy() {
+        return connectionInfo.getPresettlePolicy();
+    }
+
+    public void setPresettlePolicy(JmsPresettlePolicy presettlePolicy) {
+        connectionInfo.setPresettlePolicy(presettlePolicy);
+    }
+
     public boolean isReceiveLocalOnly() {
         return connectionInfo.isReceiveLocalOnly();
     }
@@ -1003,11 +1010,11 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     }
 
     public JmsMessageIDBuilder getMessageIDBuilder() {
-        return messageIDBuilder;
+        return connectionInfo.getMessageIDBuilder();
     }
 
     void setMessageIDBuilder(JmsMessageIDBuilder messageIDBuilder) {
-        this.messageIDBuilder = messageIDBuilder;
+        connectionInfo.setMessageIDBuilder(messageIDBuilder);
     }
 
     public boolean isPopulateJMSXUserID() {

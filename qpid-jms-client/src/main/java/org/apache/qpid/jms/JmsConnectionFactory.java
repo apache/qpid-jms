@@ -86,6 +86,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
     private JmsRedeliveryPolicy redeliveryPolicy = new JmsRedeliveryPolicy();
+    private JmsPresettlePolicy presettlePolicy = new JmsPresettlePolicy();
     private JmsMessageIDBuilder messageIDBuilder = JmsMessageIDBuilder.BUILTIN.DEFAULT.createBuilder();
 
     public JmsConnectionFactory() {
@@ -290,36 +291,28 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         try {
             if (this.remoteURI.getQuery() != null) {
                 Map<String, String> map = PropertyUtil.parseQuery(this.remoteURI.getQuery());
-                Map<String, String> jmsOptionsMap = PropertyUtil.filterProperties(map, "jms.");
-
-                Map<String, String> unused = PropertyUtil.setProperties(this, jmsOptionsMap);
-                if (!unused.isEmpty()) {
-                    String msg = ""
-                        + " Not all jms options could be set on the ConnectionFactory."
-                        + " Check the options are spelled correctly."
-                        + " Unused parameters=[" + unused + "]."
-                        + " This connection factory cannot be started.";
-                    throw new IllegalArgumentException(msg);
-                } else {
-                    this.remoteURI = PropertyUtil.replaceQuery(this.remoteURI, map);
-                }
+                applyURIOptions(map);
+                this.remoteURI = PropertyUtil.replaceQuery(this.remoteURI, map);
             } else if (URISupport.isCompositeURI(this.remoteURI)) {
                 CompositeData data = URISupport.parseComposite(this.remoteURI);
-                Map<String, String> jmsOptionsMap = PropertyUtil.filterProperties(data.getParameters(), "jms.");
-                Map<String, String> unused = PropertyUtil.setProperties(this, jmsOptionsMap);
-                if (!unused.isEmpty()) {
-                    String msg = ""
-                        + " Not all jms options could be set on the ConnectionFactory."
-                        + " Check the options are spelled correctly."
-                        + " Unused parameters=[" + unused + "]."
-                        + " This connection factory cannot be started.";
-                    throw new IllegalArgumentException(msg);
-                } else {
-                    this.remoteURI = data.toURI();
-                }
+                applyURIOptions(data.getParameters());
+                this.remoteURI = data.toURI();
             }
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    private void applyURIOptions(Map<String, String> options) throws IllegalArgumentException {
+        Map<String, String> jmsOptionsMap = PropertyUtil.filterProperties(options, "jms.");
+        Map<String, String> unused = PropertyUtil.setProperties(this, jmsOptionsMap);
+        if (!unused.isEmpty()) {
+            String msg = ""
+                + " Not all jms options could be set on the ConnectionFactory."
+                + " Check the options are spelled correctly."
+                + " Unused parameters=[" + unused + "]."
+                + " This connection factory cannot be started.";
+            throw new IllegalArgumentException(msg);
         }
     }
 
@@ -521,6 +514,23 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     public void setRedeliveryPolicy(JmsRedeliveryPolicy redeliveryPolicy) {
         this.redeliveryPolicy = redeliveryPolicy;
+    }
+
+    /**
+     * @return the presettlePolicy that is currently configured.
+     */
+    public JmsPresettlePolicy getPresettlePolicy() {
+        return presettlePolicy;
+    }
+
+    /**
+     * Sets the JmsPresettlePolicy that is applied to MessageProducers.
+     *
+     * @param presettlePolicy
+     *      the presettlePolicy to use by connections created from this factory.
+     */
+    public void setPresettlePolicy(JmsPresettlePolicy presettlePolicy) {
+        this.presettlePolicy = presettlePolicy;
     }
 
     /**

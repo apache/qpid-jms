@@ -22,6 +22,7 @@ public final class JmsProducerInfo implements JmsResource, Comparable<JmsProduce
 
     private final JmsProducerId producerId;
     private JmsDestination destination;
+    private boolean presettle;
 
     public JmsProducerInfo(JmsProducerId producerId) {
         if (producerId == null) {
@@ -64,6 +65,24 @@ public final class JmsProducerInfo implements JmsResource, Comparable<JmsProduce
 
     public void setDestination(JmsDestination destination) {
         this.destination = destination;
+    }
+
+    /**
+     * @return the presettle mode of this producer.
+     */
+    public boolean isPresettle() {
+        return presettle;
+    }
+
+    /**
+     * Sets the presettle mode of the producer, when true the producer will be created
+     * as a presettled producer and all messages it sends will be settled before dispatch.
+     *
+     * @param presettle
+     *      the presettle option to set on this producer.
+     */
+    public void setPresettle(boolean presettle) {
+        this.presettle = presettle;
     }
 
     @Override

@@ -43,6 +43,7 @@ import org.apache.qpid.proton.amqp.messaging.Released;
 import org.apache.qpid.proton.amqp.transaction.TransactionalState;
 import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
+import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Sender;
 import org.apache.qpid.proton.message.Message;
@@ -63,7 +64,6 @@ public class AmqpFixedProducer extends AmqpProducer {
     private final Set<Delivery> sent = new LinkedHashSet<Delivery>();
     private final LinkedList<InFlightSend> blocked = new LinkedList<InFlightSend>();
     private byte[] encodeBuffer = new byte[1024 * 8];
-    private boolean presettle = false;
 
     public AmqpFixedProducer(AmqpSession session, JmsProducerInfo info) {
         super(session, info);
@@ -287,13 +287,8 @@ public class AmqpFixedProducer extends AmqpProducer {
     }
 
     @Override
-    public void setPresettle(boolean presettle) {
-        this.presettle = presettle;
-    }
-
-    @Override
     public boolean isPresettle() {
-        return presettle;
+        return getEndpoint().getSenderSettleMode() == SenderSettleMode.SETTLED;
     }
 
     public long getSendTimeout() {

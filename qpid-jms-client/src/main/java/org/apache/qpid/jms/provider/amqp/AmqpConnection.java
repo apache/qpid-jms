@@ -119,6 +119,7 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
         return remoteURI;
     }
 
+    @Override
     public AmqpProvider getProvider() {
         return provider;
     }

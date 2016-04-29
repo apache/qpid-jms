@@ -40,7 +40,7 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
     protected final JmsSession session;
     protected final JmsConnection connection;
     protected JmsProducerInfo producerInfo;
-    protected final boolean flexibleDestination;
+    protected final boolean anonymousProducer;
     protected int deliveryMode = DeliveryMode.PERSISTENT;
     protected int priority = Message.DEFAULT_PRIORITY;
     protected long timeToLive = Message.DEFAULT_TIME_TO_LIVE;
@@ -53,9 +53,10 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
     protected JmsMessageProducer(JmsProducerId producerId, JmsSession session, JmsDestination destination) throws JMSException {
         this.session = session;
         this.connection = session.getConnection();
-        this.flexibleDestination = destination == null;
+        this.anonymousProducer = destination == null;
         this.producerInfo = new JmsProducerInfo(producerId);
         this.producerInfo.setDestination(destination);
+        this.producerInfo.setPresettle(session.getPresettlePolicy().isSendPresttled(destination, session));
 
         session.getConnection().createResource(producerInfo);
     }
@@ -141,7 +142,7 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
     public void send(Message message, int deliveryMode, int priority, long timeToLive) throws JMSException {
         checkClosed();
 
-        if (flexibleDestination) {
+        if (anonymousProducer) {
             throw new UnsupportedOperationException("Using this method is not supported on producers created without an explicit Destination");
         }
 
@@ -157,7 +158,7 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
     public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive) throws JMSException {
         checkClosed();
 
-        if (!flexibleDestination) {
+        if (!anonymousProducer) {
             throw new UnsupportedOperationException("Using this method is not supported on producers created with an explicit Destination.");
         }
 
@@ -229,6 +230,14 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
 
             throw jmsEx;
         }
+    }
+
+    protected boolean isPresettled() {
+        return producerInfo.isPresettle();
+    }
+
+    protected boolean isAnonymous() {
+        return anonymousProducer;
     }
 
     ////////////////////////////////////////////////////////////////////////////

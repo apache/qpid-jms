@@ -1602,36 +1602,4 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
         }
     }
-
-    @Test(timeout = 20000)
-    public void testPresettledProducersConfigurationApplied() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?amqp.presettleProducers=true");
-            testPeer.expectBegin();
-            testPeer.expectSettledSenderAttach();
-
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Queue queue = session.createQueue("myQueue");
-            MessageProducer producer = session.createProducer(queue);
-
-            // Create and transfer a new message
-            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true)
-                    .withDurable(equalTo(true));
-            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
-            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
-            messageMatcher.setHeadersMatcher(headersMatcher);
-            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
-            testPeer.expectTransfer(messageMatcher, nullValue(), true, false, null, false);
-            testPeer.expectClose();
-
-            Message message = session.createTextMessage();
-
-            producer.send(message);
-            assertEquals(DeliveryMode.PERSISTENT, message.getJMSDeliveryMode());
-
-            connection.close();
-
-            testPeer.waitForAllHandlersToComplete(1000);
-        }
-    }
 }

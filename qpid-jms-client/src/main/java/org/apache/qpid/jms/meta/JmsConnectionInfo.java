@@ -20,7 +20,9 @@ import java.net.URI;
 import java.nio.charset.Charset;
 
 import org.apache.qpid.jms.JmsPrefetchPolicy;
+import org.apache.qpid.jms.JmsPresettlePolicy;
 import org.apache.qpid.jms.JmsRedeliveryPolicy;
+import org.apache.qpid.jms.message.JmsMessageIDBuilder;
 
 /**
  * Meta object that contains the JmsConnection identification and configuration
@@ -59,6 +61,8 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
     private JmsRedeliveryPolicy redeliveryPolicy = new JmsRedeliveryPolicy();
+    private JmsPresettlePolicy presettlePolicy = new JmsPresettlePolicy();
+    private JmsMessageIDBuilder messageIDBuilder = JmsMessageIDBuilder.BUILTIN.DEFAULT.createBuilder();
 
     private volatile byte[] encodedUserId;
 
@@ -89,6 +93,10 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         copy.topicPrefix = topicPrefix;
         copy.connectTimeout = connectTimeout;
         copy.validatePropertyNames = validatePropertyNames;
+        copy.messageIDBuilder = messageIDBuilder;
+        copy.prefetchPolicy = prefetchPolicy.copy();
+        copy.redeliveryPolicy = redeliveryPolicy.copy();
+        copy.presettlePolicy = presettlePolicy.copy();
     }
 
     public boolean isForceAsyncSend() {
@@ -262,6 +270,22 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     public void setRedeliveryPolicy(JmsRedeliveryPolicy redeliveryPolicy) {
         this.redeliveryPolicy = redeliveryPolicy.copy();
+    }
+
+    public JmsPresettlePolicy getPresettlePolicy() {
+        return presettlePolicy;
+    }
+
+    public void setPresettlePolicy(JmsPresettlePolicy presettlePolicy) {
+        this.presettlePolicy = presettlePolicy;
+    }
+
+    public JmsMessageIDBuilder getMessageIDBuilder() {
+        return messageIDBuilder;
+    }
+
+    public void setMessageIDBuilder(JmsMessageIDBuilder messageIDBuilder) {
+        this.messageIDBuilder = messageIDBuilder;
     }
 
     public boolean isPopulateJMSXUserID() {

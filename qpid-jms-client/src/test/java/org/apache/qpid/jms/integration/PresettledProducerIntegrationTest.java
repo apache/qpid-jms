@@ -61,505 +61,436 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleAllSendToTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleAll=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, Topic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, true, true, Topic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleAllSendToQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleAll=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, Queue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, true, true, Queue.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleAllSendToTempTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleAll=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, TemporaryTopic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, true, true, TemporaryTopic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleAllSendToTempQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleAll=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, TemporaryQueue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, true, true, TemporaryQueue.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleAllAnonymousSendToTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleAll=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, Topic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, true, true, Topic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleAllAnonymousSendToQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleAll=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, Queue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, true, true, Queue.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleAllAnonymousSendToTempTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleAll=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, TemporaryTopic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, true, true, TemporaryTopic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleAllAnonymousSendToTempQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleAll=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, TemporaryQueue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, true, true, TemporaryQueue.class);
     }
 
     //----- Test the amqp.presettleProducers option --------------------------//
 
     @Test(timeout = 20000)
     public void testPresettledProducersConfigurationAppliedToTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?amqp.presettleProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, Topic.class);
-        }
+        String presettleConfig = "?amqp.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, true, true, Topic.class);
     }
 
     @Test(timeout = 20000)
     public void testPresettledProducersConfigurationAppliedToQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?amqp.presettleProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, Queue.class);
-        }
+        String presettleConfig = "?amqp.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, true, true, Queue.class);
     }
 
     @Test(timeout = 20000)
     public void testPresettledProducersConfigurationAppliedToTempTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?amqp.presettleProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, TemporaryTopic.class);
-        }
+        String presettleConfig = "?amqp.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, true, true, TemporaryTopic.class);
     }
 
     @Test(timeout = 20000)
     public void testPresettledProducersConfigurationAppliedToTempQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?amqp.presettleProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, TemporaryQueue.class);
-        }
+        String presettleConfig = "?amqp.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, true, true, TemporaryQueue.class);
     }
 
     @Test(timeout = 20000)
     public void testPresettledProducersConfigurationAppliedAnonymousSendToTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?amqp.presettleProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, Topic.class);
-        }
+        String presettleConfig = "?amqp.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, true, true, Topic.class);
     }
 
     @Test(timeout = 20000)
     public void testPresettledProducersConfigurationAppliedAnonymousSendToQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?amqp.presettleProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, Queue.class);
-        }
+        String presettleConfig = "?amqp.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, true, true, Queue.class);
     }
 
     @Test(timeout = 20000)
     public void testPresettledProducersConfigurationAppliedAnonymousSendToTempTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?amqp.presettleProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, TemporaryTopic.class);
-        }
+        String presettleConfig = "?amqp.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, true, true, TemporaryTopic.class);
     }
 
     @Test(timeout = 20000)
     public void testPresettledProducersConfigurationAppliedAnonymousSendToTempQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?amqp.presettleProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, TemporaryQueue.class);
-        }
+        String presettleConfig = "?amqp.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, true, true, TemporaryQueue.class);
+    }
+
+    @Test(timeout = 20000)
+    public void testPresettledProducersConfigurationAppliedAnonymousSendToTopicNoRelaySupport() throws Exception {
+        String presettleConfig = "?amqp.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, false, true, true, Topic.class);
+    }
+
+    @Test(timeout = 20000)
+    public void testPresettledProducersConfigurationAppliedAnonymousSendToQueueNoRelaySupport() throws Exception {
+        String presettleConfig = "?amqp.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, false, true, true, Queue.class);
+    }
+
+    @Test(timeout = 20000)
+    public void testPresettledProducersConfigurationAppliedAnonymousSendToTempTopicNoRelaySupport() throws Exception {
+        String presettleConfig = "?amqp.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, false, true, true, TemporaryTopic.class);
+    }
+
+    @Test(timeout = 20000)
+    public void testPresettledProducersConfigurationAppliedAnonymousSendToTempQueueNoRelaySupport() throws Exception {
+        String presettleConfig = "?amqp.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, false, true, true, TemporaryQueue.class);
     }
 
     //----- Test the jms.presettleProducers option ---------------------------------//
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleProducersTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, Topic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, true, true, Topic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleProducersQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, Queue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, true, true, Queue.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleProducersTempTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, TemporaryTopic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, true, true, TemporaryTopic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleProducersTempQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, TemporaryQueue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, true, true, TemporaryQueue.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleProducersAnonymousTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, Topic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, true, true, Topic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleProducersAnonymousQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, Queue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, true, true, Queue.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleProducersAnonymousTempTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, TemporaryTopic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, true, true, TemporaryTopic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleProducersAnonymousTempQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, TemporaryQueue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, true, true, TemporaryQueue.class);
     }
 
     //----- Test the jms.presettleTopicProducers option ---------------------------------//
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleTopicProducersTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTopicProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, Topic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleTopicProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, true, true, Topic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleTopicProducersQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTopicProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, false, false, Queue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleTopicProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, false, false, Queue.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleTopicProducersTempTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTopicProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, TemporaryTopic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleTopicProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, true, true, TemporaryTopic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleTopicProducersTempQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTopicProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, false, false, TemporaryQueue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleTopicProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, false, false, TemporaryQueue.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleTopicProducersAnonymousTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTopicProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, true, Topic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleTopicProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, false, true, Topic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleTopicProducersAnonymousQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTopicProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, false, Queue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleTopicProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, false, false, Queue.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleTopicProducersAnonymousTempTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTopicProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, true, TemporaryTopic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleTopicProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, false, true, TemporaryTopic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleTopicProducersAnonymousTempQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTopicProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, false, TemporaryQueue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleTopicProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, false, false, TemporaryQueue.class);
     }
 
     //----- Test the jms.presettleQueueProducers option ---------------------------------//
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleQueueProducersTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleQueueProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, false, false, Topic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleQueueProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, false, false, Topic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleQueueProducersQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleQueueProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, Queue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleQueueProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, true, true, Queue.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleQueueProducersTempTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleQueueProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, false, false, TemporaryTopic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleQueueProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, false, false, TemporaryTopic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleQueueProducersTempQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleQueueProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, TemporaryQueue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleQueueProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, true, true, TemporaryQueue.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleQueueProducersAnonymousTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleQueueProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, false, Topic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleQueueProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, false, false, Topic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleQueueProducersAnonymousQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleQueueProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, true, Queue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleQueueProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, false, true, Queue.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleQueueProducersAnonymousTempTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleQueueProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, false, TemporaryTopic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleQueueProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, false, false, TemporaryTopic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleQueueProducersAnonymousTempQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleQueueProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, true, TemporaryQueue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleQueueProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, true, false, true, TemporaryQueue.class);
     }
 
     //----- Test the jms.presettleTransactedProducers option ---------------------------------//
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleTransactedProducersTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTransactedProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, Topic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleTransactedProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, true, false, true, true, Topic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleTransactedProducersQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTransactedProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, Queue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleTransactedProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, true, false, true, true, Queue.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleTransactedProducersTempTopic() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTransactedProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, TemporaryTopic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleTransactedProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, true, false, true, true, TemporaryTopic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleTransactedProducersTempQueue() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTransactedProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, TemporaryQueue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleTransactedProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, true, false, true, true, TemporaryQueue.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleTransactedProducersTopicNoTX() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTransactedProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, false, false, false, Topic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleTransactedProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, false, false, Topic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleTransactedProducersQueueNoTX() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTransactedProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, false, false, false, Queue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleTransactedProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, false, false, Queue.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleTransactedProducersTempTopicNoTX() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTransactedProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, false, false, false, TemporaryTopic.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleTransactedProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, false, false, TemporaryTopic.class);
     }
 
     @Test(timeout = 20000)
     public void testJmsPresettlePolicyPresettleTransactedProducersTempQueueNoTX() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTransactedProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, false, false, false, TemporaryQueue.class);
-        }
+        String presettleConfig = "?jms.presettlePolicy.presettleTransactedProducers=true";
+        doTestProducerWithPresettleOptions(presettleConfig, false, false, false, false, TemporaryQueue.class);
     }
 
     //----- Test Method implementation ---------------------------------------//
 
-    private void doTestProducerWithPresettleOptions(TestAmqpPeer testPeer, Connection connection, boolean senderSettled, boolean transferSettled, Class<? extends Destination> destType) throws Exception {
-        doTestProducerWithPresettleOptions(testPeer, connection, false, senderSettled, transferSettled, destType);
+    private void doTestProducerWithPresettleOptions(String uriOptions, boolean transacted, boolean anonymous, boolean senderSettled, boolean transferSettled, Class<? extends Destination> destType) throws Exception {
+        doTestProducerWithPresettleOptions(uriOptions, transacted, anonymous, true, senderSettled, transferSettled, destType);
     }
 
-    private void doTestProducerWithPresettleOptions(TestAmqpPeer testPeer, Connection connection, boolean transacted, boolean senderSettled, boolean transferSettled, Class<? extends Destination> destType) throws Exception {
-        doTestProducerWithPresettleOptions(testPeer, connection, transacted, false, senderSettled, transferSettled, destType);
-    }
+    private void doTestProducerWithPresettleOptions(String uriOptions, boolean transacted, boolean anonymous, boolean relaySupported, boolean senderSettled, boolean transferSettled, Class<? extends Destination> destType) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer, uriOptions, relaySupported ? serverCapabilities : null, null);
+            testPeer.expectBegin();
 
-    private void doTestProducerWithPresettleOptions(TestAmqpPeer testPeer, Connection connection, boolean transacted, boolean anonymous, boolean senderSettled, boolean transferSettled, Class<? extends Destination> destType) throws Exception {
-        testPeer.expectBegin();
+            Session session = null;
+            Binary txnId = null;
 
-        Session session = null;
-        Binary txnId = null;
+            if (transacted) {
+                // Expect the session, with an immediate link to the transaction coordinator
+                // using a target with the expected capabilities only.
+                CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
+                txCoordinatorMatcher.withCapabilities(arrayContaining(TxnCapability.LOCAL_TXN));
+                testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
 
-        if (transacted) {
-            // Expect the session, with an immediate link to the transaction coordinator
-            // using a target with the expected capabilities only.
-            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
-            txCoordinatorMatcher.withCapabilities(arrayContaining(TxnCapability.LOCAL_TXN));
-            testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+                // First expect an unsettled 'declare' transfer to the txn coordinator, and
+                // reply with a declared disposition state containing the txnId.
+                txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
+                testPeer.expectDeclare(txnId);
 
-            // First expect an unsettled 'declare' transfer to the txn coordinator, and
-            // reply with a declared disposition state containing the txnId.
-            txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
-            testPeer.expectDeclare(txnId);
+                session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            } else {
+                session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            }
 
-            session = connection.createSession(true, Session.SESSION_TRANSACTED);
-        } else {
-            session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Destination destination = null;
+            if (destType == Queue.class) {
+                destination = session.createQueue("MyQueue");
+            } else if (destType == Topic.class) {
+                destination = session.createTopic("MyTopis");
+            } else if (destType == TemporaryQueue.class) {
+                String dynamicAddress = "myTempQueueAddress";
+                testPeer.expectTempQueueCreationAttach(dynamicAddress);
+                destination = session.createTemporaryQueue();
+            } else if (destType == TemporaryTopic.class) {
+                String dynamicAddress = "myTempTopicAddress";
+                testPeer.expectTempTopicCreationAttach(dynamicAddress);
+                destination = session.createTemporaryTopic();
+            } else {
+                fail("unexpected type");
+            }
+
+            if (senderSettled) {
+                testPeer.expectSettledSenderAttach();
+            } else {
+                testPeer.expectSenderAttach();
+            }
+
+            MessageProducer producer = null;
+            if (anonymous) {
+                producer = session.createProducer(null);
+            } else {
+                producer = session.createProducer(destination);
+            }
+
+            // Create and transfer a new message
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            headersMatcher.withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+
+            Matcher<?> stateMatcher = nullValue();
+            if (transacted) {
+                stateMatcher = new TransactionalStateMatcher();
+                ((TransactionalStateMatcher) stateMatcher).withTxnId(equalTo(txnId));
+                ((TransactionalStateMatcher) stateMatcher).withOutcome(nullValue());
+            }
+
+            ListDescribedType responseState = new Accepted();
+            if (transacted) {
+                TransactionalState txState = new TransactionalState();
+                txState.setTxnId(txnId);
+                txState.setOutcome(new Accepted());
+            }
+
+            if (transferSettled) {
+                testPeer.expectTransfer(messageMatcher, stateMatcher, true, false, responseState, false);
+            } else {
+                testPeer.expectTransfer(messageMatcher, stateMatcher, false, true, responseState, true);
+            }
+
+            if (anonymous && !relaySupported) {
+                testPeer.expectDetach(true, true, true);
+            }
+
+            Message message = session.createTextMessage();
+
+            if (anonymous) {
+                producer.send(destination, message);
+            } else {
+                producer.send(message);
+            }
+
+            if (transacted) {
+                testPeer.expectDischarge(txnId, true);
+            }
+
+            testPeer.expectClose();
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
-
-        Destination destination = null;
-        if (destType == Queue.class) {
-            destination = session.createQueue("MyQueue");
-        } else if (destType == Topic.class) {
-            destination = session.createTopic("MyTopis");
-        } else if (destType == TemporaryQueue.class) {
-            String dynamicAddress = "myTempQueueAddress";
-            testPeer.expectTempQueueCreationAttach(dynamicAddress);
-            destination = session.createTemporaryQueue();
-        } else if (destType == TemporaryTopic.class) {
-            String dynamicAddress = "myTempTopicAddress";
-            testPeer.expectTempTopicCreationAttach(dynamicAddress);
-            destination = session.createTemporaryTopic();
-        } else {
-            fail("unexpected type");
-        }
-
-        if (senderSettled) {
-            testPeer.expectSettledSenderAttach();
-        } else {
-            testPeer.expectSenderAttach();
-        }
-
-        MessageProducer producer = null;
-        if (anonymous) {
-            producer = session.createProducer(null);
-        } else {
-            producer = session.createProducer(destination);
-        }
-
-        // Create and transfer a new message
-        MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
-        headersMatcher.withDurable(equalTo(true));
-        MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
-        TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
-        messageMatcher.setHeadersMatcher(headersMatcher);
-        messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
-
-        Matcher<?> stateMatcher = nullValue();
-        if (transacted) {
-            stateMatcher = new TransactionalStateMatcher();
-            ((TransactionalStateMatcher) stateMatcher).withTxnId(equalTo(txnId));
-            ((TransactionalStateMatcher) stateMatcher).withOutcome(nullValue());
-        }
-
-        ListDescribedType responseState = new Accepted();
-        if (transacted) {
-            TransactionalState txState = new TransactionalState();
-            txState.setTxnId(txnId);
-            txState.setOutcome(new Accepted());
-        }
-
-        if (transferSettled) {
-            testPeer.expectTransfer(messageMatcher, stateMatcher, true, false, responseState, false);
-        } else {
-            testPeer.expectTransfer(messageMatcher, stateMatcher, false, true, responseState, true);
-        }
-
-        Message message = session.createTextMessage();
-
-        if (anonymous) {
-            producer.send(destination, message);
-        } else {
-            producer.send(message);
-        }
-
-        if (transacted) {
-            testPeer.expectDischarge(txnId, true);
-        }
-
-        testPeer.expectClose();
-
-        connection.close();
-
-        testPeer.waitForAllHandlersToComplete(1000);
     }
 }

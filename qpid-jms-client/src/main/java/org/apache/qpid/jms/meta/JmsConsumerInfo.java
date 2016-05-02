@@ -31,6 +31,7 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
     private boolean noLocal;
     private int acknowledgementMode;
     private boolean localMessageExpiry;
+    private boolean presettle;
 
     private JmsRedeliveryPolicy redeliveryPolicy;
 
@@ -169,6 +170,14 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
 
     public void setRedeliveryPolicy(JmsRedeliveryPolicy redeliveryPolicy) {
         this.redeliveryPolicy = redeliveryPolicy;
+    }
+
+    public boolean isPresettle() {
+        return presettle;
+    }
+
+    public void setPresettle(boolean presettle) {
+        this.presettle = presettle;
     }
 
     @Override

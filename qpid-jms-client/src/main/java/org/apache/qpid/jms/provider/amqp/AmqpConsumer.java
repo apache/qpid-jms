@@ -19,8 +19,6 @@ package org.apache.qpid.jms.provider.amqp;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.MODIFIED_FAILED;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.MODIFIED_FAILED_UNDELIVERABLE;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.REJECTED;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -52,6 +50,9 @@ import org.apache.qpid.proton.engine.Receiver;
 import org.apache.qpid.proton.message.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 /**
  * AMQP Consumer object that is used to manage JMS MessageConsumer semantics.
@@ -225,15 +226,15 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
         if (ackType.equals(ACK_TYPE.DELIVERED)) {
             LOG.debug("Delivered Ack of message: {}", envelope);
-            if (!isPresettle()) {
+            if (!delivery.isSettled()) {
                 delivered.put(envelope, delivery);
+                delivery.setDefaultDeliveryState(MODIFIED_FAILED);
             }
-            delivery.setDefaultDeliveryState(MODIFIED_FAILED);
             sendFlowIfNeeded();
         } else if (ackType.equals(ACK_TYPE.ACCEPTED)) {
             // A Consumer may not always send a DELIVERED ack so we need to
             // check to ensure we don't add too much credit to the link.
-            if (isPresettle() || delivered.remove(envelope) == null) {
+            if (delivery.isSettled() || delivered.remove(envelope) == null) {
                 sendFlowIfNeeded();
             }
             LOG.debug("Accepted Ack of message: {}", envelope);
@@ -503,11 +504,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     protected void deliver(JmsInboundMessageDispatch envelope) throws Exception {
         ProviderListener listener = session.getProvider().getProviderListener();
         if (listener != null) {
-            if (envelope.getMessage() != null) {
-                LOG.debug("Dispatching received message: {}", envelope);
-            } else {
-                LOG.debug("Dispatching end of pull/browse to: {}", envelope.getConsumerId());
-            }
+            LOG.debug("Dispatching received message: {}", envelope);
             listener.onInboundMessage(envelope);
         } else {
             LOG.error("Provider listener is not set, message will be dropped: {}", envelope);

@@ -1035,6 +1035,11 @@ public class TestAmqpPeer implements AutoCloseable
         expectReceiverAttach(notNullValue(), notNullValue());
     }
 
+    public void expectSettledReceiverAttach()
+    {
+        expectReceiverAttach(notNullValue(), notNullValue(), true, false, false, false, null, null);
+    }
+
     public void expectReceiverAttach(final Matcher<?> linkNameMatcher, final Matcher<?> sourceMatcher)
     {
         expectReceiverAttach(linkNameMatcher, sourceMatcher, false, false, false, false, null, null);
@@ -1222,6 +1227,18 @@ public class TestAmqpPeer implements AutoCloseable
     {
         expectLinkFlowRespondWithTransfer(headerDescribedType, messageAnnotationsDescribedType, propertiesDescribedType,
                                           appPropertiesDescribedType, content, 1);
+    }
+
+    public void expectLinkFlowRespondWithTransfer(final HeaderDescribedType headerDescribedType,
+                                                  final MessageAnnotationsDescribedType messageAnnotationsDescribedType,
+                                                  final PropertiesDescribedType propertiesDescribedType,
+                                                  final ApplicationPropertiesDescribedType appPropertiesDescribedType,
+                                                  final DescribedType content,
+                                                  final boolean sendSettled)
+    {
+        expectLinkFlowRespondWithTransfer(headerDescribedType, messageAnnotationsDescribedType, propertiesDescribedType,
+                                          appPropertiesDescribedType, content, 1, false, false,
+                                          Matchers.greaterThanOrEqualTo(UnsignedInteger.valueOf(1)), 1, sendSettled, false);
     }
 
     public void expectLinkFlowRespondWithTransfer(final HeaderDescribedType headerDescribedType,

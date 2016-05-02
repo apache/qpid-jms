@@ -20,12 +20,17 @@ import static org.apache.qpid.jms.provider.amqp.AmqpSupport.ANONYMOUS_RELAY;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.fail;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
+import javax.jms.Queue;
 import javax.jms.Session;
+import javax.jms.TemporaryQueue;
+import javax.jms.TemporaryTopic;
+import javax.jms.Topic;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.ListDescribedType;
@@ -58,7 +63,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleAllSendToTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleAll=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, Topic.class);
         }
     }
 
@@ -66,7 +71,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleAllSendToQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleAll=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, false, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, Queue.class);
         }
     }
 
@@ -74,7 +79,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleAllSendToTempTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleAll=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, TemporaryTopic.class);
         }
     }
 
@@ -82,7 +87,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleAllSendToTempQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleAll=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, false, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, TemporaryQueue.class);
         }
     }
 
@@ -90,7 +95,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleAllAnonymousSendToTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleAll=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, true, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, Topic.class);
         }
     }
 
@@ -98,7 +103,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleAllAnonymousSendToQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleAll=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, false, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, Queue.class);
         }
     }
 
@@ -106,7 +111,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleAllAnonymousSendToTempTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleAll=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, true, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, TemporaryTopic.class);
         }
     }
 
@@ -114,7 +119,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleAllAnonymousSendToTempQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleAll=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, false, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, TemporaryQueue.class);
         }
     }
 
@@ -124,7 +129,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testPresettledProducersConfigurationAppliedToTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?amqp.presettleProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, Topic.class);
         }
     }
 
@@ -132,7 +137,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testPresettledProducersConfigurationAppliedToQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?amqp.presettleProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, false, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, Queue.class);
         }
     }
 
@@ -140,7 +145,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testPresettledProducersConfigurationAppliedToTempTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?amqp.presettleProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, TemporaryTopic.class);
         }
     }
 
@@ -148,7 +153,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testPresettledProducersConfigurationAppliedToTempQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?amqp.presettleProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, false, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, TemporaryQueue.class);
         }
     }
 
@@ -156,7 +161,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testPresettledProducersConfigurationAppliedAnonymousSendToTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?amqp.presettleProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, true, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, Topic.class);
         }
     }
 
@@ -164,7 +169,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testPresettledProducersConfigurationAppliedAnonymousSendToQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?amqp.presettleProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, false, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, Queue.class);
         }
     }
 
@@ -172,7 +177,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testPresettledProducersConfigurationAppliedAnonymousSendToTempTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?amqp.presettleProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, true, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, TemporaryTopic.class);
         }
     }
 
@@ -180,7 +185,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testPresettledProducersConfigurationAppliedAnonymousSendToTempQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?amqp.presettleProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, false, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, TemporaryQueue.class);
         }
     }
 
@@ -190,7 +195,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleProducersTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, Topic.class);
         }
     }
 
@@ -198,7 +203,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleProducersQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, false, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, Queue.class);
         }
     }
 
@@ -206,7 +211,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleProducersTempTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, TemporaryTopic.class);
         }
     }
 
@@ -214,7 +219,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleProducersTempQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, false, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, TemporaryQueue.class);
         }
     }
 
@@ -222,7 +227,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleProducersAnonymousTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, true, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, Topic.class);
         }
     }
 
@@ -230,7 +235,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleProducersAnonymousQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, false, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, Queue.class);
         }
     }
 
@@ -238,7 +243,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleProducersAnonymousTempTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, true, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, TemporaryTopic.class);
         }
     }
 
@@ -246,7 +251,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleProducersAnonymousTempQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, false, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, true, true, TemporaryQueue.class);
         }
     }
 
@@ -256,7 +261,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleTopicProducersTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTopicProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, Topic.class);
         }
     }
 
@@ -264,7 +269,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleTopicProducersQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTopicProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, false, false, false, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, false, Queue.class);
         }
     }
 
@@ -272,7 +277,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleTopicProducersTempTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTopicProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, TemporaryTopic.class);
         }
     }
 
@@ -280,7 +285,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleTopicProducersTempQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTopicProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, false, false, false, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, false, TemporaryQueue.class);
         }
     }
 
@@ -288,7 +293,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleTopicProducersAnonymousTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTopicProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, true, true, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, true, Topic.class);
         }
     }
 
@@ -296,7 +301,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleTopicProducersAnonymousQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTopicProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, false, false, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, false, Queue.class);
         }
     }
 
@@ -304,7 +309,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleTopicProducersAnonymousTempTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTopicProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, true, true, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, true, TemporaryTopic.class);
         }
     }
 
@@ -312,7 +317,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleTopicProducersAnonymousTempQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTopicProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, false, false, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, false, TemporaryQueue.class);
         }
     }
 
@@ -322,7 +327,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleQueueProducersTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleQueueProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, false, false, true, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, false, Topic.class);
         }
     }
 
@@ -330,7 +335,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleQueueProducersQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleQueueProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, false, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, Queue.class);
         }
     }
 
@@ -338,7 +343,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleQueueProducersTempTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleQueueProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, false, false, true, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, false, TemporaryTopic.class);
         }
     }
 
@@ -346,7 +351,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleQueueProducersTempQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleQueueProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, false, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, TemporaryQueue.class);
         }
     }
 
@@ -354,7 +359,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleQueueProducersAnonymousTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleQueueProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, false, true, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, false, Topic.class);
         }
     }
 
@@ -362,7 +367,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleQueueProducersAnonymousQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleQueueProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, true, false, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, true, Queue.class);
         }
     }
 
@@ -370,7 +375,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleQueueProducersAnonymousTempTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleQueueProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, false, true, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, false, TemporaryTopic.class);
         }
     }
 
@@ -378,7 +383,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleQueueProducersAnonymousTempQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleQueueProducers=true", serverCapabilities, null);
-            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, true, false, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, true, false, true, TemporaryQueue.class);
         }
     }
 
@@ -388,7 +393,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleTransactedProducersTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTransactedProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, true, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, Topic.class);
         }
     }
 
@@ -396,7 +401,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleTransactedProducersQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTransactedProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, false, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, Queue.class);
         }
     }
 
@@ -404,7 +409,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleTransactedProducersTempTopic() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTransactedProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, true, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, TemporaryTopic.class);
         }
     }
 
@@ -412,7 +417,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleTransactedProducersTempQueue() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTransactedProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, false, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, true, true, true, TemporaryQueue.class);
         }
     }
 
@@ -420,7 +425,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleTransactedProducersTopicNoTX() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTransactedProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, false, false, false, true, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, false, false, Topic.class);
         }
     }
 
@@ -428,7 +433,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleTransactedProducersQueueNoTX() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTransactedProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, false, false, false, false, false);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, false, false, Queue.class);
         }
     }
 
@@ -436,7 +441,7 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleTransactedProducersTempTopicNoTX() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTransactedProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, false, false, false, true, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, false, false, TemporaryTopic.class);
         }
     }
 
@@ -444,21 +449,21 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
     public void testJmsPresettlePolicyPresettleTransactedProducersTempQueueNoTX() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer, "?jms.presettlePolicy.presettleTransactedProducers=true");
-            doTestProducerWithPresettleOptions(testPeer, connection, false, false, false, false, true);
+            doTestProducerWithPresettleOptions(testPeer, connection, false, false, false, TemporaryQueue.class);
         }
     }
 
     //----- Test Method implementation ---------------------------------------//
 
-    private void doTestProducerWithPresettleOptions(TestAmqpPeer testPeer, Connection connection, boolean senderSettled, boolean transferSettled, boolean topic, boolean temporary) throws Exception {
-        doTestProducerWithPresettleOptions(testPeer, connection, false, senderSettled, transferSettled, topic, temporary);
+    private void doTestProducerWithPresettleOptions(TestAmqpPeer testPeer, Connection connection, boolean senderSettled, boolean transferSettled, Class<? extends Destination> destType) throws Exception {
+        doTestProducerWithPresettleOptions(testPeer, connection, false, senderSettled, transferSettled, destType);
     }
 
-    private void doTestProducerWithPresettleOptions(TestAmqpPeer testPeer, Connection connection, boolean transacted, boolean senderSettled, boolean transferSettled, boolean topic, boolean temporary) throws Exception {
-        doTestProducerWithPresettleOptions(testPeer, connection, transacted, false, senderSettled, transferSettled, topic, temporary);
+    private void doTestProducerWithPresettleOptions(TestAmqpPeer testPeer, Connection connection, boolean transacted, boolean senderSettled, boolean transferSettled, Class<? extends Destination> destType) throws Exception {
+        doTestProducerWithPresettleOptions(testPeer, connection, transacted, false, senderSettled, transferSettled, destType);
     }
 
-    private void doTestProducerWithPresettleOptions(TestAmqpPeer testPeer, Connection connection, boolean transacted, boolean anonymous, boolean senderSettled, boolean transferSettled, boolean topic, boolean temporary) throws Exception {
+    private void doTestProducerWithPresettleOptions(TestAmqpPeer testPeer, Connection connection, boolean transacted, boolean anonymous, boolean senderSettled, boolean transferSettled, Class<? extends Destination> destType) throws Exception {
         testPeer.expectBegin();
 
         Session session = null;
@@ -482,23 +487,20 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
         }
 
         Destination destination = null;
-        if (topic) {
-            if (temporary) {
-                String dynamicAddress = "myTempTopicAddress";
-                testPeer.expectTempTopicCreationAttach(dynamicAddress);
-                destination = session.createTemporaryTopic();
-            } else {
-                destination = session.createTopic("myTopic");
-            }
+        if (destType == Queue.class) {
+            destination = session.createQueue("MyQueue");
+        } else if (destType == Topic.class) {
+            destination = session.createTopic("MyTopis");
+        } else if (destType == TemporaryQueue.class) {
+            String dynamicAddress = "myTempQueueAddress";
+            testPeer.expectTempQueueCreationAttach(dynamicAddress);
+            destination = session.createTemporaryQueue();
+        } else if (destType == TemporaryTopic.class) {
+            String dynamicAddress = "myTempTopicAddress";
+            testPeer.expectTempTopicCreationAttach(dynamicAddress);
+            destination = session.createTemporaryTopic();
         } else {
-            if (temporary) {
-                String dynamicAddress = "myTempQueueAddress";
-                testPeer.expectTempQueueCreationAttach(dynamicAddress);
-                destination = session.createTemporaryQueue();
-            } else {
-                destination = session.createQueue("myTopic");
-            }
-            destination = session.createQueue("myQueue");
+            fail("unexpected type");
         }
 
         if (senderSettled) {

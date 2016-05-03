@@ -23,10 +23,16 @@ package org.apache.qpid.jms;
 public class JmsPresettlePolicy {
 
     private boolean presettleAll;
+
     private boolean presettleProducers;
     private boolean presettleTopicProducers;
     private boolean presettleQueueProducers;
     private boolean presettleTransactedProducers;
+
+    private boolean presettleConsumers;
+    private boolean presettleTopicConsumers;
+    private boolean presettleQueueConsumers;
+    private boolean presettleTransactedConsumers;
 
     public JmsPresettlePolicy() {
     }
@@ -37,6 +43,10 @@ public class JmsPresettlePolicy {
         this.presettleTopicProducers = source.presettleTopicProducers;
         this.presettleQueueProducers = source.presettleQueueProducers;
         this.presettleTransactedProducers = source.presettleTransactedProducers;
+        this.presettleConsumers = source.presettleConsumers;
+        this.presettleTopicConsumers = source.presettleTopicConsumers;
+        this.presettleQueueConsumers = source.presettleQueueConsumers;
+        this.presettleTransactedConsumers = source.presettleTransactedConsumers;
     }
 
     public JmsPresettlePolicy copy() {
@@ -148,11 +158,11 @@ public class JmsPresettlePolicy {
      * @param destination
      *      the destination that the producer will be sending to.
      * @param session
-     *      the session that owns the producer that will send be sending a message.
+     *      the session that owns the producer.
      *
      * @return true if the producer should send presettled.
      */
-    public boolean isSendPresttled(JmsDestination destination, JmsSession session) {
+    public boolean isProducerPresttled(JmsDestination destination, JmsSession session) {
 
         if (presettleAll || presettleProducers) {
             return true;
@@ -161,6 +171,108 @@ public class JmsPresettlePolicy {
         } else if (destination != null && destination.isQueue() && presettleQueueProducers) {
             return true;
         } else if (destination != null && destination.isTopic() && presettleTopicProducers) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @return the presettleConsumers configuration value for this policy.
+     */
+    public boolean isPresettleConsumers() {
+        return presettleConsumers;
+    }
+
+    /**
+     * The presettle all consumers value to apply.  When true all MessageConsumer
+     * instances created will indicate that presettled messages are requested.
+     *
+     * @param presettleConsumers
+     *      the presettleConsumers value to apply to this policy.
+     */
+    public void setPresettleConsumers(boolean presettleConsumers) {
+        this.presettleConsumers = presettleConsumers;
+    }
+
+    /**
+     * @return the presettleTopicConsumers setting for this policy.
+     */
+    public boolean isPresettleTopicConsumers() {
+        return presettleTopicConsumers;
+    }
+
+    /**
+     * The presettle Topic consumers value to apply.  When true any MessageConsumer for
+     * a Topic destination will indicate that presettled messages are requested.
+     *
+     * @param presettleTopicConsumers
+     *      the presettleTopicConsumers value to apply to this policy.
+     */
+    public void setPresettleTopicConsumers(boolean presettleTopicConsumers) {
+        this.presettleTopicConsumers = presettleTopicConsumers;
+    }
+
+    /**
+     * @return the presettleQueueConsumers setting for this policy.
+     */
+    public boolean isPresettleQueueConsumers() {
+        return presettleQueueConsumers;
+    }
+
+    /**
+     * The presettle Queue consumers value to apply.  When true any MessageConsumer for
+     * a Queue destination will indicate that presettled messages are requested.
+     *
+     * @param presettleQueueConsumers
+     *      the presettleQueueConsumers value to apply to this policy.
+     */
+    public void setPresettleQueueConsumers(boolean presettleQueueConsumers) {
+        this.presettleQueueConsumers = presettleQueueConsumers;
+    }
+
+    /**
+     * @return the presettleTransactedConsumers setting for this policy.
+     */
+    public boolean isPresettleTransactedConsumers() {
+        return presettleTransactedConsumers;
+    }
+
+    /**
+     * The presettle consumers inside a transaction value to apply.  When true all the
+     * MessageConsumer created in a transacted Session  will indicate that presettled
+     * messages are requested.
+     *
+     * @param presettleTransactedConsumers
+     *      the presettleTransactedConsumers value to apply to this policy.
+     */
+    public void setPresettleTransactedConsumers(boolean presettleTransactedConsumers) {
+        this.presettleTransactedConsumers = presettleTransactedConsumers;
+    }
+
+    /**
+     * Determines when a consumer will be created with the settlement mode set to presettled.
+     * <p>
+     * Called when the a consumer is being created to determine whether the consumer will
+     * be configured to request that the remote sends it message that are presettled.
+     * <p>
+     *
+     * @param destination
+     *      the destination that the consumer will be listening to.
+     * @param session
+     *      the session that owns the consumer being created.
+     *
+     * @return true if the producer should send presettled.
+     */
+    public boolean isConsumerPresttled(JmsDestination destination, JmsSession session) {
+
+        if (presettleAll || presettleConsumers) {
+            return true;
+        } else if (session.isTransacted() && presettleTransactedConsumers) {
+            return true;
+        } else if (destination != null && destination.isQueue() && presettleQueueConsumers) {
+            return true;
+        } else if (destination != null && destination.isTopic() && presettleTopicConsumers) {
             return true;
         }
 

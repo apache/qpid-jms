@@ -699,7 +699,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             envelope.setDispatchId(messageSequence);
 
             if (producer.isAnonymous()) {
-                envelope.setPresettle(presettlePolicy.isSendPresttled(destination, this));
+                envelope.setPresettle(presettlePolicy.isProducerPresttled(destination, this));
             }
 
             transactionContext.send(connection, envelope);

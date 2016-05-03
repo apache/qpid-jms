@@ -98,6 +98,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         consumerInfo.setPrefetchSize(getConfiguredPrefetch(destination, policy));
         consumerInfo.setRedeliveryPolicy(redeliveryPolicy);
         consumerInfo.setLocalMessageExpiry(connection.isLocalMessageExpiry());
+        consumerInfo.setPresettle(session.getPresettlePolicy().isConsumerPresttled(destination, session));
 
         session.getConnection().createResource(consumerInfo);
     }

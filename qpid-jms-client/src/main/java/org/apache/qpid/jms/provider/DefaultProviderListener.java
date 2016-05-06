@@ -56,7 +56,7 @@ public class DefaultProviderListener implements ProviderListener {
     }
 
     @Override
-    public void onResourceRemotelyClosed(JmsResource resource, Exception cause) {
+    public void onResourceClosed(JmsResource resource, Exception cause) {
     }
 
     @Override

@@ -144,8 +144,10 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     }
 
     public void remotelyClosed(AmqpProvider provider) {
-        Exception error = AmqpSupport.convertToException(getEndpoint(), getEndpoint().getRemoteCondition());
+        locallyClosed(provider, AmqpSupport.convertToException(getEndpoint(), getEndpoint().getRemoteCondition()));
+    }
 
+    public void locallyClosed(AmqpProvider provider, Exception error) {
         if (parent != null) {
             parent.removeChildResource(this);
         }
@@ -159,7 +161,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
         if (getResourceInfo() instanceof JmsConnectionInfo) {
             provider.fireProviderException(error);
         } else {
-            provider.fireResourceRemotelyClosed(getResourceInfo(), error);
+            provider.fireResourceClosed(getResourceInfo(), error);
         }
     }
 

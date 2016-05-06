@@ -75,33 +75,33 @@ public interface JmsConnectionListener {
     void onInboundMessage(JmsInboundMessageDispatch envelope);
 
     /**
-     * Called when the remote peer closes a session.
+     * Called when the session is closed due to remote action or local error detection.
      *
      * @param session
-     *      The session that was closed on the remote end.
+     *      The session that was closed and needs to be cleaned up.
      * @param cause
-     *      The exception that provides additional context on the remote closure.
+     *      The exception that provides additional context on the closure.
      */
-    void onSessionRemotelyClosed(Session session, Exception cause);
+    void onSessionClosed(Session session, Exception cause);
 
     /**
-     * Called when the remote peer closes a MessageConsumer.
+     * Called when the MessageConsumer is closed due to remote action or local error detection.
      *
      * @param consumer
-     *      The consumer that was closed on the remote end.
+     *      The consumer that was closed and needs to be cleaned up.
      * @param cause
-     *      The exception that provides additional context on the remote closure.
+     *      The exception that provides additional context on the closure.
      */
-    void onConsumerRemotelyClosed(MessageConsumer consumer, Exception cause);
+    void onConsumerClosed(MessageConsumer consumer, Exception cause);
 
     /**
-     * Called when the remote peer closes a MessageProducer.
+     * Called when the MessageProducer is closed due to remote action or local error detection.
      *
      * @param producer
-     *      The producer that was closed on the remote end.
+     *      The producer that was closed and needs to be cleaned up.
      * @param cause
-     *      The exception that provides additional context on the remote closure.
+     *      The exception that provides additional context on the closure.
      */
-    void onProducerRemotelyClosed(MessageProducer producer, Exception cause);
+    void onProducerClosed(MessageProducer producer, Exception cause);
 
 }

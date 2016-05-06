@@ -257,7 +257,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                         // is redundant: zero-prefetch consumers already pull, and
                         // the rest block indefinitely on the local messageQueue.
                         pullForced = true;
-                        if(performPullIfRequired(timeout, true)) {
+                        if (performPullIfRequired(timeout, true)) {
                             startConsumerResource();
                             // We refresh credit if it is a prefetching consumer, since the
                             // pull drained it. Processing acks can open the credit window, but

@@ -16,10 +16,6 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
-import io.netty.util.ReferenceCountUtil;
-
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -77,6 +73,10 @@ import org.apache.qpid.proton.framing.TransportFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
+import io.netty.util.ReferenceCountUtil;
+
 /**
  * An AMQP v1.0 Provider.
  *
@@ -118,6 +118,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
     private int channelMax = DEFAULT_CHANNEL_MAX;
     private int idleTimeout = 60000;
+    private int drainTimeout = 60000;
     private long sessionOutoingWindow = -1; //Use proton default
     private int maxFrameSize = DEFAULT_MAX_FRAME_SIZE;
 
@@ -924,10 +925,10 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         }
     }
 
-    void fireResourceRemotelyClosed(JmsResource resource, Exception ex) {
+    void fireResourceClosed(JmsResource resource, Exception ex) {
         ProviderListener listener = this.listener;
         if (listener != null) {
-            listener.onResourceRemotelyClosed(resource, ex);
+            listener.onResourceClosed(resource, ex);
         }
     }
 
@@ -1027,6 +1028,22 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
      */
     public void setIdleTimeout(int idleTimeout) {
         this.idleTimeout = idleTimeout;
+    }
+
+    public int getDrainTimeout() {
+        return drainTimeout;
+    }
+
+    /**
+     * Sets the drain timeout (in milliseconds) after which a consumer will be
+     * treated as having failed and will be closed due to unknown state of the
+     * remote having not responded to the requested drain.
+     *
+     * @param drainTimeout
+     *      the drainTimeout to use for receiver links.
+     */
+    public void setDrainTimeout(int drainTimeout) {
+        this.drainTimeout = drainTimeout;
     }
 
     public int getMaxFrameSize() {

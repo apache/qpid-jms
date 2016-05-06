@@ -112,15 +112,17 @@ public interface ProviderListener {
     void onConnectionFailure(IOException ex);
 
     /**
-     * Called to indicate that a currently active resource has been closed on the
-     * remote end due to management or other action.
+     * Called to indicate that a currently active resource has been closed
+     * due to some error condition, management request or some other action.
+     * This can either be initiated remotely or locally depending on the
+     * condition that triggers the close.
      *
      * @param resource
-     *        the JmsResource instance that has been remotely closed.
+     *        the JmsResource instance that has been closed.
      * @param cause
      *        optional exception object that indicates the cause of the close.
      */
-    void onResourceRemotelyClosed(JmsResource resource, Exception cause);
+    void onResourceClosed(JmsResource resource, Exception cause);
 
     /**
      * Called to indicate that a some client operation caused or received an

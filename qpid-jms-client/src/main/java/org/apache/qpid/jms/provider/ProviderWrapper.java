@@ -184,8 +184,8 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
     }
 
     @Override
-    public void onResourceRemotelyClosed(JmsResource resource, Exception cause) {
-        listener.onResourceRemotelyClosed(resource, cause);
+    public void onResourceClosed(JmsResource resource, Exception cause) {
+        listener.onResourceClosed(resource, cause);
     }
 
     @Override

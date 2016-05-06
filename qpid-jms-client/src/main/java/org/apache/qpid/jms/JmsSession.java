@@ -268,16 +268,16 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         }
     }
 
-    void remotelyClosed(Exception cause) {
+    void sessionClosed(Exception cause) {
         try {
             shutdown(cause);
         } catch (Throwable error) {
-            LOG.trace("Ignoring exception thrown during cleanup of remotely closed session", error);
+            LOG.trace("Ignoring exception thrown during cleanup of closed session", error);
         }
     }
 
-    JmsMessageConsumer consumerRemotelyClosed(JmsConsumerInfo resource, Exception cause) {
-        LOG.info("A JMS MessageConsumer has been remotely closed: {}", resource);
+    JmsMessageConsumer consumerClosed(JmsConsumerInfo resource, Exception cause) {
+        LOG.info("A JMS MessageConsumer has been closed: {}", resource);
 
         JmsMessageConsumer consumer = consumers.get(resource.getId());
 
@@ -286,14 +286,14 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                 consumer.shutdown(cause);
             }
         } catch (Throwable error) {
-            LOG.trace("Ignoring exception thrown during cleanup of remotely closed consumer", error);
+            LOG.trace("Ignoring exception thrown during cleanup of closed consumer", error);
         }
 
         return consumer;
     }
 
-    JmsMessageProducer producerRemotelyClosed(JmsProducerInfo resource, Exception cause) {
-        LOG.info("A JMS MessageProducer has been remotely closed: {}", resource);
+    JmsMessageProducer producerClosed(JmsProducerInfo resource, Exception cause) {
+        LOG.info("A JMS MessageProducer has been closed: {}", resource);
 
         JmsMessageProducer producer = producers.get(resource.getId());
 
@@ -302,7 +302,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                 producer.shutdown(cause);
             }
         } catch (Throwable error) {
-            LOG.trace("Ignoring exception thrown during cleanup of remotely closed producer", error);
+            LOG.trace("Ignoring exception thrown during cleanup of closed producer", error);
         }
 
         return producer;

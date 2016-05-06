@@ -112,6 +112,23 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             // the peer sees the update.
             stopRequest = request;
             receiver.drain(0);
+
+            if (getDrainTimeout() > 0) {
+                // If the remote doesn't respond we will close the consumer and break any
+                // blocked receive or stop calls that are waiting.
+                final ScheduledFuture<?> future = getSession().schedule(new Runnable() {
+                    @Override
+                    public void run() {
+                        LOG.trace("Consumer {} drain request timed out", getConsumerId());
+                        IOException error = new IOException("Remote did not respond to a drain request in time");
+                        locallyClosed(session.getProvider(), error);
+                        stopRequest.onFailure(error);
+                        session.getProvider().pumpToProtonTransport(stopRequest);
+                    }
+                }, getDrainTimeout());
+
+                stopRequest = new ScheduledRequest(future, stopRequest);
+            }
         }
     }
 
@@ -124,14 +141,12 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                 LOG.trace("Consumer {} running scheduled stop", getConsumerId());
                 if (getEndpoint().getRemoteCredit() != 0) {
                     stop(request);
-                    // TODO: We close the proton transport head to avoid this doing any writes if
-                    // the TCP transport has gone, but it might be good to also avoid trying here.
                     session.getProvider().pumpToProtonTransport(request);
                 }
             }
         }, timeout);
 
-        stopRequest = new ScheduledStopRequest(future, request);
+        stopRequest = new ScheduledRequest(future, request);
     }
 
     @Override
@@ -488,6 +503,10 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         this.presettle = presettle;
     }
 
+    public int getDrainTimeout() {
+        return session.getProvider().getDrainTimeout();
+    }
+
     @Override
     public String toString() {
         return "AmqpConsumer { " + getResourceInfo().getId() + " }";
@@ -544,26 +563,26 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     //----- Inner classes used in message pull operations --------------------//
 
-    protected static final class ScheduledStopRequest implements AsyncResult {
+    protected static final class ScheduledRequest implements AsyncResult {
 
-        private final ScheduledFuture<?> sheduledStopTask;
+        private final ScheduledFuture<?> sheduledTask;
         private final AsyncResult origRequest;
 
-        public ScheduledStopRequest(ScheduledFuture<?> completionTask, AsyncResult origRequest) {
-            this.sheduledStopTask = completionTask;
+        public ScheduledRequest(ScheduledFuture<?> completionTask, AsyncResult origRequest) {
+            this.sheduledTask = completionTask;
             this.origRequest = origRequest;
         }
 
         @Override
-        public void onFailure(Throwable t) {
-            sheduledStopTask.cancel(false);
-            origRequest.onFailure(t);
+        public void onFailure(Throwable cause) {
+            sheduledTask.cancel(false);
+            origRequest.onFailure(cause);
         }
 
         @Override
         public void onSuccess() {
-            boolean cancelled = sheduledStopTask.cancel(false);
-            if(cancelled) {
+            boolean cancelled = sheduledTask.cancel(false);
+            if (cancelled) {
                 // Signal completion. Otherwise wait for the scheduled task to do it.
                 origRequest.onSuccess();
             }

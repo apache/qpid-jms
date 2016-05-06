@@ -128,7 +128,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
-                public void onConsumerRemotelyClosed(MessageConsumer consumer, Exception exception) {
+                public void onConsumerClosed(MessageConsumer consumer, Exception exception) {
                     consumerClosed.set(true);
                 }
             });
@@ -744,6 +744,67 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
             // Then close the consumer
             testPeer.expectDetach(true, true, true);
+
+            consumer.close();
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout=30000)
+    public void testReceiveWithTimoutAndNoDrainResponseFailsAfterTimeout() throws IOException, Exception {
+        doDrainWithNoResponseOnNoMessageTestImpl(false);
+    }
+
+    @Test(timeout=30000)
+    public void testReceiveNoWaitAndNoDrainResponseFailsAfterTimeout() throws IOException, Exception {
+        doDrainWithNoResponseOnNoMessageTestImpl(true);
+    }
+
+    private void doDrainWithNoResponseOnNoMessageTestImpl(boolean noWait) throws JMSException, InterruptedException, Exception, IOException {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = null;
+            connection = testFixture.establishConnecton(testPeer, "?amqp.drainTimeout=500");
+
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // Expect receiver link attach and send credit
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
+
+            // Expect drain but do not respond so that the consumer times out.
+            testPeer.expectLinkFlow(true, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
+
+            // Consumer should close due to timed waiting for drain.
+            testPeer.expectDetach(true, true, true);
+
+            MessageConsumer consumer = session.createConsumer(queue);
+
+            try {
+                if (noWait) {
+                    consumer.receiveNoWait();
+                } else {
+                    consumer.receive(1);
+                }
+
+                fail("Drain timeout should have aborted the receive.");
+            } catch (JMSException ex) {
+                LOG.info("Receive failed after drain timeout as expected: {}", ex.getMessage());
+            }
+
+            try {
+                consumer.getMessageSelector();
+                fail("Should be closed and throw an exception");
+            } catch (JMSException ex) {
+            }
 
             consumer.close();
 

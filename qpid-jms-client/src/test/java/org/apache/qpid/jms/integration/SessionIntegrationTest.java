@@ -1271,7 +1271,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
-                public void onSessionRemotelyClosed(Session session, Exception exception) {
+                public void onSessionClosed(Session session, Exception exception) {
                     sessionClosed.set(true);
                 }
             });
@@ -1334,7 +1334,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
-                public void onSessionRemotelyClosed(Session session, Exception exception) {
+                public void onSessionClosed(Session session, Exception exception) {
                     sessionClosed.set(true);
                 }
             });

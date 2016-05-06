@@ -1194,7 +1194,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     }
 
     @Override
-    public void onResourceRemotelyClosed(final JmsResource resource, final Exception cause) {
+    public void onResourceClosed(final JmsResource resource, final Exception cause) {
         // Closure of the Connection itself is notified via onConnectionFailure
 
         // Run on the connection executor to free the provider to go do more work and avoid
@@ -1207,19 +1207,19 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
                     if (resource instanceof JmsSessionInfo) {
                         JmsSession session = sessions.get(resource.getId());
                         if (session != null) {
-                            session.remotelyClosed(cause);
+                            session.sessionClosed(cause);
                             for (JmsConnectionListener listener : connectionListeners) {
-                                listener.onSessionRemotelyClosed(session, cause);
+                                listener.onSessionClosed(session, cause);
                             }
                         }
                     } else if (resource instanceof JmsProducerInfo) {
                         JmsSessionId parentId = ((JmsProducerInfo) resource).getParentId();
                         JmsSession session = sessions.get(parentId);
                         if (session != null) {
-                            JmsMessageProducer producer = session.producerRemotelyClosed((JmsProducerInfo) resource, cause);
+                            JmsMessageProducer producer = session.producerClosed((JmsProducerInfo) resource, cause);
                             if (producer != null) {
                                 for (JmsConnectionListener listener : connectionListeners) {
-                                    listener.onProducerRemotelyClosed(producer, cause);
+                                    listener.onProducerClosed(producer, cause);
                                 }
                             }
                         }
@@ -1227,10 +1227,10 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
                         JmsSessionId parentId = ((JmsConsumerInfo) resource).getParentId();
                         JmsSession session = sessions.get(parentId);
                         if (session != null) {
-                            JmsMessageConsumer consumer = session.consumerRemotelyClosed((JmsConsumerInfo) resource, cause);
+                            JmsMessageConsumer consumer = session.consumerClosed((JmsConsumerInfo) resource, cause);
                             if (consumer != null) {
                                 for (JmsConnectionListener listener : connectionListeners) {
-                                    listener.onConsumerRemotelyClosed(consumer, cause);
+                                    listener.onConsumerClosed(consumer, cause);
                                 }
                             }
                         }

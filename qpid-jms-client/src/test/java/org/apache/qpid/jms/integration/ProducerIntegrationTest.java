@@ -802,7 +802,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
-                public void onProducerRemotelyClosed(MessageProducer producer, Exception exception) {
+                public void onProducerClosed(MessageProducer producer, Exception exception) {
                     producerClosed.set(true);
                 }
             });

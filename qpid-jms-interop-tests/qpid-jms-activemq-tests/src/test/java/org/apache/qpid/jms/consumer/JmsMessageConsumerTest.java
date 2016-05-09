@@ -180,7 +180,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
      *
      * @throws Exception on error found during test run.
      */
-    @Test(timeout=60000)
+    @Test(timeout = 60000)
     public void testConsumerReceiveBeforeMessageDispatched() throws Exception {
         final Connection connection = createAmqpConnection();
         this.connection = connection;
@@ -207,7 +207,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertNotNull(msg);
     }
 
-    @Test(timeout=60000)
+    @Test(timeout = 60000)
     public void testAsynchronousMessageConsumption() throws Exception {
         final int msgCount = 4;
         final Connection connection = createAmqpConnection();
@@ -232,7 +232,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         });
 
         sendToAmqQueue(msgCount);
-        assertTrue(done.await(1000, TimeUnit.MILLISECONDS));
+        assertTrue(done.await(5000, TimeUnit.MILLISECONDS));
         assertEquals(msgCount, counter.get());
     }
 

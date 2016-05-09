@@ -286,7 +286,7 @@ public class PresettledConsumerIntegrationTest extends QpidJmsTestCase {
             }
 
             MessageConsumer consumer = session.createConsumer(destination);
-            assertNotNull(consumer.receive(100));
+            assertNotNull(consumer.receive(3000));
 
             if (transacted) {
                 testPeer.expectDischarge(txnId, true);

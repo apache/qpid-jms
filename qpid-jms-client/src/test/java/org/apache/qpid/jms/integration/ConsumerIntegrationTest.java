@@ -786,7 +786,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             // Consumer should close due to timed waiting for drain.
             testPeer.expectDetach(true, true, true);
 
-            MessageConsumer consumer = session.createConsumer(queue);
+            final MessageConsumer consumer = session.createConsumer(queue);
 
             try {
                 if (noWait) {
@@ -800,13 +800,18 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
                 LOG.info("Receive failed after drain timeout as expected: {}", ex.getMessage());
             }
 
-            try {
-                consumer.getMessageSelector();
-                fail("Should be closed and throw an exception");
-            } catch (JMSException ex) {
-            }
+            assertTrue("Consumer should close", Wait.waitFor(new Wait.Condition() {
 
-            consumer.close();
+                @Override
+                public boolean isSatisified() throws Exception {
+                    try {
+                        consumer.getMessageSelector();
+                        return false;
+                    } catch (JMSException ex) {
+                        return true;
+                    }
+                }
+            }));
 
             testPeer.expectClose();
             connection.close();

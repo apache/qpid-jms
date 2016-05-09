@@ -596,12 +596,20 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         consumers.remove(consumer.getConsumerId());
     }
 
+    protected JmsMessageConsumer lookup(JmsConsumerId consumerId) {
+        return consumers.get(consumerId);
+    }
+
     protected void add(JmsMessageProducer producer) {
         producers.put(producer.getProducerId(), producer);
     }
 
     protected void remove(JmsMessageProducer producer) {
         producers.remove(producer.getProducerId());
+    }
+
+    protected JmsMessageProducer lookup(JmsProducerId producerId) {
+        return producers.get(producerId);
     }
 
     protected void onException(Exception ex) {

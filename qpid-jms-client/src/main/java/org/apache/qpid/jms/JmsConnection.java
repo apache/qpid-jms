@@ -61,6 +61,7 @@ import org.apache.qpid.jms.meta.JmsConnectionId;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
+import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsSessionId;
@@ -1199,7 +1200,37 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
         // Run on the connection executor to free the provider to go do more work and avoid
         // any chance of a deadlock if the code ever looped back to the provider.
+
         if (!closing.get() && !closed.get()) {
+
+            // Set the failure cause indicator now to more quickly reflect the correct
+            // state in the resource.  The actual shutdown and clean will be done on the
+            // connection executor thread to avoid looping or stalling the provider thread.
+            if (resource instanceof JmsSessionInfo) {
+                JmsSession session = sessions.get(resource.getId());
+                if (session != null) {
+                    session.setFailureCause(cause);
+                }
+            } else if (resource instanceof JmsProducerInfo) {
+                JmsSessionId parentId = ((JmsProducerInfo) resource).getParentId();
+                JmsSession session = sessions.get(parentId);
+                if (session != null) {
+                    JmsMessageProducer producer = session.lookup((JmsProducerId) resource.getId());
+                    if (producer != null) {
+                        producer.setFailureCause(cause);
+                    }
+                }
+            } else if (resource instanceof JmsConsumerInfo) {
+                JmsSessionId parentId = ((JmsConsumerInfo) resource).getParentId();
+                JmsSession session = sessions.get(parentId);
+                if (session != null) {
+                    JmsMessageConsumer consumer = session.lookup((JmsConsumerId) resource.getId());
+                    if (consumer != null) {
+                        consumer.setFailureCause(cause);
+                    }
+                }
+            }
+
             executor.execute(new Runnable() {
 
                 @Override

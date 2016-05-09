@@ -18,6 +18,7 @@ package org.apache.qpid.jms;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
@@ -48,7 +49,7 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
     protected boolean disableMessageId;
     protected boolean disableTimestamp;
     protected final AtomicLong messageSequence = new AtomicLong();
-    protected Exception failureCause;
+    protected final AtomicReference<Exception> failureCause = new AtomicReference<>();
 
     protected JmsMessageProducer(JmsProducerId producerId, JmsSession session, JmsDestination destination) throws JMSException {
         this.session = session;
@@ -92,7 +93,7 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
 
     protected void shutdown(Exception cause) throws JMSException {
         if (closed.compareAndSet(false, true)) {
-            failureCause = cause;
+            failureCause.set(cause);
             session.remove(this);
         }
     }
@@ -221,11 +222,11 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
         if (closed.get()) {
             IllegalStateException jmsEx = null;
 
-            if (failureCause == null) {
+            if (getFailureCause() == null) {
                 jmsEx = new IllegalStateException("The MessageProducer is closed");
             } else {
                 jmsEx = new IllegalStateException("The MessageProducer was closed due to an unrecoverable error.");
-                jmsEx.initCause(failureCause);
+                jmsEx.initCause(failureCause.get());
             }
 
             throw jmsEx;
@@ -238,6 +239,18 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
 
     protected boolean isAnonymous() {
         return anonymousProducer;
+    }
+
+    void setFailureCause(Exception failureCause) {
+        this.failureCause.set(failureCause);
+    }
+
+    Exception getFailureCause() {
+        if (failureCause.get() == null) {
+            return session.getFailureCause();
+        }
+
+        return failureCause.get();
     }
 
     ////////////////////////////////////////////////////////////////////////////

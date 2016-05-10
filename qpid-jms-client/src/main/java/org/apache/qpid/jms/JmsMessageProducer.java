@@ -226,7 +226,7 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
                 jmsEx = new IllegalStateException("The MessageProducer is closed");
             } else {
                 jmsEx = new IllegalStateException("The MessageProducer was closed due to an unrecoverable error.");
-                jmsEx.initCause(failureCause.get());
+                jmsEx.initCause(getFailureCause());
             }
 
             throw jmsEx;

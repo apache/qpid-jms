@@ -192,12 +192,16 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         }
 
         // Stop processing any new messages that arrive
-        for (JmsMessageConsumer c : consumers.values()) {
-            c.suspendForRollback();
+        try {
+            for (JmsMessageConsumer c : consumers.values()) {
+                c.suspendForRollback();
+            }
+        } finally {
+            transactionContext.rollback();
         }
 
-        transactionContext.rollback();
-
+        // Currently some consumers won't get suspended and some won't restart
+        // after a failed rollback.
         for (JmsMessageConsumer c : consumers.values()) {
             c.resumeAfterRollback();
         }

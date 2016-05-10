@@ -1211,4 +1211,68 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
         }
     }
+
+    @Test(timeout = 20000)
+    public void testRollbackWithNoResponseForSuspendConsumer() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer, "?amqp.drainTimeout=1000");
+            connection.start();
+
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+
+            // First expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a declared disposition state containing the txnId.
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            testPeer.expectDeclare(txnId);
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            Queue queue = session.createQueue("myQueue");
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), 2);
+
+            // Then expect a *settled* TransactionalState disposition for the message once received by the consumer
+            TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
+            stateMatcher.withTxnId(equalTo(txnId));
+            stateMatcher.withOutcome(new AcceptedMatcher());
+
+            testPeer.expectDisposition(true, stateMatcher);
+
+            // Read one so we try to suspend on rollback
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+            Message receivedMessage = messageConsumer.receive(3000);
+
+            assertNotNull(receivedMessage);
+            assertTrue(receivedMessage instanceof TextMessage);
+
+            // Expect the consumer to be 'stopped' prior to rollback by issuing a 'drain'
+            testPeer.expectLinkFlow(true, false, greaterThan(UnsignedInteger.ZERO));
+
+            // Expect the consumer to be closed after drain timeout
+            testPeer.expectDetach(true, true, true);
+
+            // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
+            // and reply with accepted and settled disposition to indicate the rollback succeeded
+            testPeer.expectDischarge(txnId, true);
+
+            // Then expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a declared disposition state containing the txnId.
+            txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            testPeer.expectDeclare(txnId);
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
+
+            try {
+                session.rollback();
+                //fail("Consumer should have failed to stop and caused an error on rollback.");
+            } catch (JMSException ex) {
+                // Expected
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
 }

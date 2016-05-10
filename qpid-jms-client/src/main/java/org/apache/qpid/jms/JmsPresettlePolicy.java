@@ -32,7 +32,6 @@ public class JmsPresettlePolicy {
     private boolean presettleConsumers;
     private boolean presettleTopicConsumers;
     private boolean presettleQueueConsumers;
-    private boolean presettleTransactedConsumers;
 
     public JmsPresettlePolicy() {
     }
@@ -46,7 +45,6 @@ public class JmsPresettlePolicy {
         this.presettleConsumers = source.presettleConsumers;
         this.presettleTopicConsumers = source.presettleTopicConsumers;
         this.presettleQueueConsumers = source.presettleQueueConsumers;
-        this.presettleTransactedConsumers = source.presettleTransactedConsumers;
     }
 
     public JmsPresettlePolicy copy() {
@@ -232,25 +230,6 @@ public class JmsPresettlePolicy {
     }
 
     /**
-     * @return the presettleTransactedConsumers setting for this policy.
-     */
-    public boolean isPresettleTransactedConsumers() {
-        return presettleTransactedConsumers;
-    }
-
-    /**
-     * The presettle consumers inside a transaction value to apply.  When true all the
-     * MessageConsumer created in a transacted Session  will indicate that presettled
-     * messages are requested.
-     *
-     * @param presettleTransactedConsumers
-     *      the presettleTransactedConsumers value to apply to this policy.
-     */
-    public void setPresettleTransactedConsumers(boolean presettleTransactedConsumers) {
-        this.presettleTransactedConsumers = presettleTransactedConsumers;
-    }
-
-    /**
      * Determines when a consumer will be created with the settlement mode set to presettled.
      * <p>
      * Called when the a consumer is being created to determine whether the consumer will
@@ -266,9 +245,9 @@ public class JmsPresettlePolicy {
      */
     public boolean isConsumerPresttled(JmsDestination destination, JmsSession session) {
 
-        if (presettleAll || presettleConsumers) {
-            return true;
-        } else if (session.isTransacted() && presettleTransactedConsumers) {
+        if (session.isTransacted()) {
+            return false;
+        } else if (presettleAll || presettleConsumers) {
             return true;
         } else if (destination != null && destination.isQueue() && presettleQueueConsumers) {
             return true;

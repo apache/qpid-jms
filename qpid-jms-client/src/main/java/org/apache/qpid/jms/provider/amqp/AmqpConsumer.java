@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.meta.JmsConsumerId;
@@ -120,9 +121,9 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                     @Override
                     public void run() {
                         LOG.trace("Consumer {} drain request timed out", getConsumerId());
-                        IOException error = new IOException("Remote did not respond to a drain request in time");
-                        locallyClosed(session.getProvider(), error);
-                        stopRequest.onFailure(error);
+                        Exception cause = new JmsOperationTimedOutException("Remote did not respond to a drain request in time");
+                        locallyClosed(session.getProvider(), cause);
+                        stopRequest.onFailure(cause);
                         session.getProvider().pumpToProtonTransport(stopRequest);
                     }
                 }, getDrainTimeout());

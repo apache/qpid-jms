@@ -115,13 +115,13 @@ The RedeliveryPolicy controls how redelivered messages are handled on the client
 The PresettlePolicy controls when a producer or consumer instance will be configured to use AMQP presettled messaging semantics.
 
 + **jms.presettlePolicy.presettleAll** when true all producers and non-transacted consumers created operate in presettled mode, defaults to false.
-+ **jms.presettlePolicy.presettleProducers** when true all producers operate in presttled mode, defaults to false.
-+ **jms.presettlePolicy.presettleTopicProducers** when true any producer that is sending to a Topic or Temporary Topic destination will operate in presettled mode, default to false.
-+ **jms.presettlePolicy.presettleQueueProducers** when true any producer that is sending to a Queue or Temporary Queue destination will operate in presettled mode, default to false.
-+ **jms.presettlePolicy.presettleTransactedProducers** when true any producer that is created in a transacted Session will operate in presettled mode, default to false.
-+ **jms.presettlePolicy.presettleConsumers** when true all consumers operate in presttled mode, defaults to false.
-+ **jms.presettlePolicy.presettleTopicConsumers** when true any consumer that is receiving from a Topic or Temporary Topic destination will operate in presettled mode, default to false.
-+ **jms.presettlePolicy.presettleQueueConsumers** when true any consumer that is receiving from a Queue or Temporary Queue destination will operate in presettled mode, default to false.
++ **jms.presettlePolicy.presettleProducers** when true all producers operate in presettled mode, defaults to false.
++ **jms.presettlePolicy.presettleTopicProducers** when true any producer that is sending to a Topic or Temporary Topic destination will operate in presettled mode, defaults to false.
++ **jms.presettlePolicy.presettleQueueProducers** when true any producer that is sending to a Queue or Temporary Queue destination will operate in presettled mode, defaults to false.
++ **jms.presettlePolicy.presettleTransactedProducers** when true any producer that is created in a transacted Session will operate in presettled mode, defaults to false.
++ **jms.presettlePolicy.presettleConsumers** when true all consumers operate in presettled mode, defaults to false.
++ **jms.presettlePolicy.presettleTopicConsumers** when true any consumer that is receiving from a Topic or Temporary Topic destination will operate in presettled mode, defaults to false.
++ **jms.presettlePolicy.presettleQueueConsumers** when true any consumer that is receiving from a Queue or Temporary Queue destination will operate in presettled mode, defaults to false.
 
 ### TCP Transport Configuration options
 

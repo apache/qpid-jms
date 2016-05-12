@@ -112,6 +112,17 @@ The RedeliveryPolicy controls how redelivered messages are handled on the client
 
 + **jms.redeliveryPolicy.maxRedeliveries** controls when an incoming message is rejected based on the number of times it has been redelivered, the default value is (-1) disabled.  A value of zero would indicate no message redeliveries are accepted, a value of five would allow a message to be redelivered five times, etc.
 
+The PresettlePolicy controls when a producer or consumer instance will be configured to use AMQP presettled messaging semantics.
+
++ **jms.presettlePolicy.presettleAll** when true all producers and non-transacted consumers created operate in presettled mode, defaults to false.
++ **jms.presettlePolicy.presettleProducers** when true all producers operate in presttled mode, defaults to false.
++ **jms.presettlePolicy.presettleTopicProducers** when true any producer that is sending to a Topic or Temporary Topic destination will operate in presettled mode, default to false.
++ **jms.presettlePolicy.presettleQueueProducers** when true any producer that is sending to a Queue or Temporary Queue destination will operate in presettled mode, default to false.
++ **jms.presettlePolicy.presettleTransactedProducers** when true any producer that is created in a transacted Session will operate in presettled mode, default to false.
++ **jms.presettlePolicy.presettleConsumers** when true all consumers operate in presttled mode, defaults to false.
++ **jms.presettlePolicy.presettleTopicConsumers** when true any consumer that is receiving from a Topic or Temporary Topic destination will operate in presettled mode, default to false.
++ **jms.presettlePolicy.presettleQueueConsumers** when true any consumer that is receiving from a Queue or Temporary Queue destination will operate in presettled mode, default to false.
+
 ### TCP Transport Configuration options
 
 When connected to a remote using plain TCP these options configure the behaviour of the underlying socket.  These options are appended to the connection URI along with the other configuration options, for example:

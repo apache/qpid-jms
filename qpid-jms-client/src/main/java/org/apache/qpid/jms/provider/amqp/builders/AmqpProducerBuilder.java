@@ -66,7 +66,7 @@ public class AmqpProducerBuilder extends AmqpResourceBuilder<AmqpProducer, AmqpS
         Sender sender = getParent().getEndpoint().sender(senderName);
         sender.setSource(source);
         sender.setTarget(target);
-        if (resourceInfo.isPresettle() || getParent().getConnection().isPresettleProducers()) {
+        if (resourceInfo.isPresettle()) {
             sender.setSenderSettleMode(SenderSettleMode.SETTLED);
         } else {
             sender.setSenderSettleMode(SenderSettleMode.UNSETTLED);

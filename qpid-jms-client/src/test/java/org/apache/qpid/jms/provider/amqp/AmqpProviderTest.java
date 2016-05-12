@@ -17,7 +17,6 @@
 package org.apache.qpid.jms.provider.amqp;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -74,7 +73,6 @@ public class AmqpProviderTest extends QpidJmsTestCase {
     @Test(timeout=20000)
     public void testCreate() {
         provider = new AmqpProvider(peerURI);
-        assertFalse(provider.isPresettleConsumers());
     }
 
     @Test(timeout=20000, expected=RuntimeException.class)

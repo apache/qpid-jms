@@ -63,7 +63,7 @@ public class ProduceToAMQPTest extends AmqpTestSupport {
 
     @Override
     public String getAmqpConnectionURIOptions() {
-        return "provider.presettle=true";
+        return "jms.presettlePolicy.presettleAll=true";
     }
 
     @Test

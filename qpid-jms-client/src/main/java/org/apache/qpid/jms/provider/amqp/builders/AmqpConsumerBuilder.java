@@ -77,7 +77,7 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
         Receiver receiver = getParent().getEndpoint().receiver(receiverName);
         receiver.setSource(source);
         receiver.setTarget(target);
-        if (resourceInfo.isBrowser() || resourceInfo.isPresettle() || getParent().getConnection().isPresettleConsumers()) {
+        if (resourceInfo.isBrowser() || resourceInfo.isPresettle()) {
             receiver.setSenderSettleMode(SenderSettleMode.SETTLED);
         } else {
             receiver.setSenderSettleMode(SenderSettleMode.UNSETTLED);

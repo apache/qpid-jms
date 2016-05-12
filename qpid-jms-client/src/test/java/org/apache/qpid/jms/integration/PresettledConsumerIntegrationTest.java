@@ -48,32 +48,6 @@ public class PresettledConsumerIntegrationTest extends QpidJmsTestCase {
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
-    //----- Test the amqp.presettleConsumers option --------------------------//
-
-    @Test(timeout = 20000)
-    public void testPresettledConsumersConfigurationAppliedToTopic() throws Exception {
-        String presettleConfig = "?amqp.presettleConsumers=true";
-        doTestConsumerWithPresettleOptions(presettleConfig, false, true, true, Topic.class);
-    }
-
-    @Test(timeout = 20000)
-    public void testPresettledConsumersConfigurationAppliedToQueue() throws Exception {
-        String presettleConfig = "?amqp.presettleConsumers=true";
-        doTestConsumerWithPresettleOptions(presettleConfig, false, true, true, Queue.class);
-    }
-
-    @Test(timeout = 20000)
-    public void testPresettledConsumersConfigurationAppliedToTempTopic() throws Exception {
-        String presettleConfig = "?amqp.presettleConsumers=true";
-        doTestConsumerWithPresettleOptions(presettleConfig, false, true, true, TemporaryTopic.class);
-    }
-
-    @Test(timeout = 20000)
-    public void testPresettledConsumersConfigurationAppliedToTempQueue() throws Exception {
-        String presettleConfig = "?amqp.presettleConsumers=true";
-        doTestConsumerWithPresettleOptions(presettleConfig, false, true, true, TemporaryQueue.class);
-    }
-
     //----- Test the jms.presettlePolicy.presettleAll option -----------------//
 
     @Test(timeout = 20000)

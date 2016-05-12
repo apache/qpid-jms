@@ -156,20 +156,6 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     }
 
     /**
-     * @return true if the provider has been configured for presettle operations.
-     */
-    public boolean isPresettleConsumers() {
-        return provider.isPresettleConsumers();
-    }
-
-    /**
-     * @return true if the provider has been configured for presettle operations.
-     */
-    public boolean isPresettleProducers() {
-        return provider.isPresettleProducers();
-    }
-
-    /**
      * @return true if anonymous producers should be cached or closed on send complete.
      */
     public boolean isAnonymousProducerCache() {

@@ -88,9 +88,7 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
     public void createProducer(JmsProducerInfo producerInfo, AsyncResult request) {
         if (producerInfo.getDestination() == null && !getConnection().getProperties().isAnonymousRelaySupported()) {
             LOG.debug("Creating an AmqpAnonymousFallbackProducer");
-
-            AmqpProducer producer = new AmqpAnonymousFallbackProducer(this, producerInfo);
-            producer.setPresettle(getConnection().isPresettleProducers());
+            new AmqpAnonymousFallbackProducer(this, producerInfo);
 
             // No producer is created yet so this is always successful.
             request.onSuccess();

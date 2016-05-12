@@ -182,7 +182,7 @@ public class ProducerAndConsumerBench extends AmqpTestSupport  {
 
     @Override
     public String getAmqpConnectionURIOptions() {
-        return "provider.presettleProducers=true&provider.presettleConsumers=true";
+        return "jms.presettlePolicy.presettleAll=true";
     }
 
     @Override

@@ -108,9 +108,7 @@ public class AmqpProviderFactoryTest extends QpidJmsTestCase {
     @Test(timeout = 20000)
     public void testCreateProviderAppliesOptions() throws IOException, Exception {
         URI configuredURI = new URI(peerURI.toString() +
-            "?amqp.presettleConsumers=true" +
-            "&amqp.presettleProducers=true" +
-            "&amqp.traceFrames=true" +
+            "?amqp.traceFrames=true" +
             "&amqp.traceBytes=true" +
             "&amqp.channelMax=32");
         Provider provider = AmqpProviderFactory.create(configuredURI);
@@ -119,23 +117,8 @@ public class AmqpProviderFactoryTest extends QpidJmsTestCase {
 
         AmqpProvider amqpProvider = (AmqpProvider) provider;
 
-        assertEquals(true, amqpProvider.isPresettleConsumers());
-        assertEquals(true, amqpProvider.isPresettleProducers());
         assertEquals(true, amqpProvider.isTraceBytes());
         assertEquals(true, amqpProvider.isTraceFrames());
         assertEquals(32, amqpProvider.getChannelMax());
-    }
-
-    @Test(timeout = 20000)
-    public void testCreateProviderAppliesPresettleOption() throws IOException, Exception {
-        URI configuredURI = new URI(peerURI.toString() + "?amqp.presettle=true");
-        Provider provider = AmqpProviderFactory.create(configuredURI);
-        assertNotNull(provider);
-        assertTrue(provider instanceof AmqpProvider);
-
-        AmqpProvider amqpProvider = (AmqpProvider) provider;
-
-        assertEquals(true, amqpProvider.isPresettleConsumers());
-        assertEquals(true, amqpProvider.isPresettleProducers());
     }
 }

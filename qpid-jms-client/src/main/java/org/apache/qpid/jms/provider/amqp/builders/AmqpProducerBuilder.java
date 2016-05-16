@@ -20,6 +20,8 @@ import javax.jms.InvalidDestinationException;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
+import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.amqp.AmqpAnonymousFallbackProducer;
 import org.apache.qpid.jms.provider.amqp.AmqpFixedProducer;
 import org.apache.qpid.jms.provider.amqp.AmqpProducer;
 import org.apache.qpid.jms.provider.amqp.AmqpSession;
@@ -32,14 +34,30 @@ import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Sender;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Resource builder responsible for creating and opening an AmqpProducer instance.
  */
 public class AmqpProducerBuilder extends AmqpResourceBuilder<AmqpProducer, AmqpSession, JmsProducerInfo, Sender> {
 
+    private static final Logger LOG = LoggerFactory.getLogger(AmqpProducerBuilder.class);
+
     public AmqpProducerBuilder(AmqpSession parent, JmsProducerInfo resourceInfo) {
         super(parent, resourceInfo);
+    }
+
+    @Override
+    public void buildResource(final AsyncResult request) {
+        if (getResourceInfo().getDestination() == null && !getParent().getConnection().getProperties().isAnonymousRelaySupported()) {
+            LOG.debug("Creating an AmqpAnonymousFallbackProducer");
+            new AmqpAnonymousFallbackProducer(getParent(), getResourceInfo());
+            request.onSuccess();
+        } else {
+            LOG.debug("Creating AmqpFixedProducer for: {}", getResourceInfo().getDestination());
+            super.buildResource(request);
+        }
     }
 
     @Override

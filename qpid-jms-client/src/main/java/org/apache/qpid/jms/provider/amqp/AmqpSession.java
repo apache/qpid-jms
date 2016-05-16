@@ -86,17 +86,8 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
     }
 
     public void createProducer(JmsProducerInfo producerInfo, AsyncResult request) {
-        if (producerInfo.getDestination() == null && !getConnection().getProperties().isAnonymousRelaySupported()) {
-            LOG.debug("Creating an AmqpAnonymousFallbackProducer");
-            new AmqpAnonymousFallbackProducer(this, producerInfo);
-
-            // No producer is created yet so this is always successful.
-            request.onSuccess();
-        } else {
-            LOG.debug("Creating AmqpFixedProducer for: {}", producerInfo.getDestination());
-            AmqpProducerBuilder builder = new AmqpProducerBuilder(this, producerInfo);
-            builder.buildResource(request);
-        }
+        AmqpProducerBuilder builder = new AmqpProducerBuilder(this, producerInfo);
+        builder.buildResource(request);
     }
 
     public AmqpProducer getProducer(JmsProducerInfo producerInfo) {

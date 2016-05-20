@@ -285,4 +285,73 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
             // expected
         }
     }
+
+    /**
+     * Test that setting an object on a received message and later getting the value, returns an
+     * equal but different object that does not pick up intermediate changes to the set object.
+     *
+     * @throws Exception if an error occurs during the test.
+     */
+    @Test
+    public void testSetThenGetObjectOnSerializedReceivedMessageNoContentTypeReturnsSnapshot() throws Exception {
+        doTestSetThenGetObjectOnSerializedReceivedMessageReturnsSnapshot(false);
+    }
+
+    @Test
+    public void testSetThenGetObjectOnSerializedReceivedMessageReturnsSnapshot() throws Exception {
+        doTestSetThenGetObjectOnSerializedReceivedMessageReturnsSnapshot(true);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void doTestSetThenGetObjectOnSerializedReceivedMessageReturnsSnapshot(boolean contentType) throws Exception {
+
+        HashMap<String, String> origMap = new HashMap<String, String>();
+        origMap.put("key1", "value1");
+
+        Message message = Message.Factory.create();
+        if (contentType) {
+            message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
+            message.setBody(new Data(new Binary(getSerializedBytes(origMap))));
+        } else {
+            message.setBody(new AmqpValue(origMap));
+        }
+        AmqpJmsObjectMessageFacade amqpObjectMessageFacade = createReceivedObjectMessageFacade(createMockAmqpConsumer(), message);
+
+        // verify we get a different-but-equal object back
+        Serializable serialized = amqpObjectMessageFacade.getObject();
+        assertTrue("Unexpected object type returned", serialized instanceof Map<?, ?>);
+        Map<String, String> returnedObject1 = (Map<String, String>) serialized;
+        if (contentType) {
+            assertNotSame("Expected different objects, due to snapshot being taken", origMap, returnedObject1);
+        } else {
+            assertSame("Expected same objects, due to initial snapshot of delivered value", origMap, returnedObject1);
+        }
+        assertEquals("Expected equal objects, due to snapshot being taken", origMap, returnedObject1);
+
+        // verify we get a different-but-equal object back when compared to the previously retrieved object
+        Serializable serialized2 = amqpObjectMessageFacade.getObject();
+        assertTrue("Unexpected object type returned", serialized2 instanceof Map<?, ?>);
+        Map<String, String> returnedObject2 = (Map<String, String>) serialized2;
+        assertNotSame("Expected different objects, due to snapshot being taken", returnedObject1, returnedObject2);
+        assertEquals("Expected equal objects, due to snapshot being taken", returnedObject1, returnedObject2);
+
+        // mutate the first returned object
+        returnedObject1.put("key2", "value2");
+
+        // verify the mutated map is a different and not equal object
+        assertNotSame("Expected different objects, due to snapshot being taken", returnedObject1, returnedObject2);
+        assertNotEquals("Expected objects to differ, due to snapshot being taken", returnedObject1, returnedObject2);
+    }
+
+    private static byte[] getSerializedBytes(Serializable value) throws IOException {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+
+            oos.writeObject(value);
+            oos.flush();
+            oos.close();
+
+            return baos.toByteArray();
+        }
+    }
 }

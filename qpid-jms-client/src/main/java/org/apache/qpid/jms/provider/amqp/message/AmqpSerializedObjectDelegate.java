@@ -17,18 +17,22 @@
 package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.decodeMessage;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.qpid.jms.util.ClassLoadingAwareObjectInputStream;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.message.Message;
+
+import io.netty.buffer.ByteBuf;
 
 /**
  * Wrapper around an AMQP Message instance that will be treated as a JMS ObjectMessage
@@ -50,21 +54,33 @@ public class AmqpSerializedObjectDelegate implements AmqpObjectTypeDelegate {
     }
 
     private final Message message;
+    private final AtomicReference<Section> cachedReceivedBody = new AtomicReference<Section>();
+    private ByteBuf messageBytes;
 
     /**
      * Create a new delegate that uses Java serialization to store the message content.
      *
      * @param message
      *        the AMQP message instance where the object is to be stored / read.
+     * @param messageBytes
+     *        the raw bytes that comprise the message when it was received.
      */
-    public AmqpSerializedObjectDelegate(Message message) {
+    public AmqpSerializedObjectDelegate(Message message, ByteBuf messageBytes) {
         this.message = message;
         this.message.setContentType(SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
+        this.messageBytes = messageBytes;
+
+        // We will decode the body on each access, so clear the current value
+        // so we don't carry along unneeded bloat.
+        if (messageBytes != null) {
+            cachedReceivedBody.set(message.getBody());
+        }
     }
 
     private static byte[] getSerializedBytes(Serializable value) throws IOException {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+             ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+
             oos.writeObject(value);
             oos.flush();
             oos.close();
@@ -77,7 +93,15 @@ public class AmqpSerializedObjectDelegate implements AmqpObjectTypeDelegate {
     public Serializable getObject() throws IOException, ClassNotFoundException {
         Binary bin = null;
 
-        Section body = message.getBody();
+        Section body = cachedReceivedBody.getAndSet(null);
+        if (body == null) {
+            if (messageBytes != null) {
+                body = decodeMessage(messageBytes).getBody();
+            } else {
+                body = message.getBody();
+            }
+        }
+
         if (body == null || body == NULL_OBJECT_BODY) {
             return null;
         } else if (body instanceof Data) {
@@ -103,18 +127,22 @@ public class AmqpSerializedObjectDelegate implements AmqpObjectTypeDelegate {
 
     @Override
     public void setObject(Serializable value) throws IOException {
-        if(value == null) {
+        cachedReceivedBody.set(null);
+
+        if (value == null) {
             message.setBody(NULL_OBJECT_BODY);
         } else {
             byte[] bytes = getSerializedBytes(value);
             message.setBody(new Data(new Binary(bytes)));
         }
+
+        messageBytes = null;
     }
 
     @Override
     public void onSend() {
-        this.message.setContentType(SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
-        if(message.getBody() == null) {
+        message.setContentType(SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
+        if (message.getBody() == null) {
             message.setBody(NULL_OBJECT_BODY);
         }
     }

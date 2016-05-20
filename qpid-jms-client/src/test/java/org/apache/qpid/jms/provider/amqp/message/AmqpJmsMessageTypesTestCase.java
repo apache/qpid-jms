@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.encodeMessage;
+
 import java.nio.charset.StandardCharsets;
 
 import org.apache.qpid.jms.JmsDestination;
@@ -85,7 +87,7 @@ public class AmqpJmsMessageTypesTestCase extends QpidJmsTestCase {
     }
 
     protected AmqpJmsObjectMessageFacade createReceivedObjectMessageFacade(AmqpConsumer amqpConsumer, Message message) {
-        return new AmqpJmsObjectMessageFacade(amqpConsumer, message);
+        return new AmqpJmsObjectMessageFacade(amqpConsumer, message, encodeMessage(message));
     }
 
     protected AmqpConsumer createMockAmqpConsumer() {

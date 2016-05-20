@@ -48,7 +48,6 @@ import org.apache.qpid.proton.amqp.messaging.Released;
 import org.apache.qpid.proton.amqp.transaction.TransactionalState;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Receiver;
-import org.apache.qpid.proton.message.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -426,10 +425,9 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     private boolean processDelivery(Delivery incoming) throws Exception {
         incoming.setDefaultDeliveryState(Released.getInstance());
-        Message amqpMessage = decodeIncomingMessage(incoming);
         JmsMessage message = null;
         try {
-            message = AmqpJmsMessageBuilder.createJmsMessage(this, amqpMessage);
+            message = AmqpJmsMessageBuilder.createJmsMessage(this, unwrapIncomingMessage(incoming));
         } catch (Exception e) {
             LOG.warn("Error on transform: {}", e.getMessage());
             // TODO - We could signal provider error but not sure we want to fail
@@ -531,7 +529,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         }
     }
 
-    protected Message decodeIncomingMessage(Delivery incoming) {
+    protected ByteBuf unwrapIncomingMessage(Delivery incoming) {
         int count;
 
         while ((count = getEndpoint().recv(incomingBuffer.array(), incomingBuffer.writerIndex(), incomingBuffer.writableBytes())) > 0) {
@@ -542,9 +540,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         }
 
         try {
-            Message protonMessage = Message.Factory.create();
-            protonMessage.decode(incomingBuffer.array(), 0, incomingBuffer.readableBytes());
-            return protonMessage;
+            return incomingBuffer.duplicate();
         } finally {
             incomingBuffer.clear();
         }

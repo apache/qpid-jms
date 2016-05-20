@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.encodeMessage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.qpid.jms.message.JmsBytesMessage;
 import org.apache.qpid.jms.message.JmsMessage;
@@ -88,7 +90,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         MessageAnnotations messageAnnotations = new MessageAnnotations(map);
         message.setMessageAnnotations(messageAnnotations);
 
-        AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
     }
 
     /**
@@ -108,7 +110,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         MessageAnnotations messageAnnotations = new MessageAnnotations(map);
         message.setMessageAnnotations(messageAnnotations);
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsMessage.class, jmsMessage.getClass());
 
@@ -134,7 +136,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         MessageAnnotations messageAnnotations = new MessageAnnotations(map);
         message.setMessageAnnotations(messageAnnotations);
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsBytesMessage.class, jmsMessage.getClass());
 
@@ -160,7 +162,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         MessageAnnotations messageAnnotations = new MessageAnnotations(map);
         message.setMessageAnnotations(messageAnnotations);
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
 
@@ -209,7 +211,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
             message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
         }
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
 
@@ -234,6 +236,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
      */
     @Test
     public void testCreateStreamMessageFromMessageTypeAnnotation() throws Exception {
+
         Message message = Proton.message();
 
         Map<Symbol, Object> map = new HashMap<Symbol, Object>();
@@ -242,7 +245,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         MessageAnnotations messageAnnotations = new MessageAnnotations(map);
         message.setMessageAnnotations(messageAnnotations);
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsStreamMessage.class, jmsMessage.getClass());
 
@@ -268,7 +271,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         Message message = Proton.message();
         message.setContentType(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE);
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsBytesMessage.class, jmsMessage.getClass());
 
@@ -289,7 +292,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
 
         assertNull(message.getContentType());
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsBytesMessage.class, jmsMessage.getClass());
 
@@ -310,7 +313,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         Message message = Proton.message();
         message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
 
@@ -327,7 +330,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         Message message = Proton.message();
         message.setContentType("text/plain");
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
 
@@ -347,7 +350,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         Message message = Proton.message();
         message.setContentType("unknown-content-type");
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsMessage.class, jmsMessage.getClass());
 
@@ -372,7 +375,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         message.setBody(new Data(binary));
         message.setContentType(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE);
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsBytesMessage.class, jmsMessage.getClass());
 
@@ -394,7 +397,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         message.setBody(new Data(binary));
         message.setContentType("unknown-content-type");
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsBytesMessage.class, jmsMessage.getClass());
 
@@ -418,7 +421,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
 
         assertNull(message.getContentType());
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsBytesMessage.class, jmsMessage.getClass());
 
@@ -441,7 +444,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         message.setBody(new Data(binary));
         message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
 
@@ -554,7 +557,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         message.setBody(new Data(binary));
         message.setContentType(contentType);
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
 
@@ -579,7 +582,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         Message message = Proton.message();
         message.setBody(new AmqpValue("content"));
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
 
@@ -599,7 +602,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         Message message = Proton.message();
         message.setBody(new AmqpValue(null));
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
 
@@ -620,7 +623,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         Map<String, String> map = new HashMap<String,String>();
         message.setBody(new AmqpValue(map));
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
 
@@ -644,7 +647,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         List<String> list = new ArrayList<String>();
         message.setBody(new AmqpValue(list));
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
 
@@ -668,7 +671,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         Binary binary = new Binary(new byte[0]);
         message.setBody(new AmqpValue(binary));
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsBytesMessage.class, jmsMessage.getClass());
 
@@ -686,9 +689,9 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
     @Test
     public void testCreateObjectMessageFromAmqpValueWithUncategorisedContent() throws Exception {
         Message message = Proton.message();
-        message.setBody(new AmqpValue(new Object()));// This obviously shouldn't happen in practice
+        message.setBody(new AmqpValue(UUID.randomUUID()));
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
 
@@ -715,7 +718,7 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
         List<String> list = new ArrayList<String>();
         message.setBody(new AmqpSequence(list));
 
-        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, message);
+        JmsMessage jmsMessage = AmqpJmsMessageBuilder.createJmsMessage(mockConsumer, encodeMessage(message));
         assertNotNull("Message should not be null", jmsMessage);
         assertEquals("Unexpected message class type", JmsObjectMessage.class, jmsMessage.getClass());
 

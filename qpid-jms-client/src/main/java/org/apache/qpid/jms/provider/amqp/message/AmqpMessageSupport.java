@@ -21,6 +21,9 @@ import java.util.Map;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.message.Message;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 /**
  * Support class containing constant values and static methods that are
  * used to map to / from AMQP Message types being sent or received.
@@ -147,5 +150,46 @@ public final class AmqpMessageSupport {
         } else {
             return contentType.equals(message.getContentType());
         }
+    }
+
+    /**
+     * Given a byte buffer that represents an encoded AMQP Message instance,
+     * decode and return the Message.
+     *
+     * @param encodedBytes
+     *      the bytes that represent an encoded AMQP Message.
+     *
+     * @return a new Message instance with the decoded data.
+     */
+    public static Message decodeMessage(ByteBuf encodedBytes) {
+        // For now we must fully decode the message to get at the annotations.
+        Message protonMessage = Message.Factory.create();
+        protonMessage.decode(encodedBytes.array(), 0, encodedBytes.readableBytes());
+        return protonMessage;
+    }
+
+    /**
+     * Given a Message instance, encode the Message to the wire level representation
+     * of that Message.
+     *
+     * @param message
+     *      the Message that is to be encoded into the wire level representation.
+     *
+     * @return a buffer containing the wire level representation of the input Message.
+     */
+    public static ByteBuf encodeMessage(Message message) {
+        final int BUFFER_SIZE = 4096;
+        byte[] encodedMessage = new byte[BUFFER_SIZE];
+        int encodedSize = 0;
+        while (true) {
+            try {
+                encodedSize = message.encode(encodedMessage, 0, encodedMessage.length);
+                break;
+            } catch (java.nio.BufferOverflowException e) {
+                encodedMessage = new byte[encodedMessage.length * 2];
+            }
+        }
+
+        return Unpooled.wrappedBuffer(encodedMessage, 0, encodedSize);
     }
 }

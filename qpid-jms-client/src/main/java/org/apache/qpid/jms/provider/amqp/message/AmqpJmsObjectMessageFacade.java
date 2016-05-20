@@ -30,6 +30,8 @@ import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.proton.message.Message;
 
+import io.netty.buffer.ByteBuf;
+
 /**
  * Wrapper around an AMQP Message instance that will be treated as a JMS ObjectMessage
  * type.
@@ -50,7 +52,7 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
         super(connection);
         setMessageAnnotation(JMS_MSG_TYPE, JMS_OBJECT_MESSAGE);
 
-        initDelegate(isAmqpTypeEncoded);
+        initDelegate(isAmqpTypeEncoded, null);
     }
 
     /**
@@ -61,12 +63,14 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
      *        the consumer that received this message.
      * @param message
      *        the incoming Message instance that is being wrapped.
+     * @param messageBytes
+     *        a copy of the raw bytes of the incoming message.
      */
-    public AmqpJmsObjectMessageFacade(AmqpConsumer consumer, Message message) {
+    public AmqpJmsObjectMessageFacade(AmqpConsumer consumer, Message message, ByteBuf messageBytes) {
         super(consumer, message);
 
         boolean javaSerialized = AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE.equals(message.getContentType());
-        initDelegate(!javaSerialized);
+        initDelegate(!javaSerialized, messageBytes);
     }
 
     /**
@@ -126,9 +130,9 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
 
                 AmqpObjectTypeDelegate newDelegate = null;
                 if (useAmqpTypedEncoding) {
-                    newDelegate = new AmqpTypedObjectDelegate(message);
+                    newDelegate = new AmqpTypedObjectDelegate(message, null);
                 } else {
-                    newDelegate = new AmqpSerializedObjectDelegate(message);
+                    newDelegate = new AmqpSerializedObjectDelegate(message, null);
                 }
 
                 newDelegate.setObject(existingObject);
@@ -140,11 +144,11 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
         }
     }
 
-    private void initDelegate(boolean useAmqpTypes) {
+    private void initDelegate(boolean useAmqpTypes, ByteBuf messageBytes) {
         if (!useAmqpTypes) {
-            delegate = new AmqpSerializedObjectDelegate(getAmqpMessage());
+            delegate = new AmqpSerializedObjectDelegate(getAmqpMessage(), messageBytes);
         } else {
-            delegate = new AmqpTypedObjectDelegate(getAmqpMessage());
+            delegate = new AmqpTypedObjectDelegate(getAmqpMessage(), messageBytes);
         }
     }
 

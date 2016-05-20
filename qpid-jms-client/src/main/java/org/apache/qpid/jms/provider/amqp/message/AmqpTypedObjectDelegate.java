@@ -16,16 +16,22 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.decodeMessage;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.encodeMessage;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.message.Message;
+
+import io.netty.buffer.ByteBuf;
 
 /**
  * Wrapper around an AMQP Message instance that will be treated as a JMS ObjectMessage
@@ -36,24 +42,41 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
     static final AmqpValue NULL_OBJECT_BODY = new AmqpValue(null);
 
     private final Message message;
+    private final AtomicReference<Section> cachedReceivedBody = new AtomicReference<Section>();
+    private ByteBuf messageBytes;
 
     /**
      * Create a new delegate that uses Java serialization to store the message content.
      *
      * @param message
      *        the AMQP message instance where the object is to be stored / read.
+     * @param messageBytes
+     *        the raw bytes that comprise the AMQP message that was received.
      */
-    public AmqpTypedObjectDelegate(Message message) {
+    public AmqpTypedObjectDelegate(Message message, ByteBuf messageBytes) {
         this.message = message;
         this.message.setContentType(null);
+        this.messageBytes = messageBytes;
+
+        // We will decode the body on each access, so clear the current value
+        // so we don't carry along unneeded bloat.
+        if (messageBytes != null) {
+            cachedReceivedBody.set(message.getBody());
+        }
     }
 
     @Override
     public Serializable getObject() throws IOException, ClassNotFoundException {
-        // TODO: this should actually return a snapshot of the object, so we
-        // need to save the bytes so we can return an equal/unmodified object later
+        Section body = cachedReceivedBody.getAndSet(null);
 
-        Section body = message.getBody();
+        if (body == null) {
+            if (messageBytes != null) {
+                body = decodeMessage(messageBytes).getBody();
+            } else {
+                body = message.getBody();
+            }
+        }
+
         if (body == null) {
             return null;
         } else if (body instanceof AmqpValue) {
@@ -76,19 +99,28 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
 
     @Override
     public void setObject(Serializable value) throws IOException {
+        cachedReceivedBody.set(null);
+
         if (value == null) {
             message.setBody(NULL_OBJECT_BODY);
+            messageBytes = null;
         } else if (isSupportedAmqpValueObjectType(value)) {
-            // TODO: This is a temporary hack, we actually need to take a snapshot of the object
-            // at this point in time, not simply set the object itself into the Proton message.
-            // We will need to encode it now, first to save the snapshot to send, and also to
-            // verify up front that we can actually send it later.
+            Message transfer = Message.Factory.create();
 
-            // Even if we do that we would currently then need to decode it later to set the
-            // body to send, unless we augment Proton to allow setting the bytes directly.
-            // We will always need to decode bytes to return a snapshot from getObject(). We
-            // will need to save the bytes somehow to support that on received messages.
-            message.setBody(new AmqpValue(value));
+            // Exchange the incoming body value for one that is created from encoding
+            // and decoding the value.
+            transfer.setBody(new AmqpValue(value));
+            messageBytes = encodeMessage(transfer);
+            transfer = decodeMessage(messageBytes);
+            messageBytes = null;
+
+            // This step requires a heavy-weight operation of both encoding and decoding the
+            // incoming body value in order to create a copy such that changes to the original
+            // do not affect the stored value.  In the future it makes sense to try to enhance
+            // proton such that we can encode the body and use those bytes directly on the
+            // message as it is being sent.
+
+            message.setBody(transfer.getBody());
         } else {
             // TODO: Data and AmqpSequence?
             throw new IllegalArgumentException("Encoding this object type with the AMQP type system is not supported: " + value.getClass().getName());

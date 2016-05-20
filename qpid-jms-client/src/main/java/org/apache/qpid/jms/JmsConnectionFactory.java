@@ -35,6 +35,12 @@ import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.jndi.JNDIStorable;
 import org.apache.qpid.jms.message.JmsMessageIDBuilder;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
+import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
+import org.apache.qpid.jms.policy.JmsDefaultPresettlePolicy;
+import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
+import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
+import org.apache.qpid.jms.policy.JmsPresettlePolicy;
+import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderFactory;
 import org.apache.qpid.jms.util.IdGenerator;
@@ -84,9 +90,9 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private String connectionIDPrefix;
     private ExceptionListener exceptionListener;
 
-    private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
-    private JmsRedeliveryPolicy redeliveryPolicy = new JmsRedeliveryPolicy();
-    private JmsPresettlePolicy presettlePolicy = new JmsPresettlePolicy();
+    private JmsPrefetchPolicy prefetchPolicy = new JmsDefaultPrefetchPolicy();
+    private JmsRedeliveryPolicy redeliveryPolicy = new JmsDefaultRedeliveryPolicy();
+    private JmsPresettlePolicy presettlePolicy = new JmsDefaultPresettlePolicy();
     private JmsMessageIDBuilder messageIDBuilder = JmsMessageIDBuilder.BUILTIN.DEFAULT.createBuilder();
 
     public JmsConnectionFactory() {

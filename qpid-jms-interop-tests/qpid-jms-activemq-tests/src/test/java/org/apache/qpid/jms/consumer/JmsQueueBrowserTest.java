@@ -34,6 +34,7 @@ import javax.jms.TextMessage;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -144,7 +145,7 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
         connection = createAmqpConnection();
 
         JmsConnection jmsConnection = (JmsConnection) connection;
-        jmsConnection.getPrefetchPolicy().setQueueBrowserPrefetch(1);
+        ((JmsDefaultPrefetchPolicy) jmsConnection.getPrefetchPolicy()).setQueueBrowserPrefetch(1);
 
         connection.start();
 
@@ -175,7 +176,7 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
         connection = createAmqpConnection();
 
         JmsConnection jmsConnection = (JmsConnection) connection;
-        jmsConnection.getPrefetchPolicy().setQueueBrowserPrefetch(0);
+        ((JmsDefaultPrefetchPolicy) jmsConnection.getPrefetchPolicy()).setQueueBrowserPrefetch(0);
 
         connection.start();
 
@@ -274,7 +275,7 @@ public class JmsQueueBrowserTest extends AmqpTestSupport {
     @Test(timeout = 60000)
     public void testBrowseAllInQueueSmallPrefetch() throws Exception {
         connection = createAmqpConnection();
-        ((JmsConnection) connection).getPrefetchPolicy().setQueueBrowserPrefetch(10);
+        ((JmsDefaultPrefetchPolicy) ((JmsConnection) connection).getPrefetchPolicy()).setQueueBrowserPrefetch(1);
         connection.start();
 
         final int MSG_COUNT = 30;

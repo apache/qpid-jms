@@ -45,8 +45,8 @@ import javax.jms.Topic;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
-import org.apache.qpid.jms.JmsPrefetchPolicy;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
+import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.testpeer.AmqpPeerRunnable;
@@ -595,8 +595,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
     @Test(timeout=20000)
     public void testCannotUseMessageListener() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
-            ((JmsConnection)connection).getPrefetchPolicy().setAll(0);
+            Connection connection = testFixture.establishConnecton(testPeer, "?jms.prefetchPolicy.all=0");
             connection.start();
 
             testPeer.expectBegin();
@@ -724,12 +723,12 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
             // Expect receiver link attach and send credit
             testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
+            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
             if (!localCheckOnly) {
                 // If not doing local-check only, expect the credit to be drained
                 // and then replenished to open the window again
-                testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
-                testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
+                testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
+                testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
             }
 
             MessageConsumer consumer = session.createConsumer(queue);
@@ -778,10 +777,10 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
             // Expect receiver link attach and send credit
             testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
+            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
 
             // Expect drain but do not respond so that the consumer times out.
-            testPeer.expectLinkFlow(true, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
+            testPeer.expectLinkFlow(true, false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
 
             // Consumer should close due to timed waiting for drain.
             testPeer.expectDetach(true, true, true);

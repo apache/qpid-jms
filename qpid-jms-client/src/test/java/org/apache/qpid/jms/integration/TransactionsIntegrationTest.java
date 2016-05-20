@@ -40,7 +40,7 @@ import javax.jms.TransactionRolledBackException;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
-import org.apache.qpid.jms.JmsPrefetchPolicy;
+import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
@@ -451,8 +451,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlow();
-            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
-            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
+            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
+            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
             testPeer.expectDetach(true, true, true);
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
@@ -498,8 +498,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlow();
-            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
-            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
+            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
+            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
             testPeer.expectDetach(true, true, true);
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
@@ -678,9 +678,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
     @Test(timeout=20000)
     public void testRollbackTransactedSessionWithPrefetchFullBeforeStoppingConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
-            int messageCount = 5;
-            ((JmsConnection) connection).getPrefetchPolicy().setAll(messageCount);
+            final int messageCount = 5;
+            Connection connection = testFixture.establishConnecton(testPeer, "?jms.prefetchPolicy.all=" + messageCount);
             connection.start();
 
             testPeer.expectBegin();
@@ -754,9 +753,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
     @Test(timeout=20000)
     public void testRollbackTransactedSessionWithPrefetchFullyUtilisedByDrainWhenStoppingConsumer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
-            int messageCount = 5;
-            ((JmsConnection) connection).getPrefetchPolicy().setAll(messageCount);
+            final int messageCount = 5;
+            Connection connection = testFixture.establishConnecton(testPeer, "?jms.prefetchPolicy.all=" + messageCount);
             connection.start();
 
             testPeer.expectBegin();

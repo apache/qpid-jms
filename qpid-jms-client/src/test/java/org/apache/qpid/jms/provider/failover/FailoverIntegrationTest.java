@@ -49,8 +49,8 @@ import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
-import org.apache.qpid.jms.JmsPrefetchPolicy;
 import org.apache.qpid.jms.JmsSendTimedOutException;
+import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
@@ -442,7 +442,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             originalPeer.dropAfterLastHandler();
 
             final JmsConnection connection = establishAnonymousConnecton(originalPeer, finalPeer);
-            connection.getPrefetchPolicy().setQueuePrefetch(0);
+            ((JmsDefaultPrefetchPolicy) connection.getPrefetchPolicy()).setQueuePrefetch(0);
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
                 public void onConnectionEstablished(URI remoteURI) {
@@ -515,7 +515,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             originalPeer.dropAfterLastHandler();
 
             final JmsConnection connection = establishAnonymousConnecton(originalPeer, finalPeer);
-            connection.getPrefetchPolicy().setQueuePrefetch(0);
+            ((JmsDefaultPrefetchPolicy) connection.getPrefetchPolicy()).setQueuePrefetch(0);
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
                 public void onConnectionEstablished(URI remoteURI) {
@@ -591,7 +591,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             originalPeer.dropAfterLastHandler();
 
             final JmsConnection connection = establishAnonymousConnecton(originalPeer, finalPeer);
-            connection.getPrefetchPolicy().setQueuePrefetch(0);
+            ((JmsDefaultPrefetchPolicy) connection.getPrefetchPolicy()).setQueuePrefetch(0);
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
                 public void onConnectionEstablished(URI remoteURI) {
@@ -689,7 +689,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             originalPeer.expectBegin();
             originalPeer.expectQueueBrowserAttach();
             originalPeer.expectLinkFlow();
-            originalPeer.expectLinkFlow(true, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
+            originalPeer.expectLinkFlow(true, false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
             originalPeer.dropAfterLastHandler();
 
             // --- Post Failover Expectations of FinalPeer --- //
@@ -698,9 +698,9 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             finalPeer.expectBegin();
             finalPeer.expectBegin();
             finalPeer.expectQueueBrowserAttach();
-            finalPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
-            finalPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
-            finalPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
+            finalPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
+            finalPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
+            finalPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
             finalPeer.expectDetach(true, true, true);
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

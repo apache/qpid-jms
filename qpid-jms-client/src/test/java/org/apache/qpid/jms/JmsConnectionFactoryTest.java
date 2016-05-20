@@ -37,6 +37,7 @@ import javax.jms.Connection;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 
+import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -84,7 +85,7 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         factory.setConnectTimeout(TimeUnit.SECONDS.toMillis(30));
         factory.setCloseTimeout(TimeUnit.SECONDS.toMillis(45));
 
-        factory.getPrefetchPolicy().setAll(1);
+        ((JmsDefaultPrefetchPolicy) factory.getPrefetchPolicy()).setAll(1);
 
         JmsConnection connection = (JmsConnection) factory.createConnection();
         assertNotNull(connection);
@@ -103,10 +104,12 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         assertEquals(TimeUnit.SECONDS.toMillis(30), connection.getConnectTimeout());
         assertEquals(TimeUnit.SECONDS.toMillis(45), connection.getCloseTimeout());
 
-        assertEquals(1, connection.getPrefetchPolicy().getTopicPrefetch());
-        assertEquals(1, connection.getPrefetchPolicy().getQueuePrefetch());
-        assertEquals(1, connection.getPrefetchPolicy().getQueueBrowserPrefetch());
-        assertEquals(1, connection.getPrefetchPolicy().getDurableTopicPrefetch());
+        JmsDefaultPrefetchPolicy prefetchPolicy = (JmsDefaultPrefetchPolicy) connection.getPrefetchPolicy();
+
+        assertEquals(1, prefetchPolicy.getTopicPrefetch());
+        assertEquals(1, prefetchPolicy.getQueuePrefetch());
+        assertEquals(1, prefetchPolicy.getQueueBrowserPrefetch());
+        assertEquals(1, prefetchPolicy.getDurableTopicPrefetch());
     }
 
     @Test

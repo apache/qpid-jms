@@ -35,6 +35,7 @@ import javax.jms.Session;
 import javax.jms.TemporaryQueue;
 import javax.jms.TemporaryTopic;
 
+import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.provider.mock.MockProvider;
 import org.apache.qpid.jms.provider.mock.MockProviderFactory;
 import org.apache.qpid.jms.util.IdGenerator;
@@ -98,7 +99,7 @@ public class JmsConnectionTest {
     public void testReplacePrefetchPolicy() throws JMSException {
         connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
 
-        JmsPrefetchPolicy newPolicy = new JmsPrefetchPolicy();
+        JmsDefaultPrefetchPolicy newPolicy = new JmsDefaultPrefetchPolicy();
         newPolicy.setAll(1);
 
         assertNotSame(newPolicy, connection.getPrefetchPolicy());

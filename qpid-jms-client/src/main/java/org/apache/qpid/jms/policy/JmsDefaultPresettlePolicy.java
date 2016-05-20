@@ -14,13 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms;
+package org.apache.qpid.jms.policy;
+
+import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.JmsSession;
 
 /**
  * Policy object that allows for configuration of options that affect when
  * a JMS MessageProducer will result in AMQP presettled message sends.
  */
-public class JmsPresettlePolicy {
+public class JmsDefaultPresettlePolicy implements JmsPresettlePolicy {
 
     private boolean presettleAll;
 
@@ -33,10 +36,10 @@ public class JmsPresettlePolicy {
     private boolean presettleTopicConsumers;
     private boolean presettleQueueConsumers;
 
-    public JmsPresettlePolicy() {
+    public JmsDefaultPresettlePolicy() {
     }
 
-    public JmsPresettlePolicy(JmsPresettlePolicy source) {
+    public JmsDefaultPresettlePolicy(JmsDefaultPresettlePolicy source) {
         this.presettleAll = source.presettleAll;
         this.presettleProducers = source.presettleProducers;
         this.presettleTopicProducers = source.presettleTopicProducers;
@@ -47,8 +50,41 @@ public class JmsPresettlePolicy {
         this.presettleQueueConsumers = source.presettleQueueConsumers;
     }
 
+    @Override
     public JmsPresettlePolicy copy() {
-        return new JmsPresettlePolicy(this);
+        return new JmsDefaultPresettlePolicy(this);
+    }
+
+    @Override
+    public boolean isConsumerPresttled(JmsSession session, JmsDestination destination) {
+
+        if (session.isTransacted()) {
+            return false;
+        } else if (presettleAll || presettleConsumers) {
+            return true;
+        } else if (destination != null && destination.isQueue() && presettleQueueConsumers) {
+            return true;
+        } else if (destination != null && destination.isTopic() && presettleTopicConsumers) {
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean isProducerPresttled(JmsSession session, JmsDestination destination) {
+
+        if (presettleAll || presettleProducers) {
+            return true;
+        } else if (session.isTransacted() && presettleTransactedProducers) {
+            return true;
+        } else if (destination != null && destination.isQueue() && presettleQueueProducers) {
+            return true;
+        } else if (destination != null && destination.isTopic() && presettleTopicProducers) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -145,37 +181,6 @@ public class JmsPresettlePolicy {
     }
 
     /**
-     * Determines when a producer will send message presettled.
-     * <p>
-     * Called when the a producer is being created to determine whether the producer will
-     * be configured to send all its message as presettled or not.
-     * <p>
-     * For an anonymous producer this method is called on each send to allow the policy to
-     * be applied to the target destination that the message will be sent to.
-     *
-     * @param destination
-     *      the destination that the producer will be sending to.
-     * @param session
-     *      the session that owns the producer.
-     *
-     * @return true if the producer should send presettled.
-     */
-    public boolean isProducerPresttled(JmsDestination destination, JmsSession session) {
-
-        if (presettleAll || presettleProducers) {
-            return true;
-        } else if (session.isTransacted() && presettleTransactedProducers) {
-            return true;
-        } else if (destination != null && destination.isQueue() && presettleQueueProducers) {
-            return true;
-        } else if (destination != null && destination.isTopic() && presettleTopicProducers) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
      * @return the presettleConsumers configuration value for this policy.
      */
     public boolean isPresettleConsumers() {
@@ -227,34 +232,5 @@ public class JmsPresettlePolicy {
      */
     public void setPresettleQueueConsumers(boolean presettleQueueConsumers) {
         this.presettleQueueConsumers = presettleQueueConsumers;
-    }
-
-    /**
-     * Determines when a consumer will be created with the settlement mode set to presettled.
-     * <p>
-     * Called when the a consumer is being created to determine whether the consumer will
-     * be configured to request that the remote sends it message that are presettled.
-     * <p>
-     *
-     * @param destination
-     *      the destination that the consumer will be listening to.
-     * @param session
-     *      the session that owns the consumer being created.
-     *
-     * @return true if the producer should send presettled.
-     */
-    public boolean isConsumerPresttled(JmsDestination destination, JmsSession session) {
-
-        if (session.isTransacted()) {
-            return false;
-        } else if (presettleAll || presettleConsumers) {
-            return true;
-        } else if (destination != null && destination.isQueue() && presettleQueueConsumers) {
-            return true;
-        } else if (destination != null && destination.isTopic() && presettleTopicConsumers) {
-            return true;
-        }
-
-        return false;
     }
 }

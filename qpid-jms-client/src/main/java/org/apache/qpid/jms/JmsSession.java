@@ -69,6 +69,8 @@ import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
+import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
+import org.apache.qpid.jms.policy.JmsPresettlePolicy;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
@@ -711,7 +713,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             envelope.setDispatchId(messageSequence);
 
             if (producer.isAnonymous()) {
-                envelope.setPresettle(presettlePolicy.isProducerPresttled(destination, this));
+                envelope.setPresettle(presettlePolicy.isProducerPresttled(this, destination));
             }
 
             transactionContext.send(connection, envelope);

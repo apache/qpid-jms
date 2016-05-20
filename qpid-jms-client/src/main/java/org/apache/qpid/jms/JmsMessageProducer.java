@@ -57,7 +57,7 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
         this.anonymousProducer = destination == null;
         this.producerInfo = new JmsProducerInfo(producerId);
         this.producerInfo.setDestination(destination);
-        this.producerInfo.setPresettle(session.getPresettlePolicy().isProducerPresttled(destination, session));
+        this.producerInfo.setPresettle(session.getPresettlePolicy().isProducerPresttled(session, destination));
 
         session.getConnection().createResource(producerInfo);
     }

@@ -14,27 +14,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms;
+package org.apache.qpid.jms.policy;
+
+import org.apache.qpid.jms.JmsDestination;
 
 /**
  * Defines the policy used to manage redelivered and recovered Messages.
  */
-public class JmsRedeliveryPolicy {
+public class JmsDefaultRedeliveryPolicy implements JmsRedeliveryPolicy {
 
     public static final int DEFAULT_MAX_REDELIVERIES = -1;
 
     private int maxRedeliveries;
 
-    public JmsRedeliveryPolicy() {
+    public JmsDefaultRedeliveryPolicy() {
         maxRedeliveries = DEFAULT_MAX_REDELIVERIES;
     }
 
-    public JmsRedeliveryPolicy(JmsRedeliveryPolicy source) {
+    public JmsDefaultRedeliveryPolicy(JmsDefaultRedeliveryPolicy source) {
         maxRedeliveries = source.maxRedeliveries;
     }
 
+    @Override
     public JmsRedeliveryPolicy copy() {
-        return new JmsRedeliveryPolicy(this);
+        return new JmsDefaultRedeliveryPolicy(this);
+    }
+
+    @Override
+    public int getMaxRedeliveries(JmsDestination destination) {
+        return maxRedeliveries;
     }
 
     /**
@@ -82,7 +90,7 @@ public class JmsRedeliveryPolicy {
             return false;
         }
 
-        JmsRedeliveryPolicy other = (JmsRedeliveryPolicy) obj;
+        JmsDefaultRedeliveryPolicy other = (JmsDefaultRedeliveryPolicy) obj;
         if (maxRedeliveries != other.maxRedeliveries) {
             return false;
         }

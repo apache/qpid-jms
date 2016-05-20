@@ -30,6 +30,7 @@ import javax.jms.TextMessage;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
 import org.junit.Test;
@@ -39,10 +40,14 @@ import org.junit.Test;
  */
 public class JmsZeroPrefetchTest extends AmqpTestSupport {
 
+    @Override
+    public String getAmqpConnectionURIOptions() {
+        return "jms.prefetchPolicy.all=0";
+    }
+
     @Test(timeout = 60000)
     public void testBlockingReceivesUnBlocksOnMessageSend() throws Exception {
         connection = createAmqpConnection();
-        ((JmsConnection)connection).getPrefetchPolicy().setAll(0);
         connection.start();
 
         final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -83,7 +88,6 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
     @Test(timeout = 60000)
     public void testReceiveTimesOutAndRemovesCredit() throws Exception {
         connection = createAmqpConnection();
-        ((JmsConnection)connection).getPrefetchPolicy().setAll(0);
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -113,7 +117,6 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
     @Test(timeout = 60000)
     public void testReceiveNoWaitWaitForSever() throws Exception {
         connection = createAmqpConnection();
-        ((JmsConnection)connection).getPrefetchPolicy().setAll(0);
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -146,7 +149,6 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
     @Test(timeout = 60000)
     public void testRepeatedPullAttempts() throws Exception {
         connection = createAmqpConnection();
-        ((JmsConnection)connection).getPrefetchPolicy().setAll(0);
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -169,7 +171,6 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
     @Test(timeout = 60000)
     public void testPullConsumerOnlyRequestsOneMessage() throws Exception {
         connection = createAmqpConnection();
-        ((JmsConnection)connection).getPrefetchPolicy().setAll(0);
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -205,7 +206,6 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
     @Test(timeout = 60000)
     public void testTwoConsumers() throws Exception {
         connection = createAmqpConnection();
-        ((JmsConnection)connection).getPrefetchPolicy().setAll(0);
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -232,7 +232,6 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
     @Test(timeout = 60000)
     public void testConsumerWithNoMessageDoesNotHogMessages() throws Exception {
         connection = createAmqpConnection();
-        ((JmsConnection)connection).getPrefetchPolicy().setAll(0);
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -276,11 +275,13 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
         session.rollback();
         session.close();
 
+        JmsDefaultRedeliveryPolicy redeliveryPolicy = new JmsDefaultRedeliveryPolicy();
+        redeliveryPolicy.setMaxRedeliveries(0);
+
         // Reconnect with zero prefetch and zero redeliveries allowed.
         connection.close();
         connection = createAmqpConnection();
-        ((JmsConnection)connection).getPrefetchPolicy().setAll(0);
-        ((JmsConnection)connection).getRedeliveryPolicy().setMaxRedeliveries(0);
+        ((JmsConnection)connection).setRedeliveryPolicy(redeliveryPolicy);
         connection.start();
 
         // try consume with timeout - expect it to timeout and return NULL message

@@ -17,7 +17,7 @@
 package org.apache.qpid.jms.meta;
 
 import org.apache.qpid.jms.JmsDestination;
-import org.apache.qpid.jms.JmsRedeliveryPolicy;
+import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
 
 public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsumerInfo> {
 

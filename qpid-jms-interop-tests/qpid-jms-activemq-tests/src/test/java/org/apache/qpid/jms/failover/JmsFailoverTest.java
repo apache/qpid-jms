@@ -39,7 +39,6 @@ import javax.jms.Session;
 import javax.jms.Topic;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
-import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
@@ -339,17 +338,13 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
     @Test(timeout = 30000)
     public void testPullConsumerTimedReceiveRecovers() throws Exception {
-        URI brokerURI = new URI(getAmqpFailoverURI());
+        URI brokerURI = new URI(getAmqpFailoverURI() + "?jms.prefetchPolicy.all=0");
 
         final CountDownLatch started = new CountDownLatch(1);
         final CountDownLatch received = new CountDownLatch(1);
 
         connection = createAmqpConnection(brokerURI);
         connection.start();
-
-        // Make all our consumers pull consumers.
-        JmsConnection jmsConnection = (JmsConnection) connection;
-        jmsConnection.getPrefetchPolicy().setAll(0);
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());
@@ -403,17 +398,13 @@ public class JmsFailoverTest extends AmqpTestSupport {
 
     @Test(timeout = 30000)
     public void testPullConsumerReceiveRecovers() throws Exception {
-        URI brokerURI = new URI(getAmqpFailoverURI());
+        URI brokerURI = new URI(getAmqpFailoverURI() + "?jms.prefetchPolicy.all=0");
 
         final CountDownLatch started = new CountDownLatch(1);
         final CountDownLatch received = new CountDownLatch(1);
 
         connection = createAmqpConnection(brokerURI);
         connection.start();
-
-        // Make all our consumers pull consumers.
-        JmsConnection jmsConnection = (JmsConnection) connection;
-        jmsConnection.getPrefetchPolicy().setAll(0);
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue = session.createQueue(name.getMethodName());

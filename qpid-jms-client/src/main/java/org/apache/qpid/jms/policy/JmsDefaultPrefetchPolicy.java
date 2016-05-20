@@ -14,15 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms;
+package org.apache.qpid.jms.policy;
 
+import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.JmsSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Defines the prefetch message policies for different types of consumers
  */
-public class JmsPrefetchPolicy {
+public class JmsDefaultPrefetchPolicy implements JmsPrefetchPolicy {
 
     public static final int MAX_PREFETCH_SIZE = Short.MAX_VALUE;
     public static final int DEFAULT_QUEUE_PREFETCH = 1000;
@@ -30,7 +32,7 @@ public class JmsPrefetchPolicy {
     public static final int DEFAULT_DURABLE_TOPIC_PREFETCH = DEFAULT_QUEUE_PREFETCH;
     public static final int DEFAULT_TOPIC_PREFETCH = DEFAULT_QUEUE_PREFETCH;
 
-    private static final Logger LOG = LoggerFactory.getLogger(JmsPrefetchPolicy.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JmsDefaultPrefetchPolicy.class);
 
     private int queuePrefetch;
     private int queueBrowserPrefetch;
@@ -41,7 +43,7 @@ public class JmsPrefetchPolicy {
     /**
      * Initialize default prefetch policies
      */
-    public JmsPrefetchPolicy() {
+    public JmsDefaultPrefetchPolicy() {
         this.queuePrefetch = DEFAULT_QUEUE_PREFETCH;
         this.queueBrowserPrefetch = DEFAULT_QUEUE_BROWSER_PREFETCH;
         this.topicPrefetch = DEFAULT_TOPIC_PREFETCH;
@@ -54,7 +56,7 @@ public class JmsPrefetchPolicy {
      * @param source
      *      The policy instance to copy values from.
      */
-    public JmsPrefetchPolicy(JmsPrefetchPolicy source) {
+    public JmsDefaultPrefetchPolicy(JmsDefaultPrefetchPolicy source) {
         this.queuePrefetch = source.getQueuePrefetch();
         this.queueBrowserPrefetch = source.getQueueBrowserPrefetch();
         this.topicPrefetch = source.getTopicPrefetch();
@@ -62,13 +64,29 @@ public class JmsPrefetchPolicy {
         this.maxPrefetchSize = source.getMaxPrefetchSize();
     }
 
-    /**
-     * Copy this policy into a newly allocated instance.
-     *
-     * @return a new JmsPrefetchPolicy that is a copy of this one.
-     */
-    public JmsPrefetchPolicy copy() {
-        return new JmsPrefetchPolicy(this);
+    @Override
+    public JmsDefaultPrefetchPolicy copy() {
+        return new JmsDefaultPrefetchPolicy(this);
+    }
+
+    @Override
+    public int getConfiguredPrefetch(JmsSession session, JmsDestination destination, boolean durable, boolean browser) {
+        int prefetch = 0;
+        if (destination.isTopic()) {
+            if (durable) {
+                prefetch = getDurableTopicPrefetch();
+            } else {
+                prefetch = getTopicPrefetch();
+            }
+        } else {
+            if (browser) {
+                prefetch = getQueueBrowserPrefetch();
+            } else {
+                prefetch = getQueuePrefetch();
+            }
+        }
+
+        return prefetch;
     }
 
     /**
@@ -191,7 +209,7 @@ public class JmsPrefetchPolicy {
             return false;
         }
 
-        JmsPrefetchPolicy other = (JmsPrefetchPolicy) obj;
+        JmsDefaultPrefetchPolicy other = (JmsDefaultPrefetchPolicy) obj;
 
         return this.queuePrefetch == other.queuePrefetch &&
                this.queueBrowserPrefetch == other.queueBrowserPrefetch &&

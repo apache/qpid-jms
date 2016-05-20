@@ -20,6 +20,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
+import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
 import org.junit.Test;
 
 /**
@@ -29,8 +31,8 @@ public class JmsPrefetchPolicyTest {
 
     @Test
     public void testHashCode() {
-        JmsPrefetchPolicy policy1 = new JmsPrefetchPolicy();
-        JmsPrefetchPolicy policy2 = new JmsPrefetchPolicy();
+        JmsPrefetchPolicy policy1 = new JmsDefaultPrefetchPolicy();
+        JmsPrefetchPolicy policy2 = new JmsDefaultPrefetchPolicy();
 
         assertTrue(policy1.hashCode() != 0);
         assertEquals(policy1.hashCode(), policy1.hashCode());
@@ -39,25 +41,25 @@ public class JmsPrefetchPolicyTest {
 
     @Test
     public void testJmsPrefetchPolicy() {
-        JmsPrefetchPolicy policy = new JmsPrefetchPolicy();
+        JmsDefaultPrefetchPolicy policy = new JmsDefaultPrefetchPolicy();
 
-        assertEquals(JmsPrefetchPolicy.DEFAULT_TOPIC_PREFETCH, policy.getTopicPrefetch());
-        assertEquals(JmsPrefetchPolicy.DEFAULT_DURABLE_TOPIC_PREFETCH, policy.getDurableTopicPrefetch());
-        assertEquals(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH, policy.getQueuePrefetch());
-        assertEquals(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH, policy.getQueueBrowserPrefetch());
-        assertEquals(JmsPrefetchPolicy.MAX_PREFETCH_SIZE, policy.getMaxPrefetchSize());
+        assertEquals(JmsDefaultPrefetchPolicy.DEFAULT_TOPIC_PREFETCH, policy.getTopicPrefetch());
+        assertEquals(JmsDefaultPrefetchPolicy.DEFAULT_DURABLE_TOPIC_PREFETCH, policy.getDurableTopicPrefetch());
+        assertEquals(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH, policy.getQueuePrefetch());
+        assertEquals(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH, policy.getQueueBrowserPrefetch());
+        assertEquals(JmsDefaultPrefetchPolicy.MAX_PREFETCH_SIZE, policy.getMaxPrefetchSize());
     }
 
     @Test
     public void testJmsPrefetchPolicyJmsPrefetchPolicy() {
-        JmsPrefetchPolicy policy1 = new JmsPrefetchPolicy();
+        JmsDefaultPrefetchPolicy policy1 = new JmsDefaultPrefetchPolicy();
         policy1.setTopicPrefetch(10);
         policy1.setDurableTopicPrefetch(20);
         policy1.setQueueBrowserPrefetch(30);
         policy1.setQueuePrefetch(40);
         policy1.setMaxPrefetchSize(100);
 
-        JmsPrefetchPolicy policy2 = new JmsPrefetchPolicy(policy1);
+        JmsDefaultPrefetchPolicy policy2 = new JmsDefaultPrefetchPolicy(policy1);
 
         assertEquals(policy1.getTopicPrefetch(), policy2.getTopicPrefetch());
         assertEquals(policy1.getDurableTopicPrefetch(), policy2.getDurableTopicPrefetch());
@@ -68,16 +70,16 @@ public class JmsPrefetchPolicyTest {
 
     @Test
     public void testGetMaxPrefetchSize() {
-        JmsPrefetchPolicy policy = new JmsPrefetchPolicy();
-        assertEquals(JmsPrefetchPolicy.MAX_PREFETCH_SIZE, policy.getMaxPrefetchSize());
+        JmsDefaultPrefetchPolicy policy = new JmsDefaultPrefetchPolicy();
+        assertEquals(JmsDefaultPrefetchPolicy.MAX_PREFETCH_SIZE, policy.getMaxPrefetchSize());
         policy.setMaxPrefetchSize(10);
         assertEquals(10, policy.getMaxPrefetchSize());
     }
 
     @Test
     public void testMaxPrefetchSizeIsHonored() {
-        JmsPrefetchPolicy policy = new JmsPrefetchPolicy();
-        assertEquals(JmsPrefetchPolicy.MAX_PREFETCH_SIZE, policy.getMaxPrefetchSize());
+        JmsDefaultPrefetchPolicy policy = new JmsDefaultPrefetchPolicy();
+        assertEquals(JmsDefaultPrefetchPolicy.MAX_PREFETCH_SIZE, policy.getMaxPrefetchSize());
         policy.setMaxPrefetchSize(42);
         assertEquals(42, policy.getMaxPrefetchSize());
 
@@ -94,12 +96,12 @@ public class JmsPrefetchPolicyTest {
 
     @Test
     public void testSetAll() {
-        JmsPrefetchPolicy policy = new JmsPrefetchPolicy();
+        JmsDefaultPrefetchPolicy policy = new JmsDefaultPrefetchPolicy();
 
-        assertEquals(JmsPrefetchPolicy.DEFAULT_TOPIC_PREFETCH, policy.getTopicPrefetch());
-        assertEquals(JmsPrefetchPolicy.DEFAULT_DURABLE_TOPIC_PREFETCH, policy.getDurableTopicPrefetch());
-        assertEquals(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH, policy.getQueuePrefetch());
-        assertEquals(JmsPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH, policy.getQueueBrowserPrefetch());
+        assertEquals(JmsDefaultPrefetchPolicy.DEFAULT_TOPIC_PREFETCH, policy.getTopicPrefetch());
+        assertEquals(JmsDefaultPrefetchPolicy.DEFAULT_DURABLE_TOPIC_PREFETCH, policy.getDurableTopicPrefetch());
+        assertEquals(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH, policy.getQueuePrefetch());
+        assertEquals(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH, policy.getQueueBrowserPrefetch());
 
         policy.setAll(42);
 
@@ -111,19 +113,19 @@ public class JmsPrefetchPolicyTest {
 
     @Test
     public void testEqualsObject() {
-        JmsPrefetchPolicy policy1 = new JmsPrefetchPolicy();
-        JmsPrefetchPolicy policy2 = new JmsPrefetchPolicy();
+        JmsPrefetchPolicy policy1 = new JmsDefaultPrefetchPolicy();
+        JmsPrefetchPolicy policy2 = new JmsDefaultPrefetchPolicy();
 
         assertEquals(policy1, policy1);
         assertEquals(policy1, policy2);
 
-        JmsPrefetchPolicy policy3 = new JmsPrefetchPolicy();
+        JmsDefaultPrefetchPolicy policy3 = new JmsDefaultPrefetchPolicy();
         policy3.setTopicPrefetch(10);
-        JmsPrefetchPolicy policy4 = new JmsPrefetchPolicy();
+        JmsDefaultPrefetchPolicy policy4 = new JmsDefaultPrefetchPolicy();
         policy4.setQueuePrefetch(10);
-        JmsPrefetchPolicy policy5 = new JmsPrefetchPolicy();
+        JmsDefaultPrefetchPolicy policy5 = new JmsDefaultPrefetchPolicy();
         policy5.setDurableTopicPrefetch(10);
-        JmsPrefetchPolicy policy6 = new JmsPrefetchPolicy();
+        JmsDefaultPrefetchPolicy policy6 = new JmsDefaultPrefetchPolicy();
         policy6.setQueueBrowserPrefetch(10);
 
         assertFalse(policy1.equals(policy3));

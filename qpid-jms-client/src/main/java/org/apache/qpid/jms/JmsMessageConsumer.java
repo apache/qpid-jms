@@ -34,6 +34,8 @@ import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
+import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
+import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
@@ -84,7 +86,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
             this.messageQueue = new FifoMessageQueue();
         }
 
-        JmsPrefetchPolicy policy = connection.getPrefetchPolicy();
+        JmsPrefetchPolicy prefetchPolicy = connection.getPrefetchPolicy();
         JmsRedeliveryPolicy redeliveryPolicy = connection.getRedeliveryPolicy().copy();
 
         consumerInfo = new JmsConsumerInfo(consumerId);
@@ -95,10 +97,11 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         consumerInfo.setAcknowledgementMode(acknowledgementMode);
         consumerInfo.setNoLocal(noLocal);
         consumerInfo.setBrowser(isBrowser());
-        consumerInfo.setPrefetchSize(getConfiguredPrefetch(destination, policy));
+        consumerInfo.setPrefetchSize(
+            prefetchPolicy.getConfiguredPrefetch(session, destination, isDurableSubscription(), isBrowser()));
         consumerInfo.setRedeliveryPolicy(redeliveryPolicy);
         consumerInfo.setLocalMessageExpiry(connection.isLocalMessageExpiry());
-        consumerInfo.setPresettle(session.getPresettlePolicy().isConsumerPresttled(destination, session));
+        consumerInfo.setPresettle(session.getPresettlePolicy().isConsumerPresttled(session, destination));
 
         session.getConnection().createResource(consumerInfo);
     }
@@ -305,8 +308,8 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
 
         JmsRedeliveryPolicy redeliveryPolicy = consumerInfo.getRedeliveryPolicy();
         return redeliveryPolicy != null &&
-               redeliveryPolicy.getMaxRedeliveries() != JmsRedeliveryPolicy.DEFAULT_MAX_REDELIVERIES &&
-               redeliveryPolicy.getMaxRedeliveries() < envelope.getRedeliveryCount();
+               redeliveryPolicy.getMaxRedeliveries(getDestination()) >= 0 &&
+               redeliveryPolicy.getMaxRedeliveries(getDestination()) < envelope.getRedeliveryCount();
     }
 
     protected void checkClosed() throws IllegalStateException {
@@ -630,25 +633,6 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         }
 
         return false;
-    }
-
-    private int getConfiguredPrefetch(JmsDestination destination, JmsPrefetchPolicy policy) {
-        int prefetch = 0;
-        if (destination.isTopic()) {
-            if (isDurableSubscription()) {
-                prefetch = policy.getDurableTopicPrefetch();
-            } else {
-                prefetch = policy.getTopicPrefetch();
-            }
-        } else {
-            if (isBrowser()) {
-                prefetch = policy.getQueueBrowserPrefetch();
-            } else {
-                prefetch = policy.getQueuePrefetch();
-            }
-        }
-
-        return prefetch;
     }
 
     private final class MessageDeliverTask implements Runnable {

@@ -59,7 +59,7 @@ import javax.jms.TopicSubscriber;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
-import org.apache.qpid.jms.JmsPrefetchPolicy;
+import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
@@ -1197,10 +1197,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final int COUNT = 5;
 
-            Connection connection = testFixture.establishConnecton(testPeer);
+            Connection connection = testFixture.establishConnecton(testPeer, "?jms.redeliveryPolicy.maxRedeliveries=1");
             connection.start();
-
-            ((JmsConnection) connection).getRedeliveryPolicy().setMaxRedeliveries(1);
 
             testPeer.expectBegin();
 
@@ -1242,9 +1240,8 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     @Test(timeout=20000)
     public void testPrefetchPolicyInfluencesCreditFlow() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
-            int newPrefetch = 263;
-            ((JmsConnection) connection).getPrefetchPolicy().setAll(newPrefetch);
+            final int newPrefetch = 263;
+            Connection connection = testFixture.establishConnecton(testPeer, "?jms.prefetchPolicy.all=" + newPrefetch);
             connection.start();
 
             testPeer.expectBegin();
@@ -1492,7 +1489,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             int messageCount = 10;
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"),
-                    messageCount, false, false, equalTo(UnsignedInteger.valueOf(JmsPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)), 1, true);
+                    messageCount, false, false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)), 1, true);
 
             Queue queue = session.createQueue("myQueue");
             MessageConsumer consumer = session.createConsumer(queue);

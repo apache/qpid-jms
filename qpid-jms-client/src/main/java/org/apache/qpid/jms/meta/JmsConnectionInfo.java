@@ -19,10 +19,13 @@ package org.apache.qpid.jms.meta;
 import java.net.URI;
 import java.nio.charset.Charset;
 
-import org.apache.qpid.jms.JmsPrefetchPolicy;
-import org.apache.qpid.jms.JmsPresettlePolicy;
-import org.apache.qpid.jms.JmsRedeliveryPolicy;
 import org.apache.qpid.jms.message.JmsMessageIDBuilder;
+import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
+import org.apache.qpid.jms.policy.JmsDefaultPresettlePolicy;
+import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
+import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
+import org.apache.qpid.jms.policy.JmsPresettlePolicy;
+import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
 
 /**
  * Meta object that contains the JmsConnection identification and configuration
@@ -59,9 +62,9 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private String queuePrefix = null;
     private String topicPrefix = null;
 
-    private JmsPrefetchPolicy prefetchPolicy = new JmsPrefetchPolicy();
-    private JmsRedeliveryPolicy redeliveryPolicy = new JmsRedeliveryPolicy();
-    private JmsPresettlePolicy presettlePolicy = new JmsPresettlePolicy();
+    private JmsPrefetchPolicy prefetchPolicy = new JmsDefaultPrefetchPolicy();
+    private JmsRedeliveryPolicy redeliveryPolicy = new JmsDefaultRedeliveryPolicy();
+    private JmsPresettlePolicy presettlePolicy = new JmsDefaultPresettlePolicy();
     private JmsMessageIDBuilder messageIDBuilder = JmsMessageIDBuilder.BUILTIN.DEFAULT.createBuilder();
 
     private volatile byte[] encodedUserId;

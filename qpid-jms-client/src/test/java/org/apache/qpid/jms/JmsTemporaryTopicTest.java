@@ -145,7 +145,6 @@ public class JmsTemporaryTopicTest extends QpidJmsTestCase {
         String unusedValue = "unusedValue";
         JmsTopic topic = new JmsTopic();
 
-
         Map<String, String> props = new HashMap<String, String>();
         props.put(NAME_PROP, name);
         props.put(unusedKey, unusedValue);

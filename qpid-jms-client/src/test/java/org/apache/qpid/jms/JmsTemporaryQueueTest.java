@@ -145,7 +145,6 @@ public class JmsTemporaryQueueTest extends QpidJmsTestCase {
         String unusedValue = "unusedValue";
         JmsQueue queue = new JmsQueue();
 
-
         Map<String, String> props = new HashMap<String, String>();
         props.put(NAME_PROP, name);
         props.put(unusedKey, unusedValue);

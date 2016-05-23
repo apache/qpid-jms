@@ -57,10 +57,9 @@ public class JmsDefaultPresettlePolicy implements JmsPresettlePolicy {
 
     @Override
     public boolean isConsumerPresttled(JmsSession session, JmsDestination destination) {
-
         if (session.isTransacted()) {
             return false;
-        } else if (presettleAll || presettleConsumers) {
+        } else if (destination != null && (presettleAll || presettleConsumers)) {
             return true;
         } else if (destination != null && destination.isQueue() && presettleQueueConsumers) {
             return true;
@@ -73,10 +72,9 @@ public class JmsDefaultPresettlePolicy implements JmsPresettlePolicy {
 
     @Override
     public boolean isProducerPresttled(JmsSession session, JmsDestination destination) {
-
         if (presettleAll || presettleProducers) {
             return true;
-        } else if (session.isTransacted() && presettleTransactedProducers) {
+        } else if (destination != null && session.isTransacted() && presettleTransactedProducers) {
             return true;
         } else if (destination != null && destination.isQueue() && presettleQueueProducers) {
             return true;
@@ -109,7 +107,7 @@ public class JmsDefaultPresettlePolicy implements JmsPresettlePolicy {
      * @return the presettleProducers setting for this policy.
      */
     public boolean isPresettleProducers() {
-        return presettleProducers;
+        return presettleAll || presettleProducers;
     }
 
     /**
@@ -127,7 +125,7 @@ public class JmsDefaultPresettlePolicy implements JmsPresettlePolicy {
      * @return the presettleTopicProducers setting for this policy
      */
     public boolean isPresettleTopicProducers() {
-        return presettleTopicProducers;
+        return presettleAll || presettleProducers ||  presettleTopicProducers;
     }
 
     /**
@@ -147,7 +145,7 @@ public class JmsDefaultPresettlePolicy implements JmsPresettlePolicy {
      * @return the presettleQueueSends setting for this policy
      */
     public boolean isPresettleQueueProducers() {
-        return presettleQueueProducers;
+        return presettleAll || presettleProducers ||  presettleQueueProducers;
     }
 
     /**
@@ -167,7 +165,7 @@ public class JmsDefaultPresettlePolicy implements JmsPresettlePolicy {
      * @return the presettleTransactedSends setting for this policy
      */
     public boolean isPresettleTransactedProducers() {
-        return presettleTransactedProducers;
+        return presettleAll || presettleProducers || presettleTransactedProducers;
     }
 
     /**
@@ -184,7 +182,7 @@ public class JmsDefaultPresettlePolicy implements JmsPresettlePolicy {
      * @return the presettleConsumers configuration value for this policy.
      */
     public boolean isPresettleConsumers() {
-        return presettleConsumers;
+        return presettleAll || presettleConsumers;
     }
 
     /**
@@ -202,7 +200,7 @@ public class JmsDefaultPresettlePolicy implements JmsPresettlePolicy {
      * @return the presettleTopicConsumers setting for this policy.
      */
     public boolean isPresettleTopicConsumers() {
-        return presettleTopicConsumers;
+        return presettleAll || presettleConsumers ||  presettleTopicConsumers;
     }
 
     /**
@@ -220,7 +218,7 @@ public class JmsDefaultPresettlePolicy implements JmsPresettlePolicy {
      * @return the presettleQueueConsumers setting for this policy.
      */
     public boolean isPresettleQueueConsumers() {
-        return presettleQueueConsumers;
+        return presettleAll || presettleConsumers || presettleQueueConsumers;
     }
 
     /**
@@ -232,5 +230,61 @@ public class JmsDefaultPresettlePolicy implements JmsPresettlePolicy {
      */
     public void setPresettleQueueConsumers(boolean presettleQueueConsumers) {
         this.presettleQueueConsumers = presettleQueueConsumers;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (presettleAll ? 1231 : 1237);
+        result = prime * result + (presettleConsumers ? 1231 : 1237);
+        result = prime * result + (presettleProducers ? 1231 : 1237);
+        result = prime * result + (presettleQueueConsumers ? 1231 : 1237);
+        result = prime * result + (presettleQueueProducers ? 1231 : 1237);
+        result = prime * result + (presettleTopicConsumers ? 1231 : 1237);
+        result = prime * result + (presettleTopicProducers ? 1231 : 1237);
+        result = prime * result + (presettleTransactedProducers ? 1231 : 1237);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+
+        JmsDefaultPresettlePolicy other = (JmsDefaultPresettlePolicy) obj;
+        if (presettleAll != other.presettleAll) {
+            return false;
+        }
+        if (presettleConsumers != other.presettleConsumers) {
+            return false;
+        }
+        if (presettleProducers != other.presettleProducers) {
+            return false;
+        }
+        if (presettleQueueConsumers != other.presettleQueueConsumers) {
+            return false;
+        }
+        if (presettleQueueProducers != other.presettleQueueProducers) {
+            return false;
+        }
+        if (presettleTopicConsumers != other.presettleTopicConsumers) {
+            return false;
+        }
+        if (presettleTopicProducers != other.presettleTopicProducers) {
+            return false;
+        }
+        if (presettleTransactedProducers != other.presettleTransactedProducers) {
+            return false;
+        }
+
+        return true;
     }
 }

@@ -191,6 +191,7 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
             }, 10000, 10);
 
             assertTrue("connection didnt fail in expected timeframe", failed);
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 

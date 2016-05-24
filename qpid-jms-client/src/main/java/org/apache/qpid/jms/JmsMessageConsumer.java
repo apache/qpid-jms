@@ -86,8 +86,8 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
             this.messageQueue = new FifoMessageQueue();
         }
 
-        JmsPrefetchPolicy prefetchPolicy = connection.getPrefetchPolicy();
-        JmsRedeliveryPolicy redeliveryPolicy = connection.getRedeliveryPolicy().copy();
+        JmsPrefetchPolicy prefetchPolicy = session.getPrefetchPolicy();
+        JmsRedeliveryPolicy redeliveryPolicy = session.getRedeliveryPolicy().copy();
 
         consumerInfo = new JmsConsumerInfo(consumerId);
         consumerInfo.setClientId(connection.getClientID());

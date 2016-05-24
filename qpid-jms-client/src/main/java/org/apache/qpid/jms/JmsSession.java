@@ -68,8 +68,10 @@ import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
+import org.apache.qpid.jms.policy.JmsMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsPresettlePolicy;
+import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
@@ -94,8 +96,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     private final AtomicBoolean started = new AtomicBoolean();
     private final LinkedBlockingQueue<JmsInboundMessageDispatch> stoppedMessages =
         new LinkedBlockingQueue<JmsInboundMessageDispatch>(10000);
-    private final JmsPrefetchPolicy prefetchPolicy;
-    private final JmsPresettlePolicy presettlePolicy;
     private final JmsSessionInfo sessionInfo;
     private volatile ExecutorService executor;
     private final ReentrantLock sendLock = new ReentrantLock();
@@ -109,8 +109,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     protected JmsSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) throws JMSException {
         this.connection = connection;
         this.acknowledgementMode = acknowledgementMode;
-        this.prefetchPolicy = connection.getPrefetchPolicy().copy();
-        this.presettlePolicy = connection.getPresettlePolicy().copy();
 
         if (acknowledgementMode == SESSION_TRANSACTED) {
             setTransactionContext(new JmsLocalTransactionContext(this));
@@ -121,6 +119,10 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         sessionInfo = new JmsSessionInfo(sessionId);
         sessionInfo.setAcknowledgementMode(acknowledgementMode);
         sessionInfo.setSendAcksAsync(connection.isForceAsyncAcks());
+        sessionInfo.setMessageIDPolicy(connection.getMessageIDPolicy().copy());
+        sessionInfo.setPrefetchPolicy(connection.getPrefetchPolicy().copy());
+        sessionInfo.setPresettlePolicy(connection.getPresettlePolicy().copy());
+        sessionInfo.setRedeliveryPolicy(connection.getRedeliveryPolicy().copy());
 
         connection.createResource(sessionInfo);
 
@@ -710,7 +712,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             envelope.setDispatchId(messageSequence);
 
             if (producer.isAnonymous()) {
-                envelope.setPresettle(presettlePolicy.isProducerPresttled(this, destination));
+                envelope.setPresettle(getPresettlePolicy().isProducerPresttled(this, destination));
             }
 
             transactionContext.send(connection, envelope);
@@ -923,12 +925,20 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         }
     }
 
+    public JmsMessageIDPolicy getMessageIDPolicy() {
+        return sessionInfo.getMessageIDPolicy();
+    }
+
     public JmsPrefetchPolicy getPrefetchPolicy() {
-        return prefetchPolicy;
+        return sessionInfo.getPrefetchPolicy();
     }
 
     public JmsPresettlePolicy getPresettlePolicy() {
-        return presettlePolicy;
+        return sessionInfo.getPresettlePolicy();
+    }
+
+    public JmsRedeliveryPolicy getRedeliveryPolicy() {
+        return sessionInfo.getRedeliveryPolicy();
     }
 
     @Override

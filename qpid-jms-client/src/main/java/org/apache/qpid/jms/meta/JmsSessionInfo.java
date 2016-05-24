@@ -18,11 +18,21 @@ package org.apache.qpid.jms.meta;
 
 import javax.jms.Session;
 
+import org.apache.qpid.jms.policy.JmsMessageIDPolicy;
+import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
+import org.apache.qpid.jms.policy.JmsPresettlePolicy;
+import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
+
 public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionInfo> {
 
     private final JmsSessionId sessionId;
+
     private int acknowledgementMode;
     private boolean sendAcksAsync;
+    private JmsMessageIDPolicy messageIDPolicy;
+    private JmsPrefetchPolicy prefetchPolicy;
+    private JmsPresettlePolicy presettlePolicy;
+    private JmsRedeliveryPolicy redeliveryPolicy;
 
     public JmsSessionInfo(JmsConnectionInfo connectionInfo, long sessionId) {
         if (connectionInfo == null) {
@@ -109,5 +119,37 @@ public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionI
     @Override
     public int compareTo(JmsSessionInfo other) {
         return sessionId.compareTo(other.sessionId);
+    }
+
+    public JmsMessageIDPolicy getMessageIDPolicy() {
+        return messageIDPolicy;
+    }
+
+    public void setMessageIDPolicy(JmsMessageIDPolicy messageIDPolicy) {
+        this.messageIDPolicy = messageIDPolicy;
+    }
+
+    public JmsPrefetchPolicy getPrefetchPolicy() {
+        return prefetchPolicy;
+    }
+
+    public void setPrefetchPolicy(JmsPrefetchPolicy prefetchPolicy) {
+        this.prefetchPolicy = prefetchPolicy;
+    }
+
+    public JmsPresettlePolicy getPresettlePolicy() {
+        return presettlePolicy;
+    }
+
+    public void setPresettlePolicy(JmsPresettlePolicy presettlePolicy) {
+        this.presettlePolicy = presettlePolicy;
+    }
+
+    public JmsRedeliveryPolicy getRedeliveryPolicy() {
+        return redeliveryPolicy;
+    }
+
+    public void setRedeliveryPolicy(JmsRedeliveryPolicy redeliveryPolicy) {
+        this.redeliveryPolicy = redeliveryPolicy;
     }
 }

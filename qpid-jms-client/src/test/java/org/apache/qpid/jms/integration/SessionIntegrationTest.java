@@ -26,6 +26,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -59,6 +60,7 @@ import javax.jms.TopicSubscriber;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
+import org.apache.qpid.jms.JmsSession;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -1539,6 +1541,26 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             } catch (Exception e) {
                 LOG.error("Caught exception in listener", e);
             }
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testSessionSnapshotsPolicyObjects() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            assertNotSame(session.getMessageIDPolicy(), connection.getMessageIDPolicy());
+            assertNotSame(session.getPrefetchPolicy(), connection.getPrefetchPolicy());
+            assertNotSame(session.getPresettlePolicy(), connection.getPresettlePolicy());
+            assertNotSame(session.getRedeliveryPolicy(), connection.getRedeliveryPolicy());
+
+            testPeer.expectClose();
+            connection.close();
         }
     }
 }

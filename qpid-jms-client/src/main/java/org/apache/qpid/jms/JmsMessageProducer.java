@@ -58,7 +58,7 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
         this.anonymousProducer = destination == null;
 
         JmsMessageIDBuilder messageIDBuilder =
-            session.getConnection().getMessageIDPolicy().getMessageIDBuilder(session, destination);
+            session.getMessageIDPolicy().getMessageIDBuilder(session, destination);
 
         this.producerInfo = new JmsProducerInfo(producerId, messageIDBuilder);
         this.producerInfo.setDestination(destination);

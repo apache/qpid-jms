@@ -628,7 +628,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     protected void send(JmsMessageProducer producer, Destination dest, Message msg, int deliveryMode, int priority, long timeToLive, boolean disableMsgId, boolean disableTimestamp) throws JMSException {
         JmsDestination destination = JmsMessageTransformation.transformDestination(connection, dest);
 
-        if(destination.isTemporary() && ((JmsTemporaryDestination) destination).isDeleted()) {
+        if (destination.isTemporary() && ((JmsTemporaryDestination) destination).isDeleted()) {
             throw new IllegalStateException("Temporary destination has been deleted");
         }
 
@@ -730,7 +730,8 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
      * method is usually only called when the Session is in the CLIENT_ACKNOWLEDGE mode.
      *
      * @param ackType
-     *        The type of acknowledgement being done.
+     *      The type of acknowledgement being done.
+     *
      * @throws JMSException if an error occurs while the acknowledge is processed.
      */
     void acknowledge(ACK_TYPE ackType) throws JMSException {

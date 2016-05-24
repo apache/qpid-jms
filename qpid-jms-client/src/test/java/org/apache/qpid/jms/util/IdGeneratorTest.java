@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -38,6 +39,21 @@ public class IdGeneratorTest {
         assertEquals("somehost.lan", IdGenerator.sanitizeHostName("somehost.lan"));
         // include a UTF-8 char in the text \u0E08 is a Thai elephant
         assertEquals("otherhost.lan", IdGenerator.sanitizeHostName("other\u0E08host.lan"));
+    }
+
+    @Test
+    public void testDefaultPrefix() {
+        String generated = generator.generateId();
+        assertTrue(generated.startsWith(IdGenerator.DEFAULT_PREFIX));
+        assertFalse(generated.substring(IdGenerator.DEFAULT_PREFIX.length()).startsWith(":"));
+    }
+
+    @Test
+    public void testNonDefaultPrefix() {
+        generator = new IdGenerator("TEST-");
+        String generated = generator.generateId();
+        assertFalse(generated.startsWith(IdGenerator.DEFAULT_PREFIX));
+        assertFalse(generated.substring("TEST-".length()).startsWith(":"));
     }
 
     @Test

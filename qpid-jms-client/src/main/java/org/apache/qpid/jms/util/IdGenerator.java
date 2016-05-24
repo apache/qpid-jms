@@ -34,6 +34,7 @@ public class IdGenerator {
     private final String prefix;
     private final AtomicLong sequence = new AtomicLong(1);
 
+    public static final String DEFAULT_PREFIX = "ID:";
     public static final String PROPERTY_IDGENERATOR_HOST_PREFIX = "qpidjms.idgenerator.hostPrefixEnabled";
 
     static {
@@ -83,14 +84,14 @@ public class IdGenerator {
      *      The prefix value that is applied to all generated IDs.
      */
     public IdGenerator(String prefix) {
-        this.prefix = prefix + (hostName != null ? hostName : "") + ":";
+        this.prefix = prefix + (hostName != null ? (hostName + ":") : "");
     }
 
     /**
-     * Construct an IdGenerator using the default prefix value of 'ID:'
+     * Construct an IdGenerator using the default prefix value.
      */
     public IdGenerator() {
-        this("ID:");
+        this(DEFAULT_PREFIX);
     }
 
     /**

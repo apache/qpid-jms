@@ -370,6 +370,34 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testSetRemoteURIThrowsOnNullURI() throws Exception {
+        JmsConnectionFactory cf = new JmsConnectionFactory();
+        try {
+            cf.setRemoteURI(null);
+            fail("Should not allow a null URI to be set.");
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    @Test
+    public void testCreateWithNullURIRemoteURIThrows() throws Exception {
+        try {
+            new JmsConnectionFactory("user", "pass", (URI) null);
+            fail("Should not allow a null URI to be set.");
+        } catch (NullPointerException e) {
+        }
+    }
+
+    @Test
+    public void testCreateWithNullURIStringRemoteURIThrows() throws Exception {
+        try {
+            new JmsConnectionFactory("user", "pass", (String) null);
+            fail("Should not allow a null URI to be set.");
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    @Test
     public void testSerializeTwoConnectionFactories() throws Exception {
         String uri = "amqp://localhost:1234";
 

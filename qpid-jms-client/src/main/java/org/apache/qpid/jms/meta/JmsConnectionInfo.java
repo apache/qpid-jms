@@ -19,10 +19,11 @@ package org.apache.qpid.jms.meta;
 import java.net.URI;
 import java.nio.charset.Charset;
 
-import org.apache.qpid.jms.message.JmsMessageIDBuilder;
+import org.apache.qpid.jms.policy.JmsDefaultMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultPresettlePolicy;
 import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
+import org.apache.qpid.jms.policy.JmsMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsPresettlePolicy;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
@@ -65,7 +66,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private JmsPrefetchPolicy prefetchPolicy = new JmsDefaultPrefetchPolicy();
     private JmsRedeliveryPolicy redeliveryPolicy = new JmsDefaultRedeliveryPolicy();
     private JmsPresettlePolicy presettlePolicy = new JmsDefaultPresettlePolicy();
-    private JmsMessageIDBuilder messageIDBuilder = JmsMessageIDBuilder.BUILTIN.DEFAULT.createBuilder();
+    private JmsMessageIDPolicy messageIDPolicy = new JmsDefaultMessageIDPolicy();
 
     private volatile byte[] encodedUserId;
 
@@ -96,7 +97,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         copy.topicPrefix = topicPrefix;
         copy.connectTimeout = connectTimeout;
         copy.validatePropertyNames = validatePropertyNames;
-        copy.messageIDBuilder = messageIDBuilder;
+        copy.messageIDPolicy = messageIDPolicy;
         copy.prefetchPolicy = prefetchPolicy.copy();
         copy.redeliveryPolicy = redeliveryPolicy.copy();
         copy.presettlePolicy = presettlePolicy.copy();
@@ -283,12 +284,12 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         this.presettlePolicy = presettlePolicy;
     }
 
-    public JmsMessageIDBuilder getMessageIDBuilder() {
-        return messageIDBuilder;
+    public JmsMessageIDPolicy getMessageIDPolicy() {
+        return messageIDPolicy;
     }
 
-    public void setMessageIDBuilder(JmsMessageIDBuilder messageIDBuilder) {
-        this.messageIDBuilder = messageIDBuilder;
+    public void setMessageIDPolicy(JmsMessageIDPolicy messageIDPolicy) {
+        this.messageIDPolicy = messageIDPolicy;
     }
 
     public boolean isPopulateJMSXUserID() {

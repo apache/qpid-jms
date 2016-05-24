@@ -36,7 +36,7 @@ public class JmsDefaultRedeliveryPolicy implements JmsRedeliveryPolicy {
     }
 
     @Override
-    public JmsRedeliveryPolicy copy() {
+    public JmsDefaultRedeliveryPolicy copy() {
         return new JmsDefaultRedeliveryPolicy(this);
     }
 

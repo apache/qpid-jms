@@ -17,31 +17,35 @@
 package org.apache.qpid.jms.meta;
 
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.message.JmsMessageIDBuilder;
 
 public final class JmsProducerInfo implements JmsResource, Comparable<JmsProducerInfo> {
 
     private final JmsProducerId producerId;
+    private final JmsMessageIDBuilder messageIDBuilder;
+
     private JmsDestination destination;
     private boolean presettle;
 
     public JmsProducerInfo(JmsProducerId producerId) {
+        this(producerId, JmsMessageIDBuilder.BUILTIN.DEFAULT.createBuilder());
+    }
+
+    public JmsProducerInfo(JmsProducerId producerId, JmsMessageIDBuilder messageIDBuilder) {
         if (producerId == null) {
             throw new IllegalArgumentException("Producer ID cannot be null");
         }
 
-        this.producerId = producerId;
-    }
-
-    public JmsProducerInfo(JmsSessionInfo sessionInfo, long producerId) {
-        if (sessionInfo == null) {
-            throw new IllegalArgumentException("Parent Session Info object cannot be null");
+        if (messageIDBuilder == null) {
+            throw new IllegalArgumentException("Message ID Builder cannot be null");
         }
 
-        this.producerId = new JmsProducerId(sessionInfo.getId(), producerId);
+        this.producerId = producerId;
+        this.messageIDBuilder = messageIDBuilder;
     }
 
     public JmsProducerInfo copy() {
-        JmsProducerInfo info = new JmsProducerInfo(producerId);
+        JmsProducerInfo info = new JmsProducerInfo(producerId, messageIDBuilder);
         copy(info);
         return info;
     }
@@ -83,6 +87,10 @@ public final class JmsProducerInfo implements JmsResource, Comparable<JmsProduce
      */
     public void setPresettle(boolean presettle) {
         this.presettle = presettle;
+    }
+
+    public JmsMessageIDBuilder getMessageIDBuilder() {
+        return messageIDBuilder;
     }
 
     @Override

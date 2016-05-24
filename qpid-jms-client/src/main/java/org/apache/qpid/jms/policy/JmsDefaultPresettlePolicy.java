@@ -51,7 +51,7 @@ public class JmsDefaultPresettlePolicy implements JmsPresettlePolicy {
     }
 
     @Override
-    public JmsPresettlePolicy copy() {
+    public JmsDefaultPresettlePolicy copy() {
         return new JmsDefaultPresettlePolicy(this);
     }
 

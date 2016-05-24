@@ -35,9 +35,11 @@ import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.jndi.JNDIStorable;
 import org.apache.qpid.jms.message.JmsMessageIDBuilder;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
+import org.apache.qpid.jms.policy.JmsDefaultMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultPresettlePolicy;
 import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
+import org.apache.qpid.jms.policy.JmsMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsPresettlePolicy;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
@@ -93,7 +95,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private JmsPrefetchPolicy prefetchPolicy = new JmsDefaultPrefetchPolicy();
     private JmsRedeliveryPolicy redeliveryPolicy = new JmsDefaultRedeliveryPolicy();
     private JmsPresettlePolicy presettlePolicy = new JmsDefaultPresettlePolicy();
-    private JmsMessageIDBuilder messageIDBuilder = JmsMessageIDBuilder.BUILTIN.DEFAULT.createBuilder();
+    private JmsMessageIDPolicy messageIDPolicy = new JmsDefaultMessageIDPolicy();
 
     public JmsConnectionFactory() {
     }
@@ -208,9 +210,15 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
                 properties.remove(CLIENT_ID_PROP);
             }
 
+            // Copy the configured policies before applying URI options that
+            // might make additional configuration changes.
+            connection.setMessageIDPolicy(messageIDPolicy.copy());
+            connection.setPrefetchPolicy(prefetchPolicy.copy());
+            connection.setPresettlePolicy(presettlePolicy.copy());
+            connection.setRedeliveryPolicy(redeliveryPolicy.copy());
+
             PropertyUtil.setProperties(connection, properties);
             connection.setExceptionListener(exceptionListener);
-            connection.setMessageIDBuilder(messageIDBuilder);
             connection.setUsername(username);
             connection.setPassword(password);
             connection.setConfiguredURI(remoteURI);
@@ -500,6 +508,10 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     }
 
     public void setPrefetchPolicy(JmsPrefetchPolicy prefetchPolicy) {
+        if (prefetchPolicy == null) {
+            prefetchPolicy = new JmsDefaultPrefetchPolicy();
+        }
+
         this.prefetchPolicy = prefetchPolicy;
     }
 
@@ -519,6 +531,9 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      *        The new redeliveryPolicy to set
      */
     public void setRedeliveryPolicy(JmsRedeliveryPolicy redeliveryPolicy) {
+        if (redeliveryPolicy == null) {
+            redeliveryPolicy = new JmsDefaultRedeliveryPolicy();
+        }
         this.redeliveryPolicy = redeliveryPolicy;
     }
 
@@ -536,7 +551,32 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      *      the presettlePolicy to use by connections created from this factory.
      */
     public void setPresettlePolicy(JmsPresettlePolicy presettlePolicy) {
+        if (presettlePolicy == null) {
+            presettlePolicy = new JmsDefaultPresettlePolicy();
+        }
         this.presettlePolicy = presettlePolicy;
+    }
+
+    /**
+     * @return the messageIDPolicy that is currently configured.
+     */
+    public JmsMessageIDPolicy getMessageIDPolicy() {
+        return messageIDPolicy;
+    }
+
+    /**
+     * Sets the JmsMessageIDPolicy that is use to configure the JmsMessageIDBuilder
+     * that is assigned to any new MessageProducer created from Connection instances
+     * that this factory has created.
+     *
+     * @param messageIDPolicy
+     *      the messageIDPolicy to use by connections created from this factory.
+     */
+    public void setMessageIDPolicy(JmsMessageIDPolicy messageIDPolicy) {
+        if (messageIDPolicy == null) {
+            messageIDPolicy = new JmsDefaultMessageIDPolicy();
+        }
+        this.messageIDPolicy = messageIDPolicy;
     }
 
     /**
@@ -667,22 +707,39 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     /**
      * Sets the type of the Message IDs used to populate the outgoing Messages
      *
+     * @deprecated use the jms.messageIDPolicy.messageIDType URI setting instead.
+     *
      * @param type
      *      The name of the Message type to use when sending a message.
      */
+    @Deprecated
     public void setMessageIDType(String type) {
-        this.messageIDBuilder = JmsMessageIDBuilder.BUILTIN.create(type);
+        if (messageIDPolicy instanceof JmsDefaultMessageIDPolicy) {
+            ((JmsDefaultMessageIDPolicy) messageIDPolicy).setMessageIDType(type);
+        }
     }
 
+    @Deprecated
     public String getMessageIDType() {
-        return this.messageIDBuilder.toString();
+        if (messageIDPolicy instanceof JmsDefaultMessageIDPolicy) {
+            return ((JmsDefaultMessageIDPolicy) this.messageIDPolicy).getMessageIDType();
+        }
+
+        return null;
     }
 
     /**
      * @return the messageIDBuilder currently configured.
+     *
+     * @deprecated Create a custom JmsMessageIDPolicy to control the JmsMessageIDBuilder
      */
+    @Deprecated
     public JmsMessageIDBuilder getMessageIDBuilder() {
-        return messageIDBuilder;
+        if (messageIDPolicy instanceof JmsDefaultMessageIDPolicy) {
+            return ((JmsDefaultMessageIDPolicy) this.messageIDPolicy).getMessageIDBuilder();
+        }
+
+        return null;
     }
 
     /**
@@ -692,12 +749,14 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      *
      * @param messageIDBuilder
      *      The custom JmsMessageIDBuilder to use to create outgoing Message IDs.
+     *
+     * @deprecated Create a custom JmsMessageIDPolicy to control the JmsMessageIDBuilder
      */
+    @Deprecated
     public void setMessageIDBuilder(JmsMessageIDBuilder messageIDBuilder) {
-        if (messageIDBuilder == null) {
-            messageIDBuilder = JmsMessageIDBuilder.BUILTIN.DEFAULT.createBuilder();
+        if (messageIDPolicy instanceof JmsDefaultMessageIDPolicy) {
+            ((JmsDefaultMessageIDPolicy) this.messageIDPolicy).setMessageIDBuilder(messageIDBuilder);
         }
-        this.messageIDBuilder = messageIDBuilder;
     }
 
     public boolean isReceiveLocalOnly() {

@@ -54,7 +54,6 @@ import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.message.JmsMessageFactory;
-import org.apache.qpid.jms.message.JmsMessageIDBuilder;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsConnectionId;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
@@ -67,6 +66,7 @@ import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.meta.JmsTransactionInfo;
+import org.apache.qpid.jms.policy.JmsMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsPresettlePolicy;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
@@ -123,8 +123,8 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         // not have it's own mechanism for doing so.
         executor = new ThreadPoolExecutor(1, 1, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
             @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r, "QpidJMS Connection Executor: " + connectionId);
+            public Thread newThread(Runnable target) {
+                Thread thread = new Thread(target, "QpidJMS Connection Executor: " + connectionId);
                 thread.setDaemon(false);
                 return thread;
             }
@@ -1012,12 +1012,12 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         connectionInfo.setLocalMessageExpiry(localMessageExpiry);
     }
 
-    public JmsMessageIDBuilder getMessageIDBuilder() {
-        return connectionInfo.getMessageIDBuilder();
+    public JmsMessageIDPolicy getMessageIDPolicy() {
+        return connectionInfo.getMessageIDPolicy();
     }
 
-    void setMessageIDBuilder(JmsMessageIDBuilder messageIDBuilder) {
-        connectionInfo.setMessageIDBuilder(messageIDBuilder);
+    public void setMessageIDPolicy(JmsMessageIDPolicy messageIDPolicy) {
+        connectionInfo.setMessageIDPolicy(messageIDPolicy);
     }
 
     public boolean isPopulateJMSXUserID() {
@@ -1154,7 +1154,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
         onProviderException(ex);
 
-        for(AsyncResult request : requests.keySet()) {
+        for (AsyncResult request : requests.keySet()) {
             try {
                 request.onFailure(ex);
             } catch (Exception e) {

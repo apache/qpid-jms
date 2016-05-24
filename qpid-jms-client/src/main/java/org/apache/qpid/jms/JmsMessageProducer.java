@@ -28,6 +28,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 
+import org.apache.qpid.jms.message.JmsMessageIDBuilder;
 import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.provider.Provider;
@@ -55,7 +56,11 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
         this.session = session;
         this.connection = session.getConnection();
         this.anonymousProducer = destination == null;
-        this.producerInfo = new JmsProducerInfo(producerId);
+
+        JmsMessageIDBuilder messageIDBuilder =
+            session.getConnection().getMessageIDPolicy().getMessageIDBuilder(session, destination);
+
+        this.producerInfo = new JmsProducerInfo(producerId, messageIDBuilder);
         this.producerInfo.setDestination(destination);
         this.producerInfo.setPresettle(session.getPresettlePolicy().isProducerPresttled(session, destination));
 
@@ -239,6 +244,10 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
 
     protected boolean isAnonymous() {
         return anonymousProducer;
+    }
+
+    protected JmsMessageIDBuilder getMessageIDBuilder() {
+        return producerInfo.getMessageIDBuilder();
     }
 
     void setFailureCause(Exception failureCause) {

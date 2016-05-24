@@ -60,7 +60,6 @@ import javax.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
-import org.apache.qpid.jms.message.JmsMessageIDBuilder;
 import org.apache.qpid.jms.message.JmsMessageTransformation;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsConsumerId;
@@ -97,7 +96,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         new LinkedBlockingQueue<JmsInboundMessageDispatch>(10000);
     private final JmsPrefetchPolicy prefetchPolicy;
     private final JmsPresettlePolicy presettlePolicy;
-    private final JmsMessageIDBuilder messageIDBuilder;
     private final JmsSessionInfo sessionInfo;
     private volatile ExecutorService executor;
     private final ReentrantLock sendLock = new ReentrantLock();
@@ -113,7 +111,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         this.acknowledgementMode = acknowledgementMode;
         this.prefetchPolicy = connection.getPrefetchPolicy().copy();
         this.presettlePolicy = connection.getPresettlePolicy().copy();
-        this.messageIDBuilder = connection.getMessageIDBuilder();
 
         if (acknowledgementMode == SESSION_TRANSACTED) {
             setTransactionContext(new JmsLocalTransactionContext(this));
@@ -664,7 +661,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             long messageSequence = producer.getNextMessageSequence();
             Object messageId = null;
             if (!disableMsgId) {
-                messageId = messageIDBuilder.createMessageID(producer.getProducerId().toString(), messageSequence);
+                messageId = producer.getMessageIDBuilder().createMessageID(producer.getProducerId().toString(), messageSequence);
             }
 
             JmsMessage copy = null;

@@ -25,13 +25,11 @@ import static org.junit.Assert.assertTrue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.jms.JmsTopic;
+import org.apache.qpid.jms.message.JmsMessageIDBuilder;
 import org.apache.qpid.jms.util.IdGenerator;
 import org.junit.Before;
 import org.junit.Test;
 
-/**
- *
- */
 public class JmsProducerInfoTest {
 
     private JmsProducerId firstId;
@@ -53,33 +51,21 @@ public class JmsProducerInfoTest {
         secondId = new JmsProducerId(secondSessionId, 2);
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testExceptionWhenCreatedWithNullConnectionId() {
-        new JmsProducerInfo(null);
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void testExceptionWhenCreatedWithNullSessionInfo() {
-        new JmsProducerInfo(null, 1);
+    private JmsProducerInfo createPorducerInfo(JmsProducerId producerId) {
+        return new JmsProducerInfo(producerId, JmsMessageIDBuilder.BUILTIN.DEFAULT.createBuilder());
     }
 
     @Test
     public void testCreateFromProducerId() {
-        JmsProducerInfo info = new JmsProducerInfo(firstId);
+        JmsProducerInfo info = createPorducerInfo(firstId);
         assertSame(firstId, info.getId());
         assertSame(firstId.getParentId(), info.getParentId());
         assertNotNull(info.toString());
     }
 
     @Test
-    public void testCreateFromSessionId() {
-        JmsProducerInfo info = new JmsProducerInfo(new JmsSessionInfo(firstSessionId), 1);
-        assertNotNull(info.toString());
-    }
-
-    @Test
     public void testCopy() {
-        JmsProducerInfo info = new JmsProducerInfo(firstId);
+        JmsProducerInfo info = createPorducerInfo(firstId);
         info.setDestination(new JmsTopic("Test"));
 
         JmsProducerInfo copy = info.copy();
@@ -90,8 +76,8 @@ public class JmsProducerInfoTest {
 
     @Test
     public void testCompareTo() {
-        JmsProducerInfo first = new JmsProducerInfo(firstId);
-        JmsProducerInfo second = new JmsProducerInfo(secondId);
+        JmsProducerInfo first = createPorducerInfo(firstId);
+        JmsProducerInfo second = createPorducerInfo(secondId);
 
         assertEquals(-1, first.compareTo(second));
         assertEquals(0, first.compareTo(first));
@@ -100,8 +86,8 @@ public class JmsProducerInfoTest {
 
     @Test
     public void testHashCode() {
-        JmsProducerInfo first = new JmsProducerInfo(firstId);
-        JmsProducerInfo second = new JmsProducerInfo(secondId);
+        JmsProducerInfo first = createPorducerInfo(firstId);
+        JmsProducerInfo second = createPorducerInfo(secondId);
 
         assertEquals(first.hashCode(), first.hashCode());
         assertEquals(second.hashCode(), second.hashCode());
@@ -111,8 +97,8 @@ public class JmsProducerInfoTest {
 
     @Test
     public void testEqualsCode() {
-        JmsProducerInfo first = new JmsProducerInfo(firstId);
-        JmsProducerInfo second = new JmsProducerInfo(secondId);
+        JmsProducerInfo first = createPorducerInfo(firstId);
+        JmsProducerInfo second = createPorducerInfo(secondId);
 
         assertEquals(first, first);
         assertEquals(second, second);
@@ -126,8 +112,7 @@ public class JmsProducerInfoTest {
 
     @Test
     public void testVisit() throws Exception {
-        final JmsProducerInfo first = new JmsProducerInfo(firstId);
-
+        final JmsProducerInfo first = createPorducerInfo(firstId);
         final AtomicBoolean visited = new AtomicBoolean();
 
         first.visit(new JmsDefaultResourceVisitor() {

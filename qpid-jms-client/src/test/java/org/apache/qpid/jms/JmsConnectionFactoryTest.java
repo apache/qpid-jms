@@ -39,6 +39,7 @@ import javax.jms.JMSException;
 
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
+import org.apache.qpid.jms.util.IdGenerator;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -140,6 +141,54 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         assertNotNull(connection);
         assertNotNull(connection.getExceptionListener());
         assertSame(listener, connection.getExceptionListener());
+    }
+
+    @Test
+    public void testUserConnectionIDGeneratorIsUedToCreatedConnection() throws Exception {
+        IdGenerator userGenerator = new IdGenerator("TEST-ID:");
+
+        JmsConnectionFactory factory = new JmsConnectionFactory(new URI("mock://127.0.0.1:5763"));
+        factory.setConnectionIdGenerator(userGenerator);
+
+        JmsConnection connection = (JmsConnection) factory.createConnection();
+        assertNotNull(connection);
+        assertTrue("Connection ID = " + connection.getId(), connection.getId().toString().startsWith("TEST-ID:"));
+    }
+
+    @Test
+    public void testUserConnectionIDPrefixIsUedToCreatedConnection() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(new URI("mock://127.0.0.1:5763"));
+        factory.setConnectionIDPrefix("TEST-ID:");
+
+        JmsConnection connection = (JmsConnection) factory.createConnection();
+        assertNotNull(connection);
+        assertTrue("Connection ID = " + connection.getId(), connection.getId().toString().startsWith("TEST-ID:"));
+    }
+
+    @Test
+    public void testUserClientIDGeneratorIsUedToCreatedConnection() throws Exception {
+        IdGenerator userGenerator = new IdGenerator("TEST-ID:");
+
+        JmsConnectionFactory factory = new JmsConnectionFactory(new URI("mock://127.0.0.1:5763"));
+        factory.setClientIdGenerator(userGenerator);
+
+        JmsConnection connection = (JmsConnection) factory.createConnection();
+        connection.start();
+
+        assertNotNull(connection);
+        assertTrue("Connection ID = " + connection.getClientID(), connection.getClientID().startsWith("TEST-ID:"));
+    }
+
+    @Test
+    public void testUserClientIDPrefixIsUedToCreatedConnection() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(new URI("mock://127.0.0.1:5763"));
+        factory.setClientIDPrefix("TEST-ID:");
+
+        JmsConnection connection = (JmsConnection) factory.createConnection();
+        connection.start();
+
+        assertNotNull(connection);
+        assertTrue("Client ID = " + connection.getClientID(), connection.getClientID().startsWith("TEST-ID:"));
     }
 
     @Test
@@ -490,5 +539,13 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
             "amqp://127.0.0.1:5672?jms.populateJMSXUserID=false");
 
         assertFalse(factory.isPopulateJMSXUserID());
+    }
+
+    @Test
+    public void testConnectionFactoryCreateWithMalformedURI() {
+        try {
+            new JmsConnectionFactory("amqp:\\\\localhost:5672");
+            fail("should throw IllegalArgumentException");
+        } catch (IllegalArgumentException ex) {}
     }
 }

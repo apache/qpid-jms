@@ -283,6 +283,8 @@ public class TransportSslOptions extends TransportOptions {
         copy.setVerifyHost(isVerifyHost());
         copy.setKeyAlias(getKeyAlias());
         copy.setContextProtocol(getContextProtocol());
+        copy.setDefaultSslPort(getDefaultSslPort());
+
         return copy;
     }
 }

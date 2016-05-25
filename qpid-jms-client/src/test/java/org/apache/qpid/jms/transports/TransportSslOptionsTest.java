@@ -16,8 +16,8 @@
  */
 package org.apache.qpid.jms.transports;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -45,6 +45,7 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
     public static final int TEST_SO_LINGER = Short.MAX_VALUE;
     public static final int TEST_SO_TIMEOUT = 10;
     public static final int TEST_CONNECT_TIMEOUT = 90000;
+    public static final int TEST_DEFAULT_SSL_PORT = 5681;
 
     public static final String[] ENABLED_PROTOCOLS = new String[] {"TLSv1.2"};
     public static final String[] DISABLED_PROTOCOLS = new String[] {"SSLv3", "TLSv1.2"};
@@ -110,6 +111,7 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         assertEquals(TEST_SO_LINGER, options.getSoLinger());
         assertEquals(TEST_SO_TIMEOUT, options.getSoTimeout());
         assertEquals(TEST_CONNECT_TIMEOUT, options.getConnectTimeout());
+        assertEquals(TEST_DEFAULT_SSL_PORT, options.getDefaultSslPort());
 
         assertEquals(CLIENT_KEYSTORE, options.getKeyStoreLocation());
         assertEquals(PASSWORD, options.getKeyStorePassword());
@@ -149,6 +151,7 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         options.setSoLinger(TEST_SO_LINGER);
         options.setSoTimeout(TEST_SO_TIMEOUT);
         options.setConnectTimeout(TEST_CONNECT_TIMEOUT);
+        options.setDefaultSslPort(TEST_DEFAULT_SSL_PORT);
 
         return options;
     }

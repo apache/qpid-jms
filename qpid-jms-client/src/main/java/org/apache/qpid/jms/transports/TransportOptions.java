@@ -177,6 +177,7 @@ public class TransportOptions implements Cloneable {
         copy.setTcpKeepAlive(isTcpKeepAlive());
         copy.setTcpNoDelay(isTcpNoDelay());
         copy.setTrafficClass(getTrafficClass());
+        copy.setDefaultTcpPort(getDefaultTcpPort());
 
         return copy;
     }

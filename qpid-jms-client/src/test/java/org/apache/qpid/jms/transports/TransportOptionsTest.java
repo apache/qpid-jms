@@ -35,6 +35,7 @@ public class TransportOptionsTest extends QpidJmsTestCase {
     public static final int TEST_SO_LINGER = Short.MAX_VALUE;
     public static final int TEST_SO_TIMEOUT = 10;
     public static final int TEST_CONNECT_TIMEOUT = 90000;
+    public static final int TEST_DEFAULT_TCP_PORT = 5682;
 
     @Test
     public void testCreate() {
@@ -55,6 +56,7 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         assertEquals(TEST_SO_LINGER, options.getSoLinger());
         assertEquals(TEST_SO_TIMEOUT, options.getSoTimeout());
         assertEquals(TEST_CONNECT_TIMEOUT, options.getConnectTimeout());
+        assertEquals(TEST_DEFAULT_TCP_PORT, options.getDefaultTcpPort());
     }
 
     @Test
@@ -69,6 +71,7 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         assertEquals(TEST_SO_LINGER, options.getSoLinger());
         assertEquals(TEST_SO_TIMEOUT, options.getSoTimeout());
         assertEquals(TEST_CONNECT_TIMEOUT, options.getConnectTimeout());
+        assertEquals(TEST_DEFAULT_TCP_PORT, options.getDefaultTcpPort());
     }
 
     @Test
@@ -135,6 +138,7 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         options.setSoLinger(TEST_SO_LINGER);
         options.setSoTimeout(TEST_SO_TIMEOUT);
         options.setConnectTimeout(TEST_CONNECT_TIMEOUT);
+        options.setDefaultTcpPort(TEST_DEFAULT_TCP_PORT);
 
         return options;
     }

@@ -61,7 +61,7 @@ public class StreamMessageIntegrationTest extends QpidJmsTestCase {
      * @throws Exception if an error occurs during the test.
      */
     @Test(timeout = 20000)
-    public void testReceiveBasicMapMessage() throws Exception {
+    public void testReceiveBasicStreamMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
@@ -146,7 +146,7 @@ public class StreamMessageIntegrationTest extends QpidJmsTestCase {
      * types with the expected values.
      */
     @Test(timeout = 20000)
-    public void testSendBasicMapMessage() throws Exception {
+    public void testSendBasicStreamMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin();

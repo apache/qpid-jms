@@ -19,11 +19,16 @@ package org.apache.qpid.jms.meta;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.qpid.jms.policy.JmsDefaultMessageIDPolicy;
+import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
+import org.apache.qpid.jms.policy.JmsDefaultPresettlePolicy;
+import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
 import org.apache.qpid.jms.util.IdGenerator;
 import org.junit.Before;
 import org.junit.Test;
@@ -71,8 +76,12 @@ public class JmsConnectionInfoTest {
         info.setSendTimeout(150);
         info.setTopicPrefix("topic");
         info.setUsername("user");
-        boolean validatePropertyNames = ! info.isValidatePropertyNames();
+        boolean validatePropertyNames = !info.isValidatePropertyNames();
         info.setValidatePropertyNames(validatePropertyNames);
+        info.setMessageIDPolicy(new JmsDefaultMessageIDPolicy());
+        info.setPrefetchPolicy(new JmsDefaultPrefetchPolicy());
+        info.setPresettlePolicy(new JmsDefaultPresettlePolicy());
+        info.setRedeliveryPolicy(new JmsDefaultRedeliveryPolicy());
 
         JmsConnectionInfo copy = info.copy();
 
@@ -89,8 +98,13 @@ public class JmsConnectionInfoTest {
         assertEquals("user", copy.getUsername());
         assertEquals(validatePropertyNames, copy.isValidatePropertyNames());
 
+        assertNotSame(info.getPrefetchPolicy(), copy.getPrefetchPolicy());
+        assertNotSame(info.getPresettlePolicy(), copy.getPresettlePolicy());
+        assertNotSame(info.getRedeliveryPolicy(), copy.getRedeliveryPolicy());
+        assertNotSame(info.getMessageIDPolicy(), copy.getMessageIDPolicy());
+
         assertEquals(info, copy);
-}
+    }
 
     @Test
     public void testCompareTo() {

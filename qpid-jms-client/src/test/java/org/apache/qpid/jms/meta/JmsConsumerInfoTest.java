@@ -19,12 +19,14 @@ package org.apache.qpid.jms.meta;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.jms.JmsTopic;
+import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
 import org.apache.qpid.jms.util.IdGenerator;
 import org.junit.Before;
 import org.junit.Test;
@@ -90,6 +92,7 @@ public class JmsConsumerInfoTest {
         info.setPrefetchSize(123456);
         info.setSelector("select");
         info.setSubscriptionName("name");
+        info.setRedeliveryPolicy(new JmsDefaultRedeliveryPolicy());
 
         JmsConsumerInfo copy = info.copy();
 
@@ -102,6 +105,8 @@ public class JmsConsumerInfoTest {
         assertEquals(123456, copy.getPrefetchSize());
         assertEquals("select", copy.getSelector());
         assertEquals("name", copy.getSubscriptionName());
+
+        assertNotSame(info.getRedeliveryPolicy(), copy.getRedeliveryPolicy());
 
         assertEquals(info, copy);
     }

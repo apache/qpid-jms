@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.meta;
 
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
 
 public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsumerInfo> {
@@ -69,6 +70,7 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
         info.noLocal = noLocal;
         info.acknowledgementMode = acknowledgementMode;
         info.lastDeliveredSequenceId = lastDeliveredSequenceId;
+        info.redeliveryPolicy = getRedeliveryPolicy().copy();
     }
 
     public boolean isDurable() {
@@ -165,6 +167,9 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
     }
 
     public JmsRedeliveryPolicy getRedeliveryPolicy() {
+        if (redeliveryPolicy == null) {
+            redeliveryPolicy = new JmsDefaultRedeliveryPolicy();
+        }
         return redeliveryPolicy;
     }
 

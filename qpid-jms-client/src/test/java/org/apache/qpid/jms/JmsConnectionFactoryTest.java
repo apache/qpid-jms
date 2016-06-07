@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -38,6 +39,8 @@ import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
+import org.apache.qpid.jms.policy.JmsDefaultPresettlePolicy;
+import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.util.IdGenerator;
 import org.junit.Test;
@@ -86,8 +89,6 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         factory.setConnectTimeout(TimeUnit.SECONDS.toMillis(30));
         factory.setCloseTimeout(TimeUnit.SECONDS.toMillis(45));
 
-        ((JmsDefaultPrefetchPolicy) factory.getPrefetchPolicy()).setAll(1);
-
         JmsConnection connection = (JmsConnection) factory.createConnection();
         assertNotNull(connection);
 
@@ -104,13 +105,61 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
 
         assertEquals(TimeUnit.SECONDS.toMillis(30), connection.getConnectTimeout());
         assertEquals(TimeUnit.SECONDS.toMillis(45), connection.getCloseTimeout());
+    }
+
+    @Test
+    public void testConnectionFactoryPrefetchPolicyIsAppliedToConnection() throws JMSException {
+        JmsConnectionFactory factory = new JmsConnectionFactory(USER, PASSWORD, "mock://localhost");
+
+        ((JmsDefaultPrefetchPolicy) factory.getPrefetchPolicy()).setAll(1);
+
+        JmsConnection connection = (JmsConnection) factory.createConnection();
+        assertNotNull(connection);
 
         JmsDefaultPrefetchPolicy prefetchPolicy = (JmsDefaultPrefetchPolicy) connection.getPrefetchPolicy();
+        assertNotNull(prefetchPolicy);
+        assertNotSame(factory.getPrefetchPolicy(), prefetchPolicy);
 
         assertEquals(1, prefetchPolicy.getTopicPrefetch());
         assertEquals(1, prefetchPolicy.getQueuePrefetch());
         assertEquals(1, prefetchPolicy.getQueueBrowserPrefetch());
         assertEquals(1, prefetchPolicy.getDurableTopicPrefetch());
+    }
+
+    @Test
+    public void testConnectionFactoryPresettlePolicyIsAppliedToConnection() throws JMSException {
+        JmsConnectionFactory factory = new JmsConnectionFactory(USER, PASSWORD, "mock://localhost");
+
+        JmsDefaultPresettlePolicy presettlePolicy = (JmsDefaultPresettlePolicy) factory.getPresettlePolicy();
+
+        presettlePolicy.setPresettleAll(true);
+
+        JmsConnection connection = (JmsConnection) factory.createConnection();
+        assertNotNull(connection);
+
+        presettlePolicy = (JmsDefaultPresettlePolicy) connection.getPresettlePolicy();
+        assertNotNull(presettlePolicy);
+        assertNotSame(factory.getPresettlePolicy(), presettlePolicy);
+
+        assertTrue(presettlePolicy.isPresettleAll());
+    }
+
+    @Test
+    public void testConnectionFactoryRedeliveryPolicyIsAppliedToConnection() throws JMSException {
+        JmsConnectionFactory factory = new JmsConnectionFactory(USER, PASSWORD, "mock://localhost");
+
+        JmsDefaultRedeliveryPolicy redeliveryPolicy = (JmsDefaultRedeliveryPolicy) factory.getRedeliveryPolicy();
+
+        redeliveryPolicy.setMaxRedeliveries(100);
+
+        JmsConnection connection = (JmsConnection) factory.createConnection();
+        assertNotNull(connection);
+
+        redeliveryPolicy = (JmsDefaultRedeliveryPolicy) connection.getRedeliveryPolicy();
+        assertNotNull(redeliveryPolicy);
+        assertNotSame(factory.getRedeliveryPolicy(), redeliveryPolicy);
+
+        assertEquals(100, redeliveryPolicy.getMaxRedeliveries());
     }
 
     @Test
@@ -414,6 +463,68 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         Map<String, String> props2 = ((JmsConnectionFactory)roundTripped).getProperties();
         assertTrue("Props dont contain expected redelivery policy change", props2.containsKey(maxRedeliveryKey));
         assertEquals("Unexpected value", maxRedeliveryValue, props2.get(maxRedeliveryKey));
+
+        assertEquals("Properties were not equal", props, props2);
+    }
+
+    /**
+     * The presettle policy is maintained in a child-object, which we extract the properties from
+     * when serializing the factory. Ensure this functions by doing a round trip on a factory
+     * configured with some new presettle configuration via the URI.
+     *
+     * @throws Exception if an error occurs during the test.
+     */
+    @Test
+    public void testSerializeThenDeserializeMaintainsPresettlePolicy() throws Exception {
+        String presettleAllValue = "true";
+        String presettleAllKey = "presettlePolicy.presettleAll";
+        String uri = "amqp://localhost:1234?jms." + presettleAllKey + "=" + presettleAllValue;
+
+        JmsConnectionFactory cf = new JmsConnectionFactory(uri);
+        Map<String, String> props = cf.getProperties();
+
+        assertTrue("Props dont contain expected presettle policy change", props.containsKey(presettleAllKey));
+        assertEquals("Unexpected value", presettleAllValue, props.get(presettleAllKey));
+
+        Object roundTripped = roundTripSerialize(cf);
+
+        assertNotNull("Null object returned", roundTripped);
+        assertEquals("Unexpected type", JmsConnectionFactory.class, roundTripped.getClass());
+
+        Map<String, String> props2 = ((JmsConnectionFactory)roundTripped).getProperties();
+        assertTrue("Props dont contain expected presettle policy change", props2.containsKey(presettleAllKey));
+        assertEquals("Unexpected value", presettleAllValue, props2.get(presettleAllKey));
+
+        assertEquals("Properties were not equal", props, props2);
+    }
+
+    /**
+     * The message ID policy is maintained in a child-object, which we extract the properties from
+     * when serializing the factory. Ensure this functions by doing a round trip on a factory
+     * configured with some new message ID configuration via the URI.
+     *
+     * @throws Exception if an error occurs during the test.
+     */
+    @Test
+    public void testSerializeThenDeserializeMaintainsMessageIDPolicy() throws Exception {
+        String messageIDTypeValue = "UUID";
+        String messageIDTypeKey = "messageIDPolicy.messageIDType";
+        String uri = "amqp://localhost:1234?jms." + messageIDTypeKey + "=" + messageIDTypeValue;
+
+        JmsConnectionFactory cf = new JmsConnectionFactory(uri);
+        Map<String, String> props = cf.getProperties();
+
+        assertTrue("Props dont contain expected message ID policy change", props.containsKey(messageIDTypeKey));
+        assertEquals("Unexpected value", messageIDTypeValue, props.get(messageIDTypeKey));
+
+        Object roundTripped = roundTripSerialize(cf);
+
+        assertNotNull("Null object returned", roundTripped);
+        assertEquals("Unexpected type", JmsConnectionFactory.class, roundTripped.getClass());
+
+        Map<String, String> props2 = ((JmsConnectionFactory)roundTripped).getProperties();
+        assertTrue("Props dont contain expected message ID policy change", props2.containsKey(messageIDTypeKey));
+        assertEquals("Unexpected value", messageIDTypeValue, props2.get(messageIDTypeKey));
 
         assertEquals("Properties were not equal", props, props2);
     }

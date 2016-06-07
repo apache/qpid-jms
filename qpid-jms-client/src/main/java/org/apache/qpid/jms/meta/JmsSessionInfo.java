@@ -18,6 +18,10 @@ package org.apache.qpid.jms.meta;
 
 import javax.jms.Session;
 
+import org.apache.qpid.jms.policy.JmsDefaultMessageIDPolicy;
+import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
+import org.apache.qpid.jms.policy.JmsDefaultPresettlePolicy;
+import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
 import org.apache.qpid.jms.policy.JmsMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsPresettlePolicy;
@@ -58,6 +62,10 @@ public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionI
     private void copy(JmsSessionInfo copy) {
         copy.acknowledgementMode = acknowledgementMode;
         copy.sendAcksAsync = sendAcksAsync;
+        copy.redeliveryPolicy = getRedeliveryPolicy().copy();
+        copy.presettlePolicy = getPresettlePolicy().copy();
+        copy.prefetchPolicy = getPrefetchPolicy().copy();
+        copy.messageIDPolicy = getMessageIDPolicy().copy();
     }
 
     @Override
@@ -122,6 +130,9 @@ public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionI
     }
 
     public JmsMessageIDPolicy getMessageIDPolicy() {
+        if (messageIDPolicy == null) {
+            messageIDPolicy = new JmsDefaultMessageIDPolicy();
+        }
         return messageIDPolicy;
     }
 
@@ -130,6 +141,9 @@ public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionI
     }
 
     public JmsPrefetchPolicy getPrefetchPolicy() {
+        if (prefetchPolicy == null) {
+            prefetchPolicy = new JmsDefaultPrefetchPolicy();
+        }
         return prefetchPolicy;
     }
 
@@ -138,6 +152,9 @@ public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionI
     }
 
     public JmsPresettlePolicy getPresettlePolicy() {
+        if (presettlePolicy == null) {
+            presettlePolicy = new JmsDefaultPresettlePolicy();
+        }
         return presettlePolicy;
     }
 
@@ -146,6 +163,9 @@ public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionI
     }
 
     public JmsRedeliveryPolicy getRedeliveryPolicy() {
+        if (redeliveryPolicy == null) {
+            redeliveryPolicy = new JmsDefaultRedeliveryPolicy();
+        }
         return redeliveryPolicy;
     }
 

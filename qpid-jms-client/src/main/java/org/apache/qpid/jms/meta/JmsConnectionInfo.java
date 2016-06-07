@@ -63,10 +63,10 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private String queuePrefix = null;
     private String topicPrefix = null;
 
-    private JmsPrefetchPolicy prefetchPolicy = new JmsDefaultPrefetchPolicy();
-    private JmsRedeliveryPolicy redeliveryPolicy = new JmsDefaultRedeliveryPolicy();
-    private JmsPresettlePolicy presettlePolicy = new JmsDefaultPresettlePolicy();
-    private JmsMessageIDPolicy messageIDPolicy = new JmsDefaultMessageIDPolicy();
+    private JmsPrefetchPolicy prefetchPolicy;
+    private JmsRedeliveryPolicy redeliveryPolicy;
+    private JmsPresettlePolicy presettlePolicy;
+    private JmsMessageIDPolicy messageIDPolicy;
 
     private volatile byte[] encodedUserId;
 
@@ -97,10 +97,10 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         copy.topicPrefix = topicPrefix;
         copy.connectTimeout = connectTimeout;
         copy.validatePropertyNames = validatePropertyNames;
-        copy.messageIDPolicy = messageIDPolicy;
-        copy.prefetchPolicy = prefetchPolicy.copy();
-        copy.redeliveryPolicy = redeliveryPolicy.copy();
-        copy.presettlePolicy = presettlePolicy.copy();
+        copy.messageIDPolicy = getMessageIDPolicy().copy();
+        copy.prefetchPolicy = getPrefetchPolicy().copy();
+        copy.redeliveryPolicy = getRedeliveryPolicy().copy();
+        copy.presettlePolicy = getPresettlePolicy().copy();
     }
 
     public boolean isForceAsyncSend() {
@@ -261,6 +261,9 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     }
 
     public JmsPrefetchPolicy getPrefetchPolicy() {
+        if (prefetchPolicy == null) {
+            prefetchPolicy = new JmsDefaultPrefetchPolicy();
+        }
         return prefetchPolicy;
     }
 
@@ -269,6 +272,9 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     }
 
     public JmsRedeliveryPolicy getRedeliveryPolicy() {
+        if (redeliveryPolicy == null) {
+            redeliveryPolicy = new JmsDefaultRedeliveryPolicy();
+        }
         return redeliveryPolicy;
     }
 
@@ -277,6 +283,9 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     }
 
     public JmsPresettlePolicy getPresettlePolicy() {
+        if (presettlePolicy == null) {
+            presettlePolicy = new JmsDefaultPresettlePolicy();
+        }
         return presettlePolicy;
     }
 
@@ -285,6 +294,9 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     }
 
     public JmsMessageIDPolicy getMessageIDPolicy() {
+        if (messageIDPolicy == null) {
+            messageIDPolicy = new JmsDefaultMessageIDPolicy();
+        }
         return messageIDPolicy;
     }
 

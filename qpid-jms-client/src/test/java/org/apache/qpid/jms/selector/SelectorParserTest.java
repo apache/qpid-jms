@@ -18,8 +18,6 @@ package org.apache.qpid.jms.selector;
 
 import java.util.HashMap;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.jms.selector.filter.BooleanExpression;
 import org.apache.qpid.jms.selector.filter.ComparisonExpression;
 import org.apache.qpid.jms.selector.filter.Expression;
@@ -29,6 +27,8 @@ import org.apache.qpid.jms.selector.filter.LogicExpression;
 import org.apache.qpid.jms.selector.filter.PropertyExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import junit.framework.TestCase;
 
 public class SelectorParserTest extends TestCase {
     private static final Logger LOG = LoggerFactory.getLogger(SelectorParserTest.class);
@@ -339,6 +339,8 @@ public class SelectorParserTest extends TestCase {
         assertInvalidSelector(message, "3+5");
         assertInvalidSelector(message, "True AND 3+5");
         assertInvalidSelector(message, "=TEST 'test'");
+        assertInvalidSelector(message, "prop1 = prop2 foo AND string = 'Test'");
+        assertInvalidSelector(message, "a = 1 AMD  b = 2");
     }
 
     public void testHyphenatedProperty() throws Exception {

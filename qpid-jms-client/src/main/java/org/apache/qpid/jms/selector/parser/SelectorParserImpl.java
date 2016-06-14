@@ -53,6 +53,7 @@ public class SelectorParserImpl implements SelectorParserImplConstants {
     final public BooleanExpression JmsSelector() throws ParseException {
         Expression left = null;
         left = orExpression();
+        jj_consume_token(0);
         {
             if (true)
                 return asBooleanExpression(left);

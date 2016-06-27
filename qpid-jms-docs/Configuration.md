@@ -97,7 +97,6 @@ The options apply to the behaviour of the JMS objects such as Connection, Sessio
 + **jms.requestTimeout** Timeout value that controls how long the client waits on completion of various synchronous interactions with the remote peer before returning an error (By default the client will wait indefinitely for a request to complete
 + **jms.clientIDPrefix** Optional prefix value that is used for generated Client ID values when a new Connection is created for the JMS ConnectionFactory.  The default prefix is 'ID:'.
 + **jms.connectionIDPrefix** Optional prefix value that is used for generated Connection ID values when a new Connection is created for the JMS ConnectionFactory.  This connection ID is used when logging some information from the JMS Connection object so a configurable prefix can make breadcrumbing the logs easier.  The default prefix is 'ID:'.
-+ **jms.messageIDType** Controls the type of the Message ID assigned to messages sent from the client.  By default a generated String value is used on outgoing messages, other available types are UUID and UUID_STRING.
 + **jms.populateJMSXUserID** Controls whether a MessageProducer will populate the JMSXUserID value for each sent message using the authenticated username from the connection.  This value defaults to false and the JMSXUserID for all sent message will not be populated.
 
 These values control how many messages the remote peer can send to the client and be held in a prefetch buffer for each consumer instance.
@@ -111,6 +110,10 @@ These values control how many messages the remote peer can send to the client an
 The RedeliveryPolicy controls how redelivered messages are handled on the client.
 
 + **jms.redeliveryPolicy.maxRedeliveries** controls when an incoming message is rejected based on the number of times it has been redelivered, the default value is (-1) disabled.  A value of zero would indicate no message redeliveries are accepted, a value of five would allow a message to be redelivered five times, etc.
+
+The MessageID Policy controls the type of the Message ID assigned to messages sent from the client.
+
++ **jms.messageIDPolicy.messageIDType** By default a generated String value is used for the MessageID on outgoing messages. Other available types are UUID and UUID_STRING.
 
 The PresettlePolicy controls when a producer or consumer instance will be configured to use AMQP presettled messaging semantics.
 

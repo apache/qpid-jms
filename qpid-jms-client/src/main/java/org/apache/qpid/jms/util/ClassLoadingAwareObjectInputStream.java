@@ -31,16 +31,29 @@ public class ClassLoadingAwareObjectInputStream extends ObjectInputStream {
     private static final ClassLoader FALLBACK_CLASS_LOADER = ClassLoadingAwareObjectInputStream.class.getClassLoader();
 
     private final ClassLoader inLoader;
+    private final TrustedClassFilter securityFilter;
 
-    public ClassLoadingAwareObjectInputStream(InputStream in) throws IOException {
+    /**
+     * Security Filter used to filter classes that the application deems to be insecure, this filter
+     * is not applied to the class instances for the primitive types, and array types are narrowed
+     * to the component type of the array before being passed into this filter.
+     */
+    public interface TrustedClassFilter {
+        boolean isTrusted(Class<?> clazz);
+    }
+
+    public ClassLoadingAwareObjectInputStream(InputStream in, TrustedClassFilter filter) throws IOException {
         super(in);
+
         inLoader = in.getClass().getClassLoader();
+        securityFilter = filter;
     }
 
     @Override
     protected Class<?> resolveClass(ObjectStreamClass classDesc) throws IOException, ClassNotFoundException {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        return load(classDesc.getName(), cl, inLoader);
+        Class<?> clazz = load(classDesc.getName(), cl, inLoader);
+        return checkSecurity(clazz);
     }
 
     @Override
@@ -51,20 +64,52 @@ public class ClassLoadingAwareObjectInputStream extends ObjectInputStream {
             cinterfaces[i] = load(interfaces[i], cl);
         }
 
+        Class<?> clazz = null;
+        Throwable failureCause = null;
+
         try {
-            return Proxy.getProxyClass(cl, cinterfaces);
+            clazz = Proxy.getProxyClass(cl, cinterfaces);
         } catch (IllegalArgumentException e) {
+            failureCause = e;
+
             try {
-                return Proxy.getProxyClass(inLoader, cinterfaces);
+                clazz = Proxy.getProxyClass(inLoader, cinterfaces);
             } catch (IllegalArgumentException e1) {
             }
             try {
-                return Proxy.getProxyClass(FALLBACK_CLASS_LOADER, cinterfaces);
+                clazz = Proxy.getProxyClass(FALLBACK_CLASS_LOADER, cinterfaces);
             } catch (IllegalArgumentException e2) {
             }
-
-            throw new ClassNotFoundException(null, e);
         }
+
+        if (clazz != null) {
+            return checkSecurity(clazz);
+        }
+
+        throw new ClassNotFoundException("Failed find class.", failureCause);
+    }
+
+    private Class<?> checkSecurity(Class<?> clazz) throws ClassNotFoundException {
+
+        Class<?> target = clazz;
+
+        while (target.isArray()) {
+            target = target.getComponentType();
+        }
+
+        while (target.isAnonymousClass() || target.isLocalClass()) {
+            target = target.getEnclosingClass();
+        }
+
+        if (!target.isPrimitive() && securityFilter != null) {
+            if (!securityFilter.isTrusted(target)) {
+                throw new ClassNotFoundException("Forbidden " + clazz + "! " +
+                    "This class is not trusted to be deserialized under the current configuration. " +
+                    "Please refer to the documentation for more information on how to configure trusted classes.");
+            }
+        }
+
+        return clazz;
     }
 
     private Class<?> load(String className, ClassLoader... cl) throws ClassNotFoundException {

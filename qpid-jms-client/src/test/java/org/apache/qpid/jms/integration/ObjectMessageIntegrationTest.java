@@ -23,11 +23,13 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.HashMap;
+import java.util.UUID;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -51,13 +53,18 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSect
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedDataMatcher;
+import org.apache.qpid.jms.util.SimplePojo;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class ObjectMessageIntegrationTest extends QpidJmsTestCase
-{
+public class ObjectMessageIntegrationTest extends QpidJmsTestCase {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ObjectMessageIntegrationTest.class);
+
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
     //==== Java serialization encoding ====
@@ -219,6 +226,120 @@ public class ObjectMessageIntegrationTest extends QpidJmsTestCase
             testPeer.expectTransfer(messageMatcher);
 
             producer.send(receivedMessage);
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testReceiveBlockedSerializedContentFailsOnGetObject() throws Exception {
+        // We arent allowing the test class
+        doTestReceiveSerializedContentPolicyTest("java.lang,java.util", null, false);
+    }
+
+    @Test(timeout = 20000)
+    public void testReceiveBlockAllSerializedContentFailsOnGetObject() throws Exception {
+        // We are blocking everything
+        doTestReceiveSerializedContentPolicyTest(null, "*", false);
+    }
+
+    @Test(timeout = 20000)
+    public void testReceiveBlockSomeSerializedContentFailsOnGetObject() throws Exception {
+        // We arent allowing the UUID
+        doTestReceiveSerializedContentPolicyTest("org.apache.qpid.jms", null, false);
+    }
+
+    @Test(timeout = 20000)
+    public void testReceiveWithWrongUnblockedSerializedContentFailsOnGetObject() throws Exception {
+        // We arent allowing the UUID a different way
+        doTestReceiveSerializedContentPolicyTest("java.lang,org.apache.qpid.jms", null, false);
+    }
+
+    @Test(timeout = 20000)
+    public void testReceiveWithFullyWhitelistedSerializedContentSucceeds() throws Exception {
+        // We are allowing everything needed
+        doTestReceiveSerializedContentPolicyTest("java.lang,java.util,org.apache.qpid.jms", null, true);
+    }
+
+    @Test(timeout = 20000)
+    public void testReceiveWithFullyWhitelistedSerializedContentFailsDueToBlackList() throws Exception {
+        // We are whitelisting everything needed, but then the blacklist is overriding to block some
+        doTestReceiveSerializedContentPolicyTest("java.lang,java.util,org.apache.qpid.jms", "java.util", false);
+    }
+
+    private void doTestReceiveSerializedContentPolicyTest(String whiteList, String blackList, boolean succeed) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            String options = null;
+            if(whiteList != null) {
+                options = "?jms.deserializationPolicy.whiteList=" + whiteList;
+            }
+
+            if(blackList != null) {
+                if(options == null) {
+                    options = "?";
+                } else {
+                    options += "&";
+                }
+
+                options +="jms.deserializationPolicy.blackList=" + blackList;
+            }
+
+            Connection connection = testFixture.establishConnecton(testPeer, options);
+
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
+            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE, AmqpMessageSupport.JMS_OBJECT_MESSAGE);
+            PropertiesDescribedType properties = new PropertiesDescribedType();
+            properties.setContentType(Symbol.valueOf(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE));
+
+            SimplePojo expectedContent = new SimplePojo(UUID.randomUUID());
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(baos);
+            oos.writeObject(expectedContent);
+            oos.flush();
+            oos.close();
+            byte[] bytes = baos.toByteArray();
+
+            DescribedType dataContent = new DataDescribedType(new Binary(bytes));
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, msgAnnotations, properties, null, dataContent);
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+            Message receivedMessage = messageConsumer.receive(3000);
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            assertNotNull(receivedMessage);
+            assertTrue(receivedMessage instanceof ObjectMessage);
+
+            ObjectMessage objectMessage = (ObjectMessage) receivedMessage;
+            Object received = null;
+            try {
+                received = objectMessage.getObject();
+                if(!succeed) {
+                    fail("Should not be able to read blocked content");
+                }
+            } catch (JMSException jmsEx) {
+                LOG.debug("Caught: ", jmsEx);
+                if(succeed) {
+                    fail("Should have been able to read blocked content");
+                }
+            }
+
+            if(succeed) {
+                assertEquals("Content not as expected", expectedContent, received);
+            }
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
         }

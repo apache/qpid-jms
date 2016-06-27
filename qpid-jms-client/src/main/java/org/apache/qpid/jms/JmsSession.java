@@ -68,6 +68,7 @@ import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
+import org.apache.qpid.jms.policy.JmsDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsPresettlePolicy;
@@ -123,6 +124,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         sessionInfo.setPrefetchPolicy(connection.getPrefetchPolicy().copy());
         sessionInfo.setPresettlePolicy(connection.getPresettlePolicy().copy());
         sessionInfo.setRedeliveryPolicy(connection.getRedeliveryPolicy().copy());
+        sessionInfo.setDeserializationPolicy(connection.getDeserializationPolicy());
 
         connection.createResource(sessionInfo);
 
@@ -940,6 +942,10 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
     public JmsRedeliveryPolicy getRedeliveryPolicy() {
         return sessionInfo.getRedeliveryPolicy();
+    }
+
+    public JmsDeserializationPolicy getDeserializationPolicy() {
+        return sessionInfo.getDeserializationPolicy();
     }
 
     @Override

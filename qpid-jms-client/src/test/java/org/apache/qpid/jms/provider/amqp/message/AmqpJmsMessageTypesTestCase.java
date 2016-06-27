@@ -22,6 +22,10 @@ import java.nio.charset.StandardCharsets;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsTopic;
+import org.apache.qpid.jms.meta.JmsConnectionId;
+import org.apache.qpid.jms.meta.JmsConnectionInfo;
+import org.apache.qpid.jms.meta.JmsConsumerId;
+import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -91,13 +95,20 @@ public class AmqpJmsMessageTypesTestCase extends QpidJmsTestCase {
     }
 
     protected AmqpConsumer createMockAmqpConsumer() {
+        JmsConsumerId consumerId = new JmsConsumerId("ID:MOCK:1:1:1");
+        AmqpConnection connection = createMockAmqpConnection();
         AmqpConsumer consumer = Mockito.mock(AmqpConsumer.class);
-        Mockito.when(consumer.getConnection()).thenReturn(createMockAmqpConnection());
+        Mockito.when(consumer.getConnection()).thenReturn(connection);
         Mockito.when(consumer.getDestination()).thenReturn(consumerDestination);
+        Mockito.when(consumer.getResourceInfo()).thenReturn(new JmsConsumerInfo(consumerId));
         return consumer;
     }
 
     protected AmqpConnection createMockAmqpConnection() {
-        return Mockito.mock(AmqpConnection.class);
+        JmsConnectionId connectionId = new JmsConnectionId("ID:MOCK:1");
+        AmqpConnection connection = Mockito.mock(AmqpConnection.class);
+        Mockito.when(connection.getResourceInfo()).thenReturn(new JmsConnectionInfo(connectionId));
+
+        return connection;
     }
 }

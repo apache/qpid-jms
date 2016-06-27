@@ -41,6 +41,8 @@ import org.apache.qpid.jms.message.JmsObjectMessage;
 import org.apache.qpid.jms.message.JmsStreamMessage;
 import org.apache.qpid.jms.message.JmsTextMessage;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
+import org.apache.qpid.jms.meta.JmsConsumerId;
+import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.proton.Proton;
@@ -62,7 +64,10 @@ public class AmqpJmsMessageBuilderTest extends QpidJmsTestCase {
     @Override
     public void setUp() throws Exception {
         super.setUp();
+
+        JmsConsumerId consumerId = new JmsConsumerId("ID:MOCK:1", 1, 1);
         mockConsumer = Mockito.mock(AmqpConsumer.class);
+        Mockito.when(mockConsumer.getResourceInfo()).thenReturn(new JmsConsumerInfo(consumerId));
     }
 
     @Test

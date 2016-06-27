@@ -35,10 +35,12 @@ import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.jndi.JNDIStorable;
 import org.apache.qpid.jms.message.JmsMessageIDBuilder;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
+import org.apache.qpid.jms.policy.JmsDefaultDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultPresettlePolicy;
 import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
+import org.apache.qpid.jms.policy.JmsDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsPresettlePolicy;
@@ -96,6 +98,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private JmsRedeliveryPolicy redeliveryPolicy = new JmsDefaultRedeliveryPolicy();
     private JmsPresettlePolicy presettlePolicy = new JmsDefaultPresettlePolicy();
     private JmsMessageIDPolicy messageIDPolicy = new JmsDefaultMessageIDPolicy();
+    private JmsDeserializationPolicy deserializationPolicy = new JmsDefaultDeserializationPolicy();
 
     public JmsConnectionFactory() {
     }
@@ -577,6 +580,26 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             messageIDPolicy = new JmsDefaultMessageIDPolicy();
         }
         this.messageIDPolicy = messageIDPolicy;
+    }
+
+    /**
+     * @return the deserializationPolicy that is currently configured.
+     */
+    public JmsDeserializationPolicy getDeserializationPolicy() {
+        return deserializationPolicy;
+    }
+
+    /**
+     * Sets the JmsDeserializationPolicy that is applied when a new connection is created.
+     *
+     * @param deserializationPolicy
+     *      the deserializationPolicy that will be applied to new connections.
+     */
+    public void setDeserializationPolicy(JmsDeserializationPolicy deserializationPolicy) {
+        if (deserializationPolicy == null) {
+            deserializationPolicy = new JmsDefaultDeserializationPolicy();
+        }
+        this.deserializationPolicy = deserializationPolicy;
     }
 
     /**

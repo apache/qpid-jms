@@ -34,6 +34,7 @@ import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
+import org.apache.qpid.jms.policy.JmsDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
 import org.apache.qpid.jms.provider.Provider;
@@ -88,6 +89,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
 
         JmsPrefetchPolicy prefetchPolicy = session.getPrefetchPolicy();
         JmsRedeliveryPolicy redeliveryPolicy = session.getRedeliveryPolicy().copy();
+        JmsDeserializationPolicy deserializationPolicy = session.getDeserializationPolicy().copy();
 
         consumerInfo = new JmsConsumerInfo(consumerId);
         consumerInfo.setClientId(connection.getClientID());
@@ -102,6 +104,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         consumerInfo.setRedeliveryPolicy(redeliveryPolicy);
         consumerInfo.setLocalMessageExpiry(connection.isLocalMessageExpiry());
         consumerInfo.setPresettle(session.getPresettlePolicy().isConsumerPresttled(session, destination));
+        consumerInfo.setDeserializationPolicy(deserializationPolicy);
 
         session.getConnection().createResource(consumerInfo);
     }

@@ -857,6 +857,10 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         this.message.setReplyTo(address);
     }
 
+    JmsDestination getConsumerDestination() {
+        return this.consumerDestination;
+    }
+
     private Long getAbsoluteExpiryTime() {
         Long result = null;
         if (message.getProperties() != null) {

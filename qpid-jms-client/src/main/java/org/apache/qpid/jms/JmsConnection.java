@@ -66,6 +66,7 @@ import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.meta.JmsTransactionInfo;
+import org.apache.qpid.jms.policy.JmsDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsPresettlePolicy;
@@ -871,6 +872,14 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
     public void setPresettlePolicy(JmsPresettlePolicy presettlePolicy) {
         connectionInfo.setPresettlePolicy(presettlePolicy);
+    }
+
+    public JmsDeserializationPolicy getDeserializationPolicy() {
+        return connectionInfo.getDeserializationPolicy();
+    }
+
+    public void setDeserializationPolicy(JmsDeserializationPolicy deserializationPolicy) {
+        connectionInfo.setDeserializationPolicy(deserializationPolicy);
     }
 
     public boolean isReceiveLocalOnly() {

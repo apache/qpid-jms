@@ -19,10 +19,12 @@ package org.apache.qpid.jms.meta;
 import java.net.URI;
 import java.nio.charset.Charset;
 
+import org.apache.qpid.jms.policy.JmsDefaultDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultPresettlePolicy;
 import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
+import org.apache.qpid.jms.policy.JmsDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsPresettlePolicy;
@@ -67,6 +69,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private JmsRedeliveryPolicy redeliveryPolicy;
     private JmsPresettlePolicy presettlePolicy;
     private JmsMessageIDPolicy messageIDPolicy;
+    private JmsDeserializationPolicy deserializationPolicy;
 
     private volatile byte[] encodedUserId;
 
@@ -101,6 +104,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         copy.prefetchPolicy = getPrefetchPolicy().copy();
         copy.redeliveryPolicy = getRedeliveryPolicy().copy();
         copy.presettlePolicy = getPresettlePolicy().copy();
+        copy.deserializationPolicy = getDeserializationPolicy().copy();
     }
 
     public boolean isForceAsyncSend() {
@@ -318,6 +322,17 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         }
 
         return encodedUserId;
+    }
+
+    public JmsDeserializationPolicy getDeserializationPolicy() {
+        if (deserializationPolicy == null) {
+            deserializationPolicy = new JmsDefaultDeserializationPolicy();
+        }
+        return deserializationPolicy;
+    }
+
+    public void setDeserializationPolicy(JmsDeserializationPolicy deserializationPolicy) {
+        this.deserializationPolicy = deserializationPolicy;
     }
 
     @Override

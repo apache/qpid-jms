@@ -17,7 +17,9 @@
 package org.apache.qpid.jms.meta;
 
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.policy.JmsDefaultDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
+import org.apache.qpid.jms.policy.JmsDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
 
 public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsumerInfo> {
@@ -35,6 +37,7 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
     private boolean presettle;
 
     private JmsRedeliveryPolicy redeliveryPolicy;
+    private JmsDeserializationPolicy deserializationPolicy;
 
     // Can be used to track the last consumed message.
     private transient long lastDeliveredSequenceId;
@@ -71,6 +74,7 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
         info.acknowledgementMode = acknowledgementMode;
         info.lastDeliveredSequenceId = lastDeliveredSequenceId;
         info.redeliveryPolicy = getRedeliveryPolicy().copy();
+        info.deserializationPolicy = getDeserializationPolicy().copy();
     }
 
     public boolean isDurable() {
@@ -175,6 +179,17 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
 
     public void setRedeliveryPolicy(JmsRedeliveryPolicy redeliveryPolicy) {
         this.redeliveryPolicy = redeliveryPolicy;
+    }
+
+    public JmsDeserializationPolicy getDeserializationPolicy() {
+        if (deserializationPolicy == null) {
+            deserializationPolicy = new JmsDefaultDeserializationPolicy();
+        }
+        return deserializationPolicy;
+    }
+
+    public void setDeserializationPolicy(JmsDeserializationPolicy deserializationPolicy) {
+        this.deserializationPolicy = deserializationPolicy;
     }
 
     public boolean isPresettle() {

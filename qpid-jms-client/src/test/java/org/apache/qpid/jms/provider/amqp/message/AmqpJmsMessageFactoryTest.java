@@ -48,6 +48,8 @@ import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 import org.apache.qpid.jms.message.facade.JmsObjectMessageFacade;
 import org.apache.qpid.jms.message.facade.JmsStreamMessageFacade;
 import org.apache.qpid.jms.message.facade.JmsTextMessageFacade;
+import org.apache.qpid.jms.meta.JmsConnectionId;
+import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.junit.Test;
@@ -194,12 +196,19 @@ public class AmqpJmsMessageFactoryTest extends QpidJmsTestCase {
     }
 
     private AmqpConnection createMockAmqpConnectionAmqpTypes() {
+        JmsConnectionId connectionId = new JmsConnectionId("ID:MOCK:1");
         AmqpConnection connection = Mockito.mock(AmqpConnection.class);
         Mockito.when(connection.isObjectMessageUsesAmqpTypes()).thenReturn(true);
+        Mockito.when(connection.getResourceInfo()).thenReturn(new JmsConnectionInfo(connectionId));
+
         return connection;
     }
 
     private AmqpConnection createMockAmqpConnection() {
-        return Mockito.mock(AmqpConnection.class);
+        JmsConnectionId connectionId = new JmsConnectionId("ID:MOCK:1");
+        AmqpConnection connection = Mockito.mock(AmqpConnection.class);
+        Mockito.when(connection.getResourceInfo()).thenReturn(new JmsConnectionInfo(connectionId));
+
+        return connection;
     }
 }

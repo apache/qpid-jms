@@ -71,7 +71,7 @@ public class JmsTestObjectMessageFacade extends JmsTestMessageFacade implements 
         Serializable serialized = null;
 
         try (ByteArrayInputStream dataIn = new ByteArrayInputStream(object);
-             ClassLoadingAwareObjectInputStream objIn = new ClassLoadingAwareObjectInputStream(dataIn)) {
+             ClassLoadingAwareObjectInputStream objIn = new ClassLoadingAwareObjectInputStream(dataIn, null)) {
 
             serialized = (Serializable) objIn.readObject();
         }

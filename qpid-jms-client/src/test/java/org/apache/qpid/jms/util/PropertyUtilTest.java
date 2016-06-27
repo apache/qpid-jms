@@ -246,6 +246,17 @@ public class PropertyUtilTest {
     }
 
     @Test
+    public void testParseParametersFromStringWithNoValues() throws Exception {
+        Map<String, String> result = PropertyUtil.parseParameters("http://www.example.com?option=&another=");
+
+        assertTrue(result.size() == 2);
+        assertTrue(result.containsKey("option"));
+        assertTrue(result.containsKey("another"));
+        assertEquals("", result.get("option"));
+        assertEquals("", result.get("another"));
+    }
+
+    @Test
     public void testParseParametersFromURIStringWithNoQuery() throws Exception {
         Map<String, String> result = PropertyUtil.parseParameters("http://www.example.com");
         assertNotNull(result);

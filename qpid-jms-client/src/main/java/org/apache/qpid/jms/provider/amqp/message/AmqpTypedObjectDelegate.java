@@ -48,18 +48,17 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
     /**
      * Create a new delegate that uses Java serialization to store the message content.
      *
-     * @param message
-     *        the AMQP message instance where the object is to be stored / read.
+     * @param parent
+     *        the AMQP message facade instance where the object is to be stored / read.
      * @param messageBytes
      *        the raw bytes that comprise the AMQP message that was received.
      */
-    public AmqpTypedObjectDelegate(Message message, ByteBuf messageBytes) {
-        this.message = message;
+    public AmqpTypedObjectDelegate(AmqpJmsMessageFacade parent, ByteBuf messageBytes) {
+        this.message = parent.getAmqpMessage();
         this.message.setContentType(null);
         this.messageBytes = messageBytes;
 
-        // We will decode the body on each access, so clear the current value
-        // so we don't carry along unneeded bloat.
+        // Cache the body so the first access can grab it without extra work.
         if (messageBytes != null) {
             cachedReceivedBody.set(message.getBody());
         }
@@ -108,15 +107,16 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
             Message transfer = Message.Factory.create();
 
             // Exchange the incoming body value for one that is created from encoding
-            // and decoding the value.
+            // and decoding the value. Save the bytes for subsequent getObject and
+            // copyInto calls to use.
             transfer.setBody(new AmqpValue(value));
             messageBytes = encodeMessage(transfer);
             transfer = decodeMessage(messageBytes);
-            messageBytes = null;
 
             // This step requires a heavy-weight operation of both encoding and decoding the
             // incoming body value in order to create a copy such that changes to the original
-            // do not affect the stored value.  In the future it makes sense to try to enhance
+            // do not affect the stored value, and also verifies we can actually encode it at all
+            // now instead of later during send. In the future it makes sense to try to enhance
             // proton such that we can encode the body and use those bytes directly on the
             // message as it is being sent.
 
@@ -135,16 +135,46 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
         }
     }
 
+    @Override
+    public void copyInto(AmqpObjectTypeDelegate copy) throws Exception {
+        if (!(copy instanceof AmqpTypedObjectDelegate)) {
+            copy.setObject(getObject());
+        } else {
+            AmqpTypedObjectDelegate target = (AmqpTypedObjectDelegate) copy;
+
+            // Swap our cached value (if any) to the copy, we will just decode it if we need it later.
+            target.cachedReceivedBody.set(cachedReceivedBody.getAndSet(null));
+
+            if (messageBytes != null) {
+                // If we have the original bytes just copy those and let the next get
+                // decode them into the payload (or for the copy, use the cached
+                // body if it was swapped above).
+                target.messageBytes = messageBytes.copy();
+
+                // Internal message body copy to satisfy sends. This is safe since the body was set
+                // from a copy (decoded from the bytes) to ensure it is a snapshot. Also safe for
+                // gets as they will use the message bytes (or cached body if set) to return the object.
+                target.message.setBody(message.getBody());
+            } else {
+                // We have to deep get/set copy here, otherwise a get might return
+                // the object value carried by the original version.
+                copy.setObject(getObject());
+            }
+        }
+    }
+
+    @Override
+    public boolean isAmqpTypeEncoded() {
+        return true;
+    }
+
+    //----- Internal implementation ------------------------------------------//
+
     private boolean isSupportedAmqpValueObjectType(Serializable serializable) {
         // TODO: augment supported types to encode as an AmqpValue?
         return serializable instanceof String ||
                serializable instanceof Map<?,?> ||
                serializable instanceof List<?> ||
                serializable.getClass().isArray();
-    }
-
-    @Override
-    public boolean isAmqpTypeEncoded() {
-        return true;
     }
 }

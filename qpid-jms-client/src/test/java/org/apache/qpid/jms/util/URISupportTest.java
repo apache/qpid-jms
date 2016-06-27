@@ -16,22 +16,28 @@
  */
 package org.apache.qpid.jms.util;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.jms.util.URISupport.CompositeData;
+import org.junit.Test;
 
-public class URISupportTest extends TestCase {
+public class URISupportTest {
 
+    @Test
     public void testEmptyCompositePath() throws Exception {
         CompositeData data = URISupport.parseComposite(new URI("broker:()/localhost?persistent=false"));
         assertEquals(0, data.getComponents().size());
     }
 
+    @Test
     public void testCompositePath() throws Exception {
         CompositeData data = URISupport.parseComposite(new URI("test:(path)/path"));
         assertEquals("path", data.getPath());
@@ -39,17 +45,20 @@ public class URISupportTest extends TestCase {
         assertNull(data.getPath());
     }
 
+    @Test
     public void testSimpleComposite() throws Exception {
         CompositeData data = URISupport.parseComposite(new URI("test:part1"));
         assertEquals(1, data.getComponents().size());
     }
 
+    @Test
     public void testComposite() throws Exception {
         URI uri = new URI("test:(part1://host,part2://(sub1://part,sube2:part))");
         CompositeData data = URISupport.parseComposite(uri);
         assertEquals(2, data.getComponents().size());
     }
 
+    @Test
     public void testEmptyCompositeWithParenthesisInParam() throws Exception {
         URI uri = new URI("failover://()?updateURIsURL=file:/C:/Dir(1)/a.csv");
         CompositeData data = URISupport.parseComposite(uri);
@@ -59,6 +68,7 @@ public class URISupportTest extends TestCase {
         assertEquals("file:/C:/Dir(1)/a.csv", data.getParameters().get("updateURIsURL"));
     }
 
+    @Test
     public void testCompositeWithParenthesisInParam() throws Exception {
         URI uri = new URI("failover://(test)?updateURIsURL=file:/C:/Dir(1)/a.csv");
         CompositeData data = URISupport.parseComposite(uri);
@@ -68,6 +78,7 @@ public class URISupportTest extends TestCase {
         assertEquals("file:/C:/Dir(1)/a.csv", data.getParameters().get("updateURIsURL"));
     }
 
+    @Test
     public void testCompositeWithComponentParam() throws Exception {
         CompositeData data = URISupport.parseComposite(new URI("test:(part1://host?part1=true)?outside=true"));
         assertEquals(1, data.getComponents().size());
@@ -77,6 +88,7 @@ public class URISupportTest extends TestCase {
         assertTrue(part1Params.containsKey("part1"));
     }
 
+    @Test
     public void testParsingURI() throws Exception {
         URI source = new URI("tcp://localhost:61626/foo/bar?cheese=Edam&x=123");
 
@@ -91,16 +103,33 @@ public class URISupportTest extends TestCase {
         assertEquals("result", new URI("tcp://localhost:61626/foo/bar"), result);
     }
 
+    @Test
+    public void testParsingURIWithEmptyValuesInOptions() throws Exception {
+        URI source = new URI("tcp://localhost:61626/foo/bar?cheese=&x=");
+
+        Map<String, String> map = PropertyUtil.parseParameters(source);
+
+        assertEquals("Size: " + map, 2, map.size());
+        assertMapKey(map, "cheese", "");
+        assertMapKey(map, "x", "");
+
+        URI result = URISupport.removeQuery(source);
+
+        assertEquals("result", new URI("tcp://localhost:61626/foo/bar"), result);
+    }
+
     protected void assertMapKey(Map<String, String> map, String key, Object expected) {
         assertEquals("Map key: " + key, map.get(key), expected);
     }
 
+    @Test
     public void testParsingCompositeURI() throws URISyntaxException {
         CompositeData data = URISupport.parseComposite(new URI("broker://(tcp://localhost:61616)?name=foo"));
         assertEquals("one component", 1, data.getComponents().size());
         assertEquals("Size: " + data.getParameters(), 1, data.getParameters().size());
     }
 
+    @Test
     public void testCheckParenthesis() throws Exception {
         String str = "fred:(((ddd))";
         assertFalse(URISupport.checkParenthesis(str));
@@ -108,6 +137,7 @@ public class URISupportTest extends TestCase {
         assertTrue(URISupport.checkParenthesis(str));
     }
 
+    @Test
     public void testCreateWithQuery() throws Exception {
         URI source = new URI("vm://localhost");
         URI dest = PropertyUtil.replaceQuery(source, "network=true&one=two");
@@ -118,6 +148,7 @@ public class URISupportTest extends TestCase {
         assertFalse("same uri, ssp", dest.getQuery().equals(source.getQuery()));
     }
 
+    @Test
     public void testParsingParams() throws Exception {
         URI uri = new URI("static:(http://localhost:61617?proxyHost=jo&proxyPort=90)?proxyHost=localhost&proxyPort=80");
         Map<String,String>parameters = URISupport.parseParameters(uri);
@@ -129,6 +160,7 @@ public class URISupportTest extends TestCase {
         parameters = URISupport.parseParameters(uri);
     }
 
+    @Test
     public void testCompositeCreateURIWithQuery() throws Exception {
         String queryString = "query=value";
         URI originalURI = new URI("outerscheme:(innerscheme:innerssp)");
@@ -151,6 +183,7 @@ public class URISupportTest extends TestCase {
         assertEquals(new URI(querylessURI + "?" + queryString), PropertyUtil.replaceQuery(originalURI, queryString));
     }
 
+    @Test
     public void testApplyParameters() throws Exception {
 
         URI uri = new URI("http://0.0.0.0:61616");
@@ -178,6 +211,7 @@ public class URISupportTest extends TestCase {
         assertEquals(parameters.get("proxyPort"), "80");
     }
 
+    @Test
     public void testIsCompositeURIWithQueryNoSlashes() throws URISyntaxException {
         URI[] compositeURIs = new URI[] { new URI("test:(part1://host?part1=true)?outside=true"), new URI("broker:(tcp://localhost:61616)?name=foo") };
         for (URI uri : compositeURIs) {
@@ -185,6 +219,7 @@ public class URISupportTest extends TestCase {
         }
     }
 
+    @Test
     public void testIsCompositeURIWithQueryAndSlashes() throws URISyntaxException {
         URI[] compositeURIs = new URI[] { new URI("test://(part1://host?part1=true)?outside=true"), new URI("broker://(tcp://localhost:61616)?name=foo") };
         for (URI uri : compositeURIs) {
@@ -192,6 +227,7 @@ public class URISupportTest extends TestCase {
         }
     }
 
+    @Test
     public void testIsCompositeURINoQueryNoSlashes() throws URISyntaxException {
         URI[] compositeURIs = new URI[] { new URI("test:(part1://host,part2://(sub1://part,sube2:part))"), new URI("test:(path)/path") };
         for (URI uri : compositeURIs) {
@@ -199,10 +235,12 @@ public class URISupportTest extends TestCase {
         }
     }
 
+    @Test
     public void testIsCompositeURINoQueryNoSlashesNoParentheses() throws URISyntaxException {
         assertFalse("test:part1" + " must be detected as non-composite URI", URISupport.isCompositeURI(new URI("test:part1")));
     }
 
+    @Test
     public void testIsCompositeURINoQueryWithSlashes() throws URISyntaxException {
         URI[] compositeURIs = new URI[] { new URI("failover://(tcp://bla:61616,tcp://bla:61617)"),
                 new URI("failover://(tcp://localhost:61616,ssl://anotherhost:61617)") };
@@ -210,5 +248,4 @@ public class URISupportTest extends TestCase {
             assertTrue(uri + " must be detected as composite URI", URISupport.isCompositeURI(uri));
         }
     }
-
 }

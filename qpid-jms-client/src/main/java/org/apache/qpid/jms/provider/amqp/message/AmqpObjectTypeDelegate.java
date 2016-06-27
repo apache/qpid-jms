@@ -53,5 +53,15 @@ public interface AmqpObjectTypeDelegate {
      */
     void onSend();
 
+    /**
+     * Copy the internal data into the given instance.
+     *
+     * @param copy
+     *      the new delegate that will receive a copy of this instances object data.
+     *
+     * @throws Exception if an error occurs while copying the contents to the target.
+     */
+    void copyInto(AmqpObjectTypeDelegate copy) throws Exception;
+
     boolean isAmqpTypeEncoded();
 }

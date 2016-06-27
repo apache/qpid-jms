@@ -18,10 +18,12 @@ package org.apache.qpid.jms.meta;
 
 import javax.jms.Session;
 
+import org.apache.qpid.jms.policy.JmsDefaultDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultPresettlePolicy;
 import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
+import org.apache.qpid.jms.policy.JmsDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsPresettlePolicy;
@@ -37,6 +39,7 @@ public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionI
     private JmsPrefetchPolicy prefetchPolicy;
     private JmsPresettlePolicy presettlePolicy;
     private JmsRedeliveryPolicy redeliveryPolicy;
+    private JmsDeserializationPolicy deserializationPolicy;
 
     public JmsSessionInfo(JmsConnectionInfo connectionInfo, long sessionId) {
         if (connectionInfo == null) {
@@ -66,6 +69,7 @@ public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionI
         copy.presettlePolicy = getPresettlePolicy().copy();
         copy.prefetchPolicy = getPrefetchPolicy().copy();
         copy.messageIDPolicy = getMessageIDPolicy().copy();
+        copy.deserializationPolicy = getDeserializationPolicy().copy();
     }
 
     @Override
@@ -171,5 +175,16 @@ public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionI
 
     public void setRedeliveryPolicy(JmsRedeliveryPolicy redeliveryPolicy) {
         this.redeliveryPolicy = redeliveryPolicy;
+    }
+
+    public JmsDeserializationPolicy getDeserializationPolicy() {
+        if (deserializationPolicy == null) {
+            deserializationPolicy = new JmsDefaultDeserializationPolicy();
+        }
+        return deserializationPolicy;
+    }
+
+    public void setDeserializationPolicy(JmsDeserializationPolicy deserializationPolicy) {
+        this.deserializationPolicy = deserializationPolicy;
     }
 }

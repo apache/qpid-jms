@@ -95,7 +95,8 @@ public class AmqpJmsMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsObjectMessage createObjectMessage(Serializable payload) throws JMSException {
-        JmsObjectMessageFacade facade = new AmqpJmsObjectMessageFacade(connection, connection.isObjectMessageUsesAmqpTypes());
+        JmsObjectMessageFacade facade = new AmqpJmsObjectMessageFacade(
+            connection, connection.isObjectMessageUsesAmqpTypes());
 
         if (payload != null) {
             try {

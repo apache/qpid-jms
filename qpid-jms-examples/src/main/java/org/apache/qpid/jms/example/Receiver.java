@@ -32,8 +32,6 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 
 public class Receiver {
-    private static final String USER = "guest";
-    private static final String PASSWORD = "guest";
     private static final int DEFAULT_COUNT = 10;
 
     public static void main(String[] args) throws Exception {
@@ -55,7 +53,7 @@ public class Receiver {
             ConnectionFactory factory = (ConnectionFactory) context.lookup("myFactoryLookup");
             Destination queue = (Destination) context.lookup("myQueueLookup");
 
-            Connection connection = factory.createConnection(USER, PASSWORD);
+            Connection connection = factory.createConnection(System.getProperty("USER"), System.getProperty("PASSWORD"));
             connection.setExceptionListener(new MyExceptionListener());
             connection.start();
 

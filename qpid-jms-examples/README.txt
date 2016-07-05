@@ -16,13 +16,13 @@ Now you can run the examples using commands of the format:
 NOTE: The examples expect to use a Queue named "queue". You may need to create
 this before running the examples, depending on the broker/peer you are using.
 
-NOTE: A username and password with which the examples will
-authenticate themselves can be set through system properties named
-USER and PASSWORD respectively. E.g.
+NOTE: By default the examples can only connect anonymously. A username and
+password with which the connection can authenticate with the server may be set
+through system properties named USER and PASSWORD respectively. E.g:
 
-  Linux:   java -DUSER=guest -Dpassword=guest -cp "target/classes/:target/dependency/*" org.apache.qpid.jms.example.HelloWorld
+  Linux:   java -DUSER=guest -DPASSWORD=guest -cp "target/classes/:target/dependency/*" org.apache.qpid.jms.example.HelloWorld
 
-  Windows: java -DUSER=guest -Dpassword=guest -cp "target\classes\;target\dependency\*" org.apache.qpid.jms.example.HelloWorld
+  Windows: java -DUSER=guest -DPASSWORD=guest -cp "target\classes\;target\dependency\*" org.apache.qpid.jms.example.HelloWorld
 
 NOTE: You can configure the connection and queue details used by updating the
 JNDI configuration file before building. It can be found at:

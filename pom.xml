@@ -44,14 +44,14 @@
 
     <!-- Dependency Versions for this Project -->
     <proton-version>0.13.0</proton-version>
-    <netty-version>4.0.17.Final</netty-version>
+    <netty-version>4.0.38.Final</netty-version>
     <slf4j-version>1.7.21</slf4j-version>
     <geronimo-jms-1-1-spec-version>1.1.1</geronimo-jms-1-1-spec-version>
     <!-- Test Dependency Versions for this Project -->
     <activemq-version>5.13.3</activemq-version>
     <junit-version>4.12</junit-version>
     <fuse-joram-tests-version>1.0</fuse-joram-tests-version>
-    <jetty-version>8.1.17.v20150415</jetty-version>
+    <jetty-version>9.2.13.v20150730</jetty-version>
     <mockito-version>1.10.19</mockito-version>
     <hamcrest-version>1.3</hamcrest-version>
 
@@ -134,6 +134,11 @@
       <dependency>
         <groupId>io.netty</groupId>
         <artifactId>netty-transport</artifactId>
+        <version>${netty-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-codec-http</artifactId>
         <version>${netty-version}</version>
       </dependency>
       <dependency>

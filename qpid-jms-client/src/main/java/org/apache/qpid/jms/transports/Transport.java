@@ -16,10 +16,11 @@
  */
 package org.apache.qpid.jms.transports;
 
-import io.netty.buffer.ByteBuf;
-
 import java.io.IOException;
 import java.net.URI;
+import java.security.Principal;
+
+import io.netty.buffer.ByteBuf;
 
 /**
  * Base class for all QpidJMS Transport instances.
@@ -38,6 +39,11 @@ public interface Transport {
      * @return true if transport is connected or false if the connection is down.
      */
     boolean isConnected();
+
+    /**
+     * @return true if transport is connected using a secured channel (SSL).
+     */
+    boolean isSecure();
 
     /**
      * Close the Transport, no additional send operations are accepted.
@@ -96,5 +102,10 @@ public interface Transport {
      * @return the URI of the remote peer that this Transport connects to.
      */
     URI getRemoteLocation();
+
+    /**
+     * @return the local principal for a Transport that is using a secure connection.
+     */
+    Principal getLocalPrincipal();
 
 }

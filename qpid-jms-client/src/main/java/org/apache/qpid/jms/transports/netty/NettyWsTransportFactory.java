@@ -14,10 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.transports;
+package org.apache.qpid.jms.transports.netty;
 
-import java.security.Principal;
+import java.net.URI;
 
-public interface SSLTransport extends Transport {
-    Principal getLocalPrincipal();
+import org.apache.qpid.jms.transports.TransportFactory;
+import org.apache.qpid.jms.transports.TransportOptions;
+
+/**
+ * Factory for creating the Netty based WebSocket Transport.
+ */
+public class NettyWsTransportFactory extends TransportFactory {
+
+    @Override
+    protected NettyTcpTransport doCreateTransport(URI remoteURI, TransportOptions transportOptions) throws Exception {
+        return new NettyWsTransport(remoteURI, transportOptions);
+    }
+
+    @Override
+    public String getName() {
+        return "WS";
+    }
 }

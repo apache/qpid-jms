@@ -19,7 +19,6 @@ package org.apache.qpid.jms.provider.amqp;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.security.Principal;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -55,7 +54,6 @@ import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpConnectionBuilder;
-import org.apache.qpid.jms.transports.SSLTransport;
 import org.apache.qpid.jms.transports.TransportFactory;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.util.IOExceptionSupport;
@@ -296,7 +294,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
                                 sasl.setRemoteHostname(hostname);
 
-                                authenticator = new AmqpSaslAuthenticator(sasl, connectionInfo, getLocalPrincipal(), saslMechanisms);
+                                authenticator = new AmqpSaslAuthenticator(sasl, connectionInfo, transport.getLocalPrincipal(), saslMechanisms);
                             }
 
                             AmqpConnectionBuilder builder = new AmqpConnectionBuilder(AmqpProvider.this, connectionInfo);
@@ -1167,14 +1165,6 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 }
 
             }, timeout, TimeUnit.MILLISECONDS);
-        }
-
-        return null;
-    }
-
-    Principal getLocalPrincipal() {
-        if (transport instanceof SSLTransport) {
-            return ((SSLTransport) transport).getLocalPrincipal();
         }
 
         return null;

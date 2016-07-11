@@ -70,8 +70,9 @@ public class NettySslTransportFactoryTest {
         Transport transport = factory.createTransport(BASE_URI);
 
         assertNotNull(transport);
-        assertTrue(transport instanceof NettySslTransport);
+        assertTrue(transport instanceof NettyTcpTransport);
         assertFalse(transport.isConnected());
+        assertTrue(transport.isSecure());
 
         TransportOptions options = transport.getTransportOptions();
         assertNotNull(options);
@@ -140,8 +141,9 @@ public class NettySslTransportFactoryTest {
         Transport transport = factory.createTransport(configuredURI);
 
         assertNotNull(transport);
-        assertTrue(transport instanceof NettySslTransport);
+        assertTrue(transport instanceof NettyTcpTransport);
         assertFalse(transport.isConnected());
+        assertTrue(transport.isSecure());
 
         TransportOptions options = transport.getTransportOptions();
         assertNotNull(options);

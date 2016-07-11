@@ -16,21 +16,6 @@
  */
 package org.apache.qpid.jms.transports.netty;
 
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.ssl.SslHandler;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
-
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.concurrent.TimeUnit;
@@ -46,6 +31,26 @@ import org.apache.qpid.jms.transports.TransportSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
+
 /**
  * Simple Netty Server used to echo all data.
  */
@@ -53,6 +58,7 @@ public class NettyEchoServer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(NettyEchoServer.class);
 
     static final int PORT = Integer.parseInt(System.getProperty("port", "8007"));
+    static final String WEBSOCKET_PATH = "/";
 
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
@@ -60,6 +66,7 @@ public class NettyEchoServer implements AutoCloseable {
     private final TransportOptions options;
     private int serverPort;
     private final boolean needClientAuth;
+    private final boolean webSocketServer;
     private volatile SslHandler sslHandler;
 
     private final AtomicBoolean started = new AtomicBoolean();
@@ -69,8 +76,13 @@ public class NettyEchoServer implements AutoCloseable {
     }
 
     public NettyEchoServer(TransportOptions options, boolean needClientAuth) {
+        this(options, needClientAuth, false);
+    }
+
+    public NettyEchoServer(TransportOptions options, boolean needClientAuth, boolean webSocketServer) {
         this.options = options;
         this.needClientAuth = needClientAuth;
+        this.webSocketServer = webSocketServer;
     }
 
     public void start() throws Exception {
@@ -99,6 +111,13 @@ public class NettyEchoServer implements AutoCloseable {
                         sslHandler = new SslHandler(engine);
                         ch.pipeline().addLast(sslHandler);
                     }
+
+                    if (webSocketServer) {
+                        ch.pipeline().addLast(new HttpServerCodec());
+                        ch.pipeline().addLast(new HttpObjectAggregator(65536));
+                        ch.pipeline().addLast(new WebSocketServerProtocolHandler(WEBSOCKET_PATH, "amqp", true));
+                    }
+
                     ch.pipeline().addLast(new EchoServerHandler());
                 }
             });
@@ -149,17 +168,17 @@ public class NettyEchoServer implements AutoCloseable {
         return serverPort;
     }
 
-    private class EchoServerHandler extends ChannelInboundHandlerAdapter {
+    private class EchoServerHandler extends SimpleChannelInboundHandler<Object>  {
 
         @Override
         public void channelActive(final ChannelHandlerContext ctx) {
-            LOG.info("New active channel: {}", ctx.channel());
+            LOG.info("Server -> New active channel: {}", ctx.channel());
             SslHandler handler = ctx.pipeline().get(SslHandler.class);
             if (handler != null) {
                 handler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
                     @Override
                     public void operationComplete(Future<Channel> future) throws Exception {
-                        LOG.info("SSL handshake completed. Succeeded: {}", future.isSuccess());
+                        LOG.info("Server -> SSL handshake completed. Succeeded: {}", future.isSuccess());
                         if (!future.isSuccess()) {
                             sslHandler.close();
                             ctx.close();
@@ -176,8 +195,19 @@ public class NettyEchoServer implements AutoCloseable {
         }
 
         @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) {
-            ctx.write(msg);
+        public void channelRead0(ChannelHandlerContext ctx, Object msg) {
+            LOG.trace("Channel read: {}", msg);
+            if (webSocketServer && msg instanceof BinaryWebSocketFrame) {
+                BinaryWebSocketFrame frame = (BinaryWebSocketFrame) msg;
+                ctx.write(frame.copy());
+                return;
+            } else if (msg instanceof ByteBuf) {
+                ctx.write(((ByteBuf) msg).copy());
+                return;
+            }
+
+            String message = "unsupported frame type: " + msg.getClass().getName();
+            throw new UnsupportedOperationException(message);
         }
 
         @Override

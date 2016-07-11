@@ -22,8 +22,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
 import java.net.URI;
@@ -39,6 +37,9 @@ import org.apache.qpid.jms.transports.TransportOptions;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 /**
  * Test basic functionality of the Netty based TCP transport.
@@ -71,16 +72,19 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 60 * 1000)
-    public void testCreateWithNullOptionsUsesDefaults() throws Exception {
+    public void testCreateWithNullOptionsThrowsIAE() throws Exception {
         URI serverLocation = new URI("tcp://localhost:5762");
 
-        Transport transport = createTransport(serverLocation, testListener, null);
-        assertEquals(TransportOptions.INSTANCE, transport.getTransportOptions());
+        try {
+            createTransport(serverLocation, testListener, null);
+            fail("Should have thrown IllegalArgumentException");
+        } catch (IllegalArgumentException iae) {
+        }
     }
 
     @Test(timeout = 60 * 1000)
     public void testConnectWithoutRunningServer() throws Exception {
-        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
@@ -108,7 +112,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
     @Test(timeout = 60 * 1000)
     public void testConnectWithoutListenerFails() throws Exception {
-        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
@@ -130,7 +134,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
     @Test(timeout = 60 * 1000)
     public void testConnectAfterListenerSetWorks() throws Exception {
-        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
@@ -156,7 +160,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
     @Test(timeout = 60 * 1000)
     public void testConnectToServer() throws Exception {
-        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
@@ -188,7 +192,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
     public void testMultipleConnectionsToServer() throws Exception {
         final int CONNECTION_COUNT = 10;
 
-        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
@@ -228,7 +232,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
             sendBuffer.writeByte('A');
         }
 
-        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
@@ -268,7 +272,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
     public void testDetectServerClose() throws Exception {
         Transport transport = null;
 
-        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
@@ -307,7 +311,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
     @Test(timeout = 60 * 1000)
     public void testZeroSizedSentNoErrors() throws Exception {
-        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
@@ -335,7 +339,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
     @Test(timeout = 60 * 1000)
     public void testDataSentIsReceived() throws Exception {
-        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
@@ -387,7 +391,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
     public void doMultipleDataPacketsSentAndReceive(final int byteCount, final int iterations) throws Exception {
 
-        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
@@ -431,7 +435,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
     public void testSendToClosedTransportFails() throws Exception {
         Transport transport = null;
 
-        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
@@ -480,6 +484,14 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 LOG.info("Transport sent exception: {}", ex, ex);
             }
         }
+    }
+
+    protected NettyEchoServer createEchoServer(TransportOptions options) {
+        return createEchoServer(options, false);
+    }
+
+    protected NettyEchoServer createEchoServer(TransportOptions options, boolean needClientAuth) {
+        return new NettyEchoServer(options, needClientAuth);
     }
 
     private class NettyTransportListener implements TransportListener {

@@ -20,9 +20,9 @@ import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportSslOptions;
 
 /**
- * Creates a Netty based SSL transport.
+ * Creates a Netty based Secure WebSocket transport.
  */
-public class NettySslTransportFactory extends NettyTcpTransportFactory {
+public class NettyWssTransportFactory extends NettyWsTransportFactory {
 
     @Override
     protected TransportOptions doCreateTransportOptions() {
@@ -31,6 +31,6 @@ public class NettySslTransportFactory extends NettyTcpTransportFactory {
 
     @Override
     public String getName() {
-        return "SSL";
+        return "WSS";
     }
 }

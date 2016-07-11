@@ -62,8 +62,6 @@
       <artifactId>slf4j-log4j12</artifactId>
       <scope>test</scope>
     </dependency>
-
-    <!--  Joram JMS conformance tests -->
     <dependency>
       <groupId>org.fusesource.joram-jms-tests</groupId>
       <artifactId>joram-jms-tests</artifactId>
@@ -71,9 +69,24 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <!-- using it for Jetty's JNDI context to work /w Joram tests. -->
       <groupId>org.eclipse.jetty.aggregate</groupId>
-      <artifactId>jetty-all-server</artifactId>
+      <artifactId>jetty-all</artifactId>
+      <version>${jetty-version}</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>javax.servlet</groupId>
+          <artifactId>javax.servlet-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>javax.websocket</groupId>
+          <artifactId>javax.websocket-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty.websocket</groupId>
+      <artifactId>websocket-server</artifactId>
       <version>${jetty-version}</version>
       <scope>test</scope>
     </dependency>
@@ -103,7 +116,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.activemq</groupId>
-      <artifactId>activemq-spring</artifactId>
+      <artifactId>activemq-http</artifactId>
       <version>${activemq-version}</version>
       <scope>test</scope>
     </dependency>

@@ -267,6 +267,11 @@ public class TransportSslOptions extends TransportOptions {
         return copyOptions(new TransportSslOptions());
     }
 
+    @Override
+    public boolean isSSL() {
+        return true;
+    }
+
     protected TransportSslOptions copyOptions(TransportSslOptions copy) {
         super.copyOptions(copy);
 

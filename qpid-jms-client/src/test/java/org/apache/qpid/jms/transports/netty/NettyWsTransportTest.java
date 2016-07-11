@@ -16,21 +16,28 @@
  */
 package org.apache.qpid.jms.transports.netty;
 
+import java.net.URI;
+
+import org.apache.qpid.jms.transports.Transport;
+import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
-import org.apache.qpid.jms.transports.TransportSslOptions;
 
 /**
- * Creates a Netty based SSL transport.
+ * Test the Netty based WebSocket Transport
  */
-public class NettySslTransportFactory extends NettyTcpTransportFactory {
+public class NettyWsTransportTest extends NettyTcpTransportTest {
 
     @Override
-    protected TransportOptions doCreateTransportOptions() {
-        return TransportSslOptions.INSTANCE.clone();
+    protected NettyEchoServer createEchoServer(TransportOptions options, boolean needClientAuth) {
+        return new NettyEchoServer(options, needClientAuth, true);
     }
 
     @Override
-    public String getName() {
-        return "SSL";
+    protected Transport createTransport(URI serverLocation, TransportListener listener, TransportOptions options) {
+        if (listener == null) {
+            return new NettyWsTransport(serverLocation, options);
+        } else {
+            return new NettyWsTransport(listener, serverLocation, options);
+        }
     }
 }

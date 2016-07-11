@@ -40,7 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Test basic functionality of the Netty based SSL Transport.
+ * Test basic functionality of the Netty based TCP Transport ruuing in secure mode (SSL).
  */
 @RunWith(QpidJMSTestRunner.class)
 public class NettySslTransportTest extends NettyTcpTransportTest {
@@ -65,16 +65,19 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
     @Override
     @Test(timeout = 60 * 1000)
-    public void testCreateWithNullOptionsUsesDefaults() throws Exception {
+    public void testCreateWithNullOptionsThrowsIAE() throws Exception {
         URI serverLocation = new URI("tcp://localhost:5762");
 
-        Transport transport = createTransport(serverLocation, testListener, null);
-        assertEquals(TransportSslOptions.INSTANCE, transport.getTransportOptions());
+        try {
+            createTransport(serverLocation, testListener, null);
+            fail("Should have thrown IllegalArgumentException");
+        } catch (IllegalArgumentException iae) {
+        }
     }
 
     @Test(timeout = 60 * 1000)
     public void testConnectToServerWithoutTrustStoreFails() throws Exception {
-        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
@@ -101,7 +104,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     @Test(timeout = 60 * 1000)
     @Repeat(repetitions = 1)
     public void testConnectToServerUsingUntrustedKeyFails() throws Exception {
-        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
@@ -128,7 +131,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
     @Test(timeout = 60 * 1000)
     public void testConnectToServerClientTrustsAll() throws Exception {
-        try (NettyEchoServer server = new NettyEchoServer(createServerOptions())) {
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
             server.start();
 
             int port = server.getServerPort();
@@ -143,6 +146,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             }
 
             assertTrue(transport.isConnected());
+            assertTrue(transport.isSecure());
 
             transport.close();
         }
@@ -155,7 +159,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     public void testConnectWithNeedClientAuth() throws Exception {
         TransportSslOptions serverOptions = createServerOptions();
 
-        try (NettyEchoServer server = new NettyEchoServer(serverOptions, true)) {
+        try (NettyEchoServer server = createEchoServer(serverOptions, true)) {
             server.start();
 
             int port = server.getServerPort();
@@ -163,7 +167,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
             TransportSslOptions clientOptions = createClientOptions();
 
-            NettySslTransport transport = createTransport(serverLocation, testListener, clientOptions);
+            NettyTcpTransport transport = createTransport(serverLocation, testListener, clientOptions);
             try {
                 transport.connect();
                 LOG.info("Connection established to test server: {}", serverLocation);
@@ -172,6 +176,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             }
 
             assertTrue(transport.isConnected());
+            assertTrue(transport.isSecure());
 
             // Verify there was a certificate sent to the server
             assertNotNull(server.getSslHandler().engine().getSession().getPeerCertificates());
@@ -192,7 +197,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     private void doClientAuthAliasTestImpl(String alias, String expectedDN) throws Exception, URISyntaxException, IOException, InterruptedException {
         TransportSslOptions serverOptions = createServerOptions();
 
-        try (NettyEchoServer server = new NettyEchoServer(serverOptions, true)) {
+        try (NettyEchoServer server = createEchoServer(serverOptions, true)) {
             server.start();
 
             int port = server.getServerPort();
@@ -202,7 +207,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             clientOptions.setKeyStoreLocation(CLIENT_MULTI_KEYSTORE);
             clientOptions.setKeyAlias(alias);
 
-            NettySslTransport transport = createTransport(serverLocation, testListener, clientOptions);
+            NettyTcpTransport transport = createTransport(serverLocation, testListener, clientOptions);
             try {
                 transport.connect();
                 LOG.info("Connection established to test server: {}", serverLocation);
@@ -211,6 +216,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             }
 
             assertTrue(transport.isConnected());
+            assertTrue(transport.isSecure());
 
             Certificate[] peerCertificates = server.getSslHandler().engine().getSession().getPeerCertificates();
             assertNotNull(peerCertificates);
@@ -241,7 +247,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
         TransportSslOptions serverOptions = createServerOptions();
         serverOptions.setKeyStoreLocation(SERVER_WRONG_HOST_KEYSTORE);
 
-        try (NettyEchoServer server = new NettyEchoServer(serverOptions)) {
+        try (NettyEchoServer server = createEchoServer(serverOptions)) {
             server.start();
 
             int port = server.getServerPort();
@@ -281,8 +287,8 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     }
 
     @Override
-    protected NettySslTransport createTransport(URI serverLocation, TransportListener listener, TransportOptions options) {
-        return new NettySslTransport(listener, serverLocation, options);
+    protected NettyTcpTransport createTransport(URI serverLocation, TransportListener listener, TransportOptions options) {
+        return new NettyTcpTransport(listener, serverLocation, options);
     }
 
     @Override

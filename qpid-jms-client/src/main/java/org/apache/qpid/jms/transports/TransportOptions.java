@@ -168,6 +168,10 @@ public class TransportOptions implements Cloneable {
         return copyOptions(new TransportOptions());
     }
 
+    public boolean isSSL() {
+        return false;
+    }
+
     protected TransportOptions copyOptions(TransportOptions copy) {
         copy.setConnectTimeout(getConnectTimeout());
         copy.setReceiveBufferSize(getReceiveBufferSize());

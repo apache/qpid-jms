@@ -134,12 +134,12 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public String getJMSMessageID() throws JMSException {
-        Object value = facade.getMessageId();
-        if (value != null && !value.toString().startsWith(ID_PREFIX)) {
-            value = ID_PREFIX + value;
+        String id = facade.getMessageId();
+        if (id != null && !id.startsWith(ID_PREFIX)) {
+            id = ID_PREFIX + id;
         }
 
-        return value == null ? null : value.toString();
+        return id;
     }
 
     @Override

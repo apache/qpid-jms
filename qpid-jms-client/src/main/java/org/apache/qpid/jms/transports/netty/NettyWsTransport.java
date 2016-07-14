@@ -156,5 +156,10 @@ public class NettyWsTransport extends NettyTcpTransport {
                 ch.close();
             }
         }
+
+        @Override
+        public void exceptionCaught(ChannelHandlerContext context, Throwable cause) throws Exception {
+            handleException(context.channel(), cause);
+        }
     }
 }

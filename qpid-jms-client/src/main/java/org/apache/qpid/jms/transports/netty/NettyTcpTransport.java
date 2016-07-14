@@ -356,14 +356,17 @@ public class NettyTcpTransport implements Transport {
     }
 
     private void configureChannel(final Channel channel) throws Exception {
-        // Default event handlers takes care of exceptions and channel inactivity, which
-        // prevents missed errors if the SslHandler fails during creation and removes the
-        // need for copying this implementation.
         channel.pipeline().addLast(new NettyDefaultHandler());
 
         if (isSecure()) {
 
-            SslHandler sslHandler = TransportSupport.createSslHandler(getRemoteLocation(), getSslOptions());
+            SslHandler sslHandler = null;
+            try {
+                sslHandler = TransportSupport.createSslHandler(getRemoteLocation(), getSslOptions());
+            } catch (Exception ex) {
+                handleException(channel, ex);
+                return;
+            }
 
             sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
                 @Override
@@ -409,6 +412,11 @@ public class NettyTcpTransport implements Transport {
     //----- Handle connection events -----------------------------------------//
 
     protected class NettyTcpTransportHandler extends SimpleChannelInboundHandler<ByteBuf> {
+
+        @Override
+        public void exceptionCaught(ChannelHandlerContext context, Throwable cause) throws Exception {
+            handleException(context.channel(), cause);
+        }
 
         @Override
         public void channelActive(ChannelHandlerContext context) throws Exception {

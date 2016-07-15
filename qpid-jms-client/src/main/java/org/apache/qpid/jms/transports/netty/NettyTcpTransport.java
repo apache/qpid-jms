@@ -71,8 +71,7 @@ public class NettyTcpTransport implements Transport {
     private final AtomicBoolean connected = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
     private final CountDownLatch connectLatch = new CountDownLatch(1);
-    private IOException failureCause;
-    private Throwable pendingFailure;
+    private volatile IOException failureCause;
 
     /**
      * Create a new transport instance
@@ -118,7 +117,7 @@ public class NettyTcpTransport implements Transport {
         }
 
         final SslHandler sslHandler;
-        if(isSecure()) {
+        if (isSecure()) {
             try {
                 sslHandler = TransportSupport.createSslHandler(getRemoteLocation(), getSslOptions());
             } catch (Exception ex) {
@@ -144,9 +143,15 @@ public class NettyTcpTransport implements Transport {
         configureNetty(bootstrap, getTransportOptions());
 
         ChannelFuture future = bootstrap.connect(getRemoteHost(), getRemotePort());
+        future.addListener(new ChannelFutureListener() {
 
-        // Route all events through the channel handlers for consistent processing.
-        future.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+                if (!future.isSuccess()) {
+                    handleException(future.channel(), IOExceptionSupport.create(future.cause()));
+                }
+            }
+        });
 
         try {
             connectLatch.await();
@@ -174,8 +179,8 @@ public class NettyTcpTransport implements Transport {
 
                 @Override
                 public void run() {
-                    if (pendingFailure != null) {
-                        channel.pipeline().fireExceptionCaught(pendingFailure);
+                    if (failureCause != null) {
+                        channel.pipeline().fireExceptionCaught(failureCause);
                     }
                 }
             });
@@ -297,20 +302,20 @@ public class NettyTcpTransport implements Transport {
         LOG.trace("Exception on channel! Channel is {}", channel);
         if (connected.compareAndSet(true, false) && !closed.get()) {
             LOG.trace("Firing onTransportError listener");
-            if (pendingFailure != null) {
-                listener.onTransportError(pendingFailure);
+            if (failureCause != null) {
+                listener.onTransportError(failureCause);
             } else {
                 listener.onTransportError(cause);
             }
         } else {
             // Hold the first failure for later dispatch if connect succeeds.
             // This will then trigger disconnect using the first error reported.
-            if (pendingFailure == null) {
+            if (failureCause == null) {
                 LOG.trace("Holding error until connect succeeds: {}", cause.getMessage());
-                pendingFailure = cause;
+                failureCause = IOExceptionSupport.create(cause);
             }
 
-            connectionFailed(channel, IOExceptionSupport.create(pendingFailure));
+            connectionFailed(channel, failureCause);
         }
     }
 
@@ -367,22 +372,7 @@ public class NettyTcpTransport implements Transport {
     }
 
     private void configureChannel(final Channel channel, final SslHandler sslHandler) throws Exception {
-        channel.pipeline().addLast(new NettyDefaultHandler());
-
         if (isSecure()) {
-            sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
-                @Override
-                public void operationComplete(Future<Channel> future) throws Exception {
-                    if (future.isSuccess()) {
-                        LOG.trace("SSL Handshake has completed: {}", channel);
-                        handleConnected(channel);
-                    } else {
-                        LOG.trace("SSL Handshake has failed: {}", channel);
-                        handleException(channel, future.cause());
-                    }
-                }
-            });
-
             channel.pipeline().addLast(sslHandler);
         }
 
@@ -393,11 +383,34 @@ public class NettyTcpTransport implements Transport {
 
     //----- Handle connection errors -----------------------------------------//
 
-    private final class NettyDefaultHandler extends ChannelInboundHandlerAdapter {
+    protected abstract class NettyDefaultHandler<E> extends SimpleChannelInboundHandler<E> {
 
         @Override
         public void channelRegistered(ChannelHandlerContext context) throws Exception {
             channel = context.channel();
+        }
+
+        @Override
+        public void channelActive(ChannelHandlerContext context) throws Exception {
+            // In the Secure case we need to let the handshake complete before we
+            // trigger the connected event.
+            if (!isSecure()) {
+                handleConnected(context.channel());
+            } else {
+                SslHandler sslHandler = context.pipeline().get(SslHandler.class);
+                sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
+                    @Override
+                    public void operationComplete(Future<Channel> future) throws Exception {
+                        if (future.isSuccess()) {
+                            LOG.trace("SSL Handshake has completed: {}", channel);
+                            handleConnected(channel);
+                        } else {
+                            LOG.trace("SSL Handshake has failed: {}", channel);
+                            handleException(channel, future.cause());
+                        }
+                    }
+                });
+            }
         }
 
         @Override
@@ -413,21 +426,7 @@ public class NettyTcpTransport implements Transport {
 
     //----- Handle connection events -----------------------------------------//
 
-    protected class NettyTcpTransportHandler extends SimpleChannelInboundHandler<ByteBuf> {
-
-        @Override
-        public void exceptionCaught(ChannelHandlerContext context, Throwable cause) throws Exception {
-            handleException(context.channel(), cause);
-        }
-
-        @Override
-        public void channelActive(ChannelHandlerContext context) throws Exception {
-            // In the Secure case we need to let the handshake complete before we
-            // trigger the connected event.
-            if (!isSecure()) {
-                handleConnected(context.channel());
-            }
-        }
+    protected class NettyTcpTransportHandler extends NettyDefaultHandler<ByteBuf> {
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, ByteBuf buffer) throws Exception {

@@ -30,13 +30,14 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
@@ -108,7 +109,7 @@ public class NettyWsTransport extends NettyTcpTransport {
 
     //----- Handle connection events -----------------------------------------//
 
-    private class NettyWebSocketTransportHandler extends SimpleChannelInboundHandler<Object> {
+    private class NettyWebSocketTransportHandler extends NettyDefaultHandler<Object> {
 
         private final WebSocketClientHandshaker handshaker;
 
@@ -120,6 +121,8 @@ public class NettyWsTransport extends NettyTcpTransport {
         @Override
         public void channelActive(ChannelHandlerContext context) throws Exception {
             handshaker.handshake(context.channel());
+
+            super.channelActive(context);
         }
 
         @Override
@@ -152,15 +155,13 @@ public class NettyWsTransport extends NettyTcpTransport {
                 BinaryWebSocketFrame binaryFrame = (BinaryWebSocketFrame) frame;
                 LOG.trace("WebSocket Client received data: {} bytes", binaryFrame.content().readableBytes());
                 listener.onData(binaryFrame.content());
+            } else if (frame instanceof PingWebSocketFrame) {
+                LOG.trace("WebSocket Client received ping, response with pong");
+                ch.write(new PongWebSocketFrame(frame.content()));
             } else if (frame instanceof CloseWebSocketFrame) {
                 LOG.trace("WebSocket Client received closing");
                 ch.close();
             }
-        }
-
-        @Override
-        public void exceptionCaught(ChannelHandlerContext context, Throwable cause) throws Exception {
-            handleException(context.channel(), cause);
         }
     }
 }

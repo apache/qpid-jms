@@ -117,16 +117,27 @@ public class NettyTcpTransport implements Transport {
             throw new IllegalStateException("A transport listener must be set before connection attempts.");
         }
 
+        final SslHandler sslHandler;
+        if(isSecure()) {
+            try {
+                sslHandler = TransportSupport.createSslHandler(getRemoteLocation(), getSslOptions());
+            } catch (Exception ex) {
+                // TODO: can we stop it throwing Exception?
+                throw IOExceptionSupport.create(ex);
+            }
+        } else {
+            sslHandler = null;
+        }
+
         group = new NioEventLoopGroup(1);
 
         bootstrap = new Bootstrap();
         bootstrap.group(group);
         bootstrap.channel(NioSocketChannel.class);
         bootstrap.handler(new ChannelInitializer<Channel>() {
-
             @Override
             public void initChannel(Channel connectedChannel) throws Exception {
-                configureChannel(connectedChannel);
+                configureChannel(connectedChannel, sslHandler);
             }
         });
 
@@ -324,7 +335,7 @@ public class NettyTcpTransport implements Transport {
      * Called when the transport connection failed and an error should be returned.
      */
     private void connectionFailed(Channel failedChannel, IOException cause) {
-        failureCause = IOExceptionSupport.create(cause);
+        failureCause = cause;
         channel = failedChannel;
         connected.set(false);
         connectLatch.countDown();
@@ -355,19 +366,10 @@ public class NettyTcpTransport implements Transport {
         }
     }
 
-    private void configureChannel(final Channel channel) throws Exception {
+    private void configureChannel(final Channel channel, final SslHandler sslHandler) throws Exception {
         channel.pipeline().addLast(new NettyDefaultHandler());
 
         if (isSecure()) {
-
-            SslHandler sslHandler = null;
-            try {
-                sslHandler = TransportSupport.createSslHandler(getRemoteLocation(), getSslOptions());
-            } catch (Exception ex) {
-                handleException(channel, ex);
-                return;
-            }
-
             sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
                 @Override
                 public void operationComplete(Future<Channel> future) throws Exception {

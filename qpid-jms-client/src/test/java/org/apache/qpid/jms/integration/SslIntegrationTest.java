@@ -21,6 +21,7 @@
 package org.apache.qpid.jms.integration;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -187,6 +188,8 @@ public class SslIntegrationTest extends QpidJmsTestCase {
             } catch (JMSException jmse) {
                 // Expected
             }
+
+            assertNull("Attempt should have failed locally, peer should not have accepted any TCP connection", testPeer.getClientSocket());
         }
     }
 }

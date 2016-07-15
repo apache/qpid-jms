@@ -274,7 +274,7 @@ public class NettyTcpTransport implements Transport {
 
     }
 
-    protected ChannelInboundHandlerAdapter getChannelHandler() {
+    protected ChannelInboundHandlerAdapter createChannelHandler() {
         return new NettyTcpTransportHandler();
     }
 
@@ -388,7 +388,7 @@ public class NettyTcpTransport implements Transport {
 
         addAdditionalHandlers(channel.pipeline());
 
-        channel.pipeline().addLast(getChannelHandler());
+        channel.pipeline().addLast(createChannelHandler());
     }
 
     //----- Handle connection errors -----------------------------------------//

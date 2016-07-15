@@ -49,6 +49,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 public class NettyWsTransport extends NettyTcpTransport {
 
     private static final Logger LOG = LoggerFactory.getLogger(NettyWsTransport.class);
+    private static final String AMQP_SUB_PROTOCOL = "amqp";
 
     /**
      * Create a new transport instance
@@ -90,7 +91,7 @@ public class NettyWsTransport extends NettyTcpTransport {
     }
 
     @Override
-    protected ChannelInboundHandlerAdapter getChannelHandler() {
+    protected ChannelInboundHandlerAdapter createChannelHandler() {
         return new NettyWebSocketTransportHandler();
     }
 
@@ -113,7 +114,7 @@ public class NettyWsTransport extends NettyTcpTransport {
 
         public NettyWebSocketTransportHandler() {
             handshaker = WebSocketClientHandshakerFactory.newHandshaker(
-                getRemoteLocation(), WebSocketVersion.V13, "amqp", true, new DefaultHttpHeaders());
+                getRemoteLocation(), WebSocketVersion.V13, AMQP_SUB_PROTOCOL, true, new DefaultHttpHeaders());
         }
 
         @Override
@@ -128,7 +129,7 @@ public class NettyWsTransport extends NettyTcpTransport {
             Channel ch = ctx.channel();
             if (!handshaker.isHandshakeComplete()) {
                 handshaker.finishHandshake(ch, (FullHttpResponse) message);
-                LOG.info("WebSocket Client connected! {}", ctx.channel());
+                LOG.trace("WebSocket Client connected! {}", ctx.channel());
                 // Now trigger super processing as we are really connected.
                 NettyWsTransport.super.handleConnected(ch);
                 return;
@@ -149,7 +150,7 @@ public class NettyWsTransport extends NettyTcpTransport {
                 ctx.fireExceptionCaught(new IOException("Received invalid frame over WebSocket."));
             } else if (frame instanceof BinaryWebSocketFrame) {
                 BinaryWebSocketFrame binaryFrame = (BinaryWebSocketFrame) frame;
-                LOG.info("WebSocket Client received data: {} bytes", binaryFrame.content().readableBytes());
+                LOG.trace("WebSocket Client received data: {} bytes", binaryFrame.content().readableBytes());
                 listener.onData(binaryFrame.content());
             } else if (frame instanceof CloseWebSocketFrame) {
                 LOG.trace("WebSocket Client received closing");

@@ -381,7 +381,7 @@ public class NettyTcpTransport implements Transport {
         channel.pipeline().addLast(createChannelHandler());
     }
 
-    //----- Handle connection errors -----------------------------------------//
+    //----- Default implementation of Netty handler --------------------------//
 
     protected abstract class NettyDefaultHandler<E> extends SimpleChannelInboundHandler<E> {
 
@@ -424,7 +424,7 @@ public class NettyTcpTransport implements Transport {
         }
     }
 
-    //----- Handle connection events -----------------------------------------//
+    //----- Handle binary data over socket connections -----------------------//
 
     protected class NettyTcpTransportHandler extends NettyDefaultHandler<ByteBuf> {
 

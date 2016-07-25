@@ -127,6 +127,13 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
             source.setExpiryPolicy(TerminusExpiryPolicy.LINK_DETACH);
         }
 
+		if (this.parent.getConnection().getProvider().getDefaultExpiryPolicy() != null) {
+			source.setExpiryPolicy(this.parent.getConnection().getProvider().getDefaultExpiryPolicy());
+		}
+		if (this.parent.getConnection().getProvider().getDefaultTimeout() != null) {
+			source.setTimeout(this.parent.getConnection().getProvider().getDefaultTimeout());
+		}
+
         if (resourceInfo.isBrowser()) {
             source.setDistributionMode(COPY);
         }

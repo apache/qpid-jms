@@ -142,7 +142,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
                 transport.connect();
                 LOG.info("Connection established to untrusted test server: {}", serverLocation);
             } catch (Exception e) {
-                fail("Should have connected to the server: " + serverLocation);
+                fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
             }
 
             assertTrue(transport.isConnected());
@@ -172,7 +172,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
                 transport.connect();
                 LOG.info("Connection established to test server: {}", serverLocation);
             } catch (Exception e) {
-                fail("Should have connected to the server: " + serverLocation);
+                fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
             }
 
             assertTrue(transport.isConnected());
@@ -212,7 +212,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
                 transport.connect();
                 LOG.info("Connection established to test server: {}", serverLocation);
             } catch (Exception e) {
-                fail("Should have connected to the server: " + serverLocation);
+                fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
             }
 
             assertTrue(transport.isConnected());
@@ -272,7 +272,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
                     LOG.info("Connection failed to test server: {} as expected.", serverLocation);
                 } else {
                     LOG.error("Failed to connect to test server: " + serverLocation, e);
-                    fail("Should have connected to the server: " + serverLocation + ", but got: " + e);
+                    fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
                 }
             }
 

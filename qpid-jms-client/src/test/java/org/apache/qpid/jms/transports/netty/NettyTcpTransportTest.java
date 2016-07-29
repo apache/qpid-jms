@@ -149,7 +149,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 transport.connect();
                 LOG.info("Connected to server:{} as expected.", serverLocation);
             } catch (Exception e) {
-                fail("Should not have failed to connect to the server: " + serverLocation);
+                fail("Should not have failed to connect to the server at " + serverLocation + " but got exception: " + e);
             }
 
             assertTrue(transport.isConnected());
@@ -171,7 +171,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 transport.connect();
                 LOG.info("Connected to server:{} as expected.", serverLocation);
             } catch (Exception e) {
-                fail("Should have connected to the server: " + serverLocation);
+                fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
             }
 
             assertTrue(transport.isConnected());
@@ -208,7 +208,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                     LOG.info("Connected to server:{} as expected.", serverLocation);
                     transports.add(transport);
                 } catch (Exception e) {
-                    fail("Should have connected to the server: " + serverLocation);
+                    fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
                 }
             }
 
@@ -247,7 +247,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                     transport.send(sendBuffer.copy());
                     transports.add(transport);
                 } catch (Exception e) {
-                    fail("Should have connected to the server: " + serverLocation);
+                    fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
                 }
             }
 
@@ -283,7 +283,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 transport.connect();
                 LOG.info("Connected to server:{} as expected.", serverLocation);
             } catch (Exception e) {
-                fail("Should have connected to the server: " + serverLocation);
+                fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
             }
 
             assertTrue(transport.isConnected());
@@ -322,7 +322,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 transport.connect();
                 LOG.info("Connected to server:{} as expected.", serverLocation);
             } catch (Exception e) {
-                fail("Should have connected to the server: " + serverLocation);
+                fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
             }
 
             assertTrue(transport.isConnected());
@@ -350,7 +350,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 transport.connect();
                 LOG.info("Connected to server:{} as expected.", serverLocation);
             } catch (Exception e) {
-                fail("Should have connected to the server: " + serverLocation);
+                fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
             }
 
             assertTrue(transport.isConnected());
@@ -402,7 +402,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 transport.connect();
                 LOG.info("Connected to server:{} as expected.", serverLocation);
             } catch (Exception e) {
-                fail("Should have connected to the server: " + serverLocation);
+                fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
             }
 
             assertTrue(transport.isConnected());
@@ -446,7 +446,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 transport.connect();
                 LOG.info("Connected to server:{} as expected.", serverLocation);
             } catch (Exception e) {
-                fail("Should have connected to the server: " + serverLocation);
+                fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
             }
 
             assertTrue(transport.isConnected());

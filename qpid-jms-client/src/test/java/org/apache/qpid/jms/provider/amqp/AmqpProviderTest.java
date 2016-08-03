@@ -17,17 +17,23 @@
 package org.apache.qpid.jms.provider.amqp;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.jms.JMSException;
 
+import org.apache.qpid.jms.meta.JmsAbstractResourceId;
 import org.apache.qpid.jms.meta.JmsConnectionId;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
+import org.apache.qpid.jms.meta.JmsResource;
+import org.apache.qpid.jms.meta.JmsResourceId;
+import org.apache.qpid.jms.meta.JmsResourceVistor;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -184,5 +190,77 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         connectionInfo.setPassword(TEST_PASSWORD);
 
         return connectionInfo;
+    }
+
+    private enum Op {
+        CREATE, START, STOP, DESTROY
+    }
+
+    @Test(timeout = 20000)
+    public void testErrorDuringCreateResourceFailsRequest() throws IOException, JMSException {
+        doErrorDuringOperationFailsRequesTTestImpl(Op.CREATE);
+    }
+
+    @Test(timeout = 20000)
+    public void testErrorDuringStartResourceFailsRequest() throws IOException, JMSException {
+        doErrorDuringOperationFailsRequesTTestImpl(Op.START);
+    }
+
+    @Test(timeout = 20000)
+    public void testErrorDuringStopResourceFailsRequest() throws IOException, JMSException {
+        doErrorDuringOperationFailsRequesTTestImpl(Op.STOP);
+    }
+
+    @Test(timeout = 20000)
+    public void testErrorDuringDestroyResourceFailsRequest() throws IOException, JMSException {
+        doErrorDuringOperationFailsRequesTTestImpl(Op.DESTROY);
+    }
+
+    private void doErrorDuringOperationFailsRequesTTestImpl(Op operation) throws IOException, JMSException {
+        provider = new AmqpProvider(peerURI);
+
+        final AtomicBoolean errorThrown = new AtomicBoolean();
+        JmsResource resourceInfo = new JmsResource() {
+            @Override
+            public void visit(JmsResourceVistor visitor) {
+                errorThrown.set(true);
+                throw new Error("Deliberate error for testing");
+            }
+
+            @Override
+            public JmsResourceId getId() {
+                return new JmsAbstractResourceId() {
+                };
+            }
+        };
+
+        assertFalse("Error should not yet be thrown", errorThrown.get());
+        ProviderFuture request = new ProviderFuture();
+
+        switch(operation) {
+        case CREATE:
+            provider.create(resourceInfo, request);
+            break;
+        case START:
+            provider.start(resourceInfo, request);
+            break;
+        case STOP:
+            provider.stop(resourceInfo, request);
+            break;
+        case DESTROY:
+            provider.destroy(resourceInfo, request);
+            break;
+        default:
+            throw new IllegalArgumentException("Unexpected operation given");
+        }
+
+        try {
+            request.sync();
+            fail("Request should have failed");
+        } catch (IOException e) {
+            // Expected
+        }
+
+        assertTrue("Error should have been thrown", errorThrown.get());
     }
 }

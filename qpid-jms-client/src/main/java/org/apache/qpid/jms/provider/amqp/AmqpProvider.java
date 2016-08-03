@@ -225,15 +225,17 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
             } catch (IOException e) {
                 LOG.warn("Error caught while closing Provider: {}", e.getMessage() != null ? e.getMessage() : "<Unknown Error>");
             } finally {
-                if (transport != null) {
-                    try {
-                        transport.close();
-                    } catch (Exception e) {
-                        LOG.debug("Caught exception while closing down Transport: {}", e.getMessage());
+                try {
+                    if (transport != null) {
+                        try {
+                            transport.close();
+                        } catch (Exception e) {
+                            LOG.debug("Caught exception while closing down Transport: {}", e.getMessage());
+                        }
                     }
+                } finally {
+                    serializer.shutdown();
                 }
-
-                serializer.shutdown();
             }
         }
     }
@@ -338,8 +340,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     });
 
                     pumpToProtonTransport(request);
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable t) {
+                    request.onFailure(t);
                 }
             }
         });
@@ -365,8 +367,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     });
 
                     pumpToProtonTransport(request);
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable t) {
+                    request.onFailure(t);
                 }
             }
         });
@@ -392,8 +394,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     });
 
                     pumpToProtonTransport(request);
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable t) {
+                    request.onFailure(t);
                 }
             }
         });
@@ -448,8 +450,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     });
 
                     pumpToProtonTransport(request);
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable t) {
+                    request.onFailure(t);
                 }
             }
         });
@@ -480,8 +482,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     if (couldSend && envelope.isSendAsync()) {
                         request.onSuccess();
                     }
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable t) {
+                    request.onFailure(t);
                 }
             }
         });
@@ -500,8 +502,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     amqpSession.acknowledge(ackType);
                     pumpToProtonTransport(request);
                     request.onSuccess();
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable t) {
+                    request.onFailure(t);
                 }
             }
         });
@@ -536,8 +538,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         pumpToProtonTransport(request);
                         request.onSuccess();
                     }
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable t) {
+                    request.onFailure(t);
                 }
             }
         });
@@ -555,8 +557,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     AmqpSession session = connection.getSession(transactionInfo.getSessionId());
                     session.commit(transactionInfo, request);
                     pumpToProtonTransport(request);
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable t) {
+                    request.onFailure(t);
                 }
             }
         });
@@ -574,8 +576,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     AmqpSession session = connection.getSession(transactionInfo.getSessionId());
                     session.rollback(transactionInfo, request);
                     pumpToProtonTransport(request);
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable t) {
+                    request.onFailure(t);
                 }
             }
         });
@@ -594,8 +596,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     session.recover();
                     pumpToProtonTransport(request);
                     request.onSuccess();
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable t) {
+                    request.onFailure(t);
                 }
             }
         });
@@ -612,8 +614,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     checkClosed();
                     connection.unsubscribe(subscription, request);
                     pumpToProtonTransport(request);
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable t) {
+                    request.onFailure(t);
                 }
             }
         });
@@ -639,8 +641,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
                     consumer.pull(timeout, request);
                     pumpToProtonTransport(request);
-                } catch (Exception error) {
-                    request.onFailure(error);
+                } catch (Throwable t) {
+                    request.onFailure(t);
                 }
             }
         });
@@ -826,9 +828,12 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
             // We have to do this to pump SASL bytes in as SASL is not event driven yet.
             processSaslAuthentication();
-        } catch (Exception ex) {
-            LOG.warn("Caught Exception during update processing: {}", ex.getMessage(), ex);
-            fireProviderException(ex);
+        } catch (Throwable t) {
+            try {
+                LOG.warn("Caught problem during update processing: {}", t.getMessage(), t);
+            } finally {
+                fireProviderException(t);
+            }
         }
     }
 

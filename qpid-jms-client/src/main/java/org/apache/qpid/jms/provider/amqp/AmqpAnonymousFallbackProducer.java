@@ -191,8 +191,11 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
 
         @Override
         public void onFailure(Throwable result) {
-            // Ensure that cache get purged of any failed producers.
-            AmqpAnonymousFallbackProducer.this.producerCache.remove(producer.getResourceInfo().getDestination());
+            LOG.trace("Send phase of anonymous send failed: {} ", getProducerId());
+            if (!connection.isAnonymousProducerCache()) {
+                AnonymousCloseRequest close = new AnonymousCloseRequest(this);
+                producer.close(close);
+            }
             super.onFailure(result);
         }
 

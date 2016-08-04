@@ -210,14 +210,16 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
             "?failover.startupMaxReconnectAttempts=5" +
             "&failover.useReconnectBackOff=false");
 
-        Connection connection = factory.createConnection();
-
+        Connection connection = null;
         try {
+            connection = factory.createConnection();
             connection.start();
             fail("Should have stopped after five retries.");
         } catch (JMSException ex) {
         } finally {
-            connection.close();
+            if (connection != null) {
+                connection.close();
+            }
         }
 
         assertEquals(5, mockPeer.getContextStats().getProvidersCreated());
@@ -232,14 +234,16 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
             "?failover.maxReconnectAttempts=5" +
             "&failover.useReconnectBackOff=false");
 
-        Connection connection = factory.createConnection();
-
+        Connection connection = null;
         try {
+            connection = factory.createConnection();
             connection.start();
             fail("Should have stopped after five retries.");
         } catch (JMSException ex) {
         } finally {
-            connection.close();
+            if (connection != null) {
+                connection.close();
+            }
         }
 
         assertEquals(5, mockPeer.getContextStats().getProvidersCreated());
@@ -256,14 +260,16 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
             "&failover.reconnectDelay=10" +
             "&failover.useReconnectBackOff=true");
 
-        Connection connection = factory.createConnection();
-
+        Connection connection = null;
         try {
+            connection = factory.createConnection();
             connection.start();
             fail("Should have stopped after five retries.");
         } catch (JMSException ex) {
         } finally {
-            connection.close();
+            if (connection != null) {
+                connection.close();
+            }
         }
 
         assertEquals(5, mockPeer.getContextStats().getProvidersCreated());

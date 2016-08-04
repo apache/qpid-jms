@@ -328,6 +328,19 @@ public class AmqpFixedProducer extends AmqpProducer {
         }
 
         sent.clear();
+
+        for (InFlightSend blockedSend : blocked) {
+            try {
+                AsyncResult request = blockedSend.request;
+                if (request != null && !request.isComplete()) {
+                    request.onFailure(ex);
+                }
+            } catch (Exception e) {
+                LOG.debug("Caught exception when failing blocked send during remote producer closure: {}", blockedSend, e);
+            }
+        }
+
+        blocked.clear();
     }
 
     //----- Class used to manage held sends ----------------------------------//

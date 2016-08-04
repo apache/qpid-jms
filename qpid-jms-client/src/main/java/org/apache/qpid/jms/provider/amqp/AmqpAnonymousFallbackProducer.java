@@ -72,6 +72,11 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
     public boolean send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws IOException, JMSException {
         LOG.trace("Started send chain for anonymous producer: {}", getProducerId());
 
+        // Force sends marked as asynchronous to be sent synchronous so that the temporary
+        // producer instance can handle failures and perform necessary completion work on
+        // the send.
+        envelope.setSendAsync(false);
+
         AmqpProducer producer = null;
         if (connection.isAnonymousProducerCache()) {
             producer = producerCache.get(envelope.getDestination());

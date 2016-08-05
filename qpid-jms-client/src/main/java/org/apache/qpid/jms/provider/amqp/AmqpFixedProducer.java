@@ -306,23 +306,18 @@ public class AmqpFixedProducer extends AmqpProducer {
     }
 
     @Override
-    public void remotelyClosed(AmqpProvider provider) {
-        super.remotelyClosed(provider);
-
-        Exception ex = null;
-        if (!sent.isEmpty()) {
+    public void handleResourceClosure(AmqpProvider provider, Exception error) {
+        if (error == null) {
             // TODO: create/use a more specific/appropriate exception type?
-            ex = new JMSException("Producer closed remotely before message transfer result was notified");
+            error = new JMSException("Producer closed remotely before message transfer result was notified");
         }
-
-        ex = AmqpSupport.convertToException(getEndpoint(), getEndpoint().getRemoteCondition(), ex);
 
         for (Delivery delivery : sent) {
             try {
                 AsyncResult request = (AsyncResult) delivery.getContext();
 
                 if (request != null && !request.isComplete()) {
-                    request.onFailure(ex);
+                    request.onFailure(error);
                 }
 
                 delivery.settle();
@@ -338,7 +333,7 @@ public class AmqpFixedProducer extends AmqpProducer {
             try {
                 AsyncResult request = blockedSend.request;
                 if (request != null && !request.isComplete()) {
-                    request.onFailure(ex);
+                    request.onFailure(error);
                 }
             } catch (Exception e) {
                 LOG.debug("Caught exception when failing blocked send during remote producer closure: {}", blockedSend, e);

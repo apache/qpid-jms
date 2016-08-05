@@ -47,6 +47,7 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
     private final AmqpTransactionContext txContext;
 
     private final Map<JmsConsumerId, AmqpConsumer> consumers = new HashMap<JmsConsumerId, AmqpConsumer>();
+    private final Map<JmsProducerId, AmqpProducer> producers = new HashMap<JmsProducerId, AmqpProducer>();
 
     public AmqpSession(AmqpConnection connection, JmsSessionInfo info, Session session) {
         super(info, session, connection);
@@ -202,6 +203,9 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
         if (resource instanceof AmqpConsumer) {
             AmqpConsumer consumer = (AmqpConsumer) resource;
             consumers.put(consumer.getConsumerId(), consumer);
+        } else if (resource instanceof AmqpProducer) {
+            AmqpProducer producer = (AmqpProducer) resource;
+            producers.put(producer.getProducerId(), producer);
         } else {
             connection.addChildResource(resource);
         }
@@ -213,8 +217,22 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
         if (resource instanceof AmqpConsumer) {
             AmqpConsumer consumer = (AmqpConsumer) resource;
             consumers.remove(consumer.getConsumerId());
+        } else if (resource instanceof AmqpProducer) {
+            AmqpProducer producer = (AmqpProducer) resource;
+            producers.remove(producer.getProducerId());
         } else {
             connection.removeChildResource(resource);
+        }
+    }
+
+    @Override
+    public void handleResourceClosure(AmqpProvider provider, Exception error) {
+        for (AmqpConsumer consumer : consumers.values()) {
+            consumer.handleResourceClosure(provider, error);
+        }
+
+        for (AmqpProducer producer : producers.values()) {
+            producer.handleResourceClosure(provider, error);
         }
     }
 

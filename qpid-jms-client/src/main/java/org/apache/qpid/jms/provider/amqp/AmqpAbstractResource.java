@@ -158,11 +158,17 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
             endpoint.close();
         }
 
+        handleResourceClosure(provider, error);
+
         if (getResourceInfo() instanceof JmsConnectionInfo) {
             provider.fireProviderException(error);
         } else {
             provider.fireResourceClosed(getResourceInfo(), error);
         }
+    }
+
+    public void handleResourceClosure(AmqpProvider provider, Exception error) {
+        // Nothing do be done here, subclasses can override as needed.
     }
 
     /**

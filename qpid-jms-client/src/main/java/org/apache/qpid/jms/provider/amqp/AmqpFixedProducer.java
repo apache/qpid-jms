@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 
+import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsSendTimedOutException;
@@ -86,6 +87,10 @@ public class AmqpFixedProducer extends AmqpProducer {
 
     @Override
     public boolean send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws IOException, JMSException {
+        if (isClosed()) {
+            request.onFailure(new IllegalStateException("The MessageProducer is closed"));
+        }
+
         if (getEndpoint().getCredit() <= 0) {
             LOG.trace("Holding Message send until credit is available.");
             // Once a message goes into a held mode we no longer can send it async, so

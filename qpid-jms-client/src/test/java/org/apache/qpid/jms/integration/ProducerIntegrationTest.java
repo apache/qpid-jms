@@ -50,6 +50,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
+import javax.jms.ResourceAllocationException;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
@@ -1007,8 +1008,6 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 20000)
     public void testRemotelyCloseProducerWithSendWaitingForCredit() throws Exception {
-        final String BREAD_CRUMB = "ErrorMessageBreadCrumb";
-
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
 
@@ -1018,25 +1017,22 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             // Expect producer creation, don't give it credit.
             testPeer.expectSenderAttachWithoutGrantingCredit();
 
-            String text = "myMessage";
-
             // Producer has no credit so the send should block waiting for it, then fail when the remote close occurs
-            testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(true, true, AmqpError.RESOURCE_LIMIT_EXCEEDED, BREAD_CRUMB, 50);
+            testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(true, true, AmqpError.RESOURCE_LIMIT_EXCEEDED, "Producer closed", 50);
             testPeer.expectClose();
 
             Queue queue = session.createQueue("myQueue");
             final MessageProducer producer = session.createProducer(queue);
 
-            Message message = session.createTextMessage(text);
+            Message message = session.createTextMessage("myMessage");
 
             try {
                 producer.send(message);
-                fail("Expected exception to be thrown");
-            } catch (JMSException jmse) {
-                // Expected
-                String exMsg = jmse.getMessage();
-                assertNotNull("Expected exception to have a message", exMsg);
-                assertTrue("Expected breadcrumb not present in message, instead got: " + exMsg, exMsg.contains(BREAD_CRUMB));
+                fail("Expected exception to be thrown due to close of producer");
+            } catch (ResourceAllocationException rae) {
+                // Expected if remote close beat the send to the provider
+            } catch (IllegalStateException ise) {
+                // Can happen if send fires before remote close if processed.
             }
 
             connection.close();

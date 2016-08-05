@@ -1015,13 +1015,13 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            // Expect producer creation, give it credit.
+            // Expect producer creation, don't give it credit.
             testPeer.expectSenderAttachWithoutGrantingCredit();
 
             String text = "myMessage";
 
-            // Producer has no credit so the send should block waiting for it.
-            testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(true, true, AmqpError.RESOURCE_LIMIT_EXCEEDED, BREAD_CRUMB);
+            // Producer has no credit so the send should block waiting for it, then fail when the remote close occurs
+            testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(true, true, AmqpError.RESOURCE_LIMIT_EXCEEDED, BREAD_CRUMB, 50);
             testPeer.expectClose();
 
             Queue queue = session.createQueue("myQueue");
@@ -1034,8 +1034,9 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                 fail("Expected exception to be thrown");
             } catch (JMSException jmse) {
                 // Expected
-                assertNotNull("Expected exception to have a message", jmse.getMessage());
-                assertTrue("Expected breadcrumb to be present in message", jmse.getMessage().contains(BREAD_CRUMB));
+                String exMsg = jmse.getMessage();
+                assertNotNull("Expected exception to have a message", exMsg);
+                assertTrue("Expected breadcrumb not present in message, instead got: " + exMsg, exMsg.contains(BREAD_CRUMB));
             }
 
             connection.close();

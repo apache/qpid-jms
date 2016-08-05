@@ -1851,7 +1851,7 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     public void remotelyEndLastOpenedSession(boolean expectEndResponse, long delayBeforeSend) {
-        remotelyEndLastOpenedSession(expectEndResponse, 0, null, null);
+        remotelyEndLastOpenedSession(expectEndResponse, delayBeforeSend, null, null);
     }
 
     public void remotelyEndLastOpenedSession(boolean expectEndResponse, final long delayBeforeSend, Symbol errorType, String errorMessage) {
@@ -1945,6 +1945,10 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     public void remotelyDetachLastOpenedLinkOnLastOpenedSession(boolean expectDetachResponse, boolean closed, Symbol errorType, String errorMessage) {
+        remotelyDetachLastOpenedLinkOnLastOpenedSession(expectDetachResponse, closed, errorType, errorMessage, 0);
+    }
+
+    public void remotelyDetachLastOpenedLinkOnLastOpenedSession(boolean expectDetachResponse, boolean closed, Symbol errorType, String errorMessage, final long delayBeforeSend) {
         synchronized (_handlersLock) {
             CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
 
@@ -1965,6 +1969,15 @@ public class TestAmqpPeer implements AutoCloseable
                 public void setValues() {
                     frameSender.setChannel(_lastInitiatedChannel);
                     detachFrame.setHandle(_lastInitiatedLinkHandle);
+
+                    //Insert a delay if requested
+                    if (delayBeforeSend > 0) {
+                        try {
+                            Thread.sleep(delayBeforeSend);
+                        } catch (InterruptedException e) {
+                            // Ignore
+                        }
+                    }
                 }
             });
             comp.add(frameSender);

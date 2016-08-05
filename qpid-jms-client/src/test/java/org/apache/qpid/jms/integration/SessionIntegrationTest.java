@@ -1646,7 +1646,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectSenderAttachWithoutGrantingCredit();
 
             // Producer has no credit so the send should block waiting for it.
-            testPeer.remotelyEndLastOpenedSession(true, 0, AmqpError.RESOURCE_DELETED, BREAD_CRUMB);
+            testPeer.remotelyEndLastOpenedSession(true, 50, AmqpError.RESOURCE_DELETED, BREAD_CRUMB);
             testPeer.expectClose();
 
             Queue queue = session.createQueue("myQueue");

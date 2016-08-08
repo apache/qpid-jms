@@ -37,6 +37,8 @@ import javax.jms.TopicSubscriber;
 
 import org.apache.activemq.broker.jmx.BrokerViewMBean;
 import org.apache.activemq.broker.jmx.TopicViewMBean;
+import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.policy.JmsDefaultPresettlePolicy;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
 import org.junit.Test;
@@ -67,6 +69,9 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
         connection.setClientID("DURABLE-AMQP");
         connection.start();
 
+        assertEquals(0, brokerService.getAdminView().getDurableTopicSubscribers().length);
+        assertEquals(0, brokerService.getAdminView().getInactiveDurableTopicSubscribers().length);
+
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
         Topic topic = session.createTopic(name.getMethodName());
@@ -82,6 +87,8 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
 
         assertEquals(0, brokerService.getAdminView().getDurableTopicSubscribers().length);
         assertEquals(1, brokerService.getAdminView().getInactiveDurableTopicSubscribers().length);
+
+        session.unsubscribe(getSubscriptionName());
     }
 
     @Test(timeout = 60000)
@@ -89,6 +96,9 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
         connection = createAmqpConnection();
         connection.setClientID("DURABLE-AMQP");
         connection.start();
+
+        assertEquals(0, brokerService.getAdminView().getDurableTopicSubscribers().length);
+        assertEquals(0, brokerService.getAdminView().getInactiveDurableTopicSubscribers().length);
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
@@ -110,6 +120,9 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
         connection.setClientID("DURABLE-AMQP");
         connection.start();
 
+        assertEquals(0, brokerService.getAdminView().getDurableTopicSubscribers().length);
+        assertEquals(0, brokerService.getAdminView().getInactiveDurableTopicSubscribers().length);
+
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
 
@@ -129,6 +142,9 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
         connection = createAmqpConnection();
         connection.setClientID("DURABLE-AMQP");
         connection.start();
+
+        assertEquals(0, brokerService.getAdminView().getDurableTopicSubscribers().length);
+        assertEquals(0, brokerService.getAdminView().getInactiveDurableTopicSubscribers().length);
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
@@ -166,6 +182,9 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
         connection.setClientID("DURABLE-AMQP");
         connection.start();
 
+        assertEquals(0, brokerService.getAdminView().getDurableTopicSubscribers().length);
+        assertEquals(0, brokerService.getAdminView().getInactiveDurableTopicSubscribers().length);
+
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         assertNotNull(session);
         Topic topic = session.createTopic(name.getMethodName());
@@ -186,6 +205,10 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
 
         assertEquals(1, brokerService.getAdminView().getDurableTopicSubscribers().length);
         assertEquals(0, brokerService.getAdminView().getInactiveDurableTopicSubscribers().length);
+
+        subscriber.close();
+
+        session.unsubscribe(getSubscriptionName());
     }
 
     @Test(timeout = 60000)
@@ -193,6 +216,9 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
         connection = createAmqpConnection();
         connection.setClientID("DURABLE-AMQP");
         connection.start();
+
+        assertEquals(0, brokerService.getAdminView().getDurableTopicSubscribers().length);
+        assertEquals(0, brokerService.getAdminView().getInactiveDurableTopicSubscribers().length);
 
         final int MSG_COUNT = 5;
 
@@ -234,6 +260,10 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
         });
 
         assertTrue("Only recieved messages: " + messages.getCount(), messages.await(30, TimeUnit.SECONDS));
+
+        subscriber.close();
+
+        session.unsubscribe(getSubscriptionName());
     }
 
     @Test
@@ -241,6 +271,12 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
         connection = createAmqpConnection();
         connection.setClientID("DURABLE-AMQP");
         connection.start();
+
+        JmsConnection jmsConnection = (JmsConnection) connection;
+        ((JmsDefaultPresettlePolicy) jmsConnection.getPresettlePolicy()).setPresettleAll(true);
+
+        assertEquals(0, brokerService.getAdminView().getDurableTopicSubscribers().length);
+        assertEquals(0, brokerService.getAdminView().getInactiveDurableTopicSubscribers().length);
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Topic topic = session.createTopic(getDestinationName());
@@ -264,7 +300,7 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
 
         // Durable noLocal=true subscription should not receive them
         {
-            Message message = durableSubscriber.receive(2000);
+            Message message = durableSubscriber.receive(250);
             assertNull(message);
         }
 
@@ -303,7 +339,7 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
         // Durable noLocal=false subscription should not receive them as the subscriptions should
         // have been removed and recreated to update the noLocal flag.
         {
-            Message message = durableSubscriber.receive(2000);
+            Message message = durableSubscriber.receive(250);
             assertNull(message);
         }
 
@@ -315,6 +351,10 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
             Message message = durableSubscriber.receive(5000);
             assertNotNull("Should get local messages now", message);
         }
+
+        durableSubscriber.close();
+
+        session.unsubscribe(getSubscriptionName());
     }
 
     private void publishToTopic(Session session, Topic destination) throws Exception {

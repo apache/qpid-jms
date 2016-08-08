@@ -463,7 +463,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectSenderAttachWithoutGrantingCredit();
 
             // Producer has no credit so the send should block waiting for it.
-            testPeer.remotelyCloseConnection(true, AmqpError.RESOURCE_LIMIT_EXCEEDED, BREAD_CRUMB);
+            testPeer.remotelyCloseConnection(true, AmqpError.RESOURCE_LIMIT_EXCEEDED, BREAD_CRUMB, 50);
 
             Queue queue = session.createQueue("myQueue");
             final MessageProducer producer = session.createProducer(queue);

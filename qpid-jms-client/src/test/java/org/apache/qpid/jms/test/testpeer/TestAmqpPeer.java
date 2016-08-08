@@ -610,7 +610,7 @@ public class TestAmqpPeer implements AutoCloseable
         expectSaslAnonymousConnect(null, null, null, serverProperties);
 
         // Now generate the Close frame with the supplied error
-        final FrameSender closeSender = createCloseFrameSender(errorType, errorMessage, errorInfo);
+        final FrameSender closeSender = createCloseFrameSender(errorType, errorMessage, errorInfo, 0);
 
         // Update the handler to send the Close frame after the Open frame.
         CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
@@ -1896,20 +1896,28 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     public void remotelyCloseConnection(boolean expectCloseResponse) {
-        remotelyCloseConnection(expectCloseResponse, null, null, null);
+        remotelyCloseConnection(expectCloseResponse, null, null, null, 0);
     }
 
     public void remotelyCloseConnection(boolean expectCloseResponse, Symbol errorType, String errorMessage) {
-        remotelyCloseConnection(expectCloseResponse, errorType, errorMessage, null);
+        remotelyCloseConnection(expectCloseResponse, errorType, errorMessage, null, 0);
+    }
+
+    public void remotelyCloseConnection(boolean expectCloseResponse, Symbol errorType, String errorMessage, long delayBeforeSend) {
+        remotelyCloseConnection(expectCloseResponse, errorType, errorMessage, null, delayBeforeSend);
     }
 
     public void remotelyCloseConnection(boolean expectCloseResponse, Symbol errorType, String errorMessage, Map<Symbol, Object> info) {
+        remotelyCloseConnection(expectCloseResponse, errorType, errorMessage, info, 0);
+    }
+
+    public void remotelyCloseConnection(boolean expectCloseResponse, Symbol errorType, String errorMessage, Map<Symbol, Object> info, long delayBeforeSend) {
         synchronized (_handlersLock) {
             // Prepare a composite to insert this action at the end of the handler sequence
             CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
 
             // Now generate the Close
-            final FrameSender closeSender = createCloseFrameSender(errorType, errorMessage, info);
+            final FrameSender closeSender = createCloseFrameSender(errorType, errorMessage, info, delayBeforeSend);
 
             comp.add(closeSender);
 
@@ -1921,7 +1929,7 @@ public class TestAmqpPeer implements AutoCloseable
         }
     }
 
-    private FrameSender createCloseFrameSender(Symbol errorType, String errorMessage, Map<Symbol, Object> info) {
+    private FrameSender createCloseFrameSender(Symbol errorType, String errorMessage, Map<Symbol, Object> info, final long delayBeforeSend) {
         final CloseFrame closeFrame = new CloseFrame();
         if (errorType != null) {
             org.apache.qpid.jms.test.testpeer.describedtypes.Error closeError = new org.apache.qpid.jms.test.testpeer.describedtypes.Error();
@@ -1932,11 +1940,27 @@ public class TestAmqpPeer implements AutoCloseable
             closeFrame.setError(closeError);
         }
 
-        return new FrameSender(this, FrameType.AMQP, CONNECTION_CHANNEL, closeFrame, null);
+        final FrameSender closeSender = new FrameSender(this, FrameType.AMQP, CONNECTION_CHANNEL, closeFrame, null);
+        closeSender.setValueProvider(new ValueProvider() {
+
+            @Override
+            public void setValues() {
+                //Insert a delay if requested
+                if (delayBeforeSend > 0) {
+                    try {
+                        Thread.sleep(delayBeforeSend);
+                    } catch (InterruptedException e) {
+                        // Ignore
+                    }
+                }
+            }
+        });
+
+        return closeSender;
     }
 
     void sendConnectionCloseImmediately(Symbol errorType, String errorMessage) {
-        FrameSender closeSender = createCloseFrameSender(errorType, errorMessage, null);
+        FrameSender closeSender = createCloseFrameSender(errorType, errorMessage, null, 0);
         closeSender.run();
     }
 

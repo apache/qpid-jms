@@ -39,7 +39,6 @@ import org.apache.activemq.broker.jmx.BrokerViewMBean;
 import org.apache.activemq.broker.jmx.TopicViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -237,7 +236,6 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
         assertTrue("Only recieved messages: " + messages.getCount(), messages.await(30, TimeUnit.SECONDS));
     }
 
-    @Ignore("Fails currently as ActiveMQ doesn't update the recovered subscription")
     @Test
     public void testDurableResubscribeWithNewNoLocalValue() throws Exception {
         connection = createAmqpConnection();

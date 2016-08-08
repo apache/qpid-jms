@@ -175,6 +175,8 @@ public class QpidJmsTestSupport {
         brokerService.setUseJmx(true);
         brokerService.getManagementContext().setCreateConnector(false);
         brokerService.setDataDirectory("target/" + name);
+        brokerService.setKeepDurableSubsActive(false);
+
         if (isPersistent()) {
             KahaDBStore kaha = new KahaDBStore();
             kaha.setDirectory(new File(KAHADB_DIRECTORY + "/" + name));

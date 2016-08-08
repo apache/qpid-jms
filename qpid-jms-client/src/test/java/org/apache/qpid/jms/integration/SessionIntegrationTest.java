@@ -1585,7 +1585,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             // Create a producer, then remotely end the session afterwards.
             testPeer.expectSenderAttach();
-            testPeer.remotelyEndLastOpenedSession(true, 0, AmqpError.RESOURCE_DELETED, BREAD_CRUMB);
+            testPeer.remotelyEndLastOpenedSession(true, 50, AmqpError.RESOURCE_DELETED, BREAD_CRUMB);
 
             Queue queue = session.createQueue("myQueue");
             final MessageProducer producer = session.createProducer(queue);

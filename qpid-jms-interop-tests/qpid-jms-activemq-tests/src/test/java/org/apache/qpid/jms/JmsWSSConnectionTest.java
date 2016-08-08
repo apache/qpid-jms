@@ -32,7 +32,6 @@ import org.apache.qpid.jms.transports.TransportSslOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +39,6 @@ import org.slf4j.LoggerFactory;
 /**
  * Test connections can be established to remote peers via secure WebSockets
  */
-@Ignore("Until a release with WS support for AMQP is ready")
 public class JmsWSSConnectionTest {
 
     protected static final Logger LOG = LoggerFactory.getLogger(JmsWSSConnectionTest.class);

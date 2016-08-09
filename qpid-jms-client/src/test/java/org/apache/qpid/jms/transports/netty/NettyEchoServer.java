@@ -16,8 +16,12 @@
  */
 package org.apache.qpid.jms.transports.netty;
 
+import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -33,7 +37,10 @@ import org.slf4j.LoggerFactory;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -41,9 +48,13 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
-import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
@@ -67,6 +78,7 @@ public class NettyEchoServer implements AutoCloseable {
     private int serverPort;
     private final boolean needClientAuth;
     private final boolean webSocketServer;
+    private String webSocketPath = WEBSOCKET_PATH;
     private volatile SslHandler sslHandler;
 
     private final AtomicBoolean started = new AtomicBoolean();
@@ -83,6 +95,14 @@ public class NettyEchoServer implements AutoCloseable {
         this.options = options;
         this.needClientAuth = needClientAuth;
         this.webSocketServer = webSocketServer;
+    }
+
+    public String getWebSocketPath() {
+        return webSocketPath;
+    }
+
+    public void setWebSocketPath(String webSocketPath) {
+        this.webSocketPath = webSocketPath;
     }
 
     public void start() throws Exception {
@@ -115,7 +135,7 @@ public class NettyEchoServer implements AutoCloseable {
                     if (webSocketServer) {
                         ch.pipeline().addLast(new HttpServerCodec());
                         ch.pipeline().addLast(new HttpObjectAggregator(65536));
-                        ch.pipeline().addLast(new WebSocketServerProtocolHandler(WEBSOCKET_PATH, "amqp", true));
+                        ch.pipeline().addLast(new WebSocketServerProtocolHandler(getWebSocketPath(), "amqp", true));
                     }
 
                     ch.pipeline().addLast(new EchoServerHandler());
@@ -197,10 +217,17 @@ public class NettyEchoServer implements AutoCloseable {
         @Override
         public void channelRead0(ChannelHandlerContext ctx, Object msg) {
             LOG.trace("Channel read: {}", msg);
-            if (webSocketServer && msg instanceof BinaryWebSocketFrame) {
-                BinaryWebSocketFrame frame = (BinaryWebSocketFrame) msg;
-                ctx.write(frame.copy());
-                return;
+            if (webSocketServer) {
+                if (msg instanceof WebSocketFrame) {
+                    WebSocketFrame frame = (WebSocketFrame) msg;
+                    ctx.write(frame.copy());
+                    return;
+                } else if (msg instanceof FullHttpRequest) {
+                    // Reject anything not on the WebSocket path
+                    FullHttpRequest request = (FullHttpRequest) msg;
+                    sendHttpResponse(ctx, request, new DefaultFullHttpResponse(HTTP_1_1, BAD_REQUEST));
+                    return;
+                }
             } else if (msg instanceof ByteBuf) {
                 ctx.write(((ByteBuf) msg).copy());
                 return;
@@ -224,7 +251,23 @@ public class NettyEchoServer implements AutoCloseable {
         }
     }
 
-    SslHandler getSslHandler() {
+    private static void sendHttpResponse(ChannelHandlerContext ctx, FullHttpRequest request, FullHttpResponse response) {
+        // Generate an error page if response getStatus code is not OK (200).
+        if (response.getStatus().code() != 200) {
+            ByteBuf buf = Unpooled.copiedBuffer(response.getStatus().toString(), StandardCharsets.UTF_8);
+            response.content().writeBytes(buf);
+            buf.release();
+            HttpHeaders.setContentLength(response, response.content().readableBytes());
+        }
+
+        // Send the response and close the connection if necessary.
+        ChannelFuture f = ctx.channel().writeAndFlush(response);
+        if (!HttpHeaders.isKeepAlive(request) || response.getStatus().code() != 200) {
+            f.addListener(ChannelFutureListener.CLOSE);
+        }
+    }
+
+    protected SslHandler getSslHandler() {
         return sslHandler;
     }
 }

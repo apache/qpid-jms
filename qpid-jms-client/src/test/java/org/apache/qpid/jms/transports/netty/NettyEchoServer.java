@@ -49,18 +49,12 @@ public class NettyEchoServer extends NettyServer {
         return new EchoServerHandler();
     }
 
-    private class EchoServerHandler extends SimpleChannelInboundHandler<Object>  {
+    private class EchoServerHandler extends SimpleChannelInboundHandler<ByteBuf>  {
 
         @Override
-        public void channelRead0(ChannelHandlerContext ctx, Object msg) {
+        public void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) {
             LOG.trace("Channel read: {}", msg);
-            if (msg instanceof ByteBuf) {
-                ctx.write(((ByteBuf) msg).copy());
-                return;
-            }
-
-            String message = "unsupported frame type: " + msg.getClass().getName();
-            throw new UnsupportedOperationException(message);
+            ctx.write(msg.copy());
         }
     }
 }

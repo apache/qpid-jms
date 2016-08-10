@@ -21,6 +21,7 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -72,7 +73,7 @@ import io.netty.util.concurrent.GenericFutureListener;
  */
 public abstract class NettyServer implements AutoCloseable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(NettyEchoServer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NettyServer.class);
 
     static final int PORT = Integer.parseInt(System.getProperty("port", "8007"));
     static final String WEBSOCKET_PATH = "/";
@@ -103,6 +104,10 @@ public abstract class NettyServer implements AutoCloseable {
         this.webSocketServer = webSocketServer;
     }
 
+    public boolean isSecureServer() {
+        return options instanceof TransportSslOptions;
+    }
+
     public boolean isWebSocketServer() {
         return webSocketServer;
     }
@@ -113,6 +118,39 @@ public abstract class NettyServer implements AutoCloseable {
 
     public void setWebSocketPath(String webSocketPath) {
         this.webSocketPath = webSocketPath;
+    }
+
+    protected URI getConnectionURI() throws Exception {
+        if (!started.get()) {
+            throw new IllegalStateException("Cannot get URI of non-started server");
+        }
+
+        int port = getServerPort();
+
+        String scheme;
+        String path;
+
+        if (isWebSocketServer()) {
+            if (isSecureServer()) {
+                scheme = "amqpwss";
+            } else {
+                scheme = "amqpws";
+            }
+        } else {
+            if (isSecureServer()) {
+                scheme = "amqps";
+            } else {
+                scheme = "amqp";
+            }
+        }
+
+        if (isWebSocketServer()) {
+            path = getWebSocketPath();
+        } else {
+            path = null;
+        }
+
+        return new URI(scheme, null, "localhost", port, path, null, null);
     }
 
     public void start() throws Exception {
@@ -206,6 +244,7 @@ public abstract class NettyServer implements AutoCloseable {
 
         @Override
         public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+            LOG.trace("NettyServerHandler: Channel write: {}", msg);
             if (isWebSocketServer() && msg instanceof ByteBuf) {
                 BinaryWebSocketFrame frame = new BinaryWebSocketFrame((ByteBuf) msg);
                 ctx.write(frame, promise);

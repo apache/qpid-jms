@@ -18,7 +18,9 @@ package org.apache.qpid.jms.transports.netty;
 
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.NETWORK_HOST;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.OPEN_HOSTNAME;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.PATH;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.PORT;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SCHEME;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -215,6 +217,83 @@ public class NettyTcpToMockServerTest extends QpidJmsTestCase {
         }
     }
 
+    @Test(timeout = 60 * 1000)
+    public void testConnectToWSServerWhenRedirectedWithNewPath() throws Exception {
+        try (NettySimpleAmqpServer primary = createWSServer(createServerOptions());
+             NettySimpleAmqpServer redirect = createWSServer(createServerOptions())) {
+
+            final CountDownLatch redirectComplete = new CountDownLatch(1);
+
+            primary.setWebSocketPath("/primary");
+            redirect.setWebSocketPath("/redirect");
+
+            primary.setConnectionIntercepter(new ConnectionIntercepter() {
+
+                @Override
+                public ErrorCondition interceptConnectionAttempt(org.apache.qpid.proton.engine.Connection connection) {
+                    ErrorCondition redirection = new ErrorCondition(ConnectionError.REDIRECT,
+                        "Server redirecting connection.");
+
+                    URI serverURI = null;
+                    try {
+                        serverURI = redirect.getConnectionURI();
+                    } catch (Exception e) {
+                        new RuntimeException();
+                    }
+
+                    // Create standard redirection condition
+                    Map<Symbol, Object> infoMap = new HashMap<Symbol, Object> ();
+                    infoMap.put(OPEN_HOSTNAME, serverURI.getHost());
+                    infoMap.put(NETWORK_HOST, serverURI.getHost());
+                    infoMap.put(PORT, serverURI.getPort());
+                    infoMap.put(PATH, redirect.getWebSocketPath());
+                    infoMap.put(SCHEME, redirect.isSecureServer() ? "wss" : "ws");
+                    redirection.setInfo(infoMap);
+
+                    return redirection;
+                }
+            });
+
+            redirect.setConnectionIntercepter(new ConnectionIntercepter() {
+
+                @Override
+                public ErrorCondition interceptConnectionAttempt(org.apache.qpid.proton.engine.Connection connection) {
+                    redirectComplete.countDown();
+                    return null;
+                }
+            });
+
+            primary.start();
+            redirect.start();
+
+            JmsConnectionFactory cf = new JmsConnectionFactory(createFailoverURI(primary));
+            Connection connection = null;
+            try {
+                connection = cf.createConnection();
+                connection.start();
+            } catch (Exception ex) {
+                LOG.error("Caught exception while attempting to connect");
+                connection.close();
+                fail("Should be able to connect to the redirect server");
+            }
+
+            primary.stop();
+
+            try {
+                // We should be connected to the redirect server so this should
+                // work even though the initial server is shutdown.
+                connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            } catch (Exception ex) {
+                LOG.error("Caught exception while attempting to connect");
+                fail("Should be able to connect to the redirect server");
+            } finally {
+                connection.close();
+            }
+
+            assertTrue(redirectComplete.await(10, TimeUnit.SECONDS));
+        }
+    }
+
     protected URI createConnectionURI(NettyServer server) throws Exception {
         return createConnectionURI(server, null);
     }
@@ -250,5 +329,9 @@ public class NettyTcpToMockServerTest extends QpidJmsTestCase {
 
     protected NettySimpleAmqpServer createServer(TransportOptions options, boolean needClientAuth) {
         return new NettySimpleAmqpServer(options, needClientAuth);
+    }
+
+    protected NettySimpleAmqpServer createWSServer(TransportOptions options) {
+        return new NettySimpleAmqpServer(options, false, true);
     }
 }

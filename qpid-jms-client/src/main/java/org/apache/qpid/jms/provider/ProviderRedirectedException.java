@@ -28,14 +28,18 @@ public class ProviderRedirectedException extends IOException {
 
     private final String hostname;
     private final String networkHost;
+    private final String scheme;
+    private final String path;
     private final int port;
 
-    public ProviderRedirectedException(String reason, String hostname, String networkHost, int port) {
+    public ProviderRedirectedException(String reason, String scheme, String hostname, String networkHost, int port, String path) {
         super(reason);
 
+        this.scheme = scheme;
         this.hostname = hostname;
         this.networkHost = networkHost;
         this.port = port;
+        this.path = path;
     }
 
     /**
@@ -57,5 +61,19 @@ public class ProviderRedirectedException extends IOException {
      */
     public int getPort() {
         return port;
+    }
+
+    /**
+     * @return the scheme that the remote indicated the redirect connection should use.
+     */
+    public String getScheme() {
+        return scheme;
+    }
+
+    /**
+     * @return the path that the remote indicated should be path of the redirect URI.
+     */
+    public String getPath() {
+        return path;
     }
 }

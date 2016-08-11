@@ -50,6 +50,8 @@ public class AmqpSupport {
     public static final Symbol CONTAINER_ID = Symbol.valueOf("container-id");
 
     // Symbols used to announce connection redirect ErrorCondition 'info'
+    public static final Symbol PATH = Symbol.valueOf("path");
+    public static final Symbol SCHEME = Symbol.valueOf("scheme");
     public static final Symbol PORT = Symbol.valueOf("port");
     public static final Symbol NETWORK_HOST = Symbol.valueOf("network-host");
     public static final Symbol OPEN_HOSTNAME = Symbol.valueOf("hostname");
@@ -200,6 +202,8 @@ public class AmqpSupport {
             result = new IOException(message + " : Redirection information not set.");
         } else {
             String hostname = (String) info.get(OPEN_HOSTNAME);
+            String path = (String) info.get(PATH);
+            String scheme = (String) info.get(SCHEME);
 
             String networkHost = (String) info.get(NETWORK_HOST);
             if (networkHost == null || networkHost.isEmpty()) {
@@ -213,7 +217,7 @@ public class AmqpSupport {
                 result = new IOException(message + " : Redirection information not set.");
             }
 
-            result = new ProviderRedirectedException(message, hostname, networkHost, port);
+            result = new ProviderRedirectedException(message, scheme, hostname, networkHost, port, path);
         }
 
         return result;

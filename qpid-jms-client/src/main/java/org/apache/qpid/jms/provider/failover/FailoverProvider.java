@@ -18,7 +18,6 @@ package org.apache.qpid.jms.provider.failover;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -550,8 +549,8 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 if (cause instanceof ProviderRedirectedException) {
                     ProviderRedirectedException redirect = (ProviderRedirectedException) cause;
                     try {
-                        uris.addFirst(new URI(failedURI.getScheme() + "://" + redirect.getNetworkHost() + ":" + redirect.getPort()));
-                    } catch (URISyntaxException ex) {
+                        uris.addFirst(buildRedirectURI(failedURI, redirect));
+                    } catch (Exception error) {
                         LOG.warn("Could not construct redirection URI from remote provided information");
                     }
                 }
@@ -777,6 +776,17 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         if (closed.get()) {
             throw new IOException("The Provider is already closed");
         }
+    }
+
+    protected URI buildRedirectURI(URI sourceURI, ProviderRedirectedException redirect) throws Exception {
+        String scheme = sourceURI.getScheme();
+        String host = redirect.getNetworkHost();
+        String path = redirect.getPath();
+        int port = redirect.getPort();
+
+        URI result = new URI(scheme, null, host, port, path, null, null);
+
+        return result;
     }
 
     //--------------- DefaultProviderListener overrides ----------------------//

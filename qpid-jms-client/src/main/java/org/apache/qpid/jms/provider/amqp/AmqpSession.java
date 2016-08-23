@@ -228,11 +228,11 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
     @Override
     public void handleResourceClosure(AmqpProvider provider, Exception error) {
         for (AmqpConsumer consumer : consumers.values()) {
-            consumer.handleResourceClosure(provider, error);
+            consumer.locallyClosed(provider, error);
         }
 
         for (AmqpProducer producer : producers.values()) {
-            producer.handleResourceClosure(provider, error);
+            producer.locallyClosed(provider, error);
         }
     }
 

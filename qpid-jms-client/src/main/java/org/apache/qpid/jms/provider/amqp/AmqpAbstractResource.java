@@ -158,6 +158,9 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
             endpoint.close();
         }
 
+        // Process the close now, so that child close operations see the correct state.
+        provider.pumpToProtonTransport();
+
         handleResourceClosure(provider, error);
 
         if (getResourceInfo() instanceof JmsConnectionInfo) {

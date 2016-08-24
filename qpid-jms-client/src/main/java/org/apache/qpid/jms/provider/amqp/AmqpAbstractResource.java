@@ -155,7 +155,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
         if (endpoint != null) {
             // TODO: if this is a producer/consumer link then we may only be detached,
             // rather than fully closed, and should respond appropriately.
-            endpoint.close();
+            closeOrDetachEndpoint();
         }
 
         // Process the close now, so that child close operations see the correct state.

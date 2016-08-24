@@ -123,7 +123,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                         Exception cause = new JmsOperationTimedOutException("Remote did not respond to a drain request in time");
                         locallyClosed(session.getProvider(), cause);
                         stopRequest.onFailure(cause);
-                        session.getProvider().pumpToProtonTransport(stopRequest);
+                        session.getProvider().pumpToProtonTransport();
                     }
                 }, getDrainTimeout());
 

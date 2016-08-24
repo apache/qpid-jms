@@ -755,15 +755,25 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout=30000)
     public void testReceiveWithTimoutAndNoDrainResponseFailsAfterTimeout() throws IOException, Exception {
-        doDrainWithNoResponseOnNoMessageTestImpl(false);
+        doDrainWithNoResponseOnNoMessageTestImpl(false, false);
     }
 
     @Test(timeout=30000)
     public void testReceiveNoWaitAndNoDrainResponseFailsAfterTimeout() throws IOException, Exception {
-        doDrainWithNoResponseOnNoMessageTestImpl(true);
+        doDrainWithNoResponseOnNoMessageTestImpl(true, false);
     }
 
-    private void doDrainWithNoResponseOnNoMessageTestImpl(boolean noWait) throws JMSException, InterruptedException, Exception, IOException {
+    @Test(timeout=30000)
+    public void testDurableReceiveWithTimoutAndNoDrainResponseFailsAfterTimeout() throws IOException, Exception {
+        doDrainWithNoResponseOnNoMessageTestImpl(false, true);
+    }
+
+    @Test(timeout=30000)
+    public void testDurableReceiveNoWaitAndNoDrainResponseFailsAfterTimeout() throws IOException, Exception {
+        doDrainWithNoResponseOnNoMessageTestImpl(true, true);
+    }
+
+    private void doDrainWithNoResponseOnNoMessageTestImpl(boolean noWait, boolean durable) throws JMSException, InterruptedException, Exception, IOException {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = null;
             connection = testFixture.establishConnecton(testPeer, "?amqp.drainTimeout=500");
@@ -773,19 +783,35 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Queue queue = session.createQueue("myQueue");
+            Topic topic = session.createTopic("topic");
 
             // Expect receiver link attach and send credit
-            testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
+            if (durable) {
+                testPeer.expectDurableSubscriberAttach(topic.getTopicName(), getTestName());
+            } else {
+                testPeer.expectReceiverAttach();
+            }
+
+            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_TOPIC_PREFETCH)));
 
             // Expect drain but do not respond so that the consumer times out.
-            testPeer.expectLinkFlow(true, false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)));
+            testPeer.expectLinkFlow(true, false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_TOPIC_PREFETCH)));
 
             // Consumer should close due to timed waiting for drain.
-            testPeer.expectDetach(true, true, true);
+            if (durable) {
+                // TODO - Bug in Proton-J causes extra flow to be emitted on detach.
+                testPeer.expectLinkFlow(true, false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_TOPIC_PREFETCH)));
+                testPeer.expectDetach(false, true, true);
+            } else {
+                testPeer.expectDetach(true, true, true);
+            }
 
-            final MessageConsumer consumer = session.createConsumer(queue);
+            final MessageConsumer consumer;
+            if (durable) {
+                consumer = session.createDurableSubscriber(topic, getTestName());
+            } else {
+                consumer = session.createConsumer(topic);
+            }
 
             try {
                 if (noWait) {

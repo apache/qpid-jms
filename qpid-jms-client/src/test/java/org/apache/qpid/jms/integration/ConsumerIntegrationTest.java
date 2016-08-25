@@ -61,6 +61,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionM
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -763,11 +764,13 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
         doDrainWithNoResponseOnNoMessageTestImpl(true, false);
     }
 
+    @Ignore // TODO - Needs PROTON-1290 to be fully stable
     @Test(timeout=30000)
     public void testDurableReceiveWithTimoutAndNoDrainResponseFailsAfterTimeout() throws IOException, Exception {
         doDrainWithNoResponseOnNoMessageTestImpl(false, true);
     }
 
+    @Ignore // TODO - Needs PROTON-1290 to be fully stable
     @Test(timeout=30000)
     public void testDurableReceiveNoWaitAndNoDrainResponseFailsAfterTimeout() throws IOException, Exception {
         doDrainWithNoResponseOnNoMessageTestImpl(true, true);

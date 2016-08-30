@@ -936,15 +936,18 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                 public boolean isSatisified() throws Exception {
                     try {
                         producer.getDestination();
-                    } catch (IllegalStateException jmsise) {
-                        if (jmsise.getCause() != null) {
-                            String message = jmsise.getCause().getMessage();
-                            return message.contains(AmqpError.RESOURCE_DELETED.toString()) &&
-                                   message.contains(BREAD_CRUMB);
-                        } else {
-                            return false;
+                    } catch (Exception ex) {
+                        if (ex instanceof IllegalStateException && ex.getCause() != null) {
+                            String message = ex.getCause().getMessage();
+                            if (message.contains(AmqpError.RESOURCE_DELETED.toString()) &&
+                                message.contains(BREAD_CRUMB)) {
+                                return true;
+                            }
                         }
+
+                        LOG.debug("Caught unexpected exception: {}", ex);
                     }
+
                     return false;
                 }
             }, 10000, 10));

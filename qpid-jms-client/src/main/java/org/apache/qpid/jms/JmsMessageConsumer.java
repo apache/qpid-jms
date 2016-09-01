@@ -106,11 +106,16 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         consumerInfo.setPresettle(session.getPresettlePolicy().isConsumerPresttled(session, destination));
         consumerInfo.setDeserializationPolicy(deserializationPolicy);
 
-        session.getConnection().createResource(consumerInfo);
+        session.add(this);
+        try {
+            session.getConnection().createResource(consumerInfo);
+        } catch (JMSException jmse) {
+            session.remove(this);
+            throw jmse;
+        }
     }
 
     public void init() throws JMSException {
-        session.add(this);
         startConsumerResource();
     }
 

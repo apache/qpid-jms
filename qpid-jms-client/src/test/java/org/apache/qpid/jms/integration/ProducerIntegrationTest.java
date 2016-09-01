@@ -40,7 +40,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
@@ -866,12 +865,12 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         final String BREAD_CRUMB = "ErrorMessageBreadCrumb";
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            final AtomicBoolean producerClosed = new AtomicBoolean();
+            final CountDownLatch producerClosed = new CountDownLatch(1);
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
                 public void onProducerClosed(MessageProducer producer, Exception exception) {
-                    producerClosed.set(true);
+                    producerClosed.countDown();
                 }
             });
 
@@ -908,7 +907,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                 }
             }, 10000, 10));
 
-            assertTrue("Producer closed callback didn't trigger", producerClosed.get());
+            assertTrue("Producer closed callback didn't trigger", producerClosed.await(10, TimeUnit.SECONDS));
 
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.

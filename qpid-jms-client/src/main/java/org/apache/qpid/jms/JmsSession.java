@@ -469,7 +469,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         checkClosed();
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, destination);
         JmsMessageProducer result = new JmsMessageProducer(getNextProducerId(), this, dest);
-        add(result);
         return result;
     }
 
@@ -481,7 +480,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         checkClosed();
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, queue);
         JmsQueueSender result = new JmsQueueSender(getNextProducerId(), this, dest);
-        add(result);
         return result;
     }
 
@@ -493,7 +491,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         checkClosed();
         JmsDestination dest = JmsMessageTransformation.transformDestination(connection, topic);
         JmsTopicPublisher result = new JmsTopicPublisher(getNextProducerId(), this, dest);
-        add(result);
         return result;
     }
 

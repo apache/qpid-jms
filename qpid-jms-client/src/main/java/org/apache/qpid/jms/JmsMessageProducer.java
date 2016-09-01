@@ -64,7 +64,13 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
         this.producerInfo.setDestination(destination);
         this.producerInfo.setPresettle(session.getPresettlePolicy().isProducerPresttled(session, destination));
 
-        session.getConnection().createResource(producerInfo);
+        session.add(this);
+        try {
+            session.getConnection().createResource(producerInfo);
+        } catch (JMSException jmse) {
+            session.remove(this);
+            throw jmse;
+        }
     }
 
     @Override

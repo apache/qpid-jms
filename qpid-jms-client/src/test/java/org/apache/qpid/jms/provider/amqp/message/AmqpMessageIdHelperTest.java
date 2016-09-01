@@ -310,10 +310,10 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
      */
     @Test
     public void testToMessageIdStringWithStringBeginningWithIdAndEncodingPrefixForNoIDPrefix() {
-        String unescapedBinaryPrefixMessageId =  AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_NO_PREFIX + "id-content";
-        String expected = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_STRING_PREFIX + unescapedBinaryPrefixMessageId;
+        String unescapedNoPrefixPrefixedMessageId =  AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_NO_PREFIX + "id-content";
+        String expected = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_STRING_PREFIX + unescapedNoPrefixPrefixedMessageId;
 
-        doToMessageIdTestImpl(unescapedBinaryPrefixMessageId, expected);
+        doToMessageIdTestImpl(unescapedNoPrefixPrefixedMessageId, expected);
     }
 
     /**
@@ -527,10 +527,10 @@ public class AmqpMessageIdHelperTest extends QpidJmsTestCase {
      */
     @Test
     public void testToCorrelationIdStringWithStringBeginningWithIdAndEncodingPrefixForNoIDPrefix() {
-        String unescapedBinaryPrefixCorrelationId =  AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_NO_PREFIX + "id-content";
-        String expected = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_STRING_PREFIX + unescapedBinaryPrefixCorrelationId;
+        String unescapedNoPrefixCorrelationId =  AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_NO_PREFIX + "id-content";
+        String expected = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_STRING_PREFIX + unescapedNoPrefixCorrelationId;
 
-        doToCorrelationIDTestImpl(unescapedBinaryPrefixCorrelationId, expected);
+        doToCorrelationIDTestImpl(unescapedNoPrefixCorrelationId, expected);
     }
 
     private void doToIdObjectTestImpl(String idString, Object expected) throws IdConversionException {

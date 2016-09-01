@@ -939,7 +939,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     @Test
     public void testSetGetCorrelationIdOnNewMessageWithUUID() throws Exception {
         UUID testCorrelationId = UUID.randomUUID();
-        String converted = appendIdAndTypePrefix(testCorrelationId);
+        String converted = "ID:AMQP_UUID:" + testCorrelationId;
 
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
         amqpMessageFacade.setCorrelationId(converted);
@@ -967,7 +967,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     @Test
     public void testSetGetCorrelationIdOnNewMessageWithUnsignedLong() throws Exception {
         Object testCorrelationId = UnsignedLong.valueOf(123456789L);
-        String converted = appendIdAndTypePrefix(testCorrelationId);
+        String converted = "ID:AMQP_ULONG:" + testCorrelationId;
 
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
         amqpMessageFacade.setCorrelationId(converted);
@@ -995,7 +995,11 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     @Test
     public void testSetGetCorrelationIdOnNewMessageWithBinary() throws Exception {
         Binary testCorrelationId = createBinaryId();
-        String converted = appendIdAndTypePrefix(testCorrelationId);
+        ByteBuffer buf = testCorrelationId.asByteBuffer();
+        byte[] bytes = new byte[buf.remaining()];
+        buf.get(bytes);
+
+        String converted = "ID:AMQP_BINARY:" + new AmqpMessageIdHelper().convertBinaryToHexString(bytes);
 
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
         amqpMessageFacade.setCorrelationId(converted);
@@ -1125,7 +1129,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
      * message holding the value with the ID: prefix retained.
      */
     @Test
-    public void testSetMessageIdRemovesIdPrefixFromUnderlyingMessage() throws Exception {
+    public void testSetMessageIdRetainsIdPrefixInUnderlyingMessage() throws Exception {
         String testMessageId = "ID:myStringMessageId";
 
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
@@ -1228,27 +1232,6 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         assertNotNull("Expected a messageId on received message", amqpMessageFacade.getMessageId());
 
         assertEquals("Incorrect messageId value received", expected, amqpMessageFacade.getMessageId());
-    }
-
-    private String appendIdAndTypePrefix(Object testMessageId) {
-        if (testMessageId instanceof Binary) {
-            ByteBuffer buf = ((Binary) testMessageId).asByteBuffer();
-
-            byte[] bytes = new byte[buf.remaining()];
-            buf.get(bytes);
-
-            return "ID:AMQP_BINARY:" + new AmqpMessageIdHelper().convertBinaryToHexString(bytes);
-        } else if (testMessageId instanceof UnsignedLong) {
-            return ("ID:AMQP_ULONG:" + testMessageId);
-        } else if (testMessageId instanceof UUID) {
-            return ("ID:AMQP_UUID:" + testMessageId);
-        } else if (testMessageId instanceof String) {
-            return "ID:" + testMessageId;
-        } else if (testMessageId == null) {
-            return null;
-        }
-
-        throw new IllegalArgumentException();
     }
 
     private Binary createBinaryId() {

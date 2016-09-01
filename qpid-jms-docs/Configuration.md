@@ -113,7 +113,7 @@ The Redelivery Policy controls how redelivered messages are handled on the clien
 
 The MessageID Policy controls the type of the Message ID assigned to messages sent from the client.
 
-+ **jms.messageIDPolicy.messageIDType** By default a generated String value is used for the MessageID on outgoing messages. Other available types are UUID and UUID_STRING.
++ **jms.messageIDPolicy.messageIDType** By default a generated String value is used for the MessageID on outgoing messages. Other available types are UUID, UUID_STRING, and PREFIXED_UUID_STRING.
 
 The Presettle Policy controls when a producer or consumer instance will be configured to use AMQP presettled messaging semantics.
 

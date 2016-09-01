@@ -323,16 +323,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     @Override
     public String getMessageId() {
         Object underlying = message.getMessageId();
-        AmqpMessageIdHelper helper = AmqpMessageIdHelper.INSTANCE;
-        String baseStringId = helper.toBaseMessageIdString(underlying);
-
-        // Ensure the ID: prefix is present.
-        // TODO: should we always do this when non-null? AMQP JMS Mapping says never to send the "ID:" prefix.
-        if (baseStringId != null && !helper.hasMessageIdPrefix(baseStringId)) {
-            baseStringId = AmqpMessageIdHelper.JMS_ID_PREFIX + baseStringId;
-        }
-
-        return baseStringId;
+        return AmqpMessageIdHelper.INSTANCE.toMessageIdString(underlying);
     }
 
     @Override
@@ -346,14 +337,8 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public void setMessageId(String messageId) {
-        if (messageId == null) {
-            message.setMessageId(null);
-        } else {
-            // Remove the first 'ID:' prefix if present
-            String stripped = AmqpMessageIdHelper.INSTANCE.stripMessageIdPrefix(messageId);
-            message.setMessageId(stripped);
-        }
+    public void setMessageId(String messageId) throws IdConversionException {
+        message.setMessageId(AmqpMessageIdHelper.INSTANCE.toIdObject(messageId));
     }
 
     @Override
@@ -381,49 +366,22 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public String getCorrelationId() {
-        AmqpMessageIdHelper messageIdHelper = AmqpMessageIdHelper.INSTANCE;
-        String baseIdString = messageIdHelper.toBaseMessageIdString(message.getCorrelationId());
-
-        if (baseIdString == null) {
-            return null;
-        } else {
-            Object annotation = getMessageAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID);
-            boolean appSpecific = Boolean.TRUE.equals(annotation);
-
-            if (appSpecific) {
-                return baseIdString;
-            } else {
-                return AmqpMessageIdHelper.JMS_ID_PREFIX + baseIdString;
-            }
-        }
+        return AmqpMessageIdHelper.INSTANCE.toCorrelationIdString(message.getCorrelationId());
     }
 
     @Override
     public void setCorrelationId(String correlationId) throws IdConversionException {
-        AmqpMessageIdHelper messageIdHelper = AmqpMessageIdHelper.INSTANCE;
-        boolean appSpecific = false;
         if (correlationId == null) {
             message.setCorrelationId(null);
         } else {
-            boolean hasMessageIdPrefix = messageIdHelper.hasMessageIdPrefix(correlationId);
-            if (!hasMessageIdPrefix) {
-                appSpecific = true;
-            }
-
-            String stripped = messageIdHelper.stripMessageIdPrefix(correlationId);
-
-            if (hasMessageIdPrefix) {
-                Object idObject = messageIdHelper.toIdObject(stripped);
+            if (AmqpMessageIdHelper.INSTANCE.hasMessageIdPrefix(correlationId)) {
+                // JMSMessageID value, process it for possible type conversion
+                Object idObject = AmqpMessageIdHelper.INSTANCE.toIdObject(correlationId);
                 message.setCorrelationId(idObject);
             } else {
-                message.setCorrelationId(stripped);
+                // application-specific value, send as-is
+                message.setCorrelationId(correlationId);
             }
-        }
-
-        if (appSpecific) {
-            setMessageAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID, true);
-        } else {
-            removeMessageAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID);
         }
     }
 

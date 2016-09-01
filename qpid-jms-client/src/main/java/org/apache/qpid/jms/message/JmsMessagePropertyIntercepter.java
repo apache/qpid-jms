@@ -331,7 +331,7 @@ public class JmsMessagePropertyIntercepter {
             }
 
             @Override
-            public void clearProperty(JmsMessage message) {
+            public void clearProperty(JmsMessage message) throws JMSException {
                 message.getFacade().setMessageId(null);
             }
 

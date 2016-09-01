@@ -55,13 +55,16 @@ public class AmqpMessageIdHelper {
     public static final String AMQP_UUID_PREFIX = "AMQP_UUID:";
     public static final String AMQP_ULONG_PREFIX = "AMQP_ULONG:";
     public static final String AMQP_BINARY_PREFIX = "AMQP_BINARY:";
+    public static final String AMQP_NO_PREFIX = "AMQP_NO_PREFIX:";
     public static final String JMS_ID_PREFIX = "ID:";
 
+    private static final String AMQP_PREFIX = "AMQP_";
     private static final int JMS_ID_PREFIX_LENGTH = JMS_ID_PREFIX.length();
     private static final int AMQP_UUID_PREFIX_LENGTH = AMQP_UUID_PREFIX.length();
     private static final int AMQP_ULONG_PREFIX_LENGTH = AMQP_ULONG_PREFIX.length();
     private static final int AMQP_STRING_PREFIX_LENGTH = AMQP_STRING_PREFIX.length();
     private static final int AMQP_BINARY_PREFIX_LENGTH = AMQP_BINARY_PREFIX.length();
+    private static final int AMQP_NO_PREFIX_LENGTH = AMQP_NO_PREFIX.length();
     private static final char[] HEX_CHARS = "0123456789ABCDEF".toCharArray();
 
     /**
@@ -78,116 +81,158 @@ public class AmqpMessageIdHelper {
         return string.startsWith(JMS_ID_PREFIX);
     }
 
-    /**
-     * Returns the suffix of the given string after removing the first "ID:" prefix (if present).
-     *
-     * @param id the string to process
-     * @return the suffix, or the original String if the "ID:" prefix is not present
-     */
-    public String stripMessageIdPrefix(String id) {
-        if (hasMessageIdPrefix(id)) {
-            return strip(id, JMS_ID_PREFIX_LENGTH);
+    public String toMessageIdString(Object idObject) {
+        if (idObject instanceof String) {
+            final String stringId = (String) idObject;
+
+            boolean hasMessageIdPrefix = hasMessageIdPrefix(stringId);
+            if (!hasMessageIdPrefix) {
+                // For JMSMessageID, has no "ID:" prefix, we need to record
+                // that for later use as a JMSCorrelationID.
+                return JMS_ID_PREFIX + AMQP_NO_PREFIX + stringId;
+            } else if (hasTypeEncodingPrefix(stringId, JMS_ID_PREFIX_LENGTH)) {
+                // We are for a JMSMessageID value, but have 'ID:' followed by
+                // one of the encoding prefixes. Need to escape the entire string
+                // to preserve for later re-use as a JMSCorrelationID.
+                return JMS_ID_PREFIX + AMQP_STRING_PREFIX + stringId;
+            } else {
+                // It has "ID:" prefix and doesn't have encoding prefix, use it as-is.
+                return stringId;
+            }
         } else {
-            return id;
+            // Not a string, convert it
+            return convertToIdString(idObject);
         }
     }
 
-    private String strip(String id, int numChars) {
-        return id.substring(numChars);
+    public String toCorrelationIdString(Object idObject) {
+
+        if (idObject instanceof String) {
+            final String stringId = (String) idObject;
+
+            boolean hasMessageIdPrefix = hasMessageIdPrefix(stringId);
+            if (!hasMessageIdPrefix) {
+                // For JMSCorrelationID, has no "ID:" prefix, use it as-is.
+                return stringId;
+            } else if (hasTypeEncodingPrefix(stringId, JMS_ID_PREFIX_LENGTH)) {
+                // We are for a JMSCorrelationID value, but have 'ID:' followed by
+                // one of the encoding prefixes. Need to escape the entire string
+                // to preserve for later re-use as a JMSCorrelationID.
+                return JMS_ID_PREFIX + AMQP_STRING_PREFIX + stringId;
+            } else {
+                // It has "ID:" prefix and doesn't have encoding prefix, use it as-is.
+                return stringId;
+            }
+        } else {
+            // Not a string, convert it
+            return convertToIdString(idObject);
+        }
     }
 
     /**
-     * Takes the provided amqp messageId style object, and convert it to a base string.
-     * Encodes type information as a prefix where necessary to convey or escape the type
-     * of the provided object.
+     * Takes the provided non-String AMQP message-id/correlation-id object, and
+     * convert it it to a String usable as either a JMSMessageID or JMSCorrelationID
+     * value, encoding the type information as a prefix to convey for later use
+     * in reversing the process if used to set JMSCorrelationID on a message.
      *
-     * @param messageId the object to process
-     * @return the base string to be used in creating the actual JMS id.
+     * @param idObject the object to process
+     * @return string to be used for the actual JMS ID.
      */
-    public String toBaseMessageIdString(Object messageId) {
-        if (messageId == null) {
+    private String convertToIdString(Object idObject) {
+        if (idObject == null) {
             return null;
-        } else if (messageId instanceof String) {
-            String stringId = (String) messageId;
+        }
 
-            // If the given string has a type encoding prefix,
-            // we need to escape it as an encoded string (even if
-            // the existing encoding prefix was also for string)
-            if (hasTypeEncodingPrefix(stringId)) {
-                return AMQP_STRING_PREFIX + stringId;
-            } else {
-                return stringId;
-            }
-        } else if (messageId instanceof UUID) {
-            return AMQP_UUID_PREFIX + messageId.toString();
-        } else if (messageId instanceof UnsignedLong) {
-            return AMQP_ULONG_PREFIX + messageId.toString();
-        } else if (messageId instanceof Binary) {
-            ByteBuffer dup = ((Binary) messageId).asByteBuffer();
+        if (idObject instanceof UUID) {
+            return JMS_ID_PREFIX + AMQP_UUID_PREFIX + idObject.toString();
+        } else if (idObject instanceof UnsignedLong) {
+            return JMS_ID_PREFIX + AMQP_ULONG_PREFIX + idObject.toString();
+        } else if (idObject instanceof Binary) {
+            ByteBuffer dup = ((Binary) idObject).asByteBuffer();
 
             byte[] bytes = new byte[dup.remaining()];
             dup.get(bytes);
 
             String hex = convertBinaryToHexString(bytes);
 
-            return AMQP_BINARY_PREFIX + hex;
+            return JMS_ID_PREFIX + AMQP_BINARY_PREFIX + hex;
         } else {
-            throw new IllegalArgumentException("Unsupported type provided: " + messageId.getClass());
+            throw new IllegalArgumentException("Unsupported type provided: " + idObject.getClass());
         }
     }
 
-    private boolean hasTypeEncodingPrefix(String stringId) {
-        return hasAmqpBinaryPrefix(stringId) ||
-                    hasAmqpUuidPrefix(stringId) ||
-                        hasAmqpUlongPrefix(stringId) ||
-                            hasAmqpStringPrefix(stringId);
+    private boolean hasTypeEncodingPrefix(String stringId, int offset) {
+        if(!stringId.startsWith(AMQP_PREFIX, offset)){
+            return false;
+        }
+
+        return hasAmqpBinaryPrefix(stringId, offset) ||
+                    hasAmqpUuidPrefix(stringId, offset) ||
+                        hasAmqpUlongPrefix(stringId, offset) ||
+                            hasAmqpStringPrefix(stringId, offset) ||
+                                 hasAmqpNoPrefix(stringId, offset);
     }
 
-    private boolean hasAmqpStringPrefix(String stringId) {
-        return stringId.startsWith(AMQP_STRING_PREFIX);
+    private boolean hasAmqpStringPrefix(String stringId, int offset) {
+        return stringId.startsWith(AMQP_STRING_PREFIX, offset);
     }
 
-    private boolean hasAmqpUlongPrefix(String stringId) {
-        return stringId.startsWith(AMQP_ULONG_PREFIX);
+    private boolean hasAmqpUlongPrefix(String stringId, int offset) {
+        return stringId.startsWith(AMQP_ULONG_PREFIX, offset);
     }
 
-    private boolean hasAmqpUuidPrefix(String stringId) {
-        return stringId.startsWith(AMQP_UUID_PREFIX);
+    private boolean hasAmqpUuidPrefix(String stringId, int offset) {
+        return stringId.startsWith(AMQP_UUID_PREFIX, offset);
     }
 
-    private boolean hasAmqpBinaryPrefix(String stringId) {
-        return stringId.startsWith(AMQP_BINARY_PREFIX);
+    private boolean hasAmqpBinaryPrefix(String stringId, int offset) {
+        return stringId.startsWith(AMQP_BINARY_PREFIX, offset);
+    }
+
+    private boolean hasAmqpNoPrefix(String stringId, int offset) {
+        return stringId.startsWith(AMQP_NO_PREFIX, offset);
     }
 
     /**
-     * Takes the provided base id string and return the appropriate amqp messageId style object.
+     * Takes the provided id string and return the appropriate amqp messageId style object.
      * Converts the type based on any relevant encoding information found as a prefix.
      *
-     * @param baseId the object to be converted
+     * @param origId the object to be converted
      * @return the amqp messageId style object
      * @throws IdConversionException if the provided baseId String indicates an encoded type but can't be converted to that type. 
      */
-    public Object toIdObject(String baseId) throws IdConversionException {
-        if (baseId == null) {
+    public Object toIdObject(final String origId) throws IdConversionException {
+        if (origId == null) {
             return null;
         }
 
+        if(!AmqpMessageIdHelper.INSTANCE.hasMessageIdPrefix(origId)) {
+            // We have a string without any "ID:" prefix, it is an
+            // application-specific String, use it as-is.
+            return origId;
+        }
+
         try {
-            if (hasAmqpUuidPrefix(baseId)) {
-                String uuidString = strip(baseId, AMQP_UUID_PREFIX_LENGTH);
+            if (hasAmqpNoPrefix(origId, JMS_ID_PREFIX_LENGTH)) {
+                // Prefix telling us there was originally no "ID:" prefix,
+                // strip it and return the remainder
+                return origId.substring(JMS_ID_PREFIX_LENGTH + AMQP_NO_PREFIX_LENGTH);
+            } else if (hasAmqpUuidPrefix(origId, JMS_ID_PREFIX_LENGTH)) {
+                String uuidString = origId.substring(JMS_ID_PREFIX_LENGTH + AMQP_UUID_PREFIX_LENGTH);
                 return UUID.fromString(uuidString);
-            } else if (hasAmqpUlongPrefix(baseId)) {
-                String longString = strip(baseId, AMQP_ULONG_PREFIX_LENGTH);
-                return UnsignedLong.valueOf(longString);
-            } else if (hasAmqpStringPrefix(baseId)) {
-                return strip(baseId, AMQP_STRING_PREFIX_LENGTH);
-            } else if (hasAmqpBinaryPrefix(baseId)) {
-                String hexString = strip(baseId, AMQP_BINARY_PREFIX_LENGTH);
+            } else if (hasAmqpUlongPrefix(origId, JMS_ID_PREFIX_LENGTH)) {
+                String ulongString = origId.substring(JMS_ID_PREFIX_LENGTH + AMQP_ULONG_PREFIX_LENGTH);
+                return UnsignedLong.valueOf(ulongString);
+            } else if (hasAmqpStringPrefix(origId, JMS_ID_PREFIX_LENGTH)) {
+                return origId.substring(JMS_ID_PREFIX_LENGTH + AMQP_STRING_PREFIX_LENGTH);
+            } else if (hasAmqpBinaryPrefix(origId, JMS_ID_PREFIX_LENGTH)) {
+                String hexString = origId.substring(JMS_ID_PREFIX_LENGTH + AMQP_BINARY_PREFIX_LENGTH);
                 byte[] bytes = convertHexStringToBinary(hexString);
                 return new Binary(bytes);
             } else {
-                // We have a string without any type prefix, transmit it as-is.
-                return baseId;
+                // We have a string without any encoding prefix needing processed,
+                // so transmit it as-is, including the "ID:"
+                return origId;
             }
         } catch (IllegalArgumentException e) {
             throw new IdConversionException("Unable to convert ID value", e);

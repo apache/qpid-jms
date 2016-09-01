@@ -195,8 +195,9 @@ public interface JmsMessageFacade {
      *
      * @param messageId
      *        The message ID to set on this message, or null to clear.
+     * @throws JMSException if an error occurs while setting the message ID.
      */
-    void setMessageId(String messageId);
+    void setMessageId(String messageId) throws JMSException;
 
     /**
      * @return true if this message is tagged as being persistent.

@@ -31,12 +31,6 @@ import io.netty.buffer.Unpooled;
 public final class AmqpMessageSupport {
 
     /**
-     * Attribute used to mark the Application defined correlation Id that has been
-     * set for the message.
-     */
-    public static final String JMS_APP_CORRELATION_ID = "x-opt-app-correlation-id";
-
-    /**
      * Attribute used to mark the class type of JMS message that a particular message
      * instance represents, used internally by the client.
      */

@@ -18,6 +18,8 @@ package org.apache.qpid.jms.message;
 
 import java.util.Locale;
 
+import org.apache.qpid.jms.provider.amqp.message.AmqpMessageIdHelper;
+
 /**
  * Interface for creating a custom Message ID builder to populate the
  * Message ID field of the outgoing message.
@@ -32,7 +34,11 @@ public interface JmsMessageIDBuilder {
 
                     @Override
                     public Object createMessageID(String producerId, long messageSequence) {
-                        return producerId + "-" + messageSequence;
+                        String messageId = producerId + "-" + messageSequence;
+                        if (!AmqpMessageIdHelper.INSTANCE.hasMessageIdPrefix(messageId)) {
+                            messageId = AmqpMessageIdHelper.JMS_ID_PREFIX + messageId;
+                        }
+                        return messageId;
                     }
 
                     @Override
@@ -72,6 +78,23 @@ public interface JmsMessageIDBuilder {
                     @Override
                     public String toString() {
                         return UUID_STRING.name();
+                    }
+                };
+            }
+        },
+        PREFIXED_UUID_STRING {
+            @Override
+            public JmsMessageIDBuilder createBuilder() {
+                return new JmsMessageIDBuilder() {
+
+                    @Override
+                    public Object createMessageID(String producerId, long messageSequence) {
+                        return AmqpMessageIdHelper.JMS_ID_PREFIX + java.util.UUID.randomUUID().toString();
+                    }
+
+                    @Override
+                    public String toString() {
+                        return PREFIXED_UUID_STRING.name();
                     }
                 };
             }

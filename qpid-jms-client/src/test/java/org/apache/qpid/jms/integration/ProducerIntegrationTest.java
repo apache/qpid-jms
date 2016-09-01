@@ -61,6 +61,7 @@ import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.JmsSendTimedOutException;
 import org.apache.qpid.jms.message.foreign.ForeignJmsMessage;
+import org.apache.qpid.jms.provider.amqp.message.AmqpMessageIdHelper;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
@@ -618,7 +619,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             Object receivedMessageId = propsMatcher.getReceivedMessageId();
 
             assertTrue("Expected string message id to be sent", receivedMessageId instanceof String);
-            assertTrue("Expected JMSMessageId value to be present in AMQP message", jmsMessageID.endsWith((String)receivedMessageId));
+            assertTrue("Expected JMSMessageId value to be present in AMQP message", jmsMessageID.equals(receivedMessageId));
         }
     }
 
@@ -677,7 +678,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout=20000)
-    public void testSendingMessageWithUUIDStringMessageFormat() throws Exception {
+    public void testSendingMessageWithUUIDStringMessageIdFormat() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // DONT create a test fixture, we will drive everything directly.
             String uri = "amqp://127.0.0.1:" + testPeer.getServerPort() + "?jms.messageIDPolicy.messageIDType=UUID_STRING";
@@ -716,16 +717,21 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             String jmsMessageID = message.getJMSMessageID();
             assertNotNull("JMSMessageID should be set", jmsMessageID);
             assertTrue("JMS 'ID:' prefix not found", jmsMessageID.startsWith("ID:"));
+            String noIdPrefix = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_NO_PREFIX;
+            assertTrue("The 'No ID prefix' encoding hint was not found", jmsMessageID.startsWith(noIdPrefix));
 
             connection.close();
-
-            // Get the value that was actually transmitted/received, verify it is a String, compare to what we have locally
             testPeer.waitForAllHandlersToComplete(1000);
 
+            // Get the value that was actually transmitted/received, verify it is a String,
+            // verify it is only the UUID toString and has no "ID", check the encoded
+            // JMSMessageID value that we have locally.
             Object receivedMessageId = propsMatcher.getReceivedMessageId();
 
-            assertTrue("Expected UUID message id to be sent", receivedMessageId instanceof String);
-            assertTrue("Expected JMSMessageId value to be present in AMQP message", jmsMessageID.endsWith(receivedMessageId.toString()));
+            String expected = jmsMessageID.substring(noIdPrefix.length());
+            UUID.fromString(expected);
+            assertTrue("Expected String message id to be sent", receivedMessageId instanceof String);
+            assertEquals("Expected UUID toString value to be present in AMQP message", expected, receivedMessageId);
         }
     }
 
@@ -784,7 +790,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout=20000)
-    public void testSendingMessageWithUUIDMessageFormat() throws Exception {
+    public void testSendingMessageWithUUIDMessageIdFormat() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // DONT create a test fixture, we will drive everything directly.
             String uri = "amqp://127.0.0.1:" + testPeer.getServerPort() + "?jms.messageIDPolicy.messageIDType=UUID";
@@ -823,6 +829,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             String jmsMessageID = message.getJMSMessageID();
             assertNotNull("JMSMessageID should be set", jmsMessageID);
             assertTrue("JMS 'ID:' prefix not found", jmsMessageID.startsWith("ID:"));
+            String uuidEncodingPrefix = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_UUID_PREFIX;
+            assertTrue("The 'UUID prefix' encoding hint was not found", jmsMessageID.startsWith(uuidEncodingPrefix));
 
             connection.close();
 
@@ -833,6 +841,62 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             assertTrue("Expected UUID message id to be sent", receivedMessageId instanceof UUID);
             assertTrue("Expected JMSMessageId value to be present in AMQP message", jmsMessageID.endsWith(receivedMessageId.toString()));
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testSendingMessageWithPrefixedUUIDStringMessageIdFormat() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // DONT create a test fixture, we will drive everything directly.
+            String uri = "amqp://127.0.0.1:" + testPeer.getServerPort() + "?jms.messageIDPolicy.messageIDType=PREFIXED_UUID_STRING";
+            JmsConnectionFactory factory = new JmsConnectionFactory(uri);
+
+            Connection connection = factory.createConnection();
+            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectBegin();
+
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String queueName = "myQueue";
+            Queue queue = session.createQueue(queueName);
+            MessageProducer producer = session.createProducer(queue);
+
+            String text = "myMessage";
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true).withMessageId(isA(String.class));
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
+            messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(text));
+            testPeer.expectTransfer(messageMatcher);
+            testPeer.expectClose();
+
+            Message message = session.createTextMessage(text);
+
+            assertNull("JMSMessageID should not yet be set", message.getJMSMessageID());
+
+            producer.send(message);
+
+            String jmsMessageID = message.getJMSMessageID();
+            assertNotNull("JMSMessageID should be set", jmsMessageID);
+            assertTrue("JMS 'ID:' prefix not found", jmsMessageID.startsWith("ID:"));
+
+            connection.close();
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            // Get the value that was actually transmitted/received, verify it is a String,
+            // verify it is the "ID:" prefix followed by the UUID toString, check the
+            // JMSMessageID value that we have locally matches exactly.
+            Object receivedMessageId = propsMatcher.getReceivedMessageId();
+
+            String uuidToString = jmsMessageID.substring("ID:".length());
+            UUID.fromString(uuidToString);
+            assertTrue("Expected String message id to be sent", receivedMessageId instanceof String);
+            assertEquals("Expected UUID toString value to be present in AMQP message", jmsMessageID, receivedMessageId);
         }
     }
 

@@ -861,8 +861,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
     /**
      * Test that setting then getting an application-specific String as the CorrelationId returns
-     * the expected value and sets the expected value on the underlying AMQP message, additionally
-     * setting the annotation to indicate an application-specific correlation-id
+     * the expected value and sets the expected value on the underlying AMQP message.
      * @throws Exception if unexpected error
      */
     @Test
@@ -873,35 +872,26 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         amqpMessageFacade.setCorrelationId(testCorrelationId);
 
         Message amqpMessage = amqpMessageFacade.getAmqpMessage();
-        assertEquals("Unexpected correlationId value on underlying AMQP message", testCorrelationId, amqpMessage.getCorrelationId());
+        assertEquals("correlationId value on underlying AMQP message not as expected", testCorrelationId, amqpMessage.getCorrelationId());
         assertEquals("Expected correlationId not returned", testCorrelationId, amqpMessageFacade.getCorrelationId());
 
-        MessageAnnotations messageAnnotations = amqpMessage.getMessageAnnotations();
-        assertNotNull("Message Annotations not present", messageAnnotations);
-        Object annotation = messageAnnotations.getValue().get(Symbol.valueOf(AmqpMessageSupport.JMS_APP_CORRELATION_ID));
-        assertTrue("Message annotation " + AmqpMessageSupport.JMS_APP_CORRELATION_ID + " not set as expected", Boolean.TRUE.equals(annotation));
     }
 
     /**
      * Test that setting then getting an JMSMessageID String as the CorrelationId returns
-     * the expected value and sets the expected value on the underlying AMQP message, additionally
-     * checking it does not set the annotation to indicate an application-specific correlation-id
+     * the expected value and sets the expected value on the underlying AMQP message
      * @throws Exception if unexpected error
      */
     @Test
     public void testSetGetCorrelationIdOnNewMessageWithStringJMSMessageID() throws Exception {
         String testCorrelationId = "ID:myJMSMessageIDStringCorrelationId";
-        //The underlying AMQP message should not contain the ID: prefix
-        String stripped = AmqpMessageIdHelper.INSTANCE.stripMessageIdPrefix(testCorrelationId);
 
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
         amqpMessageFacade.setCorrelationId(testCorrelationId);
 
         Message amqpMessage = amqpMessageFacade.getAmqpMessage();
-        assertEquals("Unexpected correlationId value on underlying AMQP message", stripped, amqpMessage.getCorrelationId());
+        assertEquals("correlationId value on underlying AMQP message not as expected", testCorrelationId, amqpMessage.getCorrelationId());
         assertEquals("Expected correlationId not returned from facade", testCorrelationId, amqpMessageFacade.getCorrelationId());
-
-        assertNull("Message annotation " + AmqpMessageSupport.JMS_APP_CORRELATION_ID + " not null as expected", amqpMessageFacade.getMessageAnnotation(AmqpMessageSupport.JMS_APP_CORRELATION_ID));
     }
 
     /**
@@ -926,17 +916,19 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
      */
     @Test
     public void testGetCorrelationIdOnReceivedMessageWithStringAppSpecific() {
-        correlationIdOnReceivedMessageTestImpl("myCorrelationIdString", true);
+        String testCorrelationId = "myCorrelationIdString";
+        correlationIdOnReceivedMessageTestImpl(testCorrelationId, testCorrelationId, true);
     }
 
     /**
      * Test that getting the correlationId when using an underlying received message with
-     * a String correlation id representing a JMSMessageID (i.e there is no annotation to
-     * indicate it is an application-specific correlation-id) returns the expected value.
+     * a String correlation id representing a JMSMessageID (i.e there is an ID: prefix)
+     * returns the expected value.
      */
     @Test
     public void testGetCorrelationIdOnReceivedMessageWithStringJMSMessageId() {
-        correlationIdOnReceivedMessageTestImpl("myCorrelationIdString", false);
+        String testCorrelationId = "ID:JMSMessageIDasCorrelationIdString";
+        correlationIdOnReceivedMessageTestImpl(testCorrelationId, testCorrelationId, false);
     }
 
     /**
@@ -962,7 +954,9 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
      */
     @Test
     public void testGetCorrelationIdOnReceivedMessageWithUUID() {
-        correlationIdOnReceivedMessageTestImpl(UUID.randomUUID(), true);
+        UUID testCorrelationId = UUID.randomUUID();
+        String expected = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_UUID_PREFIX + testCorrelationId.toString();
+        correlationIdOnReceivedMessageTestImpl(testCorrelationId, expected, false);
     }
 
     /**
@@ -988,7 +982,9 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
      */
     @Test
     public void testGetCorrelationIdOnReceivedMessageWithUnsignedLong() {
-        correlationIdOnReceivedMessageTestImpl(UnsignedLong.valueOf(123456789L), true);
+        UnsignedLong testCorrelationId = UnsignedLong.valueOf(123456789L);
+        String expected = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_ULONG_PREFIX + testCorrelationId.toString();
+        correlationIdOnReceivedMessageTestImpl(testCorrelationId, expected, false);
     }
 
     /**
@@ -1075,43 +1071,31 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
     /**
      * Test that getting the correlationId when using an underlying received message with a
-     * Binary message id returns the expected ByteBuffer value.
+     * Binary message id returns the expected value.
      */
     @Test
     public void testGetCorrelationIdOnReceivedMessageWithBinary() {
         Binary testCorrelationId = createBinaryId();
-
-        correlationIdOnReceivedMessageTestImpl(testCorrelationId, true);
+        String expected = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_BINARY_PREFIX +
+                            AmqpMessageIdHelper.INSTANCE.convertBinaryToHexString(testCorrelationId.getArray());
+        correlationIdOnReceivedMessageTestImpl(testCorrelationId, expected, false);
     }
 
-    private void correlationIdOnReceivedMessageTestImpl(final Object testCorrelationId, boolean appSpecificCorrelationId) {
+    private void correlationIdOnReceivedMessageTestImpl(final Object testCorrelationId, final String expected, boolean appSpecificCorrelationId) {
         Message message = Proton.message();
 
         Properties props = new Properties();
         props.setCorrelationId(testCorrelationId);
         message.setProperties(props);
 
-        if(appSpecificCorrelationId)
-        {
-            //Add the annotation instructing the client the correlation-id is not a JMS MessageID value.
-            Map<Symbol, Object> annMap = new HashMap<Symbol, Object>();
-            annMap.put(Symbol.valueOf(AmqpMessageSupport.JMS_APP_CORRELATION_ID), true);
-            MessageAnnotations messageAnnotations = new MessageAnnotations(annMap);
-            message.setMessageAnnotations(messageAnnotations);
-        }
-
-        AmqpMessageIdHelper helper = AmqpMessageIdHelper.INSTANCE;
-        String expected = helper.toBaseMessageIdString(testCorrelationId);
-        if(!appSpecificCorrelationId && !helper.hasMessageIdPrefix(expected))
-        {
-            expected = AmqpMessageIdHelper.JMS_ID_PREFIX + expected;
-        }
-
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
-        assertNotNull("Expected a correlationId on received message", amqpMessageFacade.getCorrelationId());
-
-        assertEquals("Incorrect correlationId value received", expected, amqpMessageFacade.getCorrelationId());
+        String result = amqpMessageFacade.getCorrelationId();
+        assertNotNull("Expected a correlationId on received message", result);
+        assertEquals("Incorrect correlationId value received", expected, result);
+        if(!appSpecificCorrelationId) {
+            assertTrue("Should have have 'ID:' prefix", result.startsWith(AmqpMessageIdHelper.JMS_ID_PREFIX));
+        }
     }
 
     @Test
@@ -1125,7 +1109,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
      * Test that setting then getting a String value as the messageId returns the expected value
      */
     @Test
-    public void testSetGetMessageIdOnNewMessageWithString() {
+    public void testSetGetMessageIdOnNewMessageWithString() throws Exception {
         String testMessageId = "ID:myStringMessageId";
 
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
@@ -1138,18 +1122,17 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
     /**
      * Test that setting an ID: prefixed JMSMessageId results in the underlying AMQP
-     * message holding the value withint the ID: prefix.
+     * message holding the value with the ID: prefix retained.
      */
     @Test
-    public void testSetMessageIdRemovesIdPrefixFromUnderlyingMessage() {
-        String suffix = "myStringMessageIdSuffix";
-        String testMessageId = "ID:" + suffix;
+    public void testSetMessageIdRemovesIdPrefixFromUnderlyingMessage() throws Exception {
+        String testMessageId = "ID:myStringMessageId";
 
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
         amqpMessageFacade.setMessageId(testMessageId);
 
-        assertEquals("Expected underlying messageId value not returned", suffix, amqpMessageFacade.getAmqpMessage().getMessageId());
+        assertEquals("underlying messageId value not as expected", testMessageId, amqpMessageFacade.getAmqpMessage().getMessageId());
     }
 
     /**
@@ -1157,7 +1140,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
      * underlying amqp message-id field
      */
     @Test
-    public void testSetMessageIdNullClearsExistingValue() {
+    public void testSetMessageIdNullClearsExistingValue() throws Exception  {
         String testMessageId = "ID:myStringMessageId";
 
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
@@ -1178,7 +1161,20 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
      */
     @Test
     public void testGetMessageIdOnReceivedMessageWithString() {
-        messageIdOnReceivedMessageTestImpl("myMessageIdString");
+        String testMessageId = AmqpMessageIdHelper.JMS_ID_PREFIX + "myMessageIdString";
+        messageIdOnReceivedMessageTestImpl(testMessageId, testMessageId);
+    }
+
+    /**
+     * Test that getting the messageId when using an underlying received message with a
+     * String message id without "ID:" prefix returns the expected value.
+     */
+    @Test
+    public void testGetMessageIdOnReceivedMessageWithStringNoIdPrefix() {
+        //Deliberately omit the "ID:", as if it was sent from a non-JMS client
+        Object testMessageId = "myMessageIdString";
+        String expected = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_NO_PREFIX + testMessageId;
+        messageIdOnReceivedMessageTestImpl(testMessageId, expected);
     }
 
     /**
@@ -1187,7 +1183,9 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
      */
     @Test
     public void testGetMessageIdOnReceivedMessageWithUUID() {
-        messageIdOnReceivedMessageTestImpl(UUID.randomUUID());
+        Object testMessageId = UUID.randomUUID();
+        String expected = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_UUID_PREFIX + testMessageId;
+        messageIdOnReceivedMessageTestImpl(testMessageId, expected);
     }
 
     /**
@@ -1196,39 +1194,40 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
      */
     @Test
     public void testGetMessageIdOnReceivedMessageWithUnsignedLong() {
-        messageIdOnReceivedMessageTestImpl(UnsignedLong.valueOf(123456789L));
+        UnsignedLong testMessageId = UnsignedLong.valueOf(123456789L);
+        String expected = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_ULONG_PREFIX + testMessageId;
+        messageIdOnReceivedMessageTestImpl(testMessageId, expected);
     }
 
     /**
      * Test that getting the messageId when using an underlying received message with a
-     * Binary message id returns the expected ByteBuffer value.
+     * Binary message id returns the expected value.
      */
     @Test
     public void testGetMessageIdOnReceivedMessageWithBinary() {
         Binary testMessageId = createBinaryId();
-
-        messageIdOnReceivedMessageTestImpl(testMessageId);
+        String expected = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_BINARY_PREFIX +
+                            AmqpMessageIdHelper.INSTANCE.convertBinaryToHexString(testMessageId.getArray());
+        messageIdOnReceivedMessageTestImpl(testMessageId, expected);
     }
 
-    private void messageIdOnReceivedMessageTestImpl(Object testMessageId) {
-        Object underlyingIdObject = testMessageId;
-        if (!(testMessageId == null || testMessageId instanceof Binary || testMessageId instanceof UnsignedLong || testMessageId instanceof String || testMessageId instanceof UUID)) {
+    private void messageIdOnReceivedMessageTestImpl(Object underlyingMessageId, String expected) {
+        if (!(underlyingMessageId == null || underlyingMessageId instanceof Binary
+                || underlyingMessageId instanceof UnsignedLong || underlyingMessageId instanceof String || underlyingMessageId instanceof UUID)) {
             throw new IllegalArgumentException("invalid id type");
         }
 
         Message message = Proton.message();
 
         Properties props = new Properties();
-        props.setMessageId(underlyingIdObject);
+        props.setMessageId(underlyingMessageId);
         message.setProperties(props);
 
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
         assertNotNull("Expected a messageId on received message", amqpMessageFacade.getMessageId());
 
-        String expectedString = appendIdAndTypePrefix(testMessageId);
-
-        assertEquals("Incorrect messageId value received", expectedString, amqpMessageFacade.getMessageId());
+        assertEquals("Incorrect messageId value received", expected, amqpMessageFacade.getMessageId());
     }
 
     private String appendIdAndTypePrefix(Object testMessageId) {

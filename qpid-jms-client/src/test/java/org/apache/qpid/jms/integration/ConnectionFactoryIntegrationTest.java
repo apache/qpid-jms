@@ -146,51 +146,6 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    // TODO - Remove once the deprecated methods are removed.
-    @Test(timeout=20000)
-    public void testSetMessageIDFormatOptionAlteredCaseLegacy() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            // DONT create a test fixture, we will drive everything directly.
-            try {
-                String uri = "amqp://127.0.0.1:" + testPeer.getServerPort() + "?jms.messageIDType=uuid";
-                JmsConnectionFactory factory = new JmsConnectionFactory(uri);
-                JmsDefaultMessageIDPolicy policy = (JmsDefaultMessageIDPolicy) factory.getMessageIDPolicy();
-                assertEquals(JmsMessageIDBuilder.BUILTIN.UUID.name(), policy.getMessageIDType());
-            } catch (Exception ex) {
-                fail("Should have succeeded in creating factory");
-            }
-
-            try {
-                String uri = "amqp://127.0.0.1:" + testPeer.getServerPort() + "?jms.messageIDType=Uuid";
-                JmsConnectionFactory factory = new JmsConnectionFactory(uri);
-                JmsDefaultMessageIDPolicy policy = (JmsDefaultMessageIDPolicy) factory.getMessageIDPolicy();
-                assertEquals(JmsMessageIDBuilder.BUILTIN.UUID.name(), policy.getMessageIDType());
-            } catch (Exception ex) {
-                fail("Should have succeeded in creating factory");
-            }
-        }
-    }
-
-    // TODO - Remove once the deprecated methods are removed.
-    @Test(timeout=20000)
-    public void testMessageIDFormatOptionAppliedLegacy() throws Exception {
-        BUILTIN[] formatters = JmsMessageIDBuilder.BUILTIN.values();
-
-        for (BUILTIN formatter : formatters) {
-            LOG.info("Testing application of Message ID Format: {}", formatter.name());
-            try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-                // DONT create a test fixture, we will drive everything directly.
-                String uri = "amqp://127.0.0.1:" + testPeer.getServerPort() + "?jms.messageIDType=" + formatter.name();
-                JmsConnectionFactory factory = new JmsConnectionFactory(uri);
-                assertEquals(formatter.name(), ((JmsDefaultMessageIDPolicy) factory.getMessageIDPolicy()).getMessageIDType());
-
-                JmsConnection connection = (JmsConnection) factory.createConnection();
-                assertEquals(formatter.name(), ((JmsDefaultMessageIDPolicy) connection.getMessageIDPolicy()).getMessageIDBuilder().toString());
-                connection.close();
-            }
-        }
-    }
-
     @Test(timeout=20000)
     public void testSetMessageIDFormatOptionAlteredCase() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
@@ -231,26 +186,6 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
                 assertEquals(formatter.name(), ((JmsDefaultMessageIDPolicy) connection.getMessageIDPolicy()).getMessageIDBuilder().toString());
                 connection.close();
             }
-        }
-    }
-
-    // TODO - Remove once the deprecated methods are removed.
-    @SuppressWarnings("deprecation")
-    @Test(timeout=20000)
-    public void testSetCustomMessageIDBuilderLegacy() throws Exception {
-        CustomJmsMessageIdBuilder custom = new CustomJmsMessageIdBuilder();
-
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            // DONT create a test fixture, we will drive everything directly.
-            String uri = "amqp://127.0.0.1:" + testPeer.getServerPort();
-
-            JmsConnectionFactory factory = new JmsConnectionFactory(uri);
-            factory.setMessageIDBuilder(custom);
-            assertEquals(custom.toString(), factory.getMessageIDType());
-
-            JmsConnection connection = (JmsConnection) factory.createConnection();
-            assertEquals(custom.toString(), ((JmsDefaultMessageIDPolicy) connection.getMessageIDPolicy()).getMessageIDBuilder().toString());
-            connection.close();
         }
     }
 

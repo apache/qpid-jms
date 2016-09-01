@@ -727,61 +727,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         this.localMessageExpiry = localMessageExpiry;
     }
 
-    /**
-     * Sets the type of the Message IDs used to populate the outgoing Messages
-     *
-     * @deprecated use the jms.messageIDPolicy.messageIDType URI setting instead.
-     *
-     * @param type
-     *      The name of the Message type to use when sending a message.
-     */
-    @Deprecated
-    public void setMessageIDType(String type) {
-        if (messageIDPolicy instanceof JmsDefaultMessageIDPolicy) {
-            ((JmsDefaultMessageIDPolicy) messageIDPolicy).setMessageIDType(type);
-        }
-    }
-
-    @Deprecated
-    public String getMessageIDType() {
-        if (messageIDPolicy instanceof JmsDefaultMessageIDPolicy) {
-            return ((JmsDefaultMessageIDPolicy) this.messageIDPolicy).getMessageIDType();
-        }
-
-        return null;
-    }
-
-    /**
-     * @return the messageIDBuilder currently configured.
-     *
-     * @deprecated Create a custom JmsMessageIDPolicy to control the JmsMessageIDBuilder
-     */
-    @Deprecated
-    public JmsMessageIDBuilder getMessageIDBuilder() {
-        if (messageIDPolicy instanceof JmsDefaultMessageIDPolicy) {
-            return ((JmsDefaultMessageIDPolicy) this.messageIDPolicy).getMessageIDBuilder();
-        }
-
-        return null;
-    }
-
-    /**
-     * Allows the owner of this factory to configure a custom Message ID Builder
-     * instance that will be used to create the Message ID values set in outgoing
-     * Messages sent from MessageProducer instances.
-     *
-     * @param messageIDBuilder
-     *      The custom JmsMessageIDBuilder to use to create outgoing Message IDs.
-     *
-     * @deprecated Create a custom JmsMessageIDPolicy to control the JmsMessageIDBuilder
-     */
-    @Deprecated
-    public void setMessageIDBuilder(JmsMessageIDBuilder messageIDBuilder) {
-        if (messageIDPolicy instanceof JmsDefaultMessageIDPolicy) {
-            ((JmsDefaultMessageIDPolicy) this.messageIDPolicy).setMessageIDBuilder(messageIDBuilder);
-        }
-    }
-
     public boolean isReceiveLocalOnly() {
         return receiveLocalOnly;
     }

@@ -208,10 +208,14 @@ public abstract class NettyServer implements AutoCloseable {
             }
 
             // Shut down all event loops to terminate all threads.
-            LOG.info("Shutting down boss group");
-            bossGroup.shutdownGracefully(10, 100, TimeUnit.MILLISECONDS);
-            LOG.info("Shutting down worker group");
-            workerGroup.shutdownGracefully(10, 100, TimeUnit.MILLISECONDS);
+            int timeout = 100;
+            LOG.trace("Shutting down boss group");
+            bossGroup.shutdownGracefully(0, timeout, TimeUnit.MILLISECONDS).awaitUninterruptibly(timeout);
+            LOG.trace("Boss group shut down");
+
+            LOG.trace("Shutting down worker group");
+            workerGroup.shutdownGracefully(0, timeout, TimeUnit.MILLISECONDS).awaitUninterruptibly(timeout);
+            LOG.trace("Worker group shut down");
         }
     }
 

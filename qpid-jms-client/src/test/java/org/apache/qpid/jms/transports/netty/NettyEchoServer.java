@@ -32,10 +32,6 @@ public class NettyEchoServer extends NettyServer {
 
     private static final Logger LOG = LoggerFactory.getLogger(NettyEchoServer.class);
 
-    public NettyEchoServer(TransportOptions options) {
-        super(options);
-    }
-
     public NettyEchoServer(TransportOptions options, boolean needClientAuth) {
         super(options, needClientAuth);
     }

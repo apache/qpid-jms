@@ -58,8 +58,7 @@ public class NettyTcpTransport implements Transport {
 
     private static final Logger LOG = LoggerFactory.getLogger(NettyTcpTransport.class);
 
-    private static final int QUIET_PERIOD = 20;
-    private static final int SHUTDOWN_TIMEOUT = 100;
+    private static final int SHUTDOWN_TIMEOUT = 50;
 
     protected Bootstrap bootstrap;
     protected EventLoopGroup group;
@@ -168,7 +167,10 @@ public class NettyTcpTransport implements Transport {
                 channel = null;
             }
             if (group != null) {
-                group.shutdownGracefully(QUIET_PERIOD, SHUTDOWN_TIMEOUT, TimeUnit.MILLISECONDS);
+                Future<?> fut = group.shutdownGracefully(0, SHUTDOWN_TIMEOUT, TimeUnit.MILLISECONDS);
+                if (!fut.awaitUninterruptibly(2 * SHUTDOWN_TIMEOUT)) {
+                    LOG.trace("Channel group shutdown failed to complete in allotted time");
+                }
                 group = null;
             }
 
@@ -201,11 +203,17 @@ public class NettyTcpTransport implements Transport {
     public void close() throws IOException {
         if (closed.compareAndSet(false, true)) {
             connected.set(false);
-            if (channel != null) {
-                channel.close().syncUninterruptibly();
-            }
-            if (group != null) {
-                group.shutdownGracefully(QUIET_PERIOD, SHUTDOWN_TIMEOUT, TimeUnit.MILLISECONDS);
+            try {
+                if (channel != null) {
+                    channel.close().syncUninterruptibly();
+                }
+            } finally {
+                if (group != null) {
+                    Future<?> fut = group.shutdownGracefully(0, SHUTDOWN_TIMEOUT, TimeUnit.MILLISECONDS);
+                    if (!fut.awaitUninterruptibly(2 * SHUTDOWN_TIMEOUT)) {
+                        LOG.trace("Channel group shutdown failed to complete in allotted time");
+                    }
+                }
             }
         }
     }

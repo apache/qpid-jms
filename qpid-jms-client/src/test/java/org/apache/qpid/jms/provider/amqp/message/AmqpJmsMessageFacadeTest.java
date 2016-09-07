@@ -1111,6 +1111,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
     /**
      * Test that setting then getting a String value as the messageId returns the expected value
+     *
+     * @throws Exception if the test encounters an unexpected error
      */
     @Test
     public void testSetGetMessageIdOnNewMessageWithString() throws Exception {
@@ -1127,6 +1129,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     /**
      * Test that setting an ID: prefixed JMSMessageId results in the underlying AMQP
      * message holding the value with the ID: prefix retained.
+     *
+     * @throws Exception if the test encounters an unexpected error
      */
     @Test
     public void testSetMessageIdRetainsIdPrefixInUnderlyingMessage() throws Exception {
@@ -1142,6 +1146,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     /**
      * Test that setting the messageId null clears a previous value in the
      * underlying amqp message-id field
+     *
+     * @throws Exception if the test encounters an unexpected error
      */
     @Test
     public void testSetMessageIdNullClearsExistingValue() throws Exception  {

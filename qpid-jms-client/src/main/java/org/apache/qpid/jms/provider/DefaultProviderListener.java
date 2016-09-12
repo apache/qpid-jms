@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
+import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsResource;
 
 /**
@@ -29,6 +30,14 @@ public class DefaultProviderListener implements ProviderListener {
 
     @Override
     public void onInboundMessage(JmsInboundMessageDispatch envelope) {
+    }
+
+    @Override
+    public void onCompletedMessageSend(JmsOutboundMessageDispatch envelope) {
+    }
+
+    @Override
+    public void onFailedMessageSend(JmsOutboundMessageDispatch envelope, Throwable cause) {
     }
 
     @Override

@@ -158,7 +158,7 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
             throw new UnsupportedOperationException("Using this method is not supported on producers created without an explicit Destination");
         }
 
-        sendMessage(producerInfo.getDestination(), message, deliveryMode, priority, timeToLive);
+        sendMessage(producerInfo.getDestination(), message, deliveryMode, priority, timeToLive, null);
     }
 
     @Override
@@ -174,15 +174,107 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
             throw new UnsupportedOperationException("Using this method is not supported on producers created with an explicit Destination.");
         }
 
-        sendMessage(destination, message, deliveryMode, priority, timeToLive);
+        sendMessage(destination, message, deliveryMode, priority, timeToLive, null);
     }
 
-    private void sendMessage(Destination destination, Message message, int deliveryMode, int priority, long timeToLive) throws JMSException {
+    /**
+     * Sends the message asynchronously and notifies the assigned listener on success or failure
+     *
+     * @param message
+     *      the {@link javax.jms.Message} to send.
+     * @param listener
+     *      the {@link JmsCompletionListener} to notify on send success or failure.
+     *
+     * @throws JMSException if an error occurs while attempting to send the Message.
+     */
+    public void send(Message message, JmsCompletionListener listener) throws JMSException {
+        send(message, this.deliveryMode, this.priority, this.timeToLive, listener);
+    }
+
+    /**
+     * Sends the message asynchronously and notifies the assigned listener on success or failure
+     *
+     * @param message
+     *      the {@link javax.jms.Message} to send.
+     * @param deliveryMode
+     *      the delivery mode to assign to the outbound Message.
+     * @param priority
+     *      the priority to assign to the outbound Message.
+     * @param timeToLive
+     *      the time to live value to assign to the outbound Message.
+     * @param listener
+     *      the {@link JmsCompletionListener} to notify on send success or failure.
+     *
+     * @throws JMSException if an error occurs while attempting to send the Message.
+     */
+    public void send(Message message, int deliveryMode, int priority, long timeToLive, JmsCompletionListener listener) throws JMSException {
+        checkClosed();
+
+        if (anonymousProducer) {
+            throw new UnsupportedOperationException("Using this method is not supported on producers created without an explicit Destination");
+        }
+
+        if (listener == null) {
+            throw new IllegalArgumentException("JmsCompletetionListener cannot be null");
+        }
+
+        sendMessage(producerInfo.getDestination(), message, deliveryMode, priority, timeToLive, listener);
+    }
+
+    /**
+     * Sends the message asynchronously and notifies the assigned listener on success or failure
+     *
+     * @param destination
+     *      the Destination to send the given Message to.
+     * @param message
+     *      the {@link javax.jms.Message} to send.
+     * @param listener
+     *      the {@link JmsCompletionListener} to notify on send success or failure.
+     *
+     * @throws JMSException if an error occurs while attempting to send the Message.
+     */
+    public void send(Destination destination, Message message, JmsCompletionListener listener) throws JMSException {
+        send(destination, message, this.deliveryMode, this.priority, this.timeToLive, listener);
+    }
+
+    /**
+     * Sends the message asynchronously and notifies the assigned listener on success or failure
+     *
+     * @param destination
+     *      the Destination to send the given Message to.
+     * @param message
+     *      the {@link javax.jms.Message} to send.
+     * @param deliveryMode
+     *      the delivery mode to assign to the outbound Message.
+     * @param priority
+     *      the priority to assign to the outbound Message.
+     * @param timeToLive
+     *      the time to live value to assign to the outbound Message.
+     * @param listener
+     *      the {@link JmsCompletionListener} to notify on send success or failure.
+     *
+     * @throws JMSException if an error occurs while attempting to send the Message.
+     */
+    public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive, JmsCompletionListener listener) throws JMSException {
+        checkClosed();
+
+        if (!anonymousProducer) {
+            throw new UnsupportedOperationException("Using this method is not supported on producers created with an explicit Destination.");
+        }
+
+        if (listener == null) {
+            throw new IllegalArgumentException("JmsCompletetionListener cannot be null");
+        }
+
+        sendMessage(destination, message, deliveryMode, priority, timeToLive, listener);
+    }
+
+    private void sendMessage(Destination destination, Message message, int deliveryMode, int priority, long timeToLive, JmsCompletionListener listener) throws JMSException {
         if (destination == null) {
             throw new InvalidDestinationException("Don't understand null destinations");
         }
 
-        this.session.send(this, destination, message, deliveryMode, priority, timeToLive, disableMessageId, disableTimestamp);
+        this.session.send(this, destination, message, deliveryMode, priority, timeToLive, disableMessageId, disableTimestamp, listener);
     }
 
     @Override

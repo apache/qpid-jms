@@ -67,7 +67,7 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
     }
 
     @Override
-    public void processDeliveryUpdates(AmqpProvider provider) throws IOException {
+    public void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws IOException {
         try {
             if (pendingDelivery != null && pendingDelivery.remotelySettled()) {
                 DeliveryState state = pendingDelivery.getRemoteState();
@@ -105,7 +105,7 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
                 }
             }
 
-            super.processDeliveryUpdates(provider);
+            super.processDeliveryUpdates(provider, delivery);
         } catch (Exception e) {
             throw IOExceptionSupport.create(e);
         }

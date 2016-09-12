@@ -274,7 +274,17 @@ public class MockProvider implements Provider {
                 try {
                     checkClosed();
                     stats.recordSendCall();
+
                     request.onSuccess();
+                    if (envelope.isCompletionRequired()) {
+                        if (configuration.isDelayCompletionCalls()) {
+                            context.recordPendingCompletion(MockProvider.this, envelope);
+                        } else {
+                            if (listener != null) {
+                                listener.onCompletedMessageSend(envelope);
+                            }
+                        }
+                    }
                 } catch (Exception error) {
                     request.onFailure(error);
                 }
@@ -422,7 +432,6 @@ public class MockProvider implements Provider {
         });
     }
 
-
     /**
      * Switch state to closed without sending any notifications
      */
@@ -488,7 +497,6 @@ public class MockProvider implements Provider {
     }
 
     //----- Implementation details -------------------------------------------//
-
 
     private void checkClosed() throws ProviderClosedException {
         if (closed.get()) {

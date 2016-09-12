@@ -385,42 +385,35 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     @Override
-    public void processDeliveryUpdates(AmqpProvider provider) throws IOException {
-        Delivery incoming = null;
-        do {
-            incoming = getEndpoint().current();
-            if (incoming != null) {
-                if (incoming.isReadable() && !incoming.isPartial()) {
-                    LOG.trace("{} has incoming Message(s).", this);
-                    try {
-                        if (processDelivery(incoming)) {
-                            // We processed a message, signal completion
-                            // of a message pull request if there is one.
-                            if (pullRequest != null) {
-                                pullRequest.onSuccess();
-                                pullRequest = null;
-                            }
-                        }
-                    } catch (Exception e) {
-                        throw IOExceptionSupport.create(e);
+    public void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws IOException {
+        if (delivery.isReadable() && !delivery.isPartial()) {
+            LOG.trace("{} has incoming Message(s).", this);
+            try {
+                if (processDelivery(delivery)) {
+                    // We processed a message, signal completion
+                    // of a message pull request if there is one.
+                    if (pullRequest != null) {
+                        pullRequest.onSuccess();
+                        pullRequest = null;
                     }
-                } else {
-                    LOG.trace("{} has a partial incoming Message(s), deferring.", this);
-                    incoming = null;
                 }
-            } else {
-                // We have exhausted the locally queued messages on this link.
-                // Check if we tried to stop and have now run out of credit.
-                if (getEndpoint().getRemoteCredit() <= 0) {
-                    if (stopRequest != null) {
-                        stopRequest.onSuccess();
-                        stopRequest = null;
-                    }
+            } catch (Exception e) {
+                throw IOExceptionSupport.create(e);
+            }
+        }
+
+        if (getEndpoint().current() == null) {
+            // We have exhausted the locally queued messages on this link.
+            // Check if we tried to stop and have now run out of credit.
+            if (getEndpoint().getRemoteCredit() <= 0) {
+                if (stopRequest != null) {
+                    stopRequest.onSuccess();
+                    stopRequest = null;
                 }
             }
-        } while (incoming != null);
+        }
 
-        super.processDeliveryUpdates(provider);
+        super.processDeliveryUpdates(provider, delivery);
     }
 
     private boolean processDelivery(Delivery incoming) throws Exception {

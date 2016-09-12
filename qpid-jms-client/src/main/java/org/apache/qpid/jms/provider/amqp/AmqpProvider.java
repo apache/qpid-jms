@@ -59,6 +59,7 @@ import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.engine.Collector;
 import org.apache.qpid.proton.engine.Connection;
+import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Event;
 import org.apache.qpid.proton.engine.Event.Type;
@@ -477,11 +478,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         producer = session.getProducer(producerId);
                     }
 
-                    boolean couldSend = producer.send(envelope, request);
-                    pumpToProtonTransport(request);
-                    if (couldSend && envelope.isSendAsync()) {
-                        request.onSuccess();
-                    }
+                    producer.send(envelope, request);
                 } catch (Throwable t) {
                     request.onFailure(t);
                 }
@@ -816,7 +813,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     case DELIVERY:
                         amqpEventSink = (AmqpEventSink) protonEvent.getLink().getContext();
                         if (amqpEventSink != null) {
-                            amqpEventSink.processDeliveryUpdates(this);
+                            amqpEventSink.processDeliveryUpdates(this, (Delivery) protonEvent.getContext());
                         }
                         break;
                     default:
@@ -1166,6 +1163,36 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 @Override
                 public void run() {
                     request.onFailure(error);
+                    pumpToProtonTransport();
+                }
+
+            }, timeout, TimeUnit.MILLISECONDS);
+        }
+
+        return null;
+    }
+
+    /**
+     * Allows a resource to request that its parent resource schedule a future
+     * cancellation of a request and return it a {@link Future} instance that
+     * can be used to cancel the scheduled automatic failure of the request.
+     *
+     * @param request
+     *      The request that should be marked as failed based on configuration.
+     * @param timeout
+     *      The time to wait before marking the request as failed.
+     * @param builder
+     *      An AmqpExceptionBuilder to use when creating a timed out exception.
+     *
+     * @return a {@link ScheduledFuture} that can be stored by the caller.
+     */
+    public ScheduledFuture<?> scheduleRequestTimeout(final AsyncResult request, long timeout, final AmqpExceptionBuilder builder) {
+        if (timeout != JmsConnectionInfo.INFINITE) {
+            return serializer.schedule(new Runnable() {
+
+                @Override
+                public void run() {
+                    request.onFailure(builder.createException());
                     pumpToProtonTransport();
                 }
 

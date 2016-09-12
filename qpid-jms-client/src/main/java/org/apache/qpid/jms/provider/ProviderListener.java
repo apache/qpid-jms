@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
+import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsResource;
 
 /**
@@ -34,6 +35,27 @@ public interface ProviderListener {
      *        The dispatch object containing the message and delivery information.
      */
     void onInboundMessage(JmsInboundMessageDispatch envelope);
+
+    /**
+     * Called when an outbound message dispatch that requested a completion callback
+     * has reached a state where the send can be considered successful based on the QoS
+     * level associated of the outbound message.
+     *
+     * @param envelope
+     *      the original outbound message dispatch that is now complete.
+     */
+    void onCompletedMessageSend(JmsOutboundMessageDispatch envelope);
+
+    /**
+     * Called when an outbound message dispatch that requested a completion callback
+     * has reached a state where the send can be considered failed.
+     *
+     * @param envelope
+     *      the original outbound message dispatch that should be treated as a failed send.
+     * @param cause
+     *      the exception that describes the cause of the failed send.
+     */
+    void onFailedMessageSend(JmsOutboundMessageDispatch envelope, Throwable cause);
 
     /**
      * Called from a fault tolerant Provider instance to signal that the underlying

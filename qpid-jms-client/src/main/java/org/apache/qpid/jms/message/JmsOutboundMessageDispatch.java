@@ -29,7 +29,10 @@ public class JmsOutboundMessageDispatch {
     private JmsDestination destination;
     private boolean sendAsync;
     private boolean presettle;
+    private boolean completionRequired;
     private long dispatchId;
+
+    private transient String stringView;
 
     public JmsDestination getDestination() {
         return destination;
@@ -37,6 +40,10 @@ public class JmsOutboundMessageDispatch {
 
     public void setDestination(JmsDestination destination) {
         this.destination = destination;
+    }
+
+    public Object getMessageId() {
+        return message.getFacade().getProviderMessageIdObject();
     }
 
     public JmsMessage getMessage() {
@@ -79,15 +86,34 @@ public class JmsOutboundMessageDispatch {
         this.presettle = presettle;
     }
 
+    public boolean isCompletionRequired() {
+        return completionRequired;
+    }
+
+    public void setCompletionRequired(boolean completionRequired) {
+        this.completionRequired = completionRequired;
+    }
+
     @Override
     public String toString() {
-        StringBuilder value = new StringBuilder();
+        if (stringView == null) {
+            StringBuilder value = new StringBuilder();
 
-        value.append("JmsOutboundMessageDispatch {dispatchId = ");
-        value.append(getProducerId());
-        value.append("-");
-        value.append(getDispatchId());
+            value.append("JmsOutboundMessageDispatch {dispatchId = ");
+            value.append(getProducerId());
+            value.append("-");
+            value.append(getDispatchId());
+            value.append(", MessageID = ");
+            try {
+                value.append(message.getJMSMessageID());
+            } catch (Throwable e) {
+                value.append("<unknown>");
+            }
+            value.append(" }");
 
-        return value.toString();
+            stringView = value.toString();
+        }
+
+        return stringView;
     }
 }

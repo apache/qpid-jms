@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.Connection;
 import javax.jms.IllegalStateException;
@@ -930,6 +931,114 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testMessageListenerCallsConnectionCloseThrowsIllegalStateException() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicReference<Exception> asyncError = new AtomicReference<Exception>(null);
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue destination = session.createQueue(getTestName());
+            connection.start();
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), 1);
+
+            MessageConsumer consumer = session.createConsumer(destination);
+
+            testPeer.expectDisposition(true, new AcceptedMatcher());
+
+            consumer.setMessageListener(new MessageListener() {
+                @Override
+                public void onMessage(Message m) {
+                    try {
+                        LOG.debug("Async consumer got Message: {}", m);
+                        connection.close();
+                    } catch (Exception ex) {
+                        asyncError.set(ex);
+                    }
+
+                    latch.countDown();
+                }
+            });
+
+            boolean await = latch.await(3000, TimeUnit.MILLISECONDS);
+            assertTrue("Messages not received within given timeout. Count remaining: " + latch.getCount(), await);
+
+            assertNotNull(asyncError.get());
+            assertTrue(asyncError.get() instanceof IllegalStateException);
+
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            testPeer.expectDetach(true, true, true);
+            consumer.close();
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testMessageListenerCallsSessionCloseThrowsIllegalStateException() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicReference<Exception> asyncError = new AtomicReference<Exception>(null);
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue destination = session.createQueue(getTestName());
+            connection.start();
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), 1);
+
+            MessageConsumer consumer = session.createConsumer(destination);
+
+            testPeer.expectDisposition(true, new AcceptedMatcher());
+
+            consumer.setMessageListener(new MessageListener() {
+                @Override
+                public void onMessage(Message m) {
+                    try {
+                        LOG.debug("Async consumer got Message: {}", m);
+                        session.close();
+                    } catch (Exception ex) {
+                        asyncError.set(ex);
+                    }
+
+                    latch.countDown();
+                }
+            });
+
+            boolean await = latch.await(3000, TimeUnit.MILLISECONDS);
+            assertTrue("Messages not received within given timeout. Count remaining: " + latch.getCount(), await);
+
+            assertNotNull(asyncError.get());
+            assertTrue(asyncError.get() instanceof IllegalStateException);
+
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            testPeer.expectDetach(true, true, true);
+            consumer.close();
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(2000);
         }
     }
 }

@@ -40,7 +40,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
+import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
 import javax.jms.ExceptionListener;
@@ -54,9 +57,11 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 
+import org.apache.qpid.jms.JmsCompletionListener;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
+import org.apache.qpid.jms.JmsMessageProducer;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.JmsSendTimedOutException;
 import org.apache.qpid.jms.message.foreign.ForeignJmsMessage;
@@ -68,10 +73,13 @@ import org.apache.qpid.jms.test.testpeer.ListDescribedType;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.basictypes.TerminusDurability;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Modified;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Rejected;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Released;
+import org.apache.qpid.jms.test.testpeer.describedtypes.TransactionalState;
 import org.apache.qpid.jms.test.testpeer.matchers.TargetMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.TransactionalStateMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSectionMatcher;
@@ -1000,6 +1008,79 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testRemotelyEndProducerCompletesAsyncSends() throws Exception {
+        final String BREAD_CRUMB = "ErrorMessage";
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final AtomicBoolean producerClosed = new AtomicBoolean();
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onProducerClosed(MessageProducer producer, Exception exception) {
+                    producerClosed.set(true);
+                }
+            });
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            // Create a producer, then remotely end the session afterwards.
+            testPeer.expectSenderAttach();
+
+            Queue queue = session.createQueue("myQueue");
+            // TODO - Can revert to just MessageProducer once JMS 2.0 API is used
+            final JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+
+            Message message = session.createTextMessage("content");
+
+            final int MSG_COUNT = 3;
+
+            for (int i = 0; i < MSG_COUNT; ++i) {
+                testPeer.expectTransferButDoNotRespond(new TransferPayloadCompositeMatcher());
+            }
+
+            testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(true, true, AmqpError.RESOURCE_LIMIT_EXCEEDED, BREAD_CRUMB, 50);
+
+            TestJmsCompletionListener listener = new TestJmsCompletionListener(MSG_COUNT);
+            try {
+                for (int i = 0; i < MSG_COUNT; ++i) {
+                    producer.send(message, listener);
+                }
+            } catch (JMSException e) {
+                LOG.warn("Caught unexpected error: {}", e.getMessage());
+                fail("No expected exception for this send.");
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            // Verify the producer gets marked closed
+            assertTrue(listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertEquals(MSG_COUNT, listener.errorCount);
+
+            // Verify the session is now marked closed
+            try {
+                producer.getDeliveryMode();
+                fail("Expected ISE to be thrown due to being closed");
+            } catch (IllegalStateException jmsise) {
+                String errorMessage = jmsise.getCause().getMessage();
+                assertTrue(errorMessage.contains(AmqpError.RESOURCE_LIMIT_EXCEEDED.toString()));
+                assertTrue(errorMessage.contains(BREAD_CRUMB));
+            }
+
+            assertTrue("Producer closed callback didn't trigger", producerClosed.get());
+
+            // Try closing it explicitly, should effectively no-op in client.
+            // The test peer will throw during close if it sends anything.
+            producer.close();
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
     public void testRemotelyCloseConnectionDuringSyncSend() throws Exception {
         final String BREAD_CRUMB = "ErrorMessageBreadCrumb";
 
@@ -1142,6 +1223,50 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             } catch (Throwable error) {
                 fail("Send should time out, but got: " + error.getMessage());
             }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncCompletionGetsTimedOutErrorWhenNoDispostionArrives() throws Exception {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setSendTimeout(500);
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String queueName = "myQueue";
+            Queue queue = session.createQueue(queueName);
+
+            Message message = session.createTextMessage("text");
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+
+            // Expect the producer to attach and grant it some credit, it should send
+            // a transfer which we will not send any response for which should cause the
+            // send operation to time out.
+            testPeer.expectSenderAttach();
+            testPeer.expectTransferButDoNotRespond(messageMatcher);
+            testPeer.expectClose();
+
+            // TODO - Can revert to plain JMS once 2.0 is supported.
+            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+            TestJmsCompletionListener listener = new TestJmsCompletionListener();
+
+            try {
+                producer.send(message, listener);
+            } catch (Throwable error) {
+                LOG.info("Caught expected error: {}", error.getMessage());
+                fail("Send should not fail for async.");
+            }
+
+            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertNotNull(listener.exception);
+            assertTrue(listener.exception instanceof JmsSendTimedOutException);
+            assertNotNull(listener.message);
 
             connection.close();
 
@@ -1709,6 +1834,430 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testAsyncCompletionAfterSendMessageGetDispoation() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
+            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+
+            // Create and transfer a new message
+            String text = "myMessage";
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher());
+            testPeer.expectClose();
+
+            TextMessage message = session.createTextMessage(text);
+            TestJmsCompletionListener listener = new TestJmsCompletionListener();
+
+            producer.send(message, listener);
+
+            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertNull(listener.exception);
+            assertNotNull(listener.message);
+            assertTrue(listener.message instanceof TextMessage);
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncCompletionResetsBytesMessage() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
+            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+
+            // Create and transfer a new message
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher());
+            testPeer.expectClose();
+
+            Binary payload = new Binary(new byte[] {1, 2, 3, 4});
+            BytesMessage message = session.createBytesMessage();
+            message.writeBytes(payload.getArray());
+
+            TestJmsCompletionListener listener = new TestJmsCompletionListener();
+
+            producer.send(message, listener);
+
+            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertNull(listener.exception);
+            assertNotNull(listener.message);
+            assertTrue(listener.message instanceof BytesMessage);
+
+            BytesMessage completed = (BytesMessage) listener.message;
+            assertEquals(payload.getLength(), completed.getBodyLength());
+            byte[] data = new byte[payload.getLength()];
+            completed.readBytes(data);
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncCompletionSendMessageRejected() throws Exception {
+        doAsyncCompletionSendMessageNotAcceptedTestImpl(new Rejected());
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncCompletionSendMessageReleased() throws Exception {
+        doAsyncCompletionSendMessageNotAcceptedTestImpl(new Released());
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncCompletionSendMessageModifiedDeliveryFailed() throws Exception {
+        Modified modified = new Modified();
+        modified.setDeliveryFailed(true);
+
+        doAsyncCompletionSendMessageNotAcceptedTestImpl(modified);
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncCompletionSendMessageModifiedUndeliverable() throws Exception {
+        Modified modified = new Modified();
+        modified.setUndeliverableHere(true);
+
+        doAsyncCompletionSendMessageNotAcceptedTestImpl(modified);
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncCompletionSendMessageModifiedDeliveryFailedUndeliverable() throws Exception {
+        Modified modified = new Modified();
+        modified.setDeliveryFailed(true);
+        modified.setUndeliverableHere(true);
+
+        doAsyncCompletionSendMessageNotAcceptedTestImpl(modified);
+    }
+
+    private void doAsyncCompletionSendMessageNotAcceptedTestImpl(ListDescribedType responseState) throws JMSException, InterruptedException, Exception, IOException {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+
+            final CountDownLatch asyncError = new CountDownLatch(1);
+
+            connection.setExceptionListener(new ExceptionListener() {
+
+                @Override
+                public void onException(JMSException exception) {
+                    LOG.debug("ExceptionListener got error: {}", exception.getMessage());
+                    asyncError.countDown();
+                }
+            });
+
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
+            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+
+            // Create a second producer which allows for a safe wait for credit for the
+            // first producer without the need for a sleep.  Otherwise the first producer
+            // might not do an actual async send due to not having received credit yet.
+            session.createProducer(queue);
+
+            Message message = session.createTextMessage("content");
+
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), false, responseState, true);
+
+            assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
+
+            TestJmsCompletionListener listener = new TestJmsCompletionListener();
+            try {
+                producer.send(message, listener);
+            } catch (JMSException e) {
+                LOG.warn("Caught unexpected error: {}", e.getMessage());
+                fail("No expected exception for this send.");
+            }
+
+            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertNotNull(listener.exception);
+            assertNotNull(listener.message);
+            assertTrue(listener.message instanceof TextMessage);
+
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher());
+            testPeer.expectClose();
+
+            listener = new TestJmsCompletionListener();
+            try {
+                producer.send(message, listener);
+            } catch (JMSException e) {
+                LOG.warn("Caught unexpected error: {}", e.getMessage());
+                fail("No expected exception for this send.");
+            }
+
+            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertNull(listener.exception);
+            assertNotNull(listener.message);
+            assertTrue(listener.message instanceof TextMessage);
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncCompletionSessionCloseThrowsIllegalStateException() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
+            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+
+            // Create and transfer a new message
+            String text = "myMessage";
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher());
+            testPeer.expectClose();
+
+            final AtomicReference<JMSException> closeError = new AtomicReference<JMSException>(null);
+            TextMessage message = session.createTextMessage(text);
+            TestJmsCompletionListener listener = new TestJmsCompletionListener() {
+
+                @Override
+                public void onCompletion(Message message) {
+
+                    try {
+                        session.close();
+                    } catch (JMSException jmsEx) {
+                        closeError.set(jmsEx);
+                    }
+
+                    super.onCompletion(message);
+                };
+            };
+
+            producer.send(message, listener);
+
+            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertNull(listener.exception);
+            assertNotNull(listener.message);
+            assertTrue(listener.message instanceof TextMessage);
+            assertNotNull(closeError.get());
+            assertTrue(closeError.get() instanceof IllegalStateException);
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncCompletionConnectionCloseThrowsIllegalStateException() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
+            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+
+            // Create and transfer a new message
+            String text = "myMessage";
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher());
+            testPeer.expectClose();
+
+            final AtomicReference<JMSException> closeError = new AtomicReference<JMSException>(null);
+            TextMessage message = session.createTextMessage(text);
+            TestJmsCompletionListener listener = new TestJmsCompletionListener() {
+
+                @Override
+                public void onCompletion(Message message) {
+
+                    try {
+                        connection.close();
+                    } catch (JMSException jmsEx) {
+                        closeError.set(jmsEx);
+                    }
+
+                    super.onCompletion(message);
+                };
+            };
+
+            producer.send(message, listener);
+
+            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertNull(listener.exception);
+            assertNotNull(listener.message);
+            assertNotNull(closeError.get());
+            assertTrue(closeError.get() instanceof IllegalStateException);
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncCompletionSessionCommitThrowsIllegalStateException() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+
+            // First expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a declared disposition state containing the txnId.
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            testPeer.expectDeclare(txnId);
+
+            testPeer.expectSenderAttach();
+
+            final Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            Queue queue = session.createQueue("myQueue");
+
+            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
+            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+
+            // Create and transfer a new message
+            String text = "myMessage";
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
+            messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(text));
+            TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
+            stateMatcher.withTxnId(equalTo(txnId));
+            stateMatcher.withOutcome(nullValue());
+            TransactionalState txState = new TransactionalState();
+            txState.setTxnId(txnId);
+            txState.setOutcome(new Accepted());
+
+            testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
+
+            final AtomicReference<JMSException> commitError = new AtomicReference<JMSException>(null);
+            TextMessage message = session.createTextMessage(text);
+            TestJmsCompletionListener listener = new TestJmsCompletionListener() {
+
+                @Override
+                public void onCompletion(Message message) {
+
+                    try {
+                        session.commit();
+                    } catch (JMSException jmsEx) {
+                        commitError.set(jmsEx);
+                    }
+
+                    super.onCompletion(message);
+                };
+            };
+
+            producer.send(message, listener);
+
+            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertNull(listener.exception);
+            assertNotNull(listener.message);
+            assertNotNull(commitError.get());
+            assertTrue(commitError.get() instanceof IllegalStateException);
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncCompletionSessionRollbackThrowsIllegalStateException() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+
+            // First expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a declared disposition state containing the txnId.
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            testPeer.expectDeclare(txnId);
+
+            testPeer.expectSenderAttach();
+
+            final Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            Queue queue = session.createQueue("myQueue");
+
+            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
+            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+
+            // Create and transfer a new message
+            String text = "myMessage";
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
+            messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(text));
+            TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
+            stateMatcher.withTxnId(equalTo(txnId));
+            stateMatcher.withOutcome(nullValue());
+            TransactionalState txState = new TransactionalState();
+            txState.setTxnId(txnId);
+            txState.setOutcome(new Accepted());
+
+            testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
+
+            final AtomicReference<JMSException> rollback = new AtomicReference<JMSException>(null);
+            TextMessage message = session.createTextMessage(text);
+            TestJmsCompletionListener listener = new TestJmsCompletionListener() {
+
+                @Override
+                public void onCompletion(Message message) {
+
+                    try {
+                        session.rollback();
+                    } catch (JMSException jmsEx) {
+                        rollback.set(jmsEx);
+                    }
+
+                    super.onCompletion(message);
+                };
+            };
+
+            producer.send(message, listener);
+
+            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertNull(listener.exception);
+            assertNotNull(listener.message);
+            assertNotNull(rollback.get());
+            assertTrue(rollback.get() instanceof IllegalStateException);
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
     public void testAnonymousProducerSendFailureHandledWhenAnonymousRelayNodeIsNotSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
@@ -1829,6 +2378,49 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    private class TestJmsCompletionListener implements JmsCompletionListener {
+
+        private final CountDownLatch completed;
+
+        public volatile int successCount;
+        public volatile int errorCount;
+
+        public volatile Message message;
+        public volatile Exception exception;
+
+        public TestJmsCompletionListener() {
+            this(1);
+        }
+
+        public TestJmsCompletionListener(int expected) {
+            this.completed = new CountDownLatch(expected);
+        }
+
+        public boolean awaitCompletion(long timeout, TimeUnit units) throws InterruptedException {
+            return completed.await(timeout, units);
+        }
+
+        @Override
+        public void onCompletion(Message message) {
+            LOG.info("JmsCompletionListener onCompletion called with message: {}", message);
+            this.message = message;
+            this.successCount++;
+
+            completed.countDown();
+        }
+
+        @Override
+        public void onException(Message message, Exception exception) {
+            LOG.info("JmsCompletionListener onException called with message: {} error {}", message, exception);
+
+            this.message = message;
+            this.exception = exception;
+            this.errorCount++;
+
+            completed.countDown();
         }
     }
 }

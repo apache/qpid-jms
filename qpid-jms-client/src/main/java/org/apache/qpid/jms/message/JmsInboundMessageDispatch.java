@@ -30,6 +30,8 @@ public class JmsInboundMessageDispatch extends JmsAbstractResourceId {
     private JmsMessage message;
     private boolean enqueueFirst;
 
+    private transient String stringView;
+
     public JmsInboundMessageDispatch(long sequence) {
         this.sequence = sequence;
     }
@@ -74,10 +76,21 @@ public class JmsInboundMessageDispatch extends JmsAbstractResourceId {
 
     @Override
     public String toString() {
-        return "JmsInboundMessageDispatch {sequence = " + sequence
-                                      + ", messageId = " + messageId
-                                      + ", consumerId = " + consumerId
-                                      + "}";
+        if (stringView == null) {
+            StringBuilder builder = new StringBuilder();
+
+            builder.append("JmsInboundMessageDispatch { sequence = ");
+            builder.append(sequence);
+            builder.append(", messageId = ");
+            builder.append(messageId);
+            builder.append(", consumerId = ");
+            builder.append(consumerId);
+            builder.append(" }");
+
+            stringView = builder.toString();
+        }
+
+        return stringView;
     }
 
     @Override

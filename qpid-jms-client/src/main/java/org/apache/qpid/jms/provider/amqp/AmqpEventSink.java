@@ -18,6 +18,8 @@ package org.apache.qpid.jms.provider.amqp;
 
 import java.io.IOException;
 
+import org.apache.qpid.proton.engine.Delivery;
+
 /**
  * Interface used by classes that want to process AMQP events sent from
  * the transport layer.
@@ -60,10 +62,12 @@ public interface AmqpEventSink {
      *
      * @param provider
      *        the AmqpProvider instance for easier access to fire events.
+     * @param delivery
+     *        the Delivery that has an update to its state which needs handled.
      *
      * @throws IOException if an error occurs while processing the update.
      */
-    void processDeliveryUpdates(AmqpProvider provider) throws IOException;
+    void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws IOException;
 
     /**
      * Called when the Proton Engine signals an Flow related event has been triggered

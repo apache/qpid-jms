@@ -25,6 +25,8 @@ public class MockProviderConfiguration {
     private boolean failOnStart;
     private boolean failOnClose;
 
+    private boolean delayCompletionCalls;
+
     public boolean isFailOnConnect() {
         return failOnConnect;
     }
@@ -47,5 +49,13 @@ public class MockProviderConfiguration {
 
     public void setFailOnClose(boolean value) {
         this.failOnClose = value;
+    }
+
+    public boolean isDelayCompletionCalls() {
+        return delayCompletionCalls;
+    }
+
+    public void setDelayCompletionCalls(boolean delayCompletionCalls) {
+        this.delayCompletionCalls = delayCompletionCalls;
     }
 }

@@ -57,8 +57,10 @@ import javax.jms.TextMessage;
 import javax.jms.Topic;
 import javax.jms.TopicSubscriber;
 
+import org.apache.qpid.jms.JmsCompletionListener;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
+import org.apache.qpid.jms.JmsMessageProducer;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.JmsSession;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
@@ -1446,7 +1448,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     public void testCreateAnonymousProducerWhenAnonymousRelayNodeIsNotSupported() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
-            //DO NOT add capability to indicate server support for ANONYMOUS-RELAY
+            // DO NOT add capability to indicate server support for ANONYMOUS-RELAY
 
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
@@ -1460,12 +1462,12 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             // Expect no AMQP traffic when we create the anonymous producer, as it will wait
             // for an actual send to occur on the producer before anything occurs on the wire
 
-            //Create an anonymous producer
+            // Create an anonymous producer
             MessageProducer producer = session.createProducer(null);
             assertNotNull("Producer object was null", producer);
 
-            //Expect a new message sent by the above producer to cause creation of a new
-            //sender link to the given destination, then closing the link after the message is sent.
+            // Expect a new message sent by the above producer to cause creation of a new
+            // sender link to the given destination, then closing the link after the message is sent.
             TargetMatcher targetMatcher = new TargetMatcher();
             targetMatcher.withAddress(equalTo(topicName));
             targetMatcher.withDynamic(equalTo(false));
@@ -1484,7 +1486,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Message message = session.createMessage();
             producer.send(dest, message);
 
-            //Repeat the send and observe another attach->transfer->detach.
+            // Repeat the send and observe another attach->transfer->detach.
             testPeer.expectSenderAttach(targetMatcher, false, false);
             testPeer.expectTransfer(messageMatcher);
             testPeer.expectDetach(true, true, true);
@@ -1671,6 +1673,78 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testRemotelyEndSessionWithProducerCompletesAsyncSends() throws Exception {
+        final String BREAD_CRUMB = "ErrorMessage";
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final AtomicBoolean sessionClosed = new AtomicBoolean();
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onSessionClosed(Session session, Exception exception) {
+                    sessionClosed.set(true);
+                }
+            });
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            // Create a producer, then remotely end the session afterwards.
+            testPeer.expectSenderAttach();
+
+            Queue queue = session.createQueue("myQueue");
+            // TODO - Can revert to just MessageProducer once JMS 2.0 API is used
+            final JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+
+            Message message = session.createTextMessage("content");
+
+            final int MSG_COUNT = 3;
+
+            for (int i = 0; i < MSG_COUNT; ++i) {
+                testPeer.expectTransferButDoNotRespond(new TransferPayloadCompositeMatcher());
+            }
+
+            testPeer.remotelyEndLastOpenedSession(true, 0, AmqpError.RESOURCE_DELETED, BREAD_CRUMB);
+
+            TestJmsCompletionListener listener = new TestJmsCompletionListener(MSG_COUNT);
+            try {
+                for (int i = 0; i < MSG_COUNT; ++i) {
+                    producer.send(message, listener);
+                }
+            } catch (JMSException e) {
+                LOG.warn("Caught unexpected error: {}", e.getMessage());
+                fail("No expected exception for this send.");
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            // Verify the producer gets marked closed
+            assertTrue(listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertEquals(MSG_COUNT, listener.errorCount);
+            assertEquals(0, listener.successCount);
+
+            // Verify the session is now marked closed
+            try {
+                session.getAcknowledgeMode();
+                fail("Expected ISE to be thrown due to being closed");
+            } catch (IllegalStateException jmsise) {
+                String errorMessage = jmsise.getCause().getMessage();
+                assertTrue(errorMessage.contains(AmqpError.RESOURCE_DELETED.toString()));
+                assertTrue(errorMessage.contains(BREAD_CRUMB));
+            }
+
+            assertTrue("Session closed callback didn't trigger", sessionClosed.get());
+
+            // Try closing it explicitly, should effectively no-op in client.
+            // The test peer will throw during close if it sends anything.
+            producer.close();
+
+            testPeer.expectClose();
+            connection.close();
         }
     }
 
@@ -1918,6 +1992,36 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectClose();
             connection.close();
+        }
+    }
+
+    private class TestJmsCompletionListener implements JmsCompletionListener {
+
+        private final CountDownLatch completed;
+
+        public volatile int successCount;
+        public volatile int errorCount;
+
+        public TestJmsCompletionListener(int expected) {
+            completed = new CountDownLatch(expected);
+        }
+
+        public boolean awaitCompletion(long timeout, TimeUnit units) throws InterruptedException {
+            return completed.await(timeout, units);
+        }
+
+        @Override
+        public void onCompletion(Message message) {
+            LOG.info("JmsCompletionListener onCompletion called with message: {}", message);
+            successCount++;
+            completed.countDown();
+        }
+
+        @Override
+        public void onException(Message message, Exception exception) {
+            LOG.info("JmsCompletionListener onException called with message: {} error {}", message, exception);
+            errorCount++;
+            completed.countDown();
         }
     }
 }

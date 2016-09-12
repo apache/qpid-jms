@@ -24,10 +24,12 @@ import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.amqp.AmqpEventSink;
+import org.apache.qpid.jms.provider.amqp.AmqpExceptionBuilder;
 import org.apache.qpid.jms.provider.amqp.AmqpProvider;
 import org.apache.qpid.jms.provider.amqp.AmqpResource;
 import org.apache.qpid.jms.provider.amqp.AmqpResourceParent;
 import org.apache.qpid.jms.provider.amqp.AmqpSupport;
+import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Endpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +42,7 @@ import org.slf4j.LoggerFactory;
  * @param <INFO> The Type of JmsResource used to describe the target resource.
  * @param <ENDPOINT> The AMQP Endpoint that the target resource encapsulates.
  */
-public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT extends AmqpResourceParent, INFO extends JmsResource, ENDPOINT extends Endpoint> implements AmqpEventSink {
+public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT extends AmqpResourceParent, INFO extends JmsResource, ENDPOINT extends Endpoint> implements AmqpEventSink, AmqpExceptionBuilder {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpResourceBuilder.class);
 
@@ -97,7 +99,7 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
                     return request.isComplete();
                 }
 
-            }, getRequestTimeout(), new JmsOperationTimedOutException("Request to open resource " + getResource() + " timed out"));
+            }, getRequestTimeout(), this);
         }
     }
 
@@ -119,7 +121,7 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
     }
 
     @Override
-    public void processDeliveryUpdates(AmqpProvider provider) throws IOException {
+    public void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws IOException {
         // No implementation needed here for this event.
     }
 
@@ -183,6 +185,11 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
         getEndpoint().setContext(null);
 
         getRequest().onFailure(openError);
+    }
+
+    @Override
+    public Exception createException() {
+        return new JmsOperationTimedOutException("Request to open resource " + getResource() + " timed out");
     }
 
     //----- Implementation methods used to customize the build process -------//

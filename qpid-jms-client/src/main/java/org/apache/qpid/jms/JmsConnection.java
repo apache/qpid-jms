@@ -156,6 +156,11 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     public void close() throws JMSException {
         boolean interrupted = Thread.interrupted();
 
+        for (JmsSession session : sessions.values()) {
+            session.checkIsDeliveryThread();
+            session.checkIsCompletionThread();
+        }
+
         try {
 
             if (!closed.get() && !failed.get()) {
@@ -1072,6 +1077,26 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     }
 
     @Override
+    public void onCompletedMessageSend(JmsOutboundMessageDispatch envelope) {
+        JmsSession session = sessions.get(envelope.getProducerId().getParentId());
+        if (session != null) {
+            session.onCompletedMessageSend(envelope);
+        } else {
+            LOG.debug("No matching Session found for async send result");
+        }
+    }
+
+    @Override
+    public void onFailedMessageSend(JmsOutboundMessageDispatch envelope, Throwable cause) {
+        JmsSession session = sessions.get(envelope.getProducerId().getParentId());
+        if (session != null) {
+            session.onFailedMessageSend(envelope, cause);
+        } else {
+            LOG.debug("No matching Session found for failed async send result");
+        }
+    }
+
+    @Override
     public void onConnectionInterrupted(final URI remoteURI) {
         for (JmsSession session : sessions.values()) {
             session.onConnectionInterrupted();
@@ -1160,6 +1185,12 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     @Override
     public void onConnectionFailure(final IOException ex) {
         providerFailed(ex);
+
+        // Signal that connection dropped we need to mark transactions as
+        // failed, deliver failure events to asynchronous send completions etc.
+        for (JmsSession session : sessions.values()) {
+            session.onConnectionInterrupted();
+        }
 
         onProviderException(ex);
 
@@ -1304,10 +1335,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         if (!closed.get() && !closing.get()) {
             if (this.exceptionListener != null) {
 
-                if (!(error instanceof JMSException)) {
-                    error = JmsExceptionSupport.create(error);
-                }
-                final JMSException jmsError = (JMSException)error;
+                final JMSException jmsError = JmsExceptionSupport.create(error);
 
                 executor.execute(new Runnable() {
                     @Override

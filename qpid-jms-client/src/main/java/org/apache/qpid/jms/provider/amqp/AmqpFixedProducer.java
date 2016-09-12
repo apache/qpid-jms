@@ -18,10 +18,10 @@ package org.apache.qpid.jms.provider.amqp;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 
 import javax.jms.IllegalStateException;
@@ -62,9 +62,11 @@ public class AmqpFixedProducer extends AmqpProducer {
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[] {};
 
     private final AmqpTransferTagGenerator tagGenerator = new AmqpTransferTagGenerator(true);
-    private final Set<Delivery> sent = new LinkedHashSet<Delivery>();
-    private final LinkedList<InFlightSend> blocked = new LinkedList<InFlightSend>();
+    private final Map<Object, InFlightSend> sent = new LinkedHashMap<Object, InFlightSend>();
+    private final Map<Object, InFlightSend> blocked = new LinkedHashMap<Object, InFlightSend>();
     private byte[] encodeBuffer = new byte[1024 * 8];
+
+    private AsyncResult sendCompletionWatcher;
 
     public AmqpFixedProducer(AmqpSession session, JmsProducerInfo info) {
         super(session, info);
@@ -86,29 +88,24 @@ public class AmqpFixedProducer extends AmqpProducer {
     }
 
     @Override
-    public boolean send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws IOException, JMSException {
+    public void send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws IOException, JMSException {
         if (isClosed()) {
             request.onFailure(new IllegalStateException("The MessageProducer is closed"));
         }
 
         if (getEndpoint().getCredit() <= 0) {
             LOG.trace("Holding Message send until credit is available.");
-            // Once a message goes into a held mode we no longer can send it async, so
-            // we clear the async flag if set to avoid the sender never getting notified.
-            envelope.setSendAsync(false);
 
             InFlightSend send = new InFlightSend(envelope, request);
 
             if (getSendTimeout() > JmsConnectionInfo.INFINITE) {
-                send.requestTimeout = getParent().getProvider().scheduleRequestTimeout(
-                    send, getSendTimeout(), new JmsSendTimedOutException("Timed out waiting for credit to send Message", envelope.getMessage()));
+                send.requestTimeout = getParent().getProvider().scheduleRequestTimeout(send, getSendTimeout(), send);
             }
 
-            blocked.addLast(send);
-            return false;
+            blocked.put(envelope.getMessageId(), send);
+            getParent().getProvider().pumpToProtonTransport(request);
         } else {
             doSend(envelope, request);
-            return true;
         }
     }
 
@@ -133,35 +130,54 @@ public class AmqpFixedProducer extends AmqpProducer {
             delivery = getEndpoint().delivery(tag, 0, tag.length);
         }
 
-        delivery.setContext(request);
-
         if (session.isTransacted()) {
-            Binary amqpTxId = session.getTransactionContext().getAmqpTransactionId();
+            AmqpTransactionContext context = session.getTransactionContext();
+            Binary amqpTxId = context.getAmqpTransactionId();
             TransactionalState state = new TransactionalState();
             state.setTxnId(amqpTxId);
             delivery.disposition(state);
+            context.registerTxProducer(this);
         }
 
         AmqpJmsMessageFacade amqpMessageFacade = (AmqpJmsMessageFacade) facade;
         encodeAndSend(amqpMessageFacade.getAmqpMessage(), delivery);
 
+        AmqpProvider provider = getParent().getProvider();
+
+        InFlightSend send = null;
+        if (request instanceof InFlightSend) {
+            send = (InFlightSend) request;
+        } else {
+            send = new InFlightSend(envelope, request);
+
+            if (!presettle && getSendTimeout() != JmsConnectionInfo.INFINITE) {
+                send.requestTimeout = getParent().getProvider().scheduleRequestTimeout(send, getSendTimeout(), send);
+            }
+        }
+
         if (presettle) {
             delivery.settle();
         } else {
-            sent.add(delivery);
+            sent.put(envelope.getMessageId(), send);
             getEndpoint().advance();
         }
 
-        if (envelope.isSendAsync() || presettle) {
-            request.onSuccess();
-        } else if (getSendTimeout() != JmsConnectionInfo.INFINITE) {
-            InFlightSend send = new InFlightSend(envelope, request);
+        send.setDelivery(delivery);
+        delivery.setContext(send);
 
-            send.requestTimeout = getParent().getProvider().scheduleRequestTimeout(
-                send, getSendTimeout(), new JmsSendTimedOutException("Timed out waiting for disposition of sent Message", envelope.getMessage()));
-
-            // Update context so the incoming disposition can cancel any pending timeout
-            delivery.setContext(send);
+        // Put it on the wire and let it fail if the connection is broken, if it does
+        // get written then continue on to determine when we should complete it.
+        if (provider.pumpToProtonTransport(request)) {
+            // For presettled messages we can just mark as successful and we are done, but
+            // for any other message we still track it until the remote settles.  If the send
+            // was tagged as asynchronous we must mark the original request as complete but
+            // we still need to wait for the disposition before we can consider the send as
+            // having been successful.
+            if (presettle) {
+                send.onSuccess();
+            } else if (envelope.isSendAsync()) {
+                send.getOriginalRequest().onSuccess();
+            }
         }
     }
 
@@ -195,13 +211,16 @@ public class AmqpFixedProducer extends AmqpProducer {
     @Override
     public void processFlowUpdates(AmqpProvider provider) throws IOException {
         if (!blocked.isEmpty() && getEndpoint().getCredit() > 0) {
-            while (getEndpoint().getCredit() > 0 && !blocked.isEmpty()) {
+            Iterator<InFlightSend> blockedSends = blocked.values().iterator();
+            while (getEndpoint().getCredit() > 0 && blockedSends.hasNext()) {
                 LOG.trace("Dispatching previously held send");
-                InFlightSend held = blocked.pop();
+                InFlightSend held = blockedSends.next();
                 try {
-                    doSend(held.envelope, held);
+                    doSend(held.getEnvelope(), held);
                 } catch (JMSException e) {
                     throw IOExceptionSupport.create(e);
+                } finally {
+                    blockedSends.remove();
                 }
             }
         }
@@ -211,25 +230,18 @@ public class AmqpFixedProducer extends AmqpProducer {
             getEndpoint().drained();
         }
 
-        // Once the pending sends queue is drained we can propagate the close request.
-        if (blocked.isEmpty() && isAwaitingClose() && !isClosed()) {
-            super.close(closeRequest);
-        }
-
         super.processFlowUpdates(provider);
     }
 
     @Override
-    public void processDeliveryUpdates(AmqpProvider provider) throws IOException {
-        List<Delivery> toRemove = new ArrayList<Delivery>();
+    public void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws IOException {
+        DeliveryState state = delivery.getRemoteState();
+        if (state != null) {
 
-        for (Delivery delivery : sent) {
-            DeliveryState state = delivery.getRemoteState();
-            if (state == null) {
-                continue;
-            }
-
+            InFlightSend send = (InFlightSend) delivery.getContext();
+            Exception deliveryError = null;
             Outcome outcome = null;
+
             if (state instanceof TransactionalState) {
                 LOG.trace("State of delivery is Transactional, retrieving outcome: {}", state);
                 outcome = ((TransactionalState) state).getOutcome();
@@ -240,14 +252,9 @@ public class AmqpFixedProducer extends AmqpProducer {
                 outcome = null;
             }
 
-            AsyncResult request = (AsyncResult) delivery.getContext();
-            Exception deliveryError = null;
-
             if (outcome instanceof Accepted) {
                 LOG.trace("Outcome of delivery was accepted: {}", delivery);
-                if (request != null && !request.isComplete()) {
-                    request.onSuccess();
-                }
+                send.onSuccess();
             } else if (outcome instanceof Rejected) {
                 LOG.trace("Outcome of delivery was rejected: {}", delivery);
                 ErrorCondition remoteError = ((Rejected) outcome).getError();
@@ -265,21 +272,11 @@ public class AmqpFixedProducer extends AmqpProducer {
             }
 
             if (deliveryError != null) {
-                if (request != null && !request.isComplete()) {
-                    request.onFailure(deliveryError);
-                } else {
-                    connection.getProvider().fireNonFatalProviderException(deliveryError);
-                }
+                send.onFailure(deliveryError);
             }
-
-            tagGenerator.returnTag(delivery.getTag());
-            toRemove.add(delivery);
-            delivery.settle();
         }
 
-        sent.removeAll(toRemove);
-
-        super.processDeliveryUpdates(provider);
+        super.processDeliveryUpdates(provider, delivery);
     }
 
     public AmqpSession getSession() {
@@ -312,45 +309,45 @@ public class AmqpFixedProducer extends AmqpProducer {
             error = new JMSException("Producer closed remotely before message transfer result was notified");
         }
 
-        for (Delivery delivery : sent) {
+        Collection<InFlightSend> inflightSends = new ArrayList<InFlightSend>(sent.values());
+        for (InFlightSend send : inflightSends) {
             try {
-                AsyncResult request = (AsyncResult) delivery.getContext();
-
-                if (request != null && !request.isComplete()) {
-                    request.onFailure(error);
-                }
-
-                delivery.settle();
-                tagGenerator.returnTag(delivery.getTag());
+                send.onFailure(error);
             } catch (Exception e) {
-                LOG.debug("Caught exception when failing pending send during remote producer closure: {}", delivery, e);
+                LOG.debug("Caught exception when failing pending send during remote producer closure: {}", send, e);
             }
         }
 
-        sent.clear();
-
-        for (InFlightSend blockedSend : blocked) {
+        Collection<InFlightSend> blockedSends = new ArrayList<InFlightSend>(blocked.values());
+        for (InFlightSend send : blockedSends) {
             try {
-                AsyncResult request = blockedSend.request;
-                if (request != null && !request.isComplete()) {
-                    request.onFailure(error);
-                }
+                send.onFailure(error);
             } catch (Exception e) {
-                LOG.debug("Caught exception when failing blocked send during remote producer closure: {}", blockedSend, e);
+                LOG.debug("Caught exception when failing blocked send during remote producer closure: {}", send, e);
             }
         }
+    }
 
-        blocked.clear();
+    @Override
+    public void addSendCompletionWatcher(AsyncResult watcher) {
+        // If none pending signal done already.
+        // TODO - If we don't include blocked sends then update this.
+        if (blocked.isEmpty() && sent.isEmpty()) {
+            watcher.onSuccess();
+        } else {
+            this.sendCompletionWatcher = watcher;
+        }
     }
 
     //----- Class used to manage held sends ----------------------------------//
 
-    private class InFlightSend implements AsyncResult {
+    private class InFlightSend implements AsyncResult, AmqpExceptionBuilder {
 
-        public final JmsOutboundMessageDispatch envelope;
-        public final AsyncResult request;
+        private final JmsOutboundMessageDispatch envelope;
+        private final AsyncResult request;
 
-        public ScheduledFuture<?> requestTimeout;
+        private Delivery delivery;
+        private ScheduledFuture<?> requestTimeout;
 
         public InFlightSend(JmsOutboundMessageDispatch envelope, AsyncResult request) {
             this.envelope = envelope;
@@ -359,31 +356,95 @@ public class AmqpFixedProducer extends AmqpProducer {
 
         @Override
         public void onFailure(Throwable cause) {
-            if (requestTimeout != null) {
-                requestTimeout.cancel(false);
-                requestTimeout = null;
+            handleSendCompletion(false);
+
+            if (request.isComplete()) {
+                // Asynchronous sends can still be awaiting a completion in which case we
+                // send to them otherwise send to the listener to be reported.
+                if (envelope.isCompletionRequired()) {
+                    getParent().getProvider().getProviderListener().onFailedMessageSend(envelope, cause);
+                } else {
+                    getParent().getProvider().fireNonFatalProviderException(IOExceptionSupport.create(cause));
+                }
+            } else {
+                request.onFailure(cause);
             }
-
-            blocked.remove(this);
-
-            request.onFailure(cause);
         }
 
         @Override
         public void onSuccess() {
-            if (requestTimeout != null) {
-                requestTimeout.cancel(false);
-                requestTimeout = null;
+            handleSendCompletion(true);
+
+            if (!request.isComplete()) {
+                request.onSuccess();
             }
 
-            blocked.remove(this);
+            if (envelope.isCompletionRequired()) {
+                getParent().getProvider().getProviderListener().onCompletedMessageSend(envelope);
+            }
+        }
 
-            request.onSuccess();
+        public void setRequestTimeout(ScheduledFuture<?> requestTimeout) {
+            if (this.requestTimeout != null) {
+                this.requestTimeout.cancel(false);
+            }
+
+            this.requestTimeout = requestTimeout;
+        }
+
+        public JmsOutboundMessageDispatch getEnvelope() {
+            return envelope;
+        }
+
+        public AsyncResult getOriginalRequest() {
+            return request;
+        }
+
+        public void setDelivery(Delivery delivery) {
+            this.delivery = delivery;
+        }
+
+        public Delivery getDelivery() {
+            return delivery;
         }
 
         @Override
         public boolean isComplete() {
             return request.isComplete();
+        }
+
+        private void handleSendCompletion(boolean successful) {
+            setRequestTimeout(null);
+
+            if (getDelivery() != null) {
+                sent.remove(envelope.getMessageId());
+                delivery.settle();
+                tagGenerator.returnTag(delivery.getTag());
+            } else {
+                blocked.remove(envelope.getMessageId());
+            }
+
+            // TODO - Should this take blocked sends into consideration.
+            // Signal the watcher that all pending sends have completed if one is registered
+            // and both the in-flight sends and blocked sends have completed.
+            if (sendCompletionWatcher != null && sent.isEmpty() && blocked.isEmpty()) {
+                sendCompletionWatcher.onSuccess();
+            }
+
+            // Once the pending sends queue is drained and all in-flight sends have been
+            // settled we can propagate the close request.
+            if (isAwaitingClose() && !isClosed() && blocked.isEmpty() && sent.isEmpty()) {
+                AmqpFixedProducer.super.close(closeRequest);
+            }
+        }
+
+        @Override
+        public Exception createException() {
+            if (delivery == null) {
+                return new JmsSendTimedOutException("Timed out waiting for credit to send Message", envelope.getMessage());
+            } else {
+                return new JmsSendTimedOutException("Timed out waiting for disposition of sent Message", envelope.getMessage());
+            }
         }
     }
 }

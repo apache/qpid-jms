@@ -20,7 +20,14 @@ import static org.apache.qpid.jms.provider.amqp.AmqpSupport.ANONYMOUS_RELAY;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -30,8 +37,11 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TemporaryQueue;
 import javax.jms.TemporaryTopic;
+import javax.jms.TextMessage;
 import javax.jms.Topic;
 
+import org.apache.qpid.jms.JmsCompletionListener;
+import org.apache.qpid.jms.JmsMessageProducer;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.ListDescribedType;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -47,11 +57,15 @@ import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.transaction.TxnCapability;
 import org.hamcrest.Matcher;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test MessageProducers created using various configuration of the presettle options
  */
 public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PresettledProducerIntegrationTest.class);
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
@@ -417,6 +431,223 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    //----- Test the jms.presettleAll with asynchronous completion -----------//
+
+    @Test(timeout = 20000)
+    public void testAsyncCompletionPresettleAllSendToTopic() throws Exception {
+        String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
+        doTestAsyncCompletionProducerWithPresettleOptions(presettleConfig, false, false, true, true, Topic.class);
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncCompletionPresettleAllSendToQueue() throws Exception {
+        String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
+        doTestAsyncCompletionProducerWithPresettleOptions(presettleConfig, false, false, true, true, Queue.class);
+    }
+
+    @Test(timeout = 20000)
+    public void testsyncCompletionPresettleAllAnonymousSendToTopic() throws Exception {
+        String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
+        doTestAsyncCompletionProducerWithPresettleOptions(presettleConfig, false, true, true, true, Topic.class);
+    }
+
+    @Test(timeout = 20000)
+    public void testsyncCompletionPresettleAllAnonymousSendToQueue() throws Exception {
+        String presettleConfig = "?jms.presettlePolicy.presettleAll=true";
+        doTestAsyncCompletionProducerWithPresettleOptions(presettleConfig, false, true, true, true, Queue.class);
+    }
+
+    //----- Test the jms.presettleProducers with asynchronous completion -----//
+
+    @Test(timeout = 20000)
+    public void testAsyncCompletionPresettleProducersTopic() throws Exception {
+        String presettleConfig = "?jms.presettlePolicy.presettleProducers=true";
+        doTestAsyncCompletionProducerWithPresettleOptions(presettleConfig, false, false, true, true, Topic.class);
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncCompletionPresettleProducersQueue() throws Exception {
+        String presettleConfig = "?jms.presettlePolicy.presettleProducers=true";
+        doTestAsyncCompletionProducerWithPresettleOptions(presettleConfig, false, false, true, true, Queue.class);
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncCompletionPresettleProducersAnonymousTopic() throws Exception {
+        String presettleConfig = "?jms.presettlePolicy.presettleProducers=true";
+        doTestAsyncCompletionProducerWithPresettleOptions(presettleConfig, false, true, true, true, Topic.class);
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncCompletionPresettleProducersAnonymousQueue() throws Exception {
+        String presettleConfig = "?jms.presettlePolicy.presettleProducers=true";
+        doTestAsyncCompletionProducerWithPresettleOptions(presettleConfig, false, true, true, true, Queue.class);
+    }
+
+    //----- Asynchronous Completion test method implementation ---------------//
+
+    private void doTestAsyncCompletionProducerWithPresettleOptions(String uriOptions, boolean transacted, boolean anonymous, boolean senderSettled, boolean transferSettled, Class<? extends Destination> destType) throws Exception {
+        doTestAsyncCompletionProducerWithPresettleOptions(uriOptions, transacted, anonymous, true, senderSettled, transferSettled, destType);
+    }
+
+    private void doTestAsyncCompletionProducerWithPresettleOptions(String uriOptions, boolean transacted, boolean anonymous, boolean relaySupported, boolean senderSettled, boolean transferSettled, Class<? extends Destination> destType) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer, uriOptions, relaySupported ? serverCapabilities : null, null);
+            testPeer.expectBegin();
+
+            Session session = null;
+            Binary txnId = null;
+
+            if (transacted) {
+                // Expect the session, with an immediate link to the transaction coordinator
+                // using a target with the expected capabilities only.
+                CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
+                txCoordinatorMatcher.withCapabilities(arrayContaining(TxnCapability.LOCAL_TXN));
+                testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+
+                // First expect an unsettled 'declare' transfer to the txn coordinator, and
+                // reply with a declared disposition state containing the txnId.
+                txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
+                testPeer.expectDeclare(txnId);
+
+                session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            } else {
+                session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            }
+
+            Destination destination = null;
+            if (destType == Queue.class) {
+                destination = session.createQueue("MyQueue");
+            } else if (destType == Topic.class) {
+                destination = session.createTopic("MyTopis");
+            } else if (destType == TemporaryQueue.class) {
+                String dynamicAddress = "myTempQueueAddress";
+                testPeer.expectTempQueueCreationAttach(dynamicAddress);
+                destination = session.createTemporaryQueue();
+            } else if (destType == TemporaryTopic.class) {
+                String dynamicAddress = "myTempTopicAddress";
+                testPeer.expectTempTopicCreationAttach(dynamicAddress);
+                destination = session.createTemporaryTopic();
+            } else {
+                fail("unexpected type");
+            }
+
+            if (senderSettled) {
+                testPeer.expectSettledSenderAttach();
+            } else {
+                testPeer.expectSenderAttach();
+            }
+
+            TestJmsCompletionListener listener = new TestJmsCompletionListener();
+            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
+            JmsMessageProducer producer = null;
+            if (anonymous) {
+                producer = (JmsMessageProducer) session.createProducer(null);
+            } else {
+                producer = (JmsMessageProducer) session.createProducer(destination);
+            }
+
+            // Create and transfer a new message
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
+            headersMatcher.withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+
+            Matcher<?> stateMatcher = nullValue();
+            if (transacted) {
+                stateMatcher = new TransactionalStateMatcher();
+                ((TransactionalStateMatcher) stateMatcher).withTxnId(equalTo(txnId));
+                ((TransactionalStateMatcher) stateMatcher).withOutcome(nullValue());
+            }
+
+            ListDescribedType responseState = new Accepted();
+            if (transacted) {
+                TransactionalState txState = new TransactionalState();
+                txState.setTxnId(txnId);
+                txState.setOutcome(new Accepted());
+            }
+
+            if (transferSettled) {
+                testPeer.expectTransfer(messageMatcher, stateMatcher, true, false, responseState, false);
+            } else {
+                testPeer.expectTransfer(messageMatcher, stateMatcher, false, true, responseState, true);
+            }
+
+            if (anonymous && !relaySupported) {
+                testPeer.expectDetach(true, true, true);
+            }
+
+            Message message = session.createTextMessage();
+
+            if (anonymous) {
+                producer.send(destination, message, listener);
+            } else {
+                producer.send(message, listener);
+            }
+
+            if (transacted) {
+                testPeer.expectDischarge(txnId, true);
+            }
+
+            testPeer.expectClose();
+
+            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertNull(listener.exception);
+            assertNotNull(listener.message);
+            assertTrue(listener.message instanceof TextMessage);
+            assertEquals(1, listener.successCount);
+            assertEquals(0, listener.errorCount);
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    private class TestJmsCompletionListener implements JmsCompletionListener {
+
+        private final CountDownLatch completed;
+
+        public volatile int successCount;
+        public volatile int errorCount;
+
+        public volatile Message message;
+        public volatile Exception exception;
+
+        public TestJmsCompletionListener() {
+            this(1);
+        }
+
+        public TestJmsCompletionListener(int expected) {
+            this.completed = new CountDownLatch(expected);
+        }
+
+        public boolean awaitCompletion(long timeout, TimeUnit units) throws InterruptedException {
+            return completed.await(timeout, units);
+        }
+
+        @Override
+        public void onCompletion(Message message) {
+            LOG.info("JmsCompletionListener onCompletion called with message: {}", message);
+            this.message = message;
+            this.successCount++;
+
+            completed.countDown();
+        }
+
+        @Override
+        public void onException(Message message, Exception exception) {
+            LOG.info("JmsCompletionListener onException called with message: {} error {}", message, exception);
+
+            this.message = message;
+            this.exception = exception;
+            this.errorCount++;
+
+            completed.countDown();
         }
     }
 }

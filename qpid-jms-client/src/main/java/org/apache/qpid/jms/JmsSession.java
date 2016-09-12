@@ -18,8 +18,11 @@ package org.apache.qpid.jms;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -58,6 +61,7 @@ import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
 import javax.jms.TopicSubscriber;
 
+import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.message.JmsMessageTransformation;
@@ -98,14 +102,18 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     private final LinkedBlockingQueue<JmsInboundMessageDispatch> stoppedMessages =
         new LinkedBlockingQueue<JmsInboundMessageDispatch>(10000);
     private final JmsSessionInfo sessionInfo;
-    private volatile ExecutorService executor;
     private final ReentrantLock sendLock = new ReentrantLock();
+    private volatile ExecutorService deliveryExecutor;
+    private volatile ExecutorService completionExcecutor;
+    private Thread deliveryThread;
+    private Thread completionThread;
 
     private final AtomicLong consumerIdGenerator = new AtomicLong();
     private final AtomicLong producerIdGenerator = new AtomicLong();
     private JmsTransactionContext transactionContext;
     private boolean sessionRecovered;
     private final AtomicReference<Exception> failureCause = new AtomicReference<Exception>();
+    private final Deque<SendCompletion> asyncSendQueue = new ConcurrentLinkedDeque<SendCompletion>();
 
     protected JmsSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) throws JMSException {
         this.connection = connection;
@@ -178,6 +186,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     @Override
     public void commit() throws JMSException {
         checkClosed();
+        checkIsCompletionThread();
 
         if (!getTransacted()) {
             throw new javax.jms.IllegalStateException("Not a transacted session");
@@ -189,6 +198,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     @Override
     public void rollback() throws JMSException {
         checkClosed();
+        checkIsCompletionThread();
 
         if (!getTransacted()) {
             throw new javax.jms.IllegalStateException("Not a transacted session");
@@ -223,6 +233,9 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
     @Override
     public void close() throws JMSException {
+        checkIsDeliveryThread();
+        checkIsCompletionThread();
+
         if (!closed.get()) {
             doClose();
         }
@@ -272,11 +285,22 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             }
 
             transactionContext.shutdown();
+
+            synchronized (sessionInfo) {
+                if (completionExcecutor != null) {
+                    completionExcecutor.shutdown();
+                    completionExcecutor = null;
+                }
+            }
         }
     }
 
     void sessionClosed(Exception cause) {
         try {
+            // TODO - This assumes we can't rely on the AmqpProvider to signal all pending
+            //        asynchronous send completions that they are failed when the session
+            //        is remotely closed.
+            getCompletionExecutor().execute(new FailOrCompleteAsyncCompletionsTask(JmsExceptionSupport.create(cause)));
             shutdown(cause);
         } catch (Throwable error) {
             LOG.trace("Ignoring exception thrown during cleanup of closed session", error);
@@ -306,6 +330,11 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
         try {
             if (producer != null) {
+                // TODO - This assumes we can't rely on the AmqpProvider to signal all pending
+                //        asynchronous send completions that they are failed when the producer
+                //        is remotely closed.
+                getCompletionExecutor().execute(new FailOrCompleteAsyncCompletionsTask(
+                    producer.getProducerId(), JmsExceptionSupport.create(cause)));
                 producer.shutdown(cause);
             }
         } catch (Throwable error) {
@@ -624,17 +653,17 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         connection.onException(ex);
     }
 
-    protected void send(JmsMessageProducer producer, Destination dest, Message msg, int deliveryMode, int priority, long timeToLive, boolean disableMsgId, boolean disableTimestamp) throws JMSException {
+    protected void send(JmsMessageProducer producer, Destination dest, Message msg, int deliveryMode, int priority, long timeToLive, boolean disableMsgId, boolean disableTimestamp, JmsCompletionListener listener) throws JMSException {
         JmsDestination destination = JmsMessageTransformation.transformDestination(connection, dest);
 
         if (destination.isTemporary() && ((JmsTemporaryDestination) destination).isDeleted()) {
             throw new IllegalStateException("Temporary destination has been deleted");
         }
 
-        send(producer, destination, msg, deliveryMode, priority, timeToLive, disableMsgId, disableTimestamp);
+        send(producer, destination, msg, deliveryMode, priority, timeToLive, disableMsgId, disableTimestamp, listener);
     }
 
-    private void send(JmsMessageProducer producer, JmsDestination destination, Message original, int deliveryMode, int priority, long timeToLive, boolean disableMsgId, boolean disableTimestamp) throws JMSException {
+    private void send(JmsMessageProducer producer, JmsDestination destination, Message original, int deliveryMode, int priority, long timeToLive, boolean disableMsgId, boolean disableTimestamp, JmsCompletionListener listener) throws JMSException {
         sendLock.lock();
         try {
             original.setJMSDeliveryMode(deliveryMode);
@@ -707,14 +736,35 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             envelope.setMessage(copy);
             envelope.setProducerId(producer.getProducerId());
             envelope.setDestination(destination);
-            envelope.setSendAsync(!sync);
+            envelope.setSendAsync(listener == null ? !sync : true);
             envelope.setDispatchId(messageSequence);
+            envelope.setCompletionRequired(listener != null);
 
             if (producer.isAnonymous()) {
                 envelope.setPresettle(getPresettlePolicy().isProducerPresttled(this, destination));
             }
 
-            transactionContext.send(connection, envelope);
+            SendCompletion completion = null;
+            if (envelope.isCompletionRequired()) {
+                completion = new SendCompletion(envelope, listener);
+                asyncSendQueue.addLast(completion);
+            }
+
+            try {
+                transactionContext.send(connection, envelope);
+            } catch (JMSException jmsEx) {
+                // If the synchronous portion of the send fails the completion be
+                // notified but might depending on the circumstances of the failures,
+                // remove it from the queue and check if is is already completed.
+                if (completion != null) {
+                    asyncSendQueue.remove(completion);
+                    if (completion.hasCompleted()) {
+                        return;
+                    }
+                }
+
+                throw jmsEx;
+            }
         } finally {
             sendLock.unlock();
         }
@@ -837,9 +887,9 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         }
 
         synchronized (sessionInfo) {
-            if (executor != null) {
-                executor.shutdown();
-                executor = null;
+            if (deliveryExecutor != null) {
+                deliveryExecutor.shutdown();
+                deliveryExecutor = null;
             }
         }
     }
@@ -852,27 +902,60 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         return connection;
     }
 
-    Executor getExecutor() {
-        ExecutorService exec = executor;
-        if(exec == null) {
+    Executor getDispatcherExecutor() {
+        ExecutorService exec = deliveryExecutor;
+        if (exec == null) {
             synchronized (sessionInfo) {
-                if (executor == null) {
-                    executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
-                        @Override
-                        public Thread newThread(Runnable runner) {
-                            Thread executor = new Thread(runner);
-                            executor.setName("JmsSession ["+ sessionInfo.getId() + "] dispatcher");
-                            executor.setDaemon(true);
-                            return executor;
-                        }
-                    });
+                if (deliveryExecutor == null) {
+                    deliveryExecutor = createExecutor("delivery dispatcher");
                 }
 
-                exec = executor;
+                exec = deliveryExecutor;
+                exec.execute(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        JmsSession.this.deliveryThread = Thread.currentThread();
+                    }
+                });
             }
         }
 
         return exec;
+    }
+
+    Executor getCompletionExecutor() {
+        ExecutorService exec = completionExcecutor;
+        if (exec == null) {
+            synchronized (sessionInfo) {
+                if (completionExcecutor == null) {
+                    completionExcecutor = createExecutor("completion dispatcher");
+                }
+
+                exec = completionExcecutor;
+                exec.execute(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        JmsSession.this.completionThread = Thread.currentThread();
+                    }
+                });
+            }
+        }
+
+        return exec;
+    }
+
+    private ExecutorService createExecutor(final String threadNameSuffix) {
+        return Executors.newSingleThreadExecutor(new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable runner) {
+                Thread executor = new Thread(runner);
+                executor.setName("JmsSession ["+ sessionInfo.getId() + "] " + threadNameSuffix);
+                executor.setDaemon(true);
+                return executor;
+            }
+        });
     }
 
     protected JmsSessionInfo getSessionInfo() {
@@ -925,6 +1008,18 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         }
     }
 
+    void checkIsDeliveryThread() throws JMSException {
+        if (Thread.currentThread().equals(deliveryThread)) {
+            throw new IllegalStateException("Illegal invocation from MessageListener callback");
+        }
+    }
+
+    void checkIsCompletionThread() throws JMSException {
+        if (Thread.currentThread().equals(completionThread)) {
+            throw new IllegalStateException("Illegal invocation from CompletionListener callback");
+        }
+    }
+
     public JmsMessageIDPolicy getMessageIDPolicy() {
         return sessionInfo.getMessageIDPolicy();
     }
@@ -945,6 +1040,36 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         return sessionInfo.getDeserializationPolicy();
     }
 
+    /**
+     * Sets the transaction context of the session.
+     *
+     * @param transactionContext
+     *        provides the means to control a JMS transaction.
+     */
+    public void setTransactionContext(JmsTransactionContext transactionContext) {
+        this.transactionContext = transactionContext;
+    }
+
+    /**
+     * Returns the transaction context of the session.
+     *
+     * @return transactionContext
+     *         session's transaction context.
+     */
+    public JmsTransactionContext getTransactionContext() {
+        return transactionContext;
+    }
+
+    boolean isSessionRecovered() {
+        return sessionRecovered;
+    }
+
+    void clearSessionRecovered() {
+        sessionRecovered = false;
+    }
+
+    //----- Event handlers ---------------------------------------------------//
+
     @Override
     public void onInboundMessage(JmsInboundMessageDispatch envelope) {
         if (started.get()) {
@@ -954,9 +1079,21 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         }
     }
 
+    protected void onCompletedMessageSend(final JmsOutboundMessageDispatch envelope) {
+        getCompletionExecutor().execute(new AsyncCompletionTask(envelope));
+    }
+
+    protected void onFailedMessageSend(final JmsOutboundMessageDispatch envelope, final Throwable cause) {
+        getCompletionExecutor().execute(new AsyncCompletionTask(envelope, cause));
+    }
+
     protected void onConnectionInterrupted() {
 
         transactionContext.onConnectionInterrupted();
+
+        // TODO - Synthesize a better exception
+        JMSException failureCause = new JMSException("Send failed due to connection loss");
+        getCompletionExecutor().execute(new FailOrCompleteAsyncCompletionsTask(failureCause));
 
         for (JmsMessageProducer producer : producers.values()) {
             producer.onConnectionInterrupted();
@@ -1019,31 +1156,155 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         }
     }
 
-    /**
-     * Sets the transaction context of the session.
-     *
-     * @param transactionContext
-     *        provides the means to control a JMS transaction.
-     */
-    public void setTransactionContext(JmsTransactionContext transactionContext) {
-        this.transactionContext = transactionContext;
+    //----- Asynchronous Send Helpers ----------------------------------------//
+
+    private final class FailOrCompleteAsyncCompletionsTask implements Runnable {
+
+        private final JMSException failureCause;
+        private final JmsProducerId producerId;
+
+        public FailOrCompleteAsyncCompletionsTask(JMSException failureCause) {
+            this(null, failureCause);
+        }
+
+        public FailOrCompleteAsyncCompletionsTask(JmsProducerId producerId, JMSException failureCause) {
+            this.failureCause = failureCause;
+            this.producerId = producerId;
+        }
+
+        @Override
+        public void run() {
+            // For any completion that is not yet marked as complete we fail it
+            // otherwise we send the already marked completion state event.
+            Iterator<SendCompletion> pending = asyncSendQueue.iterator();
+            while (pending.hasNext()) {
+                SendCompletion completion = pending.next();
+
+                if (!completion.hasCompleted()) {
+                    if (producerId == null || producerId.equals(completion.envelope.getProducerId())) {
+                        completion.markAsFailed(failureCause);
+                    }
+                }
+
+                try {
+                    completion.signalCompletion();
+                } catch (Throwable error) {
+                    LOG.trace("Signaled completion of send: {}", completion.envelope);
+                }
+            }
+
+            asyncSendQueue.clear();
+        }
     }
 
-    /**
-     * Returns the transaction context of the session.
-     *
-     * @return transactionContext
-     *         session's transaction context.
-     */
-    public JmsTransactionContext getTransactionContext() {
-        return transactionContext;
+    private final class AsyncCompletionTask implements Runnable {
+
+        private final JmsOutboundMessageDispatch envelope;
+        private final Throwable cause;
+
+        public AsyncCompletionTask(JmsOutboundMessageDispatch envelope) {
+            this(envelope, null);
+        }
+
+        public AsyncCompletionTask(JmsOutboundMessageDispatch envelope, Throwable cause) {
+            this.envelope = envelope;
+            this.cause = cause;
+        }
+
+        @Override
+        public void run() {
+            try {
+                SendCompletion completion = asyncSendQueue.peek();
+                if (completion.getEnvelope().getDispatchId() == envelope.getDispatchId()) {
+                    try {
+                        completion = asyncSendQueue.remove();
+                        if (cause == null) {
+                            completion.markAsComplete();
+                        } else {
+                            completion.markAsFailed(JmsExceptionSupport.create(cause));
+                        }
+                        completion.signalCompletion();
+                    } catch (Throwable error) {
+                        LOG.trace("Failed while performing send completion: {}", envelope);
+                        // TODO - What now?
+                    }
+
+                    // Signal any trailing completions that have been marked complete
+                    // before this one was that they have now that the one in front has
+                    Iterator<SendCompletion> pending = asyncSendQueue.iterator();
+                    while (pending.hasNext()) {
+                        completion = pending.next();
+                        if (completion.hasCompleted()) {
+                            try {
+                                completion.signalCompletion();
+                            } catch (Throwable error) {
+                                LOG.trace("Failed while performing send completion: {}", envelope);
+                                // TODO - What now?
+                            } finally {
+                                pending.remove();
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                } else {
+                    // Not head so mark as complete and wait for the one in front to send
+                    // the notification of completion.
+                    Iterator<SendCompletion> pending = asyncSendQueue.iterator();
+                    while (pending.hasNext()) {
+                        completion = pending.next();
+                        if (completion.getEnvelope().getDispatchId() == envelope.getDispatchId()) {
+                            if (cause == null) {
+                                completion.markAsComplete();
+                            } else {
+                                completion.markAsFailed(JmsExceptionSupport.create(cause));
+                            }
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                LOG.debug("Send completion task encounted unexpected error: {}", ex.getMessage());
+                // TODO - What now
+            }
+        }
     }
 
-    boolean isSessionRecovered() {
-        return sessionRecovered;
-    }
+    private final class SendCompletion {
 
-    void clearSessionRecovered() {
-        sessionRecovered = false;
+        private final JmsOutboundMessageDispatch envelope;
+        private final JmsCompletionListener listener;
+
+        private Exception failureCause;
+        private boolean completed;
+
+        public SendCompletion(JmsOutboundMessageDispatch envelope, JmsCompletionListener listener) {
+            this.envelope = envelope;
+            this.listener = listener;
+        }
+
+        public void markAsComplete() {
+            completed = true;
+        }
+
+        public void markAsFailed(Exception cause) {
+            completed = true;
+            failureCause = cause;
+        }
+
+        public boolean hasCompleted() {
+            return completed;
+        }
+
+        public void signalCompletion() {
+            if (failureCause == null) {
+                listener.onCompletion(envelope.getMessage());
+            } else {
+                listener.onException(envelope.getMessage(), failureCause);
+            }
+        }
+
+        public JmsOutboundMessageDispatch getEnvelope() {
+            return envelope;
+        }
     }
 }

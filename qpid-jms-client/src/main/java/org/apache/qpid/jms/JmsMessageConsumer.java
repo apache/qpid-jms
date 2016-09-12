@@ -438,10 +438,10 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
             }
 
             if (this.messageListener != null && this.started) {
-                session.getExecutor().execute(new MessageDeliverTask());
+                session.getDispatcherExecutor().execute(new MessageDeliverTask());
             } else {
                 if (availableListener != null) {
-                    session.getExecutor().execute(new Runnable() {
+                    session.getDispatcherExecutor().execute(new Runnable() {
                         @Override
                         public void run() {
                             if (session.isStarted()) {
@@ -507,7 +507,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
 
     void drainMessageQueueToListener() {
         if (this.messageListener != null && this.started) {
-            session.getExecutor().execute(new MessageDeliverTask());
+            session.getDispatcherExecutor().execute(new MessageDeliverTask());
         }
     }
 

@@ -69,7 +69,7 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
     }
 
     @Override
-    public boolean send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws IOException, JMSException {
+    public void send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws IOException, JMSException {
         LOG.trace("Started send chain for anonymous producer: {}", getProducerId());
 
         // Force sends marked as asynchronous to be sent synchronous so that the temporary
@@ -91,7 +91,8 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
 
             // We open a Fixed Producer instance with the target destination.  Once it opens
             // it will trigger the open event which will in turn trigger the send event.
-            // If caching is disabled the created producer will be closed immediately.
+            // If caching is disabled the created producer will be closed immediately after
+            // the entire send chain has finished and the delivery has been acknowledged.
             AmqpProducerBuilder builder = new AmqpProducerBuilder(session, info);
             builder.buildResource(new AnonymousSendRequest(request, builder, envelope));
 
@@ -100,9 +101,9 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
                 producerCache.put(envelope.getDestination(), builder.getResource());
             }
 
-            return true;
+            getParent().getProvider().pumpToProtonTransport(request);
         } else {
-            return producer.send(envelope, request);
+            producer.send(envelope, request);
         }
     }
 
@@ -134,6 +135,14 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
     private JmsProducerId getNextProducerId() {
         return new JmsProducerId(producerIdKey, -1, producerIdCount++);
     }
+
+    @Override
+    public void addSendCompletionWatcher(AsyncResult watcher) {
+        throw new UnsupportedOperationException(
+            "The fallback producer parent should never have a watcher assigned.");
+    }
+
+    //----- AsyncResult objects used to complete the sends -------------------//
 
     private abstract class AnonymousRequest extends WrappedAsyncResult {
 

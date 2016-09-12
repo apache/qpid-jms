@@ -43,11 +43,14 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.QueueBrowser;
 import javax.jms.Session;
+import javax.jms.TextMessage;
 import javax.jms.Topic;
 
+import org.apache.qpid.jms.JmsCompletionListener;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
+import org.apache.qpid.jms.JmsMessageProducer;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.JmsSendTimedOutException;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
@@ -56,6 +59,7 @@ import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.basictypes.TerminusDurability;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Rejected;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.SourceMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
@@ -1034,6 +1038,153 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Test(timeout = 20000)
+    public void testFailoverPassthroughOfCompletedAsyncSend() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final Connection connection = establishAnonymousConnecton(
+                "failover.reconnectDelay=2000&failover.maxReconnectAttempts=5", testPeer);
+
+            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
+            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+
+            // Create and transfer a new message
+            String text = "myMessage";
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher());
+            testPeer.expectClose();
+
+            TextMessage message = session.createTextMessage(text);
+            TestJmsCompletionListener listener = new TestJmsCompletionListener();
+
+            producer.send(message, listener);
+
+            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertNull(listener.exception);
+            assertNotNull(listener.message);
+            assertTrue(listener.message instanceof TextMessage);
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testFalioverPassthroughOfRejectedAsyncCompletionSend() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final JmsConnection connection = establishAnonymousConnecton(
+                "failover.reconnectDelay=2000&failover.maxReconnectAttempts=5", testPeer);
+
+            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
+            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+
+            Message message = session.createTextMessage("content");
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), false, new Rejected(), true);
+
+            assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
+
+            TestJmsCompletionListener listener = new TestJmsCompletionListener();
+            try {
+                producer.send(message, listener);
+            } catch (JMSException e) {
+                LOG.warn("Caught unexpected error: {}", e.getMessage());
+                fail("No expected exception for this send.");
+            }
+
+            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertNotNull(listener.exception);
+            assertNotNull(listener.message);
+            assertTrue(listener.message instanceof TextMessage);
+
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher());
+            testPeer.expectClose();
+
+            listener = new TestJmsCompletionListener();
+            try {
+                producer.send(message, listener);
+            } catch (JMSException e) {
+                LOG.warn("Caught unexpected error: {}", e.getMessage());
+                fail("No expected exception for this send.");
+            }
+
+            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertNull(listener.exception);
+            assertNotNull(listener.message);
+            assertTrue(listener.message instanceof TextMessage);
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverConnectionLossFailsWaitingAsyncCompletionSends() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final JmsConnection connection = establishAnonymousConnecton(
+                "failover.reconnectDelay=2000&failover.maxReconnectAttempts=60",
+                testPeer);
+
+            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
+            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+
+            final int MSG_COUNT = 5;
+
+            Message message = session.createTextMessage("content");
+            for (int i = 0; i < MSG_COUNT; ++i) {
+                testPeer.expectTransferButDoNotRespond(new TransferPayloadCompositeMatcher());
+            }
+
+            // Accept one which shouldn't complete until after the others have failed.
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), false, new Accepted(), true);
+            testPeer.dropAfterLastHandler();
+
+            TestJmsCompletionListener listener = new TestJmsCompletionListener(MSG_COUNT + 1);
+            try {
+                for (int i = 0; i < MSG_COUNT; ++i) {
+                    producer.send(message, listener);
+                }
+
+                producer.send(message, listener);
+            } catch (JMSException e) {
+                LOG.warn("Caught unexpected error: {}", e.getMessage());
+                fail("No expected exception for this send.");
+            }
+
+            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertEquals(MSG_COUNT, listener.errorCount);
+            assertEquals(1, listener.successCount);
+            assertNotNull(listener.exception);
+            assertNotNull(listener.message);
+            assertTrue(listener.message instanceof TextMessage);
+
+            connection.close();
+        }
+    }
+
     private JmsConnection establishAnonymousConnecton(TestAmqpPeer... peers) throws JMSException {
         return establishAnonymousConnecton(null, null, peers);
     }
@@ -1075,5 +1226,48 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
     private String createPeerURI(TestAmqpPeer peer, String params) {
         return "amqp://localhost:" + peer.getServerPort() + (params != null ? "?" + params : "");
+    }
+
+    private class TestJmsCompletionListener implements JmsCompletionListener {
+
+        private final CountDownLatch completed;
+
+        public volatile int successCount;
+        public volatile int errorCount;
+
+        public volatile Message message;
+        public volatile Exception exception;
+
+        public TestJmsCompletionListener() {
+            this(1);
+        }
+
+        public TestJmsCompletionListener(int expected) {
+            this.completed = new CountDownLatch(expected);
+        }
+
+        public boolean awaitCompletion(long timeout, TimeUnit units) throws InterruptedException {
+            return completed.await(timeout, units);
+        }
+
+        @Override
+        public void onCompletion(Message message) {
+            LOG.info("JmsCompletionListener onCompletion called with message: {}", message);
+            this.message = message;
+            this.successCount++;
+
+            completed.countDown();
+        }
+
+        @Override
+        public void onException(Message message, Exception exception) {
+            LOG.info("JmsCompletionListener onException called with message: {} error {}", message, exception);
+
+            this.message = message;
+            this.exception = exception;
+            this.errorCount++;
+
+            completed.countDown();
+        }
     }
 }

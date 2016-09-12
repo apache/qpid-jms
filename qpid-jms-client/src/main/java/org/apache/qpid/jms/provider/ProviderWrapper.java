@@ -154,6 +154,16 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
     }
 
     @Override
+    public void onCompletedMessageSend(JmsOutboundMessageDispatch envelope) {
+        listener.onCompletedMessageSend(envelope);
+    }
+
+    @Override
+    public void onFailedMessageSend(JmsOutboundMessageDispatch envelope, Throwable cause) {
+        listener.onFailedMessageSend(envelope, cause);
+    }
+
+    @Override
     public void onConnectionInterrupted(URI remoteURI) {
         listener.onConnectionInterrupted(remoteURI);
     }

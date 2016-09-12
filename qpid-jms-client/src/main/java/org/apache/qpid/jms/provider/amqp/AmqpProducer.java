@@ -54,13 +54,10 @@ public abstract class AmqpProducer extends AmqpAbstractResource<JmsProducerInfo,
      * @param request
      *        The AsyncRequest that will be notified on send success or failure.
      *
-     * @return true if the producer had credit to send or false if there was no available
-     *         credit and the send needed to be deferred.
-     *
      * @throws IOException if an error occurs sending the message
      * @throws JMSException if an error occurs while preparing the message for send.
      */
-    public abstract boolean send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws IOException, JMSException;
+    public abstract void send(JmsOutboundMessageDispatch envelope, AsyncResult request) throws IOException, JMSException;
 
     /**
      * @return true if this is an anonymous producer or false if fixed to a given destination.
@@ -92,4 +89,14 @@ public abstract class AmqpProducer extends AmqpAbstractResource<JmsProducerInfo,
     public void setPresettle(boolean presettle) {
         this.presettle = presettle;
     }
+
+    /**
+     * Allows a completion request to be added to this producer that will be notified
+     * once all outstanding sends have completed.
+     *
+     * @param watcher
+     *      The AsyncResult that will be signaled once this producer has no pending sends.
+     */
+    public abstract void addSendCompletionWatcher(AsyncResult watcher);
+
 }

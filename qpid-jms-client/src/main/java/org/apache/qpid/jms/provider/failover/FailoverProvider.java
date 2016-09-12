@@ -801,6 +801,24 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     }
 
     @Override
+    public void onCompletedMessageSend(final JmsOutboundMessageDispatch envelope) {
+        if (closingConnection.get() || closed.get() || failed.get()) {
+            return;
+        }
+
+        listener.onCompletedMessageSend(envelope);
+    }
+
+    @Override
+    public void onFailedMessageSend(final JmsOutboundMessageDispatch envelope, Throwable cause) {
+        if (closingConnection.get() || closed.get() || failed.get()) {
+            return;
+        }
+
+        listener.onFailedMessageSend(envelope, cause);
+    }
+
+    @Override
     public void onConnectionFailure(final IOException ex) {
         if (closingConnection.get() || closed.get() || failed.get()) {
             return;

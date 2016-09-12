@@ -44,6 +44,7 @@ public class AmqpTransactionContext implements AmqpResourceParent {
 
     private final AmqpSession session;
     private final Set<AmqpConsumer> txConsumers = new LinkedHashSet<AmqpConsumer>();
+    private final Set<AmqpProducer> txProducers = new LinkedHashSet<AmqpProducer>();
 
     private JmsTransactionId current;
     private AmqpTransactionCoordinator coordinator;
@@ -85,7 +86,6 @@ public class AmqpTransactionContext implements AmqpResourceParent {
             }
         };
 
-
         if (coordinator == null || coordinator.isClosed()) {
             AmqpTransactionCoordinatorBuilder builder =
                 new AmqpTransactionCoordinatorBuilder(this, session.getResourceInfo());
@@ -115,7 +115,7 @@ public class AmqpTransactionContext implements AmqpResourceParent {
         }
     }
 
-    public void commit(JmsTransactionInfo transactionInfo, final AsyncResult request) throws Exception {
+    public void commit(final JmsTransactionInfo transactionInfo, final AsyncResult request) throws Exception {
         if (!transactionInfo.getId().equals(current)) {
             if (!transactionInfo.isInDoubt() && current == null) {
                 throw new IllegalStateException("Commit called with no active Transaction.");
@@ -128,29 +128,10 @@ public class AmqpTransactionContext implements AmqpResourceParent {
 
         preCommit();
 
+        DischargeCompletion dischargeResult = new DischargeCompletion(request, true);
+
         LOG.trace("TX Context[{}] committing current TX[[]]", this, current);
-        coordinator.discharge(current, new AsyncResult() {
-
-            @Override
-            public void onSuccess() {
-                current = null;
-                postCommit();
-                request.onSuccess();
-            }
-
-            @Override
-            public void onFailure(Throwable result) {
-                current = null;
-                postCommit();
-                request.onFailure(result);
-            }
-
-            @Override
-            public boolean isComplete() {
-                return current == null;
-            }
-
-        }, true);
+        coordinator.discharge(current, dischargeResult, true);
     }
 
     public void rollback(JmsTransactionInfo transactionInfo, final AsyncResult request) throws Exception {
@@ -167,35 +148,27 @@ public class AmqpTransactionContext implements AmqpResourceParent {
 
         preRollback();
 
-        LOG.trace("TX Context[{}] rolling back current TX[[]]", this, current);
-        coordinator.discharge(current, new AsyncResult() {
+        DischargeCompletion dischargeResult = new DischargeCompletion(request, false);
 
-            @Override
-            public void onSuccess() {
-                current = null;
-                postRollback();
-                request.onSuccess();
+        if (txProducers.isEmpty()) {
+            LOG.trace("TX Context[{}] rolling back current TX[[]]", this, current);
+            coordinator.discharge(current, dischargeResult, false);
+        } else {
+            SendCompletion producersSendCompletion = new SendCompletion(transactionInfo, dischargeResult, txProducers.size(), false);
+            for (AmqpProducer producer : txProducers) {
+                producer.addSendCompletionWatcher(producersSendCompletion);
             }
-
-            @Override
-            public void onFailure(Throwable result) {
-                current = null;
-                postRollback();
-                request.onFailure(result);
-            }
-
-            @Override
-            public boolean isComplete() {
-                return current == null;
-            }
-
-        }, false);
+        }
     }
 
     //----- Context utility methods ------------------------------------------//
 
     public void registerTxConsumer(AmqpConsumer consumer) {
         txConsumers.add(consumer);
+    }
+
+    public void registerTxProducer(AmqpProducer producer) {
+        txProducers.add(producer);
     }
 
     public AmqpSession getSession() {
@@ -243,6 +216,7 @@ public class AmqpTransactionContext implements AmqpResourceParent {
         }
 
         txConsumers.clear();
+        txProducers.clear();
     }
 
     private void postRollback() {
@@ -251,6 +225,7 @@ public class AmqpTransactionContext implements AmqpResourceParent {
         }
 
         txConsumers.clear();
+        txProducers.clear();
     }
 
     //----- Resource Parent implementation -----------------------------------//
@@ -272,5 +247,95 @@ public class AmqpTransactionContext implements AmqpResourceParent {
     @Override
     public AmqpProvider getProvider() {
         return session.getProvider();
+    }
+
+    //----- Completion for Commit or Rollback operation ----------------------//
+
+    private class DischargeCompletion implements AsyncResult {
+
+        private final AsyncResult request;
+        private final boolean commit;
+
+        public DischargeCompletion(AsyncResult request, boolean commit) {
+            this.request = request;
+            this.commit = commit;
+        }
+
+        @Override
+        public void onFailure(Throwable result) {
+            cleanup();
+            request.onFailure(result);
+        }
+
+        @Override
+        public void onSuccess() {
+            cleanup();
+            request.onSuccess();
+        }
+
+        @Override
+        public boolean isComplete() {
+            return request.isComplete();
+        }
+
+        private void cleanup() {
+            current = null;
+            if (commit) {
+                postCommit();
+            } else {
+                postRollback();
+            }
+        }
+    }
+
+    //----- Completion result for Producers ----------------------------------//
+
+    @SuppressWarnings("unused")
+    private class SendCompletion implements AsyncResult {
+
+        private int pendingCompletions;
+
+        private final JmsTransactionInfo info;
+        private final DischargeCompletion request;
+
+        private boolean commit;
+
+        public SendCompletion(JmsTransactionInfo info, DischargeCompletion request, int pendingCompletions, boolean commit) {
+            this.info = info;
+            this.request = request;
+            this.pendingCompletions = pendingCompletions;
+            this.commit = commit;
+        }
+
+        @Override
+        public void onFailure(Throwable result) {
+            if (--pendingCompletions == 0) {
+                try {
+                    LOG.trace("TX Context[{}] rolling back current TX[[]]", this, current);
+                    coordinator.discharge(current, request, false);
+                } catch (Throwable error) {
+                    request.onFailure(error);
+                }
+            } else {
+                commit = false;
+            }
+        }
+
+        @Override
+        public void onSuccess() {
+            if (--pendingCompletions == 0) {
+                try {
+                    LOG.trace("TX Context[{}] {} current TX[[]]", this, commit ? "committing" : "rolling back" ,current);
+                    coordinator.discharge(current, request, commit);
+                } catch (Throwable error) {
+                    request.onFailure(error);
+                }
+            }
+        }
+
+        @Override
+        public boolean isComplete() {
+            return request.isComplete();
+        }
     }
 }

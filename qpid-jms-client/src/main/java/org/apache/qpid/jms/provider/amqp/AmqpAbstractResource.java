@@ -23,6 +23,7 @@ import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Endpoint;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.slf4j.Logger;
@@ -158,7 +159,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
             closeOrDetachEndpoint();
         }
 
-        // Process the close now, so that child close operations see the correct state.
+        // Process the close before moving on to closing down child resources
         provider.pumpToProtonTransport();
 
         handleResourceClosure(provider, error);
@@ -253,7 +254,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
     }
 
     @Override
-    public void processDeliveryUpdates(AmqpProvider provider) throws IOException {
+    public void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws IOException {
         // Nothing do be done here, subclasses can override as needed.
     }
 

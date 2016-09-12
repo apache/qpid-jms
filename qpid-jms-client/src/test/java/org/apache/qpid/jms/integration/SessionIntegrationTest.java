@@ -1228,33 +1228,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 20000)
-    public void testCloseDurableTopicSubscriberDetachesWithCloseFalse() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
-            connection.start();
-
-            testPeer.expectBegin();
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-
-            String topicName = "myTopic";
-            Topic dest = session.createTopic(topicName);
-            String subscriptionName = "mySubscription";
-
-            testPeer.expectDurableSubscriberAttach(topicName, subscriptionName);
-            testPeer.expectLinkFlow();
-
-            TopicSubscriber subscriber = session.createDurableSubscriber(dest, subscriptionName);
-
-            testPeer.expectDetach(false, true, false);
-            subscriber.close();
-
-            testPeer.expectClose();
-            connection.close();
-
-            testPeer.waitForAllHandlersToComplete(1000);
-        }
-    }
 
     @Test(timeout = 20000)
     public void testCreateAnonymousProducerWhenAnonymousRelayNodeIsSupported() throws Exception {

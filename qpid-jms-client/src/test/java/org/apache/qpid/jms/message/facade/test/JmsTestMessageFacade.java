@@ -60,6 +60,7 @@ public class JmsTestMessageFacade implements JmsMessageFacade {
     protected int groupSequence;
     protected Object messageId;
     protected long expiration;
+    protected long deliveryTime;
     protected long timestamp;
     protected String correlationId;
     protected boolean persistent;
@@ -283,6 +284,16 @@ public class JmsTestMessageFacade implements JmsMessageFacade {
     }
 
     @Override
+    public long getDeliveryTime() {
+        return deliveryTime;
+    }
+
+    @Override
+    public void setDeliveryTime(long deliveryTime) {
+        this.deliveryTime = deliveryTime;
+    }
+
+    @Override
     public JmsDestination getDestination() {
         return this.destination;
     }
@@ -344,5 +355,10 @@ public class JmsTestMessageFacade implements JmsMessageFacade {
     @Override
     public void setGroupSequence(int groupSequence) {
         this.groupSequence = groupSequence;
+    }
+
+    @Override
+    public boolean hasBody() {
+        return false;
     }
 }

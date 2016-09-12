@@ -315,6 +315,25 @@ public interface JmsMessageFacade {
     void setExpiration(long expiration);
 
     /**
+     * Returns the set delivery time for this message.
+     *
+     * The value should be returned as an absolute time given in GMT time.
+     *
+     * @return the earliest time that the message should be made available for delivery.
+     */
+    long getDeliveryTime();
+
+    /**
+     * Sets an desired delivery time on this message.
+     *
+     * The delivery time will be given as an absolute time in GMT time.
+     *
+     * @param deliveryTime
+     *        the earliest time that the message should be made available for delivery.
+     */
+    void setDeliveryTime(long deliveryTime);
+
+    /**
      * Gets the Destination value that was assigned to this message at the time it was
      * sent.
      *
@@ -428,5 +447,12 @@ public interface JmsMessageFacade {
      *        The message ID to set on this message, or null to clear.
      */
     void setProviderMessageIdObject(Object messageId);
+
+    /**
+     * Returns true if the underlying message has a body, false if the body is empty.
+     *
+     * @return true if the underlying message has a body, false if the body is empty.
+     */
+    boolean hasBody();
 
 }

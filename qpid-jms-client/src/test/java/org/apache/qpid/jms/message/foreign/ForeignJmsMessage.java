@@ -265,4 +265,24 @@ public class ForeignJmsMessage implements Message {
     public void clearBody() throws JMSException {
         message.clearBody();
     }
+
+    @Override
+    public long getJMSDeliveryTime() throws JMSException {
+        return message.getJMSDeliveryTime();
+    }
+
+    @Override
+    public void setJMSDeliveryTime(long delay) throws JMSException {
+        message.setJMSDeliveryTime(delay);
+    }
+
+    @Override
+    public <T> T getBody(Class<T> asType) throws JMSException {
+        return message.getBody(asType);
+    }
+
+    @Override
+    public boolean isBodyAssignableTo(@SuppressWarnings("rawtypes") Class target) throws JMSException {
+        return message.isBodyAssignableTo(target);
+    }
 }

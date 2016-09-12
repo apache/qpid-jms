@@ -26,6 +26,7 @@ import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageFormatException;
 import javax.jms.MessageListener;
 import javax.jms.Session;
 
@@ -210,6 +211,58 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         checkMessageListener();
 
         return copy(ackFromReceive(dequeue(0, connection.isReceiveNoWaitLocalOnly())));
+    }
+
+    /**
+     * Reads the next available message for this consumer and returns the body of that message
+     * if the type requested matches that of the message.  The amount of time this method blocks
+     * is based on the timeout value.
+     *
+     *   {@literal timeout < 0} then it blocks until a message is received.
+     *   {@literal timeout = 0} then it returns the body immediately or null if none available.
+     *   {@literal timeout > 0} then it blocks up to timeout amount of time.
+     *
+     * @param desired
+     *      The type to assign the body of the message to for return.
+     * @param timeout
+     *      The time to wait for an incoming message before this method returns null.
+     *
+     * @return the assigned body of the next available message or null if the consumer is closed
+     *         or the specified timeout elapses.
+     *
+     * @throws MessageFormatException if the message body cannot be assigned to the requested type.
+     * @throws JMSException if an error occurs while receiving the next message.
+     */
+    public <T> T receiveBody(Class<T> desired, long timeout) throws JMSException {
+        checkClosed();
+        checkMessageListener();
+
+        T messageBody = null;
+        JmsInboundMessageDispatch envelope = null;
+
+        try {
+            envelope = dequeue(timeout, connection.isReceiveLocalOnly());
+            if (envelope != null) {
+                messageBody = envelope.getMessage().getBody(desired);
+            }
+        } catch (MessageFormatException mfe) {
+            // Should behave as if receiveBody never happened in these modes.
+            if (acknowledgementMode == Session.AUTO_ACKNOWLEDGE ||
+                acknowledgementMode == Session.DUPS_OK_ACKNOWLEDGE) {
+
+                envelope.setEnqueueFirst(true);
+                onInboundMessage(envelope);
+                envelope = null;
+            }
+
+            throw mfe;
+        } finally {
+            if (envelope != null) {
+                ackFromReceive(envelope);
+            }
+        }
+
+        return messageBody;
     }
 
     /**

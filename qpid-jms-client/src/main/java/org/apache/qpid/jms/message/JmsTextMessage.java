@@ -22,6 +22,7 @@ import javax.jms.TextMessage;
 
 import org.apache.qpid.jms.message.facade.JmsTextMessageFacade;
 
+@SuppressWarnings("unchecked")
 public class JmsTextMessage extends JmsMessage implements TextMessage {
 
     private final JmsTextMessageFacade facade;
@@ -56,5 +57,15 @@ public class JmsTextMessage extends JmsMessage implements TextMessage {
     @Override
     public String toString() {
         return "JmsTextMessage { " + facade.toString() + " }";
+    }
+
+    @Override
+    public boolean isBodyAssignableTo(@SuppressWarnings("rawtypes") Class target) throws JMSException {
+        return facade.hasBody() ? target.isAssignableFrom(String.class) : true;
+    }
+
+    @Override
+    protected <T> T doGetBody(Class<T> asType) throws JMSException {
+        return (T) getText();
     }
 }

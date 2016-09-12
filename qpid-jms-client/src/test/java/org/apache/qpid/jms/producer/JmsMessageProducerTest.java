@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import javax.jms.CompletionListener;
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
@@ -35,7 +36,6 @@ import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-import org.apache.qpid.jms.JmsCompletionListener;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.apache.qpid.jms.JmsDestination;
@@ -541,7 +541,7 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         }
     }
 
-    private class MyCompletionListener implements JmsCompletionListener {
+    private class MyCompletionListener implements CompletionListener {
 
         private final List<Message> completed = new ArrayList<Message>();
         private final List<Message> failed = new ArrayList<Message>();

@@ -28,6 +28,7 @@ import javax.jms.MessageFormatException;
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.facade.JmsBytesMessageFacade;
 
+@SuppressWarnings("unchecked")
 public class JmsBytesMessage extends JmsMessage implements BytesMessage {
 
     protected transient DataOutputStream dataOut;
@@ -394,6 +395,20 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
     @Override
     public String toString() {
         return "JmsBytesMessage { " + facade + " }";
+    }
+
+    @Override
+    public boolean isBodyAssignableTo(@SuppressWarnings("rawtypes") Class target) throws JMSException {
+        return facade.hasBody() ? target.isAssignableFrom(byte[].class) : true;
+    }
+
+    @Override
+    protected <T> T doGetBody(Class<T> asType) throws JMSException {
+        if (!facade.hasBody()) {
+            return null;
+        }
+
+        return (T) facade.copyBody();
     }
 
     private void initializeWriting() throws JMSException {

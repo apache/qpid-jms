@@ -19,10 +19,6 @@ package org.apache.qpid.jms.provider.amqp.message;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_BYTES_MESSAGE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MSG_TYPE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.ByteBufOutputStream;
-import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,6 +35,11 @@ import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.message.Message;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.Unpooled;
 
 /**
  * A JmsBytesMessageFacade that wraps around Proton AMQP Message instances to provide
@@ -211,6 +212,21 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
         } else {
             throw new java.lang.IllegalStateException("Unexpected body content type: " + body.getClass().getSimpleName());
         }
+
+        return result;
+    }
+
+    @Override
+    public boolean hasBody() {
+        return getBinaryFromBody().getLength() != 0;
+    }
+
+    @Override
+    public byte[] copyBody() {
+        Binary content = getBinaryFromBody();
+        byte[] result = new byte[content.getLength()];
+
+        System.arraycopy(content.getArray(), content.getArrayOffset(), result, 0, content.getLength());
 
         return result;
     }

@@ -32,6 +32,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.jms.CompletionListener;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.InvalidDestinationException;
@@ -46,7 +47,6 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 
-import org.apache.qpid.jms.JmsCompletionListener;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
@@ -1228,7 +1228,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         return "amqp://localhost:" + peer.getServerPort() + (params != null ? "?" + params : "");
     }
 
-    private class TestJmsCompletionListener implements JmsCompletionListener {
+    private class TestJmsCompletionListener implements CompletionListener {
 
         private final CountDownLatch completed;
 

@@ -96,4 +96,9 @@ public class JmsTestObjectMessageFacade extends JmsTestMessageFacade implements 
 
         this.object = serialized;
     }
+
+    @Override
+    public boolean hasBody() {
+        return object != null && object.length > 0;
+    }
 }

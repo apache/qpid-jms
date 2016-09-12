@@ -16,11 +16,6 @@
  */
 package org.apache.qpid.jms.message.facade.test;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.ByteBufOutputStream;
-import io.netty.buffer.Unpooled;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -29,6 +24,11 @@ import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.message.facade.JmsBytesMessageFacade;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.Unpooled;
 
 /**
  * A test implementation of the JmsBytesMessageFacade that simply holds a raw Buffer
@@ -132,5 +132,20 @@ public final class JmsTestBytesMessageFacade extends JmsTestMessageFacade implem
     @Override
     public int getBodyLength() {
         return content.readableBytes();
+    }
+
+    @Override
+    public boolean hasBody() {
+        return content.isReadable();
+    }
+
+    @Override
+    public byte[] copyBody() {
+        ByteBuf duplicate = content.duplicate();
+        byte[] result = new byte[content.readableBytes()];
+
+        duplicate.readBytes(result);
+
+        return result;
     }
 }

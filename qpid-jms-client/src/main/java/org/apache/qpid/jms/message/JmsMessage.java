@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.message;
 
+import static org.apache.qpid.jms.message.JmsMessagePropertySupport.convertPropertyTo;
+
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -32,7 +34,6 @@ import org.apache.qpid.jms.JmsAcknowledgeCallback;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
-import org.apache.qpid.jms.util.TypeConversionSupport;
 
 public class JmsMessage implements javax.jms.Message {
 
@@ -100,6 +101,24 @@ public class JmsMessage implements javax.jms.Message {
                 throw JmsExceptionSupport.create(e);
             }
         }
+    }
+
+    @Override
+    public boolean isBodyAssignableTo(@SuppressWarnings("rawtypes") Class target) throws JMSException {
+        return true;
+    }
+
+    @Override
+    public final <T> T getBody(Class<T> asType) throws JMSException {
+        if (isBodyAssignableTo(asType)) {
+            return doGetBody(asType);
+        }
+
+        throw new MessageFormatException("Message body cannot be read as type: " + asType);
+    }
+
+    protected <T> T doGetBody(Class<T> asType) throws JMSException {
+        return null;
     }
 
     @Override
@@ -248,6 +267,16 @@ public class JmsMessage implements javax.jms.Message {
     }
 
     @Override
+    public long getJMSDeliveryTime() throws JMSException {
+        return facade.getDeliveryTime();
+    }
+
+    @Override
+    public void setJMSDeliveryTime(long deliveryTime) throws JMSException {
+        facade.setDeliveryTime(deliveryTime);
+    }
+
+    @Override
     public void clearProperties() throws JMSException {
         JmsMessagePropertyIntercepter.clearProperties(this, true);
     }
@@ -288,106 +317,42 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public boolean getBooleanProperty(String name) throws JMSException {
-        Object value = getObjectProperty(name);
-        if (value == null) {
-            return false;
-        }
-        Boolean rc = (Boolean) TypeConversionSupport.convert(value, Boolean.class);
-        if (rc == null) {
-            throw new MessageFormatException("Property " + name + " was a " + value.getClass().getName() + " and cannot be read as a boolean");
-        }
-        return rc.booleanValue();
+        return convertPropertyTo(name, getObjectProperty(name), Boolean.class);
     }
 
     @Override
     public byte getByteProperty(String name) throws JMSException {
-        Object value = getObjectProperty(name);
-        if (value == null) {
-            throw new NumberFormatException("property " + name + " was null");
-        }
-        Byte rc = (Byte) TypeConversionSupport.convert(value, Byte.class);
-        if (rc == null) {
-            throw new MessageFormatException("Property " + name + " was a " + value.getClass().getName() + " and cannot be read as a byte");
-        }
-        return rc.byteValue();
+        return convertPropertyTo(name, getObjectProperty(name), Byte.class);
     }
 
     @Override
     public short getShortProperty(String name) throws JMSException {
-        Object value = getObjectProperty(name);
-        if (value == null) {
-            throw new NumberFormatException("property " + name + " was null");
-        }
-        Short rc = (Short) TypeConversionSupport.convert(value, Short.class);
-        if (rc == null) {
-            throw new MessageFormatException("Property " + name + " was a " + value.getClass().getName() + " and cannot be read as a short");
-        }
-        return rc.shortValue();
+        return convertPropertyTo(name, getObjectProperty(name), Short.class);
     }
 
     @Override
     public int getIntProperty(String name) throws JMSException {
-        Object value = getObjectProperty(name);
-        if (value == null) {
-            throw new NumberFormatException("property " + name + " was null");
-        }
-        Integer rc = (Integer) TypeConversionSupport.convert(value, Integer.class);
-        if (rc == null) {
-            throw new MessageFormatException("Property " + name + " was a " + value.getClass().getName() + " and cannot be read as an integer");
-        }
-        return rc.intValue();
+        return convertPropertyTo(name, getObjectProperty(name), Integer.class);
     }
 
     @Override
     public long getLongProperty(String name) throws JMSException {
-        Object value = getObjectProperty(name);
-        if (value == null) {
-            throw new NumberFormatException("property " + name + " was null");
-        }
-        Long rc = (Long) TypeConversionSupport.convert(value, Long.class);
-        if (rc == null) {
-            throw new MessageFormatException("Property " + name + " was a " + value.getClass().getName() + " and cannot be read as a long");
-        }
-        return rc.longValue();
+        return convertPropertyTo(name, getObjectProperty(name), Long.class);
     }
 
     @Override
     public float getFloatProperty(String name) throws JMSException {
-        Object value = getObjectProperty(name);
-        if (value == null) {
-            throw new NullPointerException("property " + name + " was null");
-        }
-        Float rc = (Float) TypeConversionSupport.convert(value, Float.class);
-        if (rc == null) {
-            throw new MessageFormatException("Property " + name + " was a " + value.getClass().getName() + " and cannot be read as a float");
-        }
-        return rc.floatValue();
+        return convertPropertyTo(name, getObjectProperty(name), Float.class);
     }
 
     @Override
     public double getDoubleProperty(String name) throws JMSException {
-        Object value = getObjectProperty(name);
-        if (value == null) {
-            throw new NullPointerException("property " + name + " was null");
-        }
-        Double rc = (Double) TypeConversionSupport.convert(value, Double.class);
-        if (rc == null) {
-            throw new MessageFormatException("Property " + name + " was a " + value.getClass().getName() + " and cannot be read as a double");
-        }
-        return rc.doubleValue();
+        return convertPropertyTo(name, getObjectProperty(name), Double.class);
     }
 
     @Override
     public String getStringProperty(String name) throws JMSException {
-        Object value = getObjectProperty(name);
-        if (value == null) {
-            return null;
-        }
-        String rc = (String) TypeConversionSupport.convert(value, String.class);
-        if (rc == null) {
-            throw new MessageFormatException("Property " + name + " was a " + value.getClass().getName() + " and cannot be read as a String");
-        }
-        return rc;
+        return convertPropertyTo(name, getObjectProperty(name), String.class);
     }
 
     @Override

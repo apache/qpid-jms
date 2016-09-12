@@ -54,4 +54,9 @@ public final class JmsTestTextMessageFacade extends JmsTestMessageFacade impleme
     public void setText(String text) {
         this.text = text;
     }
+
+    @Override
+    public boolean hasBody() {
+        return text != null;
+    }
 }

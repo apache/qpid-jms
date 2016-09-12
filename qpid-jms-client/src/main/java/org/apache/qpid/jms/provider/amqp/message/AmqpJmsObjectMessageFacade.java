@@ -125,6 +125,11 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
     }
 
     @Override
+    public boolean hasBody() {
+        return delegate.hasBody();
+    }
+
+    @Override
     public void onSend(long producerTtl) throws JMSException {
         super.onSend(producerTtl);
         delegate.onSend();

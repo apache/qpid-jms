@@ -17,6 +17,8 @@
 package org.apache.qpid.jms.message;
 
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.jms.JMSException;
 import javax.jms.MapMessage;
@@ -27,6 +29,7 @@ import org.apache.qpid.jms.message.facade.JmsMapMessageFacade;
 /**
  * Implementation of the JMS MapMessage.
  */
+@SuppressWarnings("unchecked")
 public class JmsMapMessage extends JmsMessage implements MapMessage {
 
     JmsMapMessageFacade facade;
@@ -297,6 +300,27 @@ public class JmsMapMessage extends JmsMessage implements MapMessage {
     @Override
     public String toString() {
         return "JmsMapMessage { " + facade + " }";
+    }
+
+    @Override
+    public boolean isBodyAssignableTo(@SuppressWarnings("rawtypes") Class target) throws JMSException {
+        return facade.hasBody() ? target.isAssignableFrom(Map.class) : true;
+    }
+
+    @Override
+    protected <T> T doGetBody(Class<T> asType) throws JMSException {
+        if (!facade.hasBody()) {
+            return null;
+        }
+
+        Map<String, Object> copy = new HashMap<String, Object>();
+        Enumeration<String> keys = facade.getMapNames();
+        while (keys.hasMoreElements()) {
+            String key = keys.nextElement();
+            copy.put(key, getObject(key));
+        }
+
+        return (T) copy;
     }
 
     private void put(String name, Object value) throws JMSException {

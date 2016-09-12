@@ -266,8 +266,14 @@ public class JmsConnectionTest {
     }
 
     @Test(timeout=30000, expected=JMSException.class)
-    public void testCreateDurableConnectionConsumer() throws Exception {
+    public void testCreateSharedConnectionConsumer() throws Exception {
         connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
-        connection.createDurableConnectionConsumer(new JmsTopic(), "id", "", null, 1);
+        connection.createSharedConnectionConsumer(new JmsTopic(), "id", "", null, 1);
+    }
+
+    @Test(timeout=30000, expected=JMSException.class)
+    public void testCreateSharedDurableConnectionConsumer() throws Exception {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.createSharedDurableConnectionConsumer(new JmsTopic(), "id", "", null, 1);
     }
 }

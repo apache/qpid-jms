@@ -20,8 +20,10 @@ package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -31,6 +33,7 @@ import javax.jms.Connection;
 import javax.jms.MapMessage;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageFormatException;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
@@ -116,10 +119,10 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlowRespondWithTransfer(null, msgAnnotations, null, null, amqpValueSectionContent);
             testPeer.expectDispositionThatIsAcceptedAndSettled();
+            testPeer.expectClose();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
             Message receivedMessage = messageConsumer.receive(3000);
-            testPeer.waitForAllHandlersToComplete(3000);
 
             // verify the content is as expected
             assertNotNull("Message was not received", receivedMessage);
@@ -137,6 +140,23 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
             assertEquals("Unexpected long value", myLong, receivedMapMessage.getLong(myLongKey));
             assertEquals("Unexpected short value", myShort, receivedMapMessage.getShort(myShortKey));
             assertEquals("Unexpected UTF value", myString, receivedMapMessage.getString(myStringKey));
+
+            assertTrue(receivedMapMessage.isBodyAssignableTo(Map.class));
+            assertTrue(receivedMapMessage.isBodyAssignableTo(Object.class));
+            assertFalse(receivedMapMessage.isBodyAssignableTo(Boolean.class));
+            assertFalse(receivedMapMessage.isBodyAssignableTo(byte[].class));
+
+            assertNotNull(receivedMapMessage.getBody(Object.class));
+            assertNotNull(receivedMapMessage.getBody(Map.class));
+            try {
+                receivedMapMessage.getBody(byte[].class);
+                fail("Cannot read TextMessage with this type.");
+            } catch (MessageFormatException mfe) {
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
         }
     }
 
@@ -219,9 +239,28 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
             messageMatcher.setPropertiesMatcher(propertiesMatcher);
             messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(map));
 
-            // send the message
             testPeer.expectTransfer(messageMatcher);
+            testPeer.expectClose();
+
+            // send the message
             producer.send(mapMessage);
+
+            assertTrue(mapMessage.isBodyAssignableTo(Map.class));
+            assertTrue(mapMessage.isBodyAssignableTo(Object.class));
+            assertFalse(mapMessage.isBodyAssignableTo(Boolean.class));
+            assertFalse(mapMessage.isBodyAssignableTo(byte[].class));
+
+            assertNotNull(mapMessage.getBody(Object.class));
+            assertNotNull(mapMessage.getBody(Map.class));
+            try {
+                mapMessage.getBody(byte[].class);
+                fail("Cannot read TextMessage with this type.");
+            } catch (MessageFormatException mfe) {
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
         }
     }
 }

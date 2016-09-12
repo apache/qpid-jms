@@ -257,6 +257,16 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     }
 
     @Override
+    public Session createSession() throws JMSException {
+        return createSession(false, Session.AUTO_ACKNOWLEDGE);
+    }
+
+    @Override
+    public Session createSession(int acknowledgeMode) throws JMSException {
+        return createSession(acknowledgeMode == Session.SESSION_TRANSACTED ? true : false, acknowledgeMode);
+    }
+
+    @Override
     public Session createSession(boolean transacted, int acknowledgeMode) throws JMSException {
         checkClosedOrFailed();
         connect();
@@ -344,6 +354,20 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
                 }
             }
         }
+    }
+
+    @Override
+    public ConnectionConsumer createSharedConnectionConsumer(Topic topic, String subscriptionName, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
+        checkClosedOrFailed();
+        connect();
+        throw new JMSException("Not supported");
+    }
+
+    @Override
+    public ConnectionConsumer createSharedDurableConnectionConsumer(Topic topic, String subscriptionName, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
+        checkClosedOrFailed();
+        connect();
+        throw new JMSException("Not supported");
     }
 
     @Override

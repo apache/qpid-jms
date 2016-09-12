@@ -86,4 +86,10 @@ public interface JmsBytesMessageFacade extends JmsMessageFacade {
      * @return the number of bytes contained in the body of the message.
      */
     int getBodyLength();
+
+    /**
+     * @return a copy of the bytes contained in the body of the message.
+     */
+    byte[] copyBody();
+
 }

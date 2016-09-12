@@ -21,8 +21,10 @@ package org.apache.qpid.jms.integration;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +32,7 @@ import java.util.List;
 import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageFormatException;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
@@ -106,10 +109,10 @@ public class StreamMessageIntegrationTest extends QpidJmsTestCase {
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlowRespondWithTransfer(null, msgAnnotations, null, null, amqpValueSectionContent);
             testPeer.expectDispositionThatIsAcceptedAndSettled();
+            testPeer.expectClose();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
             Message receivedMessage = messageConsumer.receive(3000);
-            testPeer.waitForAllHandlersToComplete(3000);
 
             //verify the content is as expected
             assertNotNull("Message was not received", receivedMessage);
@@ -127,6 +130,33 @@ public class StreamMessageIntegrationTest extends QpidJmsTestCase {
             assertEquals("Unexpected long value", myLong, receivedStreamMessage.readLong());
             assertEquals("Unexpected short value", myShort, receivedStreamMessage.readShort());
             assertEquals("Unexpected UTF value", myString, receivedStreamMessage.readString());
+
+            assertFalse(receivedStreamMessage.isBodyAssignableTo(String.class));
+            assertFalse(receivedStreamMessage.isBodyAssignableTo(Object.class));
+            assertFalse(receivedStreamMessage.isBodyAssignableTo(Boolean.class));
+            assertFalse(receivedStreamMessage.isBodyAssignableTo(byte[].class));
+
+            try {
+                receivedStreamMessage.getBody(Object.class);
+                fail("Cannot read TextMessage with this type.");
+            } catch (MessageFormatException mfe) {
+            }
+
+            try {
+                receivedStreamMessage.getBody(byte[].class);
+                fail("Cannot read TextMessage with this type.");
+            } catch (MessageFormatException mfe) {
+            }
+
+            try {
+                receivedStreamMessage.getBody(String.class);
+                fail("Cannot read TextMessage with this type.");
+            } catch (MessageFormatException mfe) {
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
         }
     }
 
@@ -204,9 +234,38 @@ public class StreamMessageIntegrationTest extends QpidJmsTestCase {
             messageMatcher.setPropertiesMatcher(propertiesMatcher);
             messageMatcher.setMessageContentMatcher(new EncodedAmqpSequenceMatcher(list));
 
-            //send the message
             testPeer.expectTransfer(messageMatcher);
+            testPeer.expectClose();
+
+            //send the message
             producer.send(streamMessage);
+
+            assertFalse(streamMessage.isBodyAssignableTo(String.class));
+            assertFalse(streamMessage.isBodyAssignableTo(Object.class));
+            assertFalse(streamMessage.isBodyAssignableTo(Boolean.class));
+            assertFalse(streamMessage.isBodyAssignableTo(byte[].class));
+
+            try {
+                streamMessage.getBody(Object.class);
+                fail("Cannot read TextMessage with this type.");
+            } catch (MessageFormatException mfe) {
+            }
+
+            try {
+                streamMessage.getBody(byte[].class);
+                fail("Cannot read TextMessage with this type.");
+            } catch (MessageFormatException mfe) {
+            }
+
+            try {
+                streamMessage.getBody(String.class);
+                fail("Cannot read TextMessage with this type.");
+            } catch (MessageFormatException mfe) {
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
         }
     }
 }

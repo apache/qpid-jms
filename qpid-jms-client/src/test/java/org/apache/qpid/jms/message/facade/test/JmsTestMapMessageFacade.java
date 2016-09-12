@@ -72,4 +72,9 @@ public class JmsTestMapMessageFacade extends JmsTestMessageFacade implements Jms
     public void clearBody() {
         map.clear();
     }
+
+    @Override
+    public boolean hasBody() {
+        return !map.isEmpty();
+    }
 }

@@ -64,4 +64,7 @@ public interface AmqpObjectTypeDelegate {
     void copyInto(AmqpObjectTypeDelegate copy) throws Exception;
 
     boolean isAmqpTypeEncoded();
+
+    boolean hasBody();
+
 }

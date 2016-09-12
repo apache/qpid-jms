@@ -24,6 +24,7 @@ import java.util.Map;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
+import javax.jms.JMSContext;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
@@ -61,6 +62,73 @@ public class IntegrationTestFixture {
         // Each connection creates a session for managing temporary destinations etc
         testPeer.expectBegin();
 
+        String remoteURI = buildURI(testPeer, ssl, optionsString);
+
+        ConnectionFactory factory = new JmsConnectionFactory(remoteURI);
+        Connection connection = factory.createConnection("guest", "guest");
+
+        if (setClientId) {
+            // Set a clientId to provoke the actual AMQP connection process to occur.
+            connection.setClientID("clientName");
+        }
+
+        assertNull(testPeer.getThrowable());
+
+        return connection;
+    }
+
+    JMSContext createJMSContext(TestAmqpPeer testPeer) throws JMSException {
+        return createJMSContext(testPeer, null, null, null);
+    }
+
+    JMSContext createJMSContext(TestAmqpPeer testPeer, int sessionMode) throws JMSException {
+        return createJMSContext(testPeer, false, null, null, null, true, sessionMode);
+    }
+
+    JMSContext createJMSContext(TestAmqpPeer testPeer, String optionsString) throws JMSException {
+        return createJMSContext(testPeer, optionsString, null, null);
+    }
+
+    JMSContext createJMSContext(TestAmqpPeer testPeer, Symbol[] serverCapabilities) throws JMSException {
+        return createJMSContext(testPeer, null, serverCapabilities, null);
+    }
+
+    JMSContext createJMSContext(TestAmqpPeer testPeer, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties) throws JMSException {
+        return createJMSContext(testPeer, null, serverCapabilities, serverProperties);
+    }
+
+    JMSContext createJMSContext(TestAmqpPeer testPeer, String optionsString, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties) throws JMSException {
+        return createJMSContext(testPeer, false, optionsString, serverCapabilities, serverProperties, true, JMSContext.AUTO_ACKNOWLEDGE);
+    }
+
+    JMSContext createJMSContext(TestAmqpPeer testPeer, boolean ssl, String optionsString, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties, boolean setClientId) throws JMSException {
+        return createJMSContext(testPeer, false, optionsString, serverCapabilities, serverProperties, setClientId, JMSContext.AUTO_ACKNOWLEDGE);
+    }
+
+    JMSContext createJMSContext(TestAmqpPeer testPeer, boolean ssl, String optionsString, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties, boolean setClientId, int sessionMode) throws JMSException {
+        Symbol[] desiredCapabilities = new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY };
+
+        testPeer.expectSaslPlainConnect("guest", "guest", desiredCapabilities, serverCapabilities, serverProperties);
+
+        // Each connection creates a session for managing temporary destinations etc
+        testPeer.expectBegin();
+
+        String remoteURI = buildURI(testPeer, ssl, optionsString);
+
+        ConnectionFactory factory = new JmsConnectionFactory(remoteURI);
+        JMSContext context = factory.createContext("guest", "guest", sessionMode);
+
+        if (setClientId) {
+            // Set a clientId to provoke the actual AMQP connection process to occur.
+            context.setClientID("clientName");
+        }
+
+        assertNull(testPeer.getThrowable());
+
+        return context;
+    }
+
+    String buildURI(TestAmqpPeer testPeer, boolean ssl, String optionsString) {
         String scheme = ssl ? "amqps" : "amqp";
         final String baseURI = scheme + "://localhost:" + testPeer.getServerPort();
         String remoteURI = baseURI;
@@ -68,15 +136,6 @@ public class IntegrationTestFixture {
             remoteURI = baseURI + optionsString;
         }
 
-        ConnectionFactory factory = new JmsConnectionFactory(remoteURI);
-        Connection connection = factory.createConnection("guest", "guest");
-
-        if(setClientId) {
-            // Set a clientId to provoke the actual AMQP connection process to occur.
-            connection.setClientID("clientName");
-        }
-
-        assertNull(testPeer.getThrowable());
-        return connection;
+        return remoteURI;
     }
 }

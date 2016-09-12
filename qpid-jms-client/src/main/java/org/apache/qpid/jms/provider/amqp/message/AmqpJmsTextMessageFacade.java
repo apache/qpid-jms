@@ -135,6 +135,15 @@ public class AmqpJmsTextMessageFacade extends AmqpJmsMessageFacade implements Jm
         setText(null);
     }
 
+    @Override
+    public boolean hasBody() {
+        try {
+            return getText() != null;
+        } catch (JMSException e) {
+            return false;
+        }
+    }
+
     Charset getCharset() {
         return charset;
     }

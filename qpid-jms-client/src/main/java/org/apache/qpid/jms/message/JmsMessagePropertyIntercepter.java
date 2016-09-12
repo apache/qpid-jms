@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.message;
 
+import static org.apache.qpid.jms.message.JmsMessagePropertySupport.checkPropertyNameIsValid;
+import static org.apache.qpid.jms.message.JmsMessagePropertySupport.checkValidObject;
 import static org.apache.qpid.jms.message.JmsMessageSupport.JMSX_DELIVERY_COUNT;
 import static org.apache.qpid.jms.message.JmsMessageSupport.JMSX_GROUPID;
 import static org.apache.qpid.jms.message.JmsMessageSupport.JMSX_GROUPSEQ;
@@ -42,7 +44,6 @@ import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
-import javax.jms.MessageFormatException;
 
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.util.TypeConversionSupport;
@@ -807,75 +808,5 @@ public class JmsMessagePropertyIntercepter {
         }
 
         return names;
-    }
-
-    //----- Property Validation Methods --------------------------------------//
-
-    private static void checkPropertyNameIsValid(String propertyName, boolean validateNames) throws IllegalArgumentException {
-        if (propertyName == null) {
-            throw new IllegalArgumentException("Property name must not be null");
-        } else if (propertyName.length() == 0) {
-            throw new IllegalArgumentException("Property name must not be the empty string");
-        }
-
-        if (validateNames) {
-            checkIdentifierLetterAndDigitRequirements(propertyName);
-            checkIdentifierIsntNullTrueFalse(propertyName);
-            checkIdentifierIsntLogicOperator(propertyName);
-        }
-    }
-
-    private static void checkIdentifierIsntLogicOperator(String identifier) {
-        // Identifiers cannot be NOT, AND, OR, BETWEEN, LIKE, IN, IS, or ESCAPE.
-        if ("NOT".equals(identifier) || "AND".equals(identifier) || "OR".equals(identifier) ||
-            "BETWEEN".equals(identifier) || "LIKE".equals(identifier) || "IN".equals(identifier) ||
-            "IS".equals(identifier) || "ESCAPE".equals(identifier)) {
-
-            throw new IllegalArgumentException("Identifier not allowed in JMS: '" + identifier + "'");
-        }
-    }
-
-    private static void checkIdentifierIsntNullTrueFalse(String identifier) {
-        // Identifiers cannot be the names NULL, TRUE, and FALSE.
-        if ("NULL".equals(identifier) || "TRUE".equals(identifier) || "FALSE".equals(identifier)) {
-            throw new IllegalArgumentException("Identifier not allowed in JMS: '" + identifier + "'");
-        }
-    }
-
-    private static void checkIdentifierLetterAndDigitRequirements(String identifier) {
-        // An identifier is an unlimited-length sequence of letters and digits, the first of
-        // which must be a letter.  A letter is any character for which the method
-        // Character.isJavaLetter returns true.  This includes '_' and '$'.  A letter or digit
-        // is any character for which the method Character.isJavaLetterOrDigit returns true.
-        char startChar = identifier.charAt(0);
-        if (!(Character.isJavaIdentifierStart(startChar))) {
-            throw new IllegalArgumentException("Identifier does not begin with a valid JMS identifier start character: '" + identifier + "' ");
-        }
-
-        // JMS part character
-        int length = identifier.length();
-        for (int i = 1; i < length; i++) {
-            char ch = identifier.charAt(i);
-            if (!(Character.isJavaIdentifierPart(ch))) {
-                throw new IllegalArgumentException("Identifier contains invalid JMS identifier character '" + ch + "': '" + identifier + "' ");
-            }
-        }
-    }
-
-    private static void checkValidObject(Object value) throws MessageFormatException {
-        boolean valid = value instanceof Boolean ||
-                        value instanceof Byte ||
-                        value instanceof Short ||
-                        value instanceof Integer ||
-                        value instanceof Long ||
-                        value instanceof Float ||
-                        value instanceof Double ||
-                        value instanceof Character ||
-                        value instanceof String ||
-                        value == null;
-
-        if (!valid) {
-            throw new MessageFormatException("Only objectified primitive objects and String types are allowed but was: " + value + " type: " + value.getClass());
-        }
     }
 }

@@ -553,6 +553,18 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         }
     }
 
+    @Override
+    public long getDeliveryTime() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public void setDeliveryTime(long deliveryTime) {
+        // TODO Auto-generated method stub
+
+    }
+
     /**
      * Sets a value which will be used to override any ttl value that may otherwise be set
      * based on the expiration value when sending the underlying AMQP message. A value of 0
@@ -700,6 +712,11 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         } else {
             message.setGroupSequence(groupSequence);
         }
+    }
+
+    @Override
+    public boolean hasBody() {
+        return message.getBody() == null;
     }
 
     /**

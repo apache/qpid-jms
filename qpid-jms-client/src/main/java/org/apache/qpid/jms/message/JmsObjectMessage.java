@@ -60,6 +60,25 @@ public class JmsObjectMessage extends JmsMessage implements ObjectMessage {
     }
 
     @Override
+    public boolean isBodyAssignableTo(@SuppressWarnings("rawtypes") Class target) throws JMSException {
+        if (!facade.hasBody()) {
+            return true;
+        }
+
+        return Serializable.class == target || Object.class == target || target.isInstance(getObject());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    protected <T> T doGetBody(Class<T> asType) throws JMSException {
+        try {
+            return (T) getObject();
+        } catch (JMSException e) {
+            throw new MessageFormatException("Failed to read Object: " + e.getMessage());
+        }
+    }
+
+    @Override
     public String toString() {
         return "JmsObjectMessageFacade { " + facade.toString() + " }";
     }

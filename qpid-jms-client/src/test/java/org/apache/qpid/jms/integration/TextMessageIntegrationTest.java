@@ -20,9 +20,11 @@ package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 
@@ -30,6 +32,7 @@ import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageFormatException;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
@@ -75,10 +78,27 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
             messageMatcher.setPropertiesMatcher(propsMatcher);
             messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(text));
             testPeer.expectTransfer(messageMatcher);
+            testPeer.expectClose();
 
             Message message = session.createTextMessage(text);
-
             producer.send(message);
+
+            assertTrue(message.isBodyAssignableTo(String.class));
+            assertTrue(message.isBodyAssignableTo(Object.class));
+            assertFalse(message.isBodyAssignableTo(Boolean.class));
+            assertFalse(message.isBodyAssignableTo(byte[].class));
+
+            assertNotNull(message.getBody(Object.class));
+            assertNotNull(message.getBody(String.class));
+            try {
+                message.getBody(byte[].class);
+                fail("Cannot read TextMessage with this type.");
+            } catch (MessageFormatException mfe) {
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 
@@ -99,14 +119,31 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueStringContent);
             testPeer.expectDispositionThatIsAcceptedAndSettled();
+            testPeer.expectClose();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
             Message receivedMessage = messageConsumer.receive(3000);
-            testPeer.waitForAllHandlersToComplete(3000);
+
+            assertTrue(receivedMessage.isBodyAssignableTo(String.class));
+            assertTrue(receivedMessage.isBodyAssignableTo(Object.class));
+            assertFalse(receivedMessage.isBodyAssignableTo(Boolean.class));
+            assertFalse(receivedMessage.isBodyAssignableTo(byte[].class));
+
+            assertNotNull(receivedMessage.getBody(Object.class));
+            assertNotNull(receivedMessage.getBody(String.class));
+            try {
+                receivedMessage.getBody(byte[].class);
+                fail("Cannot read TextMessage with this type.");
+            } catch (MessageFormatException mfe) {
+            }
 
             assertNotNull(receivedMessage);
             assertTrue(receivedMessage instanceof TextMessage);
             assertEquals(expectedMessageContent, ((TextMessage) receivedMessage).getText());
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
         }
     }
 
@@ -131,10 +168,21 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
             messageMatcher.setPropertiesMatcher(propsMatcher);
             messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(null));
             testPeer.expectTransfer(messageMatcher);
+            testPeer.expectClose();
 
             Message message = session.createTextMessage();
 
             producer.send(message);
+
+            // Message has no content so all are assignable
+            assertTrue(message.isBodyAssignableTo(String.class));
+            assertTrue(message.isBodyAssignableTo(Object.class));
+            assertTrue(message.isBodyAssignableTo(Boolean.class));
+            assertTrue(message.isBodyAssignableTo(byte[].class));
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
         }
     }
 
@@ -154,14 +202,24 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent);
             testPeer.expectDispositionThatIsAcceptedAndSettled();
+            testPeer.expectClose();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
             Message receivedMessage = messageConsumer.receive(3000);
-            testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
             assertTrue(receivedMessage instanceof TextMessage);
             assertNull(((TextMessage) receivedMessage).getText());
+
+            // Message has no content so all are assignable
+            assertTrue(receivedMessage.isBodyAssignableTo(String.class));
+            assertTrue(receivedMessage.isBodyAssignableTo(Object.class));
+            assertTrue(receivedMessage.isBodyAssignableTo(Boolean.class));
+            assertTrue(receivedMessage.isBodyAssignableTo(byte[].class));
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
         }
     }
 
@@ -232,16 +290,33 @@ public class TextMessageIntegrationTest extends QpidJmsTestCase {
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlowRespondWithTransfer(null, null, properties, null, dataContent);
             testPeer.expectDispositionThatIsAcceptedAndSettled();
+            testPeer.expectClose();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
             Message receivedMessage = messageConsumer.receive(3000);
-            testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
             assertTrue(receivedMessage instanceof TextMessage);
             String text = ((TextMessage) receivedMessage).getText();
 
             assertEquals(expectedString, text);
+
+            assertTrue(receivedMessage.isBodyAssignableTo(String.class));
+            assertTrue(receivedMessage.isBodyAssignableTo(Object.class));
+            assertFalse(receivedMessage.isBodyAssignableTo(Boolean.class));
+            assertFalse(receivedMessage.isBodyAssignableTo(byte[].class));
+
+            assertNotNull(receivedMessage.getBody(Object.class));
+            assertNotNull(receivedMessage.getBody(String.class));
+            try {
+                receivedMessage.getBody(byte[].class);
+                fail("Cannot read TextMessage with this type.");
+            } catch (MessageFormatException mfe) {
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
         }
     }
 }

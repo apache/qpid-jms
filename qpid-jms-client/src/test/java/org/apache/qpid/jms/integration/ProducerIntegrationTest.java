@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.BytesMessage;
+import javax.jms.CompletionListener;
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
 import javax.jms.ExceptionListener;
@@ -57,7 +58,6 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 
-import org.apache.qpid.jms.JmsCompletionListener;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
@@ -2381,7 +2381,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    private class TestJmsCompletionListener implements JmsCompletionListener {
+    private class TestJmsCompletionListener implements CompletionListener {
 
         private final CountDownLatch completed;
 

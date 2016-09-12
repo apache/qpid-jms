@@ -18,6 +18,8 @@ package org.apache.qpid.jms;
 
 import java.net.URI;
 
+import javax.jms.JMSContext;
+
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.mock.MockProviderFactory;
@@ -49,6 +51,13 @@ public class JmsConnectionTestSupport extends QpidJmsTestCase {
                 providerListener = listener;
             }
         });
+    }
+
+    protected JmsContext createJMSContextToMockProvider() throws Exception {
+        JmsConnection connection = new JmsConnection("ID:TEST:1", createMockProvider(), clientIdGenerator);
+        JmsContext context = new JmsContext(connection, JMSContext.AUTO_ACKNOWLEDGE);
+
+        return context;
     }
 
     protected JmsConnection createConnectionToMockProvider() throws Exception {

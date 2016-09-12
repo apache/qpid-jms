@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.jms.BytesMessage;
+import javax.jms.CompletionListener;
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.IllegalStateException;
@@ -471,6 +472,22 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         return result;
     }
 
+    /**
+     * @see javax.jms.Session#createDurableConsumer(javax.jms.Topic, java.lang.String)
+     */
+    @Override
+    public MessageConsumer createDurableConsumer(Topic topic, String name) throws JMSException {
+        return createDurableSubscriber(topic, name, null, false);
+    }
+
+    /**
+     * @see javax.jms.Session#createDurableConsumer(javax.jms.Topic, java.lang.String, java.lang.String, boolean)
+     */
+    @Override
+    public MessageConsumer createDurableConsumer(Topic topic, String name, String messageSelector, boolean noLocal) throws JMSException {
+        return createDurableSubscriber(topic, name, messageSelector, noLocal);
+    }
+
     protected void checkClientIDWasSetExplicitly() throws IllegalStateException {
         if (!connection.isExplicitClientID()) {
             throw new IllegalStateException("You must specify a unique clientID for the Connection to use a DurableSubscriber");
@@ -484,6 +501,46 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     public void unsubscribe(String name) throws JMSException {
         checkClosed();
         connection.unsubscribe(name);
+    }
+
+    /**
+     * @see javax.jms.Session#createSharedConsumer(javax.jms.Topic, java.lang.String)
+     */
+    @Override
+    public MessageConsumer createSharedConsumer(Topic topic, String name) throws JMSException {
+        checkClosed();
+        // TODO Auto-generated method stub
+        throw new JMSException("Not yet implemented");
+    }
+
+    /**
+     * @see javax.jms.Session#createSharedConsumer(javax.jms.Topic, java.lang.String, java.lang.String)
+     */
+    @Override
+    public MessageConsumer createSharedConsumer(Topic topic, String name, String selector) throws JMSException {
+        checkClosed();
+        // TODO Auto-generated method stub
+        throw new JMSException("Not yet implemented");
+    }
+
+    /**
+     * @see javax.jms.Session#createSharedDurableConsumer(javax.jms.Topic, java.lang.String)
+     */
+    @Override
+    public MessageConsumer createSharedDurableConsumer(Topic topic, String name) throws JMSException {
+        checkClosed();
+        // TODO Auto-generated method stub
+        throw new JMSException("Not yet implemented");
+    }
+
+    /**
+     * @see javax.jms.Session#createSharedDurableConsumer(javax.jms.Topic, java.lang.String, java.lang.String)
+     */
+    @Override
+    public MessageConsumer createSharedDurableConsumer(Topic topic, String name, String selector) throws JMSException {
+        checkClosed();
+        // TODO Auto-generated method stub
+        throw new JMSException("Not yet implemented");
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -653,17 +710,17 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         connection.onException(ex);
     }
 
-    protected void send(JmsMessageProducer producer, Destination dest, Message msg, int deliveryMode, int priority, long timeToLive, boolean disableMsgId, boolean disableTimestamp, JmsCompletionListener listener) throws JMSException {
+    protected void send(JmsMessageProducer producer, Destination dest, Message msg, int deliveryMode, int priority, long timeToLive, boolean disableMsgId, boolean disableTimestamp, long deliveryDelay, CompletionListener listener) throws JMSException {
         JmsDestination destination = JmsMessageTransformation.transformDestination(connection, dest);
 
         if (destination.isTemporary() && ((JmsTemporaryDestination) destination).isDeleted()) {
             throw new IllegalStateException("Temporary destination has been deleted");
         }
 
-        send(producer, destination, msg, deliveryMode, priority, timeToLive, disableMsgId, disableTimestamp, listener);
+        send(producer, destination, msg, deliveryMode, priority, timeToLive, disableMsgId, disableTimestamp, deliveryDelay, listener);
     }
 
-    private void send(JmsMessageProducer producer, JmsDestination destination, Message original, int deliveryMode, int priority, long timeToLive, boolean disableMsgId, boolean disableTimestamp, JmsCompletionListener listener) throws JMSException {
+    private void send(JmsMessageProducer producer, JmsDestination destination, Message original, int deliveryMode, int priority, long timeToLive, boolean disableMsgId, boolean disableTimestamp, long deliveryDelay, CompletionListener listener) throws JMSException {
         sendLock.lock();
         try {
             original.setJMSDeliveryMode(deliveryMode);
@@ -672,7 +729,8 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             original.setJMSDestination(destination);
 
             long timeStamp = System.currentTimeMillis();
-            boolean hasTTL = timeToLive > 0;
+            boolean hasTTL = timeToLive > Message.DEFAULT_TIME_TO_LIVE;
+            boolean hasDelay = deliveryDelay > Message.DEFAULT_DELIVERY_DELAY;
 
             if (!disableTimestamp) {
                 original.setJMSTimestamp(timeStamp);
@@ -684,6 +742,12 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                 original.setJMSExpiration(timeStamp + timeToLive);
             } else {
                 original.setJMSExpiration(0);
+            }
+
+            if (hasDelay) {
+                original.setJMSDeliveryTime(timeStamp + timeToLive);
+            } else {
+                original.setJMSDeliveryTime(0);
             }
 
             boolean isJmsMessage = original instanceof JmsMessage;
@@ -964,6 +1028,10 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
     protected JmsSessionId getSessionId() {
         return sessionInfo.getId();
+    }
+
+    protected int getSessionMode() {
+        return acknowledgementMode;
     }
 
     protected JmsConsumerId getNextConsumerId() {
@@ -1272,12 +1340,12 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     private final class SendCompletion {
 
         private final JmsOutboundMessageDispatch envelope;
-        private final JmsCompletionListener listener;
+        private final CompletionListener listener;
 
         private Exception failureCause;
         private boolean completed;
 
-        public SendCompletion(JmsOutboundMessageDispatch envelope, JmsCompletionListener listener) {
+        public SendCompletion(JmsOutboundMessageDispatch envelope, CompletionListener listener) {
             this.envelope = envelope;
             this.listener = listener;
         }

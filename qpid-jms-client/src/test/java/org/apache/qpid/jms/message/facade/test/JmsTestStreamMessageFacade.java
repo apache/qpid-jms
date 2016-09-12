@@ -82,4 +82,9 @@ public class JmsTestStreamMessageFacade extends JmsTestMessageFacade implements 
     public void reset() {
         index = -1;
     }
+
+    @Override
+    public boolean hasBody() {
+        return !stream.isEmpty();
+    }
 }

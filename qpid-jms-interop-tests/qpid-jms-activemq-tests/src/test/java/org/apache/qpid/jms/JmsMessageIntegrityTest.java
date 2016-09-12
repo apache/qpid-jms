@@ -33,6 +33,7 @@ import javax.jms.JMSException;
 import javax.jms.MapMessage;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageEOFException;
+import javax.jms.MessageFormatException;
 import javax.jms.MessageProducer;
 import javax.jms.ObjectMessage;
 import javax.jms.Session;
@@ -212,6 +213,7 @@ public class JmsMessageIntegrityTest extends AmqpTestSupport {
 
         public int deliveryMode;
 
+        private long deliveryTime;
         private String messageId;
         private long timestamp;
         private String correlationId;
@@ -446,6 +448,32 @@ public class JmsMessageIntegrityTest extends AmqpTestSupport {
         @Override
         public String getText() throws JMSException {
             return text;
+        }
+
+        @Override
+        public void setJMSDeliveryTime(long deliveryTime) throws JMSException {
+            this.deliveryTime = deliveryTime;
+        }
+
+        @Override
+        public long getJMSDeliveryTime() throws JMSException {
+            return deliveryTime;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <T> T getBody(Class<T> target) throws JMSException {
+            if (isBodyAssignableTo(target)) {
+                return (T) text;
+            }
+
+            throw new MessageFormatException("Cannot covert body to type: " + target.getName());
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public boolean isBodyAssignableTo(@SuppressWarnings("rawtypes") Class target) throws JMSException {
+            return target.isAssignableFrom(String.class);
         }
     }
 

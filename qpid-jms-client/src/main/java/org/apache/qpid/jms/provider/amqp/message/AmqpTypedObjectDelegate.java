@@ -168,6 +168,15 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
         return true;
     }
 
+    @Override
+    public boolean hasBody() {
+        try {
+            return getObject() != null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     //----- Internal implementation ------------------------------------------//
 
     private boolean isSupportedAmqpValueObjectType(Serializable serializable) {

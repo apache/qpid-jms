@@ -194,4 +194,13 @@ public class AmqpSerializedObjectDelegate implements AmqpObjectTypeDelegate, Tru
             return true;
         }
     }
+
+    @Override
+    public boolean hasBody() {
+        try {
+            return getObject() != null;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

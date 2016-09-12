@@ -475,6 +475,11 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
         return "JmsStreamMessage { " + facade.toString() + " }";
     }
 
+    @Override
+    public boolean isBodyAssignableTo(@SuppressWarnings("rawtypes") Class target) throws JMSException {
+        return false;
+    }
+
     private void checkBytesInFlight() throws MessageFormatException {
         if (remainingBytes != NO_BYTES_IN_FLIGHT) {
             throw new MessageFormatException(

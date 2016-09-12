@@ -31,6 +31,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -97,6 +98,45 @@ public class MessageIntegrationTest extends QpidJmsTestCase
     private static final double DOUBLE_PROP_VALUE = Double.MAX_VALUE;
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
+
+    @Test(timeout = 20000)
+    public void testReceiveMessageAndGetBody() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent);
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+            testPeer.expectClose();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+            Message receivedMessage = messageConsumer.receive(3000);
+
+            assertTrue(receivedMessage.isBodyAssignableTo(Object.class));
+            assertTrue(receivedMessage.isBodyAssignableTo(String.class));
+            assertTrue(receivedMessage.isBodyAssignableTo(byte[].class));
+            assertTrue(receivedMessage.isBodyAssignableTo(Serializable.class));
+            assertTrue(receivedMessage.isBodyAssignableTo(Map.class));
+
+            assertNull(receivedMessage.getBody(Object.class));
+            assertNull(receivedMessage.getBody(String.class));
+            assertNull(receivedMessage.getBody(byte[].class));
+            assertNull(receivedMessage.getBody(Serializable.class));
+            assertNull(receivedMessage.getBody(Map.class));
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
 
     //==== Application Properties Section ====
     //========================================

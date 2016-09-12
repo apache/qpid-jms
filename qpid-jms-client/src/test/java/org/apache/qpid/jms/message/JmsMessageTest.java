@@ -26,13 +26,21 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.Serializable;
 import java.util.Enumeration;
+import java.util.Map;
+import java.util.UUID;
 
+import javax.jms.BytesMessage;
 import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
+import javax.jms.MapMessage;
 import javax.jms.Message;
 import javax.jms.MessageFormatException;
 import javax.jms.MessageNotWriteableException;
+import javax.jms.ObjectMessage;
+import javax.jms.StreamMessage;
+import javax.jms.TextMessage;
 
 import org.apache.qpid.jms.JmsAcknowledgeCallback;
 import org.apache.qpid.jms.JmsConnection;
@@ -1496,6 +1504,333 @@ public class JmsMessageTest {
         message.setIntProperty(JMS_AMQP_ACK_TYPE, RELEASED);
 
         assertEquals("Unexpected ack type value after setting prop", RELEASED, callback.getAckType());
+    }
+
+    //--------- Test isBodyAssignableTo method -------------------------------//
+
+    @Test
+    public void testMessageIsBodyAssignableTo() throws Exception {
+        Message message = factory.createMessage();
+
+        assertTrue(message.isBodyAssignableTo(String.class));
+        assertTrue(message.isBodyAssignableTo(Boolean.class));
+        assertTrue(message.isBodyAssignableTo(Object.class));
+        assertTrue(message.isBodyAssignableTo(Map.class));
+    }
+
+    @Test
+    public void testTextMessageIsBodyAssignableTo() throws Exception {
+        JmsTextMessage message = factory.createTextMessage();
+
+        assertTrue(message.isBodyAssignableTo(String.class));
+        assertTrue(message.isBodyAssignableTo(Boolean.class));
+        assertTrue(message.isBodyAssignableTo(Map.class));
+        assertTrue(message.isBodyAssignableTo(Object.class));
+
+        message.setText("test");
+
+        assertTrue(message.isBodyAssignableTo(String.class));
+        assertFalse(message.isBodyAssignableTo(Boolean.class));
+        assertFalse(message.isBodyAssignableTo(Map.class));
+        assertTrue(message.isBodyAssignableTo(Object.class));
+    }
+
+    @Test
+    public void testStreamMessageIsBodyAssignableTo() throws Exception {
+        JmsStreamMessage message = factory.createStreamMessage();
+
+        assertFalse(message.isBodyAssignableTo(String.class));
+        assertFalse(message.isBodyAssignableTo(Boolean.class));
+        assertFalse(message.isBodyAssignableTo(Map.class));
+        assertFalse(message.isBodyAssignableTo(Object.class));
+
+        message.writeBoolean(false);
+
+        assertFalse(message.isBodyAssignableTo(String.class));
+        assertFalse(message.isBodyAssignableTo(Boolean.class));
+        assertFalse(message.isBodyAssignableTo(Map.class));
+        assertFalse(message.isBodyAssignableTo(Object.class));
+    }
+
+    @Test
+    public void testMapMessageIsBodyAssignableTo() throws Exception {
+        JmsMapMessage message = factory.createMapMessage();
+
+        assertTrue(message.isBodyAssignableTo(String.class));
+        assertTrue(message.isBodyAssignableTo(Boolean.class));
+        assertTrue(message.isBodyAssignableTo(Map.class));
+        assertTrue(message.isBodyAssignableTo(Object.class));
+
+        message.setBoolean("Boolean", true);
+
+        assertFalse(message.isBodyAssignableTo(String.class));
+        assertFalse(message.isBodyAssignableTo(Boolean.class));
+        assertTrue(message.isBodyAssignableTo(Map.class));
+        assertTrue(message.isBodyAssignableTo(Object.class));
+    }
+
+    @Test
+    public void testBytesMessageIsBodyAssignableTo() throws Exception {
+        JmsBytesMessage message = factory.createBytesMessage();
+
+        assertTrue(message.isBodyAssignableTo(byte[].class));
+        assertTrue(message.isBodyAssignableTo(Boolean.class));
+        assertTrue(message.isBodyAssignableTo(Map.class));
+        assertTrue(message.isBodyAssignableTo(String.class));
+        assertTrue(message.isBodyAssignableTo(Object.class));
+
+        message.writeBoolean(false);
+
+        // The message doesn't technically have a body until it is reset
+        message.reset();
+
+        assertTrue(message.isBodyAssignableTo(byte[].class));
+        assertFalse(message.isBodyAssignableTo(Boolean.class));
+        assertFalse(message.isBodyAssignableTo(Map.class));
+        assertFalse(message.isBodyAssignableTo(String.class));
+        assertTrue(message.isBodyAssignableTo(Object.class));
+    }
+
+    @Test
+    public void testObjectMessageIsBodyAssignableTo() throws Exception {
+        JmsObjectMessage message = factory.createObjectMessage();
+
+        assertTrue(message.isBodyAssignableTo(Boolean.class));
+        assertTrue(message.isBodyAssignableTo(Map.class));
+        assertTrue(message.isBodyAssignableTo(String.class));
+        assertTrue(message.isBodyAssignableTo(Serializable.class));
+        assertTrue(message.isBodyAssignableTo(Object.class));
+
+        message.setObject(UUID.randomUUID());
+
+        assertFalse(message.isBodyAssignableTo(Boolean.class));
+        assertFalse(message.isBodyAssignableTo(Map.class));
+        assertFalse(message.isBodyAssignableTo(String.class));
+        assertTrue(message.isBodyAssignableTo(Serializable.class));
+        assertTrue(message.isBodyAssignableTo(Object.class));
+        assertTrue(message.isBodyAssignableTo(UUID.class));
+    }
+
+    //--------- Test for getBody method --------------------------------------//
+
+    @Test
+    public void testGetBodyOnMessage() throws Exception {
+        Message message = factory.createMessage();
+
+        assertNull(message.getBody(String.class));
+        assertNull(message.getBody(Boolean.class));
+        assertNull(message.getBody(byte[].class));
+        assertNull(message.getBody(Object.class));
+    }
+
+    @Test
+    public void testGetBodyOnTextMessage() throws Exception {
+        TextMessage message = factory.createTextMessage();
+
+        assertNull(message.getBody(String.class));
+        assertNull(message.getBody(Boolean.class));
+        assertNull(message.getBody(byte[].class));
+        assertNull(message.getBody(Object.class));
+
+        message.setText("test");
+
+        assertNotNull(message.getBody(String.class));
+        assertNotNull(message.getBody(Object.class));
+
+        try {
+            message.getBody(Boolean.class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
+
+        try {
+            message.getBody(Map.class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
+
+        try {
+            message.getBody(byte[].class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
+    }
+
+    @Test
+    public void testGetBodyOnMapMessage() throws Exception {
+        MapMessage message = factory.createMapMessage();
+
+        assertNull(message.getBody(String.class));
+        assertNull(message.getBody(Boolean.class));
+        assertNull(message.getBody(byte[].class));
+        assertNull(message.getBody(Object.class));
+
+        message.setString("test", "test");
+
+        assertNotNull(message.getBody(Map.class));
+        assertNotNull(message.getBody(Object.class));
+
+        try {
+            message.getBody(Boolean.class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
+
+        try {
+            message.getBody(String.class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
+
+        try {
+            message.getBody(byte[].class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
+    }
+
+    @Test
+    public void testGetBodyOnObjectMessage() throws Exception {
+        ObjectMessage message = factory.createObjectMessage();
+
+        assertNull(message.getBody(String.class));
+        assertNull(message.getBody(Boolean.class));
+        assertNull(message.getBody(byte[].class));
+        assertNull(message.getBody(Serializable.class));
+        assertNull(message.getBody(Object.class));
+
+        message.setObject(UUID.randomUUID());
+
+        assertNotNull(message.getBody(UUID.class));
+        assertNotNull(message.getBody(Serializable.class));
+        assertNotNull(message.getBody(Object.class));
+
+        try {
+            message.getBody(Boolean.class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
+
+        try {
+            message.getBody(String.class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
+
+        try {
+            message.getBody(byte[].class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
+    }
+
+    @Test
+    public void testGetBodyOnBytesMessage() throws Exception {
+        BytesMessage message = factory.createBytesMessage();
+
+        assertNull(message.getBody(String.class));
+        assertNull(message.getBody(Boolean.class));
+        assertNull(message.getBody(byte[].class));
+        assertNull(message.getBody(Object.class));
+
+        message.writeUTF("test");
+        message.reset();
+
+        assertNotNull(message.getBody(byte[].class));
+        assertNotNull(message.getBody(Object.class));
+
+        try {
+            message.getBody(Boolean.class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
+
+        try {
+            message.getBody(Map.class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
+
+        try {
+            message.getBody(String.class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
+    }
+
+    @Test
+    public void testGetBodyOnStreamMessage() throws Exception {
+        StreamMessage message = factory.createStreamMessage();
+
+        try {
+            message.getBody(Object.class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
+
+        try {
+            message.getBody(Boolean.class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
+
+        try {
+            message.getBody(String.class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
+
+        try {
+            message.getBody(byte[].class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
+
+        message.writeBoolean(false);
+
+        try {
+            message.getBody(Object.class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
+
+        try {
+            message.getBody(Boolean.class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
+
+        try {
+            message.getBody(String.class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
+
+        try {
+            message.getBody(byte[].class);
+            fail("Should have thrown an exception");
+        } catch (MessageFormatException mfe) {
+            LOG.info("caught expected MessageFormatException");
+        }
     }
 
     //--------- Test support method ------------------------------------------//

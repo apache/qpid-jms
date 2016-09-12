@@ -16,9 +16,29 @@
  */
 package org.apache.qpid.jms.exceptions;
 
+import javax.jms.IllegalStateException;
+import javax.jms.IllegalStateRuntimeException;
+import javax.jms.InvalidClientIDException;
+import javax.jms.InvalidClientIDRuntimeException;
+import javax.jms.InvalidDestinationException;
+import javax.jms.InvalidDestinationRuntimeException;
+import javax.jms.InvalidSelectorException;
+import javax.jms.InvalidSelectorRuntimeException;
 import javax.jms.JMSException;
+import javax.jms.JMSRuntimeException;
+import javax.jms.JMSSecurityException;
+import javax.jms.JMSSecurityRuntimeException;
 import javax.jms.MessageEOFException;
 import javax.jms.MessageFormatException;
+import javax.jms.MessageFormatRuntimeException;
+import javax.jms.MessageNotWriteableException;
+import javax.jms.MessageNotWriteableRuntimeException;
+import javax.jms.ResourceAllocationException;
+import javax.jms.ResourceAllocationRuntimeException;
+import javax.jms.TransactionInProgressException;
+import javax.jms.TransactionInProgressRuntimeException;
+import javax.jms.TransactionRolledBackException;
+import javax.jms.TransactionRolledBackRuntimeException;
 
 /**
  * Exception support class.
@@ -142,5 +162,51 @@ public final class JmsExceptionSupport {
         }
         exception.initCause(cause);
         return exception;
+    }
+
+    /**
+     * Creates the proper instance of a JMSRuntimeException based on the type
+     * of JMSException that is passed.
+     *
+     * @param exception
+     *      The JMSException instance to convert to a JMSRuntimeException
+     *
+     * @return a new {@link JMSRuntimeException} instance that reflects the original error.
+     */
+    public static JMSRuntimeException createRuntimeException(Exception exception) {
+        JMSRuntimeException result = null;
+        JMSException source = null;
+
+        if (!(exception instanceof JMSException)) {
+            throw new JMSRuntimeException(exception.getMessage(), null, exception);
+        } else {
+            source = (JMSException) exception;
+        }
+
+        if (source instanceof IllegalStateException) {
+            result = new IllegalStateRuntimeException(source.getMessage(), source.getErrorCode(), source);
+        } else if (source instanceof InvalidClientIDException) {
+            result = new InvalidClientIDRuntimeException(source.getMessage(), source.getErrorCode(), source);
+        } else if (source instanceof InvalidDestinationException) {
+            result = new InvalidDestinationRuntimeException(source.getMessage(), source.getErrorCode(), source);
+        } else if (source instanceof InvalidSelectorException) {
+            result = new InvalidSelectorRuntimeException(source.getMessage(), source.getErrorCode(), source);
+        } else if (source instanceof JMSSecurityException) {
+            result = new JMSSecurityRuntimeException(source.getMessage(), source.getErrorCode(), source);
+        } else if (source instanceof MessageFormatException) {
+            result = new MessageFormatRuntimeException(source.getMessage(), source.getErrorCode(), source);
+        } else if (source instanceof MessageNotWriteableException) {
+            result = new MessageNotWriteableRuntimeException(source.getMessage(), source.getErrorCode(), source);
+        } else if (source instanceof ResourceAllocationException) {
+            result = new ResourceAllocationRuntimeException(source.getMessage(), source.getErrorCode(), source);
+        } else if (source instanceof TransactionInProgressException) {
+            result = new TransactionInProgressRuntimeException(source.getMessage(), source.getErrorCode(), source);
+        } else if (source instanceof TransactionRolledBackException) {
+            result = new TransactionRolledBackRuntimeException(source.getMessage(), source.getErrorCode(), source);
+        } else {
+            result = new JMSRuntimeException(source.getMessage(), source.getErrorCode(), source);
+        }
+
+        return result;
     }
 }

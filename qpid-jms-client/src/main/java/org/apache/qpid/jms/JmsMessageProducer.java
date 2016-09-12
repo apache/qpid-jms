@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.jms.CompletionListener;
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.IllegalStateException;
@@ -43,6 +44,7 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
     protected final JmsConnection connection;
     protected JmsProducerInfo producerInfo;
     protected final boolean anonymousProducer;
+    protected long deliveryDelay = Message.DEFAULT_DELIVERY_DELAY;
     protected int deliveryMode = DeliveryMode.PERSISTENT;
     protected int priority = Message.DEFAULT_PRIORITY;
     protected long timeToLive = Message.DEFAULT_TIME_TO_LIVE;
@@ -110,44 +112,50 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
     }
 
     @Override
+    public long getDeliveryDelay() throws JMSException {
+        checkClosed();
+        return deliveryMode;
+    }
+
+    @Override
     public int getDeliveryMode() throws JMSException {
         checkClosed();
-        return this.deliveryMode;
+        return deliveryMode;
     }
 
     @Override
     public Destination getDestination() throws JMSException {
         checkClosed();
-        return this.producerInfo.getDestination();
+        return producerInfo.getDestination();
     }
 
     @Override
     public boolean getDisableMessageID() throws JMSException {
         checkClosed();
-        return this.disableMessageId;
+        return disableMessageId;
     }
 
     @Override
     public boolean getDisableMessageTimestamp() throws JMSException {
         checkClosed();
-        return this.disableTimestamp;
+        return disableTimestamp;
     }
 
     @Override
     public int getPriority() throws JMSException {
         checkClosed();
-        return this.priority;
+        return priority;
     }
 
     @Override
     public long getTimeToLive() throws JMSException {
         checkClosed();
-        return this.timeToLive;
+        return timeToLive;
     }
 
     @Override
     public void send(Message message) throws JMSException {
-        send(message, this.deliveryMode, this.priority, this.timeToLive);
+        send(message, deliveryMode, priority, timeToLive);
     }
 
     @Override
@@ -163,7 +171,7 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
 
     @Override
     public void send(Destination destination, Message message) throws JMSException {
-        send(destination, message, this.deliveryMode, this.priority, this.timeToLive);
+        send(destination, message, deliveryMode, priority, timeToLive);
     }
 
     @Override
@@ -177,37 +185,13 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
         sendMessage(destination, message, deliveryMode, priority, timeToLive, null);
     }
 
-    /**
-     * Sends the message asynchronously and notifies the assigned listener on success or failure
-     *
-     * @param message
-     *      the {@link javax.jms.Message} to send.
-     * @param listener
-     *      the {@link JmsCompletionListener} to notify on send success or failure.
-     *
-     * @throws JMSException if an error occurs while attempting to send the Message.
-     */
-    public void send(Message message, JmsCompletionListener listener) throws JMSException {
-        send(message, this.deliveryMode, this.priority, this.timeToLive, listener);
+    @Override
+    public void send(Message message, CompletionListener listener) throws JMSException {
+        send(message, deliveryMode, priority, timeToLive, listener);
     }
 
-    /**
-     * Sends the message asynchronously and notifies the assigned listener on success or failure
-     *
-     * @param message
-     *      the {@link javax.jms.Message} to send.
-     * @param deliveryMode
-     *      the delivery mode to assign to the outbound Message.
-     * @param priority
-     *      the priority to assign to the outbound Message.
-     * @param timeToLive
-     *      the time to live value to assign to the outbound Message.
-     * @param listener
-     *      the {@link JmsCompletionListener} to notify on send success or failure.
-     *
-     * @throws JMSException if an error occurs while attempting to send the Message.
-     */
-    public void send(Message message, int deliveryMode, int priority, long timeToLive, JmsCompletionListener listener) throws JMSException {
+    @Override
+    public void send(Message message, int deliveryMode, int priority, long timeToLive, CompletionListener listener) throws JMSException {
         checkClosed();
 
         if (anonymousProducer) {
@@ -221,41 +205,13 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
         sendMessage(producerInfo.getDestination(), message, deliveryMode, priority, timeToLive, listener);
     }
 
-    /**
-     * Sends the message asynchronously and notifies the assigned listener on success or failure
-     *
-     * @param destination
-     *      the Destination to send the given Message to.
-     * @param message
-     *      the {@link javax.jms.Message} to send.
-     * @param listener
-     *      the {@link JmsCompletionListener} to notify on send success or failure.
-     *
-     * @throws JMSException if an error occurs while attempting to send the Message.
-     */
-    public void send(Destination destination, Message message, JmsCompletionListener listener) throws JMSException {
+    @Override
+    public void send(Destination destination, Message message, CompletionListener listener) throws JMSException {
         send(destination, message, this.deliveryMode, this.priority, this.timeToLive, listener);
     }
 
-    /**
-     * Sends the message asynchronously and notifies the assigned listener on success or failure
-     *
-     * @param destination
-     *      the Destination to send the given Message to.
-     * @param message
-     *      the {@link javax.jms.Message} to send.
-     * @param deliveryMode
-     *      the delivery mode to assign to the outbound Message.
-     * @param priority
-     *      the priority to assign to the outbound Message.
-     * @param timeToLive
-     *      the time to live value to assign to the outbound Message.
-     * @param listener
-     *      the {@link JmsCompletionListener} to notify on send success or failure.
-     *
-     * @throws JMSException if an error occurs while attempting to send the Message.
-     */
-    public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive, JmsCompletionListener listener) throws JMSException {
+    @Override
+    public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive, CompletionListener listener) throws JMSException {
         checkClosed();
 
         if (!anonymousProducer) {
@@ -269,12 +225,18 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
         sendMessage(destination, message, deliveryMode, priority, timeToLive, listener);
     }
 
-    private void sendMessage(Destination destination, Message message, int deliveryMode, int priority, long timeToLive, JmsCompletionListener listener) throws JMSException {
+    private void sendMessage(Destination destination, Message message, int deliveryMode, int priority, long timeToLive, CompletionListener listener) throws JMSException {
         if (destination == null) {
             throw new InvalidDestinationException("Don't understand null destinations");
         }
 
-        this.session.send(this, destination, message, deliveryMode, priority, timeToLive, disableMessageId, disableTimestamp, listener);
+        this.session.send(this, destination, message, deliveryMode, priority, timeToLive, disableMessageId, disableTimestamp, deliveryDelay, listener);
+    }
+
+    @Override
+    public void setDeliveryDelay(long deliveryDelay) throws JMSException {
+        checkClosed();
+        this.deliveryDelay = deliveryDelay;
     }
 
     @Override
@@ -318,7 +280,7 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
      * @return the next logical sequence for a Message sent from this Producer.
      */
     protected long getNextMessageSequence() {
-        return this.messageSequence.incrementAndGet();
+        return messageSequence.incrementAndGet();
     }
 
     protected void checkClosed() throws IllegalStateException {

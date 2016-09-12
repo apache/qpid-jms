@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.ExceptionListener;
+import javax.jms.JMSContext;
 import javax.jms.JMSException;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
@@ -234,6 +235,35 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         }
     }
 
+    //----- JMSContext Creation methods --------------------------------------//
+
+    @Override
+    public JMSContext createContext() {
+        return createContext(getUsername(), getPassword(), JMSContext.AUTO_ACKNOWLEDGE);
+    }
+
+    @Override
+    public JMSContext createContext(int sessionMode) {
+        return createContext(getUsername(), getPassword(), sessionMode);
+    }
+
+    @Override
+    public JMSContext createContext(String username, String password) {
+        return createContext(username, password, JMSContext.AUTO_ACKNOWLEDGE);
+    }
+
+    @Override
+    public JMSContext createContext(String username, String password, int sessionMode) {
+        try {
+            JmsConnection connection = (JmsConnection) createConnection(username, password);
+            return new JmsContext(connection, sessionMode);
+        } catch (JMSException jmse) {
+            throw JmsExceptionSupport.createRuntimeException(jmse);
+        }
+    }
+
+    //----- Internal Support Methods -----------------------------------------//
+
     protected Provider createProvider(URI remoteURI) throws Exception {
         if (remoteURI == null) {
             remoteURI = new URI(getDefaultRemoteAddress());
@@ -279,9 +309,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         this.connectionIdGenerator = connectionIdGenerator;
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    // Property getters and setters
-    //////////////////////////////////////////////////////////////////////////
+    //----- Property Access Methods ------------------------------------------//
 
     /**
      * @return the remoteURI

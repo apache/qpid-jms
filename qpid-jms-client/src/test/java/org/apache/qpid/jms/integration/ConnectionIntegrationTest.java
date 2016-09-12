@@ -106,6 +106,30 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testCreateAutoAckSessionByDefault() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            Session session = connection.createSession();
+            assertNotNull("Session should not be null", session);
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateAutoAckSessionUsingAckModeOnlyMethod() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            Session session = connection.createSession(Session.AUTO_ACKNOWLEDGE);
+            assertNotNull("Session should not be null", session);
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
+
+    @Test(timeout = 20000)
     public void testCreateTransactedSession() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -125,6 +149,32 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectClose();
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            assertNotNull("Session should not be null", session);
+
+            connection.close();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateTransactedSessionUsingAckModeOnlyMethod() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+
+            testPeer.expectBegin();
+            // Expect the session, with an immediate link to the transaction coordinator
+            // using a target with the expected capabilities only.
+            CoordinatorMatcher txCoordinatorMatcher = new CoordinatorMatcher();
+            txCoordinatorMatcher.withCapabilities(arrayContaining(TxnCapability.LOCAL_TXN));
+            testPeer.expectSenderAttach(txCoordinatorMatcher, false, false);
+
+            // First expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a declared disposition state containing the txnId.
+            Binary txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
+            testPeer.expectDeclare(txnId);
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
+
+            Session session = connection.createSession(Session.SESSION_TRANSACTED);
             assertNotNull("Session should not be null", session);
 
             connection.close();

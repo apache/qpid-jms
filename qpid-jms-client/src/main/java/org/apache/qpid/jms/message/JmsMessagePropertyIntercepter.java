@@ -24,6 +24,7 @@ import static org.apache.qpid.jms.message.JmsMessageSupport.JMSX_GROUPSEQ;
 import static org.apache.qpid.jms.message.JmsMessageSupport.JMSX_USERID;
 import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_AMQP_ACK_TYPE;
 import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_CORRELATIONID;
+import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_DELIVERYTIME;
 import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_DELIVERY_MODE;
 import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_DESTINATION;
 import static org.apache.qpid.jms.message.JmsMessageSupport.JMS_EXPIRATION;
@@ -135,6 +136,7 @@ public class JmsMessagePropertyIntercepter {
         STANDARD_HEADERS.add(JMS_TYPE);
         STANDARD_HEADERS.add(JMS_EXPIRATION);
         STANDARD_HEADERS.add(JMS_PRIORITY);
+        STANDARD_HEADERS.add(JMS_DELIVERYTIME);
 
         VENDOR_PROPERTIES.add(JMS_AMQP_ACK_TYPE);
 
@@ -636,6 +638,36 @@ public class JmsMessagePropertyIntercepter {
             @Override
             public boolean isAlwaysWritable() {
                 return true;
+            }
+        });
+        PROPERTY_INTERCEPTERS.put(JMS_DELIVERYTIME, new PropertyIntercepter() {
+            @Override
+            public Object getProperty(JmsMessage message) throws JMSException {
+                return Long.valueOf(message.getFacade().getDeliveryTime());
+            }
+
+            @Override
+            public void setProperty(JmsMessage message, Object value) throws JMSException {
+                Long rc = (Long) TypeConversionSupport.convert(value, Long.class);
+                if (rc == null) {
+                    throw new JMSException("Property JMSDeliveryTime cannot be set from a " + value.getClass().getName() + ".");
+                }
+                message.getFacade().setDeliveryTime(rc.longValue());
+            }
+
+            @Override
+            public boolean propertyExists(JmsMessage message) {
+                return message.getFacade().getDeliveryTime() > 0;
+            }
+
+            @Override
+            public void clearProperty(JmsMessage message) {
+                message.getFacade().setDeliveryTime(0);
+            }
+
+            @Override
+            public boolean isAlwaysWritable() {
+                return false;
             }
         });
     }

@@ -68,12 +68,16 @@ public class AmqpFixedProducer extends AmqpProducer {
 
     private AsyncResult sendCompletionWatcher;
 
+    private final AmqpConnection connection;
+
     public AmqpFixedProducer(AmqpSession session, JmsProducerInfo info) {
-        super(session, info);
+        this(session, info, null);
     }
 
     public AmqpFixedProducer(AmqpSession session, JmsProducerInfo info, Sender sender) {
         super(session, info, sender);
+
+        connection = session.getConnection();
     }
 
     @Override
@@ -93,7 +97,12 @@ public class AmqpFixedProducer extends AmqpProducer {
             request.onFailure(new IllegalStateException("The MessageProducer is closed"));
         }
 
-        if (getEndpoint().getCredit() <= 0) {
+        if (!connection.getProperties().isDelayedDeliverySupported() &&
+            envelope.getMessage().getJMSDeliveryTime() != 0) {
+
+            // Don't allow sends with delay if the remote said it can't handle them
+            request.onFailure(new JMSException("Remote does not support delayed message delivery"));
+        } else if (getEndpoint().getCredit() <= 0) {
             LOG.trace("Holding Message send until credit is available.");
 
             InFlightSend send = new InFlightSend(envelope, request);

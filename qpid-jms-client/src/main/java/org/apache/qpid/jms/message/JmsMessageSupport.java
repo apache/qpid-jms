@@ -31,6 +31,7 @@ public class JmsMessageSupport {
     public static final String JMS_CORRELATIONID = "JMSCorrelationID";
     public static final String JMS_EXPIRATION = "JMSExpiration";
     public static final String JMS_REDELIVERED = "JMSRedelivered";
+    public static final String JMS_DELIVERYTIME = "JMSDeliveryTime";
 
     public static final String JMSX_GROUPID = "JMSXGroupID";
     public static final String JMSX_GROUPSEQ = "JMSXGroupSeq";

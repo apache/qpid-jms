@@ -1518,6 +1518,16 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     }
 
     @Test
+    public void testNewMessageDoesNotHaveUnderlyingMessageAnnotationsSectionWithDeliveryTime() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();;
+
+        Message underlying = amqpMessageFacade.getAmqpMessage();
+        assertNotNull(underlying.getMessageAnnotations());
+        Symbol annotationKey = AmqpMessageSupport.getSymbol(AmqpMessageSupport.JMS_DELIVERY_TIME);
+        assertNull(underlying.getMessageAnnotations().getValue().get(annotationKey));
+    }
+
+    @Test
     public void testMessageAnnotationExistsUsingReceivedMessageWithoutMessageAnnotationsSection() {
         String symbolKeyName = "myTestSymbolName";
 

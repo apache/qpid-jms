@@ -19,6 +19,7 @@ package org.apache.qpid.jms.transports.netty;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.ANONYMOUS_RELAY;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.CONNECTION_OPEN_FAILED;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.CONTAINER_ID;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DELAYED_DELIVERY;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.INVALID_FIELD;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.PLATFORM;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.PRODUCT;
@@ -32,8 +33,13 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.qpid.jms.transports.TransportOptions;
+import org.apache.qpid.jms.util.IdGenerator;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.transport.AmqpError;
@@ -42,7 +48,9 @@ import org.apache.qpid.proton.engine.Collector;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Event;
+import org.apache.qpid.proton.engine.Receiver;
 import org.apache.qpid.proton.engine.Sasl;
+import org.apache.qpid.proton.engine.Sender;
 import org.apache.qpid.proton.engine.Session;
 import org.apache.qpid.proton.engine.Transport;
 import org.apache.qpid.proton.engine.impl.CollectorImpl;
@@ -60,15 +68,19 @@ import io.netty.channel.SimpleChannelInboundHandler;
  * Simple Netty based server that can handle a small subset of AMQP events
  * using Proton-J as the protocol engine.
  */
+@SuppressWarnings( "unused" )
 public class NettySimpleAmqpServer extends NettyServer {
 
     private static final Logger LOG = LoggerFactory.getLogger(NettySimpleAmqpServer.class);
+
+    private static final AtomicInteger SERVER_SEQUENCE = new AtomicInteger();
 
     private static final int CHANNEL_MAX = 32767;
     private static final int HEADER_SIZE = 8;
     private static final int SASL_PROTOCOL = 3;
 
     private final Map<String, List<Connection>> connections = new HashMap<String, List<Connection>>();
+    private final ScheduledExecutorService serializer;
 
     private boolean allowNonSaslConnections;
     private ConnectionIntercepter connectionIntercepter;
@@ -83,6 +95,18 @@ public class NettySimpleAmqpServer extends NettyServer {
 
     public NettySimpleAmqpServer(TransportOptions options, boolean needClientAuth, boolean webSocketServer) {
         super(options, needClientAuth, webSocketServer);
+
+        this.serializer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+
+            @Override
+            public Thread newThread(Runnable runner) {
+                Thread serial = new Thread(runner);
+                serial.setDaemon(true);
+                serial.setName(NettySimpleAmqpServer.this.getClass().getSimpleName() + ":(" +
+                               SERVER_SEQUENCE.incrementAndGet() + "):Worker");
+                return serial;
+            }
+        });
     }
 
     @Override
@@ -111,10 +135,14 @@ public class NettySimpleAmqpServer extends NettyServer {
 
     private final class ProtonConnection extends SimpleChannelInboundHandler<ByteBuf>  {
 
+        private final IdGenerator sessionIdGenerator = new IdGenerator();
+
         private final Transport protonTransport = Proton.transport();
         private final Connection protonConnection = Proton.connection();
         private final Collector eventCollector = new CollectorImpl();
         private SaslAuthenticator authenticator;
+
+        private final Map<String, ProtonSession> sessions = new HashMap<String, ProtonSession>();
 
         private boolean exclusiveContainerId;
         private boolean headerRead;
@@ -223,6 +251,21 @@ public class NettySimpleAmqpServer extends NettyServer {
                     case SESSION_REMOTE_CLOSE:
                         processSessionClose(event.getSession());
                         break;
+                    case LINK_REMOTE_OPEN:
+                        //processLinkOpen(event.getLink());
+                        break;
+                    case LINK_REMOTE_DETACH:
+                        //processLinkDetach(event.getLink());
+                        break;
+                    case LINK_REMOTE_CLOSE:
+                        //processLinkClose(event.getLink());
+                        break;
+                    case LINK_FLOW:
+                        //processLinkFlow(event.getLink());
+                        break;
+                    case DELIVERY:
+                        //processDelivery(event.getDelivery());
+                        break;
                     default:
                         break;
                 }
@@ -263,11 +306,17 @@ public class NettySimpleAmqpServer extends NettyServer {
         }
 
         private void processSessionClose(Session session) {
+            ProtonSession protonSession = (ProtonSession) session.getContext();
+
+            sessions.remove(protonSession.getId());
+
             session.close();
             session.free();
         }
 
         private void processSessionOpen(Session session) {
+            ProtonSession protonSession = new ProtonSession(sessionIdGenerator.generateId(), session);
+            sessions.put(protonSession.getId(), protonSession);
             session.open();
         }
 
@@ -387,7 +436,7 @@ public class NettySimpleAmqpServer extends NettyServer {
     }
 
     private Symbol[] getConnectionCapabilitiesOffered() {
-        return new Symbol[]{ ANONYMOUS_RELAY };
+        return new Symbol[]{ ANONYMOUS_RELAY, DELAYED_DELIVERY };
     }
 
     private Map<Symbol, Object> getConnetionProperties() {
@@ -453,7 +502,74 @@ public class NettySimpleAmqpServer extends NettyServer {
 
     }
 
-    //----- Internal Type Implementations ------------------------------------//
+    //----- Session Manager --------------------------------------------------//
+
+    private class ProtonSession {
+
+        private final String sessionId;
+        private final Session session;
+
+        private Map<String, ProtonSender> senders = new HashMap<String, ProtonSender>();
+        private Map<String, ProtonReceiver> receivers = new HashMap<String, ProtonReceiver>();
+
+        public ProtonSession(String sessionId, Session session) {
+            this.sessionId = sessionId;
+            this.session = session;
+            this.session.setContext(this);
+        }
+
+        public Session getSession() {
+            return session;
+        }
+
+        public String getId() {
+            return sessionId;
+        }
+    }
+
+    //----- Sender Manager ---------------------------------------------------//
+
+    private class ProtonSender {
+
+        private final String senderId;
+        private final Sender sender;
+
+        public ProtonSender(String senderId, Sender sender) {
+            this.senderId = senderId;
+            this.sender = sender;
+        }
+
+        public String getId() {
+            return senderId;
+        }
+
+        public Sender getSender() {
+            return sender;
+        }
+    }
+
+    //----- Receiver Manager ---------------------------------------------------//
+
+    private class ProtonReceiver {
+
+        private final String receiverId;
+        private final Receiver receiver;
+
+        public ProtonReceiver(String receiverId, Receiver receiver) {
+            this.receiverId = receiverId;
+            this.receiver = receiver;
+        }
+
+        public String getId() {
+            return receiverId;
+        }
+
+        public Receiver getReceiver() {
+            return receiver;
+        }
+    }
+
+    //----- SASL Authentication Manager --------------------------------------//
 
     private class SaslAuthenticator {
 
@@ -496,7 +612,8 @@ public class NettySimpleAmqpServer extends NettyServer {
         }
     }
 
-    @SuppressWarnings("unused")
+    //----- Simple AMQP Header Wrapper ---------------------------------------//
+
     private class AmqpHeader {
 
         private final byte[] PREFIX = new byte[] { 'A', 'M', 'Q', 'P' };

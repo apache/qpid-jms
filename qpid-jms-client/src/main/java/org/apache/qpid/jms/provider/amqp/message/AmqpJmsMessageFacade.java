@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_AMQP_TTL;
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_DELIVERY_TIME;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MESSAGE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MSG_TYPE;
 
@@ -555,14 +556,21 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public long getDeliveryTime() {
-        // TODO Auto-generated method stub
-        return 0;
+        Object deliveryTime = getMessageAnnotation(JMS_DELIVERY_TIME);
+        if (deliveryTime != null) {
+            return (long) deliveryTime;
+        }
+
+        return 0l;
     }
 
     @Override
     public void setDeliveryTime(long deliveryTime) {
-        // TODO Auto-generated method stub
-
+        if (deliveryTime != 0) {
+            setMessageAnnotation(JMS_DELIVERY_TIME, deliveryTime);
+        } else {
+            removeMessageAnnotation(JMS_DELIVERY_TIME);
+        }
     }
 
     /**

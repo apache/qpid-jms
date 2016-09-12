@@ -37,6 +37,11 @@ public final class AmqpMessageSupport {
     public static final String JMS_MSG_TYPE = "x-opt-jms-msg-type";
 
     /**
+     * Attribute used to mark the Application defined delivery time assigned to the message
+     */
+    public static final String JMS_DELIVERY_TIME = "x-opt-delivery-time";
+
+    /**
      * Value mapping for JMS_MSG_TYPE which indicates the message is a generic JMS Message
      * which has no body.
      */

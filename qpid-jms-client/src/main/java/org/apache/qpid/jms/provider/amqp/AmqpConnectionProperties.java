@@ -18,6 +18,7 @@ package org.apache.qpid.jms.provider.amqp;
 
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.ANONYMOUS_RELAY;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.CONNECTION_OPEN_FAILED;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DELAYED_DELIVERY;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.QUEUE_PREFIX;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.TOPIC_PREFIX;
 
@@ -41,6 +42,7 @@ public class AmqpConnectionProperties {
 
     private final JmsConnectionInfo connectionInfo;
 
+    private boolean delayedDeliverySupported = false;
     private boolean anonymousRelaySupported = false;
     private boolean connectionOpenFailed = false;
 
@@ -78,6 +80,10 @@ public class AmqpConnectionProperties {
         if (list.contains(ANONYMOUS_RELAY)) {
             anonymousRelaySupported = true;
         }
+
+        if (list.contains(DELAYED_DELIVERY)) {
+            delayedDeliverySupported = true;
+        }
     }
 
     protected void processProperties(Map<Symbol, Object> properties) {
@@ -101,6 +107,23 @@ public class AmqpConnectionProperties {
             LOG.trace("Remote sent Connection Establishment Failed marker.");
             connectionOpenFailed = true;
         }
+    }
+
+    /**
+     * @return true if the connection supports sending message with delivery delays.
+     */
+    public boolean isDelayedDeliverySupported() {
+        return delayedDeliverySupported;
+    }
+
+    /**
+     * Sets if the connection supports sending message with assigned delivery delays.
+     *
+     * @param deliveryDelaySupported
+     *      true if the delivery delay features is supported.
+     */
+    public void setDeliveryDelaySupported(boolean deliveryDelaySupported) {
+        this.delayedDeliverySupported = deliveryDelaySupported;
     }
 
     /**

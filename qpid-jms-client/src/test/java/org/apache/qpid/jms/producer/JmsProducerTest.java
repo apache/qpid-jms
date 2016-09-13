@@ -19,18 +19,31 @@
 package org.apache.qpid.jms.producer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
+import javax.jms.CompletionListener;
+import javax.jms.DeliveryMode;
+import javax.jms.Destination;
+import javax.jms.JMSException;
 import javax.jms.JMSProducer;
+import javax.jms.Message;
 import javax.jms.MessageFormatRuntimeException;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.apache.qpid.jms.JmsContext;
+import org.apache.qpid.jms.JmsMessageProducer;
+import org.apache.qpid.jms.JmsProducer;
+import org.apache.qpid.jms.JmsSession;
+import org.apache.qpid.jms.JmsTopic;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 /**
  * Test various behaviors of the JMSProducer implementation.
@@ -39,8 +52,37 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
 
     private JmsContext context;
 
+    private final String STRING_PROPERTY_NAME = "StringProperty";
+    private final String STRING_PROPERTY_VALUE = UUID.randomUUID().toString();
+
+    private final String BYTE_PROPERTY_NAME = "ByteProperty";
+    private final byte BYTE_PROPERTY_VALUE = Byte.MAX_VALUE;
+
+    private final String BOOLEAN_PROPERTY_NAME = "BooleanProperty";
+    private final boolean BOOLEAN_PROPERTY_VALUE = Boolean.TRUE;
+
+    private final String SHORT_PROPERTY_NAME = "ShortProperty";
+    private final short SHORT_PROPERTY_VALUE = Short.MAX_VALUE;
+
+    private final String INTEGER_PROPERTY_NAME = "IntegerProperty";
+    private final int INTEGER_PROPERTY_VALUE = Integer.MAX_VALUE;
+
+    private final String LONG_PROPERTY_NAME = "LongProperty";
+    private final long LONG_PROPERTY_VALUE = Long.MAX_VALUE;
+
+    private final String DOUBLE_PROPERTY_NAME = "DoubleProperty";
+    private final double DOUBLE_PROPERTY_VALUE = Double.MAX_VALUE;
+
+    private final String FLOAT_PROPERTY_NAME = "FloatProperty";
+    private final float FLOAT_PROPERTY_VALUE = Float.MAX_VALUE;
+
     private final String BAD_PROPERTY_NAME = "%_BAD_PROPERTY_NAME";
     private final String GOOD_PROPERTY_NAME = "GOOD_PROPERTY_NAME";
+
+    private final Destination JMS_DESTINATION = new JmsTopic("test.target.topic:001");
+    private final Destination JMS_REPLY_TO = new JmsTopic("test.replyto.topic:001");
+    private final String JMS_CORRELATION_ID = UUID.randomUUID().toString();
+    private final String JMS_TYPE_STRING = "TestType";
 
     @Override
     @Before
@@ -79,6 +121,507 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
 
         assertEquals(0, producer.getPropertyNames().size());
     }
+
+    @Test
+    public void testPropertyExists() {
+        JMSProducer producer = context.createProducer();
+
+        producer.setProperty("Property_1", "1");
+        producer.setProperty("Property_2", "2");
+        producer.setProperty("Property_3", "3");
+
+        assertEquals(3, producer.getPropertyNames().size());
+
+        assertTrue(producer.propertyExists("Property_1"));
+        assertTrue(producer.propertyExists("Property_2"));
+        assertTrue(producer.propertyExists("Property_3"));
+        assertFalse(producer.propertyExists("Property_4"));
+    }
+
+    //----- Test for JMS Message Headers are stored --------------------------//
+
+    @Test
+    public void testJMSCorrelationID() {
+        JMSProducer producer = context.createProducer();
+
+        producer.setJMSCorrelationID(JMS_CORRELATION_ID);
+        assertEquals(JMS_CORRELATION_ID, producer.getJMSCorrelationID());
+    }
+
+    @Test
+    public void testJMSCorrelationIDBytes() {
+        JMSProducer producer = context.createProducer();
+
+        producer.setJMSCorrelationIDAsBytes(JMS_CORRELATION_ID.getBytes(StandardCharsets.UTF_8));
+        assertEquals(JMS_CORRELATION_ID, new String(producer.getJMSCorrelationIDAsBytes(), StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void testJMSReplyTo() {
+        JMSProducer producer = context.createProducer();
+
+        producer.setJMSReplyTo(JMS_REPLY_TO);
+        assertTrue(JMS_REPLY_TO.equals(producer.getJMSReplyTo()));
+    }
+
+    @Test
+    public void testJMSType() {
+        JMSProducer producer = context.createProducer();
+
+        producer.setJMSType(JMS_TYPE_STRING);
+        assertEquals(JMS_TYPE_STRING, producer.getJMSType());
+    }
+
+    //----- Test for get property on matching types --------------------------//
+
+    @Test
+    public void testGetStringPropetry() {
+        JMSProducer producer = context.createProducer();
+        producer.setProperty(STRING_PROPERTY_NAME, STRING_PROPERTY_VALUE);
+        assertEquals(STRING_PROPERTY_VALUE, producer.getStringProperty(STRING_PROPERTY_NAME));
+    }
+
+    @Test
+    public void testGetBytePropetry() {
+        JMSProducer producer = context.createProducer();
+        producer.setProperty(BYTE_PROPERTY_NAME, BYTE_PROPERTY_VALUE);
+        assertEquals(BYTE_PROPERTY_VALUE, producer.getByteProperty(BYTE_PROPERTY_NAME));
+    }
+
+    @Test
+    public void testGetBooleanPropetry() {
+        JMSProducer producer = context.createProducer();
+        producer.setProperty(BOOLEAN_PROPERTY_NAME, BOOLEAN_PROPERTY_VALUE);
+        assertEquals(BOOLEAN_PROPERTY_VALUE, producer.getBooleanProperty(BOOLEAN_PROPERTY_NAME));
+    }
+
+    @Test
+    public void testGetShortPropetry() {
+        JMSProducer producer = context.createProducer();
+        producer.setProperty(SHORT_PROPERTY_NAME, SHORT_PROPERTY_VALUE);
+        assertEquals(SHORT_PROPERTY_VALUE, producer.getShortProperty(SHORT_PROPERTY_NAME));
+    }
+
+    @Test
+    public void testGetIntegerPropetry() {
+        JMSProducer producer = context.createProducer();
+        producer.setProperty(INTEGER_PROPERTY_NAME, INTEGER_PROPERTY_VALUE);
+        assertEquals(INTEGER_PROPERTY_VALUE, producer.getIntProperty(INTEGER_PROPERTY_NAME));
+    }
+
+    @Test
+    public void testGetLongPropetry() {
+        JMSProducer producer = context.createProducer();
+        producer.setProperty(LONG_PROPERTY_NAME, LONG_PROPERTY_VALUE);
+        assertEquals(LONG_PROPERTY_VALUE, producer.getLongProperty(LONG_PROPERTY_NAME));
+    }
+
+    @Test
+    public void testGetDoublePropetry() {
+        JMSProducer producer = context.createProducer();
+        producer.setProperty(DOUBLE_PROPERTY_NAME, DOUBLE_PROPERTY_VALUE);
+        assertEquals(DOUBLE_PROPERTY_VALUE, producer.getDoubleProperty(DOUBLE_PROPERTY_NAME), 0.0);
+    }
+
+    @Test
+    public void testGetFloatPropetry() {
+        JMSProducer producer = context.createProducer();
+        producer.setProperty(FLOAT_PROPERTY_NAME, FLOAT_PROPERTY_VALUE);
+        assertEquals(FLOAT_PROPERTY_VALUE, producer.getFloatProperty(FLOAT_PROPERTY_NAME), 0.0f);
+    }
+
+    //----- Test for set property handling -----------------------------------//
+
+    @Test
+    public void testSetPropertyConversions() {
+        JMSProducer producer = context.createProducer();
+
+        producer.setProperty(STRING_PROPERTY_NAME, STRING_PROPERTY_VALUE);
+        producer.setProperty(BYTE_PROPERTY_NAME, Byte.valueOf(BYTE_PROPERTY_VALUE));
+        producer.setProperty(BOOLEAN_PROPERTY_NAME, Boolean.valueOf(BOOLEAN_PROPERTY_VALUE));
+        producer.setProperty(SHORT_PROPERTY_NAME, Short.valueOf(SHORT_PROPERTY_VALUE));
+        producer.setProperty(INTEGER_PROPERTY_NAME, Integer.valueOf(INTEGER_PROPERTY_VALUE));
+        producer.setProperty(LONG_PROPERTY_NAME, Long.valueOf(LONG_PROPERTY_VALUE));
+        producer.setProperty(FLOAT_PROPERTY_NAME, Float.valueOf(FLOAT_PROPERTY_VALUE));
+        producer.setProperty(DOUBLE_PROPERTY_NAME, Double.valueOf(DOUBLE_PROPERTY_VALUE));
+
+        try {
+            producer.setProperty(STRING_PROPERTY_NAME, UUID.randomUUID());
+            fail("Should not be able to set non-primitive type");
+        } catch (MessageFormatRuntimeException mfe) {
+        }
+
+        assertNull(producer.getObjectProperty("Unknown"));
+
+        assertEquals(STRING_PROPERTY_VALUE, producer.getStringProperty(STRING_PROPERTY_NAME));
+        assertEquals(BYTE_PROPERTY_VALUE, producer.getByteProperty(BYTE_PROPERTY_NAME));
+        assertEquals(BOOLEAN_PROPERTY_VALUE, producer.getBooleanProperty(BOOLEAN_PROPERTY_NAME));
+        assertEquals(SHORT_PROPERTY_VALUE, producer.getShortProperty(SHORT_PROPERTY_NAME));
+        assertEquals(INTEGER_PROPERTY_VALUE, producer.getIntProperty(INTEGER_PROPERTY_NAME));
+        assertEquals(LONG_PROPERTY_VALUE, producer.getLongProperty(LONG_PROPERTY_NAME));
+        assertEquals(FLOAT_PROPERTY_VALUE, producer.getFloatProperty(FLOAT_PROPERTY_NAME), 0.0);
+        assertEquals(DOUBLE_PROPERTY_VALUE, producer.getDoubleProperty(DOUBLE_PROPERTY_NAME), 0.0);
+
+        assertEquals(STRING_PROPERTY_VALUE, producer.getObjectProperty(STRING_PROPERTY_NAME));
+        assertEquals(BYTE_PROPERTY_VALUE, producer.getObjectProperty(BYTE_PROPERTY_NAME));
+        assertEquals(BOOLEAN_PROPERTY_VALUE, producer.getObjectProperty(BOOLEAN_PROPERTY_NAME));
+        assertEquals(SHORT_PROPERTY_VALUE, producer.getObjectProperty(SHORT_PROPERTY_NAME));
+        assertEquals(INTEGER_PROPERTY_VALUE, producer.getObjectProperty(INTEGER_PROPERTY_NAME));
+        assertEquals(LONG_PROPERTY_VALUE, producer.getObjectProperty(LONG_PROPERTY_NAME));
+        assertEquals(FLOAT_PROPERTY_VALUE, producer.getObjectProperty(FLOAT_PROPERTY_NAME));
+        assertEquals(DOUBLE_PROPERTY_VALUE, producer.getObjectProperty(DOUBLE_PROPERTY_NAME));
+    }
+
+    //----- Test for get property conversions --------------------------------//
+
+    @Test
+    public void testStringPropertyConversions() {
+        JMSProducer producer = context.createProducer();
+        producer.setProperty(STRING_PROPERTY_NAME, STRING_PROPERTY_VALUE);
+        producer.setProperty(BYTE_PROPERTY_NAME, BYTE_PROPERTY_VALUE);
+        producer.setProperty(BOOLEAN_PROPERTY_NAME, BOOLEAN_PROPERTY_VALUE);
+        producer.setProperty(SHORT_PROPERTY_NAME, SHORT_PROPERTY_VALUE);
+        producer.setProperty(INTEGER_PROPERTY_NAME, INTEGER_PROPERTY_VALUE);
+        producer.setProperty(LONG_PROPERTY_NAME, LONG_PROPERTY_VALUE);
+        producer.setProperty(FLOAT_PROPERTY_NAME, FLOAT_PROPERTY_VALUE);
+        producer.setProperty(DOUBLE_PROPERTY_NAME, DOUBLE_PROPERTY_VALUE);
+
+        assertEquals(String.valueOf(STRING_PROPERTY_VALUE), producer.getStringProperty(STRING_PROPERTY_NAME));
+        assertEquals(String.valueOf(BYTE_PROPERTY_VALUE), producer.getStringProperty(BYTE_PROPERTY_NAME));
+        assertEquals(String.valueOf(BOOLEAN_PROPERTY_VALUE), producer.getStringProperty(BOOLEAN_PROPERTY_NAME));
+        assertEquals(String.valueOf(SHORT_PROPERTY_VALUE), producer.getStringProperty(SHORT_PROPERTY_NAME));
+        assertEquals(String.valueOf(INTEGER_PROPERTY_VALUE), producer.getStringProperty(INTEGER_PROPERTY_NAME));
+        assertEquals(String.valueOf(LONG_PROPERTY_VALUE), producer.getStringProperty(LONG_PROPERTY_NAME));
+        assertEquals(String.valueOf(FLOAT_PROPERTY_VALUE), producer.getStringProperty(FLOAT_PROPERTY_NAME));
+        assertEquals(String.valueOf(DOUBLE_PROPERTY_VALUE), producer.getStringProperty(DOUBLE_PROPERTY_NAME));
+    }
+
+    @Test
+    public void testBytePropertyConversions() {
+        JMSProducer producer = context.createProducer();
+        producer.setProperty(STRING_PROPERTY_NAME, STRING_PROPERTY_VALUE);
+        producer.setProperty(BYTE_PROPERTY_NAME, BYTE_PROPERTY_VALUE);
+        producer.setProperty(BOOLEAN_PROPERTY_NAME, BOOLEAN_PROPERTY_VALUE);
+        producer.setProperty(SHORT_PROPERTY_NAME, SHORT_PROPERTY_VALUE);
+        producer.setProperty(INTEGER_PROPERTY_NAME, INTEGER_PROPERTY_VALUE);
+        producer.setProperty(LONG_PROPERTY_NAME, LONG_PROPERTY_VALUE);
+        producer.setProperty(FLOAT_PROPERTY_NAME, FLOAT_PROPERTY_VALUE);
+        producer.setProperty(DOUBLE_PROPERTY_NAME, DOUBLE_PROPERTY_VALUE);
+
+        assertEquals(BYTE_PROPERTY_VALUE, producer.getByteProperty(BYTE_PROPERTY_NAME));
+
+        try {
+            producer.getByteProperty(STRING_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (NumberFormatException nfe) {
+        }
+        try {
+            producer.getByteProperty(BOOLEAN_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getByteProperty(SHORT_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getByteProperty(INTEGER_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getByteProperty(LONG_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getByteProperty(FLOAT_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getByteProperty(DOUBLE_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+    }
+
+    @Test
+    public void testBooleanPropertyConversions() {
+        JMSProducer producer = context.createProducer();
+        producer.setProperty(STRING_PROPERTY_NAME, STRING_PROPERTY_VALUE);
+        producer.setProperty(BYTE_PROPERTY_NAME, BYTE_PROPERTY_VALUE);
+        producer.setProperty(BOOLEAN_PROPERTY_NAME, BOOLEAN_PROPERTY_VALUE);
+        producer.setProperty(SHORT_PROPERTY_NAME, SHORT_PROPERTY_VALUE);
+        producer.setProperty(INTEGER_PROPERTY_NAME, INTEGER_PROPERTY_VALUE);
+        producer.setProperty(LONG_PROPERTY_NAME, LONG_PROPERTY_VALUE);
+        producer.setProperty(FLOAT_PROPERTY_NAME, FLOAT_PROPERTY_VALUE);
+        producer.setProperty(DOUBLE_PROPERTY_NAME, DOUBLE_PROPERTY_VALUE);
+
+        assertEquals(BOOLEAN_PROPERTY_VALUE, producer.getBooleanProperty(BOOLEAN_PROPERTY_NAME));
+        assertEquals(Boolean.FALSE, producer.getBooleanProperty(STRING_PROPERTY_NAME));
+
+        try {
+            producer.getBooleanProperty(BYTE_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getBooleanProperty(SHORT_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getBooleanProperty(INTEGER_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getBooleanProperty(LONG_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getBooleanProperty(FLOAT_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getBooleanProperty(DOUBLE_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+    }
+
+    @Test
+    public void testShortPropertyConversions() {
+        JMSProducer producer = context.createProducer();
+        producer.setProperty(STRING_PROPERTY_NAME, STRING_PROPERTY_VALUE);
+        producer.setProperty(BYTE_PROPERTY_NAME, BYTE_PROPERTY_VALUE);
+        producer.setProperty(BOOLEAN_PROPERTY_NAME, BOOLEAN_PROPERTY_VALUE);
+        producer.setProperty(SHORT_PROPERTY_NAME, SHORT_PROPERTY_VALUE);
+        producer.setProperty(INTEGER_PROPERTY_NAME, INTEGER_PROPERTY_VALUE);
+        producer.setProperty(LONG_PROPERTY_NAME, LONG_PROPERTY_VALUE);
+        producer.setProperty(FLOAT_PROPERTY_NAME, FLOAT_PROPERTY_VALUE);
+        producer.setProperty(DOUBLE_PROPERTY_NAME, DOUBLE_PROPERTY_VALUE);
+
+        assertEquals(BYTE_PROPERTY_VALUE, producer.getShortProperty(BYTE_PROPERTY_NAME));
+        assertEquals(SHORT_PROPERTY_VALUE, producer.getShortProperty(SHORT_PROPERTY_NAME));
+
+        try {
+            producer.getShortProperty(STRING_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (NumberFormatException nfe) {
+        }
+        try {
+            producer.getShortProperty(BOOLEAN_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getShortProperty(INTEGER_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getShortProperty(LONG_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getShortProperty(FLOAT_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getShortProperty(DOUBLE_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+    }
+
+    @Test
+    public void testIntPropertyConversions() {
+        JMSProducer producer = context.createProducer();
+        producer.setProperty(STRING_PROPERTY_NAME, STRING_PROPERTY_VALUE);
+        producer.setProperty(BYTE_PROPERTY_NAME, BYTE_PROPERTY_VALUE);
+        producer.setProperty(BOOLEAN_PROPERTY_NAME, BOOLEAN_PROPERTY_VALUE);
+        producer.setProperty(SHORT_PROPERTY_NAME, SHORT_PROPERTY_VALUE);
+        producer.setProperty(INTEGER_PROPERTY_NAME, INTEGER_PROPERTY_VALUE);
+        producer.setProperty(LONG_PROPERTY_NAME, LONG_PROPERTY_VALUE);
+        producer.setProperty(FLOAT_PROPERTY_NAME, FLOAT_PROPERTY_VALUE);
+        producer.setProperty(DOUBLE_PROPERTY_NAME, DOUBLE_PROPERTY_VALUE);
+
+        assertEquals(BYTE_PROPERTY_VALUE, producer.getIntProperty(BYTE_PROPERTY_NAME));
+        assertEquals(SHORT_PROPERTY_VALUE, producer.getIntProperty(SHORT_PROPERTY_NAME));
+        assertEquals(INTEGER_PROPERTY_VALUE, producer.getIntProperty(INTEGER_PROPERTY_NAME));
+
+        try {
+            producer.getIntProperty(STRING_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (NumberFormatException nfe) {
+        }
+        try {
+            producer.getIntProperty(BOOLEAN_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getIntProperty(LONG_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getIntProperty(FLOAT_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getIntProperty(DOUBLE_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+    }
+
+    @Test
+    public void testLongPropertyConversions() {
+        JMSProducer producer = context.createProducer();
+        producer.setProperty(STRING_PROPERTY_NAME, STRING_PROPERTY_VALUE);
+        producer.setProperty(BYTE_PROPERTY_NAME, BYTE_PROPERTY_VALUE);
+        producer.setProperty(BOOLEAN_PROPERTY_NAME, BOOLEAN_PROPERTY_VALUE);
+        producer.setProperty(SHORT_PROPERTY_NAME, SHORT_PROPERTY_VALUE);
+        producer.setProperty(INTEGER_PROPERTY_NAME, INTEGER_PROPERTY_VALUE);
+        producer.setProperty(LONG_PROPERTY_NAME, LONG_PROPERTY_VALUE);
+        producer.setProperty(FLOAT_PROPERTY_NAME, FLOAT_PROPERTY_VALUE);
+        producer.setProperty(DOUBLE_PROPERTY_NAME, DOUBLE_PROPERTY_VALUE);
+
+        assertEquals(BYTE_PROPERTY_VALUE, producer.getLongProperty(BYTE_PROPERTY_NAME));
+        assertEquals(SHORT_PROPERTY_VALUE, producer.getLongProperty(SHORT_PROPERTY_NAME));
+        assertEquals(INTEGER_PROPERTY_VALUE, producer.getLongProperty(INTEGER_PROPERTY_NAME));
+        assertEquals(LONG_PROPERTY_VALUE, producer.getLongProperty(LONG_PROPERTY_NAME));
+
+        try {
+            producer.getLongProperty(STRING_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (NumberFormatException nfe) {
+        }
+        try {
+            producer.getLongProperty(BOOLEAN_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getLongProperty(FLOAT_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getLongProperty(DOUBLE_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+    }
+
+    @Test
+    public void testFloatPropertyConversions() {
+        JMSProducer producer = context.createProducer();
+        producer.setProperty(STRING_PROPERTY_NAME, STRING_PROPERTY_VALUE);
+        producer.setProperty(BYTE_PROPERTY_NAME, BYTE_PROPERTY_VALUE);
+        producer.setProperty(BOOLEAN_PROPERTY_NAME, BOOLEAN_PROPERTY_VALUE);
+        producer.setProperty(SHORT_PROPERTY_NAME, SHORT_PROPERTY_VALUE);
+        producer.setProperty(INTEGER_PROPERTY_NAME, INTEGER_PROPERTY_VALUE);
+        producer.setProperty(LONG_PROPERTY_NAME, LONG_PROPERTY_VALUE);
+        producer.setProperty(FLOAT_PROPERTY_NAME, FLOAT_PROPERTY_VALUE);
+        producer.setProperty(DOUBLE_PROPERTY_NAME, DOUBLE_PROPERTY_VALUE);
+
+        assertEquals(FLOAT_PROPERTY_VALUE, producer.getFloatProperty(FLOAT_PROPERTY_NAME), 0.0f);
+
+        try {
+            producer.getFloatProperty(STRING_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (NumberFormatException nfe) {
+        }
+        try {
+            producer.getFloatProperty(BOOLEAN_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getFloatProperty(SHORT_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getFloatProperty(INTEGER_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getFloatProperty(LONG_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getFloatProperty(BYTE_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getFloatProperty(DOUBLE_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+    }
+
+    @Test
+    public void testDoublePropertyConversions() {
+        JMSProducer producer = context.createProducer();
+        producer.setProperty(STRING_PROPERTY_NAME, STRING_PROPERTY_VALUE);
+        producer.setProperty(BYTE_PROPERTY_NAME, BYTE_PROPERTY_VALUE);
+        producer.setProperty(BOOLEAN_PROPERTY_NAME, BOOLEAN_PROPERTY_VALUE);
+        producer.setProperty(SHORT_PROPERTY_NAME, SHORT_PROPERTY_VALUE);
+        producer.setProperty(INTEGER_PROPERTY_NAME, INTEGER_PROPERTY_VALUE);
+        producer.setProperty(LONG_PROPERTY_NAME, LONG_PROPERTY_VALUE);
+        producer.setProperty(FLOAT_PROPERTY_NAME, FLOAT_PROPERTY_VALUE);
+        producer.setProperty(DOUBLE_PROPERTY_NAME, DOUBLE_PROPERTY_VALUE);
+
+        assertEquals(DOUBLE_PROPERTY_VALUE, producer.getDoubleProperty(DOUBLE_PROPERTY_NAME), 0.0);
+        assertEquals(FLOAT_PROPERTY_VALUE, producer.getDoubleProperty(FLOAT_PROPERTY_NAME), 0.0);
+
+        try {
+            producer.getDoubleProperty(STRING_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (NumberFormatException nfe) {
+        }
+        try {
+            producer.getDoubleProperty(BOOLEAN_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getDoubleProperty(SHORT_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getDoubleProperty(INTEGER_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getDoubleProperty(LONG_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+        try {
+            producer.getDoubleProperty(BYTE_PROPERTY_NAME);
+            fail("Should not be able to convert");
+        } catch (MessageFormatRuntimeException mfre) {
+        }
+    }
+
+    //----- Test for error when set called with invalid name -----------------//
 
     @Test
     public void testSetStringPropetryWithBadPropetyName() {
@@ -178,5 +721,108 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
             producer.setProperty(GOOD_PROPERTY_NAME, UUID.randomUUID());
             fail("Should not accept invalid property name");
         } catch (MessageFormatRuntimeException mfre) {}
+    }
+
+    //----- Tests for producer send configuration methods --------------------//
+
+    @Test
+    public void testAsync() {
+        JMSProducer producer = context.createProducer();
+        TestJmsCompletionListener listener = new TestJmsCompletionListener();
+
+        producer.setAsync(listener);
+        assertEquals(listener, producer.getAsync());
+    }
+
+    @Test
+    public void testDeliveryMode() {
+        JMSProducer producer = context.createProducer();
+
+        producer.setDeliveryMode(DeliveryMode.PERSISTENT);
+        assertEquals(DeliveryMode.PERSISTENT, producer.getDeliveryMode());
+        producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+        assertEquals(DeliveryMode.NON_PERSISTENT, producer.getDeliveryMode());
+    }
+
+    @Test
+    public void testDeliveryDelay() {
+        JMSProducer producer = context.createProducer();
+
+        producer.setDeliveryDelay(2000);
+        assertEquals(2000, producer.getDeliveryDelay());
+    }
+
+    @Test
+    public void testDisableMessageID() {
+        JMSProducer producer = context.createProducer();
+
+        producer.setDisableMessageID(false);
+        assertEquals(false, producer.getDisableMessageID());
+        producer.setDisableMessageID(true);
+        assertEquals(true, producer.getDisableMessageID());
+    }
+
+    @Test
+    public void testMessageDisableTimestamp() {
+        JMSProducer producer = context.createProducer();
+
+        producer.setDisableMessageTimestamp(false);
+        assertEquals(false, producer.getDisableMessageTimestamp());
+        producer.setDisableMessageTimestamp(true);
+        assertEquals(true, producer.getDisableMessageTimestamp());
+    }
+
+    @Test
+    public void testPriority() {
+        JMSProducer producer = context.createProducer();
+
+        producer.setPriority(1);
+        assertEquals(1, producer.getPriority());
+        producer.setPriority(4);
+        assertEquals(4, producer.getPriority());
+    }
+
+    @Test
+    public void testTimeToLive() {
+        JMSProducer producer = context.createProducer();
+
+        producer.setTimeToLive(2000);
+        assertEquals(2000, producer.getTimeToLive());
+    }
+
+    //----- Test Send Methods -----------------------------------------------//
+
+    @Test
+    public void testSendJMSMessage() throws JMSException {
+        JmsSession session = Mockito.mock(JmsSession.class);
+        JmsMessageProducer messageProducer = Mockito.mock(JmsMessageProducer.class);
+        Message message = Mockito.mock(Message.class);
+
+        JmsProducer producer = new JmsProducer(session, messageProducer);
+
+        producer.setJMSCorrelationID(JMS_CORRELATION_ID);
+        producer.setJMSCorrelationIDAsBytes(JMS_CORRELATION_ID.getBytes());
+        producer.setJMSReplyTo(JMS_REPLY_TO);
+        producer.setJMSType(JMS_TYPE_STRING);
+
+        producer.send(JMS_DESTINATION, message);
+
+        Mockito.verify(message).setJMSCorrelationID(JMS_CORRELATION_ID);
+        Mockito.verify(message).setJMSCorrelationIDAsBytes(JMS_CORRELATION_ID.getBytes());
+        Mockito.verify(message).setJMSReplyTo(JMS_REPLY_TO);
+        Mockito.verify(message).setJMSType(JMS_TYPE_STRING);
+    }
+
+    //----- Internal Support -------------------------------------------------//
+
+    private class TestJmsCompletionListener implements CompletionListener {
+
+        @Override
+        public void onCompletion(Message message) {
+        }
+
+        @Override
+        public void onException(Message message, Exception exception) {
+        }
     }
 }

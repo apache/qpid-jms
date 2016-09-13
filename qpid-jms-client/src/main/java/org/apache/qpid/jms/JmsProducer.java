@@ -341,7 +341,7 @@ public class JmsProducer implements JMSProducer {
     @Override
     public JMSProducer setJMSReplyTo(Destination replyTo) {
         try {
-            JmsMessageTransformation.transformDestination(session.getConnection(), replyTo);
+            this.replyTo = JmsMessageTransformation.transformDestination(session.getConnection(), replyTo);
         } catch (JMSException e) {
             throw JmsExceptionSupport.createRuntimeException(e);
         }

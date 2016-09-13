@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import javax.jms.IllegalStateException;
+import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
@@ -186,5 +187,83 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
     public void testUnsubscribe() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         session.unsubscribe("some-subscription");
+    }
+
+    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    public void testCreateConsumerNullDestinationThrowsIDE() throws JMSException {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        session.createConsumer(null);
+    }
+
+    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    public void testCreateConsumerNullDestinationWithSelectorThrowsIDE() throws JMSException {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        session.createConsumer(null, "a > b");
+    }
+
+    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    public void testCreateConsumerNullDestinationWithSelectorNoLocalThrowsIDE() throws JMSException {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        session.createConsumer(null, "a > b", true);
+    }
+
+    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    public void testCreateReceiverNullDestinationThrowsIDE() throws JMSException {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        session.createReceiver(null);
+    }
+
+    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    public void testCreateReceiverNullDestinationWithSelectorThrowsIDE() throws JMSException {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        session.createConsumer(null, "a > b");
+    }
+
+    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    public void testCreateBrowserNullDestinationThrowsIDE() throws JMSException {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        session.createBrowser(null);
+    }
+
+    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    public void testCreateBrowserNullDestinationWithSelectorThrowsIDE() throws JMSException {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        session.createBrowser(null, "a > b");
+    }
+
+    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    public void testCreateSubscriberNullDestinationThrowsIDE() throws JMSException {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        session.createSubscriber(null);
+    }
+
+    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    public void testCreateSubscriberNullDestinationWithSelectorNoLocalThrowsIDE() throws JMSException {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        session.createSubscriber(null, "a > b", true);
+    }
+
+    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    public void testCreateDurableSubscriberNullDestinationThrowsIDE() throws JMSException {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        session.createDurableSubscriber(null, "name");
+    }
+
+    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    public void testCreateDurableSubscriberNullDestinationWithSelectorNoLocalThrowsIDE() throws JMSException {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        session.createDurableSubscriber(null, "name", "a > b", true);
+    }
+
+    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    public void testCreateDurableConsumerNullDestinationThrowsIDE() throws JMSException {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        session.createDurableConsumer(null, "name");
+    }
+
+    @Test(timeout = 10000, expected=InvalidDestinationException.class)
+    public void testCreateDurableConsumerNullDestinationWithSelectorNoLocalThrowsIDE() throws JMSException {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        session.createDurableConsumer(null, "name", "a > b", true);
     }
 }

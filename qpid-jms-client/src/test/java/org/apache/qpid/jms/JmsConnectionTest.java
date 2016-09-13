@@ -184,6 +184,27 @@ public class JmsConnectionTest {
         }
     }
 
+    @Test(timeout=30000)
+    public void testCreateSessionWithUnknownAckMode() throws JMSException, IOException {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.start();
+
+        try {
+            connection.createSession(99);
+            fail("Should not allow unkown Ack modes.");
+        } catch (JMSException ex) {
+        }
+    }
+
+    @Test(timeout=30000)
+    public void testCreateSessionDefaultMode() throws JMSException, IOException {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.start();
+
+        JmsSession session = (JmsSession) connection.createSession();
+        assertEquals(session.getSessionMode(), Session.AUTO_ACKNOWLEDGE);
+    }
+
     @Test(timeout=30000, expected=InvalidClientIDException.class)
     public void testSetClientIDFromEmptyString() throws JMSException, IOException {
         connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
@@ -263,6 +284,12 @@ public class JmsConnectionTest {
     public void testCreateConnectionQueueConsumer() throws Exception {
         connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
         connection.createConnectionConsumer(new JmsQueue(), "", null, 1);
+    }
+
+    @Test(timeout=30000, expected=JMSException.class)
+    public void testCreateDurableConnectionQueueConsumer() throws Exception {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.createDurableConnectionConsumer(new JmsTopic(), "", "", null, 1);
     }
 
     @Test(timeout=30000, expected=JMSException.class)

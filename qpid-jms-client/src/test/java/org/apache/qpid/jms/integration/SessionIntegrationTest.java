@@ -60,7 +60,6 @@ import javax.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
-import org.apache.qpid.jms.JmsMessageProducer;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.JmsSession;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
@@ -1724,8 +1723,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectSenderAttach();
 
             Queue queue = session.createQueue("myQueue");
-            // TODO - Can revert to just MessageProducer once JMS 2.0 API is used
-            final JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+            final MessageProducer producer = session.createProducer(queue);
 
             Message message = session.createTextMessage("content");
 

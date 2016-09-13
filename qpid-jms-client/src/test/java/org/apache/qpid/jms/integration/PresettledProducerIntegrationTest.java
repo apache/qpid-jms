@@ -41,7 +41,6 @@ import javax.jms.TemporaryTopic;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 
-import org.apache.qpid.jms.JmsMessageProducer;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.ListDescribedType;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -541,12 +540,11 @@ public class PresettledProducerIntegrationTest extends QpidJmsTestCase {
             }
 
             TestJmsCompletionListener listener = new TestJmsCompletionListener();
-            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
-            JmsMessageProducer producer = null;
+            MessageProducer producer = null;
             if (anonymous) {
-                producer = (JmsMessageProducer) session.createProducer(null);
+                producer = session.createProducer(null);
             } else {
-                producer = (JmsMessageProducer) session.createProducer(destination);
+                producer = session.createProducer(destination);
             }
 
             // Create and transfer a new message

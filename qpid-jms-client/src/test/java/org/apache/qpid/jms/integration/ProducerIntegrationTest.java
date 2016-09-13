@@ -63,7 +63,6 @@ import javax.jms.Topic;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
-import org.apache.qpid.jms.JmsMessageProducer;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.JmsSendTimedOutException;
 import org.apache.qpid.jms.message.foreign.ForeignJmsMessage;
@@ -1031,8 +1030,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             testPeer.expectSenderAttach();
 
             Queue queue = session.createQueue("myQueue");
-            // TODO - Can revert to just MessageProducer once JMS 2.0 API is used
-            final JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+            final MessageProducer producer = session.createProducer(queue);
 
             Message message = session.createTextMessage("content");
 
@@ -1255,8 +1253,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             testPeer.expectTransferButDoNotRespond(messageMatcher);
             testPeer.expectClose();
 
-            // TODO - Can revert to plain JMS once 2.0 is supported.
-            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+            MessageProducer producer = session.createProducer(queue);
             TestJmsCompletionListener listener = new TestJmsCompletionListener();
 
             try {
@@ -1925,8 +1922,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
-            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+            MessageProducer producer = session.createProducer(queue);
 
             // Create and transfer a new message
             String text = "myMessage";
@@ -1959,8 +1955,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
-            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+            MessageProducer producer = session.createProducer(queue);
 
             // Create and transfer a new message
             testPeer.expectTransfer(new TransferPayloadCompositeMatcher());
@@ -2047,8 +2042,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
-            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+            MessageProducer producer = session.createProducer(queue);
 
             // Create a second producer which allows for a safe wait for credit for the
             // first producer without the need for a sleep.  Otherwise the first producer
@@ -2106,8 +2100,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
-            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+            MessageProducer producer = session.createProducer(queue);
 
             // Create and transfer a new message
             String text = "myMessage";
@@ -2156,8 +2149,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
-            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+            MessageProducer producer = session.createProducer(queue);
 
             // Create and transfer a new message
             String text = "myMessage";
@@ -2212,8 +2204,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             final Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
 
-            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
-            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+            MessageProducer producer = session.createProducer(queue);
 
             // Create and transfer a new message
             String text = "myMessage";
@@ -2284,8 +2275,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             final Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
 
-            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
-            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+            MessageProducer producer = session.createProducer(queue);
 
             // Create and transfer a new message
             String text = "myMessage";

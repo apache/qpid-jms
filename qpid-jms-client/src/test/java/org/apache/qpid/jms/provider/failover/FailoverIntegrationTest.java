@@ -50,7 +50,6 @@ import javax.jms.Topic;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
-import org.apache.qpid.jms.JmsMessageProducer;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.JmsSendTimedOutException;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
@@ -1052,8 +1051,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
-            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+            MessageProducer producer = session.createProducer(queue);
 
             // Create and transfer a new message
             String text = "myMessage";
@@ -1090,8 +1088,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
-            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+            MessageProducer producer = session.createProducer(queue);
 
             Message message = session.createTextMessage("content");
             testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), false, new Rejected(), true);
@@ -1148,8 +1145,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
 
-            // TODO Can change to plain MessageProducer when JMS 2.0 API dependency is added.
-            JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(queue);
+            MessageProducer producer = session.createProducer(queue);
 
             final int MSG_COUNT = 5;
 

@@ -20,11 +20,15 @@ package org.apache.qpid.jms.producer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.jms.CompletionListener;
@@ -41,6 +45,9 @@ import org.apache.qpid.jms.JmsMessageProducer;
 import org.apache.qpid.jms.JmsProducer;
 import org.apache.qpid.jms.JmsSession;
 import org.apache.qpid.jms.JmsTopic;
+import org.apache.qpid.jms.message.JmsMessage;
+import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
+import org.apache.qpid.jms.provider.mock.MockRemotePeer;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -51,6 +58,8 @@ import org.mockito.Mockito;
 public class JmsProducerTest extends JmsConnectionTestSupport {
 
     private JmsContext context;
+
+    private final MockRemotePeer remotePeer = new MockRemotePeer();
 
     private final String STRING_PROPERTY_NAME = "StringProperty";
     private final String STRING_PROPERTY_VALUE = UUID.randomUUID().toString();
@@ -89,8 +98,11 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
     public void setUp() throws Exception {
         super.setUp();
 
+        remotePeer.start();
         context = createJMSContextToMockProvider();
     }
+
+    //----- Test Property Handling methods -----------------------------------//
 
     @Test
     public void testGetPropertyNames() {
@@ -813,7 +825,344 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
         Mockito.verify(message).setJMSType(JMS_TYPE_STRING);
     }
 
+    //----- Test that Send methods modify Message data -----------------------//
+
+    @Test
+    public void testSendAppliesDeliveryDelayMessageBody() throws JMSException {
+        doTestSendAppliesDeliveryDelayMessageBody(Message.class);
+    }
+
+    @Test
+    public void testSendAppliesDeliveryDelayStringMessageBody() throws JMSException {
+        doTestSendAppliesDeliveryDelayMessageBody(String.class);
+    }
+
+    @Test
+    public void testSendAppliesDeliveryDelayMapMessageBody() throws JMSException {
+        doTestSendAppliesDeliveryDelayMessageBody(Map.class);
+    }
+
+    @Test
+    public void testSendAppliesDeliveryDelayBytesMessageBody() throws JMSException {
+        doTestSendAppliesDeliveryDelayMessageBody(byte[].class);
+    }
+
+    @Test
+    public void testSendAppliesDeliveryDelaySerializableMessageBody() throws JMSException {
+        doTestSendAppliesDeliveryDelayMessageBody(UUID.class);
+    }
+
+    private void doTestSendAppliesDeliveryDelayMessageBody(Class<?> bodyType) throws JMSException {
+        JMSProducer producer = context.createProducer();
+
+        sendWithBodyOfType(producer, bodyType);
+        JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+        JmsMessage message = envelope.getMessage();
+        assertTrue(message.getJMSDeliveryTime() == 0);
+
+        producer.setDeliveryDelay(2000);
+        sendWithBodyOfType(producer, bodyType);
+        envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+        message = envelope.getMessage();
+        assertFalse(message.getJMSDeliveryTime() == 0);
+    }
+
+    @Test
+    public void testSendAppliesDeliveryModeMessageBody() throws JMSException {
+        doTestSendAppliesDeliveryModeWithMessageBody(Message.class);
+    }
+
+    @Test
+    public void testSendAppliesDeliveryModeStringMessageBody() throws JMSException {
+        doTestSendAppliesDeliveryModeWithMessageBody(String.class);
+    }
+
+    @Test
+    public void testSendAppliesDeliveryModeMapMessageBody() throws JMSException {
+        doTestSendAppliesDeliveryModeWithMessageBody(Map.class);
+    }
+
+    @Test
+    public void testSendAppliesDeliveryModeBytesMessageBody() throws JMSException {
+        doTestSendAppliesDeliveryModeWithMessageBody(byte[].class);
+    }
+
+    @Test
+    public void testSendAppliesDeliveryModeSerializableMessageBody() throws JMSException {
+        doTestSendAppliesDeliveryModeWithMessageBody(UUID.class);
+    }
+
+    public void doTestSendAppliesDeliveryModeWithMessageBody(Class<?> bodyType) throws JMSException {
+        JMSProducer producer = context.createProducer();
+
+        producer.setDeliveryMode(DeliveryMode.PERSISTENT);
+        producer.send(JMS_DESTINATION, "text");
+        JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+        JmsMessage message = envelope.getMessage();
+        assertEquals(DeliveryMode.PERSISTENT, message.getJMSDeliveryMode());
+
+        producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+        producer.send(JMS_DESTINATION, "text");
+        envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+        message = envelope.getMessage();
+        assertEquals(DeliveryMode.NON_PERSISTENT, message.getJMSDeliveryMode());
+    }
+
+    @Test
+    public void testSendAppliesDisableMessageIDMessageBody() throws JMSException {
+        doTestSendAppliesDisableMessageIDWithMessageBody(Message.class);
+    }
+
+    @Test
+    public void testSendAppliesDisableMessageIDStringMessageBody() throws JMSException {
+        doTestSendAppliesDisableMessageIDWithMessageBody(String.class);
+    }
+
+    @Test
+    public void testSendAppliesDisableMessageIDMapMessageBody() throws JMSException {
+        doTestSendAppliesDisableMessageIDWithMessageBody(Map.class);
+    }
+
+    @Test
+    public void testSendAppliesDisableMessageIDBytesMessageBody() throws JMSException {
+        doTestSendAppliesDisableMessageIDWithMessageBody(byte[].class);
+    }
+
+    @Test
+    public void testSendAppliesDisableMessageIDSerializableMessageBody() throws JMSException {
+        doTestSendAppliesDisableMessageIDWithMessageBody(UUID.class);
+    }
+
+    private void doTestSendAppliesDisableMessageIDWithMessageBody(Class<?> bodyType) throws JMSException {
+        JMSProducer producer = context.createProducer();
+
+        producer.setDisableMessageID(true);
+        producer.send(JMS_DESTINATION, "text");
+        JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+        JmsMessage message = envelope.getMessage();
+        assertNull(message.getJMSMessageID());
+
+        producer.setDisableMessageID(false);
+        producer.send(JMS_DESTINATION, "text");
+        envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+        message = envelope.getMessage();
+        assertNotNull(message.getJMSMessageID());
+    }
+
+    @Test
+    public void testSendAppliesDisableTimestampMessageBody() throws JMSException {
+        doTestSendAppliesDisableTimestampWithMessageBody(Message.class);
+    }
+
+    @Test
+    public void testSendAppliesDisableTimestampStringMessageBody() throws JMSException {
+        doTestSendAppliesDisableTimestampWithMessageBody(String.class);
+    }
+
+    @Test
+    public void testSendAppliesDisableTimestampMapMessageBody() throws JMSException {
+        doTestSendAppliesDisableTimestampWithMessageBody(Map.class);
+    }
+
+    @Test
+    public void testSendAppliesDisableTimestampBytesMessageBody() throws JMSException {
+        doTestSendAppliesDisableTimestampWithMessageBody(byte[].class);
+    }
+
+    @Test
+    public void testSendAppliesDisableTimestampSerializableMessageBody() throws JMSException {
+        doTestSendAppliesDisableTimestampWithMessageBody(UUID.class);
+    }
+
+    private void doTestSendAppliesDisableTimestampWithMessageBody(Class<?> bodyType) throws JMSException {
+        JMSProducer producer = context.createProducer();
+
+        producer.setDisableMessageTimestamp(true);
+        producer.send(JMS_DESTINATION, "text");
+        JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+        JmsMessage message = envelope.getMessage();
+        assertTrue(message.getJMSTimestamp() == 0);
+
+        producer.setDisableMessageTimestamp(false);
+        producer.send(JMS_DESTINATION, "text");
+        envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+        message = envelope.getMessage();
+        assertFalse(message.getJMSTimestamp() == 0);
+    }
+
+    @Test
+    public void testSendAppliesPrioirtyMessageBody() throws JMSException {
+        doTestSendAppliesPriorityWithMessageBody(Message.class);
+    }
+
+    @Test
+    public void testSendAppliesPriorityStringMessageBody() throws JMSException {
+        doTestSendAppliesPriorityWithMessageBody(String.class);
+    }
+
+    @Test
+    public void testSendAppliesPriorityMapMessageBody() throws JMSException {
+        doTestSendAppliesPriorityWithMessageBody(Map.class);
+    }
+
+    @Test
+    public void testSendAppliesPriorityBytesMessageBody() throws JMSException {
+        doTestSendAppliesPriorityWithMessageBody(byte[].class);
+    }
+
+    @Test
+    public void testSendAppliesPrioritySerializableMessageBody() throws JMSException {
+        doTestSendAppliesPriorityWithMessageBody(UUID.class);
+    }
+
+    private void doTestSendAppliesPriorityWithMessageBody(Class<?> bodyType) throws JMSException {
+        JMSProducer producer = context.createProducer();
+
+        producer.setPriority(0);
+        producer.send(JMS_DESTINATION, "text");
+        JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+        JmsMessage message = envelope.getMessage();
+        assertEquals(0, message.getJMSPriority());
+
+        producer.setPriority(7);
+        producer.send(JMS_DESTINATION, "text");
+        envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+        message = envelope.getMessage();
+        assertEquals(7, message.getJMSPriority());
+    }
+
+    @Test
+    public void testSendAppliesTimeToLiveMessageBody() throws JMSException {
+        doTestSendAppliesTimeToLiveWithMessageBody(Message.class);
+    }
+
+    @Test
+    public void testSendAppliesTimeToLiveStringMessageBody() throws JMSException {
+        doTestSendAppliesTimeToLiveWithMessageBody(String.class);
+    }
+
+    @Test
+    public void testSendAppliesTimeToLiveMapMessageBody() throws JMSException {
+        doTestSendAppliesTimeToLiveWithMessageBody(Map.class);
+    }
+
+    @Test
+    public void testSendAppliesTimeToLiveBytesMessageBody() throws JMSException {
+        doTestSendAppliesTimeToLiveWithMessageBody(byte[].class);
+    }
+
+    @Test
+    public void testSendAppliesTimeToLiveSerializableMessageBody() throws JMSException {
+        doTestSendAppliesTimeToLiveWithMessageBody(UUID.class);
+    }
+
+    private void doTestSendAppliesTimeToLiveWithMessageBody(Class<?> bodyType) throws JMSException {
+        JMSProducer producer = context.createProducer();
+
+        producer.setTimeToLive(2000);
+        producer.send(JMS_DESTINATION, "text");
+        JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+        JmsMessage message = envelope.getMessage();
+        assertTrue(message.getJMSExpiration() > 0);
+
+        producer.setTimeToLive(Message.DEFAULT_TIME_TO_LIVE);
+        producer.send(JMS_DESTINATION, "text");
+        envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+        message = envelope.getMessage();
+        assertTrue(message.getJMSExpiration() == 0);
+    }
+
+    //----- Test that body values are written into sent messages -------------//
+
+    @Test
+    public void testStringBodyIsApplied() throws JMSException {
+        JMSProducer producer = context.createProducer();
+
+        final String bodyValue = "String-Value";
+
+        producer.send(JMS_DESTINATION, bodyValue);
+        JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+        JmsMessage message = envelope.getMessage();
+        assertEquals(bodyValue, message.getBody(String.class));
+    }
+
+    @Test
+    public void testMapBodyIsApplied() throws JMSException {
+        JMSProducer producer = context.createProducer();
+
+        final Map<String, Object> bodyValue = new HashMap<String, Object>();
+
+        bodyValue.put("Value-1", "First");
+        bodyValue.put("Value-2", "Second");
+
+        producer.send(JMS_DESTINATION, bodyValue);
+        JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+        JmsMessage message = envelope.getMessage();
+        assertEquals(bodyValue, message.getBody(Map.class));
+    }
+
+    @Test
+    public void testBytesBodyIsApplied() throws JMSException {
+        JMSProducer producer = context.createProducer();
+
+        final byte[] bodyValue = new byte[] { 0, 1, 2, 3, 4 };
+
+        producer.send(JMS_DESTINATION, bodyValue);
+        JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+        JmsMessage message = envelope.getMessage();
+
+        byte[] payload = message.getBody(byte[].class);
+        assertNotNull(payload);
+        assertEquals(bodyValue.length, payload.length);
+
+        for (int i = 0; i < payload.length; ++i) {
+            assertEquals(bodyValue[i], payload[i]);
+        }
+    }
+
+    @Test
+    public void testSerializableBodyIsApplied() throws JMSException {
+        JMSProducer producer = context.createProducer();
+
+        final UUID bodyValue = UUID.randomUUID();
+
+        producer.send(JMS_DESTINATION, bodyValue);
+        JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
+        assertNotNull(envelope);
+        JmsMessage message = envelope.getMessage();
+        assertEquals(bodyValue, message.getBody(UUID.class));
+    }
+
     //----- Internal Support -------------------------------------------------//
+
+    private void sendWithBodyOfType(JMSProducer producer, Class<?> asType) {
+        if (asType.equals(String.class)) {
+            producer.send(JMS_DESTINATION, "String-body-type");
+        } else if (asType.equals(Map.class)) {
+            producer.send(JMS_DESTINATION, Collections.<String, Object>emptyMap());
+        } else if (asType.equals(Message.class)) {
+            producer.send(JMS_DESTINATION, context.createMessage());
+        } else if (asType.equals(byte[].class)) {
+            producer.send(JMS_DESTINATION, new byte[10]);
+        } else if (asType.equals(UUID.class)) {
+            producer.send(JMS_DESTINATION, UUID.randomUUID());
+        }
+    }
 
     private class TestJmsCompletionListener implements CompletionListener {
 

@@ -86,6 +86,7 @@ public class JmsTestMessageFacade implements JmsMessageFacade {
         target.groupSequence = this.groupSequence;
         target.groupId = this.groupId;
         target.expiration = this.expiration;
+        target.deliveryTime = this.deliveryTime;
         target.timestamp = this.timestamp;
         target.correlationId = this.correlationId;
         target.persistent = this.persistent;

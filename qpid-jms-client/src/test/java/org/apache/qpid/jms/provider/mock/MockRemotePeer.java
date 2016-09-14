@@ -42,6 +42,8 @@ public class MockRemotePeer {
     private final MockProviderStats contextStats = new MockProviderStats();
 
     private MockProvider lastRegistered;
+    private JmsOutboundMessageDispatch lastRecordedMessage;
+
     private boolean offline;
 
     private ResourceLifecycleFilter createFilter;
@@ -157,6 +159,16 @@ public class MockRemotePeer {
         destroyFilter = filter;
     }
 
+    public JmsOutboundMessageDispatch getLastReceivedMessage() {
+        return lastRecordedMessage;
+    }
+
+    //----- Record operations for connected providers ------------------------//
+
+    public void recordSend(MockProvider provider, JmsOutboundMessageDispatch envelope) {
+        this.lastRecordedMessage = envelope;
+    }
+
     //----- Controls handling of Message Send Completions --------------------//
 
     public void recordPendingCompletion(MockProvider provider, JmsOutboundMessageDispatch envelope) {
@@ -258,6 +270,8 @@ public class MockRemotePeer {
         return result;
     }
 
+    //----- Internal classes used for record state information ---------------//
+
     private class PendingCompletion {
 
         public final MockProvider provider;
@@ -267,6 +281,5 @@ public class MockRemotePeer {
             this.provider = provider;
             this.envelope = envelope;
         }
-
     }
 }

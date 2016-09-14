@@ -745,7 +745,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             }
 
             if (hasDelay) {
-                original.setJMSDeliveryTime(timeStamp + timeToLive);
+                original.setJMSDeliveryTime(timeStamp + deliveryDelay);
             } else {
                 original.setJMSDeliveryTime(0);
             }

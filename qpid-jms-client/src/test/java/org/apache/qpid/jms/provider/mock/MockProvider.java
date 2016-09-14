@@ -275,9 +275,13 @@ public class MockProvider implements Provider {
                     checkClosed();
                     stats.recordSendCall();
 
+                    if (context != null) {
+                        context.recordSend(MockProvider.this, envelope);
+                    }
+
                     request.onSuccess();
                     if (envelope.isCompletionRequired()) {
-                        if (configuration.isDelayCompletionCalls()) {
+                        if (context != null && configuration.isDelayCompletionCalls()) {
                             context.recordPendingCompletion(MockProvider.this, envelope);
                         } else {
                             if (listener != null) {

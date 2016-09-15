@@ -1014,12 +1014,12 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         final String BREAD_CRUMB = "ErrorMessage";
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            final AtomicBoolean producerClosed = new AtomicBoolean();
+            final CountDownLatch producerClosed = new CountDownLatch(1);
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
                 public void onProducerClosed(MessageProducer producer, Exception exception) {
-                    producerClosed.set(true);
+                    producerClosed.countDown();
                 }
             });
 
@@ -1052,13 +1052,14 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                 fail("No expected exception for this send.");
             }
 
-            testPeer.waitForAllHandlersToComplete(1000);
+            testPeer.waitForAllHandlersToComplete(2000);
 
-            // Verify the producer gets marked closed
-            assertTrue(listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            // Verify the sends gets marked errored
+            assertTrue(listener.awaitCompletion(5, TimeUnit.SECONDS));
             assertEquals(MSG_COUNT, listener.errorCount);
 
-            // Verify the session is now marked closed
+            // Verify the producer gets marked closed
+            assertTrue("Producer closed callback didn't trigger", producerClosed.await(5, TimeUnit.SECONDS));
             try {
                 producer.getDeliveryMode();
                 fail("Expected ISE to be thrown due to being closed");
@@ -1068,7 +1069,6 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                 assertTrue(errorMessage.contains(BREAD_CRUMB));
             }
 
-            assertTrue("Producer closed callback didn't trigger", producerClosed.get());
 
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.

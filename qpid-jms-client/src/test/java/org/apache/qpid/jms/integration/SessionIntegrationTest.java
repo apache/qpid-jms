@@ -1744,10 +1744,10 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
                 fail("No expected exception for this send.");
             }
 
-            testPeer.waitForAllHandlersToComplete(1000);
+            testPeer.waitForAllHandlersToComplete(2000);
 
             // Verify the producer gets marked closed
-            assertTrue(listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertTrue(listener.awaitCompletion(5, TimeUnit.SECONDS));
             assertEquals(MSG_COUNT, listener.errorCount);
             assertEquals(0, listener.successCount);
 

@@ -1259,11 +1259,11 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             try {
                 producer.send(message, listener);
             } catch (Throwable error) {
-                LOG.info("Caught expected error: {}", error.getMessage());
+                LOG.info("Caught unexpected error: {}", error.getMessage());
                 fail("Send should not fail for async.");
             }
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
             assertNotNull(listener.exception);
             assertTrue(listener.exception instanceof JmsSendTimedOutException);
             assertNotNull(listener.message);
@@ -1934,7 +1934,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             producer.send(message, listener);
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
             assertNull(listener.exception);
             assertNotNull(listener.message);
             assertTrue(listener.message instanceof TextMessage);
@@ -1969,7 +1969,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             producer.send(message, listener);
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
             assertNull(listener.exception);
             assertNotNull(listener.message);
             assertTrue(listener.message instanceof BytesMessage);
@@ -2063,7 +2063,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                 fail("No expected exception for this send.");
             }
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
             assertNotNull(listener.exception);
             assertNotNull(listener.message);
             assertTrue(listener.message instanceof TextMessage);
@@ -2079,7 +2079,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                 fail("No expected exception for this send.");
             }
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
             assertNull(listener.exception);
             assertNotNull(listener.message);
             assertTrue(listener.message instanceof TextMessage);
@@ -2126,7 +2126,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             producer.send(message, listener);
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
             assertNull(listener.exception);
             assertNotNull(listener.message);
             assertTrue(listener.message instanceof TextMessage);
@@ -2175,7 +2175,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             producer.send(message, listener);
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
             assertNull(listener.exception);
             assertNotNull(listener.message);
             assertNotNull(closeError.get());
@@ -2246,7 +2246,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             producer.send(message, listener);
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
             assertNull(listener.exception);
             assertNotNull(listener.message);
             assertNotNull(commitError.get());
@@ -2317,7 +2317,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             producer.send(message, listener);
 
-            assertTrue("Did not get async callback", listener.awaitCompletion(2000, TimeUnit.SECONDS));
+            assertTrue("Did not get async callback", listener.awaitCompletion(5, TimeUnit.SECONDS));
             assertNull(listener.exception);
             assertNotNull(listener.message);
             assertNotNull(rollback.get());

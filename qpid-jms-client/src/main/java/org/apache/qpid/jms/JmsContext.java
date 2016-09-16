@@ -99,7 +99,9 @@ public class JmsContext implements JMSContext, AutoCloseable {
                 try {
                     connection.close();
                 } catch (JMSException jmse) {
-                    failure = JmsExceptionSupport.createRuntimeException(jmse);
+                    if (failure == null) {
+                        failure = JmsExceptionSupport.createRuntimeException(jmse);
+                    }
                 }
             }
         }

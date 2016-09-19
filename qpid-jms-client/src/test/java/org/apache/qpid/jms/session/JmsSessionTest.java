@@ -21,18 +21,24 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.util.UUID;
 
 import javax.jms.IllegalStateException;
 import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
 import javax.jms.ObjectMessage;
 import javax.jms.Session;
+import javax.jms.TemporaryQueue;
 import javax.jms.TextMessage;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.apache.qpid.jms.JmsSession;
+import org.apache.qpid.jms.JmsTemporaryQueue;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -265,5 +271,36 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
     public void testCreateDurableConsumerNullDestinationWithSelectorNoLocalThrowsIDE() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         session.createDurableConsumer(null, "name", "a > b", true);
+    }
+
+    @Test(timeout = 10000)
+    public void testCannotCreateConsumerOnTempDestinationFromSomeOtherSource() throws JMSException {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        TemporaryQueue tempQueue = new JmsTemporaryQueue("ID:" + UUID.randomUUID().toString());
+
+        try {
+            session.createConsumer(tempQueue);
+            fail("Should not be able to create a consumer");
+        } catch (InvalidDestinationException idex) {}
+    }
+
+    @Test//(timeout = 10000)
+    public void testCannotCreateConsumerOnDeletedTemporaryDestination() throws JMSException {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        TemporaryQueue tempQueue = session.createTemporaryQueue();
+        MessageProducer producer = session.createProducer(tempQueue);
+
+        try {
+            producer.send(session.createMessage());
+        } catch (Exception ex) {
+            fail("Should be able to send to this temporary destination");
+        }
+
+        tempQueue.delete();
+
+        try {
+            producer.send(session.createMessage());
+            fail("Should not be able to send to this temporary destination");
+        } catch (IllegalStateException ise) {}
     }
 }

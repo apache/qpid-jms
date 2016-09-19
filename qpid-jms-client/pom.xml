@@ -24,7 +24,7 @@
   </parent>
 
   <artifactId>qpid-jms-client</artifactId>
-  <packaging>jar</packaging>
+  <packaging>bundle</packaging>
   <name>QpidJMS Client</name>
   <description>The core JMS Client implementation</description>
 
@@ -107,6 +107,21 @@
       </resource>
     </resources>
     <plugins>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <configuration>
+          <instructions>
+            <Bundle-SymbolicName>org.apache.qpid.jms.client</Bundle-SymbolicName>
+            <Export-Package>org.apache.qpid.jms.*</Export-Package>
+            <Import-Package>
+            io.netty.*;version="[4.0.0,4.1.0)",
+            org.apache.qpid.proton.*;version="[0.14.0,0.15.0)",
+            *</Import-Package>
+            <Dynamic-ImportPackage>*</Dynamic-ImportPackage>
+          </instructions>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>

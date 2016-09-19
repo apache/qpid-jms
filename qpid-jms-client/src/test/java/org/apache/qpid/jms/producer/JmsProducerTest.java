@@ -34,22 +34,27 @@ import java.util.UUID;
 import javax.jms.CompletionListener;
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
+import javax.jms.IllegalStateException;
+import javax.jms.IllegalStateRuntimeException;
 import javax.jms.JMSException;
 import javax.jms.JMSProducer;
 import javax.jms.Message;
 import javax.jms.MessageFormatRuntimeException;
+import javax.jms.Queue;
 
 import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.apache.qpid.jms.JmsContext;
 import org.apache.qpid.jms.JmsMessageProducer;
 import org.apache.qpid.jms.JmsProducer;
 import org.apache.qpid.jms.JmsSession;
+import org.apache.qpid.jms.JmsTemporaryQueue;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.provider.mock.MockRemotePeer;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 
 /**
@@ -1146,6 +1151,117 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
         assertNotNull(envelope);
         JmsMessage message = envelope.getMessage();
         assertEquals(bodyValue, message.getBody(UUID.class));
+    }
+
+    //----- Test for conversions to JMSRuntimeException ----------------------//
+
+    @Test
+    public void testRuntimeExceptionFromSendMessage() throws JMSException {
+        JmsSession session = Mockito.mock(JmsSession.class);
+        JmsMessageProducer messageProducer = Mockito.mock(JmsMessageProducer.class);
+        Message message = Mockito.mock(Message.class);
+
+        Mockito.when(session.createTemporaryQueue()).thenReturn(new JmsTemporaryQueue());
+        Mockito.when(session.createMessage()).thenReturn(message);
+
+        Mockito.doThrow(IllegalStateException.class).when(message).setJMSCorrelationID(Matchers.anyString());
+
+        JmsProducer producer = new JmsProducer(session, messageProducer);
+
+        producer.setJMSCorrelationID("id");
+
+        try {
+            producer.send(session.createTemporaryQueue(), session.createMessage());
+            fail("Should have thrown an exception");
+        } catch (IllegalStateRuntimeException isre) {}
+    }
+
+    @Test
+    public void testRuntimeExceptionFromSendByteBody() throws JMSException {
+        JmsSession session = Mockito.mock(JmsSession.class);
+        JmsMessageProducer messageProducer = Mockito.mock(JmsMessageProducer.class);
+
+        Mockito.when(session.createTemporaryQueue()).thenReturn(new JmsTemporaryQueue());
+        Mockito.when(session.createMessage()).thenReturn(Mockito.mock(Message.class));
+
+        Mockito.doThrow(IllegalStateException.class).when(session).createBytesMessage();
+
+        JmsProducer producer = new JmsProducer(session, messageProducer);
+
+        try {
+            producer.send(session.createTemporaryQueue(), new byte[0]);
+            fail("Should have thrown an exception");
+        } catch (IllegalStateRuntimeException isre) {}
+    }
+
+    @Test
+    public void testRuntimeExceptionFromSendMapBody() throws JMSException {
+        JmsSession session = Mockito.mock(JmsSession.class);
+        JmsMessageProducer messageProducer = Mockito.mock(JmsMessageProducer.class);
+
+        Mockito.when(session.createTemporaryQueue()).thenReturn(new JmsTemporaryQueue());
+        Mockito.when(session.createMessage()).thenReturn(Mockito.mock(Message.class));
+
+        Mockito.doThrow(IllegalStateException.class).when(session).createMapMessage();
+
+        JmsProducer producer = new JmsProducer(session, messageProducer);
+
+        try {
+            producer.send(session.createTemporaryQueue(), Collections.<String, Object>emptyMap());
+            fail("Should have thrown an exception");
+        } catch (IllegalStateRuntimeException isre) {}
+    }
+
+    @Test
+    public void testRuntimeExceptionFromSendSerializableBody() throws JMSException {
+        JmsSession session = Mockito.mock(JmsSession.class);
+        JmsMessageProducer messageProducer = Mockito.mock(JmsMessageProducer.class);
+
+        Mockito.when(session.createTemporaryQueue()).thenReturn(new JmsTemporaryQueue());
+        Mockito.when(session.createMessage()).thenReturn(Mockito.mock(Message.class));
+
+        Mockito.doThrow(IllegalStateException.class).when(session).createObjectMessage();
+
+        JmsProducer producer = new JmsProducer(session, messageProducer);
+
+        try {
+            producer.send(session.createTemporaryQueue(), UUID.randomUUID());
+            fail("Should have thrown an exception");
+        } catch (IllegalStateRuntimeException isre) {}
+    }
+
+    @Test
+    public void testRuntimeExceptionFromSendStringBody() throws JMSException {
+        JmsSession session = Mockito.mock(JmsSession.class);
+        JmsMessageProducer messageProducer = Mockito.mock(JmsMessageProducer.class);
+
+        Mockito.when(session.createTemporaryQueue()).thenReturn(new JmsTemporaryQueue());
+        Mockito.when(session.createMessage()).thenReturn(Mockito.mock(Message.class));
+
+        Mockito.doThrow(IllegalStateException.class).when(session).createTextMessage(Matchers.anyString());
+
+        JmsProducer producer = new JmsProducer(session, messageProducer);
+
+        try {
+            producer.send(session.createTemporaryQueue(), "test");
+            fail("Should have thrown an exception");
+        } catch (IllegalStateRuntimeException isre) {}
+    }
+
+    @Test
+    public void testRuntimeExceptionFromSetJMSReplyTo() throws JMSException {
+        JmsSession session = Mockito.mock(JmsSession.class);
+        JmsMessageProducer messageProducer = Mockito.mock(JmsMessageProducer.class);
+        Queue queue = Mockito.mock(Queue.class);
+
+        Mockito.doThrow(IllegalStateException.class).when(queue).getQueueName();
+
+        JmsProducer producer = new JmsProducer(session, messageProducer);
+
+        try {
+            producer.setJMSReplyTo(queue);
+            fail("Should have thrown an exception");
+        } catch (IllegalStateRuntimeException isre) {}
     }
 
     //----- Internal Support -------------------------------------------------//

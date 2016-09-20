@@ -27,6 +27,7 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.net.URI;
 
+import javax.jms.ConnectionMetaData;
 import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
 import javax.jms.InvalidClientIDException;
@@ -36,6 +37,7 @@ import javax.jms.TemporaryQueue;
 import javax.jms.TemporaryTopic;
 
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
+import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.mock.MockProvider;
 import org.apache.qpid.jms.provider.mock.MockProviderFactory;
 import org.apache.qpid.jms.util.IdGenerator;
@@ -264,6 +266,35 @@ public class JmsConnectionTest {
             fail("Should have thrown an IllegalStateException");
         } catch (IllegalStateException ex) {
         }
+    }
+
+    @Test(timeout=30000)
+    public void testConnectionCreatedSessionRespectsAcknowledgementMode() throws Exception {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection.start();
+
+        JmsSession session = (JmsSession) connection.createSession(Session.SESSION_TRANSACTED);
+        try {
+            session.acknowledge(ACK_TYPE.ACCEPTED);
+            fail("Should be in TX mode and not allow explicit ACK.");
+        } catch (IllegalStateException ise) {
+        }
+    }
+
+    @Test(timeout=30000)
+    public void testConnectionMetaData() throws Exception {
+        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+
+        ConnectionMetaData metaData = connection.getMetaData();
+
+        assertNotNull(metaData);
+        assertEquals(2, metaData.getJMSMajorVersion());
+        assertEquals(0, metaData.getJMSMinorVersion());
+        assertEquals("2.0", metaData.getJMSVersion());
+        assertNotNull(metaData.getJMSXPropertyNames());
+
+        assertNotNull(metaData.getProviderVersion());
+        assertNotNull(metaData.getJMSProviderName());
     }
 
     //----- Currently these are unimplemented, these will fail after that ----//

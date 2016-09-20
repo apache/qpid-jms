@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.ExceptionListener;
+import javax.jms.JMSContext;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.policy.JmsDefaultDeserializationPolicy;
@@ -755,5 +756,41 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JmsConnection connection = (JmsConnection) factory.createConnection();
 
         assertTrue(connection.getDeserializationPolicy() instanceof SerializationTestSupport.TestJmsDeserializationPolicy);
+    }
+
+    @Test
+    public void testCreateContext() {
+        JmsConnectionFactory factory = new JmsConnectionFactory("mock://127.0.0.1:5672");
+
+        JMSContext context = factory.createContext();
+        assertNotNull(context);
+        assertEquals(JMSContext.AUTO_ACKNOWLEDGE, context.getSessionMode());
+    }
+
+    @Test
+    public void testCreateContextWithUserAndPassword() {
+        JmsConnectionFactory factory = new JmsConnectionFactory("mock://127.0.0.1:5672");
+
+        JMSContext context = factory.createContext(USER, PASSWORD);
+        assertNotNull(context);
+        assertEquals(JMSContext.AUTO_ACKNOWLEDGE, context.getSessionMode());
+    }
+
+    @Test
+    public void testCreateContextWithUserAndPasswordAndSessionMode() {
+        JmsConnectionFactory factory = new JmsConnectionFactory("mock://127.0.0.1:5672");
+
+        JMSContext context = factory.createContext(USER, PASSWORD, JMSContext.CLIENT_ACKNOWLEDGE);
+        assertNotNull(context);
+        assertEquals(JMSContext.CLIENT_ACKNOWLEDGE, context.getSessionMode());
+    }
+
+    @Test
+    public void testCreateContextWithSessionMode() {
+        JmsConnectionFactory factory = new JmsConnectionFactory("mock://127.0.0.1:5672");
+
+        JMSContext context = factory.createContext(JMSContext.CLIENT_ACKNOWLEDGE);
+        assertNotNull(context);
+        assertEquals(JMSContext.CLIENT_ACKNOWLEDGE, context.getSessionMode());
     }
 }

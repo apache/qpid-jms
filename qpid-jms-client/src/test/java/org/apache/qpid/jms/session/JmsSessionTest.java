@@ -284,7 +284,7 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         } catch (InvalidDestinationException idex) {}
     }
 
-    @Test//(timeout = 10000)
+    @Test(timeout = 10000)
     public void testCannotCreateConsumerOnDeletedTemporaryDestination() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         TemporaryQueue tempQueue = session.createTemporaryQueue();
@@ -302,5 +302,60 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
             producer.send(session.createMessage());
             fail("Should not be able to send to this temporary destination");
         } catch (IllegalStateException ise) {}
+    }
+
+    @Test(timeout = 10000)
+    public void testSessionRunFailsWhenSessionIsClosed() throws Exception {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+        try {
+            session.run();
+            fail("Not implemented");
+        } catch (UnsupportedOperationException usoe) {}
+
+        session.close();
+
+        try {
+            session.run();
+            fail("Session is closed.");
+        } catch (RuntimeException re) {}
+    }
+
+    //----- Not yet implemented, should all be cleared on implementation -----//
+
+    @Test(timeout = 10000)
+    public void testCreateSharedConsumer() throws Exception {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        try {
+            session.createSharedConsumer(session.createTopic("test"), "subscription");
+            fail("Should fail until implemented.");
+        } catch (JMSException ex) {}
+    }
+
+    @Test(timeout = 10000)
+    public void testCreateSharedConsumerWithSelector() throws Exception {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        try {
+            session.createSharedConsumer(session.createTopic("test"), "subscription", "a = b");
+            fail("Should fail until implemented.");
+        } catch (JMSException ex) {}
+    }
+
+    @Test(timeout = 10000)
+    public void testCreateSharedDurableConsumer() throws Exception {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        try {
+            session.createSharedDurableConsumer(session.createTopic("test"), "subscription");
+            fail("Should fail until implemented.");
+        } catch (JMSException ex) {}
+    }
+
+    @Test(timeout = 10000)
+    public void testCreateSharedDurableConsumerWithSelector() throws Exception {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        try {
+            session.createSharedDurableConsumer(session.createTopic("test"), "subscription", "a = b");
+            fail("Should fail until implemented.");
+        } catch (JMSException ex) {}
     }
 }

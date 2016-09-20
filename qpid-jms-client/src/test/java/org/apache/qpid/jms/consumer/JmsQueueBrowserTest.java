@@ -17,8 +17,12 @@
 package org.apache.qpid.jms.consumer;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
+import java.util.Enumeration;
+
+import javax.jms.Message;
 import javax.jms.Queue;
 import javax.jms.QueueBrowser;
 import javax.jms.Session;
@@ -58,5 +62,17 @@ public class JmsQueueBrowserTest extends JmsConnectionTestSupport {
         browser = session.createBrowser(queue);
         browser.close();
         browser.close();  // Should not throw on multiple close.
+    }
+
+    @Test(timeout = 30000)
+    public void testHasMoreElementsOnClosedBrowser() throws Exception {
+        browser = session.createBrowser(queue);
+
+        @SuppressWarnings("unchecked")
+        Enumeration<Message> browse = browser.getEnumeration();
+
+        assertFalse(browse.hasMoreElements());
+        browser.close();
+        assertFalse(browse.hasMoreElements());
     }
 }

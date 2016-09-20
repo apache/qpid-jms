@@ -133,6 +133,14 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
     }
 
     @Test(timeout = 10000)
+    public void testDeliveryDelayConfiguration() throws Exception {
+        MessageProducer producer = session.createProducer(null);
+        assertEquals(Message.DEFAULT_DELIVERY_DELAY, producer.getDeliveryDelay());
+        producer.setDeliveryDelay(2000);
+        assertEquals(2000, producer.getDeliveryDelay());
+    }
+
+    @Test(timeout = 10000)
     public void testAnonymousProducerThrowsUOEWhenExplictDestinationNotProvided() throws Exception {
         JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(null);
 

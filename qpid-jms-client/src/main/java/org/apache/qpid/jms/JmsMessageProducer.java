@@ -114,7 +114,7 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
     @Override
     public long getDeliveryDelay() throws JMSException {
         checkClosed();
-        return deliveryMode;
+        return deliveryDelay;
     }
 
     @Override

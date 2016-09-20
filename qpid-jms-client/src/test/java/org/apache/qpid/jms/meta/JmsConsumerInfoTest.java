@@ -172,4 +172,14 @@ public class JmsConsumerInfoTest {
 
         assertTrue(visited.get());
     }
+
+    @Test
+    public void testGetRedeliveryPolicyDefaults() {
+        final JmsConsumerInfo info = new JmsConsumerInfo(firstId);
+
+        assertNotNull(info.getRedeliveryPolicy());
+        info.setRedeliveryPolicy(null);
+        assertNotNull(info.getRedeliveryPolicy());
+        assertTrue(info.getRedeliveryPolicy() instanceof JmsDefaultRedeliveryPolicy);
+    }
 }

@@ -20,9 +20,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.jms.policy.JmsDefaultMessageIDPolicy;
@@ -156,5 +158,35 @@ public class JmsConnectionInfoTest {
         });
 
         assertTrue(visited.get());
+    }
+
+    @Test
+    public void testGetEncodedUsername() {
+        final JmsConnectionInfo info = new JmsConnectionInfo(firstId);
+        info.setUsername("user");
+        byte[] result = info.getEncodedUsername();
+        assertEquals("user", new String(result, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void testGetEncodedUsernameValueIsCached() {
+        final JmsConnectionInfo info = new JmsConnectionInfo(firstId);
+        info.setUsername("user");
+        byte[] result1 = info.getEncodedUsername();
+        byte[] result2 = info.getEncodedUsername();
+        assertSame(result1, result2);
+    }
+
+    @Test
+    public void testGetEncodedUsernameWithNoUsername() {
+        final JmsConnectionInfo info = new JmsConnectionInfo(firstId);
+        assertNull(info.getEncodedUsername());
+    }
+
+    @Test
+    public void testGetEncodedUsernameWithEmptyUsername() {
+        final JmsConnectionInfo info = new JmsConnectionInfo(firstId);
+        info.setUsername("");
+        assertNotNull(info.getEncodedUsername());
     }
 }

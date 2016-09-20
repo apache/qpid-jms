@@ -36,7 +36,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- *
+ * Tests for the JmsSessionInfo object
  */
 public class JmsSessionInfoTest {
 
@@ -166,5 +166,45 @@ public class JmsSessionInfoTest {
         });
 
         assertTrue(visited.get());
+    }
+
+    @Test
+    public void testGetMessageIDPolicyDefaults() {
+        final JmsSessionInfo info = new JmsSessionInfo(firstId);
+
+        assertNotNull(info.getMessageIDPolicy());
+        info.setMessageIDPolicy(null);
+        assertNotNull(info.getMessageIDPolicy());
+        assertTrue(info.getMessageIDPolicy() instanceof JmsDefaultMessageIDPolicy);
+    }
+
+    @Test
+    public void testGetPrefetchPolicyDefaults() {
+        final JmsSessionInfo info = new JmsSessionInfo(firstId);
+
+        assertNotNull(info.getPrefetchPolicy());
+        info.setPrefetchPolicy(null);
+        assertNotNull(info.getPrefetchPolicy());
+        assertTrue(info.getPrefetchPolicy() instanceof JmsDefaultPrefetchPolicy);
+    }
+
+    @Test
+    public void testGetPresettlePolicyDefaults() {
+        final JmsSessionInfo info = new JmsSessionInfo(firstId);
+
+        assertNotNull(info.getPresettlePolicy());
+        info.setPresettlePolicy(null);
+        assertNotNull(info.getPresettlePolicy());
+        assertTrue(info.getPresettlePolicy() instanceof JmsDefaultPresettlePolicy);
+    }
+
+    @Test
+    public void testGetRedeliveryPolicyDefaults() {
+        final JmsSessionInfo info = new JmsSessionInfo(firstId);
+
+        assertNotNull(info.getRedeliveryPolicy());
+        info.setRedeliveryPolicy(null);
+        assertNotNull(info.getRedeliveryPolicy());
+        assertTrue(info.getRedeliveryPolicy() instanceof JmsDefaultRedeliveryPolicy);
     }
 }

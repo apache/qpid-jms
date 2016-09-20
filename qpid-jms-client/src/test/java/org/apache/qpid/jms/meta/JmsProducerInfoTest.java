@@ -21,6 +21,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -61,6 +62,19 @@ public class JmsProducerInfoTest {
         assertSame(firstId, info.getId());
         assertSame(firstId.getParentId(), info.getParentId());
         assertNotNull(info.toString());
+    }
+
+    @Test
+    public void testCreateThrowsOnNullParameters() {
+        try {
+            new JmsProducerInfo(null, JmsMessageIDBuilder.BUILTIN.DEFAULT.createBuilder());
+            fail("Should not allow create will null params");
+        } catch (IllegalArgumentException ex) {}
+
+        try {
+            new JmsProducerInfo(firstId, null);
+            fail("Should not allow create will null params");
+        } catch (IllegalArgumentException ex) {}
     }
 
     @Test

@@ -219,6 +219,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             connection.setPrefetchPolicy(prefetchPolicy.copy());
             connection.setPresettlePolicy(presettlePolicy.copy());
             connection.setRedeliveryPolicy(redeliveryPolicy.copy());
+            connection.setDeserializationPolicy(deserializationPolicy.copy());
 
             PropertyUtil.setProperties(connection, properties);
             connection.setExceptionListener(exceptionListener);

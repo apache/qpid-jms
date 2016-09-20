@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+import org.apache.qpid.jms.policy.JmsDeserializationPolicy;
+
 public class SerializationTestSupport {
 
     public static Object roundTripSerialize(final Object o) throws IOException, ClassNotFoundException {
@@ -46,5 +48,18 @@ public class SerializationTestSupport {
         Object deserializedObject = ois.readObject();
         ois.close();
         return deserializedObject;
+    }
+
+    public static class TestJmsDeserializationPolicy implements JmsDeserializationPolicy {
+
+        @Override
+        public JmsDeserializationPolicy copy() {
+            return new TestJmsDeserializationPolicy();
+        }
+
+        @Override
+        public boolean isTrustedType(JmsDestination destination, Class<?> clazz) {
+            return true;
+        }
     }
 }

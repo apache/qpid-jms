@@ -732,4 +732,28 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
             fail("should throw IllegalArgumentException");
         } catch (IllegalArgumentException ex) {}
     }
+
+    @Test
+    public void testDeserializationPolicyRestsToDefault() {
+        JmsConnectionFactory factory = new JmsConnectionFactory("amqp://127.0.0.1:5672");
+
+        assertNotNull(factory.getDeserializationPolicy());
+        factory.setDeserializationPolicy(null);
+        assertNotNull(factory.getDeserializationPolicy());
+        assertTrue(factory.getDeserializationPolicy() instanceof JmsDefaultDeserializationPolicy);
+    }
+
+    @Test
+    public void testCustomDeserializationPolicyIsAppliedToConnections() throws JMSException {
+        JmsConnectionFactory factory = new JmsConnectionFactory("mock://127.0.0.1:5672");
+
+        assertNotNull(factory.getDeserializationPolicy());
+        factory.setDeserializationPolicy(new SerializationTestSupport.TestJmsDeserializationPolicy());
+        assertNotNull(factory.getDeserializationPolicy());
+        assertTrue(factory.getDeserializationPolicy() instanceof SerializationTestSupport.TestJmsDeserializationPolicy);
+
+        JmsConnection connection = (JmsConnection) factory.createConnection();
+
+        assertTrue(connection.getDeserializationPolicy() instanceof SerializationTestSupport.TestJmsDeserializationPolicy);
+    }
 }

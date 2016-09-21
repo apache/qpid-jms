@@ -254,21 +254,6 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
-    public void testConnectionMetaDataVersion() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
-            ConnectionMetaData meta = connection.getMetaData();
-            int result = meta.getProviderMajorVersion() + meta.getProviderMinorVersion();
-            assertTrue("Expected non-zero provider major / minor version", result != 0);
-
-            testPeer.expectClose();
-            connection.close();
-
-            testPeer.waitForAllHandlersToComplete(1000);
-        }
-    }
-
-    @Test(timeout = 20000)
     public void testConnectionPropertiesContainExpectedMetaData() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 

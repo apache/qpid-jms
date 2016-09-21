@@ -295,6 +295,10 @@ public class JmsConnectionTest {
 
         assertNotNull(metaData.getProviderVersion());
         assertNotNull(metaData.getJMSProviderName());
+
+        int major = metaData.getProviderMajorVersion();
+        int minor = metaData.getProviderMinorVersion();
+        assertTrue("Expected non-zero provider major(" + major + ") / minor(" + minor +") version.", (major + minor) != 0);
     }
 
     //----- Currently these are unimplemented, these will fail after that ----//

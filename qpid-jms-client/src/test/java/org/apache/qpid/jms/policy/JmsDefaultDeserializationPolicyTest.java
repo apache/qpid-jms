@@ -207,9 +207,18 @@ public class JmsDefaultDeserializationPolicyTest {
         assertNotNull(policy.getWhiteList());
         assertTrue(policy.getWhiteList().isEmpty());
 
+        policy.setWhiteList("");
+        assertNotNull(policy.getWhiteList());
+        assertTrue(policy.getWhiteList().isEmpty());
+
         policy.setWhiteList("*");
         assertNotNull(policy.getWhiteList());
         assertFalse(policy.getWhiteList().isEmpty());
+
+        policy.setWhiteList("a,b,c");
+        assertNotNull(policy.getWhiteList());
+        assertFalse(policy.getWhiteList().isEmpty());
+        assertEquals("a,b,c", policy.getWhiteList());
     }
 
     @Test
@@ -221,9 +230,18 @@ public class JmsDefaultDeserializationPolicyTest {
         assertNotNull(policy.getBlackList());
         assertTrue(policy.getBlackList().isEmpty());
 
+        policy.setBlackList("");
+        assertNotNull(policy.getBlackList());
+        assertTrue(policy.getBlackList().isEmpty());
+
         policy.setBlackList("*");
         assertNotNull(policy.getBlackList());
         assertFalse(policy.getBlackList().isEmpty());
+
+        policy.setBlackList("a,b,c");
+        assertNotNull(policy.getBlackList());
+        assertFalse(policy.getBlackList().isEmpty());
+        assertEquals("a,b,c", policy.getBlackList());
     }
 
     @Test

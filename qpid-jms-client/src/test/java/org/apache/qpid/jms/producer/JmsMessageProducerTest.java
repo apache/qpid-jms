@@ -75,7 +75,7 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
     @Override
     @After
     public void tearDown() throws Exception {
-        remotePeer.shutdown();
+        remotePeer.terminate();
         super.tearDown();
     }
 

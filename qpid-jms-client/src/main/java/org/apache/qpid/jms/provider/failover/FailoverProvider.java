@@ -460,11 +460,13 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         final FailoverRequest pending = new FailoverRequest(request, requestTimeout) {
             @Override
             public void doTask() throws Exception {
+                LOG.info("Recover running");
                 provider.recover(sessionId, this);
             }
 
             @Override
             public boolean succeedsWhenOffline() {
+                LOG.info("Recover ok to complete due to being offline");
                 return true;
             }
 
@@ -1080,16 +1082,18 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         }
 
         @Override
-        public void onFailure(final Throwable result) {
-            if (result instanceof JMSException || closingConnection.get() || closed.get() || failed.get()) {
+        public void onFailure(final Throwable error) {
+            if (error instanceof JMSException || closingConnection.get() || closed.get() || failed.get()) {
                 requests.remove(id);
-                super.onFailure(result);
+                super.onFailure(error);
             } else {
-                LOG.debug("Request received error: {}", result.getMessage());
+                LOG.debug("Request received error: {}", error.getMessage());
                 serializer.execute(new Runnable() {
                     @Override
                     public void run() {
-                        handleProviderFailure(IOExceptionSupport.create(result));
+                        IOException ioError = IOExceptionSupport.create(error);
+                        whenOffline(ioError);
+                        handleProviderFailure(ioError);
                     }
                 });
             }

@@ -104,6 +104,12 @@ public class MockRemotePeer {
         MockRemotePeer.INSTANCE = this;
     }
 
+    public void terminate() {
+        shutdown();
+
+        MockRemotePeer.INSTANCE = null;
+    }
+
     public void shutdown() {
         offline = true;
         List<MockProvider> active = new ArrayList<MockProvider>(activeProviders.values());
@@ -112,16 +118,12 @@ public class MockRemotePeer {
         }
         activeProviders.clear();
         lastRegistered = null;
-
-        MockRemotePeer.INSTANCE = null;
     }
 
     public void shutdownQuietly() {
         offline = true;
         activeProviders.clear();
         lastRegistered = null;
-
-        MockRemotePeer.INSTANCE = null;
     }
 
     public void silentlyCloseConnectedProviders() {

@@ -57,7 +57,7 @@ public class FailoverProviderTestSupport extends QpidJmsTestCase {
     @After
     public void tearDown() throws Exception {
         if (mockPeer != null) {
-            mockPeer.shutdown();
+            mockPeer.terminate();
             mockPeer = null;
         }
 

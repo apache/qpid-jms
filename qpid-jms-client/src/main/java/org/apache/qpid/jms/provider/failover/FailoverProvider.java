@@ -460,13 +460,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         final FailoverRequest pending = new FailoverRequest(request, requestTimeout) {
             @Override
             public void doTask() throws Exception {
-                LOG.info("Recover running");
                 provider.recover(sessionId, this);
             }
 
             @Override
             public boolean succeedsWhenOffline() {
-                LOG.info("Recover ok to complete due to being offline");
                 return true;
             }
 

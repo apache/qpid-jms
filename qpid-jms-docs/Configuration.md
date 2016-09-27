@@ -67,7 +67,11 @@ The basic format of the clients Connection URI is as follows:
 
       amqp[s]://hostname:port[?option=value[&option2=value...]]
 
-Where the *amqps* scheme is specified to use SSL/TLS, the hostname segment from the URI can be used by the JVM for the
+or for WebSocket connections
+
+     amqpws[s]://hostname:port[/path][?option=value[&option2=value...]]
+
+Where the *amqps* and *amqpwss* scheme is specified to use SSL/TLS, the hostname segment from the URI can be used by the JVM for the
 TLS SNI (Server Name Indication) extension in order to communicate the desired server hostname during a TLS handshake.
 The SNI extension will be automatically included if a Fully Qualified name (e.g myhost.mydomain) is specified, but not
 when an unqualified name (e.g myhost) or bare IP address are used.
@@ -172,6 +176,15 @@ The complete set of SSL Transport options is listed below:
 + **transport.trustAll** Whether to trust the provided server certificate implicitly, regardless of any configured trust store. Defaults to false.
 + **transport.verifyHost** Whether to verify that the hostname being connected to matches with the provided server certificate. Defaults to true.
 + **transport.keyAlias** The alias to use when selecting a keypair from the keystore if required to send a client certificate to the server. No default.
+
+### Websocket Transport Configuration options
+
+The WebSocket (WS) Transport extends the TCP and SSL Transports to provide both unsecured and secured Websocket connectivity and is enabled using the *amqpws* amd *amqpwss* URI schemes.  The unsecured WS Transport extends the basic TCP transport which means all the normal TCP Transport configuration options also apply to the WS Transport, similarly the WSS Transport extends the SSL Transport which means both the TCP and SSL Transport options are available for configuration.
+
+A simple SSL/TLS based client URI is shown below:
+
+    amqpws[s]://myhost.mydomain:5671/[optional-path]
+
 
 ### AMQP Configuration options
 

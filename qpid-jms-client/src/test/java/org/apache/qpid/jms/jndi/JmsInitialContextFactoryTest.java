@@ -87,10 +87,16 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
 
     @Test
     public void testDefaultConnectionFactorySeesFactorySpecificProperty() throws Exception {
-        String updatedClientID = _testName.getMethodName();
-
         String factoryName = JmsInitialContextFactory.DEFAULT_CONNECTION_FACTORY_NAMES[0];
-        String propertyPrefix = JmsInitialContextFactory.CONNECTION_FACTORY_PROPERTY_KEY_PREFIX;
+
+        // lower case prefix
+        doDefaultConnectionFactorySeesFactorySpecificPropertyTestImpl("property.connectionfactory.", factoryName);
+        // camelCase prefix
+        doDefaultConnectionFactorySeesFactorySpecificPropertyTestImpl("property.connectionFactory.", factoryName);
+    }
+
+    private void doDefaultConnectionFactorySeesFactorySpecificPropertyTestImpl(String propertyPrefix, String factoryName) throws Exception {
+        String updatedClientID = _testName.getMethodName();
 
         Hashtable<Object, Object> env = new Hashtable<Object, Object>();
         env.put(propertyPrefix + factoryName + "." + "clientID", updatedClientID);
@@ -100,7 +106,7 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
 
         assertNotNull("No object returned", o);
         assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
-        assertEquals("Unexpected URI for returned factory", updatedClientID, ((JmsConnectionFactory) o).getClientID());
+        assertEquals("Unexpected ClientID for returned factory", updatedClientID, ((JmsConnectionFactory) o).getClientID());
     }
 
     @Test
@@ -119,13 +125,45 @@ public class JmsInitialContextFactoryTest extends QpidJmsTestCase {
         }
     }
 
+
+    @Test
+    public void testDefaultConnectionFactoriesSeeDefaultPropertyUpdate() throws Exception {
+        String factoryName = JmsInitialContextFactory.DEFAULT_CONNECTION_FACTORY_NAMES[0];
+
+        // lower case prefix
+        doDefaultConnectionFactorySeesDefaultPropertyUpdatePropertyTestImpl("default.connectionfactory.", factoryName);
+        // camelCase prefix
+        doDefaultConnectionFactorySeesDefaultPropertyUpdatePropertyTestImpl("default.connectionFactory.", factoryName);
+    }
+
+    private void doDefaultConnectionFactorySeesDefaultPropertyUpdatePropertyTestImpl(String propertyPrefix, String factoryName) throws Exception {
+        String updatedClientID = _testName.getMethodName();
+
+        Hashtable<Object, Object> env = new Hashtable<Object, Object>();
+        env.put(propertyPrefix + "clientID", updatedClientID);
+        Context ctx = createInitialContext(env);
+
+        Object o = ctx.lookup(factoryName);
+
+        assertNotNull("No object returned", o);
+        assertEquals("Unexpected class type for returned object", JmsConnectionFactory.class, o.getClass());
+        assertEquals("Unexpected ClientID for returned factory", updatedClientID, ((JmsConnectionFactory) o).getClientID());
+    }
+
     @Test
     public void testConnectionFactoryBinding() throws Exception {
         String factoryName = "myNewFactory";
+        // lower case prefix
+        doConnectionFactoryBindingTestImpl("connectionfactory." + factoryName, factoryName);
+        // camelCase prefix
+        doConnectionFactoryBindingTestImpl("connectionFactory." + factoryName, factoryName);
+    }
+
+    private void doConnectionFactoryBindingTestImpl(String environmentProperty, String factoryName) throws NamingException {
         String uri = "amqp://example.com:1234";
 
         Hashtable<Object, Object> env = new Hashtable<Object, Object>();
-        env.put(JmsInitialContextFactory.CONNECTION_FACTORY_KEY_PREFIX + factoryName, uri);
+        env.put(environmentProperty, uri);
         Context ctx = createInitialContext(env);
 
         Object o = ctx.lookup(factoryName);

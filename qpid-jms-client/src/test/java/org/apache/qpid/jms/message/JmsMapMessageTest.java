@@ -785,45 +785,6 @@ public class JmsMapMessageTest {
         assertGetMapEntryThrowsMessageFormatException(mapMessage, name, Double.class);
     }
 
-//  TODO - This is a test that should be moved to the Facade test for the AMQP message facades.
-//
-//    /**
-//     * Verify that for a message received with an AmqpValue containing a Map with a Binary entry
-//     * value, we are able to read it back as a byte[].
-//     */
-//    @Test
-//    public void testReceivedMapWithBinaryEntryReturnsByteArray() throws Exception {
-//        String myKey1 = "key1";
-//        String bytesSource = "myBytesAmqpValue";
-//
-//        Map<String, Object> origMap = new HashMap<String, Object>();
-//        byte[] bytes = bytesSource.getBytes();
-//        origMap.put(myKey1, new Binary(bytes));
-//
-//        org.apache.qpid.proton.codec.Data payloadData = new DataImpl();
-//        payloadData.putDescribedType(new AmqpValueDescribedType(origMap));
-//        Binary b = payloadData.encode();
-//
-//        System.out.println("Using encoded AMQP message payload: " + b);
-//
-//        Message message = Proton.message();
-//        int decoded = message.decode(b.getArray(), b.getArrayOffset(), b.getLength());
-//        assertEquals(decoded, b.getLength());
-//
-//        AmqpMapMessage amqpMapMessage = new AmqpMapMessage(message, _mockDelivery, _mockAmqpConnection);
-//
-//        JmsMapMessage mapMessage = new JmsMapMessage(amqpMapMessage, _mockSessionImpl, _mockConnectionImpl, null);
-//
-//        // retrieve the bytes using getBytes, check they match expectation
-//        byte[] receivedBytes = mapMessage.getBytes(myKey1);
-//        assertTrue(Arrays.equals(bytes, receivedBytes));
-//
-//        // retrieve the bytes using getObject, check they match expectation
-//        Object o = mapMessage.getObject(myKey1);
-//        assertTrue(o instanceof byte[]);
-//        assertTrue(Arrays.equals(bytes, (byte[]) o));
-//    }
-
     /**
      * Verify that setting bytes takes a copy of the array. Set bytes, then modify them, then
      * retrieve the map entry and verify the two differ.

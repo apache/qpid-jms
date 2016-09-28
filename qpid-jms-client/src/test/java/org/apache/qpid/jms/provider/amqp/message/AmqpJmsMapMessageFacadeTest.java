@@ -23,10 +23,12 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
@@ -208,5 +210,34 @@ public class AmqpJmsMapMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         amqpMapMessageFacade.clearBody();
         amqpMapMessageFacade.put("entry", "value");
         assertTrue(amqpMapMessageFacade.getMapNames().hasMoreElements());
+    }
+
+    //----- Test Read / Write of special contents in Map ---------------------//
+
+    /**
+     * Verify that for a message received with an AmqpValue containing a Map with a Binary entry
+     * value, we are able to read it back as a byte[].
+     *
+     * @throws Exception if an error occurs while running the test.
+     */
+    @Test
+    public void testReceivedMapWithBinaryEntryReturnsByteArray() throws Exception {
+        String myKey1 = "key1";
+        String bytesSource = "myBytesAmqpValue";
+
+        Map<String, Object> origMap = new HashMap<String, Object>();
+        byte[] bytes = bytesSource.getBytes();
+        origMap.put(myKey1, new Binary(bytes));
+
+        Message message = Message.Factory.create();
+        message.setBody(new AmqpValue(origMap));
+
+        AmqpJmsMapMessageFacade amqpMapMessageFacade = createReceivedMapMessageFacade(createMockAmqpConsumer(), message);
+
+        // retrieve the bytes using getBytes, check they match expectation
+        Object objectValue = amqpMapMessageFacade.get(myKey1);
+        assertTrue(byte[].class.equals(objectValue.getClass()));
+        byte[] bytesValue = (byte[]) objectValue;
+        assertTrue(Arrays.equals(bytes, bytesValue));
     }
 }

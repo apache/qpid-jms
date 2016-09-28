@@ -22,13 +22,10 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -44,15 +41,6 @@ import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsTopic;
 
-/**
- * A factory of the StompJms InitialContext which contains
- * {@link javax.jms.ConnectionFactory} instances as well as a child context
- * called <i>destinations</i> which contain all of the current active
- * destinations, in child context depending on the QoS such as transient or
- * durable and queue or topic.
- *
- * @since 1.0
- */
 public class JmsInitialContextFactory implements InitialContextFactory {
 
     static final String[] DEFAULT_CONNECTION_FACTORY_NAMES = {
@@ -63,6 +51,8 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     static final String TOPIC_KEY_PREFIX = "topic.";
     static final String CONNECTION_FACTORY_DEFAULT_KEY_PREFIX = "default." + CONNECTION_FACTORY_KEY_PREFIX;
     static final String CONNECTION_FACTORY_PROPERTY_KEY_PREFIX = "property." + CONNECTION_FACTORY_KEY_PREFIX;
+    static final String DYNAMIC_QUEUES = "dynamicQueues";
+    static final String DYNAMIC_TOPICS = "dynamicTopics";
 
     @SuppressWarnings("unchecked")
     @Override
@@ -117,7 +107,7 @@ public class JmsInitialContextFactory implements InitialContextFactory {
 
         // Add sub-contexts for dynamic creation on lookup.
         // "dynamicQueues/<queue-name>"
-        bindings.put("dynamicQueues", new LazyCreateContext() {
+        bindings.put(DYNAMIC_QUEUES, new LazyCreateContext() {
             private static final long serialVersionUID = 6503881346214855588L;
 
             @Override
@@ -127,7 +117,7 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         });
 
         // "dynamicTopics/<topic-name>"
-        bindings.put("dynamicTopics", new LazyCreateContext() {
+        bindings.put(DYNAMIC_TOPICS, new LazyCreateContext() {
             private static final long serialVersionUID = 2019166796234979615L;
 
             @Override
@@ -140,13 +130,15 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     }
 
     private void createConnectionFactories(Hashtable<Object, Object> environment, Map<String, Object> bindings) throws NamingException {
-        List<String> names = getConnectionFactoryNames(environment);
+        Map<String, String> factories = getConnectionFactoryNamesAndURIs(environment);
         Map<String, String> defaults = getConnectionFactoryDefaults(environment);
-        for (String name : names) {
-            JmsConnectionFactory factory = null;
+        for (Entry<String, String> entry : factories.entrySet()) {
+            String name = entry.getKey();
+            String uri = entry.getValue();
 
+            JmsConnectionFactory factory = null;
             try {
-                factory = createConnectionFactory(name, defaults, environment);
+                factory = createConnectionFactory(name, uri, defaults, environment);
             } catch (Exception e) {
                 NamingException ne = new NamingException("Exception while creating ConnectionFactory '" + name + "'.");
                 ne.initCause(e);
@@ -164,20 +156,15 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         return new ReadOnlyContext(environment, bindings);
     }
 
-    protected JmsConnectionFactory createConnectionFactory(String name, Map<String, String> defaults, Hashtable<Object, Object> environment) throws URISyntaxException {
-        String cfNameKey = CONNECTION_FACTORY_KEY_PREFIX + name;
+    protected JmsConnectionFactory createConnectionFactory(String name, String uri, Map<String, String> defaults, Hashtable<Object, Object> environment) throws URISyntaxException {
         Map<String, String> props = new LinkedHashMap<String, String>();
 
         // Add the defaults which apply to all connection factories
         props.putAll(defaults);
 
         // Add any URI entry for this specific factory name
-        Object o = environment.get(cfNameKey);
-        if (o != null) {
-            String value = String.valueOf(o);
-            if (value.trim().length() != 0) {
-                props.put(JmsConnectionFactory.REMOTE_URI_PROP, value);
-            }
+        if (uri != null && !uri.trim().isEmpty()) {
+            props.put(JmsConnectionFactory.REMOTE_URI_PROP, uri);
         }
 
         // Add any factory-specific additional properties
@@ -186,23 +173,29 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         return createConnectionFactory(props);
     }
 
-    protected List<String> getConnectionFactoryNames(Map<Object, Object> environment) {
-        List<String> list = new ArrayList<String>();
+    protected Map<String, String> getConnectionFactoryNamesAndURIs(Map<Object, Object> environment) {
+        Map<String, String> factories = new LinkedHashMap<String, String>();
         for (Iterator<Entry<Object, Object>> iter = environment.entrySet().iterator(); iter.hasNext();) {
             Map.Entry<Object, Object> entry = iter.next();
             String key = String.valueOf(entry.getKey());
-            if (key.startsWith(CONNECTION_FACTORY_KEY_PREFIX)) {
-                String jndiName = key.substring(CONNECTION_FACTORY_KEY_PREFIX.length());
-                list.add(jndiName);
+            if (key.toLowerCase().startsWith(CONNECTION_FACTORY_KEY_PREFIX)) {
+                String factoryName = key.substring(CONNECTION_FACTORY_KEY_PREFIX.length());
+                String value = null;
+                if(entry.getValue() != null) {
+                    value = String.valueOf(entry.getValue());
+                }
+
+                factories.put(factoryName, value);
             }
         }
 
-        if(list.isEmpty())
-        {
-            list.addAll(Arrays.asList(DEFAULT_CONNECTION_FACTORY_NAMES));
+        if (factories.isEmpty()) {
+            for (int i = 0; i < DEFAULT_CONNECTION_FACTORY_NAMES.length; i++) {
+                factories.put(DEFAULT_CONNECTION_FACTORY_NAMES[i], null);
+            }
         }
 
-        return list;
+        return factories;
     }
 
     protected Map<String, String> getConnectionFactoryDefaults(Map<Object, Object> environment) {
@@ -212,7 +205,7 @@ public class JmsInitialContextFactory implements InitialContextFactory {
         for (Iterator<Entry<Object, Object>> iter = environment.entrySet().iterator(); iter.hasNext();) {
             Map.Entry<Object, Object> entry = iter.next();
             String key = String.valueOf(entry.getKey());
-            if (key.startsWith(CONNECTION_FACTORY_DEFAULT_KEY_PREFIX)) {
+            if (key.toLowerCase().startsWith(CONNECTION_FACTORY_DEFAULT_KEY_PREFIX)) {
                 String jndiName = key.substring(CONNECTION_FACTORY_DEFAULT_KEY_PREFIX.length());
                 map.put(jndiName, String.valueOf(entry.getValue()));
             }
@@ -224,14 +217,16 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     protected Map<String, String> getConnectionFactoryProperties(String factoryName, Map<Object, Object> environment) {
         Map<String, String> map = new LinkedHashMap<String, String>();
 
-        String factoryPropertiesPrefix = CONNECTION_FACTORY_PROPERTY_KEY_PREFIX + factoryName + ".";
+        final String factoryNameSuffix = factoryName + ".";
 
         for (Iterator<Entry<Object, Object>> iter = environment.entrySet().iterator(); iter.hasNext();) {
             Map.Entry<Object, Object> entry = iter.next();
             String key = String.valueOf(entry.getKey());
-            if (key.startsWith(factoryPropertiesPrefix)) {
-                String propertyName = key.substring(factoryPropertiesPrefix.length());
-                map.put(propertyName, String.valueOf(entry.getValue()));
+            if (key.toLowerCase().startsWith(CONNECTION_FACTORY_PROPERTY_KEY_PREFIX)) {
+                if(key.substring(CONNECTION_FACTORY_PROPERTY_KEY_PREFIX.length()).startsWith(factoryNameSuffix)) {
+                    String propertyName = key.substring(CONNECTION_FACTORY_PROPERTY_KEY_PREFIX.length() + factoryNameSuffix.length());
+                    map.put(propertyName, String.valueOf(entry.getValue()));
+                }
             }
         }
 

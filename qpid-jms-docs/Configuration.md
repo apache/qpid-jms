@@ -67,7 +67,7 @@ The basic format of the clients Connection URI is as follows:
 
       amqp[s]://hostname:port[?option=value[&option2=value...]]
 
-or for WebSocket connections
+or for WebSocket connections:
 
      amqpws[s]://hostname:port[/path][?option=value[&option2=value...]]
 
@@ -179,9 +179,9 @@ The complete set of SSL Transport options is listed below:
 
 ### Websocket Transport Configuration options
 
-The WebSocket (WS) Transport extends the TCP and SSL Transports to provide both unsecured and secured Websocket connectivity and is enabled using the *amqpws* amd *amqpwss* URI schemes.  The unsecured WS Transport extends the basic TCP transport which means all the normal TCP Transport configuration options also apply to the WS Transport, similarly the WSS Transport extends the SSL Transport which means both the TCP and SSL Transport options are available for configuration.
+The WebSocket (WS) Transport extends the TCP and SSL Transports to provide both unsecured and secured Websocket connectivity and is enabled using the *amqpws* and *amqpwss* URI schemes.  The unsecured WS Transport extends the basic TCP transport which means all the normal TCP Transport configuration options also apply to the WS Transport. Similarly the WSS Transport extends the SSL Transport which means both the TCP and SSL Transport options can be applied to configure it.
 
-A simple SSL/TLS based client URI is shown below:
+A simple WS[S] based client URI is shown below:
 
     amqpws[s]://myhost.mydomain:5671/[optional-path]
 

@@ -153,4 +153,9 @@ public class PartialPooledByteBufAllocator implements ByteBufAllocator
    {
       return true;
    }
+
+   @Override
+   public int calculateNewCapacity(int minNewCapacity, int maxCapacity) {
+      return POOLED.calculateNewCapacity(minNewCapacity, maxCapacity);
+   }
 }

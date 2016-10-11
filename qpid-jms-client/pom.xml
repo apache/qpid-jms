@@ -119,7 +119,7 @@
             <Bundle-SymbolicName>org.apache.qpid.jms.client</Bundle-SymbolicName>
             <Export-Package>org.apache.qpid.jms.*</Export-Package>
             <Import-Package>
-            io.netty.*;version="[4.0.0,4.1.0)",
+            io.netty.*;version="[4.1.0,4.2.0)",
             org.apache.qpid.proton.*;version="[0.14.0,0.15.0)",
             *</Import-Package>
             <Dynamic-ImportPackage>*</Dynamic-ImportPackage>

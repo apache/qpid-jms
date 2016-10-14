@@ -63,7 +63,6 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionM
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -794,13 +793,11 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
         doDrainWithNoResponseOnNoMessageTestImpl(true, false);
     }
 
-    @Ignore // TODO - Needs PROTON-1290 to be fully stable
     @Test(timeout=30000)
     public void testDurableReceiveWithTimoutAndNoDrainResponseFailsAfterTimeout() throws IOException, Exception {
         doDrainWithNoResponseOnNoMessageTestImpl(false, true);
     }
 
-    @Ignore // TODO - Needs PROTON-1290 to be fully stable
     @Test(timeout=30000)
     public void testDurableReceiveNoWaitAndNoDrainResponseFailsAfterTimeout() throws IOException, Exception {
         doDrainWithNoResponseOnNoMessageTestImpl(true, true);
@@ -832,8 +829,6 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
             // Consumer should close due to timed waiting for drain.
             if (durable) {
-                // TODO - Bug in Proton-J causes extra flow to be emitted on detach.
-                testPeer.expectLinkFlow(true, false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_TOPIC_PREFETCH)));
                 testPeer.expectDetach(false, true, true);
             } else {
                 testPeer.expectDetach(true, true, true);

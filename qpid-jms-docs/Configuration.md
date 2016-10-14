@@ -195,7 +195,7 @@ These options apply to the behaviour of certain AMQP functionality.
 + **amqp.saslLayer** Controls whether connections should use a SASL layer or not. Default is true.
 + **amqp.saslMechanisms** Which SASL mechanism(s) the client should allow selection of, if offered by the server and usable with the configured credentials. Comma separated if specifying more than 1 mechanism. Default is to allow selection from all the clients supported mechanisms, which are currently EXTERNAL, SCRAM-SHA-256, SCRAM-SHA-1, CRAM-MD5, PLAIN, and ANONYMOUS.
 + **amqp.maxFrameSize** The max-frame-size value in bytes that is advertised to the peer. Default is 1048576.
-+ **amqp.drainTimeout** The time in milliseconds that the client will wait for a response from the remote when a drain request is made, if no response is seen in the alloted timeout period the link we be considered failed and the associated MessageConsumer will be closed.  The default timeout value is 60000.
++ **amqp.drainTimeout** The time in milliseconds that the client will wait for a response from the remote when a consumer drain request is made. If no response is seen in the allotted timeout period the link will be considered failed and the associated consumer will be closed. Default is 60000.
 
 ### Failover Configuration options
 
@@ -219,7 +219,7 @@ The complete set of configuration options for failover is listed below:
 + **failover.maxReconnectAttempts** The number of reconnection attempts allowed before reporting the connection as failed to the client.  The default is no limit or (-1).
 + **failover.startupMaxReconnectAttempts** For a client that has never connected to a remote peer before this option control how many attempts are made to connect before reporting the connection as failed.  The default is to use the value of maxReconnectAttempts.
 + **failover.warnAfterReconnectAttempts** Controls how often the client will log a message indicating that failover reconnection is being attempted.  The default is to log every 10 connection attempts.
-+ **failover.randomize** When true the set of failover URIs is randomly shuffled prior to attempting to connect to one of them.  This can help to distribute client connections more evenly across multiple remote peers.  The default value for this setting is to false.
++ **failover.randomize** When true the set of failover URIs is randomly shuffled prior to attempting to connect to one of them.  This can help to distribute client connections more evenly across multiple remote peers.  The default value is false.
 
 The failover URI also supports defining 'nested' options as a means of specifying AMQP and transport option values applicable to all the individual nested broker URI's, which can be useful to avoid repetition. This is accomplished using the same "transport." and "amqp." URI options outlined earlier for a non-failover broker URI but prefixed with *failover.nested.*. For example, to apply the same value for the *amqp.vhost* option to every broker connected to you might have a URI like:
 

@@ -40,7 +40,7 @@ import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderListener;
-import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageBuilder;
+import org.apache.qpid.jms.provider.amqp.message.AmqpCodec;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
@@ -420,7 +420,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         incoming.setDefaultDeliveryState(Released.getInstance());
         JmsMessage message = null;
         try {
-            message = AmqpJmsMessageBuilder.createJmsMessage(this, unwrapIncomingMessage(incoming));
+            message = AmqpCodec.decodeMessage(this, unwrapIncomingMessage(incoming)).asJmsMessage();
         } catch (Exception e) {
             LOG.warn("Error on transform: {}", e.getMessage());
             // TODO - We could signal provider error but not sure we want to fail

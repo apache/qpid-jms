@@ -29,8 +29,6 @@ import org.apache.qpid.jms.message.JmsMessageFactory;
 import org.apache.qpid.jms.message.JmsObjectMessage;
 import org.apache.qpid.jms.message.JmsStreamMessage;
 import org.apache.qpid.jms.message.JmsTextMessage;
-import org.apache.qpid.jms.message.facade.JmsObjectMessageFacade;
-import org.apache.qpid.jms.message.facade.JmsTextMessageFacade;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 
 /**
@@ -53,7 +51,9 @@ public class AmqpJmsMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsMessage createMessage() throws JMSException {
-        return new JmsMessage(new AmqpJmsMessageFacade(connection));
+        AmqpJmsMessageFacade facade = new AmqpJmsMessageFacade();
+        facade.initialize(connection);
+        return facade.asJmsMessage();
     }
 
     @Override
@@ -63,29 +63,35 @@ public class AmqpJmsMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsTextMessage createTextMessage(String payload) throws JMSException {
-
-        JmsTextMessageFacade facade = new AmqpJmsTextMessageFacade(connection);
+        AmqpJmsTextMessageFacade facade = new AmqpJmsTextMessageFacade();
+        facade.initialize(connection);
 
         if (payload != null) {
             facade.setText(payload);
         }
 
-        return new JmsTextMessage(facade);
+        return facade.asJmsMessage();
     }
 
     @Override
     public JmsBytesMessage createBytesMessage() throws JMSException {
-        return new JmsBytesMessage(new AmqpJmsBytesMessageFacade(connection));
+        AmqpJmsBytesMessageFacade facade = new AmqpJmsBytesMessageFacade();
+        facade.initialize(connection);
+        return facade.asJmsMessage();
     }
 
     @Override
     public JmsMapMessage createMapMessage() throws JMSException {
-        return new JmsMapMessage(new AmqpJmsMapMessageFacade(connection));
+        AmqpJmsMapMessageFacade facade = new AmqpJmsMapMessageFacade();
+        facade.initialize(connection);
+        return facade.asJmsMessage();
     }
 
     @Override
     public JmsStreamMessage createStreamMessage() throws JMSException {
-        return new JmsStreamMessage(new AmqpJmsStreamMessageFacade(connection));
+        AmqpJmsStreamMessageFacade facade = new AmqpJmsStreamMessageFacade();
+        facade.initialize(connection);
+        return facade.asJmsMessage();
     }
 
     @Override
@@ -95,9 +101,9 @@ public class AmqpJmsMessageFactory implements JmsMessageFactory {
 
     @Override
     public JmsObjectMessage createObjectMessage(Serializable payload) throws JMSException {
-        JmsObjectMessageFacade facade = new AmqpJmsObjectMessageFacade(
-            connection, connection.isObjectMessageUsesAmqpTypes());
+        AmqpJmsObjectMessageFacade facade = new AmqpJmsObjectMessageFacade();
 
+        facade.initialize(connection);
         if (payload != null) {
             try {
                 facade.setObject(payload);
@@ -106,6 +112,6 @@ public class AmqpJmsMessageFactory implements JmsMessageFactory {
             }
         }
 
-        return new JmsObjectMessage(facade);
+        return facade.asJmsMessage();
     }
 }

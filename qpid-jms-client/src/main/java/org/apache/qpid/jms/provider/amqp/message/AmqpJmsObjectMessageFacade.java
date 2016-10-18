@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
-import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MSG_TYPE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_OBJECT_MESSAGE;
 
 import java.io.IOException;
@@ -25,13 +24,11 @@ import java.io.Serializable;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
+import org.apache.qpid.jms.message.JmsObjectMessage;
 import org.apache.qpid.jms.message.facade.JmsObjectMessageFacade;
 import org.apache.qpid.jms.policy.JmsDeserializationPolicy;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
-import org.apache.qpid.proton.message.Message;
-
-import io.netty.buffer.ByteBuf;
 
 /**
  * Wrapper around an AMQP Message instance that will be treated as a JMS ObjectMessage
@@ -40,46 +37,20 @@ import io.netty.buffer.ByteBuf;
 public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements JmsObjectMessageFacade {
 
     private AmqpObjectTypeDelegate delegate;
+    private JmsDeserializationPolicy deserializationPolicy;
 
-    private final JmsDeserializationPolicy deserializationPolicy;
-
-    /**
-     * Creates a new facade instance for outgoing message
-     *
-     * @param connection
-     *        the AmqpConnection that under which this facade was created.
-     * @param isAmqpTypeEncoded
-     *        controls the type used to encode the body.
-     */
-    public AmqpJmsObjectMessageFacade(AmqpConnection connection, boolean isAmqpTypeEncoded) {
-        this(connection, isAmqpTypeEncoded, null);
+    @Override
+    public void initialize(AmqpConnection connection) {
+        super.initialize(connection);
+        initDelegate(connection.isObjectMessageUsesAmqpTypes());
     }
 
-    private AmqpJmsObjectMessageFacade(AmqpConnection connection, boolean isAmqpTypeEncoded, JmsDeserializationPolicy deserializationPolicy) {
-        super(connection);
-        this.deserializationPolicy = deserializationPolicy;
-
-        setMessageAnnotation(JMS_MSG_TYPE, JMS_OBJECT_MESSAGE);
-        initDelegate(isAmqpTypeEncoded, null);
-    }
-
-    /**
-     * Creates a new Facade around an incoming AMQP Message for dispatch to the
-     * JMS Consumer instance.
-     *
-     * @param consumer
-     *        the consumer that received this message.
-     * @param message
-     *        the incoming Message instance that is being wrapped.
-     * @param messageBytes
-     *        a copy of the raw bytes of the incoming message.
-     */
-    public AmqpJmsObjectMessageFacade(AmqpConsumer consumer, Message message, ByteBuf messageBytes) {
-        super(consumer, message);
+    @Override
+    public void initialize(AmqpConsumer consumer) {
+        super.initialize(consumer);
         deserializationPolicy = consumer.getResourceInfo().getDeserializationPolicy();
-
-        boolean javaSerialized = AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE.equals(message.getContentType());
-        initDelegate(!javaSerialized, messageBytes);
+        boolean javaSerialized = AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE.equals(getContentType());
+        initDelegate(!javaSerialized);
     }
 
     /**
@@ -96,7 +67,9 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
 
     @Override
     public AmqpJmsObjectMessageFacade copy() throws JMSException {
-        AmqpJmsObjectMessageFacade copy = new AmqpJmsObjectMessageFacade(connection, isAmqpTypedEncoding(), deserializationPolicy);
+        AmqpJmsObjectMessageFacade copy = new AmqpJmsObjectMessageFacade();
+        copy.deserializationPolicy = deserializationPolicy;
+        copy.initDelegate(isAmqpTypedEncoding());
         copyInto(copy);
         try {
             delegate.copyInto(copy.delegate);
@@ -135,6 +108,11 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
         delegate.onSend();
     }
 
+    @Override
+    public JmsObjectMessage asJmsMessage() {
+        return new JmsObjectMessage(this);
+    }
+
     void setUseAmqpTypedEncoding(boolean useAmqpTypedEncoding) throws JMSException {
         if (useAmqpTypedEncoding != delegate.isAmqpTypeEncoded()) {
             try {
@@ -142,9 +120,9 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
 
                 AmqpObjectTypeDelegate newDelegate = null;
                 if (useAmqpTypedEncoding) {
-                    newDelegate = new AmqpTypedObjectDelegate(this, null);
+                    newDelegate = new AmqpTypedObjectDelegate(this);
                 } else {
-                    newDelegate = new AmqpSerializedObjectDelegate(this, null, deserializationPolicy);
+                    newDelegate = new AmqpSerializedObjectDelegate(this, deserializationPolicy);
                 }
 
                 newDelegate.setObject(existingObject);
@@ -156,11 +134,11 @@ public class AmqpJmsObjectMessageFacade extends AmqpJmsMessageFacade implements 
         }
     }
 
-    private void initDelegate(boolean useAmqpTypes, ByteBuf messageBytes) {
+    private void initDelegate(boolean useAmqpTypes) {
         if (!useAmqpTypes) {
-            delegate = new AmqpSerializedObjectDelegate(this, messageBytes, deserializationPolicy);
+            delegate = new AmqpSerializedObjectDelegate(this, deserializationPolicy);
         } else {
-            delegate = new AmqpTypedObjectDelegate(this, messageBytes);
+            delegate = new AmqpTypedObjectDelegate(this);
         }
     }
 

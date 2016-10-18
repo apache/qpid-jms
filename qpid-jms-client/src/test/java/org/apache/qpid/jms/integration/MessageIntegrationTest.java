@@ -38,11 +38,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.jms.CompletionListener;
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageNotWriteableException;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
@@ -1970,6 +1972,103 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             producer.send(message);
 
             testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncSendMarksMessageReadOnly() throws Exception {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setSendTimeout(15000);
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String queueName = "myQueue";
+            Queue queue = session.createQueue(queueName);
+
+            Message message = session.createMessage();
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+
+            // Expect the producer to attach and grant it some credit, it should send
+            // a transfer which we will not send any response so that we can check that
+            // the inflight message is read-only
+            testPeer.expectSenderAttach();
+            testPeer.expectTransferButDoNotRespond(messageMatcher);
+            testPeer.expectClose();
+
+            MessageProducer producer = session.createProducer(queue);
+            TestJmsCompletionListener listener = new TestJmsCompletionListener();
+
+            try {
+                producer.send(message, listener);
+            } catch (Throwable error) {
+                fail("Send should not fail for async.");
+            }
+
+            try {
+                message.setJMSCorrelationID("test");
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSCorrelationIDAsBytes(new byte[]{});
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSDeliveryMode(0);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSDestination(queue);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSExpiration(0);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSMessageID(queueName);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSPriority(0);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSRedelivered(false);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSReplyTo(queue);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSTimestamp(0);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSType(queueName);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setStringProperty("test", "test");
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    private class TestJmsCompletionListener implements CompletionListener {
+
+        @Override
+        public void onCompletion(Message message) {
+        }
+
+        @Override
+        public void onException(Message message, Exception exception) {
         }
     }
 }

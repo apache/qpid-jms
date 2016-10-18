@@ -47,8 +47,7 @@ public class AmqpJmsMapMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
     public void testNewMessageToSendContainsMessageTypeAnnotation() throws Exception {
         AmqpJmsMapMessageFacade amqpMapMessageFacade = createNewMapMessageFacade();
 
-        Message protonMessage = amqpMapMessageFacade.getAmqpMessage();
-        MessageAnnotations annotations = protonMessage.getMessageAnnotations();
+        MessageAnnotations annotations = amqpMapMessageFacade.getMessageAnnotations();
         Map<Symbol, Object> annotationsMap = annotations.getValue();
 
         assertNotNull("MessageAnnotations section was not present", annotations);

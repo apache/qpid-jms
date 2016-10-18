@@ -27,12 +27,6 @@ import org.apache.qpid.jms.JmsDestination;
  * own Message type and the JMS Message types.  A Provider can implement the Facade
  * interface and offer direct access to its message types without the need to
  * copy to / from a more generic JMS message instance.
- *
- * TODO - What exceptions if any do we really need to be throwing here.  For get methods
- *        we should synthesize an answer regardless and for set most of the checking for
- *        JMS compliance happens in the JMS message level.  Methods like setMessageId and
- *        setCorrelationId might need to although we should try and validate some at the
- *        upper level.
  */
 public interface JmsMessageFacade {
 
@@ -90,6 +84,7 @@ public interface JmsMessageFacade {
      * The method allows for passing through producer configuration details not
      * explicitly mapped into the JMS Message allowing the facade to create the
      * most correct and compact message on the wire.
+     *
      * @param producerTtl
      *        the time to live value configured on the producer when sent.
      *
@@ -454,5 +449,12 @@ public interface JmsMessageFacade {
      * @return true if the underlying message has a body, false if the body is empty.
      */
     boolean hasBody();
+
+    /**
+     * Encodes the protocol level Message instance for transmission.
+     *
+     * @return an Object that represents the encoded form of the message for the target provider.
+     */
+    Object encodeMessage();
 
 }

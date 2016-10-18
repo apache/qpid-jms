@@ -199,8 +199,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             MessageProducer producer = session.createProducer(queue);
 
             // Create and transfer a new message
-            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true)
-                    .withDurable(equalTo(true));
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
@@ -233,8 +232,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             // Create and transfer a new message, explicitly setting the deliveryMode on the
             // message (which applications shouldn't) to NON_PERSISTENT and sending it to check
             // that the producer ignores this value and sends the message as PERSISTENT(/durable)
-            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true)
-                    .withDurable(equalTo(true));
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
@@ -320,11 +318,9 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             Matcher<Date> inRange = both(greaterThanOrEqualTo(creationLower)).and(lessThanOrEqualTo(creationUpper));
 
             String text = "myMessage";
-            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true)
-                    .withDurable(equalTo(true));
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
-            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true)
-                    .withCreationTime(inRange);
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true).withCreationTime(inRange);
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
             messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
@@ -416,8 +412,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             headersMatcher.withDurable(equalTo(true));
             headersMatcher.withTtl(equalTo(UnsignedInteger.valueOf(ttl)));
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
-            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true)
-                    .withAbsoluteExpiryTime(inRange);
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true).withAbsoluteExpiryTime(inRange);
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
             messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
@@ -475,8 +470,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                 headersMatcher.withTtl(equalTo(UnsignedInteger.valueOf(amqpTtl)));
             }
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
-            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true)
-                    .withAbsoluteExpiryTime(inRange);
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true).withAbsoluteExpiryTime(inRange);
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
             messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
@@ -1031,8 +1025,6 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             Queue queue = session.createQueue("myQueue");
             final MessageProducer producer = session.createProducer(queue);
 
-            Message message = session.createTextMessage("content");
-
             final int MSG_COUNT = 3;
 
             for (int i = 0; i < MSG_COUNT; ++i) {
@@ -1044,6 +1036,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             TestJmsCompletionListener listener = new TestJmsCompletionListener(MSG_COUNT);
             try {
                 for (int i = 0; i < MSG_COUNT; ++i) {
+                    Message message = session.createTextMessage("content");
                     producer.send(message, listener);
                 }
             } catch (JMSException e) {

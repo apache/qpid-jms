@@ -31,6 +31,7 @@ public class JmsOutboundMessageDispatch {
     private boolean presettle;
     private boolean completionRequired;
     private long dispatchId;
+    private Object payload;
 
     private transient String stringView;
 
@@ -52,6 +53,14 @@ public class JmsOutboundMessageDispatch {
 
     public void setMessage(JmsMessage message) {
         this.message = message;
+    }
+
+    public Object getPayload() {
+        return payload;
+    }
+
+    public void setPayload(Object payload) {
+        this.payload = payload;
     }
 
     public JmsProducerId getProducerId() {

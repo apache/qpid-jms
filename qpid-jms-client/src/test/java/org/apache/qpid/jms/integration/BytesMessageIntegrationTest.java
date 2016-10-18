@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -29,14 +30,17 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import javax.jms.BytesMessage;
+import javax.jms.CompletionListener;
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageNotWriteableException;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
+import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -381,6 +385,107 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncSendMarksBytesMessageReadOnly() throws Exception {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setSendTimeout(15000);
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String queueName = "myQueue";
+            Queue queue = session.createQueue(queueName);
+
+            BytesMessage message = session.createBytesMessage();
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+
+            // Expect the producer to attach and grant it some credit, it should send
+            // a transfer which we will not send any response so that we can check that
+            // the inflight message is read-only
+            testPeer.expectSenderAttach();
+            testPeer.expectTransferButDoNotRespond(messageMatcher);
+            testPeer.expectClose();
+
+            MessageProducer producer = session.createProducer(queue);
+            TestJmsCompletionListener listener = new TestJmsCompletionListener();
+
+            try {
+                producer.send(message, listener);
+            } catch (Throwable error) {
+                fail("Send should not fail for async.");
+            }
+
+            try {
+                message.setJMSCorrelationID("test");
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSCorrelationIDAsBytes(new byte[]{});
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSDeliveryMode(0);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSDestination(queue);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSExpiration(0);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSMessageID(queueName);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSPriority(0);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSRedelivered(false);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSReplyTo(queue);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSTimestamp(0);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSType(queueName);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setStringProperty("test", "test");
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.writeBoolean(true);
+                fail("Message should not be writable after a send.");
+            } catch (MessageNotWriteableException mnwe) {}
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    private class TestJmsCompletionListener implements CompletionListener {
+
+        @Override
+        public void onCompletion(Message message) {
+        }
+
+        @Override
+        public void onException(Message message, Exception exception) {
         }
     }
 }

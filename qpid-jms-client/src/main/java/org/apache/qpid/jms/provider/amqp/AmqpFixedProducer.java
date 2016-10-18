@@ -29,11 +29,9 @@ import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsSendTimedOutException;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
-import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
-import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageFacade;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
@@ -47,9 +45,10 @@ import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Sender;
-import org.apache.qpid.proton.message.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.buffer.ByteBuf;
 
 /**
  * AMQP Producer object that is used to manage JMS MessageProducer semantics.
@@ -64,7 +63,6 @@ public class AmqpFixedProducer extends AmqpProducer {
     private final AmqpTransferTagGenerator tagGenerator = new AmqpTransferTagGenerator(true);
     private final Map<Object, InFlightSend> sent = new LinkedHashMap<Object, InFlightSend>();
     private final Map<Object, InFlightSend> blocked = new LinkedHashMap<Object, InFlightSend>();
-    private byte[] encodeBuffer = new byte[1024 * 8];
 
     private AsyncResult sendCompletionWatcher;
 
@@ -128,7 +126,6 @@ public class AmqpFixedProducer extends AmqpProducer {
 
         LOG.trace("Producer sending message: {}", envelope);
 
-        JmsMessageFacade facade = envelope.getMessage().getFacade();
         boolean presettle = envelope.isPresettle() || isPresettle();
         Delivery delivery = null;
 
@@ -148,8 +145,9 @@ public class AmqpFixedProducer extends AmqpProducer {
             context.registerTxProducer(this);
         }
 
-        AmqpJmsMessageFacade amqpMessageFacade = (AmqpJmsMessageFacade) facade;
-        encodeAndSend(amqpMessageFacade.getAmqpMessage(), delivery);
+        // Write the already encoded AMQP message into the Sender
+        ByteBuf encoded = (ByteBuf) envelope.getPayload();
+        getEndpoint().send(encoded.array(), encoded.arrayOffset() + encoded.readerIndex(), encoded.readableBytes());
 
         AmqpProvider provider = getParent().getProvider();
 
@@ -186,33 +184,6 @@ public class AmqpFixedProducer extends AmqpProducer {
                 send.onSuccess();
             } else if (envelope.isSendAsync()) {
                 send.getOriginalRequest().onSuccess();
-            }
-        }
-    }
-
-    private void encodeAndSend(Message message, Delivery delivery) throws IOException {
-
-        int encodedSize;
-        while (true) {
-            try {
-                encodedSize = message.encode(encodeBuffer, 0, encodeBuffer.length);
-                break;
-            } catch (java.nio.BufferOverflowException e) {
-                encodeBuffer = new byte[encodeBuffer.length * 2];
-            }
-        }
-
-        int sentSoFar = 0;
-
-        while (true) {
-            int sent = getEndpoint().send(encodeBuffer, sentSoFar, encodedSize - sentSoFar);
-            if (sent > 0) {
-                sentSoFar += sent;
-                if ((encodedSize - sentSoFar) == 0) {
-                    break;
-                }
-            } else {
-                LOG.warn("{} failed to send any data from current Message.", this);
             }
         }
     }
@@ -432,6 +403,9 @@ public class AmqpFixedProducer extends AmqpProducer {
             } else {
                 blocked.remove(envelope.getMessageId());
             }
+
+            // Put the message back to usable state following send complete
+            envelope.getMessage().onSendComplete();
 
             // TODO - Should this take blocked sends into consideration.
             // Signal the watcher that all pending sends have completed if one is registered

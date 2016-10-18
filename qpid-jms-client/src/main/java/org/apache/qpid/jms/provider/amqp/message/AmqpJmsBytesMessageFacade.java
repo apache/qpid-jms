@@ -17,7 +17,6 @@
 package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_BYTES_MESSAGE;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MSG_TYPE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE;
 
 import java.io.IOException;
@@ -27,14 +26,12 @@ import java.io.OutputStream;
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 
+import org.apache.qpid.jms.message.JmsBytesMessage;
 import org.apache.qpid.jms.message.facade.JmsBytesMessageFacade;
-import org.apache.qpid.jms.provider.amqp.AmqpConnection;
-import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.Section;
-import org.apache.qpid.proton.message.Message;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
@@ -53,45 +50,26 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
     private transient ByteBufInputStream bytesIn;
     private transient ByteBufOutputStream bytesOut;
 
-    /**
-     * Creates a new facade instance
-     *
-     * @param connection
-     *        the AmqpConnection that under which this facade was created.
-     */
-    public AmqpJmsBytesMessageFacade(AmqpConnection connection) {
-        super(connection);
+    @Override
+    protected void initializeEmptyBody() {
         setContentType(OCTET_STREAM_CONTENT_TYPE);
-        setMessageAnnotation(JMS_MSG_TYPE, JMS_BYTES_MESSAGE);
-        getAmqpMessage().setBody(EMPTY_BODY);
-    }
-
-    /**
-     * Creates a new Facade around an incoming AMQP Message for dispatch to the
-     * JMS Consumer instance.
-     *
-     * @param consumer
-     *        the consumer that received this message.
-     * @param message
-     *        the incoming Message instance that is being wrapped.
-     */
-    public AmqpJmsBytesMessageFacade(AmqpConsumer consumer, Message message) {
-        super(consumer, message);
+        setBody(EMPTY_BODY);
     }
 
     @Override
     public AmqpJmsBytesMessageFacade copy() {
         reset();
-        AmqpJmsBytesMessageFacade copy = new AmqpJmsBytesMessageFacade(connection);
+        AmqpJmsBytesMessageFacade copy = new AmqpJmsBytesMessageFacade();
         copyInto(copy);
 
         Binary payload = getBinaryFromBody();
+        copy.setContentType(OCTET_STREAM_CONTENT_TYPE);
         if (payload.getLength() > 0) {
             byte[] result = new byte[payload.getLength()];
             System.arraycopy(payload.getArray(), payload.getArrayOffset(), result, 0, payload.getLength());
-            copy.message.setBody(new Data(new Binary(result)));
+            copy.setBody(new Data(new Binary(result)));
         } else {
-            copy.message.setBody(EMPTY_BODY);
+            copy.setBody(EMPTY_BODY);
         }
 
         return copy;
@@ -120,7 +98,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
             bytesOut = null;
         }
 
-        message.setBody(EMPTY_BODY);
+        setBody(EMPTY_BODY);
     }
 
     @Override
@@ -147,7 +125,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
 
         if (bytesOut == null) {
             bytesOut = new ByteBufOutputStream(Unpooled.buffer());
-            message.setBody(EMPTY_BODY);
+            setBody(EMPTY_BODY);
         }
 
         return bytesOut;
@@ -158,7 +136,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
         if (bytesOut != null) {
             ByteBuf writeBuf = bytesOut.buffer();
             Binary body = new Binary(writeBuf.array(), writeBuf.arrayOffset(), writeBuf.readableBytes());
-            message.setBody(new Data(body));
+            setBody(new Data(body));
             try {
                 bytesOut.close();
             } catch (IOException e) {
@@ -185,7 +163,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
      * @return the body binary, or empty substitute if there is none
      */
     private Binary getBinaryFromBody() {
-        Section body = getAmqpMessage().getBody();
+        Section body = getBody();
         Binary result = EMPTY_BINARY;
 
         if (body == null) {
@@ -219,6 +197,11 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
     @Override
     public boolean hasBody() {
         return getBinaryFromBody().getLength() != 0;
+    }
+
+    @Override
+    public JmsBytesMessage asJmsMessage() {
+        return new JmsBytesMessage(this);
     }
 
     @Override

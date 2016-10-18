@@ -393,6 +393,12 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
     }
 
     @Override
+    public void onSend(long producerTtl) throws JMSException {
+        reset();
+        super.onSend(producerTtl);
+    }
+
+    @Override
     public String toString() {
         return "JmsBytesMessage { " + facade + " }";
     }

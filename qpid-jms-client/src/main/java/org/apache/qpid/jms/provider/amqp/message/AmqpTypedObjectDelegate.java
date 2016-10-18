@@ -16,20 +16,15 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
-import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.decodeMessage;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.encodeMessage;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.Section;
-import org.apache.qpid.proton.message.Message;
 
 import io.netty.buffer.ByteBuf;
 
@@ -41,39 +36,31 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
 
     static final AmqpValue NULL_OBJECT_BODY = new AmqpValue(null);
 
-    private final Message message;
-    private final AtomicReference<Section> cachedReceivedBody = new AtomicReference<Section>();
-    private ByteBuf messageBytes;
+    private ByteBuf encodedBody;
+    private final AmqpJmsMessageFacade parent;
 
     /**
      * Create a new delegate that uses Java serialization to store the message content.
      *
      * @param parent
      *        the AMQP message facade instance where the object is to be stored / read.
-     * @param messageBytes
-     *        the raw bytes that comprise the AMQP message that was received.
      */
-    public AmqpTypedObjectDelegate(AmqpJmsMessageFacade parent, ByteBuf messageBytes) {
-        this.message = parent.getAmqpMessage();
-        this.message.setContentType(null);
-        this.messageBytes = messageBytes;
+    public AmqpTypedObjectDelegate(AmqpJmsMessageFacade parent) {
+        this.parent = parent;
+        this.parent.setContentType(null);
 
-        // Cache the body so the first access can grab it without extra work.
-        if (messageBytes != null) {
-            cachedReceivedBody.set(message.getBody());
+        // Create a duplicate of the message body for decode on read attempts
+        if (parent.getBody() != null) {
+            encodedBody = AmqpCodec.encode(parent.getBody());
         }
     }
 
     @Override
     public Serializable getObject() throws IOException, ClassNotFoundException {
-        Section body = cachedReceivedBody.getAndSet(null);
+        Section body = null;
 
-        if (body == null) {
-            if (messageBytes != null) {
-                body = decodeMessage(messageBytes).getBody();
-            } else {
-                body = message.getBody();
-            }
+        if (encodedBody != null) {
+            body = AmqpCodec.decode(encodedBody);
         }
 
         if (body == null) {
@@ -98,20 +85,15 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
 
     @Override
     public void setObject(Serializable value) throws IOException {
-        cachedReceivedBody.set(null);
-
         if (value == null) {
-            message.setBody(NULL_OBJECT_BODY);
-            messageBytes = null;
+            parent.setBody(NULL_OBJECT_BODY);
+            encodedBody = null;
         } else if (isSupportedAmqpValueObjectType(value)) {
-            Message transfer = Message.Factory.create();
-
             // Exchange the incoming body value for one that is created from encoding
             // and decoding the value. Save the bytes for subsequent getObject and
             // copyInto calls to use.
-            transfer.setBody(new AmqpValue(value));
-            messageBytes = encodeMessage(transfer);
-            transfer = decodeMessage(messageBytes);
+            encodedBody = AmqpCodec.encode(new AmqpValue(value));
+            Section decodedBody = AmqpCodec.decode(encodedBody);
 
             // This step requires a heavy-weight operation of both encoding and decoding the
             // incoming body value in order to create a copy such that changes to the original
@@ -120,7 +102,7 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
             // proton such that we can encode the body and use those bytes directly on the
             // message as it is being sent.
 
-            message.setBody(transfer.getBody());
+            parent.setBody(decodedBody);
         } else {
             // TODO: Data and AmqpSequence?
             throw new IllegalArgumentException("Encoding this object type with the AMQP type system is not supported: " + value.getClass().getName());
@@ -129,9 +111,9 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
 
     @Override
     public void onSend() {
-        message.setContentType(null);
-        if (message.getBody() == null) {
-            message.setBody(NULL_OBJECT_BODY);
+        parent.setContentType(null);
+        if (parent.getBody() == null) {
+            parent.setBody(NULL_OBJECT_BODY);
         }
     }
 
@@ -142,23 +124,17 @@ public class AmqpTypedObjectDelegate implements AmqpObjectTypeDelegate {
         } else {
             AmqpTypedObjectDelegate target = (AmqpTypedObjectDelegate) copy;
 
-            // Swap our cached value (if any) to the copy, we will just decode it if we need it later.
-            target.cachedReceivedBody.set(cachedReceivedBody.getAndSet(null));
-
-            if (messageBytes != null) {
-                // If we have the original bytes just copy those and let the next get
-                // decode them into the payload (or for the copy, use the cached
-                // body if it was swapped above).
-                target.messageBytes = messageBytes.copy();
+            // If there ever was a body then we will have a snapshot of it and we can
+            // be sure that our state is correct.
+            if (encodedBody != null) {
+                // If we have any body bytes just duplicate those and let the next get
+                // decode them into the returned object payload value.
+                target.encodedBody = encodedBody.duplicate();
 
                 // Internal message body copy to satisfy sends. This is safe since the body was set
                 // from a copy (decoded from the bytes) to ensure it is a snapshot. Also safe for
                 // gets as they will use the message bytes (or cached body if set) to return the object.
-                target.message.setBody(message.getBody());
-            } else {
-                // We have to deep get/set copy here, otherwise a get might return
-                // the object value carried by the original version.
-                copy.setObject(getObject());
+                target.parent.setBody(parent.getBody());
             }
         }
     }

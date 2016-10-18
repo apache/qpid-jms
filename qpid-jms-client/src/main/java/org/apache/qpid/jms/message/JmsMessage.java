@@ -42,6 +42,7 @@ public class JmsMessage implements javax.jms.Message {
     protected transient JmsConnection connection;
 
     protected final JmsMessageFacade facade;
+    protected boolean readOnly;
     protected boolean readOnlyBody;
     protected boolean readOnlyProperties;
     protected boolean validatePropertyNames = true;
@@ -123,6 +124,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void clearBody() throws JMSException {
+        checkReadOnly();
         readOnlyBody = false;
         facade.clearBody();
     }
@@ -133,6 +135,14 @@ public class JmsMessage implements javax.jms.Message {
 
     public void setValidatePropertyNames(boolean validatePropertyNames) {
         this.validatePropertyNames = validatePropertyNames;
+    }
+
+    public boolean isReadOnly() {
+        return this.readOnly;
+    }
+
+    public void setReadOnly(boolean readOnly) {
+        this.readOnly = readOnly;
     }
 
     public boolean isReadOnlyBody() {
@@ -163,6 +173,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void setJMSMessageID(String value) throws JMSException {
+        checkReadOnly();
         facade.setMessageId(value);
     }
 
@@ -173,6 +184,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void setJMSTimestamp(long timestamp) throws JMSException {
+        checkReadOnly();
         facade.setTimestamp(timestamp);
     }
 
@@ -183,6 +195,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void setJMSCorrelationID(String correlationId) throws JMSException {
+        checkReadOnly();
         facade.setCorrelationId(correlationId);
     }
 
@@ -193,6 +206,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void setJMSCorrelationIDAsBytes(byte[] correlationId) throws JMSException {
+        checkReadOnly();
         facade.setCorrelationIdBytes(correlationId);
     }
 
@@ -203,6 +217,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void setJMSReplyTo(Destination destination) throws JMSException {
+        checkReadOnly();
         facade.setReplyTo(JmsMessageTransformation.transformDestination(connection, destination));
     }
 
@@ -213,6 +228,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void setJMSDestination(Destination destination) throws JMSException {
+        checkReadOnly();
         facade.setDestination(JmsMessageTransformation.transformDestination(connection, destination));
     }
 
@@ -223,6 +239,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void setJMSDeliveryMode(int mode) throws JMSException {
+        checkReadOnly();
         facade.setPersistent(mode == DeliveryMode.PERSISTENT);
     }
 
@@ -233,6 +250,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void setJMSRedelivered(boolean redelivered) throws JMSException {
+        checkReadOnly();
         facade.setRedelivered(redelivered);
     }
 
@@ -243,6 +261,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void setJMSType(String type) throws JMSException {
+        checkReadOnly();
         facade.setType(type);
     }
 
@@ -253,6 +272,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void setJMSExpiration(long expiration) throws JMSException {
+        checkReadOnly();
         facade.setExpiration(expiration);
     }
 
@@ -263,6 +283,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void setJMSPriority(int priority) throws JMSException {
+        checkReadOnly();
         facade.setPriority(priority);
     }
 
@@ -273,11 +294,13 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void setJMSDeliveryTime(long deliveryTime) throws JMSException {
+        checkReadOnly();
         facade.setDeliveryTime(deliveryTime);
     }
 
     @Override
     public void clearProperties() throws JMSException {
+        checkReadOnly();
         JmsMessagePropertyIntercepter.clearProperties(this, true);
     }
 
@@ -307,6 +330,7 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void setObjectProperty(String name, Object value) throws JMSException {
+        checkReadOnly();
         JmsMessagePropertyIntercepter.setProperty(this, name, value);
     }
 
@@ -406,7 +430,9 @@ public class JmsMessage implements javax.jms.Message {
     /**
      * Used to trigger processing required to place the message in a state where it is
      * ready to be written to the wire.  This processing can include such tasks as ensuring
-     * that the proper message headers are set or compressing message bodies etc.
+     * that the proper message headers are set or compressing message bodies etc.  During this
+     * call the message is placed in a read-only mode and will not be returned to a writable
+     * state until send completion is triggered.
      *
      * @param producerTtl
      *        the time to live value that the producer was configured with at send time.
@@ -414,19 +440,27 @@ public class JmsMessage implements javax.jms.Message {
      * @throws JMSException if an error occurs while preparing the message for send.
      */
     public void onSend(long producerTtl) throws JMSException {
-        setReadOnlyBody(true);
-        setReadOnlyProperties(true);
+        setReadOnly(true);
         facade.onSend(producerTtl);
     }
 
     /**
+     * Used to trigger processing required to place the message into a writable state once
+     * again following completion of the send operation.
+     */
+    public void onSendComplete() {
+        setReadOnly(false);
+    }
+
+    /**
      * Used to trigger processing required before dispatch of a message to its intended
-     * consumer.  This method should perform any needed unmarshal or message property
+     * consumer.  This method should perform any needed decoding or message property
      * processing prior to the message arriving at a consumer.
      *
      * @throws JMSException if an error occurs while preparing the message for dispatch.
      */
     public void onDispatch() throws JMSException {
+        setReadOnly(false);
         setReadOnlyBody(true);
         setReadOnlyProperties(true);
         facade.onDispatch();
@@ -456,14 +490,20 @@ public class JmsMessage implements javax.jms.Message {
 
     //----- State validation methods -----------------------------------------//
 
+    protected void checkReadOnly() throws MessageNotWriteableException {
+        if (readOnly) {
+            throw new MessageNotWriteableException("Message is currently read-only");
+        }
+    }
+
     protected void checkReadOnlyProperties() throws MessageNotWriteableException {
-        if (readOnlyProperties) {
+        if (readOnly || readOnlyProperties) {
             throw new MessageNotWriteableException("Message properties are read-only");
         }
     }
 
     protected void checkReadOnlyBody() throws MessageNotWriteableException {
-        if (readOnlyBody) {
+        if (readOnly || readOnlyBody) {
             throw new MessageNotWriteableException("Message body is read-only");
         }
     }

@@ -19,6 +19,7 @@ package org.apache.qpid.jms.provider.amqp.message;
 import java.util.Map;
 
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.message.Message;
 
 import io.netty.buffer.ByteBuf;
@@ -117,14 +118,14 @@ public final class AmqpMessageSupport {
      *
      * @param key
      *        the String key to use to lookup an annotation.
-     * @param message
-     *        the AMQP message object that is being examined.
+     * @param messageAnnotations
+     *        the AMQP message annotations object that is being examined.
      *
      * @return the given annotation value or null if not present in the message.
      */
-    public static Object getMessageAnnotation(String key, Message message) {
-        if (message != null && message.getMessageAnnotations() != null) {
-            Map<Symbol, Object> annotations = message.getMessageAnnotations().getValue();
+    public static Object getMessageAnnotation(String key, MessageAnnotations messageAnnotations) {
+        if (messageAnnotations != null && messageAnnotations.getValue() != null) {
+            Map<Symbol, Object> annotations = messageAnnotations.getValue();
             return annotations.get(AmqpMessageSupport.getSymbol(key));
         }
 
@@ -138,16 +139,18 @@ public final class AmqpMessageSupport {
      *
      * @param contentType
      *        content type string to compare against, or null if none
-     * @param message
-     *        the AMQP message object that is being examined.
+     * @param messageContentType
+     *        the content type value read from an AMQP message object.
      *
      * @return true if content type matches
      */
-    public static boolean isContentType(String contentType, Message message) {
+    public static boolean isContentType(String contentType, Symbol messageContentType) {
         if (contentType == null) {
-            return message.getContentType() == null;
+            return messageContentType == null;
+        } else if (messageContentType == null) {
+            return false;
         } else {
-            return contentType.equals(message.getContentType());
+            return contentType.equals(messageContentType.toString());
         }
     }
 

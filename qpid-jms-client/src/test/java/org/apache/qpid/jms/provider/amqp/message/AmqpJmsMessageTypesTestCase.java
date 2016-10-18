@@ -16,10 +16,6 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
-import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.encodeMessage;
-
-import java.nio.charset.StandardCharsets;
-
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.meta.JmsConnectionId;
@@ -47,51 +43,86 @@ public class AmqpJmsMessageTypesTestCase extends QpidJmsTestCase {
     //---------- Test Support Methods ----------------------------------------//
 
     protected AmqpJmsMessageFacade createNewMessageFacade() {
-        return new AmqpJmsMessageFacade(createMockAmqpConnection());
+        AmqpJmsMessageFacade facade = new AmqpJmsMessageFacade();
+        facade.initialize(createMockAmqpConnection());
+        return facade;
     }
 
     protected AmqpJmsMessageFacade createReceivedMessageFacade(AmqpConsumer amqpConsumer, Message message) {
-        return new AmqpJmsMessageFacade(amqpConsumer, message);
+        AmqpJmsMessageFacade facade = new AmqpJmsMessageFacade();
+        initializeReceivedMessage(facade, amqpConsumer, message);
+        return facade;
     }
 
     protected AmqpJmsTextMessageFacade createNewTextMessageFacade() {
-        return new AmqpJmsTextMessageFacade(createMockAmqpConnection());
+        AmqpJmsTextMessageFacade facade = new AmqpJmsTextMessageFacade();
+        facade.initialize(createMockAmqpConnection());
+        return facade;
     }
 
     protected AmqpJmsTextMessageFacade createReceivedTextMessageFacade(AmqpConsumer amqpConsumer, Message message) {
-        return new AmqpJmsTextMessageFacade(amqpConsumer, message, StandardCharsets.UTF_8);
+        AmqpJmsTextMessageFacade facade = new AmqpJmsTextMessageFacade();
+        initializeReceivedMessage(facade, amqpConsumer, message);
+        return facade;
     }
 
     protected AmqpJmsBytesMessageFacade createNewBytesMessageFacade() {
-        return new AmqpJmsBytesMessageFacade(createMockAmqpConnection());
+        AmqpJmsBytesMessageFacade facade = new AmqpJmsBytesMessageFacade();
+        facade.initialize(createMockAmqpConnection());
+        return facade;
     }
 
     protected AmqpJmsBytesMessageFacade createReceivedBytesMessageFacade(AmqpConsumer amqpConsumer, Message message) {
-        return new AmqpJmsBytesMessageFacade(amqpConsumer, message);
+        AmqpJmsBytesMessageFacade facade = new AmqpJmsBytesMessageFacade();
+        initializeReceivedMessage(facade, amqpConsumer, message);
+        return facade;
     }
 
     protected AmqpJmsMapMessageFacade createNewMapMessageFacade() {
-        return new AmqpJmsMapMessageFacade(createMockAmqpConnection());
+        AmqpJmsMapMessageFacade facade = new AmqpJmsMapMessageFacade();
+        facade.initialize(createMockAmqpConnection());
+        return facade;
     }
 
     protected AmqpJmsMapMessageFacade createReceivedMapMessageFacade(AmqpConsumer amqpConsumer, Message message) {
-        return new AmqpJmsMapMessageFacade(amqpConsumer, message);
+        AmqpJmsMapMessageFacade facade = new AmqpJmsMapMessageFacade();
+        initializeReceivedMessage(facade, amqpConsumer, message);
+        return facade;
     }
 
     protected AmqpJmsStreamMessageFacade createNewStreamMessageFacade() {
-        return new AmqpJmsStreamMessageFacade(createMockAmqpConnection());
+        AmqpJmsStreamMessageFacade facade = new AmqpJmsStreamMessageFacade();
+        facade.initialize(createMockAmqpConnection());
+        return facade;
     }
 
     protected AmqpJmsStreamMessageFacade createReceivedStreamMessageFacade(AmqpConsumer amqpConsumer, Message message) {
-        return new AmqpJmsStreamMessageFacade(amqpConsumer, message);
+        AmqpJmsStreamMessageFacade facade = new AmqpJmsStreamMessageFacade();
+        initializeReceivedMessage(facade, amqpConsumer, message);
+        return facade;
     }
 
     protected AmqpJmsObjectMessageFacade createNewObjectMessageFacade(boolean amqpTyped) {
-        return new AmqpJmsObjectMessageFacade(createMockAmqpConnection(), amqpTyped);
+        AmqpJmsObjectMessageFacade facade = new AmqpJmsObjectMessageFacade();
+        facade.initialize(createMockAmqpConnection(amqpTyped));
+        return facade;
     }
 
     protected AmqpJmsObjectMessageFacade createReceivedObjectMessageFacade(AmqpConsumer amqpConsumer, Message message) {
-        return new AmqpJmsObjectMessageFacade(amqpConsumer, message, encodeMessage(message));
+        AmqpJmsObjectMessageFacade facade = new AmqpJmsObjectMessageFacade();
+        initializeReceivedMessage(facade, amqpConsumer, message);
+        return facade;
+    }
+
+    protected void initializeReceivedMessage(AmqpJmsMessageFacade facade, AmqpConsumer amqpConsumer, Message message) {
+        facade.setHeader(message.getHeader());
+        facade.setDeliveryAnnotations(message.getDeliveryAnnotations());
+        facade.setMessageAnnotations(message.getMessageAnnotations());
+        facade.setProperties(message.getProperties());
+        facade.setApplicationProperties(message.getApplicationProperties());
+        facade.setBody(message.getBody());
+        facade.setFooter(message.getFooter());
+        facade.initialize(amqpConsumer);
     }
 
     protected AmqpConsumer createMockAmqpConsumer() {
@@ -105,9 +136,14 @@ public class AmqpJmsMessageTypesTestCase extends QpidJmsTestCase {
     }
 
     protected AmqpConnection createMockAmqpConnection() {
+        return createMockAmqpConnection(false);
+    }
+
+    protected AmqpConnection createMockAmqpConnection(boolean amqpTyped) {
         JmsConnectionId connectionId = new JmsConnectionId("ID:MOCK:1");
         AmqpConnection connection = Mockito.mock(AmqpConnection.class);
         Mockito.when(connection.getResourceInfo()).thenReturn(new JmsConnectionInfo(connectionId));
+        Mockito.when(connection.isObjectMessageUsesAmqpTypes()).thenReturn(amqpTyped);
 
         return connection;
     }

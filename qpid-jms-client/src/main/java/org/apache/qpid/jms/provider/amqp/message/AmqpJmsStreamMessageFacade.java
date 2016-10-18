@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
-import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MSG_TYPE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_STREAM_MESSAGE;
 
 import java.util.ArrayList;
@@ -25,14 +24,12 @@ import java.util.List;
 
 import javax.jms.MessageEOFException;
 
+import org.apache.qpid.jms.message.JmsStreamMessage;
 import org.apache.qpid.jms.message.facade.JmsStreamMessageFacade;
-import org.apache.qpid.jms.provider.amqp.AmqpConnection;
-import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Section;
-import org.apache.qpid.proton.message.Message;
 
 /**
  * Wrapper around an AMQP Message instance that will be treated as a JMS StreamMessage
@@ -43,61 +40,11 @@ public class AmqpJmsStreamMessageFacade extends AmqpJmsMessageFacade implements 
     private List<Object> list;
     private int position = 0;
 
-    /**
-     * Create a new facade ready for sending.
-     *
-     * @param connection
-     *        the AmqpConnection that under which this facade was created.
-     */
-    public AmqpJmsStreamMessageFacade(AmqpConnection connection) {
-        super(connection);
-        list = initializeEmptyBodyList(true);
-        setMessageAnnotation(JMS_MSG_TYPE, JMS_STREAM_MESSAGE);
-    }
-
-    /**
-     * Creates a new Facade around an incoming AMQP Message for dispatch to the
-     * JMS Consumer instance.
-     *
-     * @param consumer
-     *        the consumer that received this message.
-     * @param message
-     *        the incoming Message instance that is being wrapped.
-     */
-    @SuppressWarnings("unchecked")
-    public AmqpJmsStreamMessageFacade(AmqpConsumer consumer, Message message) {
-        super(consumer, message);
-
-        Section body = getAmqpMessage().getBody();
-        if (body == null) {
-            list = initializeEmptyBodyList(true);
-        } else if (body instanceof AmqpValue) {
-            Object value = ((AmqpValue) body).getValue();
-
-            if (value == null) {
-                list = initializeEmptyBodyList(false);
-            } else if (value instanceof List) {
-                list = (List<Object>) value;
-            } else {
-                throw new IllegalStateException("Unexpected amqp-value body content type: " + value.getClass().getSimpleName());
-            }
-        } else if (body instanceof AmqpSequence) {
-            List<?> value = ((AmqpSequence) body).getValue();
-
-            if (value == null) {
-                list = initializeEmptyBodyList(true);
-            } else {
-                list = (List<Object>) value;
-            }
-        } else {
-            throw new IllegalStateException("Unexpected message body type: " + body.getClass().getSimpleName());
-        }
-    }
-
     @Override
     public AmqpJmsStreamMessageFacade copy() {
-        AmqpJmsStreamMessageFacade copy = new AmqpJmsStreamMessageFacade(connection);
+        AmqpJmsStreamMessageFacade copy = new AmqpJmsStreamMessageFacade();
         copyInto(copy);
+        copy.initializeEmptyBodyList(getBody() instanceof AmqpSequence);
         copy.list.addAll(list);
         return copy;
     }
@@ -166,13 +113,53 @@ public class AmqpJmsStreamMessageFacade extends AmqpJmsMessageFacade implements 
         return !list.isEmpty();
     }
 
+    @Override
+    public JmsStreamMessage asJmsMessage() {
+        return new JmsStreamMessage(this);
+    }
+
+    @Override
+    protected void initializeEmptyBody() {
+        list = initializeEmptyBodyList(true);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    void setBody(Section body) {
+        if (body == null) {
+            list = initializeEmptyBodyList(true);
+        } else if (body instanceof AmqpValue) {
+            Object value = ((AmqpValue) body).getValue();
+
+            if (value == null) {
+                list = initializeEmptyBodyList(false);
+            } else if (value instanceof List) {
+                list = (List<Object>) value;
+                super.setBody(body);
+            } else {
+                throw new IllegalStateException("Unexpected amqp-value body content type: " + value.getClass().getSimpleName());
+            }
+        } else if (body instanceof AmqpSequence) {
+            List<?> value = ((AmqpSequence) body).getValue();
+
+            if (value == null) {
+                list = initializeEmptyBodyList(true);
+            } else {
+                list = (List<Object>) value;
+                super.setBody(body);
+            }
+        } else {
+            throw new IllegalStateException("Unexpected message body type: " + body.getClass().getSimpleName());
+        }
+    }
+
     private List<Object> initializeEmptyBodyList(boolean useSequenceBody) {
         List<Object> emptyList = new ArrayList<Object>();
 
         if (useSequenceBody) {
-            message.setBody(new AmqpSequence(emptyList));
+            setBody(new AmqpSequence(emptyList));
         } else {
-            message.setBody(new AmqpValue(emptyList));
+            setBody(new AmqpValue(emptyList));
         }
 
         return emptyList;

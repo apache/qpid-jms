@@ -48,8 +48,7 @@ public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
     public void testNewMessageToSendContainsMessageTypeAnnotation() throws Exception {
         AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createNewStreamMessageFacade();
 
-        Message protonMessage = amqpStreamMessageFacade.getAmqpMessage();
-        MessageAnnotations annotations = protonMessage.getMessageAnnotations();
+        MessageAnnotations annotations = amqpStreamMessageFacade.getMessageAnnotations();
         Map<Symbol, Object> annotationsMap = annotations.getValue();
 
         assertNotNull("MessageAnnotations section was not present", annotations);
@@ -63,8 +62,7 @@ public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
     public void testNewMessageToSendContainsAmqpSequenceBody() throws Exception {
         AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createNewStreamMessageFacade();
 
-        Message protonMessage = amqpStreamMessageFacade.getAmqpMessage();
-        Section body = protonMessage.getBody();
+        Section body = amqpStreamMessageFacade.getBody();
 
         assertNotNull("Body section was not present", body);
         assertTrue("Body section was not of expected type: " + body.getClass(), body instanceof AmqpSequence);

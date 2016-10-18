@@ -48,8 +48,8 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
 
     @Override
     public void onSend(long producerTtl) throws JMSException {
-        super.onSend(producerTtl);
         reset();
+        super.onSend(producerTtl);
     }
 
     @Override
@@ -464,6 +464,7 @@ public class JmsStreamMessage extends JmsMessage implements StreamMessage {
 
     @Override
     public void reset() throws JMSException {
+        checkReadOnly();
         bytes = null;
         remainingBytes = NO_BYTES_IN_FLIGHT;
         setReadOnlyBody(true);

@@ -362,4 +362,9 @@ public class JmsTestMessageFacade implements JmsMessageFacade {
     public boolean hasBody() {
         return false;
     }
+
+    @Override
+    public Object encodeMessage() {
+        return this;
+    }
 }

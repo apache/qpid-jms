@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
-import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MSG_TYPE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_TEXT_MESSAGE;
 
 import java.nio.ByteBuffer;
@@ -28,14 +27,12 @@ import java.nio.charset.StandardCharsets;
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
+import org.apache.qpid.jms.message.JmsTextMessage;
 import org.apache.qpid.jms.message.facade.JmsTextMessageFacade;
-import org.apache.qpid.jms.provider.amqp.AmqpConnection;
-import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.Section;
-import org.apache.qpid.proton.message.Message;
 
 /**
  * Wrapper around an AMQP Message instance that will be treated as a JMS TextMessage
@@ -45,32 +42,11 @@ public class AmqpJmsTextMessageFacade extends AmqpJmsMessageFacade implements Jm
 
     private final Charset charset;
 
-    /**
-     * Create a new AMQP Message facade ready for sending.
-     *
-     * @param connection
-     *        the AmqpConnection that under which this facade was created.
-     */
-    public AmqpJmsTextMessageFacade(AmqpConnection connection) {
-        super(connection);
-        setMessageAnnotation(JMS_MSG_TYPE, JMS_TEXT_MESSAGE);
-        setText(null);
-        charset = StandardCharsets.UTF_8;
+    public AmqpJmsTextMessageFacade() {
+        this(StandardCharsets.UTF_8);
     }
 
-    /**
-     * Creates a new Facade around an incoming AMQP Message for dispatch to the
-     * JMS Consumer instance.
-     *
-     * @param consumer
-     *        the consumer that received this message.
-     * @param message
-     *        the incoming Message instance that is being wrapped.
-     * @param charset
-     *        the character set to use when decoding the text when the body is a Data section
-     */
-    public AmqpJmsTextMessageFacade(AmqpConsumer consumer, Message message, Charset charset) {
-        super(consumer, message);
+    AmqpJmsTextMessageFacade(Charset charset) {
         this.charset = charset;
     }
 
@@ -84,7 +60,7 @@ public class AmqpJmsTextMessageFacade extends AmqpJmsMessageFacade implements Jm
 
     @Override
     public AmqpJmsTextMessageFacade copy() throws JMSException {
-        AmqpJmsTextMessageFacade copy = new AmqpJmsTextMessageFacade(connection);
+        AmqpJmsTextMessageFacade copy = new AmqpJmsTextMessageFacade();
         copyInto(copy);
         copy.setText(getText());
         return copy;
@@ -92,7 +68,7 @@ public class AmqpJmsTextMessageFacade extends AmqpJmsMessageFacade implements Jm
 
     @Override
     public String getText() throws JMSException {
-        Section body = getAmqpMessage().getBody();
+        Section body = getBody();
 
         if (body == null) {
             return null;
@@ -126,13 +102,12 @@ public class AmqpJmsTextMessageFacade extends AmqpJmsMessageFacade implements Jm
 
     @Override
     public void setText(String value) {
-        AmqpValue body = new AmqpValue(value);
-        getAmqpMessage().setBody(body);
+        setBody(new AmqpValue(value));
     }
 
     @Override
     public void clearBody() {
-        setText(null);
+        setBody(new AmqpValue(null));
     }
 
     @Override
@@ -144,7 +119,17 @@ public class AmqpJmsTextMessageFacade extends AmqpJmsMessageFacade implements Jm
         }
     }
 
+    @Override
+    public JmsTextMessage asJmsMessage() {
+        return new JmsTextMessage(this);
+    }
+
     Charset getCharset() {
         return charset;
+    }
+
+    @Override
+    protected void initializeEmptyBody() {
+        setBody(new AmqpValue(null));
     }
 }

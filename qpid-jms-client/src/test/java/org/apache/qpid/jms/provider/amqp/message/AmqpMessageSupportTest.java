@@ -24,10 +24,8 @@ import static org.junit.Assert.assertTrue;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
-import org.apache.qpid.proton.message.Message;
 import org.junit.Test;
 
 public class AmqpMessageSupportTest {
@@ -50,25 +48,18 @@ public class AmqpMessageSupportTest {
     public void testGetMessageAnnotationWhenMessageHasAnnotationsMap() {
         Map<Symbol, Object> messageAnnotationsMap = new HashMap<Symbol,Object>();
         messageAnnotationsMap.put(Symbol.valueOf("x-opt-test"), Boolean.TRUE);
-        Message message = Proton.message();
-        message.setMessageAnnotations(new MessageAnnotations(messageAnnotationsMap));
-
-        assertNotNull(AmqpMessageSupport.getMessageAnnotation("x-opt-test", message));
+        assertNotNull(AmqpMessageSupport.getMessageAnnotation("x-opt-test", new MessageAnnotations(messageAnnotationsMap)));
     }
 
     @Test
     public void testGetMessageAnnotationWhenMessageHasEmptyAnnotationsMap() {
         Map<Symbol, Object> messageAnnotationsMap = new HashMap<Symbol,Object>();
-        Message message = Proton.message();
-        message.setMessageAnnotations(new MessageAnnotations(messageAnnotationsMap));
-
-        assertNull(AmqpMessageSupport.getMessageAnnotation("x-opt-test", message));
+        assertNull(AmqpMessageSupport.getMessageAnnotation("x-opt-test", new MessageAnnotations(messageAnnotationsMap)));
     }
 
     @Test
-    public void testGetMessageAnnotationWhenMessageHasNoAnnotationsMap() {
-        Message message = Proton.message();
-        assertNull(AmqpMessageSupport.getMessageAnnotation("x-opt-test", message));
+    public void testGetMessageAnnotationWhenMessageAnnotationHasNoAnnotationsMap() {
+        assertNull(AmqpMessageSupport.getMessageAnnotation("x-opt-test", new MessageAnnotations(null)));
     }
 
     @Test
@@ -79,35 +70,27 @@ public class AmqpMessageSupportTest {
     //---------- isContentType -----------------------------------------------//
 
     @Test
-    public void testIsContentTypeWithNullStringValueAndNullMessageContentType() {
-        Message message = Proton.message();
-        assertTrue(AmqpMessageSupport.isContentType(null, message));
+    public void testIsContentTypeWithNullStringValueAndNullContentType() {
+        assertTrue(AmqpMessageSupport.isContentType(null, null));
     }
 
     @Test
-    public void testIsContentTypeWithNonNullStringValueAndNullMessageContentType() {
-        Message message = Proton.message();
-        assertFalse(AmqpMessageSupport.isContentType("test", message));
+    public void testIsContentTypeWithNonNullStringValueAndNullContentType() {
+        assertFalse(AmqpMessageSupport.isContentType("test", null));
     }
 
     @Test
-    public void testIsContentTypeWithNonNullStringValueAndNonNullMessageContentTypeNotEqual() {
-        Message message = Proton.message();
-        message.setContentType("fails");
-        assertFalse(AmqpMessageSupport.isContentType("test", message));
+    public void testIsContentTypeWithNonNullStringValueAndNonNullContentTypeNotEqual() {
+        assertFalse(AmqpMessageSupport.isContentType("test", Symbol.valueOf("fails")));
     }
 
     @Test
-    public void testIsContentTypeWithNonNullStringValueAndNonNullMessageContentTypeEqual() {
-        Message message = Proton.message();
-        message.setContentType("test");
-        assertTrue(AmqpMessageSupport.isContentType("test", message));
+    public void testIsContentTypeWithNonNullStringValueAndNonNullContentTypeEqual() {
+        assertTrue(AmqpMessageSupport.isContentType("test", Symbol.valueOf("test")));
     }
 
     @Test
-    public void testIsContentTypeWithNullStringValueAndNonNullMessageContentType() {
-        Message message = Proton.message();
-        message.setContentType("test");
-        assertFalse(AmqpMessageSupport.isContentType(null, message));
+    public void testIsContentTypeWithNullStringValueAndNonNullContentType() {
+        assertFalse(AmqpMessageSupport.isContentType(null, Symbol.valueOf("test")));
     }
 }

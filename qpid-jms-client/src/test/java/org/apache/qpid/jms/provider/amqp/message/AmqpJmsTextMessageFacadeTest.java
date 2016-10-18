@@ -37,7 +37,6 @@ import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
-import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.message.Message;
 import org.junit.Test;
 
@@ -52,11 +51,10 @@ public class AmqpJmsTextMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
     public void testNewMessageToSendContainsMessageTypeAnnotation() throws Exception {
         AmqpJmsTextMessageFacade amqpTextMessageFacade = createNewTextMessageFacade();
 
-        Message protonMessage = amqpTextMessageFacade.getAmqpMessage();
-        MessageAnnotations annotations = protonMessage.getMessageAnnotations();
-        Map<Symbol, Object> annotationsMap = annotations.getValue();
+        assertNotNull("MessageAnnotations section was not present", amqpTextMessageFacade.getMessageAnnotations());
 
-        assertNotNull("MessageAnnotations section was not present", annotations);
+        Map<Symbol, Object> annotationsMap = amqpTextMessageFacade.getMessageAnnotations().getValue();
+
         assertNotNull("MessageAnnotations section value was not present", annotationsMap);
 
         assertTrue("expected message type annotation to be present", annotationsMap.containsKey(AmqpMessageSupport.getSymbol(JMS_MSG_TYPE)));
@@ -104,9 +102,9 @@ public class AmqpJmsTextMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         AmqpJmsTextMessageFacade amqpTextMessageFacade = createNewTextMessageFacade();
 
         amqpTextMessageFacade.setText(text);
-        assertNotNull(amqpTextMessageFacade.getAmqpMessage().getBody());
-        assertTrue(amqpTextMessageFacade.getAmqpMessage().getBody() instanceof AmqpValue);
-        assertEquals(text, ((AmqpValue) amqpTextMessageFacade.getAmqpMessage().getBody()).getValue());
+        assertNotNull(amqpTextMessageFacade.getBody());
+        assertTrue(amqpTextMessageFacade.getBody() instanceof AmqpValue);
+        assertEquals(text, ((AmqpValue) amqpTextMessageFacade.getBody()).getValue());
 
         assertEquals(text, amqpTextMessageFacade.getText());
     }

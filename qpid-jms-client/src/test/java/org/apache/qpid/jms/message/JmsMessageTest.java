@@ -98,8 +98,7 @@ public class JmsMessageTest {
         assertFalse(msg.isReadOnlyBody());
         assertFalse(msg.isReadOnlyProperties());
         msg.onSend(0);
-        assertTrue(msg.isReadOnlyBody());
-        assertTrue(msg.isReadOnlyProperties());
+        assertTrue(msg.isReadOnly());
     }
 
     @Test

@@ -17,14 +17,12 @@
 package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.decodeMessage;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.qpid.jms.policy.JmsDeserializationPolicy;
 import org.apache.qpid.jms.util.ClassLoadingAwareObjectInputStream;
@@ -32,9 +30,6 @@ import org.apache.qpid.jms.util.ClassLoadingAwareObjectInputStream.TrustedClassF
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.Section;
-import org.apache.qpid.proton.message.Message;
-
-import io.netty.buffer.ByteBuf;
 
 /**
  * Wrapper around an AMQP Message instance that will be treated as a JMS ObjectMessage
@@ -56,10 +51,7 @@ public class AmqpSerializedObjectDelegate implements AmqpObjectTypeDelegate, Tru
     }
 
     private final AmqpJmsMessageFacade parent;
-    private final Message message;
-    private final AtomicReference<Section> cachedReceivedBody = new AtomicReference<Section>();
     private final JmsDeserializationPolicy deserializationPolicy;
-    private ByteBuf messageBytes;
     private boolean localContent;
 
     /**
@@ -67,23 +59,14 @@ public class AmqpSerializedObjectDelegate implements AmqpObjectTypeDelegate, Tru
      *
      * @param parent
      *        the AMQP message facade instance where the object is to be stored / read.
-     * @param messageBytes
-     *        the raw bytes that comprise the message when it was received.
      * @param deserializationPolicy
      *        the JmsDeserializationPolicy that is used to validate the security of message
      *        content, may be null (e.g on new outgoing messages).
      */
-    public AmqpSerializedObjectDelegate(AmqpJmsMessageFacade parent, ByteBuf messageBytes, JmsDeserializationPolicy deserializationPolicy) {
+    public AmqpSerializedObjectDelegate(AmqpJmsMessageFacade parent, JmsDeserializationPolicy deserializationPolicy) {
         this.parent = parent;
-        this.message = parent.getAmqpMessage();
-        this.message.setContentType(SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
-        this.messageBytes = messageBytes;
+        this.parent.setContentType(SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
         this.deserializationPolicy = deserializationPolicy;
-
-        // Cache the body so the first access can grab it without extra work.
-        if (messageBytes != null) {
-            cachedReceivedBody.set(message.getBody());
-        }
     }
 
     private static byte[] getSerializedBytes(Serializable value) throws IOException {
@@ -100,31 +83,24 @@ public class AmqpSerializedObjectDelegate implements AmqpObjectTypeDelegate, Tru
 
     @Override
     public Serializable getObject() throws IOException, ClassNotFoundException {
-        Binary bin = null;
+        Binary binary = null;
 
-        Section body = cachedReceivedBody.getAndSet(null);
-        if (body == null) {
-            if (messageBytes != null) {
-                body = decodeMessage(messageBytes).getBody();
-            } else {
-                body = message.getBody();
-            }
-        }
+        Section body = parent.getBody();
 
         if (body == null || body == NULL_OBJECT_BODY) {
             return null;
         } else if (body instanceof Data) {
-            bin = ((Data) body).getValue();
+            binary = ((Data) body).getValue();
         } else {
             throw new IllegalStateException("Unexpected body type: " + body.getClass().getSimpleName());
         }
 
-        if (bin == null) {
+        if (binary == null) {
             return null;
         } else {
             Serializable serialized = null;
 
-            try (ByteArrayInputStream bais = new ByteArrayInputStream(bin.getArray(), bin.getArrayOffset(), bin.getLength());
+            try (ByteArrayInputStream bais = new ByteArrayInputStream(binary.getArray(), binary.getArrayOffset(), binary.getLength());
                  ClassLoadingAwareObjectInputStream objIn = new ClassLoadingAwareObjectInputStream(bais, this)) {
 
                 serialized = (Serializable) objIn.readObject();
@@ -136,24 +112,21 @@ public class AmqpSerializedObjectDelegate implements AmqpObjectTypeDelegate, Tru
 
     @Override
     public void setObject(Serializable value) throws IOException {
-        cachedReceivedBody.set(null);
-
         if (value == null) {
-            message.setBody(NULL_OBJECT_BODY);
+            parent.setBody(NULL_OBJECT_BODY);
         } else {
             byte[] bytes = getSerializedBytes(value);
-            message.setBody(new Data(new Binary(bytes)));
+            parent.setBody(new Data(new Binary(bytes)));
         }
 
-        messageBytes = null;
         localContent = true;
     }
 
     @Override
     public void onSend() {
-        message.setContentType(SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
-        if (message.getBody() == null) {
-            message.setBody(NULL_OBJECT_BODY);
+        parent.setContentType(SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
+        if (parent.getBody() == null) {
+            parent.setBody(NULL_OBJECT_BODY);
         }
     }
 
@@ -164,20 +137,11 @@ public class AmqpSerializedObjectDelegate implements AmqpObjectTypeDelegate, Tru
         } else {
             AmqpSerializedObjectDelegate target = (AmqpSerializedObjectDelegate) copy;
 
-            // Swap our cached value to the copy, we will just decode it if we need it.
-            target.cachedReceivedBody.set(cachedReceivedBody.getAndSet(null));
-
-            // If we have the original bytes just copy those and let the next get
-            // decode them into the payload, otherwise we need to do a deep copy.
-            if (messageBytes != null) {
-                target.messageBytes = messageBytes.copy();
-            }
-
             target.localContent = localContent;
 
             // Copy the already encoded message body if it exists, subsequent gets
             // will deserialize the data so no mutations can occur.
-            target.message.setBody(message.getBody());
+            target.parent.setBody(parent.getBody());
         }
     }
 

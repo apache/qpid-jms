@@ -1149,7 +1149,6 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             final int MSG_COUNT = 5;
 
-            Message message = session.createTextMessage("content");
             for (int i = 0; i < MSG_COUNT; ++i) {
                 testPeer.expectTransferButDoNotRespond(new TransferPayloadCompositeMatcher());
             }
@@ -1161,9 +1160,11 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             TestJmsCompletionListener listener = new TestJmsCompletionListener(MSG_COUNT + 1);
             try {
                 for (int i = 0; i < MSG_COUNT; ++i) {
+                    Message message = session.createTextMessage("content");
                     producer.send(message, listener);
                 }
 
+                Message message = session.createTextMessage("content");
                 producer.send(message, listener);
             } catch (JMSException e) {
                 LOG.warn("Caught unexpected error: {}", e.getMessage());

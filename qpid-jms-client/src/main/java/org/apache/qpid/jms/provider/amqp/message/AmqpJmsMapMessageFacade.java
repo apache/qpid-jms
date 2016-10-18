@@ -17,7 +17,6 @@
 package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MAP_MESSAGE;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MSG_TYPE;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,13 +24,11 @@ import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.apache.qpid.jms.message.JmsMapMessage;
 import org.apache.qpid.jms.message.facade.JmsMapMessageFacade;
-import org.apache.qpid.jms.provider.amqp.AmqpConnection;
-import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Section;
-import org.apache.qpid.proton.message.Message;
 
 /**
  * Wrapper around an AMQP Message instance that will be treated as a JMS MapMessage
@@ -40,48 +37,6 @@ import org.apache.qpid.proton.message.Message;
 public class AmqpJmsMapMessageFacade extends AmqpJmsMessageFacade implements JmsMapMessageFacade {
 
     private Map<String,Object> messageBodyMap;
-
-    /**
-     * Create a new facade ready for sending.
-     *
-     * @param connection
-     *        the AmqpConnection that under which this facade was created.
-     */
-    public AmqpJmsMapMessageFacade(AmqpConnection connection) {
-        super(connection);
-        initializeEmptyBody();
-        setMessageAnnotation(JMS_MSG_TYPE, JMS_MAP_MESSAGE);
-    }
-
-    /**
-     * Creates a new Facade around an incoming AMQP Message for dispatch to the
-     * JMS Consumer instance.
-     *
-     * @param consumer
-     *        the consumer that received this message.
-     * @param message
-     *        the incoming Message instance that is being wrapped.
-     */
-    @SuppressWarnings("unchecked")
-    public AmqpJmsMapMessageFacade(AmqpConsumer consumer, Message message) {
-        super(consumer, message);
-
-        Section body = getAmqpMessage().getBody();
-        if (body == null) {
-            initializeEmptyBody();
-        } else if (body instanceof AmqpValue) {
-            Object o = ((AmqpValue) body).getValue();
-            if (o == null) {
-                initializeEmptyBody();
-            } else if (o instanceof Map) {
-                messageBodyMap = (Map<String, Object>) o;
-            } else {
-                throw new IllegalStateException("Unexpected message body type: " + body.getClass().getSimpleName());
-            }
-        } else {
-            throw new IllegalStateException("Unexpected message body type: " + body.getClass().getSimpleName());
-        }
-    }
 
     /**
      * @return the appropriate byte value that indicates the type of message this is.
@@ -93,8 +48,9 @@ public class AmqpJmsMapMessageFacade extends AmqpJmsMessageFacade implements Jms
 
     @Override
     public AmqpJmsMapMessageFacade copy() {
-        AmqpJmsMapMessageFacade copy = new AmqpJmsMapMessageFacade(connection);
+        AmqpJmsMapMessageFacade copy = new AmqpJmsMapMessageFacade();
         copyInto(copy);
+        copy.initializeEmptyBody();
         copy.messageBodyMap.putAll(messageBodyMap);
         return copy;
     }
@@ -146,10 +102,36 @@ public class AmqpJmsMapMessageFacade extends AmqpJmsMessageFacade implements Jms
         return !messageBodyMap.isEmpty();
     }
 
-    private void initializeEmptyBody() {
+    @Override
+    public JmsMapMessage asJmsMessage() {
+        return new JmsMapMessage(this);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    void setBody(Section body) {
+        if (body == null) {
+            initializeEmptyBody();
+        } else if (body instanceof AmqpValue) {
+            Object o = ((AmqpValue) body).getValue();
+            if (o == null) {
+                initializeEmptyBody();
+            } else if (o instanceof Map) {
+                messageBodyMap = (Map<String, Object>) o;
+                super.setBody(body);
+            } else {
+                throw new IllegalStateException("Unexpected message body type: " + body.getClass().getSimpleName());
+            }
+        } else {
+            throw new IllegalStateException("Unexpected message body type: " + body.getClass().getSimpleName());
+        }
+    }
+
+    @Override
+    protected void initializeEmptyBody() {
         // Using LinkedHashMap because AMQP map equality considers order,
         // so we should behave in as predictable a manner as possible
         messageBodyMap = new LinkedHashMap<String, Object>();
-        getAmqpMessage().setBody(new AmqpValue(messageBodyMap));
+        super.setBody(new AmqpValue(messageBodyMap));
     }
 }

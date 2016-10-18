@@ -29,15 +29,18 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.jms.CompletionListener;
 import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageFormatException;
+import javax.jms.MessageNotWriteableException;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.StreamMessage;
 
+import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -197,7 +200,7 @@ public class StreamMessageIntegrationTest extends QpidJmsTestCase {
             String myString = "myString";
             byte[] myBytes = "myBytes".getBytes();
 
-            //Prepare a MapMessage to send to the test peer to send
+            //Prepare a StreamMessage to send to the test peer to send
             StreamMessage streamMessage = session.createStreamMessage();
 
             streamMessage.writeBoolean(myBool);
@@ -266,6 +269,155 @@ public class StreamMessageIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testSentStreamMessageIsReadOnly() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            MessageProducer producer = session.createProducer(queue);
+
+            String myString = "myString";
+
+            // Prepare a StreamMessage to send to the test peer to send
+            StreamMessage streamMessage = session.createStreamMessage();
+
+            streamMessage.writeString(myString);
+
+            // prepare a matcher for the test peer to use to receive and verify the message
+            List<Object> list = new ArrayList<Object>();
+            list.add(myString);
+
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            msgAnnotationsMatcher.withEntry(Symbol.valueOf(AmqpMessageSupport.JMS_MSG_TYPE), equalTo(AmqpMessageSupport.JMS_STREAM_MESSAGE));
+            MessagePropertiesSectionMatcher propertiesMatcher = new MessagePropertiesSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propertiesMatcher);
+            messageMatcher.setMessageContentMatcher(new EncodedAmqpSequenceMatcher(list));
+
+            testPeer.expectTransfer(messageMatcher);
+            testPeer.expectClose();
+
+            producer.send(streamMessage);
+
+            try {
+                streamMessage.writeString(myString);
+                fail("Message should not be writable after a send.");
+            } catch (MessageNotWriteableException mnwe) {}
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testAsyncSendMarksStreamMessageReadOnly() throws Exception {
+        try(TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setSendTimeout(15000);
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String queueName = "myQueue";
+            Queue queue = session.createQueue(queueName);
+
+            StreamMessage message = session.createStreamMessage();
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+
+            // Expect the producer to attach and grant it some credit, it should send
+            // a transfer which we will not send any response so that we can check that
+            // the inflight message is read-only
+            testPeer.expectSenderAttach();
+            testPeer.expectTransferButDoNotRespond(messageMatcher);
+            testPeer.expectClose();
+
+            MessageProducer producer = session.createProducer(queue);
+            TestJmsCompletionListener listener = new TestJmsCompletionListener();
+
+            try {
+                producer.send(message, listener);
+            } catch (Throwable error) {
+                fail("Send should not fail for async.");
+            }
+
+            try {
+                message.setJMSCorrelationID("test");
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSCorrelationIDAsBytes(new byte[]{});
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSDeliveryMode(0);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSDestination(queue);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSExpiration(0);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSMessageID(queueName);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSPriority(0);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSRedelivered(false);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSReplyTo(queue);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSTimestamp(0);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setJMSType(queueName);
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.setStringProperty("test", "test");
+                fail("Should not be able to set properties on inflight message");
+            } catch (MessageNotWriteableException mnwe) {}
+            try {
+                message.writeString("test");
+                fail("Message should not be writable after a send.");
+            } catch (MessageNotWriteableException mnwe) {}
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    private class TestJmsCompletionListener implements CompletionListener {
+
+        @Override
+        public void onCompletion(Message message) {
+        }
+
+        @Override
+        public void onException(Message message, Exception exception) {
         }
     }
 }

@@ -148,4 +148,11 @@ public final class JmsTestBytesMessageFacade extends JmsTestMessageFacade implem
 
         return result;
     }
+
+    @Override
+    public void onSend(long producerTtl) throws JMSException {
+        super.onSend(producerTtl);
+
+        reset();
+    }
 }

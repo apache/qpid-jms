@@ -1724,8 +1724,6 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             Queue queue = session.createQueue("myQueue");
             final MessageProducer producer = session.createProducer(queue);
 
-            Message message = session.createTextMessage("content");
-
             final int MSG_COUNT = 3;
 
             for (int i = 0; i < MSG_COUNT; ++i) {
@@ -1737,6 +1735,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             TestJmsCompletionListener listener = new TestJmsCompletionListener(MSG_COUNT);
             try {
                 for (int i = 0; i < MSG_COUNT; ++i) {
+                    Message message = session.createTextMessage("content");
                     producer.send(message, listener);
                 }
             } catch (JMSException e) {

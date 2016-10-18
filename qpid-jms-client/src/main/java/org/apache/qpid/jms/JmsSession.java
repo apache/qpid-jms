@@ -758,46 +758,39 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                 messageId = producer.getMessageIDBuilder().createMessageID(producer.getProducerId().toString(), messageSequence);
             }
 
-            JmsMessage copy = null;
+            JmsMessage outbound = null;
             if (isJmsMessage) {
-                JmsMessage jmsMessage = (JmsMessage) original;
-                jmsMessage.getFacade().setProviderMessageIdObject(messageId);
-
-                if (connection.isPopulateJMSXUserID()) {
-                    jmsMessage.getFacade().setUserIdBytes(connection.getEncodedUsername());
-                } else {
-                    // Prevent user spoofing the user ID value.
-                    jmsMessage.getFacade().setUserId(null);
-                }
-
-                copy = jmsMessage.copy();
+                outbound = (JmsMessage) original;
             } else {
-                copy = JmsMessageTransformation.transformMessage(connection, original);
-                copy.getFacade().setProviderMessageIdObject(messageId);
-                copy.setJMSDestination(destination);
-
-                if (connection.isPopulateJMSXUserID()) {
-                    copy.getFacade().setUserIdBytes(connection.getEncodedUsername());
-                } else {
-                    // Prevent user spoofing the user ID value.
-                    copy.getFacade().setUserId(null);
-                }
-
-                // If the original was a foreign message, we still need to update it
-                // with the properly encoded Message ID String, get it from the copy.
-                original.setJMSMessageID(copy.getJMSMessageID());
+                // Transform and assign the Destination as one of our own destination objects.
+                outbound = JmsMessageTransformation.transformMessage(connection, original);
+                outbound.setJMSDestination(destination);
             }
 
-            // Update the JmsMessage based copy with the required values.
-            copy.setConnection(connection);
+            outbound.getFacade().setProviderMessageIdObject(messageId);
+            if (!isJmsMessage) {
+                // If the original was a foreign message, we still need to update it
+                // with the properly encoded Message ID String, get it from the one
+                // we transformed from now that it is set.
+                original.setJMSMessageID(outbound.getJMSMessageID());
+            }
+
+            // If configured set the User ID using the value we have encoded and cached,
+            // otherwise clear to prevent caller from spoofing the user ID value.
+            if (connection.isPopulateJMSXUserID()) {
+                outbound.getFacade().setUserIdBytes(connection.getEncodedUsername());
+            } else {
+                outbound.getFacade().setUserId(null);
+            }
 
             boolean sync = connection.isForceSyncSend() ||
                            (!connection.isForceAsyncSend() && deliveryMode == DeliveryMode.PERSISTENT && !getTransacted());
 
-            copy.onSend(timeToLive);
+            outbound.onSend(timeToLive);
 
             JmsOutboundMessageDispatch envelope = new JmsOutboundMessageDispatch();
-            envelope.setMessage(copy);
+            envelope.setMessage(outbound);
+            envelope.setPayload(outbound.getFacade().encodeMessage());
             envelope.setProducerId(producer.getProducerId());
             envelope.setDestination(destination);
             envelope.setSendAsync(listener == null ? !sync : true);

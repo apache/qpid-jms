@@ -40,7 +40,6 @@ import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
-import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
 import org.apache.qpid.proton.amqp.messaging.DeliveryAnnotations;
@@ -54,13 +53,12 @@ import io.netty.buffer.ByteBuf;
 
 public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
-    private static final int DEFAULT_PRIORITY = javax.jms.Message.DEFAULT_PRIORITY;
     private static final long UINT_MAX = 0xFFFFFFFFL;
 
     protected AmqpConnection connection;
 
     private Properties properties;
-    private Header header;
+    private final AmqpHeader header = new AmqpHeader();
     private Section body;
     private Map<Symbol, Object> messageAnnotationsMap;
     private Map<String, Object> applicationPropertiesMap;
@@ -89,7 +87,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         this.connection = connection;
 
         setMessageAnnotation(JMS_MSG_TYPE, getJmsMsgType());
-        setPersistent(true); // TODO - Remove to avoid default Header
+        setPersistent(true);
         initializeEmptyBody();
     }
 
@@ -222,14 +220,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             ttl = producerTtl;
         }
 
-        if (ttl > 0 && ttl < UINT_MAX) {
-            lazyCreateHeader();
-            header.setTtl(UnsignedInteger.valueOf(ttl));
-        } else {
-            if (header != null) {
-                header.setTtl(null);
-            }
-        }
+        header.setTimeToLive(ttl);
 
         setMessageAnnotation(JMS_MSG_TYPE, getJmsMsgType());
     }
@@ -278,17 +269,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             target.userSpecifiedTTL = userSpecifiedTTL;
         }
 
-        if (header != null) {
-            Header targetHeader = new Header();
-
-            targetHeader.setDurable(header.getDurable());
-            targetHeader.setPriority(header.getPriority());
-            targetHeader.setTtl(header.getTtl());
-            targetHeader.setFirstAcquirer(header.getFirstAcquirer());
-            targetHeader.setDeliveryCount(header.getDeliveryCount());
-
-            target.setHeader(targetHeader);
-        }
+        target.setAmqpHeader(header);
 
         if (properties != null) {
             Properties targetProperties = new Properties();
@@ -483,23 +464,11 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public boolean isPersistent() {
-        if (header != null && header.getDurable() != null) {
-            return header.getDurable();
-        }
-
-        return false;
+        return header.isDurable();
     }
 
     @Override
     public void setPersistent(boolean value) {
-        if (header == null) {
-            if (value == false) {
-                return;
-            } else {
-                lazyCreateHeader();
-            }
-        }
-
         header.setDurable(value);
     }
 
@@ -515,26 +484,12 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public int getRedeliveryCount() {
-        if (header != null) {
-            UnsignedInteger count = header.getDeliveryCount();
-            if (count != null) {
-                return count.intValue();
-            }
-        }
-
-        return 0;
+        return header.getDeliveryCount();
     }
 
     @Override
     public void setRedeliveryCount(int redeliveryCount) {
-        if (redeliveryCount == 0) {
-            if (header != null) {
-                header.setDeliveryCount(null);
-            }
-        } else {
-            lazyCreateHeader();
-            header.setDeliveryCount(UnsignedInteger.valueOf(redeliveryCount));
-        }
+        header.setDeliveryCount(redeliveryCount);
     }
 
     @Override
@@ -578,38 +533,12 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public int getPriority() {
-        if (header != null) {
-            UnsignedByte priority = header.getPriority();
-            if (priority != null) {
-                int scaled = priority.intValue();
-                if (scaled > 9) {
-                    scaled = 9;
-                }
-
-                return scaled;
-            }
-        }
-
-        return DEFAULT_PRIORITY;
+        return header.getPriority();
     }
 
     @Override
     public void setPriority(int priority) {
-        if (priority == DEFAULT_PRIORITY) {
-            if (header != null) {
-                header.setPriority(null);
-            }
-        } else {
-            byte scaled = (byte) priority;
-            if (priority < 0) {
-                scaled = 0;
-            } else if (priority > 9) {
-                scaled = 9;
-            }
-
-            lazyCreateHeader();
-            header.setPriority(UnsignedByte.valueOf(scaled));
-        }
+        header.setPriority(priority);
     }
 
     @Override
@@ -987,12 +916,20 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     //----- Access to AMQP Message Values ------------------------------------//
 
-    Header getHeader() {
+    AmqpHeader getAmqpHeader() {
         return header;
     }
 
+    void setAmqpHeader(AmqpHeader header) {
+        this.header.setHeader(header);
+    }
+
+    Header getHeader() {
+        return header.getHeader();
+    }
+
     void setHeader(Header header) {
-        this.header = header;
+        this.header.setHeader(header);
     }
 
     Properties getProperties() {
@@ -1087,11 +1024,8 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     private Long getTtl() {
         Long result = null;
-        if (header != null) {
-            UnsignedInteger ttl = header.getTtl();
-            if (ttl != null) {
-                result = ttl.longValue();
-            }
+        if (header.nonDefaultTimeToLive()) {
+            result = header.getTimeToLive();
         }
 
         return result;
@@ -1111,12 +1045,6 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     private void lazyCreateProperties() {
         if (properties == null) {
             properties = new Properties();
-        }
-    }
-
-    private void lazyCreateHeader() {
-        if (header == null) {
-            header = new Header();
         }
     }
 

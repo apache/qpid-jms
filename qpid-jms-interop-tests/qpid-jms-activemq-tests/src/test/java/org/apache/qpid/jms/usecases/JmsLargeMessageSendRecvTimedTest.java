@@ -25,6 +25,7 @@ import java.util.Random;
 
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
+import javax.jms.DeliveryMode;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -72,7 +73,7 @@ public class JmsLargeMessageSendRecvTimedTest extends AmqpTestSupport {
     }
 
     @Test(timeout = 5 * 60 * 1000)
-    public void testSend50MBMessage() throws Exception {
+    public void testSend100MBMessage() throws Exception {
         doTestSendLargeMessage(1024 * 1024 * 100);
     }
 
@@ -89,6 +90,10 @@ public class JmsLargeMessageSendRecvTimedTest extends AmqpTestSupport {
         MessageProducer producer = session.createProducer(queue);
         BytesMessage message = session.createBytesMessage();
         message.writeBytes(payload);
+        producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+
+        // Set this to non-default to get a Header in the encoded message.
+        producer.setPriority(4);
         producer.send(message);
         long endTime = System.currentTimeMillis();
 

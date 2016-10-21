@@ -255,6 +255,49 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
     }
 
     /**
+     * Test that when a message is sent and the producer is set to send as NON_PERSISTENT
+     * the resulting sent message has durable set to false.
+     *
+     * @throws Exception if an error occurs during the test.
+     */
+    @Test(timeout = 20000)
+    public void testSendingMessageNonPersistentSetDurableFalse() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String queueName = "myQueue";
+            Queue queue = session.createQueue(queueName);
+            MessageProducer producer = session.createProducer(queue);
+
+            String text = "myMessage";
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
+            messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(text));
+            testPeer.expectTransfer(messageMatcher);
+            testPeer.expectClose();
+
+            Message message = session.createTextMessage(text);
+
+            assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
+
+            producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+            producer.send(message);
+
+            assertEquals("Should have NON_PERSISTENT delivery mode set", DeliveryMode.NON_PERSISTENT, message.getJMSDeliveryMode());
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    /**
      * Test that when a message is sent the JMSDestination header is set to
      * the Destination used by the producer.
      *

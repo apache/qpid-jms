@@ -22,6 +22,7 @@ package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.encodeMessage;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -34,6 +35,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import javax.jms.DeliveryMode;
 
 import org.apache.qpid.jms.message.JmsBytesMessage;
 import org.apache.qpid.jms.message.JmsMessage;
@@ -48,14 +51,19 @@ import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
+import org.apache.qpid.proton.amqp.messaging.Header;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.message.Message;
+import org.apache.qpid.proton.message.impl.MessageImpl;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import io.netty.buffer.ByteBuf;
 
 public class AmqpCodecTest extends QpidJmsTestCase {
     private AmqpConsumer mockConsumer;
@@ -68,6 +76,162 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         JmsConsumerId consumerId = new JmsConsumerId("ID:MOCK:1", 1, 1);
         mockConsumer = Mockito.mock(AmqpConsumer.class);
         Mockito.when(mockConsumer.getResourceInfo()).thenReturn(new JmsConsumerInfo(consumerId));
+    }
+
+    //----- AmqpHeader encode and decode -------------------------------------//
+
+    @Test
+    public void testEncodeEmptyHeaderAndDecode() {
+        Header empty = new Header();
+
+        ByteBuf encoded = AmqpCodec.encode(empty);
+        Header decoded = (Header) AmqpCodec.decode(encoded);
+
+        assertNotNull(decoded);
+
+        AmqpHeader header = new AmqpHeader(decoded);
+
+        assertFalse(header.isDurable());
+        assertEquals(4, header.getPriority());
+        assertEquals(0, header.getTimeToLive());
+        assertFalse(header.isFirstAcquirer());
+        assertEquals(0, header.getDeliveryCount());
+    }
+
+    @Test
+    public void testEncodeHeaderWithDurableAndDecode() {
+        AmqpHeader header = new AmqpHeader();
+        header.setDurable(true);
+
+        ByteBuf encoded = AmqpCodec.encode(header.getHeader());
+        AmqpHeader decoded = new AmqpHeader((Header) AmqpCodec.decode(encoded));
+
+        assertTrue(decoded.isDurable());
+        assertEquals(4, decoded.getPriority());
+        assertEquals(0, decoded.getTimeToLive());
+        assertFalse(decoded.isFirstAcquirer());
+        assertEquals(0, decoded.getDeliveryCount());
+    }
+
+    @Test
+    public void testEncodeHeaderWithDeliveryCountAndDecode() {
+        AmqpHeader header = new AmqpHeader();
+        header.setDeliveryCount(1);
+
+        ByteBuf encoded = AmqpCodec.encode(header.getHeader());
+        AmqpHeader decoded = new AmqpHeader((Header) AmqpCodec.decode(encoded));
+
+        assertFalse(decoded.isDurable());
+        assertEquals(4, decoded.getPriority());
+        assertEquals(0, decoded.getTimeToLive());
+        assertFalse(decoded.isFirstAcquirer());
+        assertEquals(1, decoded.getDeliveryCount());
+    }
+
+    @Test
+    public void testEncodeHeaderWithAllSetAndDecode() {
+        AmqpHeader header = new AmqpHeader();
+        header.setDurable(true);
+        header.setDeliveryCount(43);
+        header.setFirstAcquirer(true);
+        header.setPriority(9);
+        header.setTimeToLive(32768);
+
+        ByteBuf encoded = AmqpCodec.encode(header.getHeader());
+        AmqpHeader decoded = new AmqpHeader((Header) AmqpCodec.decode(encoded));
+
+        assertTrue(decoded.isDurable());
+        assertTrue(decoded.isFirstAcquirer());
+        assertEquals(43, decoded.getDeliveryCount());
+        assertEquals(9, decoded.getPriority());
+        assertEquals(32768, decoded.getTimeToLive());
+    }
+
+    //----- AmqpHeader handling on message decode ----------------------------//
+
+    @Test
+    public void testPersistentSetFromMessageWithNonDefaultValue() throws Exception {
+        MessageImpl message = (MessageImpl) Message.Factory.create();
+        message.setDurable(true);
+        message.setBody(new AmqpValue("test"));
+
+        JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
+        assertEquals(DeliveryMode.PERSISTENT, jmsMessage.getJMSDeliveryMode());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, facade.getClass());
+        assertTrue(facade.isPersistent());
+    }
+
+    @Test
+    public void testMessagePrioritySetFromMessageWithNonDefaultValue() throws Exception {
+        MessageImpl message = (MessageImpl) Message.Factory.create();
+        message.setPriority((short) 8);
+        message.setBody(new AmqpValue("test"));
+
+        JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
+        assertEquals(8, jmsMessage.getJMSPriority());
+
+        JmsMessageFacade facade = jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, facade.getClass());
+        assertEquals(8, facade.getPriority());
+    }
+
+    @Test
+    public void testFirstAcquirerSetFromMessageWithNonDefaultValue() throws Exception {
+        MessageImpl message = (MessageImpl) Message.Factory.create();
+        message.setFirstAcquirer(true);
+        message.setBody(new AmqpValue("test"));
+
+        JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
+
+        assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, jmsMessage.getFacade().getClass());
+        AmqpJmsTextMessageFacade facade = (AmqpJmsTextMessageFacade) jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertTrue(facade.getAmqpHeader().isFirstAcquirer());
+    }
+
+    @Test
+    public void testTimeToLiveSetFromMessageWithNonDefaultValue() throws Exception {
+        MessageImpl message = (MessageImpl) Message.Factory.create();
+        message.setTtl(65535);
+        message.setBody(new AmqpValue("test"));
+
+        JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
+
+        assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, jmsMessage.getFacade().getClass());
+        AmqpJmsTextMessageFacade facade = (AmqpJmsTextMessageFacade) jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals(65535, facade.getAmqpHeader().getTimeToLive());
+    }
+
+    @Test
+    public void testDeliveryCountSetFromMessageWithNonDefaultValue() throws Exception {
+        MessageImpl message = (MessageImpl) Message.Factory.create();
+        message.setDeliveryCount(2);
+        message.setBody(new AmqpValue("test"));
+
+        JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
+        assertNotNull("Message should not be null", jmsMessage);
+        assertEquals("Unexpected message class type", JmsTextMessage.class, jmsMessage.getClass());
+        assertTrue(jmsMessage.getJMSRedelivered());
+
+        assertEquals("Unexpected facade class type", AmqpJmsTextMessageFacade.class, jmsMessage.getFacade().getClass());
+        AmqpJmsTextMessageFacade facade = (AmqpJmsTextMessageFacade) jmsMessage.getFacade();
+        assertNotNull("Facade should not be null", facade);
+        assertEquals(2, facade.getRedeliveryCount());
+        assertEquals(2, facade.getAmqpHeader().getDeliveryCount());
+        assertEquals(UnsignedInteger.valueOf(2), facade.getHeader().getDeliveryCount());
     }
 
     // =============== With The Message Type Annotation =========

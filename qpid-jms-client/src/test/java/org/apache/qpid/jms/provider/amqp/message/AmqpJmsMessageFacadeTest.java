@@ -98,13 +98,12 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
         assertNotNull("Expected message to have Header section", amqpMessageFacade.getHeader());
-        assertTrue("Durable not as expected", amqpMessageFacade.getHeader().getDurable());
+        assertTrue("Durable not as expected", amqpMessageFacade.getAmqpHeader().isDurable());
     }
 
     @Test
     public void testNewMessageHasUnderlyingHeaderSectionWithNoTtlSet() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
-        amqpMessageFacade.setHeader(new Header());
 
         assertNotNull("Expected message to have Header section", amqpMessageFacade.getHeader());
         assertNull("Ttl field should not be set", amqpMessageFacade.getHeader().getTtl());
@@ -162,8 +161,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         amqpMessageFacade.onSend(0);
 
         // check value on underlying TTL field is NOT set
-        assertEquals("TTL has not been cleared", 0, message.getTtl());
-        assertNull("TTL field on underlying message should NOT be set", amqpMessageFacade.getHeader().getTtl());
+        assertEquals("TTL has not been cleared", 0, amqpMessageFacade.getAmqpHeader().getTimeToLive());
+        assertNull("Underlying Header should be null, no values set to non-defaults", amqpMessageFacade.getHeader());
     }
 
     @Test
@@ -180,7 +179,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         amqpMessageFacade.onSend(newTtl);
 
         // check value on underlying TTL field is NOT set
-        assertEquals("TTL has not been overriden", newTtl, message.getTtl());
+        assertEquals("TTL has not been overriden", newTtl, amqpMessageFacade.getAmqpHeader().getTimeToLive());
         assertEquals("TTL field on underlying message should be set", UnsignedInteger.valueOf(newTtl), amqpMessageFacade.getHeader().getTtl());
     }
 
@@ -196,7 +195,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         amqpMessageFacade.onSend(producerTtl);
 
         // check value on underlying TTL field is set to the override
-        assertEquals("TTL has not been overriden", overrideTtl, amqpMessageFacade.getHeader().getTtl().intValue());
+        assertEquals("TTL has not been overriden", overrideTtl, amqpMessageFacade.getAmqpHeader().getTimeToLive());
     }
 
     // --- delivery count  ---
@@ -423,7 +422,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         amqpMessageFacade.setPriority(priority);
 
         assertEquals("expected priority value not found", priority, amqpMessageFacade.getPriority());
-        assertEquals("expected priority value not found", priority, amqpMessageFacade.getHeader().getPriority().intValue());
+        assertEquals("expected priority value not found", UnsignedByte.valueOf(priority), amqpMessageFacade.getHeader().getPriority());
     }
 
     /**
@@ -436,7 +435,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         amqpMessageFacade.setPriority(-1);
 
         assertEquals("expected priority value not found", 0, amqpMessageFacade.getPriority());
-        assertEquals("expected priority value not found", 0, amqpMessageFacade.getHeader().getPriority().intValue());
+        assertEquals("expected priority value not found", UnsignedByte.valueOf((byte) 0), amqpMessageFacade.getHeader().getPriority());
     }
 
     /**
@@ -449,7 +448,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         amqpMessageFacade.setPriority(11);
 
         assertEquals("expected priority value not found", 9, amqpMessageFacade.getPriority());
-        assertEquals("expected priority value not found", 9, amqpMessageFacade.getHeader().getPriority().intValue());
+        assertEquals("expected priority value not found", UnsignedByte.valueOf((byte) 9), amqpMessageFacade.getHeader().getPriority());
     }
 
     /**
@@ -490,7 +489,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         assertEquals("expected priority value not returned", Message.DEFAULT_PRIORITY, amqpMessageFacade.getPriority());
 
         //check the underlying header field was actually cleared rather than set to Message.DEFAULT_PRIORITY
-        assertNull("underlying header priority field was not cleared", amqpMessageFacade.getHeader().getPriority());
+        assertNull("underlying header priority field was not cleared", amqpMessageFacade.getHeader());
     }
 
     // ====== AMQP Properties Section =======
@@ -1841,6 +1840,35 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         JmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
         assertFalse(amqpMessageFacade.propertyExists(null));
+    }
+
+    // ====== AMQP Message No Header tests ===========
+    // ===============================================
+
+    @Test
+    public void testMessageWithDefaultHeaderValuesCreateNoHeaderForEncode() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setPersistent(false);
+        amqpMessageFacade.setPriority(Message.DEFAULT_PRIORITY);
+        amqpMessageFacade.setRedelivered(false);
+
+        amqpMessageFacade.onSend(0);
+
+        assertNull(amqpMessageFacade.getHeader());
+    }
+
+    @Test
+    public void testMessageWithNonDefaultHeaderValuesCreateNoHeaderForEncode() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setPersistent(true);
+        amqpMessageFacade.setPriority(Message.DEFAULT_PRIORITY + 1);
+        amqpMessageFacade.setRedelivered(true);
+
+        amqpMessageFacade.onSend(100);
+
+        assertNotNull(amqpMessageFacade.getHeader());
     }
 
     // ====== AMQP Message Facade copy() tests =======

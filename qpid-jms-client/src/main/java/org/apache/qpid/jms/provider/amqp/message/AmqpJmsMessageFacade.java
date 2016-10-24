@@ -279,34 +279,35 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         }
 
         if (header != null) {
-            Header headers = new Header();
-            headers.setDurable(header.getDurable());
-            headers.setPriority(header.getPriority());
-            headers.setTtl(header.getTtl());
-            headers.setFirstAcquirer(header.getFirstAcquirer());
-            headers.setDeliveryCount(header.getDeliveryCount());
+            Header targetHeader = new Header();
 
-            target.setHeader(headers);
+            targetHeader.setDurable(header.getDurable());
+            targetHeader.setPriority(header.getPriority());
+            targetHeader.setTtl(header.getTtl());
+            targetHeader.setFirstAcquirer(header.getFirstAcquirer());
+            targetHeader.setDeliveryCount(header.getDeliveryCount());
+
+            target.setHeader(targetHeader);
         }
 
         if (properties != null) {
-            Properties properties = new Properties();
+            Properties targetProperties = new Properties();
 
-            properties.setMessageId(getProperties().getMessageId());
-            properties.setUserId(getProperties().getUserId());
-            properties.setTo(getProperties().getTo());
-            properties.setSubject(getProperties().getSubject());
-            properties.setReplyTo(getProperties().getReplyTo());
-            properties.setCorrelationId(getProperties().getCorrelationId());
-            properties.setContentType(getProperties().getContentType());
-            properties.setContentEncoding(getProperties().getContentEncoding());
-            properties.setAbsoluteExpiryTime(getProperties().getAbsoluteExpiryTime());
-            properties.setCreationTime(getProperties().getCreationTime());
-            properties.setGroupId(getProperties().getGroupId());
-            properties.setGroupSequence(getProperties().getGroupSequence());
-            properties.setReplyToGroupId(getProperties().getReplyToGroupId());
+            targetProperties.setMessageId(properties.getMessageId());
+            targetProperties.setUserId(properties.getUserId());
+            targetProperties.setTo(properties.getTo());
+            targetProperties.setSubject(properties.getSubject());
+            targetProperties.setReplyTo(properties.getReplyTo());
+            targetProperties.setCorrelationId(properties.getCorrelationId());
+            targetProperties.setContentType(properties.getContentType());
+            targetProperties.setContentEncoding(properties.getContentEncoding());
+            targetProperties.setAbsoluteExpiryTime(properties.getAbsoluteExpiryTime());
+            targetProperties.setCreationTime(properties.getCreationTime());
+            targetProperties.setGroupId(properties.getGroupId());
+            targetProperties.setGroupSequence(properties.getGroupSequence());
+            targetProperties.setReplyToGroupId(properties.getReplyToGroupId());
 
-            target.setProperties(properties);
+            target.setProperties(targetProperties);
         }
 
         target.setBody(body);

@@ -22,7 +22,7 @@ import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_M
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MSG_TYPE;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -55,7 +55,6 @@ import io.netty.buffer.ByteBuf;
 public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     private static final int DEFAULT_PRIORITY = javax.jms.Message.DEFAULT_PRIORITY;
-    private static final Charset UTF8 = Charset.forName("UTF-8");
     private static final long UINT_MAX = 0xFFFFFFFFL;
 
     protected AmqpConnection connection;
@@ -744,7 +743,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         if (properties != null && properties.getUserId() != null) {
             Binary userIdBytes = properties.getUserId();
             if (userIdBytes.getLength() != 0) {
-                userId = new String(userIdBytes.getArray(), userIdBytes.getArrayOffset(), userIdBytes.getLength(), UTF8);
+                userId = new String(userIdBytes.getArray(), userIdBytes.getArrayOffset(), userIdBytes.getLength(), StandardCharsets.UTF_8);
             }
         }
 
@@ -755,7 +754,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     public void setUserId(String userId) {
         byte[] bytes = null;
         if (userId != null) {
-            bytes = userId.getBytes(UTF8);
+            bytes = userId.getBytes(StandardCharsets.UTF_8);
         }
 
         if (bytes == null) {

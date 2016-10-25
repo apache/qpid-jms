@@ -148,26 +148,34 @@ public final class AmqpCodec {
         EncoderImpl encoder = getEncoder();
         encoder.setByteBuffer(buffer);
 
-        if (message.getHeader() != null) {
-            encoder.writeObject(message.getHeader());
+        Header header = message.getHeader();
+        DeliveryAnnotations deliveryAnnotations = message.getDeliveryAnnotations();
+        MessageAnnotations messageAnnotations = message.getMessageAnnotations();
+        Properties properties = message.getProperties();
+        ApplicationProperties applicationProperties = message.getApplicationProperties();
+        Section body = message.getBody();
+        Footer footer = message.getFooter();
+
+        if (header != null) {
+            encoder.writeObject(header);
         }
-        if (message.getDeliveryAnnotations() != null) {
-            encoder.writeObject(message.getDeliveryAnnotations());
+        if (deliveryAnnotations != null) {
+            encoder.writeObject(deliveryAnnotations);
         }
-        if (message.getMessageAnnotations() != null) {
-            encoder.writeObject(message.getMessageAnnotations());
+        if (messageAnnotations != null) {
+            encoder.writeObject(messageAnnotations);
         }
-        if (message.getProperties() != null) {
-            encoder.writeObject(message.getProperties());
+        if (properties != null) {
+            encoder.writeObject(properties);
         }
-        if (message.getApplicationProperties() != null) {
-            encoder.writeObject(message.getApplicationProperties());
+        if (applicationProperties != null) {
+            encoder.writeObject(applicationProperties);
         }
-        if (message.getBody() != null) {
-            encoder.writeObject(message.getBody());
+        if (body != null) {
+            encoder.writeObject(body);
         }
-        if (message.getFooter() != null) {
-            encoder.writeObject(message.getFooter());
+        if (footer != null) {
+            encoder.writeObject(footer);
         }
 
         encoder.setByteBuffer((WritableBuffer) null);

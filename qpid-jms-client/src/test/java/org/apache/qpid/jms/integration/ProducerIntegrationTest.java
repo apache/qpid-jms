@@ -256,7 +256,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
     /**
      * Test that when a message is sent and the producer is set to send as NON_PERSISTENT
-     * the resulting sent message has durable set to false.
+     * the resulting sent message has durable false, in this case due to omitting the
+     * header section due to it having all default values.
      *
      * @throws Exception if an error occurs during the test.
      */

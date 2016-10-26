@@ -19,13 +19,12 @@ package org.apache.qpid.jms.provider.amqp.message;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.messaging.Header;
-import org.apache.qpid.proton.amqp.messaging.Section;
 
 /**
  * Wraps around the proton Header object and provides an ability to
  * determine if the Header can be optimized out of message encodes
  */
-public final class AmqpHeader implements Section {
+public final class AmqpHeader {
 
     private static final int DEFAULT_PRIORITY = 4;
     private static final long UINT_MAX = 0xFFFFFFFFL;

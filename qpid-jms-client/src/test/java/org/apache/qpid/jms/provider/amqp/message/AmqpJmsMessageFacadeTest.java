@@ -1859,7 +1859,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     }
 
     @Test
-    public void testMessageWithNonDefaultHeaderValuesCreateNoHeaderForEncode() throws Exception {
+    public void testMessageWithNonDefaultHeaderValuesCreatesHeaderForEncode() throws Exception {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
         amqpMessageFacade.setPersistent(true);

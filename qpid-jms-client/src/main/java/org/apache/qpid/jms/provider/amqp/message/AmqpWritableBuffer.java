@@ -28,10 +28,12 @@ import io.netty.buffer.Unpooled;
  */
 public class AmqpWritableBuffer implements WritableBuffer {
 
+    public static final int INITIAL_CAPACITY = 1024;
+
     public ByteBuf nettyBuffer;
 
     public AmqpWritableBuffer() {
-        nettyBuffer = Unpooled.buffer(1024);
+        nettyBuffer = Unpooled.buffer(INITIAL_CAPACITY);
     }
 
     public AmqpWritableBuffer(ByteBuf buffer) {
@@ -88,12 +90,12 @@ public class AmqpWritableBuffer implements WritableBuffer {
 
     @Override
     public boolean hasRemaining() {
-        return nettyBuffer.writerIndex() < nettyBuffer.capacity();
+        return nettyBuffer.writerIndex() < nettyBuffer.maxCapacity();
     }
 
     @Override
     public int remaining() {
-        return nettyBuffer.capacity() - nettyBuffer.writerIndex();
+        return nettyBuffer.maxCapacity() - nettyBuffer.writerIndex();
     }
 
     @Override

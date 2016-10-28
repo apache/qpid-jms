@@ -28,7 +28,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.jms.BytesMessage;
 import javax.jms.ConnectionFactory;
 import javax.jms.DeliveryMode;
-import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
@@ -64,7 +63,7 @@ public class ProducerAndConsumerBench extends AmqpTestSupport  {
     private final Vector<Throwable> exceptions = new Vector<Throwable>();
     private ConnectionFactory factory;
 
-    private final long NUM_SENDS = 30000;
+    private final long NUM_SENDS = 100000;
 
     @Test
     public void testProduceConsume() throws Exception {
@@ -121,6 +120,9 @@ public class ProducerAndConsumerBench extends AmqpTestSupport  {
         MessageConsumer consumer = session.createConsumer(queue);
         long v;
         while ((v = count.decrementAndGet()) > 0) {
+            if ((count.get() % 10000) == 0) {
+                LOG.info("Received message: {}", NUM_SENDS - count.get());
+            }
             assertNotNull("got message " + v, consumer.receive(15000));
         }
         consumer.close();
@@ -134,11 +136,14 @@ public class ProducerAndConsumerBench extends AmqpTestSupport  {
 
         MessageProducer producer = session.createProducer(queue);
         producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
-        Message message = session.createBytesMessage();
-        ((BytesMessage) message).writeBytes(payloadString.getBytes());
 
         while (count.getAndDecrement() > 0) {
+            BytesMessage message = session.createBytesMessage();
+            message.writeBytes(payloadString.getBytes());
             producer.send(message);
+            if ((count.get() % 10000) == 0) {
+                LOG.info("Sent message: {}", NUM_SENDS - count.get());
+            }
         }
         producer.close();
         connection.close();
@@ -162,7 +167,7 @@ public class ProducerAndConsumerBench extends AmqpTestSupport  {
 
     @Override
     protected boolean isForceAsyncSends() {
-        return true;
+        return false;
     }
 
     @Override
@@ -172,7 +177,7 @@ public class ProducerAndConsumerBench extends AmqpTestSupport  {
 
     @Override
     protected String getAmqpTransformer() {
-        return "raw";
+        return "jms";
     }
 
     @Override
@@ -182,7 +187,7 @@ public class ProducerAndConsumerBench extends AmqpTestSupport  {
 
     @Override
     public String getAmqpConnectionURIOptions() {
-        return "jms.presettlePolicy.presettleAll=true";
+        return "jms.presettlePolicy.presettleAll=false";
     }
 
     @Override

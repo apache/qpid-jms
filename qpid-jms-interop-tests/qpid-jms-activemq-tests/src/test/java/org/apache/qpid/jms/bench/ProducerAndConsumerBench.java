@@ -40,30 +40,38 @@ import org.apache.activemq.broker.region.policy.PolicyMap;
 import org.apache.activemq.broker.region.policy.VMPendingQueueMessageStoragePolicy;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.support.AmqpTestSupport;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- *
- */
 @Ignore
 public class ProducerAndConsumerBench extends AmqpTestSupport  {
 
     private static final Logger LOG = LoggerFactory.getLogger(ProducerAndConsumerBench.class);
 
-    public static final int payload = 64 * 1024;
-    public static final int ioBuffer = 2 * payload;
-    public static final int socketBuffer = 64 * payload;
+    public static final int PAYLOAD_SIZE = 64 * 1024;
+    public static final int ioBuffer = 2 * PAYLOAD_SIZE;
+    public static final int socketBuffer = 64 * PAYLOAD_SIZE;
 
-    private final String payloadString = new String(new byte[payload]);
+    private final byte[] payload = new byte[PAYLOAD_SIZE];
     private final int parallelProducer = 1;
     private final int parallelConsumer = 1;
     private final Vector<Throwable> exceptions = new Vector<Throwable>();
     private ConnectionFactory factory;
 
-    private final long NUM_SENDS = 100000;
+    private final long NUM_SENDS = 30000;
+
+    @Override
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+
+        for (int i = 0; i < PAYLOAD_SIZE; ++i) {
+            payload[i] = (byte) (i % 255);
+        }
+    }
 
     @Test
     public void testProduceConsume() throws Exception {
@@ -139,7 +147,7 @@ public class ProducerAndConsumerBench extends AmqpTestSupport  {
 
         while (count.getAndDecrement() > 0) {
             BytesMessage message = session.createBytesMessage();
-            message.writeBytes(payloadString.getBytes());
+            message.writeBytes(payload);
             producer.send(message);
             if ((count.get() % 10000) == 0) {
                 LOG.info("Sent message: {}", NUM_SENDS - count.get());

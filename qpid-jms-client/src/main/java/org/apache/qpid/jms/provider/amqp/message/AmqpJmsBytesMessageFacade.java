@@ -65,9 +65,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
         Binary payload = getBinaryFromBody();
         copy.setContentType(OCTET_STREAM_CONTENT_TYPE);
         if (payload.getLength() > 0) {
-            byte[] result = new byte[payload.getLength()];
-            System.arraycopy(payload.getArray(), payload.getArrayOffset(), result, 0, payload.getLength());
-            copy.setBody(new Data(new Binary(result)));
+            copy.setBody(new Data(payload));
         } else {
             copy.setBody(EMPTY_BODY);
         }

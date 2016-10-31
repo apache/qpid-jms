@@ -177,6 +177,33 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         assertDataBodyAsExpected(copy.getBody(), 0);
     }
 
+    /**
+     * Test that copying a new messages which has a body and the copy has getOutputStream
+     * called which clears the message body doesn't affect the original.
+     *
+     * @throws Exception if an error occurs during the test.
+     */
+    @Test
+    public void testGetOutputStreamOnCopiedMessageLeavesOriginalUntouched() throws Exception {
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
+
+        assertDataBodyAsExpected(amqpBytesMessageFacade.getBody(), 0);
+
+        byte[] bytes = "myBytes".getBytes();
+        OutputStream os = amqpBytesMessageFacade.getOutputStream();
+        os.write(bytes);
+
+        AmqpJmsBytesMessageFacade copy = amqpBytesMessageFacade.copy();
+
+        assertDataBodyAsExpected(amqpBytesMessageFacade.getBody(), bytes.length);
+        assertDataBodyAsExpected(copy.getBody(), bytes.length);
+
+        copy.getOutputStream();
+
+        assertDataBodyAsExpected(amqpBytesMessageFacade.getBody(), bytes.length);
+        assertDataBodyAsExpected(copy.getBody(), 0);
+    }
+
     @Test
     public void testClearBodySetsBodyLength0AndCausesEmptyInputStream() throws Exception {
         byte[] bytes = "myBytes".getBytes();

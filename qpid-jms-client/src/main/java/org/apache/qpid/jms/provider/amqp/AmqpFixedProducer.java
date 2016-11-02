@@ -81,7 +81,7 @@ public class AmqpFixedProducer extends AmqpProducer {
     @Override
     public void close(AsyncResult request) {
         // If any sends are held we need to wait for them to complete.
-        if (!blocked.isEmpty()) {
+        if (!blocked.isEmpty() || !sent.isEmpty()) {
             this.closeRequest = request;
             return;
         }

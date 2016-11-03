@@ -194,6 +194,7 @@ public final class JmsMessageTransformation {
         target.setJMSReplyTo(transformDestination(connection, source.getJMSReplyTo()));
         target.setJMSDestination(transformDestination(connection, source.getJMSDestination()));
         target.setJMSDeliveryMode(source.getJMSDeliveryMode());
+        target.setJMSDeliveryTime(source.getJMSDeliveryTime());
         target.setJMSRedelivered(source.getJMSRedelivered());
         target.setJMSType(source.getJMSType());
         target.setJMSExpiration(source.getJMSExpiration());

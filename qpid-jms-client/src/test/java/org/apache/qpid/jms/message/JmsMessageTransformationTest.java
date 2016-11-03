@@ -25,6 +25,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageEOFException;
@@ -270,6 +271,41 @@ public class JmsMessageTransformationTest {
     }
 
     //---------- Test Generic Property Copy ----------------------------------//
+
+    @Test
+    public void testJMSMessageHeadersAreCopied() throws JMSException {
+        JmsMessage source = new JmsMessage(new JmsTestMessageFacade());
+        JmsMessage target = new JmsMessage(new JmsTestMessageFacade());
+
+        JmsTopic destination = new JmsTopic(DESTINATION_NAME);
+        JmsTopic replyTo = new JmsTopic("ReplyTp:" + DESTINATION_NAME);
+
+        source.setJMSMessageID("ID:TEST");
+        source.setJMSCorrelationID("ID:CORRELATION");
+        source.setJMSReplyTo(replyTo);
+        source.setJMSDestination(destination);
+        source.setJMSDeliveryMode(DeliveryMode.NON_PERSISTENT);
+        source.setJMSDeliveryTime(10000);
+        source.setJMSRedelivered(true);
+        source.setJMSType("test-type");
+        source.setJMSExpiration(15000);
+        source.setJMSPriority(7);
+        source.setJMSTimestamp(5000);
+
+        JmsMessageTransformation.copyProperties(createMockJmsConnection(), source, target);
+
+        assertEquals("ID:TEST" , target.getJMSMessageID());
+        assertEquals("ID:CORRELATION", target.getJMSCorrelationID());
+        assertEquals(replyTo, target.getJMSReplyTo());
+        assertEquals(destination, target.getJMSDestination());
+        assertEquals(DeliveryMode.NON_PERSISTENT, target.getJMSDeliveryMode());
+        assertEquals(10000, target.getJMSDeliveryTime());
+        assertEquals(true, target.getJMSRedelivered());
+        assertEquals("test-type", target.getJMSType());
+        assertEquals(15000, target.getJMSExpiration());
+        assertEquals(7, target.getJMSPriority());
+        assertEquals(5000, target.getJMSTimestamp());
+    }
 
     @Test
     public void testJMSMessagePropertiesAreCopied() throws JMSException {

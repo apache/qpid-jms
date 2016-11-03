@@ -16,7 +16,9 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -227,11 +229,13 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
 
     @Override
     public void handleResourceClosure(AmqpProvider provider, Exception error) {
-        for (AmqpConsumer consumer : consumers.values()) {
+        List<AmqpConsumer> consumerList = new ArrayList<>(consumers.values());
+        for (AmqpConsumer consumer : consumerList) {
             consumer.locallyClosed(provider, error);
         }
 
-        for (AmqpProducer producer : producers.values()) {
+        List<AmqpProducer> producerList = new ArrayList<>(producers.values());
+        for (AmqpProducer producer : producerList) {
             producer.locallyClosed(provider, error);
         }
     }

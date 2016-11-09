@@ -226,10 +226,6 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
     }
 
     private void sendMessage(Destination destination, Message message, int deliveryMode, int priority, long timeToLive, CompletionListener listener) throws JMSException {
-        if (destination == null) {
-            throw new InvalidDestinationException("Don't understand null destinations");
-        }
-
         this.session.send(this, destination, message, deliveryMode, priority, timeToLive, disableMessageId, disableTimestamp, deliveryDelay, listener);
     }
 

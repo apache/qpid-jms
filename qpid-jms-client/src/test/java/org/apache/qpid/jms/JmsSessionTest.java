@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.qpid.jms.session;
+package org.apache.qpid.jms;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -36,11 +36,11 @@ import javax.jms.Session;
 import javax.jms.TemporaryQueue;
 import javax.jms.TextMessage;
 
-import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.apache.qpid.jms.JmsSession;
 import org.apache.qpid.jms.JmsTemporaryQueue;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 /**
  * Test basic contracts of the JmsSession class using a mocked connection.
@@ -271,6 +271,17 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
     public void testCreateDurableConsumerNullDestinationWithSelectorNoLocalThrowsIDE() throws JMSException {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         session.createDurableConsumer(null, "name", "a > b", true);
+    }
+
+    @Test(timeout = 10000)
+    public void testSendWithNullDestThrowsIDE() throws JMSException {
+        JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        JmsMessageProducer mockProducer = Mockito.mock(JmsMessageProducer.class);
+
+        try {
+            session.send(mockProducer, null, null, 0, 0, 0, true, true, 0, null);
+            fail("Should not be able to send");
+        } catch (InvalidDestinationException idex) {}
     }
 
     @Test(timeout = 10000)

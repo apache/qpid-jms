@@ -36,12 +36,15 @@ import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.IllegalStateException;
 import javax.jms.IllegalStateRuntimeException;
+import javax.jms.InvalidDestinationException;
+import javax.jms.InvalidDestinationRuntimeException;
 import javax.jms.JMSException;
 import javax.jms.JMSProducer;
 import javax.jms.Message;
 import javax.jms.MessageFormatRuntimeException;
 import javax.jms.Queue;
 
+import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.apache.qpid.jms.JmsContext;
 import org.apache.qpid.jms.JmsMessageProducer;
@@ -51,6 +54,7 @@ import org.apache.qpid.jms.JmsTemporaryQueue;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
+import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.provider.mock.MockRemotePeer;
 import org.junit.Before;
 import org.junit.Test;
@@ -1262,6 +1266,41 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
             producer.setJMSReplyTo(queue);
             fail("Should have thrown an exception");
         } catch (IllegalStateRuntimeException isre) {}
+    }
+
+    @Test
+    public void testRuntimeExceptionFromSendToInvalidDestination() throws JMSException {
+        class TestJmsSession extends JmsSession {
+            protected TestJmsSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) throws JMSException {
+                super(connection, sessionId, acknowledgementMode);
+            }
+
+            @Override
+            public void send(JmsMessageProducer producer, Destination dest, Message msg, int deliveryMode, int priority, long timeToLive,
+                             boolean disableMsgId, boolean disableTimestamp, long deliveryDelay, CompletionListener listener) throws JMSException {
+                super.send(producer, dest, msg, deliveryMode, priority, timeToLive, disableMsgId, disableTimestamp, deliveryDelay, listener);
+            }
+        };
+
+        JmsMessageProducer mockMessageProducer = Mockito.mock(JmsMessageProducer.class);
+        TestJmsSession mockSession = Mockito.mock(TestJmsSession.class);
+
+        Mockito.doThrow(new InvalidDestinationException("ide"))
+                .when(mockSession)
+                .send(Mockito.any(JmsMessageProducer.class), Mockito.any(Destination.class), Mockito.any(Message.class),
+                      Mockito.any(int.class),    Mockito.any(int.class), Mockito.any(long.class), Mockito.any(boolean.class),
+                      Mockito.any(boolean.class), Mockito.any(long.class), Mockito.any(CompletionListener.class));
+
+        JmsProducer producer = new JmsProducer(mockSession, mockMessageProducer);
+
+        try {
+            producer.send(null, Mockito.mock(Message.class));
+            fail("Should have thrown an InvalidDestinationRuntimeException");
+        } catch (InvalidDestinationRuntimeException idre) {}
+
+        Mockito.verify(mockSession).send(Mockito.any(JmsMessageProducer.class), Mockito.any(Destination.class), Mockito.any(Message.class),
+                Mockito.any(int.class),    Mockito.any(int.class), Mockito.any(long.class), Mockito.any(boolean.class),
+                Mockito.any(boolean.class), Mockito.any(long.class), Mockito.any(CompletionListener.class));
     }
 
     //----- Internal Support -------------------------------------------------//

@@ -711,6 +711,10 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     }
 
     protected void send(JmsMessageProducer producer, Destination dest, Message msg, int deliveryMode, int priority, long timeToLive, boolean disableMsgId, boolean disableTimestamp, long deliveryDelay, CompletionListener listener) throws JMSException {
+        if (dest == null) {
+            throw new InvalidDestinationException("Destination must not be null");
+        }
+
         JmsDestination destination = JmsMessageTransformation.transformDestination(connection, dest);
 
         if (destination.isTemporary() && ((JmsTemporaryDestination) destination).isDeleted()) {

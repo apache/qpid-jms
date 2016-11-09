@@ -1022,8 +1022,15 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             boolean await = latch.await(3000, TimeUnit.MILLISECONDS);
             assertTrue("Messages not received within given timeout. Count remaining: " + latch.getCount(), await);
 
-            assertNotNull(asyncError.get());
-            assertTrue(asyncError.get() instanceof IllegalStateException);
+            Exception ex = asyncError.get();
+
+            assertNotNull("Expected an exception", ex);
+
+            boolean expectedType = ex instanceof IllegalStateException;
+            if(!expectedType) {
+                LOG.error("Unexpected exception type", ex);
+            }
+            assertTrue("Got unexpected exception type: " + ex, expectedType);
 
             testPeer.waitForAllHandlersToComplete(2000);
 

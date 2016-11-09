@@ -63,7 +63,7 @@ public class JmsTestMessageFacade implements JmsMessageFacade {
     protected long deliveryTime;
     protected long timestamp;
     protected String correlationId;
-    protected boolean persistent;
+    protected boolean persistent = true;
     protected int redeliveryCount;
     protected String type;
     protected JmsDestination destination;

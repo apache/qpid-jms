@@ -25,11 +25,14 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.CompletionListener;
 import javax.jms.Connection;
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
+import javax.jms.IllegalStateException;
 import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -117,6 +120,25 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
     }
 
     @Test(timeout = 10000)
+    public void testPriorityConfigurationWithInvalidPriorityValues() throws Exception {
+        MessageProducer producer = session.createProducer(null);
+        assertEquals(Message.DEFAULT_PRIORITY, producer.getPriority());
+        try {
+            producer.setPriority(-1);
+            fail("Should have thrown an exception");
+        } catch (JMSException ex) {
+            LOG.debug("Caught expected exception: {}", ex.getMessage());
+        }
+        try {
+            producer.setPriority(10);
+            fail("Should have thrown an exception");
+        } catch (JMSException ex) {
+            LOG.debug("Caught expected exception: {}", ex.getMessage());
+        }
+        assertEquals(Message.DEFAULT_PRIORITY, producer.getPriority());
+    }
+
+    @Test(timeout = 10000)
     public void testTimeToLiveConfiguration() throws Exception {
         MessageProducer producer = session.createProducer(null);
         assertEquals(Message.DEFAULT_TIME_TO_LIVE, producer.getTimeToLive());
@@ -130,6 +152,25 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertEquals(Message.DEFAULT_DELIVERY_MODE, producer.getDeliveryMode());
         producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
         assertEquals(DeliveryMode.NON_PERSISTENT, producer.getDeliveryMode());
+    }
+
+    @Test(timeout = 10000)
+    public void testDeliveryModeConfigurationWithInvalidMode() throws Exception {
+        MessageProducer producer = session.createProducer(null);
+        assertEquals(Message.DEFAULT_DELIVERY_MODE, producer.getDeliveryMode());
+        try {
+            producer.setDeliveryMode(-1);
+            fail("Should have thrown an exception");
+        } catch (JMSException ex) {
+            LOG.debug("Caught expected exception: {}", ex.getMessage());
+        }
+        try {
+            producer.setDeliveryMode(5);
+            fail("Should have thrown an exception");
+        } catch (JMSException ex) {
+            LOG.debug("Caught expected exception: {}", ex.getMessage());
+        }
+        assertEquals(Message.DEFAULT_DELIVERY_MODE, producer.getDeliveryMode());
     }
 
     @Test(timeout = 10000)
@@ -516,7 +557,108 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         connection.close();
     }
 
-    private void sendMessages(int count, JmsMessageProducer producer, MyCompletionListener listener) throws Exception {
+    @Test(timeout = 15000)
+    public void testCompletionListenerOnCompleteCallsProducerCloseThrowsISE() throws Exception {
+        final int MESSAGE_COUNT = 1;
+
+        final MockRemotePeer remotePoor = MockRemotePeer.INSTANCE;
+
+        JmsConnectionFactory factory = new JmsConnectionFactory(
+            "mock://localhost?mock.delayCompletionCalls=true");
+
+        Connection connection = factory.createConnection();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+        final CountDownLatch done = new CountDownLatch(1);
+        final Destination destination = new JmsQueue("explicitDestination");
+        final JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(destination);
+        final CompletionListener listener = new CompletionListener() {
+
+            @Override
+            public void onCompletion(Message message) {
+                try {
+                    producer.close();
+                } catch (IllegalStateException ex) {
+                    done.countDown();
+                } catch (Exception e) {
+                    LOG.info("Wrong exception thrown when close called in completion: {}", e.getMessage());
+                }
+            }
+
+            @Override
+            public void onException(Message message, Exception exception) {
+                LOG.info("Unexpected exception thrown in completion: {}", exception.getMessage());
+            }
+        };
+
+        sendMessages(MESSAGE_COUNT, producer, listener);
+
+        assertTrue("Not all sends made it to the remote", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return remotePoor.getPendingCompletions(destination).size() == MESSAGE_COUNT;
+            }
+        }));
+
+        remotePoor.completeAllPendingSends(destination);
+
+        assertTrue("Completion never got expected ISE", done.await(10, TimeUnit.SECONDS));
+
+        connection.close();
+    }
+
+    @Test(timeout = 15000)
+    public void testCompletionListenerOnExceptionCallsProducerCloseThrowsISE() throws Exception {
+        final int MESSAGE_COUNT = 1;
+
+        final MockRemotePeer remotePoor = MockRemotePeer.INSTANCE;
+
+        JmsConnectionFactory factory = new JmsConnectionFactory(
+            "mock://localhost?mock.delayCompletionCalls=true");
+
+        Connection connection = factory.createConnection();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+        final CountDownLatch done = new CountDownLatch(1);
+        final Destination destination = new JmsQueue("explicitDestination");
+        final JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(destination);
+        final CompletionListener listener = new CompletionListener() {
+
+            @Override
+            public void onCompletion(Message message) {
+            }
+
+            @Override
+            public void onException(Message message, Exception exception) {
+                try {
+                    producer.close();
+                } catch (IllegalStateException ex) {
+                    done.countDown();
+                } catch (Exception e) {
+                    LOG.info("Wrong exception thrown when close called in completion: {}", e.getMessage());
+                }
+            }
+        };
+
+        sendMessages(MESSAGE_COUNT, producer, listener);
+
+        assertTrue("Not all sends made it to the remote", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return remotePoor.getPendingCompletions(destination).size() == MESSAGE_COUNT;
+            }
+        }));
+
+        remotePoor.failAllPendingSends(destination, new JMSException("Could not send message"));
+
+        assertTrue("Completion never got expected ISE", done.await(10, TimeUnit.SECONDS));
+
+        connection.close();
+    }
+
+    private void sendMessages(int count, JmsMessageProducer producer, CompletionListener listener) throws Exception {
         for (int i = 0; i < count; ++i) {
             Message message = session.createMessage();
             message.setIntProperty("sequence", i);

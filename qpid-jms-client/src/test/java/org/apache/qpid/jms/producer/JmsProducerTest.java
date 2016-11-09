@@ -1288,7 +1288,7 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
         Mockito.doThrow(new InvalidDestinationException("ide"))
                 .when(mockSession)
                 .send(Mockito.any(JmsMessageProducer.class), Mockito.any(Destination.class), Mockito.any(Message.class),
-                      Mockito.any(int.class),    Mockito.any(int.class), Mockito.any(long.class), Mockito.any(boolean.class),
+                      Mockito.any(int.class), Mockito.any(int.class), Mockito.any(long.class), Mockito.any(boolean.class),
                       Mockito.any(boolean.class), Mockito.any(long.class), Mockito.any(CompletionListener.class));
 
         JmsProducer producer = new JmsProducer(mockSession, mockMessageProducer);
@@ -1299,7 +1299,7 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
         } catch (InvalidDestinationRuntimeException idre) {}
 
         Mockito.verify(mockSession).send(Mockito.any(JmsMessageProducer.class), Mockito.any(Destination.class), Mockito.any(Message.class),
-                Mockito.any(int.class),    Mockito.any(int.class), Mockito.any(long.class), Mockito.any(boolean.class),
+                Mockito.any(int.class), Mockito.any(int.class), Mockito.any(long.class), Mockito.any(boolean.class),
                 Mockito.any(boolean.class), Mockito.any(long.class), Mockito.any(CompletionListener.class));
     }
 

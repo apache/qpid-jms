@@ -24,7 +24,6 @@ import javax.jms.CompletionListener;
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.IllegalStateException;
-import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
@@ -89,8 +88,9 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
      * @throws JMSException if an internal error occurs during the close operation.
      */
     protected void doClose() throws JMSException {
+        session.checkIsCompletionThread();
         shutdown();
-        this.connection.destroyResource(producerInfo);
+        connection.destroyResource(producerInfo);
     }
 
     /**
@@ -238,7 +238,14 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
     @Override
     public void setDeliveryMode(int deliveryMode) throws JMSException {
         checkClosed();
-        this.deliveryMode = deliveryMode;
+        switch (deliveryMode) {
+            case DeliveryMode.PERSISTENT:
+            case DeliveryMode.NON_PERSISTENT:
+                this.deliveryMode = deliveryMode;
+                break;
+            default:
+                throw new JMSException(String.format("Invalid DeliveryMode specific: %d", deliveryMode));
+        }
     }
 
     @Override
@@ -256,6 +263,11 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
     @Override
     public void setPriority(int defaultPriority) throws JMSException {
         checkClosed();
+
+        if (defaultPriority < 0 || defaultPriority > 9) {
+            throw new JMSException(String.format("Priority value given {%d} is out of range (0..9)", defaultPriority));
+        }
+
         this.priority = defaultPriority;
     }
 

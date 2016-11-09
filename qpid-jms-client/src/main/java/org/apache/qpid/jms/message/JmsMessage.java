@@ -240,7 +240,16 @@ public class JmsMessage implements javax.jms.Message {
     @Override
     public void setJMSDeliveryMode(int mode) throws JMSException {
         checkReadOnly();
-        facade.setPersistent(mode == DeliveryMode.PERSISTENT);
+        switch (mode) {
+            case DeliveryMode.PERSISTENT:
+                facade.setPersistent(true);
+                break;
+            case DeliveryMode.NON_PERSISTENT:
+                facade.setPersistent(false);
+                break;
+            default:
+                throw new JMSException(String.format("Invalid DeliveryMode specific: %d", mode));
+        }
     }
 
     @Override
@@ -284,6 +293,11 @@ public class JmsMessage implements javax.jms.Message {
     @Override
     public void setJMSPriority(int priority) throws JMSException {
         checkReadOnly();
+
+        if (priority < 0 || priority > 9) {
+            throw new JMSException(String.format("Priority value given {%d} is out of range (0..9)", priority));
+        }
+
         facade.setPriority(priority);
     }
 

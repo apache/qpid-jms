@@ -314,6 +314,25 @@ public class JmsMessageTest {
     }
 
     @Test
+    public void testSetJMSDeliveryModeWithInvalidValue() throws JMSException {
+        JmsMessage msg = factory.createMessage();
+        assertEquals(Message.DEFAULT_DELIVERY_MODE, msg.getJMSDeliveryMode());
+        try {
+            msg.setJMSDeliveryMode(-1);
+            fail("Should have thrown an exception");
+        } catch (JMSException ex) {
+            LOG.debug("Caught expected exception: {}", ex.getMessage());
+        }
+        try {
+            msg.setJMSDeliveryMode(3);
+            fail("Should have thrown an exception");
+        } catch (JMSException ex) {
+            LOG.debug("Caught expected exception: {}", ex.getMessage());
+        }
+        assertEquals(Message.DEFAULT_DELIVERY_MODE, msg.getJMSDeliveryMode());
+    }
+
+    @Test
     public void testGetAndSetMSRedelivered() throws JMSException {
         JmsMessage msg = factory.createMessage();
         msg.setJMSRedelivered(this.jmsRedelivered);
@@ -336,15 +355,23 @@ public class JmsMessageTest {
 
     @Test
     public void testGetAndSetJMSPriority() throws JMSException {
-        JmsMessage msg = factory.createMessage();
-        msg.setJMSPriority(this.jmsPriority);
-        assertTrue(msg.getJMSPriority() == this.jmsPriority);
+        JmsMessage message = factory.createMessage();
+        assertEquals(Message.DEFAULT_PRIORITY, message.getJMSPriority());
 
-        msg.setJMSPriority(-90);
-        assertEquals(0, msg.getJMSPriority());
+        try {
+            message.setJMSPriority(-1);
+            fail("Should have thrown an exception");
+        } catch (JMSException ex) {
+            LOG.debug("Caught expected exception: {}", ex.getMessage());
+        }
+        try {
+            message.setJMSPriority(10);
+            fail("Should have thrown an exception");
+        } catch (JMSException ex) {
+            LOG.debug("Caught expected exception: {}", ex.getMessage());
+        }
 
-        msg.setJMSPriority(90);
-        assertEquals(9, msg.getJMSPriority());
+        assertEquals(Message.DEFAULT_PRIORITY, message.getJMSPriority());
     }
 
     @Test

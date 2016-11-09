@@ -347,6 +347,11 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         if (checkClosed) {
             checkClosedOrFailed();
         }
+
+        for (JmsSession session : sessions.values()) {
+            session.checkIsDeliveryThread();
+        }
+
         if (started.compareAndSet(true, false)) {
             synchronized(sessions) {
                 for (JmsSession s : sessions.values()) {

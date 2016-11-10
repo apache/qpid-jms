@@ -410,6 +410,8 @@ public class JmsBytesMessage extends JmsMessage implements BytesMessage {
 
     @Override
     protected <T> T doGetBody(Class<T> asType) throws JMSException {
+        reset();
+
         if (!facade.hasBody()) {
             return null;
         }

@@ -136,7 +136,7 @@ public final class JmsTestBytesMessageFacade extends JmsTestMessageFacade implem
 
     @Override
     public boolean hasBody() {
-        return content.isReadable();
+        return content.isReadable() || (bytesOut != null && bytesOut.writtenBytes() > 0);
     }
 
     @Override

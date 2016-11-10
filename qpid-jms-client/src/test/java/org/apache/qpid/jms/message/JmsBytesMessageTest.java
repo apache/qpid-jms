@@ -960,6 +960,22 @@ public class JmsBytesMessageTest {
         }
     }
 
+    @Test
+    public void testGetBodyThrowsMessageFormatException() throws JMSException {
+        JmsBytesMessage bytesMessage = factory.createBytesMessage();
+        bytesMessage.setStringProperty("property", "value");
+        bytesMessage.writeByte((byte) 1);
+        bytesMessage.writeInt(22);
+
+        try {
+            bytesMessage.getBody(StringBuffer.class);
+            fail("should have thrown MessageFormatException");
+        } catch (MessageFormatException mfe) {
+        } catch (Exception e) {
+            fail("should have thrown MessageFormatException");
+        }
+    }
+
     //---------- Test for misc message methods -------------------------------//
 
     @Test

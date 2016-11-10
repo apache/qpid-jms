@@ -20,6 +20,7 @@ import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_B
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MSG_TYPE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.getSymbol;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -521,6 +522,74 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         Mockito.doThrow(new IOException()).when(inputStream).close();
 
         amqpBytesMessageFacade.reset();
+    }
+
+    //--------- hasBody tests ---------------
+
+    @Test
+    public void testHasBodyOnNewMessage() throws Exception {
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
+
+        assertFalse(amqpBytesMessageFacade.hasBody());
+    }
+
+    @Test
+    public void testHasBodyWithContent() throws Exception {
+        byte[] bodyBytes = "myOrigBytes".getBytes();
+
+        Message message = Message.Factory.create();
+        message.setBody(new Data(new Binary(bodyBytes)));
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
+
+        assertTrue(amqpBytesMessageFacade.hasBody());
+    }
+
+    @Test
+    public void testHasBodyAfterClear() throws Exception {
+        byte[] bodyBytes = "myOrigBytes".getBytes();
+
+        Message message = Message.Factory.create();
+        message.setBody(new Data(new Binary(bodyBytes)));
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
+
+        assertTrue(amqpBytesMessageFacade.hasBody());
+
+        amqpBytesMessageFacade.clearBody();
+
+        assertFalse(amqpBytesMessageFacade.hasBody());
+    }
+
+    @Test
+    public void testHasBodyWithActiveInputStream() throws Exception {
+        byte[] bodyBytes = "myOrigBytes".getBytes();
+
+        Message message = Message.Factory.create();
+        message.setBody(new Data(new Binary(bodyBytes)));
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createReceivedBytesMessageFacade(createMockAmqpConsumer(), message);
+
+        assertTrue(amqpBytesMessageFacade.hasBody());
+
+        amqpBytesMessageFacade.getInputStream();
+
+        assertTrue(amqpBytesMessageFacade.hasBody());
+    }
+
+    @Test
+    public void testHasBodyWithActiveOutputStream() throws Exception {
+        AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
+
+        assertFalse(amqpBytesMessageFacade.hasBody());
+
+        OutputStream output = amqpBytesMessageFacade.getOutputStream();
+
+        assertFalse(amqpBytesMessageFacade.hasBody());
+
+        output.write(1);
+
+        // Body exists after some data written.
+        assertTrue(amqpBytesMessageFacade.hasBody());
+        amqpBytesMessageFacade.reset();
+        assertTrue(amqpBytesMessageFacade.hasBody());
     }
 
     //--------- utility methods ----------

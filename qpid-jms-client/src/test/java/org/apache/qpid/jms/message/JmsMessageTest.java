@@ -1768,6 +1768,8 @@ public class JmsMessageTest {
         assertNull(message.getBody(byte[].class));
         assertNull(message.getBody(Object.class));
 
+        message.clearBody();
+
         message.writeUTF("test");
         message.reset();
 

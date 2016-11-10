@@ -194,7 +194,11 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
 
     @Override
     public boolean hasBody() {
-        return getBinaryFromBody().getLength() != 0;
+        if (bytesOut != null) {
+            return bytesOut.writtenBytes() > 0;
+        } else {
+            return getBinaryFromBody().getLength() != 0;
+        }
     }
 
     @Override

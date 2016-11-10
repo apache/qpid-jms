@@ -24,6 +24,7 @@ import javax.jms.CompletionListener;
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.IllegalStateException;
+import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
@@ -178,6 +179,8 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
     public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive) throws JMSException {
         checkClosed();
 
+        checkDestinationNotInvalid(destination);
+
         if (!anonymousProducer) {
             throw new UnsupportedOperationException("Using this method is not supported on producers created with an explicit Destination.");
         }
@@ -214,6 +217,8 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
     public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive, CompletionListener listener) throws JMSException {
         checkClosed();
 
+        checkDestinationNotInvalid(destination);
+
         if (!anonymousProducer) {
             throw new UnsupportedOperationException("Using this method is not supported on producers created with an explicit Destination.");
         }
@@ -223,6 +228,12 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
         }
 
         sendMessage(destination, message, deliveryMode, priority, timeToLive, listener);
+    }
+
+    private void checkDestinationNotInvalid(Destination destination) throws InvalidDestinationException {
+        if (destination == null) {
+            throw new InvalidDestinationException("Destination must not be null");
+        }
     }
 
     private void sendMessage(Destination destination, Message message, int deliveryMode, int priority, long timeToLive, CompletionListener listener) throws JMSException {

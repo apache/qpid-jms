@@ -46,6 +46,7 @@ import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsMessageProducer;
 import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsSession;
+import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.provider.mock.MockRemotePeer;
 import org.apache.qpid.jms.test.Wait;
@@ -212,6 +213,50 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
             producer.send(message, Message.DEFAULT_DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE, completionListener);
             fail("Expected exception not thrown");
         } catch (UnsupportedOperationException uoe) {
+            // expected
+        }
+    }
+
+    @Test(timeout = 10000)
+    public void testExplicitQueueProducerThrowsIDEWhenNullDestinationIsProvidedOnSend() throws Exception {
+        doExplicitProducerThrowsIDEWhenNullDestinationIsProvidedOnSendTestImpl(new JmsQueue("explicitQueueDest"));
+    }
+
+    @Test(timeout = 10000)
+    public void testExplicitTopicProducerThrowsIDEWhenInvalidDestinationIsProvidedOnSend() throws Exception {
+        doExplicitProducerThrowsIDEWhenNullDestinationIsProvidedOnSendTestImpl(new JmsTopic("explicitTopicDest"));
+    }
+
+    private void doExplicitProducerThrowsIDEWhenNullDestinationIsProvidedOnSendTestImpl(JmsDestination explicitDest) throws JMSException {
+        JmsDestination invalildNullDest = null;
+        JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(explicitDest);
+
+        Message message = Mockito.mock(Message.class);
+        try {
+            producer.send(invalildNullDest, message);
+            fail("Expected exception to be thrown");
+        } catch (InvalidDestinationException ide) {
+            // expected
+        }
+
+        try {
+            producer.send(invalildNullDest, message, completionListener);
+            fail("Expected exception to be thrown");
+        } catch (InvalidDestinationException ide) {
+            // expected
+        }
+
+        try {
+            producer.send(invalildNullDest, message, Message.DEFAULT_DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+            fail("Expected exception to be thrown");
+        } catch (InvalidDestinationException ide) {
+            // expected
+        }
+
+        try {
+            producer.send(invalildNullDest, message, Message.DEFAULT_DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE, completionListener);
+            fail("Expected exception to be thrown");
+        } catch (InvalidDestinationException ide) {
             // expected
         }
     }

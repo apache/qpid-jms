@@ -34,6 +34,7 @@ import javax.jms.JMSException;
 import javax.jms.JMSProducer;
 import javax.jms.MapMessage;
 import javax.jms.Message;
+import javax.jms.MessageFormatException;
 import javax.jms.ObjectMessage;
 import javax.jms.TextMessage;
 
@@ -148,6 +149,10 @@ public class JmsProducer implements JMSProducer {
     }
 
     private void doSend(Destination destination, Message message) throws JMSException {
+
+        if (message == null) {
+            throw new MessageFormatException("Message must not be null");
+        }
 
         for (Map.Entry<String, Object> entry : messageProperties.entrySet()) {
             message.setObjectProperty(entry.getKey(), entry.getValue());

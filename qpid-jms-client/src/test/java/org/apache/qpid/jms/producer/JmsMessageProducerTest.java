@@ -36,6 +36,7 @@ import javax.jms.IllegalStateException;
 import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.MessageFormatException;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
@@ -323,6 +324,74 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
             producer.send(message, Message.DEFAULT_DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE, null);
             fail("Expected exception not thrown");
         } catch (IllegalArgumentException iae) {
+            // expected
+        }
+    }
+
+    @Test(timeout = 10000)
+    public void testAnonymousProducerThrowsMFEWhenNullMessageProvided() throws Exception {
+        JmsDestination dest = new JmsQueue("explicitDestination");
+        JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(null);
+
+        try {
+            producer.send(dest, (Message) null);
+            fail("Expected exception not thrown");
+        } catch (MessageFormatException mfe) {
+            // expected
+        }
+
+        try {
+            producer.send(dest, (Message) null, completionListener);
+            fail("Expected exception not thrown");
+        } catch (MessageFormatException mfe) {
+            // expected
+        }
+
+        try {
+            producer.send(dest, (Message) null, Message.DEFAULT_DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+            fail("Expected exception not thrown");
+        } catch (MessageFormatException mfe) {
+            // expected
+        }
+
+        try {
+            producer.send(dest, (Message) null, Message.DEFAULT_DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE, completionListener);
+            fail("Expected exception not thrown");
+        } catch (MessageFormatException mfe) {
+            // expected
+        }
+    }
+
+    @Test(timeout = 10000)
+    public void testExplicitProducerThrowsMFEWhenNullMessageProvided() throws Exception {
+        JmsDestination dest = new JmsQueue("explicitDestination");
+        JmsMessageProducer producer = (JmsMessageProducer) session.createProducer(dest);
+
+        try {
+            producer.send((Message) null);
+            fail("Expected exception not thrown");
+        } catch (MessageFormatException mfe) {
+            // expected
+        }
+
+        try {
+            producer.send((Message) null, completionListener);
+            fail("Expected exception not thrown");
+        } catch (MessageFormatException mfe) {
+            // expected
+        }
+
+        try {
+            producer.send((Message) null, Message.DEFAULT_DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+            fail("Expected exception not thrown");
+        } catch (MessageFormatException mfe) {
+            // expected
+        }
+
+        try {
+            producer.send((Message) null, Message.DEFAULT_DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE, completionListener);
+            fail("Expected exception not thrown");
+        } catch (MessageFormatException mfe) {
             // expected
         }
     }

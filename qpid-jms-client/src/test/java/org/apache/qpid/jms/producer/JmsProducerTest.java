@@ -814,6 +814,22 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
     //----- Test Send Methods -----------------------------------------------//
 
     @Test
+    public void testSendNullMessageThrowsMFRE() throws JMSException {
+        JmsSession session = Mockito.mock(JmsSession.class);
+        JmsMessageProducer messageProducer = Mockito.mock(JmsMessageProducer.class);
+
+        JmsProducer producer = new JmsProducer(session, messageProducer);
+
+        try {
+            producer.send(JMS_DESTINATION, (Message) null);
+            fail("Should throw a MessageFormatRuntimeException");
+        } catch (MessageFormatRuntimeException mfre) {
+        } catch (Exception e) {
+            fail("Should throw a MessageFormatRuntimeException");
+        }
+    }
+
+    @Test
     public void testSendJMSMessage() throws JMSException {
         JmsSession session = Mockito.mock(JmsSession.class);
         JmsMessageProducer messageProducer = Mockito.mock(JmsMessageProducer.class);

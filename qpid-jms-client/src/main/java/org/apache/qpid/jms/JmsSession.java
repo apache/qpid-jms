@@ -44,6 +44,7 @@ import javax.jms.JMSException;
 import javax.jms.MapMessage;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageFormatException;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.ObjectMessage;
@@ -713,6 +714,10 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     protected void send(JmsMessageProducer producer, Destination dest, Message msg, int deliveryMode, int priority, long timeToLive, boolean disableMsgId, boolean disableTimestamp, long deliveryDelay, CompletionListener listener) throws JMSException {
         if (dest == null) {
             throw new InvalidDestinationException("Destination must not be null");
+        }
+
+        if (msg == null) {
+            throw new MessageFormatException("Message must not be null");
         }
 
         JmsDestination destination = JmsMessageTransformation.transformDestination(connection, dest);

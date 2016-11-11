@@ -622,40 +622,6 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
-    public void testCannotUseMessageListener() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer, "?jms.prefetchPolicy.all=0");
-            connection.start();
-
-            testPeer.expectBegin();
-
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            Queue destination = session.createQueue(getTestName());
-
-            testPeer.expectReceiverAttach();
-
-            MessageConsumer consumer = session.createConsumer(destination);
-            MessageListener listener = new MessageListener() {
-
-                @Override
-                public void onMessage(Message message) {
-                }
-            };
-
-            try {
-                consumer.setMessageListener(listener);
-                fail("Should not allow listener to be set when prefetch is zero.");
-            } catch (JMSException ex) {
-            }
-
-            testPeer.expectClose();
-            connection.close();
-
-            testPeer.waitForAllHandlersToComplete(2000);
-        }
-    }
-
     @Test(timeout = 20000)
     public void testCreateProducerInOnMessage() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {

@@ -93,6 +93,7 @@ public class JmsConsumerInfoTest {
         info.setSelector("select");
         info.setSubscriptionName("name");
         info.setRedeliveryPolicy(new JmsDefaultRedeliveryPolicy());
+        info.setListener(true);
 
         JmsConsumerInfo copy = info.copy();
 
@@ -105,7 +106,7 @@ public class JmsConsumerInfoTest {
         assertEquals(123456, copy.getPrefetchSize());
         assertEquals("select", copy.getSelector());
         assertEquals("name", copy.getSubscriptionName());
-
+        assertEquals(true, copy.isListener());
         assertNotSame(info.getRedeliveryPolicy(), copy.getRedeliveryPolicy());
 
         assertEquals(info, copy);
@@ -181,5 +182,13 @@ public class JmsConsumerInfoTest {
         info.setRedeliveryPolicy(null);
         assertNotNull(info.getRedeliveryPolicy());
         assertTrue(info.getRedeliveryPolicy() instanceof JmsDefaultRedeliveryPolicy);
+    }
+
+    @Test
+    public void testIsListener() {
+        JmsConsumerInfo info = new JmsConsumerInfo(firstId);
+        assertFalse(info.isListener());
+        info.setListener(true);
+        assertTrue(info.isListener());
     }
 }

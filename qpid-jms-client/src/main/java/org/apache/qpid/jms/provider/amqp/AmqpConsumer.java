@@ -84,7 +84,12 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      *      The request that awaits completion of the consumer start.
      */
     public void start(AsyncResult request) {
-        sendFlowIfNeeded();
+        JmsConsumerInfo consumerInfo = getResourceInfo();
+        if(consumerInfo.isListener() && consumerInfo.getPrefetchSize() == 0) {
+            sendFlowForNoPrefetchListener();
+        } else {
+            sendFlowIfNeeded();
+        }
         request.onSuccess();
     }
 
@@ -306,6 +311,15 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             int newCredit = getResourceInfo().getPrefetchSize() - currentCredit;
             LOG.trace("Consumer {} granting additional credit: {}", getConsumerId(), newCredit);
             getEndpoint().flow(newCredit);
+        }
+    }
+
+    private void sendFlowForNoPrefetchListener() {
+        int currentCredit = getEndpoint().getCredit();
+        if (currentCredit < 1) {
+            int additionalCredit = 1 - currentCredit;
+            LOG.trace("Consumer {} granting additional credit: {}", getConsumerId(), additionalCredit);
+            getEndpoint().flow(additionalCredit);
         }
     }
 

@@ -35,6 +35,7 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
     private int acknowledgementMode;
     private boolean localMessageExpiry;
     private boolean presettle;
+    private volatile boolean listener;
 
     private JmsRedeliveryPolicy redeliveryPolicy;
     private JmsDeserializationPolicy deserializationPolicy;
@@ -75,6 +76,7 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
         info.lastDeliveredSequenceId = lastDeliveredSequenceId;
         info.redeliveryPolicy = getRedeliveryPolicy().copy();
         info.deserializationPolicy = getDeserializationPolicy().copy();
+        info.listener = listener;
     }
 
     public boolean isDurable() {
@@ -92,6 +94,14 @@ public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsume
 
     public void setBrowser(boolean browser) {
         this.browser = browser;
+    }
+
+    public boolean isListener() {
+        return listener;
+    }
+
+    public void setListener(boolean listener) {
+        this.listener = listener;
     }
 
     public JmsDestination getDestination() {

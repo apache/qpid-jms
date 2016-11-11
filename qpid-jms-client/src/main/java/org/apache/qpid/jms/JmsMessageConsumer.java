@@ -117,7 +117,9 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     }
 
     public void init() throws JMSException {
-        startConsumerResource();
+        if(!isPullConsumer()){
+            startConsumerResource();
+        }
     }
 
     private void startConsumerResource() throws JMSException {
@@ -587,12 +589,16 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     @Override
     public void setMessageListener(MessageListener listener) throws JMSException {
         checkClosed();
-        if (consumerInfo.getPrefetchSize() == 0) {
-            throw new JMSException("Illegal prefetch size of zero. This setting is not supported" +
-                                   "for asynchronous consumers please set a value of at least 1");
-        }
         this.messageListener = listener;
-        drainMessageQueueToListener();
+        if(listener != null) {
+            consumerInfo.setListener(true);
+            if(isPullConsumer()){
+                startConsumerResource();
+            }
+            drainMessageQueueToListener();
+        } else {
+            consumerInfo.setListener(false);
+        }
     }
 
     @Override
@@ -741,6 +747,14 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                     //        other being an error while attempting to copy the incoming message.
                     //        We need to decide how to respond to these.
                     session.getConnection().onException(e);
+                } finally {
+                    if (isPullConsumer()) {
+                        try {
+                            startConsumerResource();
+                        } catch (JMSException e) {
+                            LOG.error("Exception during credit replenishment for consumer listener {}", getConsumerId(), e);
+                        }
+                    }
                 }
             }
         }

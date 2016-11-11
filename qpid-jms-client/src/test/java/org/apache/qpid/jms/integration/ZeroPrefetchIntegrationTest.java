@@ -24,10 +24,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Date;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
@@ -123,4 +126,65 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(3000);
         }
     }
+
+    @Test(timeout=20000)
+    public void testZeroPrefetchMessageListener() throws Exception {
+        final CountDownLatch msgReceived = new CountDownLatch(1);
+        final CountDownLatch completeOnMessage = new CountDownLatch(1);
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Create a connection with zero prefetch
+            Connection connection = testFixture.establishConnecton(testPeer, "?jms.prefetchPolicy.all=0");
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue destination = session.createQueue(getTestName());
+
+            // Expected the consumer to attach but NOT send credit
+            testPeer.expectReceiverAttach();
+
+            MessageConsumer consumer = session.createConsumer(destination);
+
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            MessageListener listener = new MessageListener() {
+                @Override
+                public void onMessage(Message message) {
+                    msgReceived.countDown();
+
+                    try {
+                        completeOnMessage.await(6, TimeUnit.SECONDS);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
+
+            // Expect that once setMessageListener is called, it flows 1 credit with drain=false. Then give it a message.
+            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.ONE));
+            testPeer.sendTransferToLastOpenedLinkOnLastOpenedSession(null, null, null, null, new AmqpValueDescribedType("content"), 1);
+
+            consumer.setMessageListener(listener);
+
+            // Wait for message to arrive
+            assertTrue("message not received in given time", msgReceived.await(6, TimeUnit.SECONDS));
+
+            // Ensure the handlers are complete at the peer
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            // Now allow onMessage to complete, expecting an accept and another flow.
+            testPeer.expectDisposition(true, new AcceptedMatcher(), 1, 1);
+            testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.ONE));
+            completeOnMessage.countDown();
+
+            // Wait for the resulting flow to be received
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
+
 }

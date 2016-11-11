@@ -572,6 +572,18 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         JmsConsumerInfo consumerInfo = getResourceInfo();
 
         subTracker.consumerRemoved(consumerInfo);
+
+        // When closed we need to release any pending tasks to avoid blocking
+
+        if (stopRequest != null) {
+            stopRequest.onSuccess();
+            stopRequest = null;
+        }
+
+        if (pullRequest != null) {
+            pullRequest.onSuccess();
+            pullRequest = null;
+        }
     }
 
     //----- Inner classes used in message pull operations --------------------//

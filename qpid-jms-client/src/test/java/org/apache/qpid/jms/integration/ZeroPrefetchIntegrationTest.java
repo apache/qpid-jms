@@ -25,7 +25,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Date;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.jms.Connection;
 import javax.jms.Message;
@@ -89,6 +92,9 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
             assertTrue(m instanceof TextMessage);
             assertEquals("Unexpected message content", liveMsgContent, ((TextMessage) m).getText());
 
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(3000);
         }
     }
@@ -122,6 +128,9 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
             assertNotNull("Message should have been received", m);
             assertTrue(m instanceof TextMessage);
             assertEquals("Unexpected message content", msgContent, ((TextMessage) m).getText());
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
         }
@@ -187,4 +196,80 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Test(timeout=40000)
+    public void testZeroPrefetchConsumerReceiveUnblockedOnSessionClose() throws Exception {
+        doTestZeroPrefetchConsumerReceiveUnblockedOnSessionClose(0);
+    }
+
+    @Test(timeout=40000)
+    public void testZeroPrefetchConsumerReceiveTimedUnblockedOnSessionClose() throws Exception {
+        doTestZeroPrefetchConsumerReceiveUnblockedOnSessionClose(1);
+    }
+
+    @Test(timeout=40000)
+    public void testZeroPrefetchConsumerReceiveNoWaitUnblockedOnSessionClose() throws Exception {
+        doTestZeroPrefetchConsumerReceiveUnblockedOnSessionClose(-1);
+    }
+
+    public void doTestZeroPrefetchConsumerReceiveUnblockedOnSessionClose(final int timeout) throws Exception {
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Create a connection with zero prefetch
+            Connection connection = testFixture.establishConnecton(testPeer, "?jms.prefetchPolicy.all=0");
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            // Expected the consumer to attach but NOT send credit
+            testPeer.expectReceiverAttach();
+
+            final MessageConsumer consumer = session.createConsumer(queue);
+
+            // Expect that once receive is called, it drains with 1 credit, don't answer it
+            if (timeout < 0) {
+                testPeer.expectLinkFlow(true, false, equalTo(UnsignedInteger.ONE));
+            } else {
+                testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.ONE));
+            }
+
+            final AtomicBoolean error = new AtomicBoolean(false);
+            final CountDownLatch done = new CountDownLatch(1);
+
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executor.execute(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        if (timeout < 0) {
+                            consumer.receiveNoWait();
+                        } else if (timeout == 0) {
+                            consumer.receive();
+                        } else {
+                            consumer.receive(10000);
+                        }
+                    } catch (Exception ex) {
+                        error.set(true);
+                    } finally {
+                        done.countDown();
+                    }
+                }
+            });
+
+            testPeer.waitForAllHandlersToComplete(3000);
+            testPeer.expectEnd();
+            testPeer.expectClose();
+
+            session.close();
+
+            assertTrue("Consumer did not unblock", done.await(10, TimeUnit.SECONDS));
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
 }

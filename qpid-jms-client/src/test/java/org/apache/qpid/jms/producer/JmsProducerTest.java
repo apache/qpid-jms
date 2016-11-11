@@ -40,6 +40,7 @@ import javax.jms.InvalidDestinationException;
 import javax.jms.InvalidDestinationRuntimeException;
 import javax.jms.JMSException;
 import javax.jms.JMSProducer;
+import javax.jms.JMSRuntimeException;
 import javax.jms.Message;
 import javax.jms.MessageFormatRuntimeException;
 import javax.jms.Queue;
@@ -765,6 +766,29 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
         assertEquals(DeliveryMode.NON_PERSISTENT, producer.getDeliveryMode());
     }
 
+    @Test(timeout = 10000)
+    public void testDeliveryModeConfigurationWithInvalidMode() throws Exception {
+        JMSProducer producer = context.createProducer();
+
+        assertEquals(Message.DEFAULT_DELIVERY_MODE, producer.getDeliveryMode());
+
+        try {
+            producer.setDeliveryMode(-1);
+            fail("Should have thrown an exception");
+        } catch (JMSRuntimeException ex) {
+            // Expected
+        }
+
+        try {
+            producer.setDeliveryMode(5);
+            fail("Should have thrown an exception");
+        } catch (JMSRuntimeException ex) {
+            // Expected
+        }
+
+        assertEquals(Message.DEFAULT_DELIVERY_MODE, producer.getDeliveryMode());
+    }
+
     @Test
     public void testDeliveryDelay() {
         JMSProducer producer = context.createProducer();
@@ -801,6 +825,29 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
         assertEquals(1, producer.getPriority());
         producer.setPriority(4);
         assertEquals(4, producer.getPriority());
+    }
+
+    @Test(timeout = 10000)
+    public void testPriorityConfigurationWithInvalidPriorityValues() throws Exception {
+        JMSProducer producer = context.createProducer();
+
+        assertEquals(Message.DEFAULT_PRIORITY, producer.getPriority());
+
+        try {
+            producer.setPriority(-1);
+            fail("Should have thrown an exception");
+        } catch (JMSRuntimeException ex) {
+            // Expected
+        }
+
+        try {
+            producer.setPriority(10);
+            fail("Should have thrown an exception");
+        } catch (JMSRuntimeException ex) {
+            // Expected
+        }
+
+        assertEquals(Message.DEFAULT_PRIORITY, producer.getPriority());
     }
 
     @Test

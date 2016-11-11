@@ -32,6 +32,7 @@ import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.JMSProducer;
+import javax.jms.JMSRuntimeException;
 import javax.jms.MapMessage;
 import javax.jms.Message;
 import javax.jms.MessageFormatException;
@@ -396,8 +397,14 @@ public class JmsProducer implements JMSProducer {
 
     @Override
     public JMSProducer setDeliveryMode(int deliveryMode) {
-        this.deliveryMode = deliveryMode;
-        return this;
+        switch (deliveryMode) {
+            case DeliveryMode.PERSISTENT:
+            case DeliveryMode.NON_PERSISTENT:
+                this.deliveryMode = deliveryMode;
+                return this;
+            default:
+                throw new JMSRuntimeException(String.format("Invalid DeliveryMode specified: %d", deliveryMode));
+        }
     }
 
     @Override
@@ -429,6 +436,10 @@ public class JmsProducer implements JMSProducer {
 
     @Override
     public JMSProducer setPriority(int priority) {
+        if (priority < 0 || priority > 9) {
+            throw new JMSRuntimeException(String.format("Priority value given {%d} is out of range (0..9)", priority));
+        }
+
         this.priority = priority;
         return this;
     }

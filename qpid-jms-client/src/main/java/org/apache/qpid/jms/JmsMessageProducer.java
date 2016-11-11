@@ -255,7 +255,7 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
                 this.deliveryMode = deliveryMode;
                 break;
             default:
-                throw new JMSException(String.format("Invalid DeliveryMode specific: %d", deliveryMode));
+                throw new JMSException(String.format("Invalid DeliveryMode specified: %d", deliveryMode));
         }
     }
 

@@ -47,6 +47,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private URI configuredURI;
     private URI connectedURI;
     private String clientId;
+    private boolean explicitClientID;
     private String username;
     private String password;
     private boolean forceAsyncSend;
@@ -89,6 +90,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     private void copy(JmsConnectionInfo copy) {
         copy.clientId = clientId;
+        copy.explicitClientID = explicitClientID;
         copy.username = username;
         copy.password = password;
         copy.forceAsyncSend = forceAsyncSend;
@@ -148,8 +150,13 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         return clientId;
     }
 
-    public void setClientId(String clientId) {
+    public void setClientId(String clientId, boolean explicitClientID) {
         this.clientId = clientId;
+        this.explicitClientID = explicitClientID;
+    }
+
+    public boolean isExplicitClientID() {
+        return explicitClientID;
     }
 
     public String getUsername() {

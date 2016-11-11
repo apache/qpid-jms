@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -85,12 +86,14 @@ public class JmsConsumerInfoTest {
 
         info.setAcknowledgementMode(1);
         info.setBrowser(true);
-        info.setClientId("test");
+        info.setExplicitClientID(true);
         info.setDestination(new JmsTopic("Test"));
         info.setLastDeliveredSequenceId(42);
         info.setNoLocal(true);
         info.setPrefetchSize(123456);
         info.setSelector("select");
+        info.setDurable(true);
+        info.setShared(true);
         info.setSubscriptionName("name");
         info.setRedeliveryPolicy(new JmsDefaultRedeliveryPolicy());
         info.setListener(true);
@@ -99,10 +102,12 @@ public class JmsConsumerInfoTest {
 
         assertEquals(1, copy.getAcknowledgementMode());
         assertEquals(true, copy.isBrowser());
-        assertEquals("test", copy.getClientId());
+        assertEquals(true, copy.isExplicitClientID());
         assertEquals(new JmsTopic("Test"), copy.getDestination());
         assertEquals(42, copy.getLastDeliveredSequenceId());
         assertEquals(true, copy.isNoLocal());
+        assertEquals(true, copy.isDurable());
+        assertEquals(true, copy.isShared());
         assertEquals(123456, copy.getPrefetchSize());
         assertEquals("select", copy.getSelector());
         assertEquals("name", copy.getSubscriptionName());
@@ -116,8 +121,34 @@ public class JmsConsumerInfoTest {
     public void testIsDurable() {
         JmsConsumerInfo info = new JmsConsumerInfo(firstId);
         assertFalse(info.isDurable());
-        info.setSubscriptionName("name");
+        info.setDurable(true);
         assertTrue(info.isDurable());
+    }
+
+    @Test
+    public void testIsExplicitClientID() {
+        JmsConsumerInfo info = new JmsConsumerInfo(firstId);
+        assertFalse(info.isExplicitClientID());
+        info.setExplicitClientID(true);
+        assertTrue(info.isExplicitClientID());
+    }
+
+    @Test
+    public void testIsShared() {
+        JmsConsumerInfo info = new JmsConsumerInfo(firstId);
+        assertFalse(info.isShared());
+        info.setShared(true);
+        assertTrue(info.isShared());
+    }
+
+    @Test
+    public void testGetSubscriptionName() {
+        String subName = "name";
+
+        JmsConsumerInfo info = new JmsConsumerInfo(firstId);
+        assertNull(info.getSubscriptionName());
+        info.setSubscriptionName(subName);
+        assertEquals(subName, info.getSubscriptionName());
     }
 
     @Test

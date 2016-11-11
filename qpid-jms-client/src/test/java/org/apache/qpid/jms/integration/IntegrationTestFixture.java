@@ -54,6 +54,10 @@ public class IntegrationTestFixture {
         return establishConnecton(testPeer, false, optionsString, serverCapabilities, serverProperties, true);
     }
 
+    Connection establishConnectonWithoutClientID(TestAmqpPeer testPeer, Symbol[] serverCapabilities) throws JMSException {
+        return establishConnecton(testPeer, false, null, serverCapabilities, null, false);
+    }
+
     Connection establishConnecton(TestAmqpPeer testPeer, boolean ssl, String optionsString, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties, boolean setClientId) throws JMSException {
         Symbol[] desiredCapabilities = new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY };
 

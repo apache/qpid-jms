@@ -565,6 +565,15 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     public void postRollback() {
     }
 
+    @Override
+    public void handleResourceClosure(AmqpProvider provider, Exception error) {
+        AmqpConnection connection = session.getConnection();
+        AmqpSubscriptionTracker subTracker = connection.getSubTracker();
+        JmsConsumerInfo consumerInfo = getResourceInfo();
+
+        subTracker.consumerRemoved(consumerInfo);
+    }
+
     //----- Inner classes used in message pull operations --------------------//
 
     protected static final class ScheduledRequest implements AsyncResult {

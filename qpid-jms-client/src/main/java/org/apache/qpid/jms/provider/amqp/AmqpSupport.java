@@ -44,6 +44,7 @@ public class AmqpSupport {
     public static final Symbol SOLE_CONNECTION_CAPABILITY = Symbol.valueOf("sole-connection-for-container");
     public static final Symbol ANONYMOUS_RELAY = Symbol.valueOf("ANONYMOUS-RELAY");
     public static final Symbol DELAYED_DELIVERY = Symbol.valueOf("DELAYED_DELIVERY");
+    public static final Symbol SHARED_SUBS = Symbol.valueOf("SHARED-SUBS");
 
     // Symbols used to announce connection error information
     public static final Symbol CONNECTION_OPEN_FAILED = Symbol.valueOf("amqp:connection-establishment-failed");
@@ -69,6 +70,8 @@ public class AmqpSupport {
     public static final Symbol COPY = Symbol.getSymbol("copy");
     public static final Symbol JMS_NO_LOCAL_SYMBOL = Symbol.valueOf("no-local");
     public static final Symbol JMS_SELECTOR_SYMBOL = Symbol.valueOf("jms-selector");
+    public static final Symbol SHARED = Symbol.valueOf("shared");
+    public static final Symbol GLOBAL = Symbol.valueOf("global");
 
     // Delivery states
     public static final Rejected REJECTED = new Rejected();
@@ -79,6 +82,9 @@ public class AmqpSupport {
     public static final Symbol DYNAMIC_NODE_LIFETIME_POLICY = Symbol.valueOf("lifetime-policy");
     public static final String TEMP_QUEUE_CREATOR = "temp-queue-creator:";
     public static final String TEMP_TOPIC_CREATOR = "temp-topic-creator:";
+
+    // Subscription Name Delimiter
+    public static final String SUB_NAME_DELIMITER = "|";
 
     //----- Static initializer -----------------------------------------------//
 

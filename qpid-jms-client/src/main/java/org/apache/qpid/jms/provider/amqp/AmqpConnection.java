@@ -41,6 +41,8 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnection.class);
 
+    private AmqpSubscriptionTracker subTracker = new AmqpSubscriptionTracker();
+
     private final AmqpJmsMessageFactory amqpMessageFactory;
 
     private final URI remoteURI;
@@ -80,15 +82,15 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     }
 
     public void unsubscribe(String subscriptionName, AsyncResult request) {
-
-        for (AmqpSession session : sessions.values()) {
-            if (session.containsSubscription(subscriptionName)) {
-                request.onFailure(new JMSException("Cannot remove an active durable subscription"));
-                return;
-            }
+        // Check if there is an active (i.e open subscriber) shared or exclusive durable subscription using this name
+        if(subTracker.isActiveDurableSub(subscriptionName)) {
+            request.onFailure(new JMSException("Can't remove an active durable subscription: " + subscriptionName));
+            return;
         }
 
-        connectionSession.unsubscribe(subscriptionName, request);
+        boolean hasClientID = getResourceInfo().isExplicitClientID();
+
+        connectionSession.unsubscribe(subscriptionName, hasClientID, request);
     }
 
     @Override
@@ -219,6 +221,10 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
      */
     public AmqpConnectionProperties getProperties() {
         return properties;
+    }
+
+    public AmqpSubscriptionTracker getSubTracker() {
+        return subTracker;
     }
 
     /**

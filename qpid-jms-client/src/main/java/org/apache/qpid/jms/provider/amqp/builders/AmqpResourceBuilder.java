@@ -164,6 +164,9 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
         // If the resource being built is closed during the creation process
         // then this is always an error.
 
+        // Perform any post processing relating to closure during creation attempt
+        afterClosed(getResource(), getResourceInfo());
+
         Throwable openError;
         if (hasRemoteError()) {
             openError = AmqpSupport.convertToException(getEndpoint(), getEndpoint().getRemoteCondition());
@@ -242,6 +245,18 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
      * is deemed to have been completed and success is signaled.
      */
     protected void afterOpened() {
+        // Nothing to do here.
+    }
+
+    /**
+     * Called if endpoint opening process fails in order to give the subclasses a
+     * place to perform any follow-on processing or teardown steps before the operation
+     * is deemed to have been completed and failure is signalled.
+     *
+     * @param resource the resource
+     * @param resourceInfo the resourceInfo
+     */
+    protected void afterClosed(TARGET resource, INFO resourceInfo) {
         // Nothing to do here.
     }
 

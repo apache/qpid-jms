@@ -415,8 +415,32 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
                         @Override
                         public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
-                            AmqpSession session = connection.getSession(sessionInfo.getId());
-                            session.close(request);
+                            final AmqpSession session = connection.getSession(sessionInfo.getId());
+                            session.close(new AsyncResult() {
+                                // TODO: bit of a hack, but works. Similarly below for locally initiated consumer close.
+                                @Override
+                                public void onSuccess() {
+                                    onComplete();
+                                    request.onSuccess();
+                                }
+
+                                @Override
+                                public void onFailure(Throwable result) {
+                                    onComplete();
+                                    request.onFailure(result);
+                                }
+
+                                @Override
+                                public boolean isComplete() {
+                                    return request.isComplete();
+                                }
+
+                                void onComplete() {
+                                    // Mark the sessions resources closed, which in turn calls
+                                    // the subscription cleanup.
+                                    session.handleResourceClosure(AmqpProvider.this, null);
+                                }
+                            });
                         }
 
                         @Override
@@ -427,10 +451,32 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         }
 
                         @Override
-                        public void processConsumerInfo(JmsConsumerInfo consumerInfo) throws Exception {
+                        public void processConsumerInfo(final JmsConsumerInfo consumerInfo) throws Exception {
                             AmqpSession session = connection.getSession(consumerInfo.getParentId());
-                            AmqpConsumer consumer = session.getConsumer(consumerInfo);
-                            consumer.close(request);
+                            final AmqpConsumer consumer = session.getConsumer(consumerInfo);
+                            consumer.close(new AsyncResult() {
+                                // TODO: bit of a hack, but works. Similarly above for locally initiated session close.
+                                @Override
+                                public void onSuccess() {
+                                    onComplete();
+                                    request.onSuccess();
+                                }
+
+                                @Override
+                                public void onFailure(Throwable result) {
+                                    onComplete();
+                                    request.onFailure(result);
+                                }
+
+                                @Override
+                                public boolean isComplete() {
+                                    return request.isComplete();
+                                }
+
+                                void onComplete() {
+                                    connection.getSubTracker().consumerRemoved(consumerInfo);
+                                }
+                            });
                         }
 
                         @Override

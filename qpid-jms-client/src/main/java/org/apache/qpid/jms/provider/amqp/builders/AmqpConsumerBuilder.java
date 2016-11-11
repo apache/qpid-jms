@@ -22,14 +22,19 @@ import static org.apache.qpid.jms.provider.amqp.AmqpSupport.JMS_SELECTOR_SYMBOL;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.MODIFIED_FAILED;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 
 import javax.jms.InvalidDestinationException;
+import javax.jms.JMSRuntimeException;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
+import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.jms.provider.amqp.AmqpSession;
+import org.apache.qpid.jms.provider.amqp.AmqpSubscriptionTracker;
+import org.apache.qpid.jms.provider.amqp.AmqpSupport;
 import org.apache.qpid.jms.provider.amqp.filters.AmqpJmsNoLocalType;
 import org.apache.qpid.jms.provider.amqp.filters.AmqpJmsSelectorType;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
@@ -59,22 +64,51 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
     @Override
     protected Receiver createEndpoint(JmsConsumerInfo resourceInfo) {
         JmsDestination destination = resourceInfo.getDestination();
-        String subscription = AmqpDestinationHelper.INSTANCE.getDestinationAddress(destination, getParent().getConnection());
+        String address = AmqpDestinationHelper.INSTANCE.getDestinationAddress(destination, getParent().getConnection());
 
         Source source = new Source();
-        source.setAddress(subscription);
+        source.setAddress(address);
         Target target = new Target();
 
         configureSource(source);
 
-        String receiverName = "qpid-jms:receiver:" + resourceInfo.getId() + ":" + subscription;
-        if (resourceInfo.getSubscriptionName() != null && !resourceInfo.getSubscriptionName().isEmpty()) {
-            // In the case of Durable Topic Subscriptions the client must use the same
-            // receiver name which is derived from the subscription name property.
-            receiverName = resourceInfo.getSubscriptionName();
+        String receiverLinkName = null;
+        String subscriptionName = resourceInfo.getSubscriptionName();
+        if (subscriptionName != null && !subscriptionName.isEmpty()) {
+            AmqpConnection connection = getParent().getConnection();
+
+            if (resourceInfo.isShared() && !connection.getProperties().isSharedSubsSupported()) {
+                // Don't allow shared sub if peer hasn't said it can handle them (or we haven't overridden it).
+                throw new JMSRuntimeException("Remote peer does not support shared subscriptions");
+            }
+
+            AmqpSubscriptionTracker subTracker = connection.getSubTracker();
+
+            // Validate subscriber type allowed given existing active subscriber types.
+            if (resourceInfo.isShared() && resourceInfo.isDurable()) {
+                if(subTracker.isActiveExclusiveDurableSub(subscriptionName)) {
+                    // Don't allow shared sub if there is already an active exclusive durable sub
+                    throw new JMSRuntimeException("A non-shared durable subscription is already active with name '" + subscriptionName + "'");
+                }
+            } else if (!resourceInfo.isShared() && resourceInfo.isDurable()) {
+                if (subTracker.isActiveExclusiveDurableSub(subscriptionName)) {
+                    // Exclusive durable sub is already active
+                    throw new JMSRuntimeException("A non-shared durable subscription is already active with name '" + subscriptionName + "'");
+                } else if (subTracker.isActiveSharedDurableSub(subscriptionName)) {
+                    // Don't allow exclusive durable sub if there is already an active shared durable sub
+                    throw new JMSRuntimeException("A shared durable subscription is already active with name '" + subscriptionName + "'");
+                }
+            }
+
+            // Get the link name for the subscription. Throws if certain further validations fail.
+            receiverLinkName = subTracker.reserveNextSubscriptionLinkName(subscriptionName, resourceInfo);
         }
 
-        Receiver receiver = getParent().getEndpoint().receiver(receiverName);
+        if(receiverLinkName == null) {
+            receiverLinkName = "qpid-jms:receiver:" + resourceInfo.getId() + ":" + address;
+        }
+
+        Receiver receiver = getParent().getEndpoint().receiver(receiverLinkName);
         receiver.setSource(source);
         receiver.setTarget(target);
         if (resourceInfo.isBrowser() || resourceInfo.isPresettle()) {
@@ -85,6 +119,15 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
         receiver.setReceiverSettleMode(ReceiverSettleMode.FIRST);
 
         return receiver;
+    }
+
+    @Override
+    protected void afterClosed(AmqpConsumer resource, JmsConsumerInfo info) {
+        // If the resource being built is closed during the creation process
+        // then this is a failure, we need to ensure we don't track it.
+        AmqpConnection connection = getParent().getConnection();
+        AmqpSubscriptionTracker subTracker = connection.getSubTracker();
+        subTracker.consumerRemoved(info);
     }
 
     @Override
@@ -118,7 +161,7 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
         Symbol[] outcomes = new Symbol[]{ Accepted.DESCRIPTOR_SYMBOL, Rejected.DESCRIPTOR_SYMBOL,
                                           Released.DESCRIPTOR_SYMBOL, Modified.DESCRIPTOR_SYMBOL };
 
-        if (resourceInfo.getSubscriptionName() != null && !resourceInfo.getSubscriptionName().isEmpty()) {
+        if (resourceInfo.isDurable()) {
             source.setExpiryPolicy(TerminusExpiryPolicy.NEVER);
             source.setDurable(TerminusDurability.UNSETTLED_STATE);
             source.setDistributionMode(COPY);
@@ -131,14 +174,32 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
             source.setDistributionMode(COPY);
         }
 
+        // Capabilities
+        LinkedList<Symbol> capabilities = new LinkedList<>();
+
         Symbol typeCapability =  AmqpDestinationHelper.INSTANCE.toTypeCapability(resourceInfo.getDestination());
-        if(typeCapability != null) {
-            source.setCapabilities(typeCapability);
+        if(typeCapability != null){
+            capabilities.add(typeCapability);
         }
 
+        if(resourceInfo.isShared()) {
+            capabilities.add(AmqpSupport.SHARED);
+        }
+
+        if(!resourceInfo.isExplicitClientID()) {
+            capabilities.add(AmqpSupport.GLOBAL);
+        }
+
+        if(!capabilities.isEmpty()) {
+            Symbol[] capArray = capabilities.toArray(new Symbol[capabilities.size()]);
+            source.setCapabilities(capArray);
+        }
+
+        //Outcomes
         source.setOutcomes(outcomes);
         source.setDefaultOutcome(MODIFIED_FAILED);
 
+        // Filters
         if (resourceInfo.isNoLocal()) {
             filters.put(JMS_NO_LOCAL_SYMBOL, AmqpJmsNoLocalType.NO_LOCAL);
         }

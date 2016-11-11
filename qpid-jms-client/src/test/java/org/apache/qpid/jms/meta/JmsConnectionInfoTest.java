@@ -68,7 +68,7 @@ public class JmsConnectionInfoTest {
         JmsConnectionInfo info = new JmsConnectionInfo(firstId);
 
         info.setForceSyncSend(true);
-        info.setClientId("test");
+        info.setClientId("test", true);
         info.setCloseTimeout(100);
         info.setConnectTimeout(200);
         info.setForceAsyncSends(true);
@@ -89,6 +89,7 @@ public class JmsConnectionInfoTest {
 
         assertEquals(true, copy.isForceSyncSend());
         assertEquals("test", copy.getClientId());
+        assertEquals(true, copy.isExplicitClientID());
         assertEquals(100, copy.getCloseTimeout());
         assertEquals(200, copy.getConnectTimeout());
         assertEquals(true, copy.isForceAsyncSend());
@@ -158,6 +159,14 @@ public class JmsConnectionInfoTest {
         });
 
         assertTrue(visited.get());
+    }
+
+    @Test
+    public void testIsExplicitClientId() {
+        final JmsConnectionInfo info = new JmsConnectionInfo(firstId);
+        assertFalse(info.isExplicitClientID());
+        info.setClientId("something", true);
+        assertTrue(info.isExplicitClientID());
     }
 
     @Test

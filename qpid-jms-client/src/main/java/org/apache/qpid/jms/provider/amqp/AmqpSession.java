@@ -241,25 +241,6 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
     }
 
     /**
-     * Query the Session to see if there are any registered consumer instances that have
-     * a durable subscription with the given subscription name.
-     *
-     * @param subscriptionName
-     *        the name of the subscription being searched for.
-     *
-     * @return true if there is a consumer that has the given subscription.
-     */
-    public boolean containsSubscription(String subscriptionName) {
-        for (AmqpConsumer consumer : consumers.values()) {
-            if (subscriptionName.equals(consumer.getResourceInfo().getSubscriptionName())) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * Call to send an error that occurs outside of the normal asynchronous processing
      * of a session resource such as a remote close etc.
      *

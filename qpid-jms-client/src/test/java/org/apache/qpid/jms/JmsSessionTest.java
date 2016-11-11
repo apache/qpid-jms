@@ -35,7 +35,10 @@ import javax.jms.ObjectMessage;
 import javax.jms.Session;
 import javax.jms.TemporaryQueue;
 import javax.jms.TextMessage;
+import javax.jms.Topic;
 
+import org.apache.qpid.jms.JmsConnectionTestSupport;
+import org.apache.qpid.jms.JmsMessageConsumer;
 import org.apache.qpid.jms.JmsSession;
 import org.apache.qpid.jms.JmsTemporaryQueue;
 import org.junit.Before;
@@ -332,41 +335,53 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         } catch (RuntimeException re) {}
     }
 
-    //----- Not yet implemented, should all be cleared on implementation -----//
-
     @Test(timeout = 10000)
     public void testCreateSharedConsumer() throws Exception {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        try {
-            session.createSharedConsumer(session.createTopic("test"), "subscription");
-            fail("Should fail until implemented.");
-        } catch (JMSException ex) {}
+
+        Topic topic = session.createTopic("test");
+        JmsMessageConsumer consumer = (JmsMessageConsumer) session.createSharedConsumer(topic, "subscription");
+
+        assertNotNull(consumer);
+        assertNull("unexpected selector", consumer.getMessageSelector());
+        assertEquals("unexpected topic", topic, consumer.getDestination());
     }
 
     @Test(timeout = 10000)
     public void testCreateSharedConsumerWithSelector() throws Exception {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        try {
-            session.createSharedConsumer(session.createTopic("test"), "subscription", "a = b");
-            fail("Should fail until implemented.");
-        } catch (JMSException ex) {}
+
+        String selector = "a = b";
+        Topic topic = session.createTopic("test");
+        JmsMessageConsumer consumer = (JmsMessageConsumer) session.createSharedConsumer(topic, "subscription", selector);
+
+        assertNotNull(consumer);
+        assertEquals("unexpected selector", selector, consumer.getMessageSelector());
+        assertEquals("unexpected topic", topic, consumer.getDestination());
     }
 
     @Test(timeout = 10000)
     public void testCreateSharedDurableConsumer() throws Exception {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        try {
-            session.createSharedDurableConsumer(session.createTopic("test"), "subscription");
-            fail("Should fail until implemented.");
-        } catch (JMSException ex) {}
+
+        Topic topic = session.createTopic("test");
+        JmsMessageConsumer consumer = (JmsMessageConsumer) session.createSharedDurableConsumer(topic, "subscription");
+
+        assertNotNull(consumer);
+        assertNull("unexpected selector", consumer.getMessageSelector());
+        assertEquals("unexpected topic", topic, consumer.getDestination());
     }
 
     @Test(timeout = 10000)
     public void testCreateSharedDurableConsumerWithSelector() throws Exception {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        try {
-            session.createSharedDurableConsumer(session.createTopic("test"), "subscription", "a = b");
-            fail("Should fail until implemented.");
-        } catch (JMSException ex) {}
+
+        String selector = "a = b";
+        Topic topic = session.createTopic("test");
+        JmsMessageConsumer consumer = (JmsMessageConsumer) session.createSharedDurableConsumer(topic, "subscription", selector);
+
+        assertNotNull(consumer);
+        assertEquals("unexpected selector", selector, consumer.getMessageSelector());
+        assertEquals("unexpected topic", topic, consumer.getDestination());
     }
 }

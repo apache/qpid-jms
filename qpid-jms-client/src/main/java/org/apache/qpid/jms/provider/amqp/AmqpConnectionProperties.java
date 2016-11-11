@@ -20,6 +20,7 @@ import static org.apache.qpid.jms.provider.amqp.AmqpSupport.ANONYMOUS_RELAY;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.CONNECTION_OPEN_FAILED;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DELAYED_DELIVERY;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.QUEUE_PREFIX;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SHARED_SUBS;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.TOPIC_PREFIX;
 
 import java.util.Arrays;
@@ -44,6 +45,7 @@ public class AmqpConnectionProperties {
 
     private boolean delayedDeliverySupported = false;
     private boolean anonymousRelaySupported = false;
+    private boolean sharedSubsSupported = false;
     private boolean connectionOpenFailed = false;
 
     /**
@@ -84,6 +86,10 @@ public class AmqpConnectionProperties {
         if (list.contains(DELAYED_DELIVERY)) {
             delayedDeliverySupported = true;
         }
+
+        if (list.contains(SHARED_SUBS)) {
+            sharedSubsSupported = true;
+        }
     }
 
     protected void processProperties(Map<Symbol, Object> properties) {
@@ -107,6 +113,23 @@ public class AmqpConnectionProperties {
             LOG.trace("Remote sent Connection Establishment Failed marker.");
             connectionOpenFailed = true;
         }
+    }
+
+    /**
+     * @return true if the connection supports shared subscriptions features.
+     */
+    public boolean isSharedSubsSupported() {
+        return sharedSubsSupported;
+    }
+
+    /**
+     * Sets if the connection supports shared subscriptions features.
+     *
+     * @param sharedSubsSupported
+     *      true if the shared subscriptions features are supported.
+     */
+    public void setSharedSubsSupported(boolean sharedSubsSupported) {
+        this.sharedSubsSupported = sharedSubsSupported;
     }
 
     /**

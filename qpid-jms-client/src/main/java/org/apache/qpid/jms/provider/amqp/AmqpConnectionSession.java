@@ -63,12 +63,17 @@ public class AmqpConnectionSession extends AmqpSession {
      *
      * @param subscriptionName
      *        the subscription name that is to be removed.
+     * @param hasClientID
+     *        whether the connection has a clientID set.
      * @param request
      *        the request that awaits the completion of this action.
      */
-    public void unsubscribe(String subscriptionName, AsyncResult request) {
-        DurableSubscriptionReattachBuilder builder = new DurableSubscriptionReattachBuilder(this, getResourceInfo(), subscriptionName);
-        DurableSubscriptionReattachRequest subscribeRequest = new DurableSubscriptionReattachRequest(builder, request);
+    public void unsubscribe(String subscriptionName, boolean hasClientID, AsyncResult request) {
+        AmqpSubscriptionTracker subTracker = getConnection().getSubTracker();
+        String linkName = subTracker.getFirstDurableSubscriptionLinkName(subscriptionName, hasClientID);
+
+        DurableSubscriptionReattachBuilder builder = new DurableSubscriptionReattachBuilder(this, getResourceInfo(), linkName);
+        DurableSubscriptionReattachRequest subscribeRequest = new DurableSubscriptionReattachRequest(subscriptionName, builder, request);
         pendingUnsubs.put(subscriptionName, subscribeRequest);
 
         LOG.debug("Attempting remove of subscription: {}", subscriptionName);
@@ -81,24 +86,24 @@ public class AmqpConnectionSession extends AmqpSession {
             super(resource, receiver, parent);
         }
 
-        public String getSubscriptionName() {
+        public String getLinkName() {
             return getEndpoint().getName();
         }
     }
 
     private final class DurableSubscriptionReattachBuilder extends AmqpResourceBuilder<DurableSubscriptionReattach, AmqpSession, JmsSessionInfo, Receiver> {
 
-        private final String subscriptionName;
+        private final String linkName;
 
-        public DurableSubscriptionReattachBuilder(AmqpSession parent, JmsSessionInfo resourceInfo, String subscriptionName) {
+        public DurableSubscriptionReattachBuilder(AmqpSession parent, JmsSessionInfo resourceInfo, String linkName) {
             super(parent, resourceInfo);
 
-            this.subscriptionName = subscriptionName;
+            this.linkName = linkName;
         }
 
         @Override
         protected Receiver createEndpoint(JmsSessionInfo resourceInfo) {
-            Receiver receiver = getParent().getEndpoint().receiver(subscriptionName);
+            Receiver receiver = getParent().getEndpoint().receiver(linkName);
             receiver.setTarget(new Target());
             receiver.setSenderSettleMode(SenderSettleMode.UNSETTLED);
             receiver.setReceiverSettleMode(ReceiverSettleMode.FIRST);
@@ -121,18 +126,20 @@ public class AmqpConnectionSession extends AmqpSession {
 
     private final class DurableSubscriptionReattachRequest extends WrappedAsyncResult {
 
+        private final String subscriptionName;
         private final DurableSubscriptionReattachBuilder subscriberBuilder;
 
-        public DurableSubscriptionReattachRequest(DurableSubscriptionReattachBuilder subscriberBuilder, AsyncResult originalRequest) {
+        public DurableSubscriptionReattachRequest(String subscriptionName, DurableSubscriptionReattachBuilder subscriberBuilder, AsyncResult originalRequest) {
             super(originalRequest);
+            this.subscriptionName = subscriptionName;
             this.subscriberBuilder = subscriberBuilder;
         }
 
         @Override
         public void onSuccess() {
             DurableSubscriptionReattach subscriber = subscriberBuilder.getResource();
-            LOG.trace("Reattached to subscription: {}", subscriber.getSubscriptionName());
-            pendingUnsubs.remove(subscriber.getSubscriptionName());
+            LOG.trace("Reattached to subscription '{}' using link name '{}'", subscriptionName, subscriber.getLinkName());
+            pendingUnsubs.remove(subscriptionName);
             if (subscriber.getEndpoint().getRemoteSource() != null) {
                 subscriber.close(getWrappedRequest());
             } else {
@@ -144,8 +151,8 @@ public class AmqpConnectionSession extends AmqpSession {
         @Override
         public void onFailure(Throwable result) {
             DurableSubscriptionReattach subscriber = subscriberBuilder.getResource();
-            LOG.trace("Failed to reattach to subscription: {}", subscriber.getSubscriptionName());
-            pendingUnsubs.remove(subscriber.getSubscriptionName());
+            LOG.trace("Failed to reattach to subscription '{}' using link name '{}'", subscriptionName, subscriber.getLinkName());
+            pendingUnsubs.remove(subscriptionName);
             subscriber.resourceClosed();
             super.onFailure(result);
         }

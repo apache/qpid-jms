@@ -101,7 +101,6 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     private final ThreadPoolExecutor executor;
 
     private volatile IOException firstFailureError;
-    private boolean clientIdSet;
     private ExceptionListener exceptionListener;
     private JmsMessageFactory messageFactory;
     private Provider provider;
@@ -295,7 +294,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     public synchronized void setClientID(String clientID) throws JMSException {
         checkClosedOrFailed();
 
-        if (clientIdSet) {
+        if (connectionInfo.isExplicitClientID()) {
             throw new IllegalStateException("The clientID has already been set");
         }
         if (clientID == null || clientID.isEmpty()) {
@@ -305,8 +304,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
             throw new IllegalStateException("Cannot set the client id once connected.");
         }
 
-        this.connectionInfo.setClientId(clientID);
-        this.clientIdSet = true;
+        this.connectionInfo.setClientId(clientID, true);
 
         // We weren't connected if we got this far, we should now connect to ensure the
         // configured clientID is valid.
@@ -478,7 +476,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
             }
 
             if (connectionInfo.getClientId() == null || connectionInfo.getClientId().trim().isEmpty()) {
-                connectionInfo.setClientId(clientIdGenerator.generateId());
+                connectionInfo.setClientId(clientIdGenerator.generateId(), false);
             }
 
             createResource(connectionInfo);
@@ -560,7 +558,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     }
 
     protected synchronized boolean isExplicitClientID() {
-        return clientIdSet;
+        return connectionInfo.isExplicitClientID();
     }
 
     //----- Provider interface methods ---------------------------------------//

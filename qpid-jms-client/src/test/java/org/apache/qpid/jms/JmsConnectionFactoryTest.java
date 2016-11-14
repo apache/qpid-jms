@@ -38,6 +38,7 @@ import javax.jms.Connection;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSContext;
 import javax.jms.JMSException;
+import javax.jms.JMSRuntimeException;
 
 import org.apache.qpid.jms.policy.JmsDefaultDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
@@ -792,5 +793,27 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JMSContext context = factory.createContext(JMSContext.CLIENT_ACKNOWLEDGE);
         assertNotNull(context);
         assertEquals(JMSContext.CLIENT_ACKNOWLEDGE, context.getSessionMode());
+    }
+
+
+    @Test
+    public void testCreateContextWithInvalidSessionMode() {
+        JmsConnectionFactory factory = new JmsConnectionFactory("mock://127.0.0.1:5672");
+
+        try {
+            factory.createContext(-1);
+            fail("Should have thrown an JMSRuntimeException");
+        } catch (JMSRuntimeException ex) {
+        } catch (Throwable e) {
+            fail("Wrong exception type thrown: " + e.getClass().getSimpleName());
+        }
+
+        try {
+            factory.createContext("user", "pass", -1);
+            fail("Should have thrown an JMSRuntimeException");
+        } catch (JMSRuntimeException ex) {
+        } catch (Throwable e) {
+            fail("Wrong exception type thrown: " + e.getClass().getSimpleName());
+        }
     }
 }

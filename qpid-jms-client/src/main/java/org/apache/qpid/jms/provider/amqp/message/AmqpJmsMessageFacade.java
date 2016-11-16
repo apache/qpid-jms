@@ -995,7 +995,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     Footer getFooter() {
         Footer result = null;
-        if (footerMap != null && footerMap.isEmpty()) {
+        if (footerMap != null && !footerMap.isEmpty()) {
             result = new Footer(footerMap);
         }
         return result;

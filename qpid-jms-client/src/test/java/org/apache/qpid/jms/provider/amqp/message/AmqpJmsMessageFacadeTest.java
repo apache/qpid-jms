@@ -45,6 +45,7 @@ import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsTemporaryQueue;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
+import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescribedType;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
@@ -53,6 +54,8 @@ import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.UnsignedLong;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
+import org.apache.qpid.proton.amqp.messaging.DeliveryAnnotations;
+import org.apache.qpid.proton.amqp.messaging.Footer;
 import org.apache.qpid.proton.amqp.messaging.Header;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Properties;
@@ -660,6 +663,21 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         assertEquals("expected ReplyToGroupId on message was not found", replyToGroupId, amqpMessageFacade.getProperties().getReplyToGroupId());
     }
 
+    @Test
+    public void testSetReplyToGroupIdNullClearsProperty() {
+        String replyToGroupId = "myReplyGroup";
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setReplyToGroupId(replyToGroupId);
+
+        assertNotNull("expected ReplyToGroupId on message was not found", amqpMessageFacade.getProperties().getReplyToGroupId());
+        assertEquals("expected ReplyToGroupId on message was not found", replyToGroupId, amqpMessageFacade.getProperties().getReplyToGroupId());
+
+        amqpMessageFacade.setReplyToGroupId(null);
+        assertNull("expected ReplyToGroupId on message to be null", amqpMessageFacade.getProperties().getReplyToGroupId());
+    }
+
     /**
      * Test that setting and getting the ReplyToGroupId yields the expected result
      */
@@ -763,6 +781,21 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     // for more comprehensive testing of the underlying bits.
 
     @Test
+    public void testSetDestinationWithNullClearsProperty() {
+        String testToAddress = "myTestAddress";
+        JmsTopic dest = new JmsTopic(testToAddress);
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertNull(amqpMessageFacade.getProperties());
+        amqpMessageFacade.setDestination(dest);
+        assertNotNull(amqpMessageFacade.getProperties().getTo());
+
+        amqpMessageFacade.setDestination(null);
+        assertNull(amqpMessageFacade.getProperties().getTo());
+    }
+
+    @Test
     public void testSetGetDestination() {
         String testToAddress = "myTestAddress";
         JmsTopic dest = new JmsTopic(testToAddress);
@@ -796,10 +829,34 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         assertEquals(testToAddress, ((Topic) dest).getTopicName());
     }
 
+    @Test
+    public void testGetDestinationWithReceivedMessageWithoutPropertiesUsesConsumerDestination() throws JMSException {
+        AmqpConsumer consumer = createMockAmqpConsumer();
+        Message message = Proton.message();
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(consumer, message);
+        assertNotNull(amqpMessageFacade.getDestination());
+        assertEquals(consumer.getDestination(), amqpMessageFacade.getDestination());
+    }
+
     // --- reply-to field ---
 
     // Basic test to see things are wired up at all. See {@link AmqpDestinationHelperTest}
     // for more comprehensive testing of the underlying bits.
+
+    @Test
+    public void testSetGetReplyToWithNullClearsProperty() {
+        String testReplyToAddress = "myTestReplyTo";
+        JmsTopic dest = new JmsTopic(testReplyToAddress);
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertNull(amqpMessageFacade.getProperties());
+        amqpMessageFacade.setReplyTo(dest);
+        assertNotNull(amqpMessageFacade.getProperties().getReplyTo());
+
+        amqpMessageFacade.setReplyTo(null);
+        assertNull(amqpMessageFacade.getProperties().getReplyTo());
+    }
 
     @Test
     public void testSetGetReplyTo() {
@@ -833,6 +890,13 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         //We didn't set any destination type annotations, so the consumer destination type will be used: a topic.
         assertTrue(dest instanceof Topic);
         assertEquals(testReplyToAddress, ((Topic) dest).getTopicName());
+    }
+
+    @Test
+    public void testGetReplyToWithReceivedMessageWithoutProperties() throws JMSException {
+        Message message = Proton.message();
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+        assertNull(amqpMessageFacade.getReplyTo());
     }
 
     // --- message-id and correlation-id ---
@@ -1469,12 +1533,27 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
         amqpMessageFacade.setUserIdBytes(bytes);
-        amqpMessageFacade.setUserId(null);
+        amqpMessageFacade.setUserIdBytes(null);
 
         assertNotNull("properties section was not created", amqpMessageFacade.getProperties());
         assertNull("bytes were not cleared as expected for userid", amqpMessageFacade.getProperties().getUserId());
         assertNull("userid bytes not as expected", amqpMessageFacade.getUserIdBytes());
     }
+
+   @Test
+   public void testSetUserIdBytesEmptyOnMessageWithExistingUserId() throws Exception {
+       String userIdString = "testValue";
+       byte[] bytes = userIdString.getBytes("UTF-8");
+
+       AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+       amqpMessageFacade.setUserIdBytes(bytes);
+       amqpMessageFacade.setUserIdBytes(new byte[0]);
+
+       assertNotNull("properties section was not created", amqpMessageFacade.getProperties());
+       assertNull("bytes were not cleared as expected for userid", amqpMessageFacade.getProperties().getUserId());
+       assertNull("userid bytes not as expected", amqpMessageFacade.getUserIdBytes());
+   }
 
     @Test
     public void testClearUserIdBytesWithNoExistingProperties() {
@@ -1674,6 +1753,16 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         assertNull("Subject should be clear", amqpMessageFacade.getProperties().getSubject());
     }
 
+    @Test
+    public void testSetTypeNullWhenNoPropertiesDoesNotCreateProperties() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertNull("Should not be any Properties object by default", amqpMessageFacade.getProperties());
+        amqpMessageFacade.setType(null);
+        assertNull("Subject should be clear", amqpMessageFacade.getProperties());
+        assertNull("Should be no Type", amqpMessageFacade.getType());
+    }
+
     /**
      * Test that {@link AmqpJmsMessageFacade#getType()} returns the expected value
      * for a message received with the message Subject set.
@@ -1842,6 +1931,85 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         assertFalse(amqpMessageFacade.propertyExists(null));
     }
 
+    @Test
+    public void testNoApplicationPropertiesReturnedOnEmptyMessage() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertNull(amqpMessageFacade.getApplicationProperties());
+    }
+
+    @Test
+    public void testNoApplicationReturnedOnEmptyMapInMessage() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        Map<String, Object> value = new HashMap<>();
+        amqpMessageFacade.setApplicationProperties(new ApplicationProperties(value));
+
+        assertNull(amqpMessageFacade.getApplicationProperties());
+    }
+
+    // ====== AMQP Footer =======================
+    // ==========================================
+
+    @Test
+    public void testNoFooterReturnedOnEmptyMessage() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertNull(amqpMessageFacade.getFooter());
+    }
+
+    @Test
+    public void testNoFooterReturnedOnEmptyFooterMapInMessage() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        Map<Symbol, Object> footerMap = new HashMap<>();
+        amqpMessageFacade.setFooter(new Footer(footerMap));
+
+        assertNull(amqpMessageFacade.getFooter());
+    }
+
+    @Test
+    public void testDeliveryAnnotationsReturnedOnNonEmptyFooterMapInMessage() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        Map<Symbol, Object> footerMap = new HashMap<>();
+        footerMap.put(Symbol.valueOf("test"), "value");
+        amqpMessageFacade.setFooter(new Footer(footerMap));
+
+        assertNotNull(amqpMessageFacade.getFooter());
+    }
+
+    // ====== AMQP Delivery Annotations =======================
+    // ========================================================
+
+    @Test
+    public void testNoDeliveryAnnotationsReturnedOnEmptyMessage() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertNull(amqpMessageFacade.getDeliveryAnnotations());
+    }
+
+    @Test
+    public void testNoDeliveryAnnotationsReturnedOnEmptyDeliveryAnnotationsMap() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        Map<Symbol, Object> deliveryAnnotationsMap = new HashMap<>();
+        amqpMessageFacade.setDeliveryAnnotations(new DeliveryAnnotations(deliveryAnnotationsMap));
+
+        assertNull(amqpMessageFacade.getDeliveryAnnotations());
+    }
+
+    @Test
+    public void testDeliveryAnnotationsReturnedOnNonEmptyDeliveryAnnotationsMap() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        Map<Symbol, Object> deliveryAnnotationsMap = new HashMap<>();
+        deliveryAnnotationsMap.put(Symbol.valueOf("test"), "value");
+        amqpMessageFacade.setDeliveryAnnotations(new DeliveryAnnotations(deliveryAnnotationsMap));
+
+        assertNotNull(amqpMessageFacade.getDeliveryAnnotations());
+    }
+
     // ====== AMQP Message No Header tests ===========
     // ===============================================
 
@@ -1885,6 +2053,14 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     public void testBasicMessageCopy() throws JMSException {
         AmqpJmsMessageFacade source = createNewMessageFacade();
 
+        Map<Symbol, Object> deliveryAnnotationsMap = new HashMap<>();
+        deliveryAnnotationsMap.put(Symbol.valueOf("test-annotation"), "value");
+        source.setDeliveryAnnotations(new DeliveryAnnotations(deliveryAnnotationsMap));
+
+        Map<Symbol, Object> footerMap = new HashMap<>();
+        footerMap.put(Symbol.valueOf("test-footer"), "value");
+        source.setFooter(new Footer(footerMap));
+
         JmsQueue aQueue = new JmsQueue("Test-Queue");
         JmsTemporaryQueue tempQueue = new JmsTemporaryQueue("Test-Temp-Queue");
 
@@ -1909,6 +2085,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade copy = source.copy();
 
         assertSame(source.getConnection(), copy.getConnection());
+        assertEquals(source.hasBody(), copy.hasBody());
 
         assertEquals(source.getDestination(), copy.getDestination());
         assertEquals(source.getReplyTo(), copy.getReplyTo());
@@ -1933,6 +2110,21 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         assertEquals("APP-Prop-1-Value", copy.getProperty("APP-Prop-1"));
         assertEquals("APP-Prop-2-Value", copy.getProperty("APP-Prop-2"));
+
+        Footer copiedFooter = copy.getFooter();
+        DeliveryAnnotations copiedDeliveryAnnotations = copy.getDeliveryAnnotations();
+
+        assertNotNull(copiedFooter);
+        assertNotNull(copiedDeliveryAnnotations);
+
+        assertNotNull(copiedFooter.getValue());
+        assertNotNull(copiedDeliveryAnnotations.getValue());
+
+        assertFalse(copiedFooter.getValue().isEmpty());
+        assertFalse(copiedDeliveryAnnotations.getValue().isEmpty());
+
+        assertTrue(copiedFooter.getValue().containsKey(Symbol.valueOf("test-footer")));
+        assertTrue(copiedDeliveryAnnotations.getValue().containsKey(Symbol.valueOf("test-annotation")));
     }
 
     @Test

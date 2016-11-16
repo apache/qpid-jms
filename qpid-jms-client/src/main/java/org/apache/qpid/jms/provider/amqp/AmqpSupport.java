@@ -213,18 +213,21 @@ public class AmqpSupport {
             String scheme = (String) info.get(SCHEME);
 
             String networkHost = (String) info.get(NETWORK_HOST);
+            int port = 0;
+
             if (networkHost == null || networkHost.isEmpty()) {
                 result = new IOException(message + " : Redirection information not set.");
+            } else {
+                try {
+                    port = Integer.parseInt(info.get(PORT).toString());
+                } catch (Exception ex) {
+                    result = new IOException(message + " : Redirection information not set.");
+                }
             }
 
-            int port = 0;
-            try {
-                port = Integer.parseInt(info.get(PORT).toString());
-            } catch (Exception ex) {
-                result = new IOException(message + " : Redirection information not set.");
+            if (result == null) {
+                result = new ProviderRedirectedException(message, scheme, hostname, networkHost, port, path);
             }
-
-            result = new ProviderRedirectedException(message, scheme, hostname, networkHost, port, path);
         }
 
         return result;

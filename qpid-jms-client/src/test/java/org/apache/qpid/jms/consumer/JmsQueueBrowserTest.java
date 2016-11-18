@@ -19,9 +19,11 @@ package org.apache.qpid.jms.consumer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 import java.util.Enumeration;
 
+import javax.jms.IllegalStateException;
 import javax.jms.Message;
 import javax.jms.Queue;
 import javax.jms.QueueBrowser;
@@ -74,5 +76,17 @@ public class JmsQueueBrowserTest extends JmsConnectionTestSupport {
         assertFalse(browse.hasMoreElements());
         browser.close();
         assertFalse(browse.hasMoreElements());
+    }
+
+    @Test(timeout = 30000)
+    public void testGetEnumerationClosedBrowser() throws Exception {
+        browser = session.createBrowser(queue);
+
+        browser.close();
+
+        try {
+            browser.getEnumeration();
+            fail("Should throw an IllegalStateException");
+        } catch (IllegalStateException ise) {}
     }
 }

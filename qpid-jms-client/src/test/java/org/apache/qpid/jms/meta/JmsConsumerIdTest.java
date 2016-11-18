@@ -145,9 +145,20 @@ public class JmsConsumerIdTest {
         JmsConsumerId id5 = new JmsConsumerId(firstId, 1);
         JmsConsumerId id6 = new JmsConsumerId(secondId.getConnectionId(), 1, 1);
 
+        // Connection ID
+        IdGenerator generator = new IdGenerator();
+        String connectionId = generator.generateId();
+
+        JmsConsumerId id7 = new JmsConsumerId(connectionId, 1, 2);
+        JmsConsumerId id8 = new JmsConsumerId(connectionId, 1, 3);
+
         assertFalse(id3.equals(id4));
         assertTrue(id3.equals(id5));
         assertTrue(id3.equals(id6));
+        assertFalse(id3.equals(id7));
+        assertFalse(id3.equals(id8));
+        assertFalse(id4.equals(id7));
+        assertFalse(id4.equals(id8));
     }
 
     @Test

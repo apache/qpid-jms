@@ -22,20 +22,16 @@ package org.apache.qpid.jms.exceptions;
 
 import javax.jms.JMSException;
 
-public class QpidJmsException extends JMSException
-{
+public class QpidJmsException extends JMSException {
     private static final long serialVersionUID = 751932967255393054L;
 
-    public QpidJmsException(String reason)
-    {
+    public QpidJmsException(String reason) {
         this(reason, null);
     }
 
-    public QpidJmsException(String reason, Exception cause)
-    {
+    public QpidJmsException(String reason, Exception cause) {
         super(reason);
-        if (cause != null)
-        {
+        if (cause != null) {
             setLinkedException(cause);
             initCause(cause);
         }

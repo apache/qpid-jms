@@ -148,8 +148,19 @@ public class JmsSessionIdTest {
         JmsSessionId id4 = new JmsSessionId(firstId, 2);
         JmsSessionId id5 = new JmsSessionId(firstId, 1);
 
+        // Connection ID
+        IdGenerator generator = new IdGenerator();
+        String connectionId = generator.generateId();
+
+        JmsSessionId id6 = new JmsSessionId(connectionId, 1);
+        JmsSessionId id7 = new JmsSessionId(connectionId, 3);
+
         assertFalse(id3.equals(id4));
         assertTrue(id3.equals(id5));
+        assertFalse(id3.equals(id6));
+        assertFalse(id3.equals(id7));
+        assertFalse(id4.equals(id6));
+        assertFalse(id4.equals(id7));
     }
 
     @Test

@@ -73,6 +73,12 @@ public class AmqpProviderFactoryTest extends QpidJmsTestCase {
         AmqpProviderFactory.create(badOptionsURI);
     }
 
+    @Test(timeout = 20000, expected=IOException.class)
+    public void testCreateProviderFailsWithMissingScheme() throws IOException, Exception {
+        URI missingSchemeURI = new URI(null, null, peerURI.getHost(), peerURI.getPort(), null, null, null);
+        AmqpProviderFactory.create(missingSchemeURI);
+    }
+
     @Test(timeout = 20000)
     public void testCreateProviderHasDefaultIdleTimeoutValue() throws IOException, Exception {
         Provider provider = AmqpProviderFactory.create(new URI(peerURI.toString()));

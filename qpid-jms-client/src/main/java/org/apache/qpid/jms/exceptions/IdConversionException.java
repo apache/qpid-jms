@@ -20,17 +20,14 @@
  */
 package org.apache.qpid.jms.exceptions;
 
-public class IdConversionException extends QpidJmsException
-{
+public class IdConversionException extends QpidJmsException {
     private static final long serialVersionUID = -2349723813650476823L;
 
-    public IdConversionException(String reason)
-    {
+    public IdConversionException(String reason) {
         super(reason);
     }
 
-    public IdConversionException(String reason, Exception cause)
-    {
+    public IdConversionException(String reason, Exception cause) {
         super(reason, cause);
     }
 }

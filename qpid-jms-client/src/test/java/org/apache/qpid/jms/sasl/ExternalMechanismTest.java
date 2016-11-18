@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.sasl;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.security.Principal;
@@ -24,6 +25,24 @@ import java.security.Principal;
 import org.junit.Test;
 
 public class ExternalMechanismTest {
+
+    @Test
+    public void testGetInitialResponseWithNullUserAndPassword() {
+        ExternalMechanism mech = new ExternalMechanism();
+
+        byte[] response = mech.getInitialResponse();
+        assertNotNull(response);
+        assertTrue(response.length == 0);
+    }
+
+    @Test
+    public void testGetChallengeResponse() {
+        ExternalMechanism mech = new ExternalMechanism();
+
+        byte[] response = mech.getChallengeResponse(new byte[1]);
+        assertNotNull(response);
+        assertTrue(response.length == 0);
+    }
 
     @Test
     public void testIsNotApplicableWithUserAndPasswordButNoPrincipal() {

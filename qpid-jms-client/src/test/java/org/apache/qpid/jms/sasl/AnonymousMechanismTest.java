@@ -16,6 +16,7 @@
  */
 package org.apache.qpid.jms.sasl;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.security.Principal;
@@ -23,6 +24,24 @@ import java.security.Principal;
 import org.junit.Test;
 
 public class AnonymousMechanismTest {
+
+    @Test
+    public void testGetInitialResponseWithNullUserAndPassword() {
+        AnonymousMechanism mech = new AnonymousMechanism();
+
+        byte[] response = mech.getInitialResponse();
+        assertNotNull(response);
+        assertTrue(response.length == 0);
+    }
+
+    @Test
+    public void testGetChallengeResponse() {
+        AnonymousMechanism mech = new AnonymousMechanism();
+
+        byte[] response = mech.getChallengeResponse(new byte[1]);
+        assertNotNull(response);
+        assertTrue(response.length == 0);
+    }
 
     @Test
     public void testIsApplicableWithNoCredentials() {

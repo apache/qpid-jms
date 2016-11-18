@@ -114,7 +114,7 @@ public class AmqpJmsTextMessageFacade extends AmqpJmsMessageFacade implements Jm
     public boolean hasBody() {
         try {
             return getText() != null;
-        } catch (JMSException e) {
+        } catch (Exception e) {
             return false;
         }
     }

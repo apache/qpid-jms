@@ -207,6 +207,12 @@ public class JmsSessionClosedTest extends JmsConnectionTestSupport {
     }
 
     @Test(timeout=30000, expected=JMSException.class)
+    public void testCreateDurableConsumerSelectorBooleanFails() throws Exception {
+        Topic destination = session.createTopic("TEST");
+        session.createDurableConsumer(destination, "test", "a = b", false);
+    }
+
+    @Test(timeout=30000, expected=JMSException.class)
     public void testCreateQueueBrowserFails() throws Exception {
         Queue destination = session.createQueue("test");
         session.createBrowser(destination);

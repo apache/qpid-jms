@@ -27,6 +27,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -53,6 +54,7 @@ import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.UnsignedLong;
+import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.ApplicationProperties;
 import org.apache.qpid.proton.amqp.messaging.DeliveryAnnotations;
 import org.apache.qpid.proton.amqp.messaging.Footer;
@@ -1090,10 +1092,32 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     }
 
     @Test
+    public void testSetCorrelationIdBytesNullDoesNotCreateProperties() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        amqpMessageFacade.setCorrelationIdBytes(null);
+        assertNull("Unexpected Properties Object in AMQP message", amqpMessageFacade.getProperties());
+    }
+
+    @Test
     public void testGetCorrelationIdBytesOnNewMessage() throws Exception {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
         assertNull("Expected correlationId bytes to be null", amqpMessageFacade.getCorrelationIdBytes());
+    }
+
+    @Test
+    public void testGetCorrelationIdBytesOnMessageWithNonBinaryContent() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        Properties properties = new Properties();
+        properties.setCorrelationId(UUID.randomUUID());
+
+        amqpMessageFacade.setProperties(properties);
+
+        try {
+            amqpMessageFacade.getCorrelationIdBytes();
+            fail("Should have thrown JMSException");
+        } catch (JMSException ex) {}
     }
 
     @Test
@@ -1148,12 +1172,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         }
     }
 
-    @Test
-    public void testGetMessageIdIsNullOnNewMessage() {
-        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
-
-        assertNull("Expected messageId value to be null on new message", amqpMessageFacade.getMessageId());
-    }
+    //--- Message Id field ---
 
     /**
      * Test that setting then getting a String value as the messageId returns the expected value
@@ -1294,6 +1313,56 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         }
 
         return new Binary(idBytes);
+    }
+
+    // --- Provider Message Id field ---
+
+    @Test
+    public void testGetProviderMessageIdObjectOnNewMessage() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        assertNull("Expected messageId not returned", amqpMessageFacade.getProviderMessageIdObject());
+    }
+
+    /**
+     * Test that setting then getting a String value as the provider messageId returns the expected value
+     *
+     * @throws Exception if the test encounters an unexpected error
+     */
+    @Test
+    public void testSetGetProviderMessageIdObjectOnNewMessageWithString() throws Exception {
+        String testMessageId = "ID:myStringMessageId";
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setProviderMessageIdObject(testMessageId);
+
+        assertEquals("Expected messageId not returned", testMessageId, amqpMessageFacade.getProviderMessageIdObject());
+        assertEquals("ID strings were not equal", testMessageId, amqpMessageFacade.getProviderMessageIdObject());
+    }
+
+    @Test
+    public void testSetProviderMessageIdObjectNullClearsProperty() throws Exception {
+        String testMessageId = "ID:myStringMessageId";
+
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        amqpMessageFacade.setProviderMessageIdObject(testMessageId);
+        assertEquals("Expected messageId not returned", testMessageId, amqpMessageFacade.getProviderMessageIdObject());
+
+        amqpMessageFacade.setProviderMessageIdObject(null);
+        assertNull("Expected messageId not returned", amqpMessageFacade.getProviderMessageIdObject());
+    }
+
+    @Test
+    public void testSetProviderMessageIdObjectNullDoesNotCreateProperties() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertNull("Expected null value not returned", amqpMessageFacade.getProperties());
+
+        amqpMessageFacade.setProviderMessageIdObject(null);
+
+        assertNull("Expected null value not returned", amqpMessageFacade.getProviderMessageIdObject());
+        assertNull("Expected null value not returned", amqpMessageFacade.getProperties());
     }
 
     // --- creation-time field  ---
@@ -2143,6 +2212,14 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
     // ====== AMQP Message Facade misc tests =========
     // ===============================================
+
+    @Test
+    public void testMessageHasBodyDetectsPayload() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        assertFalse(amqpMessageFacade.hasBody());
+        amqpMessageFacade.setBody(new AmqpValue("test"));
+        assertTrue(amqpMessageFacade.hasBody());
+    }
 
     @Test
     public void testClearBodyRemoveMessageBody() {

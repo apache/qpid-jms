@@ -19,10 +19,13 @@ package org.apache.qpid.jms.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -138,6 +141,12 @@ public class URISupportTest {
     }
 
     @Test
+    public void testCheckParenthesisWithNullOrEmpty() throws Exception {
+        assertTrue(URISupport.checkParenthesis(null));
+        assertTrue(URISupport.checkParenthesis(""));
+    }
+
+    @Test
     public void testCreateWithQuery() throws Exception {
         URI source = new URI("vm://localhost");
         URI dest = PropertyUtil.replaceQuery(source, "network=true&one=two");
@@ -233,6 +242,40 @@ public class URISupportTest {
         for (URI uri : compositeURIs) {
             assertTrue(uri + " must be detected as composite URI", URISupport.isCompositeURI(uri));
         }
+    }
+
+    @Test
+    public void testIndexOfParenthesisMatchExceptions() throws URISyntaxException {
+        try {
+            URISupport.indexOfParenthesisMatch(null, -1);
+            fail("Should have thrown IllegalArgumentException");
+        } catch (IllegalArgumentException iobe) {}
+
+        try {
+            URISupport.indexOfParenthesisMatch("tcp", 4);
+            fail("Should have thrown IllegalArgumentException");
+        } catch (IllegalArgumentException iobe) {}
+
+        try {
+            URISupport.indexOfParenthesisMatch("tcp", 2);
+            fail("Should have thrown IllegalArgumentException");
+        } catch (IllegalArgumentException iobe) {}
+
+        try {
+            URISupport.indexOfParenthesisMatch("(tcp", 0);
+            fail("Should have thrown URISyntaxException");
+        } catch (URISyntaxException iobe) {}
+    }
+
+    @Test
+    public void testApplyParametersWithNullOrEmptyParameters() throws URISyntaxException {
+        URI uri = new URI("tcp://localhost");
+
+        URI result = URISupport.applyParameters(uri, null, "value.");
+        assertSame(uri, result);
+
+        result = URISupport.applyParameters(uri, Collections.<String, String>emptyMap(), "value.");
+        assertSame(uri, result);
     }
 
     @Test

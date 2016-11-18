@@ -82,6 +82,14 @@ public class JmsTopicTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testEqualsWithTemporaryTopic() {
+        JmsTopic topic1 = new JmsTopic("name");
+        JmsTemporaryTopic topic2 = new JmsTemporaryTopic("name");
+        assertFalse("should be unequal", topic1.equals(topic2));
+        assertFalse("should still be unequal", topic2.equals(topic1));
+    }
+
+    @Test
     public void testHashcodeWithEqualNamedObjects() {
         JmsTopic topic1 = new JmsTopic("name");
         JmsTopic topic2 = new JmsTopic("name");

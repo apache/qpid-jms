@@ -26,7 +26,6 @@ import javax.jms.IllegalStateException;
 public class JmsConnectionClosedException extends IllegalStateException {
     private static final long serialVersionUID = -7975982446284065025L;
 
-
     public JmsConnectionClosedException(IOException cause) {
         super("The JMS connection has been closed: " + extractMessage(cause));
         initCause(cause);

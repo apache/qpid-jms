@@ -37,10 +37,6 @@ import javax.jms.TemporaryQueue;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 
-import org.apache.qpid.jms.JmsConnectionTestSupport;
-import org.apache.qpid.jms.JmsMessageConsumer;
-import org.apache.qpid.jms.JmsSession;
-import org.apache.qpid.jms.JmsTemporaryQueue;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;

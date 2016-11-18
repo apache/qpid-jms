@@ -772,7 +772,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public boolean hasBody() {
-        return body == null;
+        return body != null;
     }
 
     /**

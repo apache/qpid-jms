@@ -45,6 +45,12 @@ import org.junit.Test;
 public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
 
     @Test
+    public void testNewMessageToSendReportsNoBody() throws Exception {
+        AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createNewStreamMessageFacade();
+        assertFalse("Message should report no body", amqpStreamMessageFacade.hasBody());
+    }
+
+    @Test
     public void testNewMessageToSendContainsMessageTypeAnnotation() throws Exception {
         AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createNewStreamMessageFacade();
 
@@ -114,6 +120,7 @@ public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createReceivedStreamMessageFacade(createMockAmqpConsumer(), message);
 
+        assertTrue("Message should report that it contains a body", amqpStreamMessageFacade.hasBody());
         assertEquals("Unexpected value retrieved", Boolean.FALSE, amqpStreamMessageFacade.peek());
         assertEquals("Unexpected value retrieved", Boolean.FALSE, amqpStreamMessageFacade.peek());
     }

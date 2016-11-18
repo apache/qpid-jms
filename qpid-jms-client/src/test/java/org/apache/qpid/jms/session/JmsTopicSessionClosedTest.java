@@ -87,6 +87,11 @@ public class JmsTopicSessionClosedTest extends JmsConnectionTestSupport {
         session.createDurableSubscriber(destination, "foo", "color = blue", false);
     }
 
+    @Test(timeout=30000, expected=javax.jms.IllegalStateException.class)
+    public void testCreateDurableConsumerWithSelector() throws Exception {
+        session.createDurableConsumer(destination, "foo", "color = blue", false);
+    }
+
     @Test(timeout=30000)
     public void testSubscriberCloseAgain() throws Exception {
         // Close it again (closing the session should have closed it already).

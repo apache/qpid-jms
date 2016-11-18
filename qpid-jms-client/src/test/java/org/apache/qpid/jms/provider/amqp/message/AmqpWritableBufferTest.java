@@ -21,6 +21,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import java.nio.ByteBuffer;
+
 import org.junit.Test;
 
 import io.netty.buffer.ByteBuf;
@@ -37,6 +39,14 @@ public class AmqpWritableBufferTest {
         AmqpWritableBuffer writable = new AmqpWritableBuffer(buffer);
 
         assertSame(buffer, writable.getBuffer());
+    }
+
+    @Test
+    public void testLimit() {
+        ByteBuf buffer = Unpooled.buffer(1024);
+        AmqpWritableBuffer writable = new AmqpWritableBuffer(buffer);
+
+        assertEquals(buffer.capacity(), writable.limit());
     }
 
     @Test
@@ -78,6 +88,33 @@ public class AmqpWritableBufferTest {
 
         assertEquals(0, writable.position());
         writable.position(1);
+        assertEquals(1, writable.position());
+    }
+
+    @Test
+    public void testPutByteBuffer() {
+        ByteBuffer input = ByteBuffer.allocate(1024);
+        input.put((byte) 1);
+        input.flip();
+
+        ByteBuf buffer = Unpooled.buffer(1024);
+        AmqpWritableBuffer writable = new AmqpWritableBuffer(buffer);
+
+        assertEquals(0, writable.position());
+        writable.put(input);
+        assertEquals(1, writable.position());
+    }
+
+    @Test
+    public void testPutByteBuf() {
+        ByteBuf input = Unpooled.buffer();
+        input.writeByte((byte) 1);
+
+        ByteBuf buffer = Unpooled.buffer(1024);
+        AmqpWritableBuffer writable = new AmqpWritableBuffer(buffer);
+
+        assertEquals(0, writable.position());
+        writable.put(input);
         assertEquals(1, writable.position());
     }
 }

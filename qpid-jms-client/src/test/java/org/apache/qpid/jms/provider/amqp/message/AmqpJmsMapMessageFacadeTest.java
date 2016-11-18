@@ -64,6 +64,12 @@ public class AmqpJmsMapMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
     }
 
     @Test
+    public void testNewMessageToSendReportsNoBody() throws Exception {
+        AmqpJmsMapMessageFacade amqpMapMessageFacade = createNewMapMessageFacade();
+        amqpMapMessageFacade.hasBody();
+    }
+
+    @Test
     public void testNewMessageToSendReportsIsEmpty() throws Exception {
         AmqpJmsMapMessageFacade amqpMapMessageFacade = createNewMapMessageFacade();
         assertFalse(amqpMapMessageFacade.getMapNames().hasMoreElements());
@@ -153,9 +159,11 @@ public class AmqpJmsMapMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         Object result = amqpMapMessageFacade.get("entry1");
         assertNotNull(result);
         assertTrue(result instanceof Boolean);
+        assertTrue(amqpMapMessageFacade.hasBody());
 
         // Should be able to use the message, e.g clearing it and adding to it.
         amqpMapMessageFacade.clearBody();
+        assertFalse(amqpMapMessageFacade.hasBody());
         amqpMapMessageFacade.put("entry", "value");
     }
 

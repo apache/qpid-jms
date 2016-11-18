@@ -30,30 +30,26 @@ public abstract class WrappedAsyncResult implements AsyncResult {
      *      The AsyncResult to be wrapped by this AsyncResult instance.
      */
     public WrappedAsyncResult(AsyncResult wrapped) {
+        if (wrapped == null) {
+            throw new IllegalArgumentException("Wrapped AsyncResult cannot be null");
+        }
+
         this.wrapped = wrapped;
     }
 
     @Override
     public void onFailure(Throwable result) {
-        if (wrapped != null) {
-            wrapped.onFailure(result);
-        }
+        wrapped.onFailure(result);
     }
 
     @Override
     public void onSuccess() {
-        if (wrapped != null) {
-            wrapped.onSuccess();
-        }
+        wrapped.onSuccess();
     }
 
     @Override
     public boolean isComplete() {
-        if (wrapped != null) {
-            return wrapped.isComplete();
-        }
-
-        return false;
+        return wrapped.isComplete();
     }
 
     public AsyncResult getWrappedRequest() {

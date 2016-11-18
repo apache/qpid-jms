@@ -82,6 +82,14 @@ public class JmsQueueTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testEqualsWithTemporaryQueue() {
+        JmsQueue queue1 = new JmsQueue("name");
+        JmsTemporaryQueue queue2 = new JmsTemporaryQueue("name");
+        assertFalse("should be unequal", queue1.equals(queue2));
+        assertFalse("should still be unequal", queue2.equals(queue1));
+    }
+
+    @Test
     public void testHashcodeWithEqualNamedObjects() {
         JmsQueue queue1 = new JmsQueue("name");
         JmsQueue queue2 = new JmsQueue("name");

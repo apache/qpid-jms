@@ -55,6 +55,6 @@ public class JmsQueueSender extends JmsMessageProducer implements AutoCloseable,
      */
     @Override
     public void send(Queue queue, Message message, int deliveryMode, int priority, long timeToLive) throws JMSException {
-        super.send(message, deliveryMode, priority, timeToLive);
+        super.send(queue, message, deliveryMode, priority, timeToLive);
     }
 }

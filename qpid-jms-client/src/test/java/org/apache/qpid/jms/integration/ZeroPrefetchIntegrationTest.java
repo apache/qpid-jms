@@ -21,6 +21,7 @@ package org.apache.qpid.jms.integration;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Date;
@@ -190,6 +191,12 @@ public class ZeroPrefetchIntegrationTest extends QpidJmsTestCase {
 
             // Wait for the resulting flow to be received
             testPeer.waitForAllHandlersToComplete(2000);
+
+            // Should not flow more credit after consumer removed and a receive should drain
+            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.ONE));
+            consumer.setMessageListener(null);
+
+            assertNull(consumer.receiveNoWait());
 
             testPeer.expectClose();
             connection.close();

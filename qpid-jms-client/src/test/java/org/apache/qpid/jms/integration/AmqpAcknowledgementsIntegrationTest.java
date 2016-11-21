@@ -21,12 +21,14 @@ package org.apache.qpid.jms.integration;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.Connection;
+import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
@@ -47,8 +49,43 @@ import org.junit.Test;
 public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
 
     private static final int SKIP = -1;
+    private static final int INVALID = 99;
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
+
+    @Test(timeout = 20000)
+    public void testAcknowledgeFailsAfterSessionIsClosed() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType(null), 1);
+            testPeer.expectEnd();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+
+            Message receivedMessage = messageConsumer.receive(6000);
+            assertNotNull("Message was not recieved", receivedMessage);
+
+            session.close();
+
+            try {
+                receivedMessage.acknowledge();
+                fail("Should not be able to acknowledge the message after session closed");
+            } catch (JMSException jmsex) {}
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
 
     @Test(timeout = 20000)
     public void testDefaultAcceptMessages() throws Exception {
@@ -85,6 +122,11 @@ public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
         doTestAmqpAcknowledgementTestImpl(JmsMessageSupport.MODIFIED_FAILED_UNDELIVERABLE, new ModifiedMatcher().withDeliveryFailed(equalTo(true)).withUndeliverableHere(equalTo(true)), false);
     }
 
+    @Test(timeout = 20000)
+    public void testRequestAcknowledgeMessagesWithInvalidDisposition() throws Exception {
+        doTestAmqpAcknowledgementTestImpl(INVALID, new AcceptedMatcher(), false);
+    }
+
     private void doTestAmqpAcknowledgementTestImpl(int disposition, Matcher<?> descriptorMatcher, boolean clearPropsFirst) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -114,10 +156,21 @@ public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
                 if (clearPropsFirst) {
                     lastReceivedMessage.clearProperties();
                 }
+
                 lastReceivedMessage.setIntProperty(JmsMessageSupport.JMS_AMQP_ACK_TYPE, disposition);
             }
 
-            lastReceivedMessage.acknowledge();
+            if (disposition == INVALID) {
+                try {
+                    lastReceivedMessage.acknowledge();
+                    fail("Should throw exception due to invalid ack type");
+                } catch (JMSException jmsex) {}
+
+                lastReceivedMessage.setIntProperty(JmsMessageSupport.JMS_AMQP_ACK_TYPE, JmsMessageSupport.ACCEPTED);
+                lastReceivedMessage.acknowledge();
+            } else {
+                lastReceivedMessage.acknowledge();
+            }
 
             testPeer.expectClose();
             connection.close();
@@ -161,6 +214,11 @@ public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
         doTestAmqpAcknowledgementAsyncTestImpl(JmsMessageSupport.MODIFIED_FAILED_UNDELIVERABLE, new ModifiedMatcher().withDeliveryFailed(equalTo(true)).withUndeliverableHere(equalTo(true)), false);
     }
 
+    @Test(timeout = 20000)
+    public void testRequestAcknowledgeMessagesWithInvalidDispositionWithMessageListener() throws Exception {
+        doTestAmqpAcknowledgementAsyncTestImpl(INVALID, new AcceptedMatcher(), false);
+    }
+
     private void doTestAmqpAcknowledgementAsyncTestImpl(int disposition, Matcher<?> descriptorMatcher, boolean clearPropsFirst) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
@@ -201,7 +259,17 @@ public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
                 lastReceivedMessage.get().setIntProperty(JmsMessageSupport.JMS_AMQP_ACK_TYPE, disposition);
             }
 
-            lastReceivedMessage.get().acknowledge();
+            if (disposition == INVALID) {
+                try {
+                    lastReceivedMessage.get().acknowledge();
+                    fail("Should throw exception due to invalid ack type");
+                } catch (JMSException jmsex) {}
+
+                lastReceivedMessage.get().setIntProperty(JmsMessageSupport.JMS_AMQP_ACK_TYPE, JmsMessageSupport.ACCEPTED);
+                lastReceivedMessage.get().acknowledge();
+            } else {
+                lastReceivedMessage.get().acknowledge();
+            }
 
             testPeer.expectClose();
             connection.close();

@@ -83,25 +83,23 @@ public class JmsContext implements JMSContext, AutoCloseable {
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
         JMSRuntimeException failure = null;
 
-        synchronized (this) {
-            try {
-                if (session != null) {
-                    session.close();
-                }
-            } catch (JMSException jmse) {
-                failure = JmsExceptionSupport.createRuntimeException(jmse);
+        try {
+            if (session != null) {
+                session.close();
             }
+        } catch (JMSException jmse) {
+            failure = JmsExceptionSupport.createRuntimeException(jmse);
+        }
 
-            if (connectionRefCount.decrementAndGet() == 0) {
-                try {
-                    connection.close();
-                } catch (JMSException jmse) {
-                    if (failure == null) {
-                        failure = JmsExceptionSupport.createRuntimeException(jmse);
-                    }
+        if (connectionRefCount.decrementAndGet() == 0) {
+            try {
+                connection.close();
+            } catch (JMSException jmse) {
+                if (failure == null) {
+                    failure = JmsExceptionSupport.createRuntimeException(jmse);
                 }
             }
         }
@@ -275,16 +273,14 @@ public class JmsContext implements JMSContext, AutoCloseable {
     //----- JMSContext factory methods --------------------------------------//
 
     @Override
-    public JMSContext createContext(int sessionMode) {
-        synchronized (this) {
-            if (connectionRefCount.get() == 0) {
-                throw new IllegalStateRuntimeException("The Connection is closed");
-            }
-
-            connectionRefCount.incrementAndGet();
-
-            return new JmsContext(connection, sessionMode, connectionRefCount);
+    public synchronized JMSContext createContext(int sessionMode) {
+        if (connectionRefCount.get() == 0) {
+            throw new IllegalStateRuntimeException("The Connection is closed");
         }
+
+        connectionRefCount.incrementAndGet();
+
+        return new JmsContext(connection, sessionMode, connectionRefCount);
     }
 
     //----- JMSProducer factory methods --------------------------------------//

@@ -62,6 +62,16 @@ public class URISupportTest {
     }
 
     @Test
+    public void testParseCompositeWithMismatchedParends() throws Exception {
+        URI uri = new URI("test:(part1://host,part2://(sub1://part,sube2:part)");
+        try {
+            URISupport.parseComposite(uri);
+            fail("Should not parse when parends don't match.");
+        } catch (URISyntaxException ex) {
+        }
+    }
+
+    @Test
     public void testEmptyCompositeWithParenthesisInParam() throws Exception {
         URI uri = new URI("failover://()?updateURIsURL=file:/C:/Dir(1)/a.csv");
         CompositeData data = URISupport.parseComposite(uri);
@@ -167,6 +177,10 @@ public class URISupportTest {
         verifyParams(parameters);
         uri = new URI("http://0.0.0.0:61616");
         parameters = URISupport.parseParameters(uri);
+        assertTrue(parameters.isEmpty());
+        uri = new URI("failover:(http://0.0.0.0:61616)");
+        parameters = URISupport.parseParameters(uri);
+        assertTrue(parameters.isEmpty());
     }
 
     @Test
@@ -215,6 +229,19 @@ public class URISupportTest {
         verifyParams(URISupport.parseParameters(uri));
     }
 
+    @Test
+    public void testApplyParametersPreservesOriginalParameters() throws Exception {
+        URI uri = new URI("http://0.0.0.0:61616?timeout=1000");
+
+        Map<String,String> parameters = new HashMap<String, String>();
+        parameters.put("t.proxyHost", "localhost");
+        parameters.put("t.proxyPort", "80");
+
+        uri = URISupport.applyParameters(uri, parameters);
+        Map<String,String> appliedParameters = URISupport.parseParameters(uri);
+        assertEquals("all params applied with no prefix", 3, appliedParameters.size());
+    }
+
     private void verifyParams(Map<String,String> parameters) {
         assertEquals(parameters.get("proxyHost"), "localhost");
         assertEquals(parameters.get("proxyPort"), "80");
@@ -242,6 +269,12 @@ public class URISupportTest {
         for (URI uri : compositeURIs) {
             assertTrue(uri + " must be detected as composite URI", URISupport.isCompositeURI(uri));
         }
+    }
+
+    @Test
+    public void testIsCompositeWhenURIHasUnmatchedParends() throws Exception {
+        URI uri = new URI("test:(part1://host,part2://(sub1://part,sube2:part)");
+        assertFalse(URISupport.isCompositeURI(uri));
     }
 
     @Test

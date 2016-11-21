@@ -441,6 +441,15 @@ public class PropertyUtilTest {
         assertEquals("bar", configObject.getLastName());
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetPropertiesThrowsOnNullObject() throws Exception {
+        Map<String, String> properties = new HashMap<String, String>();
+        properties.put("firstName", "foo");
+        properties.put("lastName", "bar");
+
+        PropertyUtil.setProperties(null, properties);
+    }
+
     @Test
     public void testSetPropertiesUsingPropertiesObject() throws Exception {
         Options configObject = new Options();

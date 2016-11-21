@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,12 +30,14 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.jms.JMSException;
+import javax.jms.MessageNotReadableException;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.message.facade.test.JmsTestMessageFacade;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 /**
  * Test for the priority based message Queue
@@ -390,6 +393,29 @@ public class PriorityMessageQueueTest {
         assertNull(queue.dequeue(1L));
     }
 
+    @Test
+    public void testUnreadablePrioirtyIsStillEnqueued() throws JMSException {
+        JmsInboundMessageDispatch message = createEnvelopeWithMessageThatCannotReadPriority();
+        queue.enqueue(createEnvelope(9));
+        queue.enqueue(message);
+        queue.enqueue(createEnvelope(1));
+
+        JmsInboundMessageDispatch envelope = queue.peek();
+        assertEquals(9, envelope.getMessage().getJMSPriority());
+        queue.dequeueNoWait();
+        envelope = queue.peek();
+        try {
+            envelope.getMessage().getJMSPriority();
+            fail("Unreadable priority message should sit at default level");
+        } catch (MessageNotReadableException mnre) {}
+        queue.dequeueNoWait();
+        envelope = queue.peek();
+        assertEquals(1, envelope.getMessage().getJMSPriority());
+        queue.dequeueNoWait();
+
+        assertTrue(queue.isEmpty());
+    }
+
     private List<JmsInboundMessageDispatch> createFullRangePrioritySet() {
         List<JmsInboundMessageDispatch> messages = new ArrayList<JmsInboundMessageDispatch>();
         for (int i = 0; i < 10; ++i) {
@@ -401,6 +427,16 @@ public class PriorityMessageQueueTest {
     private JmsInboundMessageDispatch createEnvelope() {
         JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch(sequence++);
         envelope.setMessage(createMessage());
+        return envelope;
+    }
+
+    private JmsInboundMessageDispatch createEnvelopeWithMessageThatCannotReadPriority() throws JMSException {
+        JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch(sequence++);
+
+        JmsMessage message = Mockito.mock(JmsMessage.class);
+        Mockito.when(message.getJMSPriority()).thenThrow(new MessageNotReadableException("Message is not readable"));
+
+        envelope.setMessage(message);
         return envelope;
     }
 

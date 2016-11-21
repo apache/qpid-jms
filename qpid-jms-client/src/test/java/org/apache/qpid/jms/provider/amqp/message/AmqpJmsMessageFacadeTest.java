@@ -1493,6 +1493,21 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         assertEquals("Incorrect messageId value received", userIdString, amqpMessageFacade.getUserId());
     }
 
+    @Test
+    public void testGetUserIdOnReceievedMessageWithEmptyBinaryValue() throws Exception {
+        byte[] bytes = new byte[0];
+
+        Message message = Proton.message();
+
+        Properties props = new Properties();
+        props.setUserId(new Binary(bytes));
+        message.setProperties(props);
+
+        AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
+
+        assertNull("Expected a userid on received message", amqpMessageFacade.getUserId());
+    }
+
     /**
      * Check that setting UserId on the message causes creation of the underlying properties
      * section with the expected value. New messages lack the properties section section,
@@ -1847,6 +1862,21 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
         assertEquals("JMSType value was not as expected", myJMSType, amqpMessageFacade.getType());
+    }
+
+    // ====== Content Type =======
+
+    @Test
+    public void testGetContentTypeIsNullOnNewMessage() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        assertNull("did not expect a JMSType value to be present", amqpMessageFacade.getContentType());
+    }
+
+    @Test
+    public void testGetContentTypeIsNullOnMessageWithEmptyPropertiesObject() throws Exception {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        amqpMessageFacade.setProperties(new Properties());
+        assertNull("did not expect a JMSType value to be present", amqpMessageFacade.getContentType());
     }
 
     // ====== AMQP Application Properties =======

@@ -119,7 +119,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     }
 
     public void init() throws JMSException {
-        if(!isPullConsumer()){
+        if (!isPullConsumer()){
             startConsumerResource();
         }
     }
@@ -592,9 +592,9 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     public void setMessageListener(MessageListener listener) throws JMSException {
         checkClosed();
         this.messageListener = listener;
-        if(listener != null) {
+        if (listener != null) {
             consumerInfo.setListener(true);
-            if(isPullConsumer()){
+            if (isPullConsumer()){
                 startConsumerResource();
             }
             drainMessageQueueToListener();

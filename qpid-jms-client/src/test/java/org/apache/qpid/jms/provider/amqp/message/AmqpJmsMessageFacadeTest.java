@@ -77,6 +77,19 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     // ====== AMQP Header Section =======
     // ==================================
 
+    /**
+     * To satisfy the JMS requirement that messages are durable by default, the
+     * {@link AmqpJmsMessageFacade} objects created for sending new messages are
+     * populated with a header section with durable set to true.
+     */
+    @Test
+    public void testNewMessageHasUnderlyingHeaderSectionWithDurableTrue() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+
+        assertNotNull("Expected message to have Header section", amqpMessageFacade.getHeader());
+        assertTrue("Durable not as expected", amqpMessageFacade.getAmqpHeader().isDurable());
+    }
+
     // --- ttl field  ---
 
     @Test(expected = MessageFormatException.class)
@@ -93,19 +106,6 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         amqpMessageFacade.setAmqpTimeToLiveOverride(0X100000000L);
     }
 
-    /**
-     * To satisfy the JMS requirement that messages are durable by default, the
-     * {@link AmqpJmsMessageFacade} objects created for sending new messages are
-     * populated with a header section with durable set to true.
-     */
-    @Test
-    public void testNewMessageHasUnderlyingHeaderSectionWithDurableTrue() {
-        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
-
-        assertNotNull("Expected message to have Header section", amqpMessageFacade.getHeader());
-        assertTrue("Durable not as expected", amqpMessageFacade.getAmqpHeader().isDurable());
-    }
-
     @Test
     public void testNewMessageHasUnderlyingHeaderSectionWithNoTtlSet() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
@@ -115,7 +115,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     }
 
     @Test
-    public void testGetTtlSynthesizedExpirationOnReceivedMessageWithTtlButNoAbsoluteExpiration() {
+    public void testGetTtlSynthesizedExpirationOnReceivedMessageWithTtlButNoAbsoluteExpiration() throws JMSException {
         Long ttl = 123L;
 
         Message message = Proton.message();
@@ -134,6 +134,10 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         long expiration2 = amqpMessageFacade.getExpiration();
         assertEquals("Second retrieval should return same result", expiration, expiration2);
+
+        amqpMessageFacade = amqpMessageFacade.copy();
+        long expiration3 = amqpMessageFacade.getExpiration();
+        assertEquals("Thrid retrieval from copy should return same result", expiration, expiration3);
     }
 
     @Test
@@ -789,6 +793,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
 
+        amqpMessageFacade.setDestination(null);
         assertNull(amqpMessageFacade.getProperties());
         amqpMessageFacade.setDestination(dest);
         assertNotNull(amqpMessageFacade.getProperties().getTo());
@@ -1748,6 +1753,16 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         assertTrue(underlyingAnnotations.getValue().containsKey(Symbol.valueOf(symbolKeyName)));
         assertTrue(underlyingAnnotations.getValue().containsKey(Symbol.valueOf(symbolKeyName2)));
+    }
+
+    @Test
+    public void testGetMessageAnnotationsOnMessageWithEmptyAnnotationsMap() {
+        AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
+        MessageAnnotations annotations = new MessageAnnotations(new HashMap<Symbol, Object>());
+        amqpMessageFacade.setMessageAnnotations(annotations);
+
+        MessageAnnotations underlyingAnnotations = amqpMessageFacade.getMessageAnnotations();
+        assertNull(underlyingAnnotations);
     }
 
     @Test

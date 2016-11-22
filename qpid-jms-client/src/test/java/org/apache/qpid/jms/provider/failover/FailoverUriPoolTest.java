@@ -114,6 +114,17 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testGetSetRandomize() {
+        FailoverUriPool pool = new FailoverUriPool(uris, null);
+        assertFalse(pool.isEmpty());
+        assertFalse(pool.isRandomize());
+        pool.setRandomize(true);
+        assertTrue(pool.isRandomize());
+        pool.setRandomize(false);
+        assertFalse(pool.isRandomize());
+    }
+
+    @Test
     public void testDuplicatesNotAdded() {
         FailoverUriPool pool = new FailoverUriPool(uris, null);
 
@@ -121,6 +132,17 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
         pool.add(uris.get(0));
         assertEquals(uris.size(), pool.size());
         pool.add(uris.get(1));
+        assertEquals(uris.size(), pool.size());
+    }
+
+    @Test
+    public void testDuplicatesNotAddedByAddFirst() {
+        FailoverUriPool pool = new FailoverUriPool(uris, null);
+
+        assertEquals(uris.size(), pool.size());
+        pool.addFirst(uris.get(0));
+        assertEquals(uris.size(), pool.size());
+        pool.addFirst(uris.get(1));
         assertEquals(uris.size(), pool.size());
     }
 
@@ -457,6 +479,40 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
             assertTrue(pool.remove(uris.get(i)));
             assertEquals(uris.size() - (i + 1), pool.size());
         }
+    }
+
+    @Test
+    public void testAddURIWhenNestedOptionsSet() throws URISyntaxException {
+        Map<String, String> nested = new HashMap<String, String>();
+
+        nested.put("transport.tcpNoDelay", "true");
+        nested.put("transport.tcpKeepAlive", "false");
+
+        FailoverUriPool pool = new FailoverUriPool(null, nested);
+        assertNotNull(pool.getNestedOptions());
+        assertFalse(pool.getNestedOptions().isEmpty());
+
+        assertTrue(pool.isEmpty());
+        pool.add(uris.get(0));
+        assertFalse(pool.isEmpty());
+        assertEquals(uris.get(0).getHost(), pool.getNext().getHost());
+    }
+
+    @Test
+    public void testAddFirstURIWhenNestedOptionsSet() throws URISyntaxException {
+        Map<String, String> nested = new HashMap<String, String>();
+
+        nested.put("transport.tcpNoDelay", "true");
+        nested.put("transport.tcpKeepAlive", "false");
+
+        FailoverUriPool pool = new FailoverUriPool(null, nested);
+        assertNotNull(pool.getNestedOptions());
+        assertFalse(pool.getNestedOptions().isEmpty());
+
+        assertTrue(pool.isEmpty());
+        pool.addFirst(uris.get(0));
+        assertFalse(pool.isEmpty());
+        assertEquals(uris.get(0).getHost(), pool.getNext().getHost());
     }
 
     private boolean checkIfResolutionWorks() {

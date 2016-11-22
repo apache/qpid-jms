@@ -565,29 +565,58 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
 
     /**
      * Verifies that on a connection which doesn't identify as supporting shared subscriptions, the
-     * attempt to create a shared durable subscriber fails.
+     * attempt to create a shared durable subscriber fails if the link also doesn't identify as
+     * supporting shared subscriptions.
      *
      * @throws Exception if an unexpected exception occurs
      */
     @Test(timeout = 20000)
     public void testCreateSharedDurableTopicSubscriberFailsIfNotSupported() throws Exception {
-        doSharedTopicSubscriberSupportedTestImpl(true);
+        doSharedSubscriptionNotSupportedTestImpl(true, false);
     }
 
     /**
      * Verifies that on a connection which doesn't identify as supporting shared subscriptions, the
-     * attempt to create a shared volatile subscriber fails.
+     * attempt to create a shared volatile subscriber fails if the link also doesn't identify as
+     * supporting shared subscriptions.
      *
      * @throws Exception if an unexpected exception occurs
      */
     @Test(timeout = 20000)
     public void testCreateSharedVolatileTopicSubscriberFailsIfNotSupported() throws Exception {
-        doSharedTopicSubscriberSupportedTestImpl(true);
+        doSharedSubscriptionNotSupportedTestImpl(false, false);
     }
 
-    private void doSharedTopicSubscriberSupportedTestImpl(boolean durable) throws Exception {
+    /**
+     * Verifies that when a durable shared subscriber creation fails because the connection and link
+     * both lack the capability indicating support, the subscriber is appropriately removed from
+     * record, releasing use of the link name such that attempting another subscriber creation
+     * uses the same initial link name.
+     *
+     * @throws Exception if an unexpected exception occurs
+     */
+    @Test(timeout = 20000)
+    public void testCreateSharedDurableTopicSubscriberFailsIfNotSupportedReleasesLinkName() throws Exception {
+        doSharedSubscriptionNotSupportedTestImpl(true, true);
+    }
+
+    /**
+     * Verifies that when a volatile shared subscriber creation fails because the connection and link
+     * both lack the capability indicating support, the subscriber is appropriately removed from
+     * record, releasing use of the link name such that attempting another subscriber creation
+     * uses the same initial link name.
+     *
+     * @throws Exception if an unexpected exception occurs
+     */
+    @Test(timeout = 20000)
+    public void testCreateSharedVolatileTopicSubscriberFailsIfNotSupportedReleasesLinkName() throws Exception {
+        doSharedSubscriptionNotSupportedTestImpl(false, true);
+    }
+
+    private void doSharedSubscriptionNotSupportedTestImpl(boolean durable, boolean repeat) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // DONT include server connection capability to indicate support for shared-subs
+            // This will cause the link capability to be desired, and we verify failure if not offered.
             Symbol[] serverCapabilities = new Symbol[]{};
 
             Connection connection = testFixture.establishConnecton(testPeer, serverCapabilities);
@@ -600,20 +629,96 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
             Topic dest = session.createTopic(topicName);
             String subscriptionName = "mySubscription";
 
-            testPeer.expectClose();
+            int iterations = repeat ? 2 : 1;
 
-            try {
-                if (durable) {
-                    session.createSharedDurableConsumer(dest, subscriptionName);
-                } else {
-                    session.createSharedConsumer(dest, subscriptionName);
+            // Expect a shared receiver to attach, then detach due to the link also not
+            // reporting it offers the shared subs capability, i.e sharing not supported.
+            for (int i = 0; i < iterations; i++) {
+                try {
+                    if (durable) {
+                        Matcher<?> durableLinkNameMatcher = equalTo(subscriptionName);
+                        testPeer.expectSharedSubscriberAttach(topicName, subscriptionName, durableLinkNameMatcher, true, false, true, true, false);
+                        testPeer.expectDetach(false, true, false);
+
+                        session.createSharedDurableConsumer(dest, subscriptionName);
+                    } else {
+                        Matcher<?> volatileLinkNameMatcher = equalTo(subscriptionName + SUB_NAME_DELIMITER + "volatile1");
+                        testPeer.expectSharedSubscriberAttach(topicName, subscriptionName, volatileLinkNameMatcher, false, false, true, true, false);
+                        testPeer.expectDetach(true, true, true);
+
+                        session.createSharedConsumer(dest, subscriptionName);
+                    }
+
+                    fail("Expected an exception to be thrown");
+                } catch (JMSException jmse) {
+                    // expected
                 }
-
-                fail("Expected an exception to be thrown");
-            } catch (JMSException jmse) {
-                // expected
             }
 
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    /**
+     * Verifies that on a connection which doesn't identify as supporting shared subscriptions, the
+     * attempt to create a shared durable subscriber succeeds if the server offers link capability for
+     * shared subscriptions.
+     *
+     * @throws Exception if an unexpected exception occurs
+     */
+    @Test(timeout = 20000)
+    public void testCreateSharedDurableTopicSubscriberSucceedsWithOnlyLinkCapability() throws Exception {
+        doSharedSubscriptionLinkCapabilitySupportedTestImpl(true);
+    }
+
+    /**
+     * Verifies that on a connection which doesn't identify as supporting shared subscriptions, the
+     * attempt to create a shared volatile subscriber succeeds if the server offers link capability for
+     * shared subscriptions.
+     *
+     * @throws Exception if an unexpected exception occurs
+     */
+    @Test(timeout = 20000)
+    public void testCreateSharedVolatileTopicSubscriberSucceedsWithOnlyLinkCapability() throws Exception {
+        doSharedSubscriptionLinkCapabilitySupportedTestImpl(false);
+    }
+
+    private void doSharedSubscriptionLinkCapabilitySupportedTestImpl(boolean durable) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // DONT include server connection capability to indicate support for shared-subs.
+            // This will cause the link capability to be desired, and we verify success if offered.
+            Symbol[] serverCapabilities = new Symbol[]{};
+
+            Connection connection = testFixture.establishConnecton(testPeer, serverCapabilities);
+            connection.start();
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String topicName = "myTopic";
+            Topic dest = session.createTopic(topicName);
+            String subscriptionName = "mySubscription";
+
+            // Expect a shared receiver to attach, and succeed due to the server offering
+            // the shared subs capability, i.e sharing is supported.
+            if (durable) {
+                Matcher<?> durableLinkNameMatcher = equalTo(subscriptionName);
+                testPeer.expectSharedSubscriberAttach(topicName, subscriptionName, durableLinkNameMatcher, true, false, true, true, true);
+                testPeer.expectLinkFlow();
+
+                session.createSharedDurableConsumer(dest, subscriptionName);
+            } else {
+                Matcher<?> volatileLinkNameMatcher = equalTo(subscriptionName + SUB_NAME_DELIMITER + "volatile1");
+                testPeer.expectSharedSubscriberAttach(topicName, subscriptionName, volatileLinkNameMatcher, false, false, true, true, true);
+                testPeer.expectLinkFlow();
+
+                session.createSharedConsumer(dest, subscriptionName);
+            }
+
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);

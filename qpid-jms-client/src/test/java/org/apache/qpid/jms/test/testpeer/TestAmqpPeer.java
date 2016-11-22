@@ -1065,11 +1065,12 @@ public class TestAmqpPeer implements AutoCloseable
     public void expectReceiverAttach(final Matcher<?> linkNameMatcher, final Matcher<?> sourceMatcher, final boolean settled, final boolean refuseLink,
                                      boolean omitDetach, boolean deferAttachResponseWrite, Symbol errorType, String errorMessage)
     {
-        expectReceiverAttach(linkNameMatcher, sourceMatcher, settled, refuseLink, omitDetach, deferAttachResponseWrite, errorType, errorMessage, null);
+        expectReceiverAttach(linkNameMatcher, sourceMatcher, settled, refuseLink, omitDetach, deferAttachResponseWrite, errorType, errorMessage, null, null, null);
     }
 
-    public void expectReceiverAttach(final Matcher<?> linkNameMatcher, final Matcher<?> sourceMatcher, final boolean settled, final boolean refuseLink,
-                                     boolean omitDetach, boolean deferAttachResponseWrite, Symbol errorType, String errorMessage, final Source responseSourceOverride)
+    private void expectReceiverAttach(final Matcher<?> linkNameMatcher, final Matcher<?> sourceMatcher, final boolean settled, final boolean refuseLink,
+                                     boolean omitDetach, boolean deferAttachResponseWrite, Symbol errorType, String errorMessage, final Source responseSourceOverride,
+                                     Matcher<?> desiredCapabilitiesMatcher, Symbol[] offeredCapabilitiesResponse)
     {
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(linkNameMatcher)
@@ -1080,12 +1081,23 @@ public class TestAmqpPeer implements AutoCloseable
                 .withSource(sourceMatcher)
                 .withTarget(notNullValue());
 
+        if(desiredCapabilitiesMatcher != null) {
+            attachMatcher.withDesiredCapabilities(desiredCapabilitiesMatcher);
+        }
+
         final AttachFrame attachResponse = new AttachFrame()
                             .setRole(Role.SENDER)
+                            .setOfferedCapabilities(offeredCapabilitiesResponse)
                             .setSndSettleMode(settled ? SenderSettleMode.SETTLED : SenderSettleMode.UNSETTLED)
                             .setRcvSettleMode(ReceiverSettleMode.FIRST)
                             .setInitialDeliveryCount(UnsignedInteger.ZERO);
 
+        expectReceiverAttach(attachMatcher, attachResponse, refuseLink, omitDetach, deferAttachResponseWrite, errorType, errorMessage, responseSourceOverride);
+    }
+
+    private void expectReceiverAttach(final AttachMatcher attachMatcher, final AttachFrame attachResponse, final boolean refuseLink, boolean omitDetach,
+                                     boolean deferAttachResponseWrite, Symbol errorType, String errorMessage, final Source responseSourceOverride)
+    {
         // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
         final FrameSender attachResponseSender = new FrameSender(this, FrameType.AMQP, -1, attachResponse, null);
         attachResponseSender.setValueProvider(new ValueProvider()
@@ -1155,18 +1167,19 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     public void expectSharedDurableSubscriberAttach(String topicName, String subscriptionName, Matcher<?> linkNameMatcher, boolean clientIdSet) {
-        expectSharedSubscriberAttach(topicName, subscriptionName, true, linkNameMatcher, false, clientIdSet);
+        expectSharedSubscriberAttach(topicName, subscriptionName, linkNameMatcher, true, false, clientIdSet, false, false);
     }
 
     public void expectSharedVolatileSubscriberAttach(String topicName, String subscriptionName, Matcher<?> linkNameMatcher, boolean clientIdSet) {
-        expectSharedSubscriberAttach(topicName, subscriptionName, false, linkNameMatcher, false, clientIdSet);
+        expectSharedSubscriberAttach(topicName, subscriptionName, linkNameMatcher, false, false, clientIdSet, false, false);
     }
 
     public void expectSharedDurableSubscriberAttach(String topicName, String subscriptionName, Matcher<?> linkNameMatcher, boolean refuseLink, boolean clientIdSet) {
-        expectSharedSubscriberAttach(topicName, subscriptionName, true, linkNameMatcher, refuseLink, clientIdSet);
+        expectSharedSubscriberAttach(topicName, subscriptionName, linkNameMatcher, true, refuseLink, clientIdSet, false, false);
     }
 
-    private void expectSharedSubscriberAttach(String topicName, String subscriptionName, boolean durable, Matcher<?> linkNameMatcher, boolean refuseLink, boolean clientIdSet)
+    public void expectSharedSubscriberAttach(String topicName, String subscriptionName, Matcher<?> linkNameMatcher, boolean durable, boolean refuseLink,
+                                              boolean clientIdSet, boolean expectLinkCapability, boolean responseOffersLinkCapability)
     {
         Symbol[] sourceCapabilities;
         if(clientIdSet) {
@@ -1189,7 +1202,21 @@ public class TestAmqpPeer implements AutoCloseable
 
         sourceMatcher.withCapabilities(arrayContaining(sourceCapabilities));
 
-        expectReceiverAttach(linkNameMatcher, sourceMatcher, refuseLink, false);
+        // If we don't have the connection capability set we expect a desired link capability
+        Matcher<?> linkDesiredCapabilitiesMatcher;
+        if(expectLinkCapability) {
+            linkDesiredCapabilitiesMatcher = arrayContaining(new Symbol[] { AmqpSupport.SHARED_SUBS });
+        } else {
+            linkDesiredCapabilitiesMatcher = nullValue();
+        }
+
+        // Generate offered capability response if supported
+        Symbol[] linkOfferedCapabilitiesResponse = null;
+        if(responseOffersLinkCapability) {
+             linkOfferedCapabilitiesResponse = new Symbol[] { AmqpSupport.SHARED_SUBS };
+        }
+
+        expectReceiverAttach(linkNameMatcher, sourceMatcher, false, refuseLink, false, false, null, null, null, linkDesiredCapabilitiesMatcher, linkOfferedCapabilitiesResponse);
     }
 
     public void expectDurableSubscriberAttach(String topicName, String subscriptionName)
@@ -1235,7 +1262,7 @@ public class TestAmqpPeer implements AutoCloseable
             }
         }
 
-        expectReceiverAttach(linkNameMatcher, nullSourceMatcher, false, failLookup, false, false, errorType, errorMessage, responseSourceOverride);
+        expectReceiverAttach(linkNameMatcher, nullSourceMatcher, false, failLookup, false, false, errorType, errorMessage, responseSourceOverride, null, null);
     }
 
     public void expectDetach(boolean expectClosed, boolean sendResponse, boolean replyClosed)

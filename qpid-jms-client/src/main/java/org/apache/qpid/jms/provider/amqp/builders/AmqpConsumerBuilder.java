@@ -20,9 +20,12 @@ import static org.apache.qpid.jms.provider.amqp.AmqpSupport.COPY;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.JMS_NO_LOCAL_SYMBOL;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.JMS_SELECTOR_SYMBOL;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.MODIFIED_FAILED;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SHARED_SUBS;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import javax.jms.InvalidDestinationException;
@@ -32,6 +35,7 @@ import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
+import org.apache.qpid.jms.provider.amqp.AmqpProvider;
 import org.apache.qpid.jms.provider.amqp.AmqpSession;
 import org.apache.qpid.jms.provider.amqp.AmqpSubscriptionTracker;
 import org.apache.qpid.jms.provider.amqp.AmqpSupport;
@@ -57,6 +61,9 @@ import org.apache.qpid.proton.engine.Receiver;
  */
 public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpSession, JmsConsumerInfo, Receiver> {
 
+    boolean validateSharedSubsLinkCapability;
+    boolean sharedSubsNotSupported;
+
     public AmqpConsumerBuilder(AmqpSession parent, JmsConsumerInfo consumerInfo) {
         super(parent, consumerInfo);
     }
@@ -78,8 +85,7 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
             AmqpConnection connection = getParent().getConnection();
 
             if (resourceInfo.isShared() && !connection.getProperties().isSharedSubsSupported()) {
-                // Don't allow shared sub if peer hasn't said it can handle them (or we haven't overridden it).
-                throw new JMSRuntimeException("Remote peer does not support shared subscriptions");
+                validateSharedSubsLinkCapability = true;
             }
 
             AmqpSubscriptionTracker subTracker = connection.getSubTracker();
@@ -118,7 +124,36 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
         }
         receiver.setReceiverSettleMode(ReceiverSettleMode.FIRST);
 
+        if(validateSharedSubsLinkCapability) {
+            receiver.setDesiredCapabilities(new Symbol[] { AmqpSupport.SHARED_SUBS });
+        }
+
         return receiver;
+    }
+
+    @Override
+    protected void afterOpened() {
+        if(validateSharedSubsLinkCapability) {
+            Symbol[] remoteOfferedCapabilities = endpoint.getRemoteOfferedCapabilities();
+
+            boolean supported = false;
+            if(remoteOfferedCapabilities != null) {
+                List<Symbol> list = Arrays.asList(remoteOfferedCapabilities);
+                if (list.contains(SHARED_SUBS)) {
+                    supported = true;
+                }
+            }
+
+            if(!supported) {
+                sharedSubsNotSupported = true;
+
+                if(resourceInfo.isDurable()) {
+                    endpoint.detach();
+                } else {
+                    endpoint.close();
+                }
+            }
+        }
     }
 
     @Override
@@ -131,12 +166,21 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
     }
 
     @Override
+    public void processRemoteDetach(AmqpProvider provider) {
+        handleClosed(provider, null);
+    }
+
+    @Override
     protected AmqpConsumer createResource(AmqpSession parent, JmsConsumerInfo resourceInfo, Receiver endpoint) {
         return new AmqpConsumer(parent, resourceInfo, endpoint);
     }
 
     @Override
     protected Exception getOpenAbortException() {
+        if(sharedSubsNotSupported) {
+            return new JMSRuntimeException("Remote peer does not support shared subscriptions");
+        }
+
         // Verify the attach response contained a non-null Source
         org.apache.qpid.proton.amqp.transport.Source source = endpoint.getRemoteSource();
         if (source != null) {
@@ -151,7 +195,7 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
     protected boolean isClosePending() {
         // When no link terminus was created, the peer will now detach/close us otherwise
         // we need to validate the returned remote source prior to open completion.
-        return endpoint.getRemoteSource() == null;
+        return sharedSubsNotSupported || endpoint.getRemoteSource() == null;
     }
 
     //----- Internal implementation ------------------------------------------//

@@ -1151,7 +1151,9 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         request.sync();
 
         for (JmsTemporaryDestination tempDestination : tempDestinations.values()) {
-            createResource(tempDestination);
+            request = new ProviderFuture();
+            provider.create(tempDestination, request);
+            request.sync();
         }
 
         for (JmsSession session : sessions.values()) {

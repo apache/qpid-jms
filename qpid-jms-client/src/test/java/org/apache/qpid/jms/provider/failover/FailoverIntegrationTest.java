@@ -44,6 +44,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.QueueBrowser;
 import javax.jms.Session;
+import javax.jms.TemporaryTopic;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 
@@ -840,6 +841,82 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
 
             assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+
+            session.close();
+
+            // Shut it down
+            finalPeer.expectClose();
+            connection.close();
+
+            originalPeer.waitForAllHandlersToComplete(2000);
+            finalPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testTempDestinationRecreatedAfterConnectionFailsOver() throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final CountDownLatch originalConnected = new CountDownLatch(1);
+            final CountDownLatch finalConnected = new CountDownLatch(1);
+
+            // Create a peer to connect to, then one to reconnect to
+            final String originalURI = createPeerURI(originalPeer);
+            final String finalURI = createPeerURI(finalPeer);
+
+            LOG.info("Original peer is at: {}", originalURI);
+            LOG.info("Final peer is at: {}", finalURI);
+
+            originalPeer.expectSaslAnonymousConnect();
+            originalPeer.expectBegin();
+            originalPeer.expectBegin();
+            String dynamicAddress1 = "myTempTopicAddress";
+            originalPeer.expectTempTopicCreationAttach(dynamicAddress1);
+
+            originalPeer.dropAfterLastHandler();
+            final JmsConnection connection = establishAnonymousConnecton(originalPeer, finalPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (originalURI.equals(remoteURI.toString())) {
+                        originalConnected.countDown();
+                    }
+                }
+
+                @Override
+                public void onConnectionRestored(URI remoteURI) {
+                    LOG.info("Connection Restored: {}", remoteURI);
+                    if (finalURI.equals(remoteURI.toString())) {
+                        finalConnected.countDown();
+                    }
+                }
+            });
+            connection.start();
+
+            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+
+            // --- Post Failover Expectations of FinalPeer --- //
+
+            finalPeer.expectSaslAnonymousConnect();
+            finalPeer.expectBegin();
+            String dynamicAddress2 = "myTempTopicAddress2";
+            finalPeer.expectTempTopicCreationAttach(dynamicAddress2);
+
+            // Session is recreated after previous temporary destinations are recreated on failover.
+            finalPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            TemporaryTopic tempTopic = session.createTemporaryTopic();
+
+            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+
+            // Delete the temporary Topic and close the session.
+            finalPeer.expectDetach(true, true, true);
+            finalPeer.expectEnd();
+
+            tempTopic.delete();
 
             session.close();
 

@@ -1131,6 +1131,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             Message message = session.createMessage();
             producer.send(dest, message);
+            producer.close();
 
             connection.close();
 

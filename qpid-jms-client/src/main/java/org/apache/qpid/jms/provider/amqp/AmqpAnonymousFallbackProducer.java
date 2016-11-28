@@ -110,8 +110,11 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
     @Override
     public void close(AsyncResult request) {
         // Trigger an immediate close, the internal producers that are currently in the cache
-        for (AmqpProducer producer : producerCache.values()) {
-            producer.close(new CloseRequest(producer));
+        // if the cache is enabled.
+        if (connection.isAnonymousProducerCache()) {
+            for (AmqpProducer producer : producerCache.values()) {
+                producer.close(new CloseRequest(producer));
+            }
         }
 
         request.onSuccess();

@@ -137,7 +137,11 @@ public class IntegrationTestFixture {
         final String baseURI = scheme + "://localhost:" + testPeer.getServerPort();
         String remoteURI = baseURI;
         if (optionsString != null) {
-            remoteURI = baseURI + optionsString;
+            if (optionsString.startsWith("?")) {
+                remoteURI = baseURI + optionsString;
+            } else {
+                remoteURI = baseURI + "?" + optionsString;
+            }
         }
 
         return remoteURI;

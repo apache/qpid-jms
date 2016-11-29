@@ -126,7 +126,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
     public void testCloseSenderTimesOut() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
-            connection.setRequestTimeout(500);
+            connection.setCloseTimeout(500);
 
             testPeer.expectBegin();
             testPeer.expectSenderAttach();

@@ -122,7 +122,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     public void testCloseSessionTimesOut() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
-            connection.setRequestTimeout(500);
+            connection.setCloseTimeout(500);
 
             testPeer.expectBegin();
             testPeer.expectEnd(false);
@@ -530,7 +530,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     public void testDeleteTemporaryQueueTimesOut() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
-            connection.setRequestTimeout(500);
+            connection.setCloseTimeout(500);
 
             connection.start();
 
@@ -637,7 +637,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     public void testDeleteTemporaryTopicTimesOut() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
-            connection.setRequestTimeout(500);
+            connection.setCloseTimeout(500);
 
             connection.start();
 

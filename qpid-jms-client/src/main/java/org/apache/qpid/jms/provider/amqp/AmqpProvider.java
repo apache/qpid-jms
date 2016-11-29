@@ -111,8 +111,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private boolean traceBytes;
     private boolean saslLayer = true;
     private String[] saslMechanisms;
-    private long connectTimeout = JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT;
-    private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
+    private JmsConnectionInfo connectionInfo;
     private int channelMax = DEFAULT_CHANNEL_MAX;
     private int idleTimeout = 60000;
     private int drainTimeout = 60000;
@@ -218,10 +217,10 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
             });
 
             try {
-                if (closeTimeout < 0) {
+                if (getCloseTimeout() < 0) {
                     request.sync();
                 } else {
-                    request.sync(closeTimeout, TimeUnit.MILLISECONDS);
+                    request.sync(getCloseTimeout(), TimeUnit.MILLISECONDS);
                 }
             } catch (IOException e) {
                 LOG.warn("Error caught while closing Provider: {}", e.getMessage() != null ? e.getMessage() : "<Unknown Error>");
@@ -270,8 +269,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
                         @Override
                         public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
-                            closeTimeout = connectionInfo.getCloseTimeout();
-                            connectTimeout = connectionInfo.getConnectTimeout();
+                            AmqpProvider.this.connectionInfo = connectionInfo;
 
                             protonTransport.setEmitFlowEventOnSend(false);
 
@@ -1120,19 +1118,19 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     }
 
     public long getCloseTimeout() {
-        return this.closeTimeout;
+        return connectionInfo != null ? connectionInfo.getCloseTimeout() : JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
     }
 
     public long getConnectTimeout() {
-        return connectTimeout;
+        return connectionInfo != null ? connectionInfo.getConnectTimeout() : JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT;
     }
 
     public long getRequestTimeout() {
-        return connection != null ? connection.getResourceInfo().getRequestTimeout() : JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
+        return connectionInfo != null ? connectionInfo.getRequestTimeout() : JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
     }
 
     public long getSendTimeout() {
-        return connection != null ? connection.getResourceInfo().getSendTimeout() : JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
+        return connectionInfo != null ? connectionInfo.getSendTimeout() : JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
     }
 
     @Override

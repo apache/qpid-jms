@@ -96,7 +96,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
     public void testCloseConsumerTimesOut() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
-            connection.setRequestTimeout(500);
+            connection.setCloseTimeout(500);
 
             testPeer.expectBegin();
             testPeer.expectReceiverAttach();

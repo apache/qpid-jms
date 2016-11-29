@@ -184,9 +184,9 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
                 if (isConnected() && !failed.get()) {
                     ProviderFuture request = new ProviderFuture();
+                    requests.put(request, request);
                     try {
                         provider.destroy(connectionInfo, request);
-
                         try {
                             request.sync();
                         } catch (Exception ex) {
@@ -200,6 +200,8 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
                         }
                     } catch(ProviderClosedException pce) {
                         LOG.debug("Ignoring provider closed exception during connection close");
+                    } finally {
+                        requests.remove(request);
                     }
                 }
 

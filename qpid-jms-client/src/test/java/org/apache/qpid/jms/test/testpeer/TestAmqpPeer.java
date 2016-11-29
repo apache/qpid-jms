@@ -626,6 +626,11 @@ public class TestAmqpPeer implements AutoCloseable
         expectClose(Matchers.nullValue(), true);
     }
 
+    public void expectClose(boolean sendReply)
+    {
+        expectClose(Matchers.nullValue(), sendReply);
+    }
+
     public void expectClose(Matcher<?> errorMatcher, boolean sendReply)
     {
         CloseMatcher closeMatcher = new CloseMatcher().withError(errorMatcher);

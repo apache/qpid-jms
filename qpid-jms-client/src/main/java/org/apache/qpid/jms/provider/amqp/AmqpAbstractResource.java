@@ -101,7 +101,13 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
         closeRequest = request;
 
-        long closeTimeout = getParent().getProvider().getRequestTimeout();
+        // Use close timeout for all resource closures and fallback to the request
+        // timeout if the close timeout was not set
+        long closeTimeout = getParent().getProvider().getCloseTimeout();
+        if (closeTimeout == JmsConnectionInfo.INFINITE) {
+            closeTimeout = getParent().getProvider().getRequestTimeout();
+        }
+
         if (closeTimeout != JmsConnectionInfo.INFINITE) {
             closeTimeoutTask = getParent().getProvider().scheduleRequestTimeout(
                 new AsyncResult() {

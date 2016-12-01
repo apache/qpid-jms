@@ -33,6 +33,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.support.AmqpTestSupport;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,6 +73,7 @@ public class JmsLargeMessageSendRecvTimedTest extends AmqpTestSupport {
         doTestSendLargeMessage(1024 * 1024 * 10);
     }
 
+    @Ignore
     @Test(timeout = 5 * 60 * 1000)
     public void testSend100MBMessage() throws Exception {
         doTestSendLargeMessage(1024 * 1024 * 100);

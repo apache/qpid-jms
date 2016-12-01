@@ -575,6 +575,63 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout=20000)
+    public void testProducedMessagesOnTransactedSessionCanBeReused() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+
+            // First expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a Declared disposition state containing the txnId.
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            testPeer.expectDeclare(txnId);
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            Queue queue = session.createQueue("myQueue");
+
+            // Create a producer to use in provoking creation of the AMQP transaction
+            testPeer.expectSenderAttach();
+            MessageProducer producer = session.createProducer(queue);
+
+            // Expect the message which was sent under the current transaction. Check it carries
+            // TransactionalState with the above txnId but has no outcome. Respond with a
+            // TransactionalState with Accepted outcome.
+
+            Message message = session.createMessage();
+
+            for(int i = 0; i < 3; ++i) {
+                TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+                messageMatcher.setHeadersMatcher(new MessageHeaderSectionMatcher(true));
+                messageMatcher.setMessageAnnotationsMatcher(new MessageAnnotationsSectionMatcher(true));
+
+                TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
+                stateMatcher.withTxnId(equalTo(txnId));
+                stateMatcher.withOutcome(nullValue());
+
+                TransactionalState txState = new TransactionalState();
+                txState.setTxnId(txnId);
+                txState.setOutcome(new Accepted());
+
+                testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+
+                message.setIntProperty("sequence", i);
+
+                producer.send(message);
+            }
+
+            // Expect rollback on close without a commit call.
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectClose();
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
     public void testRollbackTransactedSessionWithConsumerReceivingAllMessages() throws Exception {
         doRollbackTransactedSessionWithConsumerTestImpl(1, 1, false);
     }

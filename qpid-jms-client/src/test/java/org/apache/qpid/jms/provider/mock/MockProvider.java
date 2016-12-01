@@ -279,6 +279,9 @@ public class MockProvider implements Provider {
                         context.recordSend(MockProvider.this, envelope);
                     }
 
+                    // Put the message back to usable state following send complete
+                    envelope.getMessage().onSendComplete();
+
                     request.onSuccess();
                     if (envelope.isCompletionRequired()) {
                         if (context != null && configuration.isDelayCompletionCalls()) {

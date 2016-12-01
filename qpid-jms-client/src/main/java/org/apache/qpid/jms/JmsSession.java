@@ -814,6 +814,13 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
             if (producer.isAnonymous()) {
                 envelope.setPresettle(getPresettlePolicy().isProducerPresttled(this, destination));
+            } else {
+                envelope.setPresettle(producer.isPresettled());
+            }
+
+            if (envelope.isSendAsync() && !envelope.isCompletionRequired() && !envelope.isPresettle()) {
+                envelope.setMessage(outbound.copy());
+                outbound.onSendComplete();
             }
 
             SendCompletion completion = null;

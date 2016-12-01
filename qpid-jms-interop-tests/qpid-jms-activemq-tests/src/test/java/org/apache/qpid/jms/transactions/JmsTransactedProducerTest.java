@@ -26,6 +26,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
+import javax.jms.TextMessage;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
 import org.apache.qpid.jms.support.AmqpTestSupport;
@@ -49,6 +50,31 @@ public class JmsTransactedProducerTest extends AmqpTestSupport {
         Queue queue = session.createQueue(name.getMethodName());
         MessageProducer producer = session.createProducer(queue);
         assertNotNull(producer);
+    }
+
+    @Test(timeout = 60000)
+    public void testTXProducerReusesMessage() throws Exception {
+        final int MSG_COUNT = 10;
+        connection = createAmqpConnection();
+        connection.start();
+        Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+        Session nonTxSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageConsumer consumer = nonTxSession.createConsumer(queue);
+        MessageProducer producer = session.createProducer(queue);
+
+        TextMessage message = session.createTextMessage();
+        for (int i = 0; i < MSG_COUNT; ++i) {
+            message.setText("Sequence: " + i);
+            producer.send(message);
+        }
+
+        Message msg = consumer.receive(1000);
+        assertNull(msg);
+
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        session.commit();
+        assertEquals(MSG_COUNT, proxy.getQueueSize());
     }
 
     @Test(timeout = 60000)

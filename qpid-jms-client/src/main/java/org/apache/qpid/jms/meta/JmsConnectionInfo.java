@@ -38,7 +38,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     public static final long INFINITE = -1;
     public static final long DEFAULT_CONNECT_TIMEOUT = 15000;
-    public static final long DEFAULT_CLOSE_TIMEOUT = 15000;
+    public static final long DEFAULT_CLOSE_TIMEOUT = 30000;
     public static final long DEFAULT_SEND_TIMEOUT = INFINITE;
     public static final long DEFAULT_REQUEST_TIMEOUT = INFINITE;
 

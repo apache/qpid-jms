@@ -38,7 +38,7 @@
       <artifactId>qpid-jms-client</artifactId>
     </dependency>
 
-    <!-- Provide a logging implementating to avoid
+    <!-- Provide a logging implementation to avoid
          notice from SLF4J that none was found -->
     <dependency>
       <groupId>org.slf4j</groupId>

@@ -68,14 +68,11 @@ public class AmqpFixedProducer extends AmqpProducer {
 
     private final AmqpConnection connection;
 
-    public AmqpFixedProducer(AmqpSession session, JmsProducerInfo info) {
-        this(session, info, null);
-    }
-
     public AmqpFixedProducer(AmqpSession session, JmsProducerInfo info, Sender sender) {
         super(session, info, sender);
 
         connection = session.getConnection();
+        delayedDeliverySupported = connection.getProperties().isDelayedDeliverySupported();
     }
 
     @Override
@@ -95,10 +92,8 @@ public class AmqpFixedProducer extends AmqpProducer {
             request.onFailure(new IllegalStateException("The MessageProducer is closed"));
         }
 
-        if (!connection.getProperties().isDelayedDeliverySupported() &&
-            envelope.getMessage().getJMSDeliveryTime() != 0) {
-
-            // Don't allow sends with delay if the remote said it can't handle them
+        if (!delayedDeliverySupported && envelope.getMessage().getJMSDeliveryTime() != 0) {
+            // Don't allow sends with delay if the remote has not said it can handle them
             request.onFailure(new JMSException("Remote does not support delayed message delivery"));
         } else if (getEndpoint().getCredit() <= 0) {
             LOG.trace("Holding Message send until credit is available.");

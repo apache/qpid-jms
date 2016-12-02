@@ -19,6 +19,7 @@
 package org.apache.qpid.jms.integration;
 
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DELAYED_DELIVERY;
+import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -1880,7 +1881,10 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             connection.start();
 
             testPeer.expectBegin();
-            testPeer.expectSenderAttach();
+
+            Matcher<Symbol[]> desiredCapabilitiesMatcher = arrayContaining(new Symbol[] { DELAYED_DELIVERY });
+            Symbol[] offeredCapabilities = null;
+            testPeer.expectSenderAttach(notNullValue(), notNullValue(), false, false, false, false, 0, 1, null, null, desiredCapabilitiesMatcher, offeredCapabilities);
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -1913,14 +1917,59 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             String topicName = "myTopic";
 
-            // DO add capability to indicate server support for DELAYED-DELIVERY
-
+            // add connection capability to indicate server support for DELAYED-DELIVERY
             Connection connection = testFixture.establishConnecton(testPeer, new Symbol[]{ DELAYED_DELIVERY });
 
             connection.start();
 
             testPeer.expectBegin();
-            testPeer.expectSenderAttach();
+
+            Matcher<Object> desiredCapabilitiesMatcher = nullValue();
+            Symbol[] offeredCapabilities = null;
+            testPeer.expectSenderAttach(notNullValue(), notNullValue(), false, false, false, false, 0, 1, null, null, desiredCapabilitiesMatcher, offeredCapabilities);
+
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            Symbol annotationKey = AmqpMessageSupport.getSymbol(AmqpMessageSupport.JMS_DELIVERY_TIME);
+            msgAnnotationsMatcher.withEntry(annotationKey, notNullValue());
+
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+
+            testPeer.expectTransfer(messageMatcher);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            Topic dest = session.createTopic(topicName);
+
+            MessageProducer producer = session.createProducer(dest);
+            producer.setDeliveryDelay(5000);
+            producer.send(session.createMessage());
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testSendWorksWhenDelayedDeliveryIsSupportedOnlyLinkCapability() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            String topicName = "myTopic";
+
+            // DONT add connection capability to indicate support for DELAYED-DELIVERY
+            Connection connection = testFixture.establishConnecton(testPeer, new Symbol[]{ });
+
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Matcher<Symbol[]> desiredCapabilitiesMatcher = arrayContaining(new Symbol[] { DELAYED_DELIVERY });
+            Symbol[] offeredCapabilities = new Symbol[] { DELAYED_DELIVERY };
+            testPeer.expectSenderAttach(notNullValue(), notNullValue(), false, false, false, false, 0, 1, null, null, desiredCapabilitiesMatcher, offeredCapabilities);
 
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);

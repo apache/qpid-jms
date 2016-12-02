@@ -16,15 +16,22 @@
  */
 package org.apache.qpid.jms.provider.amqp.builders;
 
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DELAYED_DELIVERY;
+
+import java.util.Arrays;
+import java.util.List;
+
 import javax.jms.InvalidDestinationException;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.amqp.AmqpAnonymousFallbackProducer;
+import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpFixedProducer;
 import org.apache.qpid.jms.provider.amqp.AmqpProducer;
 import org.apache.qpid.jms.provider.amqp.AmqpSession;
+import org.apache.qpid.jms.provider.amqp.AmqpSupport;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
@@ -43,6 +50,7 @@ import org.slf4j.LoggerFactory;
 public class AmqpProducerBuilder extends AmqpResourceBuilder<AmqpProducer, AmqpSession, JmsProducerInfo, Sender> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpProducerBuilder.class);
+    private boolean validateDelayedDeliveryLinkCapability;
 
     public AmqpProducerBuilder(AmqpSession parent, JmsProducerInfo resourceInfo) {
         super(parent, resourceInfo);
@@ -63,7 +71,9 @@ public class AmqpProducerBuilder extends AmqpResourceBuilder<AmqpProducer, AmqpS
     @Override
     protected Sender createEndpoint(JmsProducerInfo resourceInfo) {
         JmsDestination destination = resourceInfo.getDestination();
-        String targetAddress = AmqpDestinationHelper.INSTANCE.getDestinationAddress(destination, getParent().getConnection());
+        AmqpConnection connection = getParent().getConnection();
+
+        String targetAddress = AmqpDestinationHelper.INSTANCE.getDestinationAddress(destination, connection);
 
         Symbol[] outcomes = new Symbol[]{ Accepted.DESCRIPTOR_SYMBOL, Rejected.DESCRIPTOR_SYMBOL };
         String sourceAddress = resourceInfo.getId().toString();
@@ -91,12 +101,34 @@ public class AmqpProducerBuilder extends AmqpResourceBuilder<AmqpProducer, AmqpS
         }
         sender.setReceiverSettleMode(ReceiverSettleMode.FIRST);
 
+        if (!connection.getProperties().isDelayedDeliverySupported()) {
+            validateDelayedDeliveryLinkCapability = true;
+            sender.setDesiredCapabilities(new Symbol[] { AmqpSupport.DELAYED_DELIVERY });
+        }
+
         return sender;
     }
 
     @Override
     protected AmqpProducer createResource(AmqpSession parent, JmsProducerInfo resourceInfo, Sender endpoint) {
         return new AmqpFixedProducer(getParent(), getResourceInfo(), endpoint);
+    }
+
+    @Override
+    protected void afterOpened() {
+        if (validateDelayedDeliveryLinkCapability) {
+            Symbol[] remoteOfferedCapabilities = endpoint.getRemoteOfferedCapabilities();
+
+            boolean supported = false;
+            if (remoteOfferedCapabilities != null) {
+                List<Symbol> list = Arrays.asList(remoteOfferedCapabilities);
+                if (list.contains(DELAYED_DELIVERY)) {
+                    supported = true;
+                }
+            }
+
+            getResource().setDelayedDeliverySupported(supported);
+        }
     }
 
     @Override

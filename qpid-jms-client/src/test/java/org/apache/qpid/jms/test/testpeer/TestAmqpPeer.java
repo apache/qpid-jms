@@ -911,6 +911,11 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectSenderAttach(final Matcher<?> sourceMatcher, final Matcher<?> targetMatcher, final boolean senderSettled, final boolean refuseLink, boolean omitDetach, boolean deferAttachResponseWrite, long creditFlowDelay, int creditAmount, Symbol errorType, String errorMessage)
     {
+        expectSenderAttach(sourceMatcher, targetMatcher, senderSettled, refuseLink, omitDetach, deferAttachResponseWrite, creditFlowDelay, creditAmount, errorType, errorMessage, null, null);
+    }
+
+    public void expectSenderAttach(final Matcher<?> sourceMatcher, final Matcher<?> targetMatcher, final boolean senderSettled, final boolean refuseLink, boolean omitDetach, boolean deferAttachResponseWrite, long creditFlowDelay, int creditAmount, Symbol errorType, String errorMessage, Matcher<?> desiredCapabilitiesMatcher, Symbol[] offeredCapabilitiesResponse)
+    {
         final AttachMatcher attachMatcher = new AttachMatcher()
                 .withName(notNullValue())
                 .withHandle(notNullValue())
@@ -920,11 +925,21 @@ public class TestAmqpPeer implements AutoCloseable
                 .withSource(sourceMatcher)
                 .withTarget(targetMatcher);
 
+        if(desiredCapabilitiesMatcher != null) {
+            attachMatcher.withDesiredCapabilities(desiredCapabilitiesMatcher);
+        }
+
         final AttachFrame attachResponse = new AttachFrame()
                             .setRole(Role.RECEIVER)
+                            .setOfferedCapabilities(offeredCapabilitiesResponse)
                             .setSndSettleMode(senderSettled ? SenderSettleMode.SETTLED : SenderSettleMode.UNSETTLED)
                             .setRcvSettleMode(ReceiverSettleMode.FIRST);
 
+        expectSenderAttach(attachMatcher, attachResponse, refuseLink, omitDetach, deferAttachResponseWrite, creditFlowDelay, creditAmount, errorType, errorMessage);
+    }
+
+    public void expectSenderAttach(final AttachMatcher attachMatcher, final AttachFrame attachResponse, final boolean refuseLink, boolean omitDetach, boolean deferAttachResponseWrite, long creditFlowDelay, int creditAmount, Symbol errorType, String errorMessage)
+    {
         // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
         final FrameSender attachResponseSender = new FrameSender(this, FrameType.AMQP, -1, attachResponse, null);
         attachResponseSender.setValueProvider(new ValueProvider()
@@ -946,7 +961,8 @@ public class TestAmqpPeer implements AutoCloseable
 
                 _lastInitiatedLinkHandle = (UnsignedInteger) receivedHandle;
 
-                if (targetMatcher instanceof CoordinatorMatcher)
+                Object target = createTargetObjectFromDescribedType(attachMatcher.getReceivedTarget());
+                if (target instanceof Coordinator)
                 {
                     _lastInitiatedCoordinatorLinkHandle = (UnsignedInteger) receivedHandle;
                 }

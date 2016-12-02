@@ -34,6 +34,7 @@ public abstract class AmqpProducer extends AmqpAbstractResource<JmsProducerInfo,
     protected final AmqpSession session;
     protected final AmqpConnection connection;
     protected boolean presettle;
+    protected boolean delayedDeliverySupported;
 
     public AmqpProducer(AmqpSession session, JmsProducerInfo info) {
         this(session, info, null);
@@ -88,6 +89,10 @@ public abstract class AmqpProducer extends AmqpAbstractResource<JmsProducerInfo,
      */
     public void setPresettle(boolean presettle) {
         this.presettle = presettle;
+    }
+
+    public void setDelayedDeliverySupported(boolean delayedDeliverySupported) {
+        this.delayedDeliverySupported = delayedDeliverySupported;
     }
 
     /**

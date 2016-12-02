@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -291,17 +292,21 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             synchronized (sessionInfo) {
                 if (completionExcecutor != null) {
                     completionExcecutor.shutdown();
+                    try {
+                        completionExcecutor.awaitTermination(connection.getCloseTimeout(), TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException e) {
+                        LOG.trace("Session close awaiting send completions was interrupted");
+                    }
                     completionExcecutor = null;
                 }
             }
         }
     }
 
+    //----- Events fired when resource remotely closed due to some error -----//
+
     void sessionClosed(Exception cause) {
         try {
-            // TODO - This assumes we can't rely on the AmqpProvider to signal all pending
-            //        asynchronous send completions that they are failed when the session
-            //        is remotely closed.
             getCompletionExecutor().execute(new FailOrCompleteAsyncCompletionsTask(JmsExceptionSupport.create(cause)));
             shutdown(cause);
         } catch (Throwable error) {
@@ -332,9 +337,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
         try {
             if (producer != null) {
-                // TODO - This assumes we can't rely on the AmqpProvider to signal all pending
-                //        asynchronous send completions that they are failed when the producer
-                //        is remotely closed.
                 getCompletionExecutor().execute(new FailOrCompleteAsyncCompletionsTask(
                     producer.getProducerId(), JmsExceptionSupport.create(cause)));
                 producer.shutdown(cause);

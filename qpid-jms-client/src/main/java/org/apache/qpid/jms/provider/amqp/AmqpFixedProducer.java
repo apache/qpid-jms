@@ -402,11 +402,11 @@ public class AmqpFixedProducer extends AmqpProducer {
             // Put the message back to usable state following send complete
             envelope.getMessage().onSendComplete();
 
-            // TODO - Should this take blocked sends into consideration.
             // Signal the watcher that all pending sends have completed if one is registered
             // and both the in-flight sends and blocked sends have completed.
             if (sendCompletionWatcher != null && sent.isEmpty() && blocked.isEmpty()) {
                 sendCompletionWatcher.onSuccess();
+                sendCompletionWatcher = null;
             }
 
             // Once the pending sends queue is drained and all in-flight sends have been

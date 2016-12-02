@@ -130,8 +130,15 @@ public class AmqpTransactionContext implements AmqpResourceParent {
 
         DischargeCompletion dischargeResult = new DischargeCompletion(request, true);
 
-        LOG.trace("TX Context[{}] committing current TX[[]]", this, current);
-        coordinator.discharge(current, dischargeResult, true);
+        if (txProducers.isEmpty()) {
+            LOG.trace("TX Context[{}] committing current TX[[]]", this, current);
+            coordinator.discharge(current, dischargeResult, true);
+        } else {
+            SendCompletion producersSendCompletion = new SendCompletion(transactionInfo, dischargeResult, txProducers.size(), true);
+            for (AmqpProducer producer : txProducers) {
+                producer.addSendCompletionWatcher(producersSendCompletion);
+            }
+        }
     }
 
     public void rollback(JmsTransactionInfo transactionInfo, final AsyncResult request) throws Exception {

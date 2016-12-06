@@ -173,14 +173,12 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
     //----- Base class overrides ---------------------------------------------//
 
     @Override
-    public void remotelyClosed(AmqpProvider provider) {
-
-        Exception txnError = AmqpSupport.convertToException(getEndpoint(), getEndpoint().getRemoteCondition());
+    public void closeResource(AmqpProvider provider, Throwable cause, boolean localClose) {
 
         // Alert any pending operation that the link failed to complete the pending
         // begin / commit / rollback operation.
         if (pendingRequest != null) {
-            pendingRequest.onFailure(txnError);
+            pendingRequest.onFailure(cause);
             pendingRequest = null;
         }
 

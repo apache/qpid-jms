@@ -99,6 +99,8 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
             return;
         }
 
+        LOG.trace("{} requesting close on remote.", this);
+
         closeRequest = request;
 
         // Use close timeout for all resource closures and fallback to the request
@@ -119,13 +121,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
                     @Override
                     public void onFailure(Throwable result) {
-                        closeRequest.onFailure(result);
-                        closeRequest = null;
-
-                        // This ensures that the resource gets properly cleaned
-                        // up, the request will have already completed so there
-                        // won't be multiple events fired.
-                        resourceClosed();
+                        closeResource(getParent().getProvider(), result, false);
                     }
 
                     @Override
@@ -139,45 +135,49 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
         closeOrDetachEndpoint();
     }
 
-    public void resourceClosed() {
-        getEndpoint().close();
-        getEndpoint().free();
-        getEndpoint().setContext(null);
-
-        if (closeRequest != null) {
-            closeRequest.onSuccess();
-            closeRequest = null;
-        }
-    }
-
-    public void remotelyClosed(AmqpProvider provider) {
-        locallyClosed(provider, AmqpSupport.convertToException(getEndpoint(), getEndpoint().getRemoteCondition()));
-    }
-
-    public void locallyClosed(AmqpProvider provider, Exception error) {
+    public void closeResource(AmqpProvider provider, Throwable cause, boolean remotelyClosed) {
         if (parent != null) {
             parent.removeChildResource(this);
         }
 
-        if (endpoint != null) {
+        if (getEndpoint() != null) {
             // TODO: if this is a producer/consumer link then we may only be detached,
             // rather than fully closed, and should respond appropriately.
             closeOrDetachEndpoint();
+
+            // Process the close before moving on to closing down child resources
+            provider.pumpToProtonTransport();
+
+            handleResourceClosure(provider, cause);
+
+            // Now clean up after the close has completed if the close is not initiated
+            // from this client, otherwise we need to wait for the remote to respond.
+            if (remotelyClosed) {
+                getEndpoint().free();
+                getEndpoint().setContext(null);
+            }
         }
 
-        // Process the close before moving on to closing down child resources
-        provider.pumpToProtonTransport();
-
-        handleResourceClosure(provider, error);
-
-        if (getResourceInfo() instanceof JmsConnectionInfo) {
-            provider.fireProviderException(error);
+        if (isAwaitingClose()) {
+            LOG.debug("{} is now closed: ", this);
+            if (cause == null) {
+                closeRequest.onSuccess();
+            } else {
+                closeRequest.onFailure(cause);
+            }
+            closeRequest = null;
         } else {
-            provider.fireResourceClosed(getResourceInfo(), error);
+            if (cause != null) {
+                if (getResourceInfo() instanceof JmsConnectionInfo) {
+                    provider.fireProviderException(cause);
+                } else {
+                    provider.fireResourceClosed(getResourceInfo(), cause);
+                }
+            }
         }
     }
 
-    public void handleResourceClosure(AmqpProvider provider, Exception error) {
+    public void handleResourceClosure(AmqpProvider provider, Throwable error) {
         // Nothing do be done here, subclasses can override as needed.
     }
 
@@ -241,21 +241,15 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
     @Override
     public void processRemoteDetach(AmqpProvider provider) throws IOException {
-        if (isAwaitingClose()) {
-            LOG.debug("{} is now closed: ", this);
-            resourceClosed();
-        } else {
-            remotelyClosed(provider);
-        }
+        processRemoteClose(provider);
     }
 
     @Override
     public void processRemoteClose(AmqpProvider provider) throws IOException {
         if (isAwaitingClose()) {
-            LOG.debug("{} is now closed: ", this);
-            resourceClosed();
+            closeResource(provider, null, true); // Close was expected so ignore any endpoint errors.
         } else {
-            remotelyClosed(provider);
+            closeResource(provider, AmqpSupport.convertToException(getEndpoint(), getEndpoint().getRemoteCondition()), true);
         }
     }
 

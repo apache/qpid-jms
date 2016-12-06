@@ -144,7 +144,7 @@ public interface ProviderListener {
      * @param cause
      *        optional exception object that indicates the cause of the close.
      */
-    void onResourceClosed(JmsResource resource, Exception cause);
+    void onResourceClosed(JmsResource resource, Throwable cause);
 
     /**
      * Called to indicate that a some client operation caused or received an

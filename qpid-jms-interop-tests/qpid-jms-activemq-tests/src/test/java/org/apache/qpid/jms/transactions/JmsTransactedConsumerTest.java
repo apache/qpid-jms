@@ -360,15 +360,15 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
             }
 
             @Override
-            public void onSessionClosed(Session session, Exception exception) {
+            public void onSessionClosed(Session session, Throwable exception) {
             }
 
             @Override
-            public void onConsumerClosed(MessageConsumer consumer, Exception cause) {
+            public void onConsumerClosed(MessageConsumer consumer, Throwable cause) {
             }
 
             @Override
-            public void onProducerClosed(MessageProducer producer, Exception cause) {
+            public void onProducerClosed(MessageProducer producer, Throwable cause) {
             }
         });
 

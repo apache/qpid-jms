@@ -1116,7 +1116,7 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
             final CountDownLatch subscriberClosed = new CountDownLatch(1);
             ((JmsConnection) connection).addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
-                public void onConsumerClosed(MessageConsumer consumer, Exception exception) {
+                public void onConsumerClosed(MessageConsumer consumer, Throwable exception) {
                     subscriberClosed.countDown();
                 }
             });
@@ -1368,7 +1368,7 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
             final CountDownLatch sessionClosed = new CountDownLatch(1);
             ((JmsConnection) connection).addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
-                public void onSessionClosed(Session session, Exception exception) {
+                public void onSessionClosed(Session session, Throwable exception) {
                     sessionClosed.countDown();
                 }
             });
@@ -1450,7 +1450,7 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
             final CountDownLatch sessionClosed = new CountDownLatch(1);
             ((JmsConnection) connection).addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
-                public void onSessionClosed(Session session, Exception exception) {
+                public void onSessionClosed(Session session, Throwable exception) {
                     sessionClosed.countDown();
                 }
             });

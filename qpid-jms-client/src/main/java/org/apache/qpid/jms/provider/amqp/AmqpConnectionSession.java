@@ -16,7 +16,9 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.jms.InvalidDestinationException;
@@ -78,6 +80,14 @@ public class AmqpConnectionSession extends AmqpSession {
 
         LOG.debug("Attempting remove of subscription: {}", subscriptionName);
         builder.buildResource(subscribeRequest);
+    }
+
+    @Override
+    public void handleResourceClosure(AmqpProvider provider, Throwable cause) {
+        List<AsyncResult> pending = new ArrayList<>(pendingUnsubs.values());
+        for (AsyncResult unsubscribeRequest : pending) {
+            unsubscribeRequest.onFailure(cause);
+        }
     }
 
     private static final class DurableSubscriptionReattach extends AmqpAbstractResource<JmsSessionInfo, Receiver> {
@@ -149,12 +159,12 @@ public class AmqpConnectionSession extends AmqpSession {
         }
 
         @Override
-        public void onFailure(Throwable result) {
+        public void onFailure(Throwable cause) {
             DurableSubscriptionReattach subscriber = subscriberBuilder.getResource();
             LOG.trace("Failed to reattach to subscription '{}' using link name '{}'", subscriptionName, subscriber.getLinkName());
             pendingUnsubs.remove(subscriptionName);
-            subscriber.resourceClosed();
-            super.onFailure(result);
+            subscriber.closeResource(getProvider(), cause, false);
+            super.onFailure(cause);
         }
     }
 }

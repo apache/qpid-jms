@@ -1285,7 +1285,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             Queue queue = session.createQueue("myQueue");
 
             testPeer.expectReceiverAttach();
-            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), 2);
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), 1);
 
             // Then expect a *settled* TransactionalState disposition for the message once received by the consumer
             TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
@@ -1311,6 +1311,9 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             // and reply with accepted and settled disposition to indicate the rollback succeeded
             testPeer.expectDischarge(txnId, true);
 
+            // Expect the release of the prefetched message from the consumer that was closed.
+            //testPeer.expectDispositionThatIsReleasedAndSettled();
+
             // Then expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.
             txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
@@ -1318,13 +1321,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.expectDischarge(txnId, true);
             testPeer.expectClose();
 
-            try {
-                session.rollback();
-                //fail("Consumer should have failed to stop and caused an error on rollback.");
-            } catch (JMSException ex) {
-                // Expected
-            }
-
+            session.rollback();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);

@@ -88,6 +88,9 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             testPeer.expectDetach(true, true, true);
             consumer.close();
 
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(1000);
         }
     }
@@ -130,7 +133,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
-                public void onConsumerClosed(MessageConsumer consumer, Exception exception) {
+                public void onConsumerClosed(MessageConsumer consumer, Throwable exception) {
                     consumerClosed.set(true);
                 }
             });

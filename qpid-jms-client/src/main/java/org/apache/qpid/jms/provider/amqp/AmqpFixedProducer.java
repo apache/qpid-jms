@@ -278,7 +278,7 @@ public class AmqpFixedProducer extends AmqpProducer {
     }
 
     @Override
-    public void handleResourceClosure(AmqpProvider provider, Exception error) {
+    public void handleResourceClosure(AmqpProvider provider, Throwable error) {
         if (error == null) {
             // TODO: create/use a more specific/appropriate exception type?
             error = new JMSException("Producer closed remotely before message transfer result was notified");

@@ -17,7 +17,9 @@
 package org.apache.qpid.jms.provider.amqp;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -114,6 +116,21 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
         } else if (resource instanceof AmqpTemporaryDestination) {
             AmqpTemporaryDestination tempDest = (AmqpTemporaryDestination) resource;
             tempDests.remove(tempDest.getResourceInfo());
+        }
+    }
+
+    @Override
+    public void handleResourceClosure(AmqpProvider provider, Throwable cause) {
+        connectionSession.handleResourceClosure(getProvider(), cause);
+
+        List<AmqpSession> sessionList = new ArrayList<>(sessions.values());
+        for (AmqpSession session : sessionList) {
+            session.handleResourceClosure(provider, cause);
+        }
+
+        List<AmqpTemporaryDestination> tempDestsList = new ArrayList<>(tempDests.values());
+        for (AmqpTemporaryDestination tempDest : tempDestsList) {
+            tempDest.handleResourceClosure(provider, cause);
         }
     }
 

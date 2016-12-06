@@ -82,7 +82,7 @@ public interface JmsConnectionListener {
      * @param cause
      *      The exception that provides additional context on the closure.
      */
-    void onSessionClosed(Session session, Exception cause);
+    void onSessionClosed(Session session, Throwable cause);
 
     /**
      * Called when the MessageConsumer is closed due to remote action or local error detection.
@@ -92,7 +92,7 @@ public interface JmsConnectionListener {
      * @param cause
      *      The exception that provides additional context on the closure.
      */
-    void onConsumerClosed(MessageConsumer consumer, Exception cause);
+    void onConsumerClosed(MessageConsumer consumer, Throwable cause);
 
     /**
      * Called when the MessageProducer is closed due to remote action or local error detection.
@@ -102,6 +102,6 @@ public interface JmsConnectionListener {
      * @param cause
      *      The exception that provides additional context on the closure.
      */
-    void onProducerClosed(MessageProducer producer, Exception cause);
+    void onProducerClosed(MessageProducer producer, Throwable cause);
 
 }

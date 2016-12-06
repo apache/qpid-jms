@@ -228,15 +228,15 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
     }
 
     @Override
-    public void handleResourceClosure(AmqpProvider provider, Exception error) {
+    public void handleResourceClosure(AmqpProvider provider, Throwable error) {
         List<AmqpConsumer> consumerList = new ArrayList<>(consumers.values());
         for (AmqpConsumer consumer : consumerList) {
-            consumer.locallyClosed(provider, error);
+            consumer.handleResourceClosure(provider, error);
         }
 
         List<AmqpProducer> producerList = new ArrayList<>(producers.values());
         for (AmqpProducer producer : producerList) {
-            producer.locallyClosed(provider, error);
+            producer.handleResourceClosure(provider, error);
         }
     }
 

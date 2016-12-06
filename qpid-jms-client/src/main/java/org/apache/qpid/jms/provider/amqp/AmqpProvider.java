@@ -761,9 +761,6 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         // We can't send any more output, so close the transport
                         protonTransport.close_head();
                         fireProviderException(error);
-                        if (connection != null) {
-                            connection.resourceClosed();
-                        }
                     }
                 }
             });
@@ -787,9 +784,6 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         // We can't send any more output, so close the transport
                         protonTransport.close_head();
                         fireProviderException(new IOException("Transport connection remotely closed."));
-                        if (connection != null) {
-                            connection.resourceClosed();
-                        }
                     }
                 }
             });
@@ -967,10 +961,10 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         }
     }
 
-    void fireResourceClosed(JmsResource resource, Exception ex) {
+    void fireResourceClosed(JmsResource resource, Throwable cause) {
         ProviderListener listener = this.listener;
         if (listener != null) {
-            listener.onResourceClosed(resource, ex);
+            listener.onResourceClosed(resource, cause);
         }
     }
 

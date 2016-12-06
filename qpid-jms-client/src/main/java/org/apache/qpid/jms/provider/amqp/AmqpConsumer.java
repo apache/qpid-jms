@@ -126,8 +126,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                     public void run() {
                         LOG.trace("Consumer {} drain request timed out", getConsumerId());
                         Exception cause = new JmsOperationTimedOutException("Remote did not respond to a drain request in time");
-                        locallyClosed(session.getProvider(), cause);
-                        stopRequest.onFailure(cause);
+                        closeResource(session.getProvider(), cause, false);
                         session.getProvider().pumpToProtonTransport();
                     }
                 }, getDrainTimeout());
@@ -566,7 +565,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     @Override
-    public void handleResourceClosure(AmqpProvider provider, Exception error) {
+    public void handleResourceClosure(AmqpProvider provider, Throwable cause) {
         AmqpConnection connection = session.getConnection();
         AmqpSubscriptionTracker subTracker = connection.getSubTracker();
         JmsConsumerInfo consumerInfo = getResourceInfo();
@@ -576,12 +575,20 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         // When closed we need to release any pending tasks to avoid blocking
 
         if (stopRequest != null) {
-            stopRequest.onSuccess();
+            if (cause == null) {
+                stopRequest.onSuccess();
+            } else {
+                stopRequest.onFailure(cause);
+            }
             stopRequest = null;
         }
 
         if (pullRequest != null) {
-            pullRequest.onSuccess();
+            if (cause == null) {
+                pullRequest.onSuccess();
+            } else {
+                pullRequest.onFailure(cause);
+            }
             pullRequest = null;
         }
     }

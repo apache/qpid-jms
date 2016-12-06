@@ -115,7 +115,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     private final AtomicLong producerIdGenerator = new AtomicLong();
     private JmsTransactionContext transactionContext;
     private boolean sessionRecovered;
-    private final AtomicReference<Exception> failureCause = new AtomicReference<Exception>();
+    private final AtomicReference<Throwable> failureCause = new AtomicReference<>();
     private final Deque<SendCompletion> asyncSendQueue = new ConcurrentLinkedDeque<SendCompletion>();
 
     protected JmsSession(JmsConnection connection, JmsSessionId sessionId, int acknowledgementMode) throws JMSException {
@@ -253,8 +253,8 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     protected void doClose() throws JMSException {
         boolean interrupted = Thread.interrupted();
         shutdown();
-        connection.removeSession(sessionInfo);
         connection.destroyResource(sessionInfo);
+        connection.removeSession(sessionInfo);
         if (interrupted) {
             Thread.currentThread().interrupt();
         }
@@ -275,7 +275,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         shutdown(null);
     }
 
-    protected void shutdown(Exception cause) throws JMSException {
+    protected void shutdown(Throwable cause) throws JMSException {
         if (closed.compareAndSet(false, true)) {
             setFailureCause(cause);
             stop();
@@ -289,8 +289,14 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
             transactionContext.shutdown();
 
+            // Ensure that no asynchronous completion sends remain blocked after close.
             synchronized (sessionInfo) {
                 if (completionExcecutor != null) {
+                    if (cause == null) {
+                        cause = new JMSException("Session closed remotely before message transfer result was notified");
+                    }
+
+                    completionExcecutor.execute(new FailOrCompleteAsyncCompletionsTask(JmsExceptionSupport.create(cause)));
                     completionExcecutor.shutdown();
                     try {
                         completionExcecutor.awaitTermination(connection.getCloseTimeout(), TimeUnit.MILLISECONDS);
@@ -305,16 +311,15 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
     //----- Events fired when resource remotely closed due to some error -----//
 
-    void sessionClosed(Exception cause) {
+    void sessionClosed(Throwable cause) {
         try {
-            getCompletionExecutor().execute(new FailOrCompleteAsyncCompletionsTask(JmsExceptionSupport.create(cause)));
             shutdown(cause);
         } catch (Throwable error) {
             LOG.trace("Ignoring exception thrown during cleanup of closed session", error);
         }
     }
 
-    JmsMessageConsumer consumerClosed(JmsConsumerInfo resource, Exception cause) {
+    JmsMessageConsumer consumerClosed(JmsConsumerInfo resource, Throwable cause) {
         LOG.info("A JMS MessageConsumer has been closed: {}", resource);
 
         JmsMessageConsumer consumer = consumers.get(resource.getId());
@@ -330,7 +335,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         return consumer;
     }
 
-    JmsMessageProducer producerClosed(JmsProducerInfo resource, Exception cause) {
+    JmsMessageProducer producerClosed(JmsProducerInfo resource, Throwable cause) {
         LOG.info("A JMS MessageProducer has been closed: {}", resource);
 
         JmsMessageProducer producer = producers.get(resource.getId());
@@ -1059,11 +1064,11 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         return new JmsProducerId(sessionInfo.getId(), producerIdGenerator.incrementAndGet());
     }
 
-    void setFailureCause(Exception failureCause) {
+    void setFailureCause(Throwable failureCause) {
         this.failureCause.set(failureCause);
     }
 
-    Exception getFailureCause() {
+    Throwable getFailureCause() {
         return failureCause.get();
     }
 

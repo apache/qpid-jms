@@ -179,9 +179,6 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
                     session.shutdown();
                 }
 
-                sessions.clear();
-                tempDestinations.clear();
-
                 if (isConnected() && !failed.get()) {
                     ProviderFuture request = new ProviderFuture();
                     requests.put(request, request);
@@ -205,6 +202,8 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
                     }
                 }
 
+                sessions.clear();
+                tempDestinations.clear();
                 connected.set(false);
                 started.set(false);
                 closing.set(false);
@@ -1268,7 +1267,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     }
 
     @Override
-    public void onResourceClosed(final JmsResource resource, final Exception cause) {
+    public void onResourceClosed(final JmsResource resource, final Throwable cause) {
         // Closure of the Connection itself is notified via onConnectionFailure
 
         // Run on the connection executor to free the provider to go do more work and avoid

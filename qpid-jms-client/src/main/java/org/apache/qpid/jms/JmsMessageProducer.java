@@ -52,7 +52,7 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
     protected boolean disableMessageId;
     protected boolean disableTimestamp;
     protected final AtomicLong messageSequence = new AtomicLong();
-    protected final AtomicReference<Exception> failureCause = new AtomicReference<>();
+    protected final AtomicReference<Throwable> failureCause = new AtomicReference<>();
 
     protected JmsMessageProducer(JmsProducerId producerId, JmsSession session, JmsDestination destination) throws JMSException {
         this.session = session;
@@ -105,7 +105,7 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
         shutdown(null);
     }
 
-    protected void shutdown(Exception cause) throws JMSException {
+    protected void shutdown(Throwable cause) throws JMSException {
         if (closed.compareAndSet(false, true)) {
             failureCause.set(cause);
             session.remove(this);
@@ -329,11 +329,11 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
         return producerInfo.getMessageIDBuilder();
     }
 
-    void setFailureCause(Exception failureCause) {
+    void setFailureCause(Throwable failureCause) {
         this.failureCause.set(failureCause);
     }
 
-    Exception getFailureCause() {
+    Throwable getFailureCause() {
         if (failureCause.get() == null) {
             return session.getFailureCause();
         }

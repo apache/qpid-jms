@@ -65,7 +65,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     protected final MessageQueue messageQueue;
     protected final Lock lock = new ReentrantLock();
     protected final AtomicBoolean suspendedConnection = new AtomicBoolean();
-    protected final AtomicReference<Exception> failureCause = new AtomicReference<>();
+    protected final AtomicReference<Throwable> failureCause = new AtomicReference<>();
 
     protected JmsMessageConsumer(JmsConsumerId consumerId, JmsSession session, JmsDestination destination,
                                  String selector, boolean noLocal) throws JMSException {
@@ -183,7 +183,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         shutdown(null);
     }
 
-    protected void shutdown(Exception cause) throws JMSException {
+    protected void shutdown(Throwable cause) throws JMSException {
         if (closed.compareAndSet(false, true)) {
             setFailureCause(cause);
             session.remove(this);
@@ -392,11 +392,11 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         }
     }
 
-    void setFailureCause(Exception failureCause) {
+    void setFailureCause(Throwable failureCause) {
         this.failureCause.set(failureCause);
     }
 
-    Exception getFailureCause() {
+    Throwable getFailureCause() {
         if (failureCause.get() == null) {
             return session.getFailureCause();
         }

@@ -1321,7 +1321,11 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.expectDischarge(txnId, true);
             testPeer.expectClose();
 
-            session.rollback();
+            try {
+                session.rollback();
+                fail("Should throw a timed out exception");
+            } catch (JmsOperationTimedOutException jmsEx) {}
+
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);

@@ -57,6 +57,9 @@ import org.apache.qpid.jms.provider.amqp.builders.AmqpConnectionBuilder;
 import org.apache.qpid.jms.transports.TransportFactory;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.util.IOExceptionSupport;
+import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.UnsignedInteger;
+import org.apache.qpid.proton.amqp.messaging.TerminusExpiryPolicy;
 import org.apache.qpid.proton.engine.Collector;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.Delivery;
@@ -117,6 +120,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private int drainTimeout = 60000;
     private long sessionOutoingWindow = -1; //Use proton default
     private int maxFrameSize = DEFAULT_MAX_FRAME_SIZE;
+	private TerminusExpiryPolicy defaultExpiryPolicy;
+	private UnsignedInteger defaultTimeout;
 
     private final URI remoteURI;
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -1111,6 +1116,36 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         this.sessionOutoingWindow = sessionOutoingWindow;
     }
 
+	public TerminusExpiryPolicy getDefaultExpiryPolicy() {
+		return defaultExpiryPolicy;
+	}
+
+	/**
+     * Set the default expiry policy. This will override consumer policy.
+     * 
+     * @param defaultExpiryPolicy
+     */
+	public void setDefaultExpiryPolicy(String defaultExpiryPolicy) {
+		this.defaultExpiryPolicy = TerminusExpiryPolicy.valueOf(Symbol.valueOf(defaultExpiryPolicy));
+	}
+
+	public UnsignedInteger getDefaultTimeout() {
+		return defaultTimeout;
+	}
+
+	/**
+	 * Set the default timeout for consumer policy
+	 * 
+	 * @param timeout
+	 */
+	public void setDefaultTimeout(int timeout) {
+		if (timeout < 0) {
+			defaultTimeout = new UnsignedInteger(Integer.MAX_VALUE);
+		} else {
+			defaultTimeout = new UnsignedInteger(timeout);
+		}
+	}
+
     public long getCloseTimeout() {
         return connectionInfo != null ? connectionInfo.getCloseTimeout() : JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
     }
@@ -1248,7 +1283,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         }
     }
 
-    private final class IdleTimeoutCheck implements Runnable {
+	private final class IdleTimeoutCheck implements Runnable {
         @Override
         public void run() {
             boolean checkScheduled = false;

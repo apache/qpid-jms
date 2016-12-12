@@ -85,6 +85,8 @@ import org.apache.qpid.jms.util.Repeat;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
+import org.apache.qpid.proton.amqp.messaging.Modified;
+import org.apache.qpid.proton.amqp.messaging.Released;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -165,7 +167,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
-    public void testCreateProducerLinkSupportsAcceptedAndRejectedOutcomes() throws Exception {
+    public void testCreateProducerLinkSupportedSourceOutcomes() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectBegin();
@@ -175,7 +177,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             String queueName = "myQueue";
 
             SourceMatcher sourceMatcher = new SourceMatcher();
-            sourceMatcher.withOutcomes(arrayContaining(Accepted.DESCRIPTOR_SYMBOL, Rejected.DESCRIPTOR_SYMBOL));
+            sourceMatcher.withOutcomes(arrayContaining(Accepted.DESCRIPTOR_SYMBOL, Rejected.DESCRIPTOR_SYMBOL, Released.DESCRIPTOR_SYMBOL, Modified.DESCRIPTOR_SYMBOL));
             //TODO: what default outcome for producers?
             //Accepted normally, Rejected for transaction controller?
             //sourceMatcher.withDefaultOutcome(outcomeMatcher);

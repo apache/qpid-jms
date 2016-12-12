@@ -92,7 +92,7 @@ public class MockProvider implements Provider {
     }
 
     @Override
-    public void connect() throws IOException {
+    public void connect(JmsConnectionInfo connectionInfo) throws IOException {
         checkClosed();
 
         stats.recordConnectAttempt();

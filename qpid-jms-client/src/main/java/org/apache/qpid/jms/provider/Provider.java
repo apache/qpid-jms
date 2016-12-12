@@ -24,6 +24,7 @@ import javax.jms.JMSException;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessageFactory;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
+import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsSessionId;
@@ -43,9 +44,12 @@ public interface Provider {
      * is considered to be unusable and no further operations should be attempted
      * using this Provider.
      *
+     * @param connectionInfo
+     * 		The JmsConnectionInfo that contains the properties that define this connection.
+     *
      * @throws IOException if the remote resource can not be contacted.
      */
-    void connect() throws IOException;
+    void connect(JmsConnectionInfo connectionInfo) throws IOException;
 
     /**
      * Starts the Provider.  The start method provides a place for the Provider to perform

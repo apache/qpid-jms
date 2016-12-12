@@ -25,6 +25,7 @@ import java.net.URI;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsConnectionId;
+import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
@@ -127,8 +128,11 @@ public class ProviderWrapperTest extends QpidJmsTestCase{
         Provider mockProvider = Mockito.mock(Provider.class);
         ProviderWrapper<Provider> wrapper = new ProviderWrapper<Provider>(mockProvider);
 
-        wrapper.connect();
-        Mockito.verify(mockProvider).connect();
+        JmsConnectionId id = new JmsConnectionId("ID:1");
+        JmsConnectionInfo connectionInfo = new JmsConnectionInfo(id);
+
+        wrapper.connect(connectionInfo);
+        Mockito.verify(mockProvider).connect(connectionInfo);
     }
 
     @Test

@@ -22,13 +22,13 @@ import javax.jms.ServerSessionPool;
 import javax.jms.Topic;
 import javax.jms.TopicSession;
 
+import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.provider.Provider;
-import org.apache.qpid.jms.util.IdGenerator;
 
 public class JmsQueueConnection extends JmsConnection implements AutoCloseable {
 
-    public JmsQueueConnection(String connectionId, Provider provider, IdGenerator clientIdGenerator) throws JMSException {
-        super(connectionId, provider, clientIdGenerator);
+    public JmsQueueConnection(JmsConnectionInfo connectionInfo, Provider provider) throws JMSException {
+        super(connectionInfo, provider);
     }
 
     @Override

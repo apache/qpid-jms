@@ -61,7 +61,8 @@ public class IntegrationTestFixture {
     Connection establishConnecton(TestAmqpPeer testPeer, boolean ssl, String optionsString, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties, boolean setClientId) throws JMSException {
         Symbol[] desiredCapabilities = new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY };
 
-        testPeer.expectSaslPlainConnect("guest", "guest", desiredCapabilities, serverCapabilities, serverProperties);
+        testPeer.expectSaslPlain("guest", "guest");
+        testPeer.expectOpen(desiredCapabilities, serverCapabilities, serverProperties);
 
         // Each connection creates a session for managing temporary destinations etc
         testPeer.expectBegin();
@@ -112,7 +113,8 @@ public class IntegrationTestFixture {
     JMSContext createJMSContext(TestAmqpPeer testPeer, boolean ssl, String optionsString, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties, boolean setClientId, int sessionMode) throws JMSException {
         Symbol[] desiredCapabilities = new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY };
 
-        testPeer.expectSaslPlainConnect("guest", "guest", desiredCapabilities, serverCapabilities, serverProperties);
+        testPeer.expectSaslPlain("guest", "guest");
+        testPeer.expectOpen(desiredCapabilities, serverCapabilities, serverProperties);
 
         // Each connection creates a session for managing temporary destinations etc
         testPeer.expectBegin();

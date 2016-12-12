@@ -60,10 +60,18 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
     @Test(timeout=20000)
     public void testCreateConnectionGoodProviderURI() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Ignore errors from peer close due to not sending any Open / Close frames
+            testPeer.setSuppressReadExceptionOnClose(true);
+
             // DONT create a test fixture, we will drive everything directly.
+            testPeer.expectSaslAnonymous();
+
             JmsConnectionFactory factory = new JmsConnectionFactory(new URI("amqp://127.0.0.1:" + testPeer.getServerPort()));
             Connection connection = factory.createConnection();
             assertNotNull(connection);
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
             connection.close();
         }
     }
@@ -71,10 +79,18 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
     @Test(timeout=20000)
     public void testCreateConnectionGoodProviderString() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Ignore errors from peer close due to not sending any Open / Close frames
+            testPeer.setSuppressReadExceptionOnClose(true);
+
             // DONT create a test fixture, we will drive everything directly.
+            testPeer.expectSaslAnonymous();
+
             JmsConnectionFactory factory = new JmsConnectionFactory("amqp://127.0.0.1:" + testPeer.getServerPort());
             Connection connection = factory.createConnection();
             assertNotNull(connection);
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
             connection.close();
         }
     }
@@ -82,10 +98,18 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
     @Test(timeout=20000)
     public void testTopicCreateConnectionGoodProviderString() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Ignore errors from peer close due to not sending any Open / Close frames
+            testPeer.setSuppressReadExceptionOnClose(true);
+
             // DONT create a test fixture, we will drive everything directly.
+            testPeer.expectSaslAnonymous();
+
             JmsConnectionFactory factory = new JmsConnectionFactory("amqp://127.0.0.1:" + testPeer.getServerPort());
             TopicConnection connection = factory.createTopicConnection();
             assertNotNull(connection);
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
             connection.close();
         }
     }
@@ -93,10 +117,18 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
     @Test(timeout=20000)
     public void testCreateQueueConnectionGoodProviderString() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Ignore errors from peer close due to not sending any Open / Close frames
+            testPeer.setSuppressReadExceptionOnClose(true);
+
             // DONT create a test fixture, we will drive everything directly.
+            testPeer.expectSaslAnonymous();
+
             JmsConnectionFactory factory = new JmsConnectionFactory("amqp://127.0.0.1:" + testPeer.getServerPort());
             QueueConnection connection = factory.createQueueConnection();
             assertNotNull(connection);
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
             connection.close();
         }
     }
@@ -104,7 +136,12 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
     @Test(timeout=20000)
     public void testUriOptionsAppliedToConnection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Ignore errors from peer close due to not sending any Open / Close frames
+            testPeer.setSuppressReadExceptionOnClose(true);
+
             // DONT create a test fixture, we will drive everything directly.
+            testPeer.expectSaslAnonymous();
+
             String uri = "amqp://127.0.0.1:" + testPeer.getServerPort() + "?jms.localMessagePriority=true&jms.forceAsyncSend=true";
             JmsConnectionFactory factory = new JmsConnectionFactory(uri);
             assertTrue(factory.isLocalMessagePriority());
@@ -114,6 +151,9 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
             assertNotNull(connection);
             assertTrue(connection.isLocalMessagePriority());
             assertTrue(connection.isForceAsyncSend());
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
             connection.close();
         }
     }
@@ -170,20 +210,28 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test(timeout = 20000)
     public void testMessageIDFormatOptionApplied() throws Exception {
         BUILTIN[] formatters = JmsMessageIDBuilder.BUILTIN.values();
 
         for (BUILTIN formatter : formatters) {
             LOG.info("Testing application of Message ID Format: {}", formatter.name());
             try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+                // Ignore errors from peer close due to not sending any Open / Close frames
+                testPeer.setSuppressReadExceptionOnClose(true);
+
                 // DONT create a test fixture, we will drive everything directly.
+                testPeer.expectSaslAnonymous();
+
                 String uri = "amqp://127.0.0.1:" + testPeer.getServerPort() + "?jms.messageIDPolicy.messageIDType=" + formatter.name();
                 JmsConnectionFactory factory = new JmsConnectionFactory(uri);
                 assertEquals(formatter.name(), ((JmsDefaultMessageIDPolicy) factory.getMessageIDPolicy()).getMessageIDType());
 
                 JmsConnection connection = (JmsConnection) factory.createConnection();
                 assertEquals(formatter.name(), ((JmsDefaultMessageIDPolicy) connection.getMessageIDPolicy()).getMessageIDBuilder().toString());
+
+                testPeer.waitForAllHandlersToComplete(1000);
+
                 connection.close();
             }
         }
@@ -194,7 +242,12 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         CustomJmsMessageIdBuilder custom = new CustomJmsMessageIdBuilder();
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Ignore errors from peer close due to not sending any Open / Close frames
+            testPeer.setSuppressReadExceptionOnClose(true);
+
             // DONT create a test fixture, we will drive everything directly.
+            testPeer.expectSaslAnonymous();
+
             String uri = "amqp://127.0.0.1:" + testPeer.getServerPort();
 
             JmsConnectionFactory factory = new JmsConnectionFactory(uri);
@@ -203,6 +256,9 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
 
             JmsConnection connection = (JmsConnection) factory.createConnection();
             assertEquals(custom.toString(), ((JmsDefaultMessageIDPolicy) connection.getMessageIDPolicy()).getMessageIDBuilder().toString());
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
             connection.close();
         }
     }
@@ -212,7 +268,12 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         CustomJmsMessageIDPolicy custom = new CustomJmsMessageIDPolicy();
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Ignore errors from peer close due to not sending any Open / Close frames
+            testPeer.setSuppressReadExceptionOnClose(true);
+
             String uri = "amqp://127.0.0.1:" + testPeer.getServerPort();
+
+            testPeer.expectSaslAnonymous();
 
             JmsConnectionFactory factory = new JmsConnectionFactory(uri);
             factory.setMessageIDPolicy(custom);
@@ -221,6 +282,9 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
             JmsConnection connection = (JmsConnection) factory.createConnection();
             assertTrue(connection.getMessageIDPolicy() instanceof CustomJmsMessageIDPolicy);
             assertNotSame(custom, connection.getMessageIDPolicy());
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
             connection.close();
         }
     }
@@ -230,7 +294,12 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         CustomJmsPrefetchPolicy custom = new CustomJmsPrefetchPolicy();
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Ignore errors from peer close due to not sending any Open / Close frames
+            testPeer.setSuppressReadExceptionOnClose(true);
+
             String uri = "amqp://127.0.0.1:" + testPeer.getServerPort();
+
+            testPeer.expectSaslAnonymous();
 
             JmsConnectionFactory factory = new JmsConnectionFactory(uri);
             factory.setPrefetchPolicy(custom);
@@ -239,6 +308,9 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
             JmsConnection connection = (JmsConnection) factory.createConnection();
             assertTrue(connection.getPrefetchPolicy() instanceof CustomJmsPrefetchPolicy);
             assertNotSame(custom, connection.getPrefetchPolicy());
+
+            testPeer.waitForAllHandlersToCompleteNoAssert(1000);
+
             connection.close();
         }
     }
@@ -248,7 +320,12 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         CustomJmsPresettlePolicy custom = new CustomJmsPresettlePolicy();
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Ignore errors from peer close due to not sending any Open / Close frames
+            testPeer.setSuppressReadExceptionOnClose(true);
+
             String uri = "amqp://127.0.0.1:" + testPeer.getServerPort();
+
+            testPeer.expectSaslAnonymous();
 
             JmsConnectionFactory factory = new JmsConnectionFactory(uri);
             factory.setPresettlePolicy(custom);
@@ -257,6 +334,9 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
             JmsConnection connection = (JmsConnection) factory.createConnection();
             assertTrue(connection.getPresettlePolicy() instanceof CustomJmsPresettlePolicy);
             assertNotSame(custom, connection.getPresettlePolicy());
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
             connection.close();
         }
     }
@@ -266,7 +346,12 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         CustomJmsRedeliveryPolicy custom = new CustomJmsRedeliveryPolicy();
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Ignore errors from peer close due to not sending any Open / Close frames
+            testPeer.setSuppressReadExceptionOnClose(true);
+
             String uri = "amqp://127.0.0.1:" + testPeer.getServerPort();
+
+            testPeer.expectSaslAnonymous();
 
             JmsConnectionFactory factory = new JmsConnectionFactory(uri);
             factory.setRedeliveryPolicy(custom);
@@ -275,6 +360,9 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
             JmsConnection connection = (JmsConnection) factory.createConnection();
             assertTrue(connection.getRedeliveryPolicy() instanceof CustomJmsRedeliveryPolicy);
             assertNotSame(custom, connection.getRedeliveryPolicy());
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
             connection.close();
         }
     }

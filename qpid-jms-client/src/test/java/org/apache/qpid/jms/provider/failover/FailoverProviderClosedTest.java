@@ -61,7 +61,7 @@ public class FailoverProviderClosedTest extends FailoverProviderTestSupport {
 
     @Test(timeout=30000, expected=IOException.class)
     public void testConnect() throws Exception {
-        provider.connect();
+        provider.connect(connection);
     }
 
     @Test(timeout=30000, expected=IOException.class)

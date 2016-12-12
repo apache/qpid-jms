@@ -35,6 +35,7 @@ import javax.jms.TopicConnectionFactory;
 
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.jndi.JNDIStorable;
+import org.apache.qpid.jms.meta.JmsConnectionId;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.policy.JmsDefaultDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultMessageIDPolicy;
@@ -159,14 +160,25 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     @Override
     public TopicConnection createTopicConnection(String username, String password) throws JMSException {
+        JmsTopicConnection connection = null;
+
         try {
-            String connectionId = getConnectionIdGenerator().generateId();
+            JmsConnectionInfo connectionInfo = configureConnectionInfo(username, password);
             Provider provider = createProvider(remoteURI);
-            JmsTopicConnection result = new JmsTopicConnection(connectionId, provider, getClientIdGenerator());
-            return configureConnection(result, username, password);
+
+            connection = new JmsTopicConnection(connectionInfo, provider);
+            connection.setExceptionListener(exceptionListener);
+            connection.connect();
         } catch (Exception e) {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (Throwable ignored) {}
+            }
             throw JmsExceptionSupport.create(e);
         }
+
+        return connection;
     }
 
     @Override
@@ -176,14 +188,25 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     @Override
     public Connection createConnection(String username, String password) throws JMSException {
+        JmsConnection connection = null;
+
         try {
-            String connectionId = getConnectionIdGenerator().generateId();
+            JmsConnectionInfo connectionInfo = configureConnectionInfo(username, password);
             Provider provider = createProvider(remoteURI);
-            JmsConnection result = new JmsConnection(connectionId, provider, getClientIdGenerator());
-            return configureConnection(result, username, password);
+
+            connection = new JmsConnection(connectionInfo, provider);
+            connection.setExceptionListener(exceptionListener);
+            connection.connect();
         } catch (Exception e) {
-            throw JmsExceptionSupport.create("Failed to create connection to: " + getRemoteURI(), e);
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (Throwable ignored) {}
+            }
+            throw JmsExceptionSupport.create(e);
         }
+
+        return connection;
     }
 
     @Override
@@ -193,45 +216,61 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     @Override
     public QueueConnection createQueueConnection(String username, String password) throws JMSException {
+        JmsQueueConnection connection = null;
+
         try {
-            String connectionId = getConnectionIdGenerator().generateId();
+            JmsConnectionInfo connectionInfo = configureConnectionInfo(username, password);
             Provider provider = createProvider(remoteURI);
-            JmsQueueConnection result = new JmsQueueConnection(connectionId, provider, getClientIdGenerator());
-            return configureConnection(result, username, password);
+
+            connection = new JmsQueueConnection(connectionInfo, provider);
+            connection.setExceptionListener(exceptionListener);
+            connection.connect();
         } catch (Exception e) {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (Throwable ignored) {}
+            }
             throw JmsExceptionSupport.create(e);
         }
+
+        return connection;
     }
 
-    protected <T extends JmsConnection> T configureConnection(T connection, String username, String password) throws JMSException {
+    protected JmsConnectionInfo configureConnectionInfo(String username, String password) throws JMSException {
         try {
             Map<String, String> properties = PropertyUtil.getProperties(this);
             // We must ensure that we apply the clientID last, since setting it on
             // the Connection object provokes establishing the underlying connection.
-            boolean setClientID = false;
+            boolean userSpecifiedClientId = false;
             if (properties.containsKey(CLIENT_ID_PROP)) {
-                setClientID = true;
+                userSpecifiedClientId = true;
                 properties.remove(CLIENT_ID_PROP);
             }
 
+            String connectionId = getConnectionIdGenerator().generateId();
+
             // Copy the configured policies before applying URI options that
             // might make additional configuration changes.
-            connection.setMessageIDPolicy(messageIDPolicy.copy());
-            connection.setPrefetchPolicy(prefetchPolicy.copy());
-            connection.setPresettlePolicy(presettlePolicy.copy());
-            connection.setRedeliveryPolicy(redeliveryPolicy.copy());
-            connection.setDeserializationPolicy(deserializationPolicy.copy());
+            JmsConnectionInfo connectionInfo = new JmsConnectionInfo(new JmsConnectionId(connectionId));
 
-            PropertyUtil.setProperties(connection, properties);
-            connection.setExceptionListener(exceptionListener);
-            connection.setUsername(username);
-            connection.setPassword(password);
-            connection.setConfiguredURI(remoteURI);
-            if (setClientID) {
-                connection.setClientID(clientID);
+            connectionInfo.setMessageIDPolicy(messageIDPolicy.copy());
+            connectionInfo.setPrefetchPolicy(prefetchPolicy.copy());
+            connectionInfo.setPresettlePolicy(presettlePolicy.copy());
+            connectionInfo.setRedeliveryPolicy(redeliveryPolicy.copy());
+            connectionInfo.setDeserializationPolicy(deserializationPolicy.copy());
+
+            PropertyUtil.setProperties(connectionInfo, properties);
+            connectionInfo.setUsername(username);
+            connectionInfo.setPassword(password);
+            connectionInfo.setConfiguredURI(remoteURI);
+            if (userSpecifiedClientId) {
+                connectionInfo.setClientId(clientID, true);
+            } else {
+                connectionInfo.setClientId(getClientIdGenerator().generateId(), false);
             }
 
-            return connection;
+            return connectionInfo;
         } catch (Exception e) {
             throw JmsExceptionSupport.create(e);
         }
@@ -276,7 +315,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
         try {
             result = ProviderFactory.create(remoteURI);
-            result.connect();
         } catch (Exception ex) {
             LOG.error("Failed to create JMS Provider instance for: {}", remoteURI.getScheme());
             LOG.trace("Error: ", ex);

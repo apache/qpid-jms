@@ -20,6 +20,8 @@ import java.net.URI;
 
 import javax.jms.JMSContext;
 
+import org.apache.qpid.jms.meta.JmsConnectionId;
+import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.mock.MockProviderFactory;
@@ -27,6 +29,7 @@ import org.apache.qpid.jms.provider.mock.MockProviderListener;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.util.IdGenerator;
 import org.junit.After;
+import org.junit.Before;
 
 /**
  * Base for tests that require a JmsConnection that is created using a
@@ -42,6 +45,7 @@ public class JmsConnectionTestSupport extends QpidJmsTestCase {
     protected JmsTopicConnection topicConnection;
     protected JmsQueueConnection queueConnection;
     protected ProviderListener providerListener;
+    protected JmsConnectionInfo connectionInfo;
 
     private Provider createMockProvider() throws Exception {
         return mockFactory.createProvider(new URI("mock://localhost")).setEventListener(new MockProviderListener() {
@@ -54,22 +58,30 @@ public class JmsConnectionTestSupport extends QpidJmsTestCase {
     }
 
     protected JmsContext createJMSContextToMockProvider() throws Exception {
-        JmsConnection connection = new JmsConnection("ID:TEST:1", createMockProvider(), clientIdGenerator);
+        JmsConnection connection = new JmsConnection(connectionInfo, createMockProvider());
         JmsContext context = new JmsContext(connection, JMSContext.AUTO_ACKNOWLEDGE);
 
         return context;
     }
 
     protected JmsConnection createConnectionToMockProvider() throws Exception {
-        return new JmsConnection("ID:TEST:1", createMockProvider(), clientIdGenerator);
+        return new JmsConnection(connectionInfo, createMockProvider());
     }
 
     protected JmsQueueConnection createQueueConnectionToMockProvider() throws Exception {
-        return new JmsQueueConnection("ID:TEST:1", createMockProvider(), clientIdGenerator);
+        return new JmsQueueConnection(connectionInfo, createMockProvider());
     }
 
     protected JmsTopicConnection createTopicConnectionToMockProvider() throws Exception {
-        return new JmsTopicConnection("ID:TEST:1", createMockProvider(), clientIdGenerator);
+        return new JmsTopicConnection(connectionInfo, createMockProvider());
+    }
+
+    @Override
+    @Before
+    public void setUp() throws Exception {
+        super.setUp();
+        connectionInfo = new JmsConnectionInfo(new JmsConnectionId("ID:TEST:1"));
+        connectionInfo.setClientId(clientIdGenerator.generateId(), false);
     }
 
     @Override

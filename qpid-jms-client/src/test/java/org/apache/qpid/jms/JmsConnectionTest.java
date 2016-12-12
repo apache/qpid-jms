@@ -36,6 +36,8 @@ import javax.jms.Session;
 import javax.jms.TemporaryQueue;
 import javax.jms.TemporaryTopic;
 
+import org.apache.qpid.jms.meta.JmsConnectionId;
+import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.mock.MockProvider;
@@ -54,10 +56,13 @@ public class JmsConnectionTest {
 
     private MockProvider provider;
     private JmsConnection connection;
+    private JmsConnectionInfo connectionInfo;
 
     @Before
     public void setUp() throws Exception {
         provider = (MockProvider) MockProviderFactory.create(new URI("mock://localhost"));
+        connectionInfo = new JmsConnectionInfo(new JmsConnectionId("ID:TEST:1"));
+        connectionInfo.setClientId(clientIdGenerator.generateId(), false);
     }
 
     @After
@@ -70,12 +75,12 @@ public class JmsConnectionTest {
     @Test(timeout=30000, expected=JMSException.class)
     public void testJmsConnectionThrowsJMSExceptionProviderStartFails() throws JMSException, IllegalStateException, IOException {
         provider.getConfiguration().setFailOnStart(true);
-        try (JmsConnection connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);) {}
+        try (JmsConnection connection = new JmsConnection(connectionInfo, provider);) {}
     }
 
     @Test(timeout=30000)
     public void testStateAfterCreate() throws JMSException {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
 
         assertFalse(connection.isStarted());
         assertFalse(connection.isClosed());
@@ -84,7 +89,7 @@ public class JmsConnectionTest {
 
     @Test(timeout=30000)
     public void testGetExceptionListener() throws JMSException {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
 
         assertNull(connection.getExceptionListener());
         connection.setExceptionListener(new ExceptionListener() {
@@ -99,7 +104,7 @@ public class JmsConnectionTest {
 
     @Test(timeout=30000)
     public void testReplacePrefetchPolicy() throws JMSException {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
 
         JmsDefaultPrefetchPolicy newPolicy = new JmsDefaultPrefetchPolicy();
         newPolicy.setAll(1);
@@ -111,13 +116,13 @@ public class JmsConnectionTest {
 
     @Test(timeout=30000)
     public void testGetConnectionId() throws JMSException {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
         assertEquals("ID:TEST:1", connection.getId().toString());
     }
 
     @Test(timeout=30000)
     public void testAddConnectionListener() throws JMSException {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
         JmsConnectionListener listener = new JmsDefaultConnectionListener();
         assertFalse(connection.removeConnectionListener(listener));
         connection.addConnectionListener(listener);
@@ -126,7 +131,7 @@ public class JmsConnectionTest {
 
     @Test(timeout=30000)
     public void testConnectionStart() throws JMSException, IOException {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
 
         assertFalse(connection.isConnected());
         connection.start();
@@ -135,7 +140,7 @@ public class JmsConnectionTest {
 
     @Test(timeout=30000)
     public void testConnectionMulitpleStartCalls() throws JMSException, IOException {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
 
         assertFalse(connection.isConnected());
         connection.start();
@@ -146,7 +151,7 @@ public class JmsConnectionTest {
 
     @Test(timeout=30000)
     public void testConnectionStartAndStop() throws JMSException, IOException {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
 
         assertFalse(connection.isConnected());
         connection.start();
@@ -157,14 +162,14 @@ public class JmsConnectionTest {
 
     @Test(timeout=30000, expected=InvalidClientIDException.class)
     public void testSetClientIDFromNull() throws JMSException, IOException {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
         assertFalse(connection.isConnected());
         connection.setClientID("");
     }
 
     @Test(timeout=30000)
     public void testCreateNonTXSessionWithTXAckMode() throws JMSException, IOException {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
         connection.start();
 
         try {
@@ -176,7 +181,7 @@ public class JmsConnectionTest {
 
     @Test(timeout=30000)
     public void testCreateNonTXSessionWithUnknownAckMode() throws JMSException, IOException {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
         connection.start();
 
         try {
@@ -188,7 +193,7 @@ public class JmsConnectionTest {
 
     @Test(timeout=30000)
     public void testCreateSessionWithUnknownAckMode() throws JMSException, IOException {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
         connection.start();
 
         try {
@@ -200,7 +205,7 @@ public class JmsConnectionTest {
 
     @Test(timeout=30000)
     public void testCreateSessionDefaultMode() throws JMSException, IOException {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
         connection.start();
 
         JmsSession session = (JmsSession) connection.createSession();
@@ -209,14 +214,14 @@ public class JmsConnectionTest {
 
     @Test(timeout=30000, expected=InvalidClientIDException.class)
     public void testSetClientIDFromEmptyString() throws JMSException, IOException {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
         assertFalse(connection.isConnected());
         connection.setClientID(null);
     }
 
     @Test(timeout=30000, expected=IllegalStateException.class)
     public void testSetClientIDFailsOnSecondCall() throws JMSException, IOException {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
 
         assertFalse(connection.isConnected());
         connection.setClientID("TEST-ID");
@@ -226,7 +231,7 @@ public class JmsConnectionTest {
 
     @Test(timeout=30000, expected=IllegalStateException.class)
     public void testSetClientIDFailsAfterStart() throws JMSException, IOException {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
 
         assertFalse(connection.isConnected());
         connection.start();
@@ -236,7 +241,7 @@ public class JmsConnectionTest {
 
     @Test(timeout=30000)
     public void testDeleteOfTempQueueOnClosedConnection() throws JMSException, IOException {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -253,7 +258,7 @@ public class JmsConnectionTest {
 
     @Test(timeout=30000)
     public void testDeleteOfTempTopicOnClosedConnection() throws JMSException, IOException {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
         connection.start();
 
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -270,7 +275,7 @@ public class JmsConnectionTest {
 
     @Test(timeout=30000)
     public void testConnectionCreatedSessionRespectsAcknowledgementMode() throws Exception {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
         connection.start();
 
         JmsSession session = (JmsSession) connection.createSession(Session.SESSION_TRANSACTED);
@@ -283,7 +288,7 @@ public class JmsConnectionTest {
 
     @Test(timeout=30000)
     public void testConnectionMetaData() throws Exception {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
 
         ConnectionMetaData metaData = connection.getMetaData();
 
@@ -305,37 +310,37 @@ public class JmsConnectionTest {
 
     @Test(timeout=30000, expected=JMSException.class)
     public void testCreateConnectionConsumer() throws Exception {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
         connection.createConnectionConsumer((JmsDestination) new JmsTopic(), "", null, 1);
     }
 
     @Test(timeout=30000, expected=JMSException.class)
     public void testCreateConnectionTopicConsumer() throws Exception {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
         connection.createConnectionConsumer(new JmsTopic(), "", null, 1);
     }
 
     @Test(timeout=30000, expected=JMSException.class)
     public void testCreateConnectionQueueConsumer() throws Exception {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
         connection.createConnectionConsumer(new JmsQueue(), "", null, 1);
     }
 
     @Test(timeout=30000, expected=JMSException.class)
     public void testCreateDurableConnectionQueueConsumer() throws Exception {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
         connection.createDurableConnectionConsumer(new JmsTopic(), "", "", null, 1);
     }
 
     @Test(timeout=30000, expected=JMSException.class)
     public void testCreateSharedConnectionConsumer() throws Exception {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
         connection.createSharedConnectionConsumer(new JmsTopic(), "id", "", null, 1);
     }
 
     @Test(timeout=30000, expected=JMSException.class)
     public void testCreateSharedDurableConnectionConsumer() throws Exception {
-        connection = new JmsConnection("ID:TEST:1", provider, clientIdGenerator);
+        connection = new JmsConnection(connectionInfo, provider);
         connection.createSharedDurableConnectionConsumer(new JmsTopic(), "id", "", null, 1);
     }
 }

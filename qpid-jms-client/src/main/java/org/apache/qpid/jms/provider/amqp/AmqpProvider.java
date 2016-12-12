@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.JMSException;
-import javax.jms.JMSSecurityException;
 
 import org.apache.qpid.jms.JmsTemporaryDestination;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
@@ -103,7 +102,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     private ProviderListener listener;
     private AmqpConnection connection;
-    private AmqpSaslAuthenticator authenticator;
+    private volatile AmqpSaslAuthenticator authenticator;
     private org.apache.qpid.jms.transports.Transport transport;
     private String transportType = AmqpProviderFactory.DEFAULT_TRANSPORT_TYPE;
     private String vhost;
@@ -125,7 +124,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private final Collector protonCollector = new CollectorImpl();
     private final Connection protonConnection = Connection.Factory.create();
 
-    private AsyncResult connectionOpenRequest;
+    private AsyncResult connectionRequest;
     private ScheduledFuture<?> nextIdleTimeoutCheck;
 
     /**
@@ -153,16 +152,72 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     }
 
     @Override
-    public void connect() throws IOException {
+    public void connect(final JmsConnectionInfo connectionInfo) throws IOException {
         checkClosed();
 
-        try {
-            transport = TransportFactory.create(getTransportType(), getRemoteURI());
-        } catch (Exception e) {
-            throw IOExceptionSupport.create(e);
+        final ProviderFuture connectRequest = new ProviderFuture();
+
+        serializer.execute(new Runnable() {
+
+            @Override
+            public void run() {
+
+                connectionRequest = connectRequest;
+
+                protonTransport.setEmitFlowEventOnSend(false);
+
+                if (getMaxFrameSize() > 0) {
+                    protonTransport.setMaxFrameSize(getMaxFrameSize());
+                }
+
+                protonTransport.setChannelMax(getChannelMax());
+                protonTransport.setIdleTimeout(idleTimeout);
+                protonTransport.bind(protonConnection);
+                protonConnection.collect(protonCollector);
+
+                try {
+                    transport = TransportFactory.create(getTransportType(), getRemoteURI());
+                } catch (Exception e) {
+                    connectionRequest.onFailure(IOExceptionSupport.create(e));
+                }
+
+                transport.setTransportListener(AmqpProvider.this);
+
+                try {
+                    transport.connect();
+                } catch (Exception e) {
+                    connectionRequest.onFailure(IOExceptionSupport.create(e));
+                }
+
+                if (saslLayer) {
+                    Sasl sasl = protonTransport.sasl();
+                    sasl.client();
+
+                    String hostname = getVhost();
+                    if (hostname == null) {
+                        hostname = remoteURI.getHost();
+                    } else if (hostname.isEmpty()) {
+                        hostname = null;
+                    }
+
+                    sasl.setRemoteHostname(hostname);
+
+                    authenticator = new AmqpSaslAuthenticator(connectionRequest, sasl, connectionInfo, transport.getLocalPrincipal(), saslMechanisms);
+                }
+
+                if (saslLayer) {
+                    pumpToProtonTransport();
+                } else {
+                    connectRequest.onSuccess();
+                }
+            }
+        });
+
+        if (connectionInfo.getConnectTimeout() != JmsConnectionInfo.INFINITE) {
+            connectRequest.sync(connectionInfo.getConnectTimeout(), TimeUnit.MILLISECONDS);
+        } else {
+            connectRequest.sync();
         }
-        transport.setTransportListener(this);
-        transport.connect();
     }
 
     @Override
@@ -271,35 +326,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         public void processConnectionInfo(JmsConnectionInfo connectionInfo) throws Exception {
                             AmqpProvider.this.connectionInfo = connectionInfo;
 
-                            protonTransport.setEmitFlowEventOnSend(false);
-
-                            if (getMaxFrameSize() > 0) {
-                                protonTransport.setMaxFrameSize(getMaxFrameSize());
-                            }
-
-                            protonTransport.setChannelMax(getChannelMax());
-                            protonTransport.setIdleTimeout(idleTimeout);
-                            protonTransport.bind(protonConnection);
-                            protonConnection.collect(protonCollector);
-
-                            if (saslLayer) {
-                                Sasl sasl = protonTransport.sasl();
-                                sasl.client();
-
-                                String hostname = getVhost();
-                                if (hostname == null) {
-                                    hostname = remoteURI.getHost();
-                                } else if (hostname.isEmpty()) {
-                                    hostname = null;
-                                }
-
-                                sasl.setRemoteHostname(hostname);
-
-                                authenticator = new AmqpSaslAuthenticator(sasl, connectionInfo, transport.getLocalPrincipal(), saslMechanisms);
-                            }
-
                             AmqpConnectionBuilder builder = new AmqpConnectionBuilder(AmqpProvider.this, connectionInfo);
-                            AsyncResult wrappedOpenRequest = new AsyncResult() {
+                            connectionRequest = new AsyncResult() {
                                 @Override
                                 public void onSuccess() {
                                     fireConnectionEstablished();
@@ -317,9 +345,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                                 }
                             };
 
-                            connectionOpenRequest = wrappedOpenRequest;
-
-                            builder.buildResource(wrappedOpenRequest);
+                            builder.buildResource(connectionRequest);
                         }
 
                         @Override
@@ -879,9 +905,14 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
         try {
             if (authenticator.authenticate()) {
+                if (!authenticator.wasSuccessful()) {
+                    // Close the transport to avoid emitting any additional frames.
+                    org.apache.qpid.proton.engine.Transport t = protonConnection.getTransport();
+                    t.close_head();
+                }
                 authenticator = null;
             }
-        } catch (JMSSecurityException ex) {
+        } catch (Throwable ex) {
             try {
                 org.apache.qpid.proton.engine.Transport t = protonConnection.getTransport();
                 t.close_head();
@@ -925,7 +956,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     void fireConnectionEstablished() {
         // The request onSuccess calls this method
-        connectionOpenRequest = null;
+        connectionRequest = null;
 
         // Using nano time since it is not related to the wall clock, which may change
         long now = TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
@@ -950,9 +981,9 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     }
 
     void fireProviderException(Throwable ex) {
-        if (connectionOpenRequest != null) {
-            connectionOpenRequest.onFailure(ex);
-            connectionOpenRequest = null;
+        if (connectionRequest != null) {
+            connectionRequest.onFailure(ex);
+            connectionRequest = null;
         }
 
         ProviderListener listener = this.listener;

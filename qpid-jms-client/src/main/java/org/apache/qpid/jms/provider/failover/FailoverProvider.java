@@ -106,6 +106,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     private long nextReconnectDelay = -1;
     private IOException failureCause;
     private URI connectedURI;
+    private volatile JmsConnectionInfo connectionInfo;
 
     // Timeout values configured via JmsConnectionInfo
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
@@ -160,8 +161,9 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     }
 
     @Override
-    public void connect() throws IOException {
+    public void connect(JmsConnectionInfo connectionInfo) throws IOException {
         checkClosed();
+        this.connectionInfo = connectionInfo;
         LOG.debug("Initiating initial connection attempt task");
         triggerReconnectionAttempt();
     }
@@ -690,7 +692,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     try {
                         LOG.debug("Connection attempt:[{}] to: {} in-progress", reconnectAttempts, target);
                         provider = ProviderFactory.create(target);
-                        provider.connect();
+                        provider.connect(connectionInfo);
                         initializeNewConnection(provider);
                         return;
                     } catch (Throwable e) {

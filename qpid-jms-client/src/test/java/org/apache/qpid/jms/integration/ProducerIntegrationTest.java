@@ -677,13 +677,13 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             String uri = "amqp://127.0.0.1:" + testPeer.getServerPort() + "?jms.messageIDPolicy.messageIDType=UUID_STRING";
             JmsConnectionFactory factory = new JmsConnectionFactory(uri);
 
-            Connection connection = factory.createConnection();
-            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
             testPeer.expectBegin();
-
             testPeer.expectBegin();
             testPeer.expectSenderAttach();
 
+            Connection connection = factory.createConnection();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             String queueName = "myQueue";
             Queue queue = session.createQueue(queueName);
@@ -735,13 +735,13 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             String uri = "amqp://127.0.0.1:" + testPeer.getServerPort() + "?jms.messageIDPolicy.messageIDType=UUID";
             JmsConnectionFactory factory = new JmsConnectionFactory(uri);
 
-            Connection connection = factory.createConnection();
-            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
             testPeer.expectBegin();
-
             testPeer.expectBegin();
             testPeer.expectSenderAttach();
 
+            Connection connection = factory.createConnection();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             String queueName = "myQueue";
             Queue queue = session.createQueue(queueName);
@@ -790,13 +790,13 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             String uri = "amqp://127.0.0.1:" + testPeer.getServerPort() + "?jms.messageIDPolicy.messageIDType=PREFIXED_UUID_STRING";
             JmsConnectionFactory factory = new JmsConnectionFactory(uri);
 
-            Connection connection = factory.createConnection();
-            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
             testPeer.expectBegin();
-
             testPeer.expectBegin();
             testPeer.expectSenderAttach();
 
+            Connection connection = factory.createConnection();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             String queueName = "myQueue";
             Queue queue = session.createQueue(queueName);
@@ -1587,7 +1587,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             String user = "user";
             String pass = "qwerty123456";
 
-            testPeer.expectSaslPlainConnect(user, pass, null, null);
+            testPeer.expectSaslPlain(user, pass);
+            testPeer.expectOpen();
             testPeer.expectBegin();
             testPeer.expectBegin();
             testPeer.expectSenderAttach();
@@ -1630,7 +1631,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             String user = "user";
             String pass = "qwerty123456";
 
-            testPeer.expectSaslPlainConnect(user, pass, null, null);
+            testPeer.expectSaslPlain(user, pass);
+            testPeer.expectOpen();
             testPeer.expectBegin();
             testPeer.expectBegin();
             testPeer.expectSenderAttach();
@@ -1672,7 +1674,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             String user = "user";
             String pass = "qwerty123456";
 
-            testPeer.expectSaslPlainConnect(user, pass, null, null);
+            testPeer.expectSaslPlain(user, pass);
+            testPeer.expectOpen();
             testPeer.expectBegin();
             testPeer.expectBegin();
             testPeer.expectSenderAttach();
@@ -1718,7 +1721,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             String user = "user";
             String pass = "qwerty123456";
 
-            testPeer.expectSaslPlainConnect(user, pass, null, null);
+            testPeer.expectSaslPlain(user, pass);
+            testPeer.expectOpen();
             testPeer.expectBegin();
             testPeer.expectBegin();
             testPeer.expectSenderAttach();
@@ -1789,7 +1793,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             String user = "user";
             String pass = "qwerty123456";
 
-            testPeer.expectSaslPlainConnect(user, pass, null, null);
+            testPeer.expectSaslPlain(user, pass);
+            testPeer.expectOpen();
             testPeer.expectBegin();
             testPeer.expectBegin();
             testPeer.expectSenderAttach();
@@ -1835,7 +1840,8 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             String user = "user";
             String pass = "qwerty123456";
 
-            testPeer.expectSaslPlainConnect(user, pass, null, null);
+            testPeer.expectSaslPlain(user, pass);
+            testPeer.expectOpen();
             testPeer.expectBegin();
             testPeer.expectBegin();
             testPeer.expectSenderAttach();

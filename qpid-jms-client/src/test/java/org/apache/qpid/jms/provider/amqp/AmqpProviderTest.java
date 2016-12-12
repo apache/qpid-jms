@@ -54,12 +54,15 @@ public class AmqpProviderTest extends QpidJmsTestCase {
     private TestAmqpPeer testPeer;
     private URI peerURI;
     private AmqpProvider provider;
+    private JmsConnectionInfo connectionInfo;
 
     @Override
     @Before
     public void setUp() throws Exception {
         testPeer = new TestAmqpPeer();
+        testPeer.setSuppressReadExceptionOnClose(true);
         peerURI = new URI("amqp://localhost:" + testPeer.getServerPort());
+        connectionInfo = new JmsConnectionInfo(new JmsConnectionId("ID:TEST-Connection:1"));
     }
 
     @Override
@@ -92,7 +95,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         provider = new AmqpProvider(peerURI);
         provider.setTransportType("ftp");
         try {
-            provider.connect();
+            provider.connect(connectionInfo);
             fail("Should have failed to connect.");
         } catch (Exception ex) {
         }
@@ -103,7 +106,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         provider = new AmqpProvider(peerURI);
         testPeer.close();
         try {
-            provider.connect();
+            provider.connect(connectionInfo);
             fail("Should have failed to connect.");
         } catch (Exception ex) {
         }
@@ -111,8 +114,10 @@ public class AmqpProviderTest extends QpidJmsTestCase {
 
     @Test(timeout=20000)
     public void testStartThrowsIfNoListenerSet() throws Exception {
+        testPeer.expectSaslAnonymous();
+
         provider = new AmqpProvider(peerURI);
-        provider.connect();
+        provider.connect(connectionInfo);
 
         try {
             provider.start();
@@ -123,16 +128,20 @@ public class AmqpProviderTest extends QpidJmsTestCase {
 
     @Test(timeout=20000)
     public void testToString() throws IOException {
+        testPeer.expectSaslAnonymous();
+
         provider = new AmqpProvider(peerURI);
-        provider.connect();
+        provider.connect(connectionInfo);
         assertTrue(provider.toString().contains("localhost"));
         assertTrue(provider.toString().contains(String.valueOf(peerURI.getPort())));
     }
 
     @Test(timeout=20000)
     public void testClosedProviderThrowsIOException() throws IOException {
+        testPeer.expectSaslAnonymous();
+
         provider = new AmqpProvider(peerURI);
-        provider.connect();
+        provider.connect(connectionInfo);
         provider.close();
 
         try {
@@ -141,7 +150,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         } catch (IOException ex) {}
 
         try {
-            provider.connect();
+            provider.connect(connectionInfo);
             fail("Should have thrown an IOException when closed.");
         } catch (IOException ex) {}
 
@@ -159,10 +168,14 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         final long SEND_TIMEOUT = TimeUnit.SECONDS.toMillis(6);
         final long REQUEST_TIMEOUT = TimeUnit.SECONDS.toMillis(7);
 
+        connectionInfo.setUsername(TEST_USERNAME);
+        connectionInfo.setPassword(TEST_PASSWORD);
+
         provider = new AmqpProvider(peerURI);
-        testPeer.expectSaslPlainConnect(TEST_USERNAME, TEST_PASSWORD, null, null);
+        testPeer.expectSaslPlain(TEST_USERNAME, TEST_PASSWORD);
+        testPeer.expectOpen();
         testPeer.expectBegin();
-        provider.connect();
+        provider.connect(connectionInfo);
         testPeer.expectClose();
 
         JmsConnectionInfo connectionInfo = createConnectionInfo();

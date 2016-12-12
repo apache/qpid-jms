@@ -52,7 +52,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     private static final String CLIENT_JKS_TRUSTSTORE = "src/test/resources/client-jks.truststore";
     private static final String PASSWORD = "password";
 
-    @Test(timeout = 20000)
+    @Test //(timeout = 20000)  // TODO
     public void testSaslExternalConnection() throws Exception {
         TransportSslOptions sslOptions = new TransportSslOptions();
         sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
@@ -70,7 +70,9 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer(context, true);) {
             // Expect an EXTERNAL connection
-            testPeer.expectSaslExternalConnect();
+            testPeer.expectSaslExternal();
+            testPeer.expectOpen();
+
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin();
 
@@ -95,7 +97,9 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
             String user = "user";
             String pass = "qwerty123456";
 
-            testPeer.expectSaslPlainConnect(user, pass, null, null);
+            testPeer.expectSaslPlain(user, pass);
+            testPeer.expectOpen();
+
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin();
 
@@ -116,7 +120,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     public void testSaslAnonymousConnection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Expect an ANOYMOUS connection
-            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin();
 
@@ -172,7 +177,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     private void doMechanismSelectedTestImpl(String username, String password, Symbol clientSelectedMech, Symbol[] serverMechs, boolean wait) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
-            testPeer.expectFailingSaslConnect(serverMechs, clientSelectedMech);
+            testPeer.expectFailingSaslAuthentication(serverMechs, clientSelectedMech);
 
             ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + "?jms.clientID=myclientid");
             try {
@@ -223,7 +228,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
                                "transport.keyStorePassword=" + PASSWORD;
             }
 
-            testPeer.expectFailingSaslConnect(serverMechs, clientSelectedMech);
+            testPeer.expectFailingSaslAuthentication(serverMechs, clientSelectedMech);
 
             JmsConnectionFactory factory = new JmsConnectionFactory("amqps://localhost:" + testPeer.getServerPort() + connOptions);
             try {
@@ -285,7 +290,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     private void doMechanismSelectionRestrictedTestImpl(String username, String password, Symbol clientSelectedMech, Symbol[] serverMechs, String mechanismsOptionValue) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
-            testPeer.expectFailingSaslConnect(serverMechs, clientSelectedMech);
+            testPeer.expectFailingSaslAuthentication(serverMechs, clientSelectedMech);
 
             String uriOptions = "?jms.clientID=myclientid";
             if(mechanismsOptionValue != null) {

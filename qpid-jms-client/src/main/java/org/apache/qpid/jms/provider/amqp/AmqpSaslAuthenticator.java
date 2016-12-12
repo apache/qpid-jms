@@ -24,6 +24,7 @@ import javax.jms.JMSSecurityException;
 import javax.security.sasl.SaslException;
 
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
+import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.sasl.Mechanism;
 import org.apache.qpid.jms.sasl.SaslMechanismFinder;
 import org.apache.qpid.proton.engine.Sasl;
@@ -38,6 +39,7 @@ public class AmqpSaslAuthenticator {
     private Mechanism mechanism;
     private final Principal localPrincipal;
     private Set<String> mechanismsRestriction;
+    private final AsyncResult authenticationRequest;
 
     /**
      * Create the authenticator and initialize it.
@@ -52,20 +54,22 @@ public class AmqpSaslAuthenticator {
      *        The possible mechanism(s) to which the client should restrict its
      *        mechanism selection to if offered by the server
      */
-    public AmqpSaslAuthenticator(Sasl sasl, JmsConnectionInfo info, Principal localPrincipal, String[] mechanismsRestriction) {
+    public AmqpSaslAuthenticator(AsyncResult request, Sasl sasl, JmsConnectionInfo info, Principal localPrincipal, String[] mechanismsRestriction) {
         this.sasl = sasl;
         this.info = info;
         this.localPrincipal = localPrincipal;
-        if(mechanismsRestriction != null) {
+        this.authenticationRequest = request;
+
+        if (mechanismsRestriction != null) {
             Set<String> mechs = new HashSet<String>();
-            for(int i = 0; i < mechanismsRestriction.length; i++) {
+            for (int i = 0; i < mechanismsRestriction.length; i++) {
                 String mech = mechanismsRestriction[i];
-                if(!mech.trim().isEmpty()) {
+                if (!mech.trim().isEmpty()) {
                     mechs.add(mech);
                 }
             }
 
-            if(!mechs.isEmpty()) {
+            if (!mechs.isEmpty()) {
                 this.mechanismsRestriction = mechs;
             }
         }
@@ -77,27 +81,50 @@ public class AmqpSaslAuthenticator {
      * successful authentication or a JMSSecurityException is thrown indicating that the
      * handshake failed.
      *
-     * @return true if the SASL handshake completes successfully.
+     * @param authenticationRequest
+     * 		The request that is awaiting the result of authentication.
      *
-     * @throws JMSSecurityException if a security violation is detected during the handshake.
+     * @return true if the authentication process completed.
      */
     public boolean authenticate() throws JMSSecurityException {
+        try {
+            switch (sasl.getState()) {
+                case PN_SASL_IDLE:
+                    handleSaslInit();
+                    break;
+                case PN_SASL_STEP:
+                    handleSaslStep();
+                    break;
+                case PN_SASL_FAIL:
+                    handleSaslFail();
+                    break;
+                case PN_SASL_PASS:
+                    authenticationRequest.onSuccess();
+                default:
+                    break;
+            }
+        } catch (JMSSecurityException result) {
+            authenticationRequest.onFailure(result);
+        }
+
+        return authenticationRequest.isComplete();
+    }
+
+    public boolean wasSuccessful() throws IllegalStateException {
         switch (sasl.getState()) {
+            case PN_SASL_CONF:
             case PN_SASL_IDLE:
-                handleSaslInit();
-                break;
             case PN_SASL_STEP:
-                handleSaslStep();
                 break;
             case PN_SASL_FAIL:
-                handleSaslFail();
-                break;
+                return false;
             case PN_SASL_PASS:
                 return true;
             default:
+                break;
         }
 
-        return false;
+        throw new IllegalStateException("Authentication has not completed yet.");
     }
 
     private void handleSaslInit() throws JMSSecurityException {

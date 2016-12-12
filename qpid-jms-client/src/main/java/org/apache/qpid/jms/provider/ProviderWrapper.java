@@ -24,6 +24,7 @@ import javax.jms.JMSException;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessageFactory;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
+import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsSessionId;
@@ -51,8 +52,8 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
     }
 
     @Override
-    public void connect() throws IOException {
-        next.connect();
+    public void connect(JmsConnectionInfo connectionInfo) throws IOException {
+        next.connect(connectionInfo);
     }
 
     @Override

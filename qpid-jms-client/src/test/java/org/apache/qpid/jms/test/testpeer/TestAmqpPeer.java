@@ -421,9 +421,7 @@ public class TestAmqpPeer implements AutoCloseable
         return openFrame;
     }
 
-    public void expectSaslConnect(Symbol mechanism, Matcher<Binary> initialResponseMatcher, Symbol[] desiredCapabilities, Symbol[] serverCapabilities,
-                                  Matcher<?> clientPropertiesMatcher, Map<Symbol, Object> serverProperties, Matcher<?> idleTimeoutMatcher,
-                                  Matcher<?> hostnameMatcher, boolean deferOpened)
+    public void expectSaslAuthentication(Symbol mechanism, Matcher<Binary> initialResponseMatcher, Matcher<?> hostnameMatcher)
     {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(mechanism);
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
@@ -459,55 +457,9 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(saslInitMatcher);
 
         addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
-
-        OpenFrame open = createOpenFrame();
-        if(serverCapabilities != null)
-        {
-            open.setOfferedCapabilities(serverCapabilities);
-        }
-
-        if(serverProperties != null)
-        {
-            open.setProperties(serverProperties);
-        }
-
-        OpenMatcher openMatcher = new OpenMatcher().withContainerId(notNullValue(String.class));
-        if (!deferOpened) {
-            openMatcher.onCompletion(new FrameSender(this, FrameType.AMQP, 0, open, null));
-        }
-
-        if (desiredCapabilities != null)
-        {
-            openMatcher.withDesiredCapabilities(arrayContaining(desiredCapabilities));
-        }
-        else
-        {
-            openMatcher.withDesiredCapabilities(nullValue());
-        }
-
-        if(idleTimeoutMatcher !=null)
-        {
-            openMatcher.withIdleTimeOut(idleTimeoutMatcher);
-        }
-
-        if(hostnameMatcher != null)
-        {
-            openMatcher.withHostname(hostnameMatcher);
-        }
-
-        if(clientPropertiesMatcher != null) {
-            openMatcher.withProperties(clientPropertiesMatcher);
-        }
-
-        addHandler(openMatcher);
     }
 
-    public void expectSaslPlainConnect(String username, String password, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties)
-    {
-        expectSaslPlainConnect(username, password, new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, serverCapabilities, serverProperties);
-    }
-
-    public void expectSaslPlainConnect(String username, String password, Symbol[] desiredCapabilities, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties)
+    public void expectSaslPlain(String username, String password)
     {
         byte[] usernameBytes = username.getBytes();
         byte[] passwordBytes = password.getBytes();
@@ -517,40 +469,30 @@ public class TestAmqpPeer implements AutoCloseable
 
         Matcher<Binary> initialResponseMatcher = equalTo(new Binary(data));
 
-        expectSaslConnect(PLAIN, initialResponseMatcher, desiredCapabilities, serverCapabilities, null, serverProperties, null, null, false);
+        expectSaslAuthentication(PLAIN, initialResponseMatcher, null);
     }
 
-    public void expectSaslExternalConnect()
+    public void expectSaslExternal()
     {
         if(!_driverRunnable.isNeedClientCert())
         {
             throw new IllegalStateException("need-client-cert must be enabled on the test peer");
         }
 
-        expectSaslConnect(EXTERNAL, equalTo(new Binary(new byte[0])), new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, null, null, null, null, false);
+        expectSaslAuthentication(EXTERNAL, equalTo(new Binary(new byte[0])), null);
     }
 
-    public void expectSaslAnonymousConnect()
+    public void expectSaslAnonymous()
     {
-        expectSaslAnonymousConnect(null, null);
+        expectSaslAnonymous(null);
     }
 
-    public void expectSaslAnonymousConnect(boolean deferOpened)
+    public void expectSaslAnonymous(Matcher<?> hostnameMatcher)
     {
-        expectSaslConnect(ANONYMOUS, equalTo(new Binary(new byte[0])), new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, null, null, null, null, deferOpened);
+        expectSaslAuthentication(ANONYMOUS, equalTo(new Binary(new byte[0])), hostnameMatcher);
     }
 
-    public void expectSaslAnonymousConnect(Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher)
-    {
-        expectSaslAnonymousConnect(idleTimeoutMatcher, hostnameMatcher, null, null);
-    }
-
-    public void expectSaslAnonymousConnect(Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher, Matcher<?> propertiesMatcher, Map<Symbol, Object> serverProperties)
-    {
-        expectSaslConnect(ANONYMOUS, equalTo(new Binary(new byte[0])), new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, propertiesMatcher, serverProperties, idleTimeoutMatcher, hostnameMatcher, false);
-    }
-
-    public void expectFailingSaslConnect(Symbol[] serverMechs, Symbol clientSelectedMech)
+    public void expectFailingSaslAuthentication(Symbol[] serverMechs, Symbol clientSelectedMech)
     {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(serverMechs);
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
@@ -604,12 +546,76 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(openMatcher);
     }
 
+    public void expectOpen() {
+        expectOpen(false);
+    }
+
+    public void expectOpen(boolean deferOpened) {
+        expectOpen(null, null, deferOpened);
+    }
+
+    public void expectOpen(Map<Symbol, Object> serverProperties) {
+        expectOpen(new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, serverProperties, null, null, false);
+    }
+
+    public void expectOpen(Matcher<?> clientPropertiesMatcher, Matcher<?> hostnameMatcher, boolean deferOpened) {
+        expectOpen(clientPropertiesMatcher, nullValue(), hostnameMatcher, deferOpened);
+    }
+
+    public void expectOpen(Matcher<?> clientPropertiesMatcher, Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher, boolean deferOpened) {
+        expectOpen(new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, clientPropertiesMatcher, null, null, hostnameMatcher, deferOpened);
+    }
+
+    public void expectOpen(Symbol[] desiredCapabilities, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties) {
+        expectOpen(desiredCapabilities, serverCapabilities, null, serverProperties, null, null, false);
+    }
+
+    public void expectOpen(Symbol[] desiredCapabilities, Symbol[] serverCapabilities,
+                           Matcher<?> clientPropertiesMatcher, Map<Symbol, Object> serverProperties,
+                           Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher, boolean deferOpened) {
+
+        OpenFrame open = createOpenFrame();
+        if (serverCapabilities != null) {
+            open.setOfferedCapabilities(serverCapabilities);
+        }
+
+        if (serverProperties != null) {
+            open.setProperties(serverProperties);
+        }
+
+        OpenMatcher openMatcher = new OpenMatcher().withContainerId(notNullValue(String.class));
+        if (!deferOpened) {
+            openMatcher.onCompletion(new FrameSender(this, FrameType.AMQP, 0, open, null));
+        }
+
+        if (desiredCapabilities != null) {
+            openMatcher.withDesiredCapabilities(arrayContaining(desiredCapabilities));
+        } else {
+            openMatcher.withDesiredCapabilities(nullValue());
+        }
+
+        if (idleTimeoutMatcher != null) {
+            openMatcher.withIdleTimeOut(idleTimeoutMatcher);
+        }
+
+        if (hostnameMatcher != null) {
+            openMatcher.withHostname(hostnameMatcher);
+        }
+
+        if (clientPropertiesMatcher != null) {
+            openMatcher.withProperties(clientPropertiesMatcher);
+        }
+
+        addHandler(openMatcher);
+    }
+
     public void rejectConnect(Symbol errorType, String errorMessage, Map<Symbol, Object> errorInfo) {
         // Expect a connection, establish through the SASL negotiation and sending of the Open frame
         Map<Symbol, Object> serverProperties = new HashMap<Symbol, Object>();
         serverProperties.put(AmqpSupport.CONNECTION_OPEN_FAILED, true);
 
-        expectSaslAnonymousConnect(null, null, null, serverProperties);
+        expectSaslAnonymous();
+        expectOpen(serverProperties);
 
         // Now generate the Close frame with the supplied error
         final FrameSender closeSender = createCloseFrameSender(errorType, errorMessage, errorInfo, 0);

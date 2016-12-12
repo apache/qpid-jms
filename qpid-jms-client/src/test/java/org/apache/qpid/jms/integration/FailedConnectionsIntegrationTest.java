@@ -74,7 +74,8 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 20000)
     public void testConnectThrowsTimedOutExceptioWhenResponseNotSent() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            testPeer.expectSaslAnonymousConnect(true);
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen(true);
             testPeer.expectClose();
             try {
                 establishAnonymousConnecton(testPeer, true, "jms.connectTimeout=500");

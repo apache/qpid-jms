@@ -113,7 +113,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         return forceAsyncSend;
     }
 
-    public void setForceAsyncSends(boolean forceAsyncSend) {
+    public void setForceAsyncSend(boolean forceAsyncSend) {
         this.forceAsyncSend = forceAsyncSend;
     }
 

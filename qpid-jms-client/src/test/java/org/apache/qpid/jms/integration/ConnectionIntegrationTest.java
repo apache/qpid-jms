@@ -292,7 +292,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
                     hasEntry(AmqpSupport.VERSION, MetaDataSupport.PROVIDER_VERSION),
                     hasEntry(AmqpSupport.PLATFORM, MetaDataSupport.PLATFORM_DETAILS));
 
-            testPeer.expectSaslAnonymousConnect(null, null, connPropsMatcher, null);
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen(connPropsMatcher, null, false);
             testPeer.expectBegin();
 
             ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + "?jms.clientID=foo");
@@ -354,7 +355,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
 
     private void doAmqpHostnameTestImpl(String amqpHostname, boolean setHostnameOption, Matcher<?> hostnameMatcher) throws JMSException, InterruptedException, Exception, IOException {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            testPeer.expectSaslAnonymousConnect(null, hostnameMatcher);
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen(null, hostnameMatcher, false);
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin();
 

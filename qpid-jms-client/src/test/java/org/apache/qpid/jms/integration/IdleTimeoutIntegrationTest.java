@@ -21,7 +21,6 @@
 package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -52,7 +51,8 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 20000)
     public void testIdleTimeoutIsAdvertisedByDefault() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            testPeer.expectSaslAnonymousConnect(greaterThan(UnsignedInteger.valueOf(0)), null);
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen(null, greaterThan(UnsignedInteger.valueOf(0)), null, false);
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin();
 
@@ -75,7 +75,9 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
             int configuredTimeout = 54320;
             int advertisedValue = configuredTimeout / 2;
 
-            testPeer.expectSaslAnonymousConnect(equalTo(UnsignedInteger.valueOf(advertisedValue)), null);
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen(null, greaterThan(UnsignedInteger.valueOf(advertisedValue)), null, false);
+
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin();
 
@@ -101,7 +103,9 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
 
             testPeer.setAdvertisedIdleTimeout(advertisedTimeout);
 
-            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin();
 
@@ -139,7 +143,9 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
 
             testPeer.setAdvertisedIdleTimeout(advertisedTimeout);
 
-            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin();
 
@@ -168,7 +174,9 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             int configuredTimeout = 200;
 
-            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin();
 
@@ -204,7 +212,9 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
 
             final CountDownLatch latch = new CountDownLatch(cycles);
 
-            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin();
 

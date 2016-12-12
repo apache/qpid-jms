@@ -111,7 +111,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             originalPeer.rejectConnect(AmqpError.NOT_FOUND, "Resource could not be located", null);
 
-            finalPeer.expectSaslAnonymousConnect();
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
             finalPeer.expectBegin();
 
             final JmsConnection connection = establishAnonymousConnecton(originalPeer, finalPeer);
@@ -171,7 +172,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             LOG.info("Final peer is at: {}", finalURI);
 
             // Connect to the first
-            originalPeer.expectSaslAnonymousConnect();
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
             originalPeer.expectBegin();
 
             final JmsConnection connection = establishAnonymousConnecton(originalPeer, rejectingPeer, finalPeer);
@@ -200,7 +202,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             // Set expectations on rejecting and final peer
             rejectingPeer.expectSaslHeaderThenDrop();
 
-            finalPeer.expectSaslAnonymousConnect();
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
             finalPeer.expectBegin();
 
             // Close the original peer and wait for things to shake out.
@@ -233,7 +236,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             LOG.info("Final peer is at: {}", finalURI);
 
             // Connect to the first peer
-            originalPeer.expectSaslAnonymousConnect();
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
             originalPeer.expectBegin();
 
             final JmsConnection connection = establishAnonymousConnecton(originalPeer, finalPeer);
@@ -302,7 +306,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             originalPeer.waitForAllHandlersToComplete(3000);
 
             // Set the secondary peer to expect connection restoration, this time send disposition accepting the message
-            finalPeer.expectSaslAnonymousConnect();
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
             finalPeer.expectBegin();
             finalPeer.expectBegin();
             finalPeer.expectSenderAttach();
@@ -343,7 +348,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             LOG.info("Final peer is at: {}", finalURI);
 
             // Connect to the first peer
-            originalPeer.expectSaslAnonymousConnect();
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
             originalPeer.expectBegin();
             originalPeer.expectBegin();
             originalPeer.dropAfterLastHandler();
@@ -374,7 +380,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             // --- Post Failover Expectations of FinalPeer --- //
 
-            finalPeer.expectSaslAnonymousConnect();
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
             finalPeer.expectBegin();
             finalPeer.expectBegin();
 
@@ -399,7 +406,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             LOG.info("Original peer is at: {}", originalURI);
 
             // Connect to the first peer
-            originalPeer.expectSaslAnonymousConnect();
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
             originalPeer.expectBegin();
 
             int delay = 20000;
@@ -438,7 +446,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             LOG.info("Final peer is at: {}", finalURI);
 
             // Connect to the first peer
-            originalPeer.expectSaslAnonymousConnect();
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
             originalPeer.expectBegin();
             originalPeer.expectBegin();
             originalPeer.expectReceiverAttach();
@@ -470,7 +479,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             // --- Post Failover Expectations of FinalPeer --- //
 
-            finalPeer.expectSaslAnonymousConnect();
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
             finalPeer.expectBegin();
             finalPeer.expectBegin();
             finalPeer.expectReceiverAttach();
@@ -511,7 +521,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             LOG.info("Final peer is at: {}", finalURI);
 
             // Connect to the first peer
-            originalPeer.expectSaslAnonymousConnect();
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
             originalPeer.expectBegin();
             originalPeer.expectBegin();
             originalPeer.expectReceiverAttach();
@@ -543,7 +554,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             // --- Post Failover Expectations of FinalPeer --- //
 
-            finalPeer.expectSaslAnonymousConnect();
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
             finalPeer.expectBegin();
             finalPeer.expectBegin();
             finalPeer.expectReceiverAttach();
@@ -587,7 +599,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             LOG.info("Final peer is at: {}", finalURI);
 
             // Connect to the first peer
-            originalPeer.expectSaslAnonymousConnect();
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
             originalPeer.expectBegin();
             originalPeer.expectBegin();
             originalPeer.expectReceiverAttach();
@@ -621,7 +634,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
 
-            finalPeer.expectSaslAnonymousConnect();
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
             finalPeer.expectBegin();
             finalPeer.expectBegin();
             finalPeer.expectReceiverAttach();
@@ -665,7 +679,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             LOG.info("Final peer is at: {}", finalURI);
 
             // Connect to the first peer
-            originalPeer.expectSaslAnonymousConnect();
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
             originalPeer.expectBegin();
 
             final JmsConnection connection = establishAnonymousConnecton(originalPeer, finalPeer);
@@ -698,7 +713,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             // --- Post Failover Expectations of FinalPeer --- //
 
-            finalPeer.expectSaslAnonymousConnect();
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
             finalPeer.expectBegin();
             finalPeer.expectBegin();
             finalPeer.expectQueueBrowserAttach();
@@ -737,7 +753,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
     private void doCreateConsumerFailsWhenLinkRefusedTestImpl(boolean deferAttachResponseWrite) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
             testPeer.expectBegin();
 
             Connection connection = establishAnonymousConnecton(testPeer);
@@ -790,7 +807,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             LOG.info("Original peer is at: {}", originalURI);
             LOG.info("Final peer is at: {}", finalURI);
 
-            originalPeer.expectSaslAnonymousConnect();
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
             originalPeer.expectBegin();
 
             final JmsConnection connection = establishAnonymousConnecton(originalPeer, finalPeer);
@@ -827,7 +845,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             // --- Post Failover Expectations of FinalPeer --- //
 
-            finalPeer.expectSaslAnonymousConnect();
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
             finalPeer.expectBegin();
             finalPeer.expectBegin();
             finalPeer.expectCoordinatorAttach();
@@ -868,7 +887,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             LOG.info("Original peer is at: {}", originalURI);
             LOG.info("Final peer is at: {}", finalURI);
 
-            originalPeer.expectSaslAnonymousConnect();
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
             originalPeer.expectBegin();
             originalPeer.expectBegin();
             String dynamicAddress1 = "myTempTopicAddress";
@@ -899,7 +919,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             // --- Post Failover Expectations of FinalPeer --- //
 
-            finalPeer.expectSaslAnonymousConnect();
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
             finalPeer.expectBegin();
             String dynamicAddress2 = "myTempTopicAddress2";
             finalPeer.expectTempTopicCreationAttach(dynamicAddress2);
@@ -943,7 +964,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             LOG.info("Original peer is at: {}", peerURI);
 
             // Connect to the test peer
-            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
             testPeer.expectBegin();
             testPeer.dropAfterLastHandler();
 
@@ -998,7 +1020,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             LOG.info("Original peer is at: {}", peerURI);
 
             // Connect to the test peer
-            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
             testPeer.expectBegin();
             testPeer.expectBegin();
             testPeer.expectSenderAttach();
@@ -1060,7 +1083,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             LOG.info("Original peer is at: {}", peerURI);
 
             // Connect to the test peer
-            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
             testPeer.expectBegin();
             testPeer.expectBegin();
             testPeer.dropAfterLastHandler();
@@ -1120,7 +1144,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             final Connection connection = establishAnonymousConnecton(
                 "failover.reconnectDelay=2000&failover.maxReconnectAttempts=5", testPeer);
 
-            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
             testPeer.expectBegin();
             testPeer.expectBegin();
             testPeer.expectSenderAttach();
@@ -1157,7 +1182,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             final JmsConnection connection = establishAnonymousConnecton(
                 "failover.reconnectDelay=2000&failover.maxReconnectAttempts=5", testPeer);
 
-            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
             testPeer.expectBegin();
             testPeer.expectBegin();
             testPeer.expectSenderAttach();
@@ -1214,7 +1240,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 "failover.reconnectDelay=2000&failover.maxReconnectAttempts=60",
                 testPeer);
 
-            testPeer.expectSaslAnonymousConnect();
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
             testPeer.expectBegin();
             testPeer.expectBegin();
             testPeer.expectSenderAttach();

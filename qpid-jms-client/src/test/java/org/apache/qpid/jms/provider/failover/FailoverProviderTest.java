@@ -63,6 +63,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
 
     private List<URI> uris;
     private FailoverProvider provider;
+    private JmsConnectionInfo connection;
 
     @Override
     @Before
@@ -73,6 +74,8 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         uris.add(new URI("mock://192.168.2.2:5672"));
         uris.add(new URI("mock://192.168.2.3:5672"));
         uris.add(new URI("mock://192.168.2.4:5672"));
+
+        connection = createConnectionInfo();
 
         super.setUp();
     }
@@ -130,7 +133,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         provider = new FailoverProvider(uris, Collections.<String, String>emptyMap());
 
         assertNull(provider.getRemoteURI());
-        provider.connect();
+        provider.connect(connection);
         assertTrue("Should have a remote URI after connect", Wait.waitFor(new Wait.Condition() {
 
             @Override
@@ -145,7 +148,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         provider = new FailoverProvider(uris, Collections.<String, String>emptyMap());
 
         assertNotNull(provider.toString());
-        provider.connect();
+        provider.connect(connection);
         assertTrue("Should have a mock scheme after connect", Wait.waitFor(new Wait.Condition() {
 
             @Override
@@ -172,7 +175,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
             }
         });
 
-        provider.connect();
+        provider.connect(connection);
 
         ProviderFuture request = new ProviderFuture();
         provider.create(createConnectionInfo(), request);
@@ -192,7 +195,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         provider = new FailoverProvider(uris, Collections.<String, String>emptyMap());
         assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, provider.isRandomize());
         assertNull(provider.getRemoteURI());
-        provider.connect();
+        provider.connect(connection);
 
         try {
             provider.start();
@@ -398,7 +401,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
             }
         });
 
-        provider.connect();
+        provider.connect(connection);
         provider.start();
 
         JmsConnectionInfo connectionInfo = createConnectionInfo();

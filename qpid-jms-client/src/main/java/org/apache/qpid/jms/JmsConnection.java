@@ -78,7 +78,6 @@ import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.ProviderSynchronization;
-import org.apache.qpid.jms.util.IdGenerator;
 import org.apache.qpid.jms.util.ThreadPoolUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,7 +89,6 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsConnection.class);
 
-    private final IdGenerator clientIdGenerator;
     private final Map<JmsSessionId, JmsSession> sessions = new ConcurrentHashMap<JmsSessionId, JmsSession>();
     private final AtomicBoolean connected = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -115,7 +113,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
     private final Map<AsyncResult, AsyncResult> requests = new ConcurrentHashMap<AsyncResult, AsyncResult>();
 
-    protected JmsConnection(final String connectionId, Provider provider, IdGenerator clientIdGenerator) throws JMSException {
+    protected JmsConnection(final JmsConnectionInfo connectionInfo, Provider provider) throws JMSException {
 
         // This executor can be used for dispatching asynchronous tasks that might block or result
         // in reentrant calls to this Connection that could block.  The thread in this executor
@@ -124,7 +122,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         executor = new ThreadPoolExecutor(1, 1, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable target) {
-                Thread thread = new Thread(target, "QpidJMS Connection Executor: " + connectionId);
+                Thread thread = new Thread(target, "QpidJMS Connection Executor: " + connectionInfo.getId());
                 thread.setDaemon(false);
                 return thread;
             }
@@ -147,8 +145,31 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
             throw JmsExceptionSupport.create(e);
         }
 
-        this.clientIdGenerator = clientIdGenerator;
-        this.connectionInfo = new JmsConnectionInfo(new JmsConnectionId(connectionId));
+        this.connectionInfo = connectionInfo;
+    }
+
+    JmsConnection connect() throws JMSException {
+        if (provider == null) {
+            throw new IllegalStateException("Remote provider instance not set.");
+        }
+
+        try {
+            provider.connect(connectionInfo);
+        } catch (Exception ex) {
+            LOG.error("Failed to connect to remote at: {}", connectionInfo.getConfiguredURI());
+            LOG.trace("Error: ", ex);
+            try {
+                provider.close();
+            } catch (Throwable ignored) {}
+
+            throw JmsExceptionSupport.create(ex);
+        }
+
+        if (connectionInfo.isExplicitClientID()) {
+            createJmsConnection();
+        }
+
+        return this;
     }
 
     @Override
@@ -269,7 +290,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     @Override
     public Session createSession(boolean transacted, int acknowledgeMode) throws JMSException {
         checkClosedOrFailed();
-        connect();
+        createJmsConnection();
         int ackMode = getSessionAcknowledgeMode(transacted, acknowledgeMode);
         JmsSession result = new JmsSession(this, getNextSessionId(), ackMode);
         addSession(result.getSessionInfo(), result);
@@ -282,7 +303,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     @Override
     public synchronized String getClientID() throws JMSException {
         checkClosedOrFailed();
-        return this.connectionInfo.getClientId();
+        return connected.get() ? connectionInfo.getClientId() : null;
     }
 
     @Override
@@ -309,13 +330,13 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
         // We weren't connected if we got this far, we should now connect to ensure the
         // configured clientID is valid.
-        connect();
+        createJmsConnection();
     }
 
     @Override
     public void start() throws JMSException {
         checkClosedOrFailed();
-        connect();
+        createJmsConnection();
         if (started.compareAndSet(false, true)) {
             try {
                 for (JmsSession s : sessions.values()) {
@@ -363,14 +384,14 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     @Override
     public ConnectionConsumer createSharedConnectionConsumer(Topic topic, String subscriptionName, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
         checkClosedOrFailed();
-        connect();
+        createJmsConnection();
         throw new JMSException("Not supported");
     }
 
     @Override
     public ConnectionConsumer createSharedDurableConnectionConsumer(Topic topic, String subscriptionName, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
         checkClosedOrFailed();
-        connect();
+        createJmsConnection();
         throw new JMSException("Not supported");
     }
 
@@ -378,7 +399,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     public ConnectionConsumer createDurableConnectionConsumer(Topic topic, String subscriptionName,
                                                               String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
         checkClosedOrFailed();
-        connect();
+        createJmsConnection();
         throw new JMSException("Not supported");
     }
 
@@ -386,7 +407,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     public ConnectionConsumer createConnectionConsumer(Destination destination, String messageSelector,
                                                        ServerSessionPool sessionPool, int maxMessages) throws JMSException {
         checkClosedOrFailed();
-        connect();
+        createJmsConnection();
         throw new JMSException("Not supported");
     }
 
@@ -394,7 +415,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     public ConnectionConsumer createConnectionConsumer(Topic topic, String messageSelector,
                                                        ServerSessionPool sessionPool, int maxMessages) throws JMSException {
         checkClosedOrFailed();
-        connect();
+        createJmsConnection();
         throw new JMSException("Not supported");
     }
 
@@ -402,14 +423,14 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     public ConnectionConsumer createConnectionConsumer(Queue queue, String messageSelector,
                                                        ServerSessionPool sessionPool, int maxMessages) throws JMSException {
         checkClosedOrFailed();
-        connect();
+        createJmsConnection();
         throw new JMSException("Not supported");
     }
 
     @Override
     public TopicSession createTopicSession(boolean transacted, int acknowledgeMode) throws JMSException {
         checkClosedOrFailed();
-        connect();
+        createJmsConnection();
         int ackMode = getSessionAcknowledgeMode(transacted, acknowledgeMode);
         JmsTopicSession result = new JmsTopicSession(this, getNextSessionId(), ackMode);
         addSession(result.getSessionInfo(), result);
@@ -422,7 +443,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     @Override
     public QueueSession createQueueSession(boolean transacted, int acknowledgeMode) throws JMSException {
         checkClosedOrFailed();
-        connect();
+        createJmsConnection();
         int ackMode = getSessionAcknowledgeMode(transacted, acknowledgeMode);
         JmsQueueSession result = new JmsQueueSession(this, getNextSessionId(), ackMode);
         addSession(result.getSessionInfo(), result);
@@ -466,7 +487,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         sessions.put(sessionInfo.getId(), session);
     }
 
-    private void connect() throws JMSException {
+    private void createJmsConnection() throws JMSException {
         if (isConnected() || closed.get()) {
             return;
         }
@@ -477,7 +498,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
             }
 
             if (connectionInfo.getClientId() == null || connectionInfo.getClientId().trim().isEmpty()) {
-                connectionInfo.setClientId(clientIdGenerator.generateId(), false);
+                throw new IllegalArgumentException("Client ID cannot be null or empty string");
             }
 
             createResource(connectionInfo);
@@ -848,7 +869,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     }
 
     public void setForceAsyncSend(boolean forceAsyncSend) {
-        connectionInfo.setForceAsyncSends(forceAsyncSend);
+        connectionInfo.setForceAsyncSend(forceAsyncSend);
     }
 
     public boolean isForceSyncSend() {

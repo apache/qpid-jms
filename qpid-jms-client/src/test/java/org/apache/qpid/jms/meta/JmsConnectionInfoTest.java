@@ -71,7 +71,7 @@ public class JmsConnectionInfoTest {
         info.setClientId("test", true);
         info.setCloseTimeout(100);
         info.setConnectTimeout(200);
-        info.setForceAsyncSends(true);
+        info.setForceAsyncSend(true);
         info.setPassword("pass");
         info.setQueuePrefix("queue");
         info.setRequestTimeout(50);

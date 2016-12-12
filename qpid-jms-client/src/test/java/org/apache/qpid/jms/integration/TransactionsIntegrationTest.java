@@ -925,6 +925,37 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout=20000)
+    public void testCoordinatorLinkSupportedOutcomes() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            // Expect session, then coordinator link
+            testPeer.expectBegin();
+
+            SourceMatcher sourceMatcher = new SourceMatcher();
+            sourceMatcher.withOutcomes(arrayContaining(Accepted.DESCRIPTOR_SYMBOL, Rejected.DESCRIPTOR_SYMBOL, Released.DESCRIPTOR_SYMBOL, Modified.DESCRIPTOR_SYMBOL));
+
+            testPeer.expectCoordinatorAttach(sourceMatcher);
+
+            // First expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a declared disposition state containing the txnId.
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            testPeer.expectDeclare(txnId);
+
+            connection.createSession(true, Session.SESSION_TRANSACTED);
+
+            //Expect rollback on close
+            testPeer.expectDischarge(txnId, true);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
     public void testRollbackErrorCoordinatorClosedOnCommit() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);

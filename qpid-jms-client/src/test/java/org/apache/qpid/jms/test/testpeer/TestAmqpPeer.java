@@ -1044,6 +1044,11 @@ public class TestAmqpPeer implements AutoCloseable
         expectCoordinatorAttach(false, false, null, null);
     }
 
+    public void expectCoordinatorAttach(SourceMatcher sourceMatcher)
+    {
+        expectCoordinatorAttach(sourceMatcher, false, false, null, null);
+    }
+
     public void expectCoordinatorAttach(boolean refuseLink, boolean deferAttachResponseWrite)
     {
         expectCoordinatorAttach(refuseLink, deferAttachResponseWrite, null, null);
@@ -1051,7 +1056,11 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectCoordinatorAttach(final boolean refuseLink, boolean deferAttachResponseWrite, Symbol errorType, String errorMessage)
     {
-        expectSenderAttach(notNullValue(), new CoordinatorMatcher(), refuseLink, false, deferAttachResponseWrite, 0, errorType, errorMessage);
+        expectCoordinatorAttach(notNullValue(), refuseLink, deferAttachResponseWrite, errorType, errorMessage);
+    }
+
+    private void expectCoordinatorAttach(Matcher<Object> sourceMatcher, final boolean refuseLink, boolean deferAttachResponseWrite, Symbol errorType, String errorMessage) {
+        expectSenderAttach(sourceMatcher, new CoordinatorMatcher(), refuseLink, false, deferAttachResponseWrite, 0, errorType, errorMessage);
     }
 
     public void expectQueueBrowserAttach()

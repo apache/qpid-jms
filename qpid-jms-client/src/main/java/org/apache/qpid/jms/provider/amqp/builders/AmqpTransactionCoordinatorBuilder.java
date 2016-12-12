@@ -19,6 +19,11 @@ package org.apache.qpid.jms.provider.amqp.builders;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.amqp.AmqpTransactionContext;
 import org.apache.qpid.jms.provider.amqp.AmqpTransactionCoordinator;
+import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.messaging.Accepted;
+import org.apache.qpid.proton.amqp.messaging.Modified;
+import org.apache.qpid.proton.amqp.messaging.Rejected;
+import org.apache.qpid.proton.amqp.messaging.Released;
 import org.apache.qpid.proton.amqp.messaging.Source;
 import org.apache.qpid.proton.amqp.transaction.Coordinator;
 import org.apache.qpid.proton.amqp.transaction.TxnCapability;
@@ -39,7 +44,11 @@ public class AmqpTransactionCoordinatorBuilder extends AmqpResourceBuilder<AmqpT
     protected Sender createEndpoint(JmsSessionInfo resourceInfo) {
         Coordinator coordinator = new Coordinator();
         coordinator.setCapabilities(TxnCapability.LOCAL_TXN);
+
+        Symbol[] outcomes = new Symbol[]{ Accepted.DESCRIPTOR_SYMBOL, Rejected.DESCRIPTOR_SYMBOL, Released.DESCRIPTOR_SYMBOL, Modified.DESCRIPTOR_SYMBOL };
+
         Source source = new Source();
+        source.setOutcomes(outcomes);
 
         String coordinatorName = "qpid-jms:coordinator:" + resourceInfo.getId().toString();
 

@@ -291,7 +291,6 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     }
                 } finally {
                     ThreadPoolUtils.shutdown(serializer);
-                    //serializer.shutdown();
                 }
             }
         }

@@ -101,6 +101,9 @@ public class MessageExpirationIntegrationTest extends QpidJmsTestCase {
             m = consumer.receive(10);
             assertNull("Message should not have been received", m);
 
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(3000);
         }
     }
@@ -145,6 +148,9 @@ public class MessageExpirationIntegrationTest extends QpidJmsTestCase {
             assertNotNull("Message should have been received", m);
             assertTrue(m instanceof TextMessage);
             assertEquals("Unexpected message content", liveMsgContent, ((TextMessage)m).getText());
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
         }
@@ -208,6 +214,9 @@ public class MessageExpirationIntegrationTest extends QpidJmsTestCase {
             assertTrue("didn't get expected message", success.await(5, TimeUnit.SECONDS));
             assertFalse("There was a failure in the listener, see logs", listenerFailure.get());
 
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(3000);
         }
     }
@@ -264,6 +273,9 @@ public class MessageExpirationIntegrationTest extends QpidJmsTestCase {
 
             assertTrue("didn't get expected messages", success.await(5, TimeUnit.SECONDS));
             assertFalse("There was a failure in the listener, see logs", listenerFailure.get());
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
         }

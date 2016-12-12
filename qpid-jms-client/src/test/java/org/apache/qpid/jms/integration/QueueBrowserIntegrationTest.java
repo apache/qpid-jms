@@ -61,6 +61,7 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectBegin();
             testPeer.expectEnd();
+            testPeer.expectClose();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue queue = session.createQueue("myQueue");
@@ -70,6 +71,7 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             browser.close();
 
             session.close();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
         }
@@ -96,6 +98,9 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             assertNotNull(queueView);
 
             browser.close();
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
         }
@@ -136,6 +141,9 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
 
             browser.close();
 
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(3000);
         }
     }
@@ -170,6 +178,9 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             assertNotNull(queueView.nextElement());
 
             browser.close();
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
         }
@@ -208,6 +219,9 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
 
             browser.close();
 
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(3000);
         }
     }
@@ -245,6 +259,9 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectEnd();
             session.close();
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
         }
@@ -319,6 +336,9 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
 
             browser.close();
 
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(3000);
         }
     }
@@ -345,6 +365,9 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             assertFalse(queueView.hasMoreElements());
 
             browser.close();
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
         }
@@ -387,6 +410,9 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             assertFalse(queueView.hasMoreElements());
 
             browser.close();
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
         }

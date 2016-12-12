@@ -56,6 +56,7 @@ import org.apache.qpid.jms.provider.amqp.builders.AmqpConnectionBuilder;
 import org.apache.qpid.jms.transports.TransportFactory;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.util.IOExceptionSupport;
+import org.apache.qpid.jms.util.ThreadPoolUtils;
 import org.apache.qpid.proton.engine.Collector;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.Delivery;
@@ -289,7 +290,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         }
                     }
                 } finally {
-                    serializer.shutdown();
+                    ThreadPoolUtils.shutdown(serializer);
+                    //serializer.shutdown();
                 }
             }
         }
@@ -984,6 +986,11 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         if (connectionRequest != null) {
             connectionRequest.onFailure(ex);
             connectionRequest = null;
+        }
+
+        if (nextIdleTimeoutCheck != null) {
+            nextIdleTimeoutCheck.cancel(true);
+            nextIdleTimeoutCheck = null;
         }
 
         ProviderListener listener = this.listener;

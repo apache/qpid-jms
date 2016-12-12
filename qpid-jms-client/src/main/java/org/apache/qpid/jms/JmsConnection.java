@@ -1282,6 +1282,11 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
                     for (JmsConnectionListener listener : connectionListeners) {
                         listener.onConnectionFailure(ex);
                     }
+
+                    // Don't accept any more connection work but allow all pending work
+                    // to complete in order to ensure notifications are sent to any blocked
+                    // resources.
+                    executor.shutdown();
                 }
             });
         }

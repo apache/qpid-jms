@@ -120,14 +120,19 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
 
             testPeer.rejectConnect(AmqpError.INVALID_FIELD, "Client ID already in use", errorInfo);
 
+            Connection connection = null;
             try {
                 ConnectionFactory factory = new JmsConnectionFactory(remoteURI);
-                Connection connection = factory.createConnection();
+                connection = factory.createConnection();
                 connection.setClientID("in-use-client-id");
 
                 fail("Should have thrown InvalidClientIDException");
             } catch (InvalidClientIDException e) {
                 // Expected
+            } finally {
+                if (connection != null) {
+                    connection.close();
+                }
             }
 
             testPeer.waitForAllHandlersToComplete(1000);

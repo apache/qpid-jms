@@ -195,6 +195,9 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             producer.send(message);
 
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(1000);
         }
     }
@@ -232,6 +235,10 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
             Message receivedMessage = messageConsumer.receive(3000);
+
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertTrue(receivedMessage.propertyExists(STRING_PROP));
@@ -305,6 +312,10 @@ public class MessageIntegrationTest extends QpidJmsTestCase
                 assertEquals(value, receivedMessage.getStringProperty(invalidPropName));
             }
 
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
         }
     }
 
@@ -361,6 +372,9 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
                 producer.send(message);
             }
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(2000);
         }
@@ -424,6 +438,10 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             MessageConsumer messageConsumer = session.createConsumer(destination);
             Message receivedMessage = messageConsumer.receive(3000);
+
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
@@ -469,6 +487,10 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
             Message receivedMessage = messageConsumer.receive(3000);
+
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
@@ -726,6 +748,11 @@ public class MessageIntegrationTest extends QpidJmsTestCase
                 assertEquals("Temporary destination name and address should be equal", destName, destAddress);
                 assertEquals("Temporary replyto name and address should be equal", replyName, replyAddress);
             }
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 
@@ -869,6 +896,9 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             producer.send(message);
 
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(2000);
         }
     }
@@ -1003,6 +1033,11 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             assertEquals("Unexpected name for JMSDestination", destName, recievedName);
             assertEquals("Unexpected name for JMSReplyTo", replyName, recievedReplyName);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 
@@ -1098,6 +1133,9 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             producer.send(message);
 
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(2000);
         }
     }
@@ -1145,6 +1183,11 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             assertNotNull("JMSReplyTo should not be null", dest);
             assertTrue("Destination not of expected type: " + dest.getClass(), dest instanceof Topic);
             assertEquals(myReplyTopicAddress, ((Topic)dest).getTopicName());
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 
@@ -1184,6 +1227,9 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Topic topic = session.createTopic(topicName);
             MessageProducer producer = session.createProducer(topic);
             producer.send(message);
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(2000);
         }
@@ -1228,6 +1274,9 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Queue queue = session.createQueue(queueName);
             MessageProducer producer = session.createProducer(queue);
             producer.send(message);
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(2000);
         }
@@ -1276,6 +1325,11 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             assertNotNull("Expected Topic destination but got null", dest);
             assertTrue("Expected Topic instance but did not get one. Actual type was: " + dest.getClass().getName(), dest instanceof Topic);
             assertEquals(myTopicAddress, ((Topic)dest).getTopicName());
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 
@@ -1319,6 +1373,11 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             Destination dest = receivedMessage.getJMSReplyTo();
             assertTrue(dest instanceof Topic);
             assertEquals(myTopicAddress, ((Topic)dest).getTopicName());
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 
@@ -1357,6 +1416,11 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             assertNotNull(receivedMessage);
             assertEquals(0L, receivedMessage.getJMSExpiration());
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 
@@ -1396,6 +1460,11 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             assertNotNull(receivedMessage);
             assertEquals(timestamp, receivedMessage.getJMSExpiration());
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 
@@ -1424,6 +1493,11 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             testPeer.waitForAllHandlersToComplete(2000);
 
             assertNull(receivedMessage.getJMSMessageID());
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 
@@ -1517,6 +1591,11 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             assertEquals(expected, receivedMessage.getJMSMessageID());
             assertTrue(receivedMessage.getJMSMessageID().startsWith("ID:"));
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 
@@ -1596,6 +1675,10 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
             Message receivedMessage = messageConsumer.receive(3000);
+
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(3000);
 
             assertNotNull(receivedMessage);
@@ -1717,6 +1800,9 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             message.setJMSCorrelationID(stringCorrelationId);
 
             producer.send(message);
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
         }
@@ -1843,6 +1929,9 @@ public class MessageIntegrationTest extends QpidJmsTestCase
 
             producer.send(message);
 
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(3000);
         }
     }
@@ -1924,6 +2013,11 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             assertEquals("did not get the expected JMSXGroupID", expectedGroupId, receivedMessage.getStringProperty(JmsClientProperties.JMSXGROUPID));
             assertEquals("did not get the expected JMSXGroupSeq", expectedGroupSeq, receivedMessage.getIntProperty(JmsClientProperties.JMSXGROUPSEQ));
             assertEquals("did not get the expected JMS_AMQP_REPLY_TO_GROUP_ID", expectedReplyToGroupId, receivedMessage.getStringProperty(AmqpMessageSupport.JMS_AMQP_REPLY_TO_GROUP_ID));
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 
@@ -1971,6 +2065,9 @@ public class MessageIntegrationTest extends QpidJmsTestCase
             message.setStringProperty(AmqpMessageSupport.JMS_AMQP_REPLY_TO_GROUP_ID, expectedReplyToGroupId);
 
             producer.send(message);
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
         }

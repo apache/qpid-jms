@@ -78,6 +78,9 @@ public class ForeignMessageIntegrationTest extends QpidJmsTestCase {
             foreign.writeBytes(content);
 
             producer.send(foreign);
+
+            testPeer.expectClose();
+            connection.close();
         }
     }
 
@@ -108,6 +111,9 @@ public class ForeignMessageIntegrationTest extends QpidJmsTestCase {
             producer.send(foreign);
 
             assertNotNull("JMSMessageID should not be null", foreign.getJMSMessageID());
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(2000);
         }
@@ -159,6 +165,9 @@ public class ForeignMessageIntegrationTest extends QpidJmsTestCase {
             producer.send(foreign);
 
             assertNull("JMSMessageID should now be null", foreign.getJMSMessageID());
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(2000);
         }

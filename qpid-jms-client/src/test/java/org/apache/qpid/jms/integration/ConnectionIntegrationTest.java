@@ -261,6 +261,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             }
 
             testPeer.waitForAllHandlersToComplete(3000);
+
+            connection.close();
         }
     }
 
@@ -281,6 +283,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             }
 
             testPeer.waitForAllHandlersToComplete(3000);
+
+            connection.close();
         }
     }
 
@@ -404,6 +408,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             assertTrue("Connection should report failure", done.await(5, TimeUnit.SECONDS));
 
             testPeer.waitForAllHandlersToComplete(1000);
+
+            connection.close();
         }
     }
 
@@ -452,6 +458,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             assertEquals(redirectPort, redirect.getPort());
 
             testPeer.waitForAllHandlersToComplete(1000);
+
+            connection.close();
         }
     }
 
@@ -514,6 +522,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             // The test peer will throw during close if it sends anything.
             consumer.close();
             session.close();
+            connection.close();
         }
     }
 

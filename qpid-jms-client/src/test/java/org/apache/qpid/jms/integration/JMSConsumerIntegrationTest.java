@@ -174,6 +174,11 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
             } catch (JMSRuntimeException jmsre) {
                 // Expected
             }
+
+            try {
+                context.close();
+            } catch (Throwable ignored) {
+            }
         }
     }
 

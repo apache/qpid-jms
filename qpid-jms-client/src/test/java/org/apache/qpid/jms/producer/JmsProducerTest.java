@@ -57,6 +57,7 @@ import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.provider.mock.MockRemotePeer;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Matchers;
@@ -110,6 +111,16 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
 
         remotePeer.start();
         context = createJMSContextToMockProvider();
+    }
+
+    @Override
+    @After
+    public void tearDown() throws Exception {
+        try {
+            context.close();
+        } finally {
+            super.tearDown();
+        }
     }
 
     //----- Test Property Handling methods -----------------------------------//

@@ -80,8 +80,11 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
     @Override
     @After
     public void tearDown() throws Exception {
-        remotePeer.terminate();
-        super.tearDown();
+        try {
+            remotePeer.terminate();
+        } finally {
+            super.tearDown();
+        }
     }
 
     @Test(timeout = 10000)

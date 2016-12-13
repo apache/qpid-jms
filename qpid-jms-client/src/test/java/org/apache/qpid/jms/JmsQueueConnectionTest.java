@@ -38,12 +38,6 @@ public class JmsQueueConnectionTest extends JmsConnectionTestSupport {
         queueConnection.start();
     }
 
-    @Override
-    @After
-    public void tearDown() throws Exception {
-        queueConnection.close();
-    }
-
     @Test(timeout = 30000, expected=IllegalStateException.class)
     public void testCreateConnectionConsumerOnQueueConnection() throws JMSException{
         queueConnection.createConnectionConsumer(new JmsTopic(), "subscriptionName", (ServerSessionPool)null, 1);

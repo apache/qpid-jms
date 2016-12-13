@@ -25,7 +25,6 @@ import javax.jms.IllegalStateException;
 import javax.jms.IllegalStateRuntimeException;
 import javax.jms.JMSException;
 
-import org.apache.qpid.jms.JmsConnectionTestSupport;
 import org.apache.qpid.jms.JmsConsumer;
 import org.apache.qpid.jms.JmsMessageConsumer;
 import org.apache.qpid.jms.JmsSession;
@@ -36,7 +35,7 @@ import org.mockito.Mockito;
 /**
  * Test for basic behavior of the JMSConsumer implementation.
  */
-public class JmsConsumerTest extends JmsConnectionTestSupport {
+public class JmsConsumerTest {
 
     @Test
     public void testGetMessageSelector() throws JMSException {

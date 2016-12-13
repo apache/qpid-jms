@@ -108,6 +108,8 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
 
         assertEquals(TimeUnit.SECONDS.toMillis(30), connection.getConnectTimeout());
         assertEquals(TimeUnit.SECONDS.toMillis(45), connection.getCloseTimeout());
+
+        connection.close();
     }
 
     @Test
@@ -131,6 +133,8 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         assertEquals(1, prefetchPolicy.getQueuePrefetch());
         assertEquals(1, prefetchPolicy.getQueueBrowserPrefetch());
         assertEquals(1, prefetchPolicy.getDurableTopicPrefetch());
+
+        connection.close();
     }
 
     @Test
@@ -151,6 +155,8 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         assertNotSame(factory.getPresettlePolicy(), presettlePolicy);
 
         assertTrue(presettlePolicy.isPresettleAll());
+
+        connection.close();
     }
 
     @Test
@@ -171,6 +177,8 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         assertNotSame(factory.getRedeliveryPolicy(), redeliveryPolicy);
 
         assertEquals(100, redeliveryPolicy.getMaxRedeliveries());
+
+        connection.close();
     }
 
     @Test
@@ -206,6 +214,8 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         assertEquals(mock, connection.getConfiguredURI());
         connection.start();
         assertEquals(mock, connection.getConnectedURI());
+
+        connection.close();
     }
 
     @Test
@@ -224,6 +234,8 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         assertNotNull(connection);
         assertNotNull(connection.getExceptionListener());
         assertSame(listener, connection.getExceptionListener());
+
+        connection.close();
     }
 
     @Test
@@ -236,6 +248,8 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JmsConnection connection = (JmsConnection) factory.createConnection();
         assertNotNull(connection);
         assertTrue("Connection ID = " + connection.getId(), connection.getId().toString().startsWith("TEST-ID:"));
+
+        connection.close();
     }
 
     @Test
@@ -246,6 +260,8 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JmsConnection connection = (JmsConnection) factory.createConnection();
         assertNotNull(connection);
         assertTrue("Connection ID = " + connection.getId(), connection.getId().toString().startsWith("TEST-ID:"));
+
+        connection.close();
     }
 
     @Test
@@ -260,6 +276,8 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
 
         assertNotNull(connection);
         assertTrue("Connection ID = " + connection.getClientID(), connection.getClientID().startsWith("TEST-ID:"));
+
+        connection.close();
     }
 
     @Test
@@ -272,6 +290,8 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
 
         assertNotNull(connection);
         assertTrue("Client ID = " + connection.getClientID(), connection.getClientID().startsWith("TEST-ID:"));
+
+        connection.close();
     }
 
     @Test
@@ -757,6 +777,8 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JmsConnection connection = (JmsConnection) factory.createConnection();
 
         assertTrue(connection.getDeserializationPolicy() instanceof SerializationTestSupport.TestJmsDeserializationPolicy);
+
+        connection.close();
     }
 
     @Test
@@ -766,6 +788,8 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JMSContext context = factory.createContext();
         assertNotNull(context);
         assertEquals(JMSContext.AUTO_ACKNOWLEDGE, context.getSessionMode());
+
+        context.close();
     }
 
     @Test
@@ -775,6 +799,8 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JMSContext context = factory.createContext(USER, PASSWORD);
         assertNotNull(context);
         assertEquals(JMSContext.AUTO_ACKNOWLEDGE, context.getSessionMode());
+
+        context.close();
     }
 
     @Test
@@ -784,6 +810,8 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JMSContext context = factory.createContext(USER, PASSWORD, JMSContext.CLIENT_ACKNOWLEDGE);
         assertNotNull(context);
         assertEquals(JMSContext.CLIENT_ACKNOWLEDGE, context.getSessionMode());
+
+        context.close();
     }
 
     @Test
@@ -793,6 +821,8 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
         JMSContext context = factory.createContext(JMSContext.CLIENT_ACKNOWLEDGE);
         assertNotNull(context);
         assertEquals(JMSContext.CLIENT_ACKNOWLEDGE, context.getSessionMode());
+
+        context.close();
     }
 
 

@@ -18,7 +18,11 @@
  */
 package org.apache.qpid.jms.integration;
 
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DELAYED_DELIVERY;
+import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
@@ -29,8 +33,10 @@ import javax.jms.Connection;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
+import javax.jms.Topic;
 
 import org.apache.qpid.jms.message.foreign.ForeignJmsBytesMessage;
+import org.apache.qpid.jms.message.foreign.ForeignJmsMessage;
 import org.apache.qpid.jms.message.foreign.ForeignJmsTextMessage;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -42,6 +48,8 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompos
 import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedDataMatcher;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.hamcrest.Matcher;
+import org.hamcrest.MatcherAssert;
 import org.junit.Test;
 
 public class ForeignMessageIntegrationTest extends QpidJmsTestCase {
@@ -172,4 +180,66 @@ public class ForeignMessageIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(2000);
         }
     }
+
+    @Test(timeout = 20000)
+    public void testSendForeignMessageWithDeliveryDelay() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            String topicName = "myTopic";
+
+            // add connection capability to indicate server support for DELAYED-DELIVERY
+            Connection connection = testFixture.establishConnecton(testPeer, new Symbol[]{ DELAYED_DELIVERY });
+
+            connection.start();
+
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            int deliveryDelay = 100000;
+            long currentTime = System.currentTimeMillis();
+            long deliveryTimeLower = currentTime + deliveryDelay;
+            long deliveryTimeUpper = deliveryTimeLower + 5000;
+
+            // Create matcher to expect the deliverytime annotation to be set to
+            // a value greater than 'now'+deliveryDelay, within a delta for test execution.
+            Matcher<Long> inRange = both(greaterThanOrEqualTo(deliveryTimeLower)).and(lessThanOrEqualTo(deliveryTimeUpper));
+
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            Symbol annotationKey = AmqpMessageSupport.getSymbol(AmqpMessageSupport.JMS_DELIVERY_TIME);
+            msgAnnotationsMatcher.withEntry(annotationKey, inRange);
+
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+
+            testPeer.expectTransfer(messageMatcher);
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            Topic dest = session.createTopic(topicName);
+
+            MessageProducer producer = session.createProducer(dest);
+            producer.setDeliveryDelay(deliveryDelay);
+
+            // Create a foreign message, [erroneously] set a JMSDeliveryTime value, expect it to be overwritten
+            ForeignJmsMessage foreign = new ForeignJmsMessage();
+            assertEquals("JMSDeliveryTime should not yet be set", 0, foreign.getJMSDeliveryTime());
+            foreign.setJMSDeliveryTime(1234);
+            assertEquals("JMSDeliveryTime should now (erroneously) be set", 1234, foreign.getJMSDeliveryTime());
+
+            // Now send the message, peer will verify the actual delivery time was set as expected
+            producer.send(foreign);
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            // Now verify the local message also has the deliveryTime set as expected
+            MatcherAssert.assertThat("JMSDeliveryTime should now be set in expected range", foreign.getJMSDeliveryTime(), inRange);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
 }

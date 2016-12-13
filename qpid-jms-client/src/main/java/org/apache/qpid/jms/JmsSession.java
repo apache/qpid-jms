@@ -17,6 +17,7 @@
 package org.apache.qpid.jms;
 
 import java.io.Serializable;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
@@ -754,6 +755,8 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             boolean hasTTL = timeToLive > Message.DEFAULT_TIME_TO_LIVE;
             boolean hasDelay = deliveryDelay > Message.DEFAULT_DELIVERY_DELAY;
 
+            boolean isJmsMessage = original instanceof JmsMessage;
+
             if (!disableTimestamp) {
                 original.setJMSTimestamp(timeStamp);
             } else {
@@ -766,13 +769,16 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                 original.setJMSExpiration(0);
             }
 
+            long deliveryTime = 0;
             if (hasDelay) {
-                original.setJMSDeliveryTime(timeStamp + deliveryDelay);
-            } else {
-                original.setJMSDeliveryTime(0);
+                deliveryTime = timeStamp + deliveryDelay;
             }
 
-            boolean isJmsMessage = original instanceof JmsMessage;
+            if(isJmsMessage) {
+                original.setJMSDeliveryTime(deliveryTime);
+            } else {
+                setForeignMessageDeliveryTime(original, deliveryTime);
+            }
 
             long messageSequence = producer.getNextMessageSequence();
             Object messageId = null;
@@ -853,6 +859,22 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             }
         } finally {
             sendLock.unlock();
+        }
+    }
+
+    private void setForeignMessageDeliveryTime(Message foreignMessage, long deliveryTime) throws JMSException {
+        // Verify if the setJMSDeliveryTime method exists, i.e the foreign provider isn't only JMS 1.1.
+        Method deliveryTimeMethod = null;
+        try {
+            Class<?> clazz = foreignMessage.getClass();
+            deliveryTimeMethod = clazz.getMethod("setJMSDeliveryTime", new Class[] { long.class });
+        } catch (NoSuchMethodException e) {
+            // Assume its a JMS 1.1 Message, we will no-op.
+        }
+
+        if (deliveryTimeMethod != null) {
+            // Method exists, so use it
+            foreignMessage.setJMSDeliveryTime(deliveryTime);
         }
     }
 

@@ -91,6 +91,7 @@ import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.hamcrest.Matcher;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -1930,6 +1931,15 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectBegin();
 
+            int deliveryDelay = 100000;
+            long currentTime = System.currentTimeMillis();
+            long deliveryTimeLower = currentTime + deliveryDelay;
+            long deliveryTimeUpper = deliveryTimeLower + 5000;
+
+            // Create matcher to expect the deliverytime annotation to be set to
+            // a value greater than 'now'+deliveryDelay, within a delta for test execution.
+            Matcher<Long> inRange = both(greaterThanOrEqualTo(deliveryTimeLower)).and(lessThanOrEqualTo(deliveryTimeUpper));
+
             Matcher<Object> desiredCapabilitiesMatcher = nullValue();
             Symbol[] offeredCapabilities = null;
             testPeer.expectSenderAttach(notNullValue(), notNullValue(), false, false, false, false, 0, 1, null, null, desiredCapabilitiesMatcher, offeredCapabilities);
@@ -1937,7 +1947,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
             Symbol annotationKey = AmqpMessageSupport.getSymbol(AmqpMessageSupport.JMS_DELIVERY_TIME);
-            msgAnnotationsMatcher.withEntry(annotationKey, notNullValue());
+            msgAnnotationsMatcher.withEntry(annotationKey, inRange);
 
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
@@ -1949,9 +1959,22 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             Topic dest = session.createTopic(topicName);
 
+            // Create a message, [erroneously] set a JMSDeliveryTime value, expect it to be overwritten
+            Message message = session.createMessage();
+            assertEquals("JMSDeliveryTime should not yet be set", 0, message.getJMSDeliveryTime());
+            message.setJMSDeliveryTime(1234);
+            assertEquals("JMSDeliveryTime should now (erroneously) be set", 1234, message.getJMSDeliveryTime());
+
             MessageProducer producer = session.createProducer(dest);
-            producer.setDeliveryDelay(5000);
-            producer.send(session.createMessage());
+            producer.setDeliveryDelay(deliveryDelay);
+
+            // Now send the message, peer will verify the actual delivery time was set as expected
+            producer.send(message);
+
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            // Now verify the local message also has the deliveryTime set as expected
+            MatcherAssert.assertThat("JMSDeliveryTime should now be set in expected range", message.getJMSDeliveryTime(), inRange);
 
             testPeer.expectClose();
             connection.close();

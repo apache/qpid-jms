@@ -274,6 +274,8 @@ public class MessageExpirationIntegrationTest extends QpidJmsTestCase {
             assertTrue("didn't get expected messages", success.await(5, TimeUnit.SECONDS));
             assertFalse("There was a failure in the listener, see logs", listenerFailure.get());
 
+            testPeer.waitForAllHandlersToComplete(3000);
+
             testPeer.expectClose();
             connection.close();
 

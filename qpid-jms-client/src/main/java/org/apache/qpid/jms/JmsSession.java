@@ -770,17 +770,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                 original.setJMSExpiration(0);
             }
 
-            long deliveryTime = 0;
-            if (hasDelay) {
-                deliveryTime = timeStamp + deliveryDelay;
-            }
-
-            if(isJmsMessage) {
-                original.setJMSDeliveryTime(deliveryTime);
-            } else {
-                setForeignMessageDeliveryTime(original, deliveryTime);
-            }
-
             long messageSequence = producer.getNextMessageSequence();
             Object messageId = null;
             if (!disableMsgId) {
@@ -796,6 +785,23 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                 outbound.setJMSDestination(destination);
             }
 
+            // Set the delivery time. Purposefully avoided doing this earlier so
+            // that we use the 'outbound' JmsMessage object reference when
+            // updating our own message instances, avoids using the interface
+            // in case the JMS 1.1 Message API is actually being used due to
+            // being on the classpath too.
+            long deliveryTime = 0;
+            if (hasDelay) {
+                deliveryTime = timeStamp + deliveryDelay;
+            }
+
+            outbound.setJMSDeliveryTime(deliveryTime);
+            if(!isJmsMessage) {
+                // If the original was a foreign message, we still need to update it too.
+                setForeignMessageDeliveryTime(original, deliveryTime);
+            }
+
+            // Set the message ID
             outbound.getFacade().setProviderMessageIdObject(messageId);
             if (!isJmsMessage) {
                 // If the original was a foreign message, we still need to update it

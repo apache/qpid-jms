@@ -190,7 +190,7 @@ public final class JmsMessageTransformation {
      *
      * @throws JMSException if an error occurs during the copy of message properties.
      */
-    public static void copyProperties(JmsConnection connection, Message source, Message target) throws JMSException {
+    public static void copyProperties(JmsConnection connection, Message source, JmsMessage target) throws JMSException {
         target.setJMSMessageID(source.getJMSMessageID());
         target.setJMSCorrelationID(source.getJMSCorrelationID());
         target.setJMSReplyTo(transformDestination(connection, source.getJMSReplyTo()));

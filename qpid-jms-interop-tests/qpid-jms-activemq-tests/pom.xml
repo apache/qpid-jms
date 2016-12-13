@@ -33,8 +33,17 @@
 
   <dependencies>
     <!-- =================================== -->
-    <!-- Required Dependencies                -->
+    <!-- Required Dependencies               -->
     <!-- =================================== -->
+
+    <!-- Adding the JMS 1.1 API jar for these tests explicitly, first,
+         since its whats implemented by ActiveMQ, and also helps to
+         verify the client works when both APIs are on the classpath -->
+    <dependency>
+      <groupId>org.apache.geronimo.specs</groupId>
+      <artifactId>geronimo-jms_1.1_spec</artifactId>
+      <version>1.1.1</version>
+    </dependency>
     <dependency>
       <groupId>org.apache.qpid</groupId>
       <artifactId>qpid-jms-client</artifactId>

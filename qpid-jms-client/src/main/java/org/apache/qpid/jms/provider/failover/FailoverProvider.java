@@ -23,9 +23,8 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -89,8 +88,8 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     private final FailoverUriPool uris;
     private ScheduledFuture<?> requestTimeoutTask;
 
-    private final ScheduledExecutorService serializer;
-    private final ScheduledExecutorService connectionHub;
+    private final ScheduledThreadPoolExecutor serializer;
+    private final ScheduledThreadPoolExecutor connectionHub;
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean failed = new AtomicBoolean();
     private final AtomicBoolean closingConnection = new AtomicBoolean(false);
@@ -134,7 +133,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     public FailoverProvider(List<URI> uris, Map<String, String> nestedOptions) {
         this.uris = new FailoverUriPool(uris, nestedOptions);
 
-        this.serializer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+        serializer = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
 
             @Override
             public Thread newThread(Runnable runner) {
@@ -145,10 +144,13 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             }
         });
 
+        serializer.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+        serializer.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
+
         // All Connection attempts happen in this schedulers thread.  Once a connection
         // is established it will hand the open connection back to the serializer thread
         // for state recovery.
-        this.connectionHub = Executors.newScheduledThreadPool(1, new ThreadFactory() {
+        connectionHub = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
 
             @Override
             public Thread newThread(Runnable runner) {
@@ -158,6 +160,9 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 return serial;
             }
         });
+
+        connectionHub.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+        connectionHub.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
     }
 
     @Override

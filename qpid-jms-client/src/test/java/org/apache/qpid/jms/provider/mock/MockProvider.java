@@ -19,8 +19,7 @@ package org.apache.qpid.jms.provider.mock;
 import java.io.IOException;
 import java.net.URI;
 import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -44,6 +43,7 @@ import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.amqp.AmqpProvider;
+import org.apache.qpid.jms.util.ThreadPoolUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +61,7 @@ public class MockProvider implements Provider {
     private final MockProviderStats stats;
     private final URI remoteURI;
     private final MockProviderConfiguration configuration;
-    private final ScheduledExecutorService serializer;
+    private final ScheduledThreadPoolExecutor serializer;
     private final AtomicBoolean closed = new AtomicBoolean();
     private final MockRemotePeer context;
 
@@ -77,7 +77,7 @@ public class MockProvider implements Provider {
         this.context = context;
         this.stats = new MockProviderStats(context != null ? context.getContextStats() : null);
 
-        this.serializer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+        serializer = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
 
             @Override
             public Thread newThread(Runnable runner) {
@@ -89,6 +89,9 @@ public class MockProvider implements Provider {
                 return serial;
             }
         });
+
+        serializer.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+        serializer.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
     }
 
     @Override
@@ -156,7 +159,7 @@ public class MockProvider implements Provider {
             } catch (IOException e) {
                 LOG.warn("Error caught while closing Provider: ", e.getMessage());
             } finally {
-                serializer.shutdown();
+                ThreadPoolUtils.shutdownGraceful(serializer);
             }
         }
     }

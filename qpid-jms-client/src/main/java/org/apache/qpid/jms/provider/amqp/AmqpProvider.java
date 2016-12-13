@@ -19,10 +19,10 @@ package org.apache.qpid.jms.provider.amqp;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -101,12 +101,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private static final AtomicInteger PROVIDER_SEQUENCE = new AtomicInteger();
     private static final NoOpAsyncResult NOOP_REQUEST = new NoOpAsyncResult();
 
-    private ProviderListener listener;
+    private volatile ProviderListener listener;
     private AmqpConnection connection;
-    private volatile AmqpSaslAuthenticator authenticator;
-    private org.apache.qpid.jms.transports.Transport transport;
+    private AmqpSaslAuthenticator authenticator;
+    private volatile org.apache.qpid.jms.transports.Transport transport;
     private String transportType = AmqpProviderFactory.DEFAULT_TRANSPORT_TYPE;
     private String vhost;
+    private String threadToken;
     private boolean traceFrames;
     private boolean traceBytes;
     private boolean saslLayer = true;
@@ -120,7 +121,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     private final URI remoteURI;
     private final AtomicBoolean closed = new AtomicBoolean();
-    private final ScheduledExecutorService serializer;
+    private ScheduledThreadPoolExecutor serializer;
     private final Transport protonTransport = Transport.Factory.create();
     private final Collector protonCollector = new CollectorImpl();
     private final Connection protonConnection = Connection.Factory.create();
@@ -136,7 +137,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
      */
     public AmqpProvider(URI remoteURI) {
         this.remoteURI = remoteURI;
-        this.serializer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+
+        serializer = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
 
             @Override
             public Thread newThread(Runnable runner) {
@@ -148,6 +150,9 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 return serial;
             }
         });
+
+        serializer.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+        serializer.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
 
         updateTracer();
     }
@@ -290,7 +295,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         }
                     }
                 } finally {
-                    ThreadPoolUtils.shutdown(serializer);
+                    ThreadPoolUtils.shutdownGraceful(serializer);
                 }
             }
         }
@@ -1215,6 +1220,20 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     @Override
     public AmqpProvider getProvider() {
         return this;
+    }
+
+    /**
+     * @return the threadToken
+     */
+    public String getThreadToken() {
+        return threadToken;
+    }
+
+    /**
+     * @param threadToken the threadToken to set
+     */
+    public void setThreadToken(String threadToken) {
+        this.threadToken = threadToken;
     }
 
     /**

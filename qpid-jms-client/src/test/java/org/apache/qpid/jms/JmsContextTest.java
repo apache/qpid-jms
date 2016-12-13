@@ -44,6 +44,7 @@ import javax.jms.Topic;
 
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.mock.MockRemotePeer;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Matchers;
@@ -66,13 +67,26 @@ public class JmsContextTest extends JmsConnectionTestSupport {
         context = createJMSContextToMockProvider();
     }
 
+    @Override
+    @After
+    public void tearDown() throws Exception {
+        super.tearDown();
+        if (context != null) {
+            context.close();
+        }
+    }
+
     //----- Test basic interface behaviors -----------------------------------//
 
     @Test
     public void testCreateContextWithNewAcknowledgementMode() {
         JMSContext newContext = context.createContext(JMSContext.CLIENT_ACKNOWLEDGE);
-        assertNotNull(newContext);
-        assertEquals(JMSContext.CLIENT_ACKNOWLEDGE, newContext.getSessionMode());
+        try {
+            assertNotNull(newContext);
+            assertEquals(JMSContext.CLIENT_ACKNOWLEDGE, newContext.getSessionMode());
+        } finally {
+            newContext.close();
+        }
     }
 
     @Test
@@ -84,9 +98,13 @@ public class JmsContextTest extends JmsConnectionTestSupport {
     public void testGetTransactedFromContext() {
         assertFalse(context.getTransacted());
         JMSContext newContext = context.createContext(JMSContext.SESSION_TRANSACTED);
-        assertNotNull(newContext);
-        assertEquals(JMSContext.SESSION_TRANSACTED, newContext.getSessionMode());
-        assertTrue(newContext.getTransacted());
+        try {
+            assertNotNull(newContext);
+            assertEquals(JMSContext.SESSION_TRANSACTED, newContext.getSessionMode());
+            assertTrue(newContext.getTransacted());
+        } finally {
+            newContext.close();
+        }
     }
 
     @Test

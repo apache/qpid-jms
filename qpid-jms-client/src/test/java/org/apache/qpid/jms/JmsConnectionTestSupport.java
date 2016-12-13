@@ -17,6 +17,7 @@
 package org.apache.qpid.jms;
 
 import java.net.URI;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.jms.JMSContext;
 
@@ -37,6 +38,7 @@ import org.junit.Before;
  */
 public class JmsConnectionTestSupport extends QpidJmsTestCase {
 
+    private static final AtomicLong CONN_ID_SUFFIX = new AtomicLong();
     private final IdGenerator clientIdGenerator = new IdGenerator();
 
     protected final MockProviderFactory mockFactory = new MockProviderFactory();
@@ -80,7 +82,7 @@ public class JmsConnectionTestSupport extends QpidJmsTestCase {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        connectionInfo = new JmsConnectionInfo(new JmsConnectionId("ID:TEST:1"));
+        connectionInfo = new JmsConnectionInfo(new JmsConnectionId("ID:JCTS(" + CONN_ID_SUFFIX.incrementAndGet() + "):" + getClass().getName()));
         connectionInfo.setClientId(clientIdGenerator.generateId(), false);
     }
 

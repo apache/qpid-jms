@@ -81,9 +81,6 @@ public class AmqpSaslAuthenticator {
      * successful authentication or a JMSSecurityException is thrown indicating that the
      * handshake failed.
      *
-     * @param authenticationRequest
-     * 		The request that is awaiting the result of authentication.
-     *
      * @return true if the authentication process completed.
      */
     public boolean authenticate() throws JMSSecurityException {

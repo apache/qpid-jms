@@ -18,6 +18,7 @@ package org.apache.qpid.jms;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
@@ -867,13 +868,16 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         Method deliveryTimeMethod = null;
         try {
             Class<?> clazz = foreignMessage.getClass();
-            deliveryTimeMethod = clazz.getMethod("setJMSDeliveryTime", new Class[] { long.class });
+            Method method = clazz.getMethod("setJMSDeliveryTime", new Class[] { long.class });
+            if (!Modifier.isAbstract(method.getModifiers())) {
+                deliveryTimeMethod = method;
+            }
         } catch (NoSuchMethodException e) {
             // Assume its a JMS 1.1 Message, we will no-op.
         }
 
         if (deliveryTimeMethod != null) {
-            // Method exists, so use it
+            // Method exists, isn't abstract, so use it.
             foreignMessage.setJMSDeliveryTime(deliveryTime);
         }
     }

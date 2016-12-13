@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import javax.jms.BytesMessage;
+import javax.jms.Connection;
 import javax.jms.DeliveryMode;
 import javax.jms.JMSSecurityException;
 import javax.jms.Message;
@@ -170,6 +171,43 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         message = consumer.receive(5000);
         assertNotNull(message);
         assertTrue(message.getJMSDeliveryMode() == DeliveryMode.PERSISTENT);
+    }
+
+    @Test(timeout = 20000)
+    public void testSendForeignMessage() throws Exception {
+        connection = createAmqpConnection();
+        assertNotNull(connection);
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        assertNotNull(session);
+        Queue queue = session.createQueue(name.getMethodName());
+        MessageProducer producer = session.createProducer(queue);
+
+        QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertEquals(0, proxy.getQueueSize());
+
+        String foreignPropKey = "myForeignMessageProp";
+        String foreignPropValue = "ABC456XYZ";
+
+        Connection activeMQConnection = createActiveMQConnection();
+        try {
+            Session activeMQSession = activeMQConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            Message foreignMessage = activeMQSession.createMessage();
+            foreignMessage.setStringProperty(foreignPropKey, foreignPropValue);
+
+            producer.send(foreignMessage);
+        } finally {
+            activeMQConnection.close();
+        }
+
+        assertEquals(1, proxy.getQueueSize());
+
+        MessageConsumer consumer = session.createConsumer(queue);
+        Message receivedMessage = consumer.receive(5000);
+        assertNotNull("Did not receive message as expected", receivedMessage);
+        assertEquals("Unexpected property value", foreignPropValue, receivedMessage.getStringProperty(foreignPropKey));
     }
 
     @Test(timeout = 20000)

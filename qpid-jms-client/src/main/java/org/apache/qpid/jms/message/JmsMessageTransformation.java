@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.message;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Enumeration;
 
 import javax.jms.BytesMessage;
@@ -194,7 +196,7 @@ public final class JmsMessageTransformation {
         target.setJMSReplyTo(transformDestination(connection, source.getJMSReplyTo()));
         target.setJMSDestination(transformDestination(connection, source.getJMSDestination()));
         target.setJMSDeliveryMode(source.getJMSDeliveryMode());
-        target.setJMSDeliveryTime(source.getJMSDeliveryTime());
+        target.setJMSDeliveryTime(getForeignMessageDeliveryTime(source));
         target.setJMSRedelivered(source.getJMSRedelivered());
         target.setJMSType(source.getJMSType());
         target.setJMSExpiration(source.getJMSExpiration());
@@ -220,5 +222,26 @@ public final class JmsMessageTransformation {
         }
 
         return unresolvedDestinationHandler;
+    }
+
+    private static long getForeignMessageDeliveryTime(Message foreignMessage) throws JMSException {
+        // Verify if the getJMSDeliveryTime method exists, i.e the foreign provider isn't only JMS 1.1.
+        Method deliveryTimeMethod = null;
+        try {
+            Class<?> clazz = foreignMessage.getClass();
+            Method method = clazz.getMethod("getJMSDeliveryTime", (Class[]) null);
+            if (!Modifier.isAbstract(method.getModifiers())) {
+                deliveryTimeMethod = method;
+            }
+        } catch (NoSuchMethodException e) {
+            // Assume its a JMS 1.1 Message, we will return 0.
+        }
+
+        if (deliveryTimeMethod != null) {
+            // Method exists, isn't abstract, so use it.
+            return foreignMessage.getJMSDeliveryTime();
+        }
+
+        return 0;
     }
 }

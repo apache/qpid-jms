@@ -158,6 +158,11 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
             }
         }
 
+        if (closeTimeoutTask != null) {
+            closeTimeoutTask.cancel(true);
+            closeTimeoutTask = null;
+        }
+
         if (isAwaitingClose()) {
             LOG.debug("{} is now closed: ", this);
             if (cause == null) {

@@ -292,7 +292,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
     public void testConnectionPropertiesContainExpectedMetaData() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
-            Matcher<?> connPropsMatcher =  allOf(hasEntry(AmqpSupport.PRODUCT, MetaDataSupport.PROVIDER_NAME),
+            Matcher<?> connPropsMatcher = allOf(hasEntry(AmqpSupport.PRODUCT, MetaDataSupport.PROVIDER_NAME),
                     hasEntry(AmqpSupport.VERSION, MetaDataSupport.PROVIDER_VERSION),
                     hasEntry(AmqpSupport.PLATFORM, MetaDataSupport.PLATFORM_DETAILS));
 
@@ -577,6 +577,80 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectClose();
             connection.close();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testWaitForClientIDBeforeOpen() throws Exception {
+        doTestWaitForClientIDBeforeOpen(true);
+    }
+
+    @Test(timeout = 20000)
+    public void testDonNotWaitForClientIDBeforeOpen() throws Exception {
+        doTestWaitForClientIDBeforeOpen(false);
+    }
+
+    private void doTestWaitForClientIDBeforeOpen(boolean waitForClientID) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            String uri = "amqp://localhost:" + testPeer.getServerPort() + "?jms.awaitClientID=" + waitForClientID;
+
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+
+            ConnectionFactory factory = new JmsConnectionFactory(uri);
+            Connection connection = factory.createConnection();
+
+            // if configured to wait we set an ID to kick off the Open process.
+            if (waitForClientID) {
+                connection.setClientID("client-id");
+            }
+
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testWaitForClientIDDoesNotOpenUntilPromptedWithSetClientID() throws Exception {
+        doTestWaitForClientIDDoesNotOpenUntilPrompted(true);
+    }
+
+    @Test(timeout = 20000)
+    public void testWaitForClientIDDoesNotOpenUntilPromptedWithStart() throws Exception {
+        doTestWaitForClientIDDoesNotOpenUntilPrompted(false);
+    }
+
+    private void doTestWaitForClientIDDoesNotOpenUntilPrompted(boolean setClientID) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            String uri = "amqp://localhost:" + testPeer.getServerPort() + "?jms.awaitClientID=true";
+
+            testPeer.expectSaslAnonymous();
+
+            ConnectionFactory factory = new JmsConnectionFactory(uri);
+            Connection connection = factory.createConnection();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+
+            if (setClientID) {
+                connection.setClientID("client-id");
+            } else {
+                connection.start();
+            }
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(2000);
         }
     }
 }

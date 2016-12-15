@@ -87,6 +87,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private String queuePrefix = null;
     private String topicPrefix = null;
     private boolean validatePropertyNames = true;
+    private boolean awaitClientID = true;
     private long sendTimeout = JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
     private long requestTimeout = JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
@@ -271,7 +272,9 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             if (userSpecifiedClientId) {
                 connectionInfo.setClientId(clientID, true);
             } else {
-                connectionInfo.setClientId(getClientIdGenerator().generateId(), false);
+                // If we aren't waiting on a client ID then we just treat a generated Client ID as
+                // the user specified version and connection open will commence.
+                connectionInfo.setClientId(getClientIdGenerator().generateId(), !isAwaitClientID());
             }
 
             return connectionInfo;
@@ -875,6 +878,31 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     public void setSslContext(SSLContext sslContext) {
         this.sslContext = sslContext;
+    }
+
+    public boolean isAwaitClientID() {
+        return awaitClientID;
+    }
+
+    /**
+     * Controls whether the client will wait for a ClientID value to be set or the Connection
+     * to be used before it will attempt to complete the AMQP connection Open process.
+     * <p>
+     * By default a newly created Connection that does not have a ClientID configured in the URI
+     * will wait until a call to setClientID or some other interaction with the Connection API
+     * occurs before finishing the AMQP connection Open process with the remote peer. In some
+     * cases if this takes too long the remote can disconnect as a way of defending against
+     * denial of service attacks. If the user does not plan on setting a ClientID then this
+     * option allows for immediate AMQP connection Open completion and avoids the case where
+     * the remote peer might drop the Connection if it isn't used promptly.
+     * <p>
+     * This value defaults to true.
+     *
+     * @param awaitClientID
+     * 		the whether to wait for the client ID to be set before activating the connection.
+     */
+    public void setAwaitClientID(boolean awaitClientID) {
+        this.awaitClientID = awaitClientID;
     }
 
     //----- Static Methods ---------------------------------------------------//

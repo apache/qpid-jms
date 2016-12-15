@@ -23,6 +23,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.net.ssl.SSLContext;
+
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
@@ -109,7 +111,7 @@ public class NettyTcpTransport implements Transport {
     }
 
     @Override
-    public void connect() throws IOException {
+    public void connect(SSLContext sslContextOverride) throws IOException {
 
         if (listener == null) {
             throw new IllegalStateException("A transport listener must be set before connection attempts.");
@@ -118,7 +120,10 @@ public class NettyTcpTransport implements Transport {
         final SslHandler sslHandler;
         if (isSecure()) {
             try {
-                sslHandler = TransportSupport.createSslHandler(getRemoteLocation(), getSslOptions());
+                TransportSslOptions sslOptions = getSslOptions();
+                sslOptions.setSslContextOverride(sslContextOverride);
+
+                sslHandler = TransportSupport.createSslHandler(getRemoteLocation(), sslOptions);
             } catch (Exception ex) {
                 // TODO: can we stop it throwing Exception?
                 throw IOExceptionSupport.create(ex);

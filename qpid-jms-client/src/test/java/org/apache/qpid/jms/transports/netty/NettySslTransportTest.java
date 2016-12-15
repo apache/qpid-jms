@@ -85,7 +85,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
             Transport transport = createTransport(serverLocation, testListener, createClientOptionsWithoutTrustStore(false));
             try {
-                transport.connect();
+                transport.connect(null);
                 fail("Should not have connected to the server: " + serverLocation);
             } catch (Exception e) {
                 LOG.info("Connection failed to untrusted test server: {}", serverLocation);
@@ -117,7 +117,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
             Transport transport = createTransport(serverLocation, testListener, options);
             try {
-                transport.connect();
+                transport.connect(null);
                 fail("Should not have connected to the server: " + serverLocation);
             } catch (Exception e) {
                 LOG.info("Connection failed to untrusted test server: {}", serverLocation);
@@ -139,7 +139,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
             Transport transport = createTransport(serverLocation, testListener, createClientOptionsWithoutTrustStore(true));
             try {
-                transport.connect();
+                transport.connect(null);
                 LOG.info("Connection established to untrusted test server: {}", serverLocation);
             } catch (Exception e) {
                 fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
@@ -169,7 +169,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
             NettyTcpTransport transport = createTransport(serverLocation, testListener, clientOptions);
             try {
-                transport.connect();
+                transport.connect(null);
                 LOG.info("Connection established to test server: {}", serverLocation);
             } catch (Exception e) {
                 fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
@@ -209,7 +209,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
             NettyTcpTransport transport = createTransport(serverLocation, testListener, clientOptions);
             try {
-                transport.connect();
+                transport.connect(null);
                 LOG.info("Connection established to test server: {}", serverLocation);
             } catch (Exception e) {
                 fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
@@ -263,7 +263,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
             Transport transport = createTransport(serverLocation, testListener, clientOptions);
             try {
-                transport.connect();
+                transport.connect(null);
                 if (verifyHost) {
                     fail("Should not have connected to the server: " + serverLocation);
                 }

@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.JMSException;
+import javax.net.ssl.SSLContext;
 
 import org.apache.qpid.jms.JmsTemporaryDestination;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
@@ -181,6 +182,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 protonTransport.bind(protonConnection);
                 protonConnection.collect(protonCollector);
 
+                SSLContext sslContextOverride = connectionInfo.getSslContextOverride();
+
                 try {
                     transport = TransportFactory.create(getTransportType(), getRemoteURI());
                 } catch (Exception e) {
@@ -190,7 +193,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 transport.setTransportListener(AmqpProvider.this);
 
                 try {
-                    transport.connect();
+                    transport.connect(sslContextOverride);
                 } catch (Exception e) {
                     connectionRequest.onFailure(IOExceptionSupport.create(e));
                 }

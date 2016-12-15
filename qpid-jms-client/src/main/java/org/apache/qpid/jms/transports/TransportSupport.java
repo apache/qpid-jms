@@ -55,6 +55,10 @@ public class TransportSupport {
      * Creates a Netty SslHandler instance for use in Transports that require
      * an SSL encoder / decoder.
      *
+     * If the given options contain an SSLContext override, this will be used directly
+     * when creating the handler. If they do not, an SSLContext will first be created
+     * using the other option values.
+     *
      * @param remote
      *        The URI of the remote peer that the SslHandler will be used against.
      * @param options
@@ -65,7 +69,14 @@ public class TransportSupport {
      * @throws Exception if an error occurs while creating the SslHandler instance.
      */
     public static SslHandler createSslHandler(URI remote, TransportSslOptions options) throws Exception {
-        return new SslHandler(createSslEngine(remote, createSslContext(options), options));
+        SSLContext sslContext = options.getSslContextOverride();
+        if(sslContext == null) {
+            sslContext = createSslContext(options);
+        }
+
+        SSLEngine sslEngine = createSslEngine(remote, sslContext, options);
+
+        return new SslHandler(sslEngine);
     }
 
     /**

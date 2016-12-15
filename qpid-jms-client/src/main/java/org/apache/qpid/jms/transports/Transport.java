@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.Principal;
 
+import javax.net.ssl.SSLContext;
+
 import io.netty.buffer.ByteBuf;
 
 /**
@@ -28,12 +30,16 @@ import io.netty.buffer.ByteBuf;
 public interface Transport {
 
     /**
-     * Performs the protocol connect operation for the implemented Transport type
-     * such as a TCP socket connection etc.
+     * Performs the connect operation for the implemented Transport type
+     * such as a TCP socket connection, SSL/TLS handshake etc.
+     *
+     * @param sslContextOverride
+     *          a user-provided SSLContext to use if establishing a secure
+     *          connection, overrides applicable URI configuration
      *
      * @throws IOException if an error occurs while attempting the connect.
      */
-    void connect() throws IOException;
+    void connect(SSLContext sslContextOverride) throws IOException;
 
     /**
      * @return true if transport is connected or false if the connection is down.

@@ -64,7 +64,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
 
             Transport transport = createTransport(serverLocation, testListener, createClientOptions());
             try {
-                transport.connect();
+                transport.connect(null);
                 LOG.info("Connected to server:{} as expected.", serverLocation);
             } catch (Exception e) {
                 fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
@@ -99,7 +99,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
 
             Transport transport = createTransport(serverLocation, testListener, createClientOptions());
             try {
-                transport.connect();
+                transport.connect(null);
                 fail("Should have failed to connect to the server: " + serverLocation);
             } catch (Exception e) {
                 LOG.info("Failed to connect to: {} as expected.", serverLocation);

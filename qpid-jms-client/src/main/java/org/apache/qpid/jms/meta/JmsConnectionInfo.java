@@ -19,6 +19,8 @@ package org.apache.qpid.jms.meta;
 import java.net.URI;
 import java.nio.charset.Charset;
 
+import javax.net.ssl.SSLContext;
+
 import org.apache.qpid.jms.policy.JmsDefaultDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
@@ -73,6 +75,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private JmsDeserializationPolicy deserializationPolicy;
 
     private volatile byte[] encodedUserId;
+    private SSLContext sslContextOverride;
 
     public JmsConnectionInfo(JmsConnectionId connectionId) {
         if (connectionId == null) {
@@ -313,6 +316,20 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     public void setMessageIDPolicy(JmsMessageIDPolicy messageIDPolicy) {
         this.messageIDPolicy = messageIDPolicy;
+    }
+
+    /**
+     * SSLContext to use for SSL/TLS connections. Overrides URI/System property transport configuration.
+     *
+     * @param sslContextOverride
+     *      the sslContext to use, or null to respect the URI/System property configuration again.
+     */
+    public void setSslContextOverride(SSLContext sslContextOverride) {
+        this.sslContextOverride = sslContextOverride;
+    }
+
+    public SSLContext getSslContextOverride() {
+        return sslContextOverride;
     }
 
     public boolean isPopulateJMSXUserID() {

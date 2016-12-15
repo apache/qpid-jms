@@ -22,6 +22,7 @@ package org.apache.qpid.jms.integration;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -51,6 +52,8 @@ public class SslIntegrationTest extends QpidJmsTestCase {
     private static final String BROKER_JKS_TRUSTSTORE = "src/test/resources/broker-jks.truststore";
     private static final String CLIENT_MULTI_KEYSTORE = "src/test/resources/client-multiple-keys-jks.keystore";
     private static final String CLIENT_JKS_TRUSTSTORE = "src/test/resources/client-jks.truststore";
+    private static final String CLIENT_JKS_KEYSTORE = "src/test/resources/client-jks.keystore";
+    private static final String CLIENT2_JKS_KEYSTORE = "src/test/resources/client2-jks.keystore";
     private static final String PASSWORD = "password";
 
     private static final String CLIENT_KEY_ALIAS = "client";
@@ -190,6 +193,137 @@ public class SslIntegrationTest extends QpidJmsTestCase {
             }
 
             assertNull("Attempt should have failed locally, peer should not have accepted any TCP connection", testPeer.getClientSocket());
+        }
+    }
+
+    /**
+     * Checks that configuring different SSLContext instances using different client key
+     * stores via {@link JmsConnectionFactory#setSslContext(SSLContext)} results
+     * in different certificates being observed server side following handshake.
+     */
+    @Test(timeout = 20000)
+    public void testCreateConnectionWithSslContextOverride() throws Exception {
+        assertNotEquals(CLIENT_JKS_KEYSTORE, CLIENT2_JKS_KEYSTORE);
+        assertNotEquals(CLIENT_DN, CLIENT2_DN);
+
+        // Connect providing the Client 1 details via context override, expect Client1 DN.
+        doConnectionWithSslContextOverride(CLIENT_JKS_KEYSTORE, CLIENT_DN);
+        // Connect providing the Client 2 details via context override, expect Client2 DN instead.
+        doConnectionWithSslContextOverride(CLIENT2_JKS_KEYSTORE, CLIENT2_DN);
+    }
+
+    private void doConnectionWithSslContextOverride(String clientKeyStorePath, String expectedDN) throws Exception {
+        TransportSslOptions serverSslOptions = new TransportSslOptions();
+        serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
+        serverSslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
+        serverSslOptions.setKeyStorePassword(PASSWORD);
+        serverSslOptions.setTrustStorePassword(PASSWORD);
+        serverSslOptions.setVerifyHost(false);
+
+        SSLContext serverContext = TransportSupport.createSslContext(serverSslOptions);
+
+        TransportSslOptions clientSslOptions = new TransportSslOptions();
+        clientSslOptions.setKeyStoreLocation(clientKeyStorePath);
+        clientSslOptions.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE);
+        clientSslOptions.setKeyStorePassword(PASSWORD);
+        clientSslOptions.setTrustStorePassword(PASSWORD);
+
+        SSLContext clientContext = TransportSupport.createSslContext(clientSslOptions);
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(serverContext, true);) {
+            JmsConnectionFactory factory = new JmsConnectionFactory("amqps://localhost:" + testPeer.getServerPort());
+            factory.setSslContext(clientContext);
+
+            testPeer.expectSaslPlain("guest", "guest");
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+
+            Connection connection = factory.createConnection("guest", "guest");
+            connection.start();
+
+            Socket socket = testPeer.getClientSocket();
+            assertTrue(socket instanceof SSLSocket);
+            SSLSession session = ((SSLSocket) socket).getSession();
+
+            Certificate[] peerCertificates = session.getPeerCertificates();
+            assertNotNull(peerCertificates);
+
+            Certificate cert = peerCertificates[0];
+            assertTrue(cert instanceof X509Certificate);
+            String dn = ((X509Certificate)cert).getSubjectX500Principal().getName();
+            assertEquals("Unexpected certificate DN", expectedDN, dn);
+
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
+
+    /**
+     * Checks that configuring an SSLContext instance via
+     * {@link JmsConnectionFactory#setSslContext(SSLContext)} overrides URI config
+     * for store location etc, resulting in a different certificate being observed
+     * server side following handshake.
+     */
+    @Test(timeout = 20000)
+    public void testCreateConnectionWithSslContextOverrideAndURIConfig() throws Exception {
+        assertNotEquals(CLIENT_JKS_KEYSTORE, CLIENT2_JKS_KEYSTORE);
+        assertNotEquals(CLIENT_DN, CLIENT2_DN);
+
+        // Connect without providing a context, expect Client1 DN.
+        doConnectionWithSslContextOverrideAndURIConfig(null, CLIENT_DN);
+
+        TransportSslOptions clientSslOptions = new TransportSslOptions();
+        clientSslOptions.setKeyStoreLocation(CLIENT2_JKS_KEYSTORE);
+        clientSslOptions.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE);
+        clientSslOptions.setKeyStorePassword(PASSWORD);
+        clientSslOptions.setTrustStorePassword(PASSWORD);
+
+        SSLContext clientContext = TransportSupport.createSslContext(clientSslOptions);
+
+        // Connect providing the Client 2 details via context override, expect Client2 DN instead.
+        doConnectionWithSslContextOverrideAndURIConfig(clientContext, CLIENT2_DN);
+    }
+
+    private void doConnectionWithSslContextOverrideAndURIConfig(SSLContext clientContext, String expectedDN) throws Exception {
+        TransportSslOptions serverSslOptions = new TransportSslOptions();
+        serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
+        serverSslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
+        serverSslOptions.setKeyStorePassword(PASSWORD);
+        serverSslOptions.setTrustStorePassword(PASSWORD);
+        serverSslOptions.setVerifyHost(false);
+
+        SSLContext serverContext = TransportSupport.createSslContext(serverSslOptions);
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(serverContext, true);) {
+            String connOptions = "?transport.keyStoreLocation=" + CLIENT_JKS_KEYSTORE + "&" +
+                    "transport.keyStorePassword=" + PASSWORD + "&" +
+                    "transport.trustStoreLocation=" + CLIENT_JKS_TRUSTSTORE + "&" +
+                    "transport.trustStorePassword=" + PASSWORD;
+
+            JmsConnectionFactory factory = new JmsConnectionFactory("amqps://localhost:" + testPeer.getServerPort() + connOptions);
+            factory.setSslContext(clientContext);
+
+            testPeer.expectSaslPlain("guest", "guest");
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+
+            Connection connection = factory.createConnection("guest", "guest");
+            connection.start();
+
+            Socket socket = testPeer.getClientSocket();
+            assertTrue(socket instanceof SSLSocket);
+            SSLSession session = ((SSLSocket) socket).getSession();
+
+            Certificate[] peerCertificates = session.getPeerCertificates();
+            assertNotNull(peerCertificates);
+
+            Certificate cert = peerCertificates[0];
+            assertTrue(cert instanceof X509Certificate);
+            String dn = ((X509Certificate)cert).getSubjectX500Principal().getName();
+            assertEquals("Unexpected certificate DN", expectedDN, dn);
+
+            testPeer.expectClose();
+            connection.close();
         }
     }
 }

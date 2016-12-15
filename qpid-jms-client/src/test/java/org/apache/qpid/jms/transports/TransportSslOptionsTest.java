@@ -20,37 +20,42 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+import javax.net.ssl.SSLContext;
+
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 /**
  * Test for class TransportSslOptions
  */
 public class TransportSslOptionsTest extends QpidJmsTestCase {
 
-    public static final String PASSWORD = "password";
-    public static final String CLIENT_KEYSTORE = "src/test/resources/client-jks.keystore";
-    public static final String CLIENT_TRUSTSTORE = "src/test/resources/client-jks.truststore";
-    public static final String KEYSTORE_TYPE = "jks";
-    public static final String KEY_ALIAS = "myTestAlias";
-    public static final String CONTEXT_PROTOCOL = "TLSv1.1";
-    public static final boolean TRUST_ALL = true;
-    public static final boolean VERIFY_HOST = true;
+    private static final String PASSWORD = "password";
+    private static final String CLIENT_KEYSTORE = "src/test/resources/client-jks.keystore";
+    private static final String CLIENT_TRUSTSTORE = "src/test/resources/client-jks.truststore";
+    private static final String KEYSTORE_TYPE = "jks";
+    private static final String KEY_ALIAS = "myTestAlias";
+    private static final String CONTEXT_PROTOCOL = "TLSv1.1";
+    private static final boolean TRUST_ALL = true;
+    private static final boolean VERIFY_HOST = true;
 
-    public static final int TEST_SEND_BUFFER_SIZE = 128 * 1024;
-    public static final int TEST_RECEIVE_BUFFER_SIZE = TEST_SEND_BUFFER_SIZE;
-    public static final int TEST_TRAFFIC_CLASS = 1;
-    public static final boolean TEST_TCP_NO_DELAY = false;
-    public static final boolean TEST_TCP_KEEP_ALIVE = true;
-    public static final int TEST_SO_LINGER = Short.MAX_VALUE;
-    public static final int TEST_SO_TIMEOUT = 10;
-    public static final int TEST_CONNECT_TIMEOUT = 90000;
-    public static final int TEST_DEFAULT_SSL_PORT = 5681;
+    private static final int TEST_SEND_BUFFER_SIZE = 128 * 1024;
+    private static final int TEST_RECEIVE_BUFFER_SIZE = TEST_SEND_BUFFER_SIZE;
+    private static final int TEST_TRAFFIC_CLASS = 1;
+    private static final boolean TEST_TCP_NO_DELAY = false;
+    private static final boolean TEST_TCP_KEEP_ALIVE = true;
+    private static final int TEST_SO_LINGER = Short.MAX_VALUE;
+    private static final int TEST_SO_TIMEOUT = 10;
+    private static final int TEST_CONNECT_TIMEOUT = 90000;
+    private static final int TEST_DEFAULT_SSL_PORT = 5681;
 
-    public static final String[] ENABLED_PROTOCOLS = new String[] {"TLSv1.2"};
-    public static final String[] DISABLED_PROTOCOLS = new String[] {"SSLv3", "TLSv1.2"};
-    public static final String[] ENABLED_CIPHERS = new String[] {"CIPHER_A", "CIPHER_B"};
-    public static final String[] DISABLED_CIPHERS = new String[] {"CIPHER_C"};
+    private static final String[] ENABLED_PROTOCOLS = new String[] {"TLSv1.2"};
+    private static final String[] DISABLED_PROTOCOLS = new String[] {"SSLv3", "TLSv1.2"};
+    private static final String[] ENABLED_CIPHERS = new String[] {"CIPHER_A", "CIPHER_B"};
+    private static final String[] DISABLED_CIPHERS = new String[] {"CIPHER_C"};
+
+    private static final SSLContext SSL_CONTEXT = Mockito.mock(SSLContext.class);
 
     @Test
     public void testCreate() {
@@ -71,6 +76,7 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         assertNull(options.getTrustStoreLocation());
         assertNull(options.getTrustStorePassword());
         assertNull(options.getKeyAlias());
+        assertNull(options.getSslContextOverride());
     }
 
     @Test
@@ -93,6 +99,7 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         assertEquals(KEYSTORE_TYPE, options.getStoreType());
         assertEquals(KEY_ALIAS, options.getKeyAlias());
         assertEquals(CONTEXT_PROTOCOL, options.getContextProtocol());
+        assertEquals(SSL_CONTEXT, options.getSslContextOverride());
         assertArrayEquals(ENABLED_PROTOCOLS,options.getEnabledProtocols());
         assertArrayEquals(DISABLED_PROTOCOLS,options.getDisabledProtocols());
         assertArrayEquals(ENABLED_CIPHERS,options.getEnabledCipherSuites());
@@ -120,6 +127,7 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         assertEquals(KEYSTORE_TYPE, options.getStoreType());
         assertEquals(KEY_ALIAS, options.getKeyAlias());
         assertEquals(CONTEXT_PROTOCOL, options.getContextProtocol());
+        assertEquals(SSL_CONTEXT, options.getSslContextOverride());
         assertArrayEquals(ENABLED_PROTOCOLS,options.getEnabledProtocols());
         assertArrayEquals(DISABLED_PROTOCOLS,options.getDisabledProtocols());
         assertArrayEquals(ENABLED_CIPHERS,options.getEnabledCipherSuites());
@@ -152,6 +160,7 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         options.setSoTimeout(TEST_SO_TIMEOUT);
         options.setConnectTimeout(TEST_CONNECT_TIMEOUT);
         options.setDefaultSslPort(TEST_DEFAULT_SSL_PORT);
+        options.setSslContextOverride(SSL_CONTEXT);
 
         return options;
     }

@@ -20,6 +20,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import javax.net.ssl.SSLContext;
+
 
 /**
  * Holds the defined SSL options for connections that operate over a secure
@@ -52,6 +54,7 @@ public class TransportSslOptions extends TransportOptions {
     private boolean verifyHost = DEFAULT_VERIFY_HOST;
     private String keyAlias;
     private int defaultSslPort = DEFAULT_SSL_PORT;
+    private SSLContext sslContextOverride;
 
     static {
         INSTANCE.setKeyStoreLocation(System.getProperty("javax.net.ssl.keyStore"));
@@ -262,6 +265,14 @@ public class TransportSslOptions extends TransportOptions {
         this.defaultSslPort = defaultSslPort;
     }
 
+    public void setSslContextOverride(SSLContext sslContextOverride) {
+        this.sslContextOverride = sslContextOverride;
+    }
+
+    public SSLContext getSslContextOverride() {
+        return sslContextOverride;
+    }
+
     @Override
     public TransportSslOptions clone() {
         return copyOptions(new TransportSslOptions());
@@ -289,6 +300,7 @@ public class TransportSslOptions extends TransportOptions {
         copy.setKeyAlias(getKeyAlias());
         copy.setContextProtocol(getContextProtocol());
         copy.setDefaultSslPort(getDefaultSslPort());
+        copy.setSslContextOverride(getSslContextOverride());
 
         return copy;
     }

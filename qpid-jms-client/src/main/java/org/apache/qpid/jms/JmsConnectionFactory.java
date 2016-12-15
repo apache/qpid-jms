@@ -32,6 +32,7 @@ import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
 import javax.jms.TopicConnection;
 import javax.jms.TopicConnectionFactory;
+import javax.net.ssl.SSLContext;
 
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.jndi.JNDIStorable;
@@ -101,6 +102,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private JmsPresettlePolicy presettlePolicy = new JmsDefaultPresettlePolicy();
     private JmsMessageIDPolicy messageIDPolicy = new JmsDefaultMessageIDPolicy();
     private JmsDeserializationPolicy deserializationPolicy = new JmsDefaultDeserializationPolicy();
+
+    private SSLContext sslContext;
 
     public JmsConnectionFactory() {
     }
@@ -259,6 +262,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             connectionInfo.setPresettlePolicy(presettlePolicy.copy());
             connectionInfo.setRedeliveryPolicy(redeliveryPolicy.copy());
             connectionInfo.setDeserializationPolicy(deserializationPolicy.copy());
+            connectionInfo.setSslContextOverride(sslContext);
 
             PropertyUtil.setProperties(connectionInfo, properties);
             connectionInfo.setUsername(username);
@@ -857,6 +861,20 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     public void setPopulateJMSXUserID(boolean populateJMSXUserID) {
         this.populateJMSXUserID = populateJMSXUserID;
+    }
+
+    /**
+     * Sets an SSLContext to use when creating an SSL/TLS secured connection with this factory.
+     * The URI must still be configured to indicate a secure connection should be created.
+     * Using this method overrides the effect of URI/System property configuration relating
+     * to the location/credentials/type of SSL key/trust stores and whether to trust all
+     * certificates or use a particular keyAlias.
+     *
+     * @param sslContext
+     *      the sslContext to use, or null to respect the URI/System property configuration again.
+     */
+    public void setSslContext(SSLContext sslContext) {
+        this.sslContext = sslContext;
     }
 
     //----- Static Methods ---------------------------------------------------//

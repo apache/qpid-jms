@@ -56,6 +56,16 @@ keytool -storetype pkcs12 -keystore client-pkcs12.keystore -storepass password -
 keytool -importkeystore -srckeystore client-pkcs12.keystore -destkeystore client-jceks.keystore -srcstoretype pkcs12 -deststoretype jceks -srcstorepass password -deststorepass password
 keytool -importkeystore -srckeystore client-pkcs12.keystore -destkeystore client-jks.keystore -srcstoretype pkcs12 -deststoretype jks -srcstorepass password -deststorepass password
 
+# Create a key pair for a second client, and sign it with the CA:
+# ----------------------------------------------------------
+keytool -storetype jks -keystore client2-jks.keystore -storepass password -keypass password -alias client2 -genkey -dname "O=Client2,CN=client2" -validity 9999 -ext bc=ca:false -ext eku=cA
+
+keytool -storetype jks -keystore client2-jks.keystore -storepass password -alias client2 -certreq -file client2.csr
+keytool -storetype pkcs12 -keystore ca-pkcs12.keystore -storepass password -alias ca -gencert -rfc -infile client2.csr -outfile client2.crt -validity 9999 -ext bc=ca:false -ext eku=cA
+
+keytool -storetype jks -keystore client2-jks.keystore -storepass password -keypass password -importcert -alias ca -file ca.crt -noprompt
+keytool -storetype jks -keystore client2-jks.keystore -storepass password -keypass password -importcert -alias client2 -file client2.crt
+
 # Create trust stores for the client, import the CA cert:
 # -------------------------------------------------------
 keytool -storetype pkcs12 -keystore client-pkcs12.truststore -storepass password -keypass password -importcert -alias ca -file ca.crt -noprompt
@@ -70,13 +80,8 @@ keytool -storetype jks -keystore other-ca-jks.truststore -storepass password -al
 keytool -storetype jks -keystore other-ca-jks.truststore -storepass password -alias other-ca -delete
 keytool -storetype jks -keystore other-ca-jks.truststore -storepass password -keypass password -importcert -alias other-ca -file other-ca.crt -noprompt
 
-
 # Create a store with multiple key pairs for the client to allow for alias selection:
 # ----------------------------------------------------------
 keytool -importkeystore -srckeystore client-pkcs12.keystore -destkeystore client-multiple-keys-jks.keystore -srcstoretype pkcs12 -deststoretype jks -srcstorepass password -deststorepass password
-
-keytool -storetype jks -keystore client-multiple-keys-jks.keystore -storepass password -keypass password -alias client2 -genkey -dname "O=Client2,CN=client2" -validity 9999 -ext bc=ca:false -ext eku=cA
-
-keytool -storetype jks -keystore client-multiple-keys-jks.keystore -storepass password -alias client2 -certreq -file client2.csr
-keytool -storetype pkcs12 -keystore ca-pkcs12.keystore -storepass password -alias ca -gencert -rfc -infile client2.csr -outfile client2.crt -validity 9999 -ext bc=ca:false -ext eku=cA
-keytool -storetype jks -keystore client-multiple-keys-jks.keystore -storepass password -keypass password -importcert -alias client2 -file client2.crt
+keytool -storetype jks -keystore client-multiple-keys-jks.keystore -storepass password -alias ca -delete
+keytool -importkeystore -srckeystore client2-jks.keystore -destkeystore client-multiple-keys-jks.keystore -srcstoretype jks -deststoretype jks -srcstorepass password -deststorepass password

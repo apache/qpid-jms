@@ -561,4 +561,22 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(3000);
         }
     }
+
+    @Test(timeout = 20000)
+    public void testCreateConnectionWithServerSendingPreemptiveData() throws Exception {
+        boolean sendServerSaslHeaderPreEmptively = true;
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(null, false, sendServerSaslHeaderPreEmptively);) {
+            // Don't use test fixture, handle the connection directly to control sasl behaviour
+            testPeer.expectSaslAnonymousWithPreEmptiveServerHeader();
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+
+            JmsConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort());
+            Connection connection = factory.createConnection();
+            connection.start();
+
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
 }

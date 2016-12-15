@@ -31,6 +31,7 @@ import javax.net.ssl.SSLServerSocketFactory;
 
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.engine.impl.AmqpHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +52,7 @@ class TestAmqpPeerRunner implements Runnable
     private final TestFrameParser _testFrameParser;
     private volatile boolean _suppressReadExceptionOnClose;
     private volatile boolean _exitReadLoopEarly;
+    private volatile boolean _sendSaslHeaderPreEmptively;
 
     private volatile Throwable _throwable;
 
@@ -94,6 +96,12 @@ class TestAmqpPeerRunner implements Runnable
         {
             _clientSocket = clientSocket;
             _networkOutputStream = networkOutputStream;
+
+            if (_sendSaslHeaderPreEmptively) {
+                byte[] bytes = AmqpHeader.SASL_HEADER;
+                LOGGER.debug("Sending header pre-emptively: {}", new Binary(bytes));
+                _networkOutputStream.write(bytes);
+            }
 
             int bytesRead;
             byte[] networkInputBytes = new byte[1024];
@@ -241,5 +249,13 @@ class TestAmqpPeerRunner implements Runnable
 
     public void exitReadLoopEarly() {
         _exitReadLoopEarly = true;
+    }
+
+    public void setSendSaslHeaderPreEmptively(boolean sendSaslHeaderPreEmptively) {
+        _sendSaslHeaderPreEmptively = sendSaslHeaderPreEmptively;
+    }
+
+    public boolean isSendSaslHeaderPreEmptively() {
+        return _sendSaslHeaderPreEmptively;
     }
 }

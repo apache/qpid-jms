@@ -89,6 +89,37 @@ public class SslIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testCreateSslConnectionWithServerSendingPreemptiveData() throws Exception {
+        TransportSslOptions serverSslOptions = new TransportSslOptions();
+        serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
+        serverSslOptions.setKeyStorePassword(PASSWORD);
+        serverSslOptions.setVerifyHost(false);
+
+        SSLContext serverSslContext = TransportSupport.createSslContext(serverSslOptions);
+
+        boolean sendServerSaslHeaderPreEmptively = true;
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(serverSslContext, false, sendServerSaslHeaderPreEmptively);) {
+            // Don't use test fixture, handle the connection directly to control sasl behaviour
+            testPeer.expectSaslAnonymousWithPreEmptiveServerHeader();
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+
+            String connOptions = "?transport.trustStoreLocation=" + CLIENT_JKS_TRUSTSTORE + "&" +
+                                  "transport.trustStorePassword=" + PASSWORD;
+
+            JmsConnectionFactory factory = new JmsConnectionFactory("amqps://localhost:" + testPeer.getServerPort() + connOptions);
+            Connection connection = factory.createConnection();
+            connection.start();
+
+            Socket socket = testPeer.getClientSocket();
+            assertTrue(socket instanceof SSLSocket);
+
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
+
+    @Test(timeout = 20000)
     public void testCreateAndCloseSslConnectionWithClientAuth() throws Exception {
         TransportSslOptions sslOptions = new TransportSslOptions();
         sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);

@@ -60,8 +60,15 @@ class HeaderHandlerImpl implements HeaderHandler
             peer.assertionFailed(ae);
         }
 
-        LOGGER.debug("Sending header response.");
-        peer.sendHeader(_response);
+        if (_response == null || _response.length == 0)
+        {
+            LOGGER.debug("Skipping header response as none was instructed");
+        }
+        else
+        {
+            LOGGER.debug("Sending header response: " + new Binary(_response));
+            peer.sendHeader(_response);
+        }
 
         if(_onCompletion != null)
         {

@@ -171,53 +171,47 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
                 connectionRequest = connectRequest;
 
-                protonTransport.setEmitFlowEventOnSend(false);
+                try
+                {
+                    protonTransport.setEmitFlowEventOnSend(false);
 
-                if (getMaxFrameSize() > 0) {
-                    protonTransport.setMaxFrameSize(getMaxFrameSize());
-                }
-
-                protonTransport.setChannelMax(getChannelMax());
-                protonTransport.setIdleTimeout(idleTimeout);
-                protonTransport.bind(protonConnection);
-                protonConnection.collect(protonCollector);
-
-                SSLContext sslContextOverride = connectionInfo.getSslContextOverride();
-
-                try {
-                    transport = TransportFactory.create(getTransportType(), getRemoteURI());
-                } catch (Exception e) {
-                    connectionRequest.onFailure(IOExceptionSupport.create(e));
-                }
-
-                transport.setTransportListener(AmqpProvider.this);
-
-                try {
-                    transport.connect(sslContextOverride);
-                } catch (Exception e) {
-                    connectionRequest.onFailure(IOExceptionSupport.create(e));
-                }
-
-                if (saslLayer) {
-                    Sasl sasl = protonTransport.sasl();
-                    sasl.client();
-
-                    String hostname = getVhost();
-                    if (hostname == null) {
-                        hostname = remoteURI.getHost();
-                    } else if (hostname.isEmpty()) {
-                        hostname = null;
+                    if (getMaxFrameSize() > 0) {
+                        protonTransport.setMaxFrameSize(getMaxFrameSize());
                     }
 
-                    sasl.setRemoteHostname(hostname);
+                    protonTransport.setChannelMax(getChannelMax());
+                    protonTransport.setIdleTimeout(idleTimeout);
+                    protonTransport.bind(protonConnection);
+                    protonConnection.collect(protonCollector);
 
-                    authenticator = new AmqpSaslAuthenticator(connectionRequest, sasl, connectionInfo, transport.getLocalPrincipal(), saslMechanisms);
+                    SSLContext sslContextOverride = connectionInfo.getSslContextOverride();
+
+                    transport = TransportFactory.create(getTransportType(), getRemoteURI());
+                    transport.setTransportListener(AmqpProvider.this);
+                    transport.connect(sslContextOverride);
+
+                    if (saslLayer) {
+                        Sasl sasl = protonTransport.sasl();
+                        sasl.client();
+
+                        String hostname = getVhost();
+                        if (hostname == null) {
+                            hostname = remoteURI.getHost();
+                        } else if (hostname.isEmpty()) {
+                            hostname = null;
+                        }
+
+                        sasl.setRemoteHostname(hostname);
+
+                        authenticator = new AmqpSaslAuthenticator(connectionRequest, sasl, connectionInfo, transport.getLocalPrincipal(), saslMechanisms);
+
+                        pumpToProtonTransport();
+                    } else {
+                        connectRequest.onSuccess();
+                    }
                 }
-
-                if (saslLayer) {
-                    pumpToProtonTransport();
-                } else {
-                    connectRequest.onSuccess();
+                catch (Throwable t) {
+                    connectionRequest.onFailure(IOExceptionSupport.create(t));
                 }
             }
         });

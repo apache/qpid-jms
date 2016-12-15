@@ -147,7 +147,13 @@ public class TestAmqpPeer implements AutoCloseable
 
     public TestAmqpPeer(SSLContext context, boolean needClientCert) throws IOException
     {
+        this(context, needClientCert, false);
+    }
+
+    public TestAmqpPeer(SSLContext context, boolean needClientCert, boolean sendSaslHeaderPreEmptively) throws IOException
+    {
         _driverRunnable = new TestAmqpPeerRunner(this, context, needClientCert);
+        _driverRunnable.setSendSaslHeaderPreEmptively(sendSaslHeaderPreEmptively);
         _driverThread = new Thread(_driverRunnable, "MockAmqpPeer-" + _driverRunnable.getServerPort());
         _driverThread.start();
     }
@@ -421,10 +427,14 @@ public class TestAmqpPeer implements AutoCloseable
         return openFrame;
     }
 
-    public void expectSaslAuthentication(Symbol mechanism, Matcher<Binary> initialResponseMatcher, Matcher<?> hostnameMatcher)
+    private void expectSaslAuthentication(Symbol mechanism, Matcher<Binary> initialResponseMatcher, Matcher<?> hostnameMatcher, boolean sendSaslHeaderResponse)
     {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(mechanism);
-        addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
+        byte[] saslHeaderResponse = null;
+        if(sendSaslHeaderResponse) {
+            saslHeaderResponse = AmqpHeader.SASL_HEADER;
+        }
+        addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, saslHeaderResponse,
                                             new FrameSender(
                                                     this, FrameType.SASL, 0,
                                                     saslMechanismsFrame, null)));
@@ -469,7 +479,7 @@ public class TestAmqpPeer implements AutoCloseable
 
         Matcher<Binary> initialResponseMatcher = equalTo(new Binary(data));
 
-        expectSaslAuthentication(PLAIN, initialResponseMatcher, null);
+        expectSaslAuthentication(PLAIN, initialResponseMatcher, null, true);
     }
 
     public void expectSaslExternal()
@@ -479,7 +489,7 @@ public class TestAmqpPeer implements AutoCloseable
             throw new IllegalStateException("need-client-cert must be enabled on the test peer");
         }
 
-        expectSaslAuthentication(EXTERNAL, equalTo(new Binary(new byte[0])), null);
+        expectSaslAuthentication(EXTERNAL, equalTo(new Binary(new byte[0])), null, true);
     }
 
     public void expectSaslAnonymous()
@@ -489,7 +499,14 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectSaslAnonymous(Matcher<?> hostnameMatcher)
     {
-        expectSaslAuthentication(ANONYMOUS, equalTo(new Binary(new byte[0])), hostnameMatcher);
+        expectSaslAuthentication(ANONYMOUS, equalTo(new Binary(new byte[0])), hostnameMatcher, true);
+    }
+
+    public void expectSaslAnonymousWithPreEmptiveServerHeader()
+    {
+        assertThat("Peer should be created with instruction to send preemptively", _driverRunnable.isSendSaslHeaderPreEmptively(), equalTo(true));
+        boolean sendSaslHeaderResponse = false; // Must arrange for the server to have already sent it preemptively
+        expectSaslAuthentication(ANONYMOUS, equalTo(new Binary(new byte[0])), null, sendSaslHeaderResponse);
     }
 
     public void expectFailingSaslAuthentication(Symbol[] serverMechs, Symbol clientSelectedMech)

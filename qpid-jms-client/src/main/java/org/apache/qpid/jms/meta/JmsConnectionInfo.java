@@ -61,6 +61,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private boolean localMessagePriority;
     private boolean localMessageExpiry;
     private boolean populateJMSXUserID;
+    private boolean useDaemonThread;
     private long sendTimeout = DEFAULT_SEND_TIMEOUT;
     private long requestTimeout = DEFAULT_REQUEST_TIMEOUT;
     private long connectTimeout = DEFAULT_CONNECT_TIMEOUT;
@@ -105,6 +106,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
         copy.topicPrefix = topicPrefix;
         copy.connectTimeout = connectTimeout;
         copy.validatePropertyNames = validatePropertyNames;
+        copy.useDaemonThread = useDaemonThread;
         copy.messageIDPolicy = getMessageIDPolicy().copy();
         copy.prefetchPolicy = getPrefetchPolicy().copy();
         copy.redeliveryPolicy = getRedeliveryPolicy().copy();
@@ -357,6 +359,14 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     public void setDeserializationPolicy(JmsDeserializationPolicy deserializationPolicy) {
         this.deserializationPolicy = deserializationPolicy;
+    }
+
+    public boolean isUseDaemonThread() {
+        return useDaemonThread;
+    }
+
+    public void setUseDaemonThread(boolean useDaemonThread) {
+        this.useDaemonThread = useDaemonThread;
     }
 
     @Override

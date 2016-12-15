@@ -88,6 +88,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private String topicPrefix = null;
     private boolean validatePropertyNames = true;
     private boolean awaitClientID = true;
+    private boolean useDaemonThread = false;
     private long sendTimeout = JmsConnectionInfo.DEFAULT_SEND_TIMEOUT;
     private long requestTimeout = JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT;
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
@@ -903,6 +904,21 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     public void setAwaitClientID(boolean awaitClientID) {
         this.awaitClientID = awaitClientID;
+    }
+
+    public boolean isUseDaemonThread() {
+        return useDaemonThread;
+    }
+
+    /**
+     * Sets whether the Connection created will ensure that there is at least one non-daemon
+     * thread running at all times.
+     *
+     * @param useDaemonThread
+     * 		controls whether the Connection maintains a non-daemon thread.
+     */
+    public void setUseDaemonThread(boolean useDaemonThread) {
+        this.useDaemonThread = useDaemonThread;
     }
 
     //----- Static Methods ---------------------------------------------------//

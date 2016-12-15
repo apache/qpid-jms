@@ -118,12 +118,13 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         // This executor can be used for dispatching asynchronous tasks that might block or result
         // in reentrant calls to this Connection that could block.  The thread in this executor
         // will also serve as a means of preventing JVM shutdown should a client application
-        // not have it's own mechanism for doing so.
+        // not have it's own mechanism for doing so if the configuration specifies that the
+        // Connection create this thread as a non-daemon thread.
         executor = new ThreadPoolExecutor(1, 1, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable target) {
                 Thread thread = new Thread(target, "QpidJMS Connection Executor: " + connectionInfo.getId());
-                thread.setDaemon(false);
+                thread.setDaemon(connectionInfo.isUseDaemonThread());
                 return thread;
             }
         });
@@ -1089,6 +1090,10 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
     public void setPopulateJMSXUserID(boolean populateJMSXUserID) {
         connectionInfo.setPopulateJMSXUserID(populateJMSXUserID);
+    }
+
+    public boolean isUseDaemonThread() {
+        return connectionInfo.isUseDaemonThread();
     }
 
     //----- Async event handlers ---------------------------------------------//

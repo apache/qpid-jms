@@ -74,6 +74,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         }
 
         if (testPeer != null) {
+            testPeer.waitForAllHandlersToComplete(100);
             testPeer.close();
             testPeer = null;
         }

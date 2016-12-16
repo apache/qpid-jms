@@ -997,24 +997,12 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         return connectionInfo.getConfiguredURI();
     }
 
-    void setConfiguredURI(URI uri) {
-        connectionInfo.setConfiguredURI(uri);
-    }
-
     public URI getConnectedURI() {
         return connectionInfo.getConnectedURI();
     }
 
-    void setConnectedURI(URI connectedURI) {
-        connectionInfo.setConnectedURI(connectedURI);
-    }
-
     public String getUsername() {
         return connectionInfo.getUsername();
-    }
-
-    void setUsername(String username) {
-        connectionInfo.setUsername(username);;
     }
 
     byte[] getEncodedUsername() {
@@ -1023,10 +1011,6 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
     public String getPassword() {
         return connectionInfo.getPassword();
-    }
-
-    void setPassword(String password) {
-        this.connectionInfo.setPassword(password);
     }
 
     public boolean isConnected() {
@@ -1193,7 +1177,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         LOG.debug("Connection {} is finalizing recovery.", connectionInfo.getId());
 
         setMessageFactory(provider.getMessageFactory());
-        setConnectedURI(provider.getRemoteURI());
+        connectionInfo.setConnectedURI(provider.getRemoteURI());
 
         for (JmsSession session : sessions.values()) {
             session.onConnectionRecovered(provider);
@@ -1223,7 +1207,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     public void onConnectionEstablished(final URI remoteURI) {
         LOG.info("Connection {} connected to remote Broker: {}", connectionInfo.getId(), remoteURI);
         setMessageFactory(provider.getMessageFactory());
-        setConnectedURI(provider.getRemoteURI());
+        connectionInfo.setConnectedURI(provider.getRemoteURI());
 
         // Run the application callbacks on the connection executor to allow the provider to
         // return to its normal processing without waiting for client level processing to finish.

@@ -95,7 +95,7 @@ The options apply to the behaviour of the JMS objects such as Connection, Sessio
 + **jms.receiveNoWaitLocalOnly** If enabled receiveNoWait calls will only check a consumers local message buffer, otherwise the remote peer is checked to ensure there are really no messages available. Default is false, the remote is checked.
 + **jms.queuePrefix** Optional prefix value added to the name of any Queue created from a JMS Session.
 + **jms.topicPrefix** Optional prefix value added to the name of any Topic created from a JMS Session.
-+ **jms.closeTimeout** Timeout value that controls how long the client waits on Connection close before returning. (By default the client waits 15 seconds for a normal close completion event).
++ **jms.closeTimeout** Timeout value that controls how long the client waits on resource closure before returning. (By default the client waits 60 seconds for a normal close completion event).
 + **jms.connectTimeout** Timeout value that controls how long the client waits on Connection establishment before returning with an error. (By default the client waits 15 seconds for a connection to be established before failing).
 + **jms.sendTimeout** Timeout value that controls how long the client waits on completion of a synchronous message send before returning an error (By default the client will wait indefinitely for a send to complete).
 + **jms.requestTimeout** Timeout value that controls how long the client waits on completion of various synchronous interactions with the remote peer before returning an error (By default the client will wait indefinitely for a request to complete

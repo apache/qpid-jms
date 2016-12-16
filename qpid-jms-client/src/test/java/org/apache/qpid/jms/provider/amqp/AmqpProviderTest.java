@@ -18,15 +18,16 @@ package org.apache.qpid.jms.provider.amqp;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.jms.JMSException;
 
 import org.apache.qpid.jms.meta.JmsAbstractResourceId;
 import org.apache.qpid.jms.meta.JmsConnectionId;
@@ -34,10 +35,12 @@ import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsResource;
 import org.apache.qpid.jms.meta.JmsResourceId;
 import org.apache.qpid.jms.meta.JmsResourceVistor;
+import org.apache.qpid.jms.provider.DefaultProviderListener;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.util.IdGenerator;
+import org.apache.qpid.proton.engine.impl.TransportImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,17 +54,12 @@ public class AmqpProviderTest extends QpidJmsTestCase {
     private final String TEST_USERNAME = "user";
     private final String TEST_PASSWORD = "password";
 
-    private TestAmqpPeer testPeer;
-    private URI peerURI;
     private AmqpProvider provider;
     private JmsConnectionInfo connectionInfo;
 
     @Override
     @Before
     public void setUp() throws Exception {
-        testPeer = new TestAmqpPeer();
-        testPeer.setSuppressReadExceptionOnClose(true);
-        peerURI = new URI("amqp://localhost:" + testPeer.getServerPort());
         connectionInfo = new JmsConnectionInfo(new JmsConnectionId("ID:TEST-Connection:1"));
     }
 
@@ -72,136 +70,388 @@ public class AmqpProviderTest extends QpidJmsTestCase {
             provider.close();
             provider = null;
         }
-
-        if (testPeer != null) {
-            testPeer.waitForAllHandlersToComplete(100);
-            testPeer.close();
-            testPeer = null;
-        }
     }
 
     @Test(timeout=20000)
-    public void testCreate() {
-        provider = new AmqpProvider(peerURI);
+    public void testCreate() throws Exception {
+        provider = new AmqpProvider(getDefaultURI());
     }
 
     @Test(timeout=20000, expected=RuntimeException.class)
-    public void testGetMessageFactoryTrowsWhenNotConnected() {
-        provider = new AmqpProvider(peerURI);
+    public void testGetMessageFactoryTrowsWhenNotConnected() throws Exception {
+        provider = new AmqpProvider(getDefaultURI());
         provider.getMessageFactory();
     }
 
     @Test(timeout=20000)
+    public void testUnInitializedProviderReturnsDefaultConnectTimeout() throws Exception {
+        provider = new AmqpProvider(getDefaultURI());
+        assertEquals(JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT, provider.getConnectTimeout());
+    }
+
+    @Test(timeout=20000)
+    public void testUnInitializedProviderReturnsDefaultCloseTimeout() throws Exception {
+        provider = new AmqpProvider(getDefaultURI());
+        assertEquals(JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT, provider.getCloseTimeout());
+    }
+
+    @Test(timeout=20000)
+    public void testUnInitializedProviderReturnsDefaultSendTimeout() throws Exception {
+        provider = new AmqpProvider(getDefaultURI());
+        assertEquals(JmsConnectionInfo.DEFAULT_SEND_TIMEOUT, provider.getSendTimeout());
+    }
+
+    @Test(timeout=20000)
+    public void testUnInitializedProviderReturnsDefaultRequestTimeout() throws Exception {
+        provider = new AmqpProvider(getDefaultURI());
+        assertEquals(JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT, provider.getRequestTimeout());
+    }
+
+    @Test(timeout=20000)
+    public void testGetDefaultDrainTimeout() throws Exception {
+        provider = new AmqpProvider(getDefaultURI());
+        assertEquals(TimeUnit.MINUTES.toMillis(1), provider.getDrainTimeout());
+    }
+
+    @Test(timeout=20000)
+    public void testGetDefaultIdleTimeout() throws Exception {
+        provider = new AmqpProvider(getDefaultURI());
+        assertEquals(TimeUnit.MINUTES.toMillis(1), provider.getIdleTimeout());
+    }
+
+    @Test(timeout=20000)
+    public void testEnableTraceFrames() throws Exception {
+        provider = new AmqpProvider(getDefaultURI());
+        TransportImpl transport = (TransportImpl) provider.getProtonTransport();
+        assertNotNull(transport);
+        assertNull(transport.getProtocolTracer());
+        provider.setTraceFrames(true);
+        assertNotNull(transport.getProtocolTracer());
+    }
+
+    @Test(timeout=20000)
     public void testConnectWithUnknownProtocol() throws Exception {
-        provider = new AmqpProvider(peerURI);
-        provider.setTransportType("ftp");
-        try {
-            provider.connect(connectionInfo);
-            fail("Should have failed to connect.");
-        } catch (Exception ex) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+            provider = new AmqpProvider(getPeerURI(testPeer));
+            provider.setTransportType("ftp");
+            try {
+                provider.connect(connectionInfo);
+                fail("Should have failed to connect.");
+            } catch (Exception ex) {
+            }
+
+            provider.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 
     @Test(timeout=20000)
     public void testConnectThrowsWhenNoPeer() throws Exception {
-        provider = new AmqpProvider(peerURI);
-        testPeer.close();
-        try {
-            provider.connect(connectionInfo);
-            fail("Should have failed to connect.");
-        } catch (Exception ex) {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+            URI peerURI = getPeerURI(testPeer);
+            testPeer.close();
+
+            provider = new AmqpProvider(peerURI);
+            try {
+                provider.connect(connectionInfo);
+                fail("Should have failed to connect.");
+            } catch (Exception ex) {
+            }
         }
     }
 
+    @Test(timeout=20000)
+    public void testDisableSaslLayer() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+
+            provider = new AmqpProvider(getPeerURI(testPeer));
+
+            provider.setSaslLayer(false);
+            provider.connect(connectionInfo);
+
+            testPeer.expectSaslLayerDisabledConnect(null);
+            testPeer.expectClose();
+
+            provider.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testSetIdleTimeout() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+            testPeer.expectSaslAnonymous();
+
+            provider = new AmqpProvider(getPeerURI(testPeer));
+
+            TransportImpl transport = (TransportImpl) provider.getProtonTransport();
+
+            final int NEW_TIMEOUT = provider.getIdleTimeout() + 500;
+
+            provider.setIdleTimeout(NEW_TIMEOUT);
+            provider.connect(connectionInfo);
+
+            assertEquals(NEW_TIMEOUT, transport.getIdleTimeout());
+
+            testPeer.expectOpen();
+            testPeer.expectClose();
+
+            provider.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testSetMaxFrameSize() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+            testPeer.expectSaslAnonymous();
+
+            provider = new AmqpProvider(getPeerURI(testPeer));
+
+            TransportImpl transport = (TransportImpl) provider.getProtonTransport();
+
+            final int NEW_MAX_FRAME_SIZE = provider.getMaxFrameSize() + 500;
+
+            provider.setMaxFrameSize(NEW_MAX_FRAME_SIZE);
+            provider.connect(connectionInfo);
+
+            assertEquals(NEW_MAX_FRAME_SIZE, transport.getMaxFrameSize());
+
+            testPeer.expectOpen();
+            testPeer.expectClose();
+
+            provider.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testSkipSetMaxFrameSize() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+            testPeer.expectSaslAnonymous();
+
+            provider = new AmqpProvider(getPeerURI(testPeer));
+
+            TransportImpl transport = (TransportImpl) provider.getProtonTransport();
+
+            final int RECORDED_MAX = transport.getMaxFrameSize();
+
+            provider.setMaxFrameSize(-1);
+            provider.connect(connectionInfo);
+
+            assertEquals(RECORDED_MAX, transport.getMaxFrameSize());
+
+            testPeer.expectOpen();
+            testPeer.expectClose();
+
+            provider.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
     @Test(timeout=20000)
     public void testStartThrowsIfNoListenerSet() throws Exception {
-        testPeer.expectSaslAnonymous();
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+            testPeer.expectSaslAnonymous();
 
-        provider = new AmqpProvider(peerURI);
-        provider.connect(connectionInfo);
-
-        try {
-            provider.start();
-            fail("Should have thrown an error, no listener registered.");
-        } catch (Exception ex) {
-        }
-
-        testPeer.expectOpen();
-        testPeer.expectClose();
-    }
-
-    @Test(timeout=20000)
-    public void testToString() throws IOException {
-        testPeer.expectSaslAnonymous();
-
-        provider = new AmqpProvider(peerURI);
-        provider.connect(connectionInfo);
-        assertTrue(provider.toString().contains("localhost"));
-        assertTrue(provider.toString().contains(String.valueOf(peerURI.getPort())));
-
-        testPeer.expectOpen();
-        testPeer.expectClose();
-    }
-
-    @Test(timeout=20000)
-    public void testClosedProviderThrowsIOException() throws IOException {
-        testPeer.expectSaslAnonymous();
-        testPeer.expectOpen();
-        testPeer.expectClose();
-
-        provider = new AmqpProvider(peerURI);
-        provider.connect(connectionInfo);
-        provider.close();
-
-        try {
-            provider.start();
-            fail("Should have thrown an IOException when closed.");
-        } catch (IOException ex) {}
-
-        try {
+            provider = new AmqpProvider(getPeerURI(testPeer));
             provider.connect(connectionInfo);
-            fail("Should have thrown an IOException when closed.");
-        } catch (IOException ex) {}
 
-        ProviderFuture request = new ProviderFuture();
-        try {
-            provider.unsubscribe("subscription-name", request);
-            fail("Should have thrown an IOException when closed.");
-        } catch (IOException ex) {}
+            assertNull(provider.getProviderListener());
+
+            try {
+                provider.start();
+                fail("Should have thrown an error, no listener registered.");
+            } catch (Exception ex) {
+            }
+
+            provider.setProviderListener(new DefaultProviderListener());
+
+            assertNotNull(provider.getProviderListener());
+
+            try {
+                provider.start();
+            } catch (Exception ex) {
+                fail("Should not have thrown an error, listener registered.");
+            }
+
+            testPeer.expectOpen();
+            testPeer.expectClose();
+
+            provider.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
     }
 
     @Test(timeout=20000)
-    public void testTimeoutsSetFromConnectionInfo() throws IOException, JMSException {
-        final long CONNECT_TIMEOUT = TimeUnit.SECONDS.toMillis(4);
-        final long CLOSE_TIMEOUT = TimeUnit.SECONDS.toMillis(5);
-        final long SEND_TIMEOUT = TimeUnit.SECONDS.toMillis(6);
-        final long REQUEST_TIMEOUT = TimeUnit.SECONDS.toMillis(7);
+    public void testToString() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+            testPeer.expectSaslAnonymous();
 
-        connectionInfo.setUsername(TEST_USERNAME);
-        connectionInfo.setPassword(TEST_PASSWORD);
+            provider = new AmqpProvider(getPeerURI(testPeer));
+            provider.connect(connectionInfo);
+            assertTrue(provider.toString().contains("localhost"));
+            assertTrue(provider.toString().contains(String.valueOf(testPeer.getServerPort())));
 
-        provider = new AmqpProvider(peerURI);
-        testPeer.expectSaslPlain(TEST_USERNAME, TEST_PASSWORD);
-        testPeer.expectOpen();
-        testPeer.expectBegin();
-        provider.connect(connectionInfo);
-        testPeer.expectClose();
+            testPeer.expectOpen();
+            testPeer.expectClose();
 
-        JmsConnectionInfo connectionInfo = createConnectionInfo();
+            provider.close();
 
-        connectionInfo.setConnectTimeout(CONNECT_TIMEOUT);
-        connectionInfo.setCloseTimeout(CLOSE_TIMEOUT);
-        connectionInfo.setSendTimeout(SEND_TIMEOUT);
-        connectionInfo.setRequestTimeout(REQUEST_TIMEOUT);
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
 
-        ProviderFuture request = new ProviderFuture();
-        provider.create(connectionInfo, request);
-        request.sync();
+    @Test(timeout=20000)
+    public void testClosedProviderThrowsIOException() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+            testPeer.expectClose();
 
-        assertEquals(CONNECT_TIMEOUT, provider.getConnectTimeout());
-        assertEquals(CLOSE_TIMEOUT, provider.getCloseTimeout());
-        assertEquals(SEND_TIMEOUT, provider.getSendTimeout());
-        assertEquals(REQUEST_TIMEOUT, provider.getRequestTimeout());
+            provider = new AmqpProvider(getPeerURI(testPeer));
+            provider.connect(connectionInfo);
+            provider.close();
+
+            try {
+                provider.start();
+                fail("Should have thrown an IOException when closed.");
+            } catch (IOException ex) {}
+
+            try {
+                provider.connect(connectionInfo);
+                fail("Should have thrown an IOException when closed.");
+            } catch (IOException ex) {}
+
+            ProviderFuture request = new ProviderFuture();
+            try {
+                provider.unsubscribe("subscription-name", request);
+                fail("Should have thrown an IOException when closed.");
+            } catch (IOException ex) {}
+
+            provider.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testTimeoutsSetFromConnectionInfo() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+            final long CONNECT_TIMEOUT = TimeUnit.SECONDS.toMillis(4);
+            final long CLOSE_TIMEOUT = TimeUnit.SECONDS.toMillis(5);
+            final long SEND_TIMEOUT = TimeUnit.SECONDS.toMillis(6);
+            final long REQUEST_TIMEOUT = TimeUnit.SECONDS.toMillis(7);
+
+            connectionInfo.setUsername(TEST_USERNAME);
+            connectionInfo.setPassword(TEST_PASSWORD);
+
+            provider = new AmqpProvider(getPeerURI(testPeer));
+            testPeer.expectSaslPlain(TEST_USERNAME, TEST_PASSWORD);
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+            provider.connect(connectionInfo);
+            testPeer.expectClose();
+
+            JmsConnectionInfo connectionInfo = createConnectionInfo();
+
+            connectionInfo.setConnectTimeout(CONNECT_TIMEOUT);
+            connectionInfo.setCloseTimeout(CLOSE_TIMEOUT);
+            connectionInfo.setSendTimeout(SEND_TIMEOUT);
+            connectionInfo.setRequestTimeout(REQUEST_TIMEOUT);
+
+            ProviderFuture request = new ProviderFuture();
+            provider.create(connectionInfo, request);
+            request.sync();
+
+            assertEquals(CONNECT_TIMEOUT, provider.getConnectTimeout());
+            assertEquals(CLOSE_TIMEOUT, provider.getCloseTimeout());
+            assertEquals(SEND_TIMEOUT, provider.getSendTimeout());
+            assertEquals(REQUEST_TIMEOUT, provider.getRequestTimeout());
+
+            provider.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testErrorDuringCreateResourceFailsRequest() throws Exception {
+        doErrorDuringOperationFailsRequesTTestImpl(Op.CREATE);
+    }
+
+    @Test(timeout = 20000)
+    public void testErrorDuringStartResourceFailsRequest() throws Exception {
+        doErrorDuringOperationFailsRequesTTestImpl(Op.START);
+    }
+
+    @Test(timeout = 20000)
+    public void testErrorDuringStopResourceFailsRequest() throws Exception {
+        doErrorDuringOperationFailsRequesTTestImpl(Op.STOP);
+    }
+
+    @Test(timeout = 20000)
+    public void testErrorDuringDestroyResourceFailsRequest() throws Exception {
+        doErrorDuringOperationFailsRequesTTestImpl(Op.DESTROY);
+    }
+
+    private void doErrorDuringOperationFailsRequesTTestImpl(Op operation) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+            provider = new AmqpProvider(getPeerURI(testPeer));
+
+            final AtomicBoolean errorThrown = new AtomicBoolean();
+            JmsResource resourceInfo = new JmsResource() {
+                @Override
+                public void visit(JmsResourceVistor visitor) {
+                    errorThrown.set(true);
+                    throw new Error("Deliberate error for testing");
+                }
+
+                @Override
+                public JmsResourceId getId() {
+                    return new JmsAbstractResourceId() {
+                    };
+                }
+            };
+
+            assertFalse("Error should not yet be thrown", errorThrown.get());
+            ProviderFuture request = new ProviderFuture();
+
+            switch(operation) {
+            case CREATE:
+                provider.create(resourceInfo, request);
+                break;
+            case START:
+                provider.start(resourceInfo, request);
+                break;
+            case STOP:
+                provider.stop(resourceInfo, request);
+                break;
+            case DESTROY:
+                provider.destroy(resourceInfo, request);
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected operation given");
+            }
+
+            try {
+                request.sync();
+                fail("Request should have failed");
+            } catch (IOException e) {
+                // Expected
+            }
+
+            assertTrue("Error should have been thrown", errorThrown.get());
+
+            provider.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
     }
 
     private JmsConnectionInfo createConnectionInfo() {
@@ -218,71 +468,11 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         CREATE, START, STOP, DESTROY
     }
 
-    @Test(timeout = 20000)
-    public void testErrorDuringCreateResourceFailsRequest() throws IOException, JMSException {
-        doErrorDuringOperationFailsRequesTTestImpl(Op.CREATE);
+    private URI getDefaultURI() throws URISyntaxException {
+        return new URI("amqp://localhost:5672");
     }
 
-    @Test(timeout = 20000)
-    public void testErrorDuringStartResourceFailsRequest() throws IOException, JMSException {
-        doErrorDuringOperationFailsRequesTTestImpl(Op.START);
-    }
-
-    @Test(timeout = 20000)
-    public void testErrorDuringStopResourceFailsRequest() throws IOException, JMSException {
-        doErrorDuringOperationFailsRequesTTestImpl(Op.STOP);
-    }
-
-    @Test(timeout = 20000)
-    public void testErrorDuringDestroyResourceFailsRequest() throws IOException, JMSException {
-        doErrorDuringOperationFailsRequesTTestImpl(Op.DESTROY);
-    }
-
-    private void doErrorDuringOperationFailsRequesTTestImpl(Op operation) throws IOException, JMSException {
-        provider = new AmqpProvider(peerURI);
-
-        final AtomicBoolean errorThrown = new AtomicBoolean();
-        JmsResource resourceInfo = new JmsResource() {
-            @Override
-            public void visit(JmsResourceVistor visitor) {
-                errorThrown.set(true);
-                throw new Error("Deliberate error for testing");
-            }
-
-            @Override
-            public JmsResourceId getId() {
-                return new JmsAbstractResourceId() {
-                };
-            }
-        };
-
-        assertFalse("Error should not yet be thrown", errorThrown.get());
-        ProviderFuture request = new ProviderFuture();
-
-        switch(operation) {
-        case CREATE:
-            provider.create(resourceInfo, request);
-            break;
-        case START:
-            provider.start(resourceInfo, request);
-            break;
-        case STOP:
-            provider.stop(resourceInfo, request);
-            break;
-        case DESTROY:
-            provider.destroy(resourceInfo, request);
-            break;
-        default:
-            throw new IllegalArgumentException("Unexpected operation given");
-        }
-
-        try {
-            request.sync();
-            fail("Request should have failed");
-        } catch (IOException e) {
-            // Expected
-        }
-
-        assertTrue("Error should have been thrown", errorThrown.get());
+    private URI getPeerURI(TestAmqpPeer peer) throws URISyntaxException {
+        return new URI("amqp://localhost:" + peer.getServerPort());
     }
 }

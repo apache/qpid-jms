@@ -109,7 +109,6 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private volatile org.apache.qpid.jms.transports.Transport transport;
     private String transportType = AmqpProviderFactory.DEFAULT_TRANSPORT_TYPE;
     private String vhost;
-    private String threadToken;
     private boolean traceFrames;
     private boolean traceBytes;
     private boolean saslLayer = true;
@@ -155,8 +154,6 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
         serializer.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
         serializer.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
-
-        updateTracer();
     }
 
     @Override
@@ -1236,20 +1233,6 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     @Override
     public AmqpProvider getProvider() {
         return this;
-    }
-
-    /**
-     * @return the threadToken
-     */
-    public String getThreadToken() {
-        return threadToken;
-    }
-
-    /**
-     * @param threadToken the threadToken to set
-     */
-    public void setThreadToken(String threadToken) {
-        this.threadToken = threadToken;
     }
 
     /**

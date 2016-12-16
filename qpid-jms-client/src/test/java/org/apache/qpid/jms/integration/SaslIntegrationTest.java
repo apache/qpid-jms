@@ -52,7 +52,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     private static final String CLIENT_JKS_TRUSTSTORE = "src/test/resources/client-jks.truststore";
     private static final String PASSWORD = "password";
 
-    @Test //(timeout = 20000)  // TODO
+    @Test(timeout = 20000)
     public void testSaslExternalConnection() throws Exception {
         TransportSslOptions sslOptions = new TransportSslOptions();
         sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);

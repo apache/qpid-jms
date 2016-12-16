@@ -125,6 +125,9 @@ public class AmqpProviderTest extends QpidJmsTestCase {
             fail("Should have thrown an error, no listener registered.");
         } catch (Exception ex) {
         }
+
+        testPeer.expectOpen();
+        testPeer.expectClose();
     }
 
     @Test(timeout=20000)
@@ -135,11 +138,16 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         provider.connect(connectionInfo);
         assertTrue(provider.toString().contains("localhost"));
         assertTrue(provider.toString().contains(String.valueOf(peerURI.getPort())));
+
+        testPeer.expectOpen();
+        testPeer.expectClose();
     }
 
     @Test(timeout=20000)
     public void testClosedProviderThrowsIOException() throws IOException {
         testPeer.expectSaslAnonymous();
+        testPeer.expectOpen();
+        testPeer.expectClose();
 
         provider = new AmqpProvider(peerURI);
         provider.connect(connectionInfo);

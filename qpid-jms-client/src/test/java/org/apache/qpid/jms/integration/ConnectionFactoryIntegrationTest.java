@@ -72,7 +72,12 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
 
             testPeer.waitForAllHandlersToComplete(1000);
 
+            testPeer.expectOpen();
+            testPeer.expectClose();
+
             connection.close();
+
+            testPeer.waitForAllHandlersToCompleteNoAssert(1000);
         }
     }
 
@@ -91,7 +96,12 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
 
             testPeer.waitForAllHandlersToComplete(1000);
 
+            testPeer.expectOpen();
+            testPeer.expectClose();
+
             connection.close();
+
+            testPeer.waitForAllHandlersToCompleteNoAssert(1000);
         }
     }
 
@@ -110,7 +120,12 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
 
             testPeer.waitForAllHandlersToComplete(1000);
 
+            testPeer.expectOpen();
+            testPeer.expectClose();
+
             connection.close();
+
+            testPeer.waitForAllHandlersToCompleteNoAssert(1000);
         }
     }
 
@@ -129,7 +144,12 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
 
             testPeer.waitForAllHandlersToComplete(1000);
 
+            testPeer.expectOpen();
+            testPeer.expectClose();
+
             connection.close();
+
+            testPeer.waitForAllHandlersToCompleteNoAssert(1000);
         }
     }
 
@@ -154,7 +174,12 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
 
             testPeer.waitForAllHandlersToComplete(1000);
 
+            testPeer.expectOpen();
+            testPeer.expectClose();
+
             connection.close();
+
+            testPeer.waitForAllHandlersToCompleteNoAssert(1000);
         }
     }
 
@@ -232,7 +257,12 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
 
                 testPeer.waitForAllHandlersToComplete(1000);
 
+                testPeer.expectOpen();
+                testPeer.expectClose();
+
                 connection.close();
+
+                testPeer.waitForAllHandlersToCompleteNoAssert(1000);
             }
         }
     }
@@ -259,7 +289,12 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
 
             testPeer.waitForAllHandlersToComplete(1000);
 
+            testPeer.expectOpen();
+            testPeer.expectClose();
+
             connection.close();
+
+            testPeer.waitForAllHandlersToCompleteNoAssert(1000);
         }
     }
 
@@ -285,7 +320,12 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
 
             testPeer.waitForAllHandlersToComplete(1000);
 
+            testPeer.expectOpen();
+            testPeer.expectClose();
+
             connection.close();
+
+            testPeer.waitForAllHandlersToCompleteNoAssert(1000);
         }
     }
 
@@ -311,7 +351,12 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
 
             testPeer.waitForAllHandlersToCompleteNoAssert(1000);
 
+            testPeer.expectOpen();
+            testPeer.expectClose();
+
             connection.close();
+
+            testPeer.waitForAllHandlersToCompleteNoAssert(1000);
         }
     }
 
@@ -337,7 +382,12 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
 
             testPeer.waitForAllHandlersToComplete(1000);
 
+            testPeer.expectOpen();
+            testPeer.expectClose();
+
             connection.close();
+
+            testPeer.waitForAllHandlersToCompleteNoAssert(1000);
         }
     }
 
@@ -363,7 +413,12 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
 
             testPeer.waitForAllHandlersToComplete(1000);
 
+            testPeer.expectOpen();
+            testPeer.expectClose();
+
             connection.close();
+
+            testPeer.waitForAllHandlersToCompleteNoAssert(1000);
         }
     }
 

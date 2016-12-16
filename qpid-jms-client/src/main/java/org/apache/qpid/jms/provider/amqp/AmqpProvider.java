@@ -53,6 +53,7 @@ import org.apache.qpid.jms.provider.ProviderClosedException;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
+import org.apache.qpid.jms.provider.amqp.builders.AmqpClosedConnectionBuilder;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpConnectionBuilder;
 import org.apache.qpid.jms.transports.TransportFactory;
 import org.apache.qpid.jms.transports.TransportListener;
@@ -170,9 +171,9 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
             public void run() {
 
                 connectionRequest = connectRequest;
+                AmqpProvider.this.connectionInfo = connectionInfo;
 
-                try
-                {
+                try {
                     protonTransport.setEmitFlowEventOnSend(false);
 
                     if (getMaxFrameSize() > 0) {
@@ -209,8 +210,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     } else {
                         connectRequest.onSuccess();
                     }
-                }
-                catch (Throwable t) {
+                } catch (Throwable t) {
                     connectionRequest.onFailure(IOExceptionSupport.create(t));
                 }
             }
@@ -254,14 +254,32 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         // just signal success.
                         if (transport == null || !transport.isConnected()) {
                             request.onSuccess();
+                            return;
                         }
 
                         if (connection != null) {
                             connection.close(request);
-                            pumpToProtonTransport(request);
                         } else {
-                            request.onSuccess();
+                            // If the SASL authentication occurred but failed then we don't
+                            // need to do an open / close
+                            if (authenticator != null && !authenticator.wasSuccessful()) {
+                                request.onSuccess();
+                                return;
+                            }
+
+                            // Connection attempt might have been tried and failed so only perform
+                            // an open / close cycle if one hasn't been done already.
+                            if (protonConnection.getLocalState() == EndpointState.UNINITIALIZED) {
+                                AmqpClosedConnectionBuilder builder = new AmqpClosedConnectionBuilder(getProvider(), connectionInfo);
+                                builder.buildResource(request);
+
+                                protonConnection.setContext(builder);
+                            } else {
+                                request.onSuccess();
+                            }
                         }
+
+                        pumpToProtonTransport(request);
                     } catch (Exception e) {
                         LOG.debug("Caught exception while closing proton connection: {}", e.getMessage());
                     } finally {
@@ -912,8 +930,9 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     // Close the transport to avoid emitting any additional frames.
                     org.apache.qpid.proton.engine.Transport t = protonConnection.getTransport();
                     t.close_head();
+                } else {
+                    authenticator = null;
                 }
-                authenticator = null;
             }
         } catch (Throwable ex) {
             try {

@@ -48,8 +48,11 @@ public class AmqpConnectionBuilder extends AmqpResourceBuilder<AmqpConnection, A
 
     @Override
     public void buildResource(final AsyncResult request) {
+        super.buildResource(createRequestIntercepter(request));
+    }
 
-        AsyncResult connectionRequest = new AsyncResult() {
+    protected AsyncResult createRequestIntercepter(final AsyncResult request) {
+        return new AsyncResult() {
 
             @Override
             public void onSuccess() {
@@ -90,8 +93,6 @@ public class AmqpConnectionBuilder extends AmqpResourceBuilder<AmqpConnection, A
                 return getResource().isOpen();
             }
         };
-
-        super.buildResource(connectionRequest);
     }
 
     @Override

@@ -102,6 +102,7 @@ The options apply to the behaviour of the JMS objects such as Connection, Sessio
 + **jms.clientIDPrefix** Optional prefix value that is used for generated Client ID values when a new Connection is created for the JMS ConnectionFactory.  The default prefix is 'ID:'.
 + **jms.connectionIDPrefix** Optional prefix value that is used for generated Connection ID values when a new Connection is created for the JMS ConnectionFactory.  This connection ID is used when logging some information from the JMS Connection object so a configurable prefix can make breadcrumbing the logs easier.  The default prefix is 'ID:'.
 + **jms.populateJMSXUserID** Controls whether a MessageProducer will populate the JMSXUserID value for each sent message using the authenticated username from the connection.  This value defaults to false and the JMSXUserID for all sent message will not be populated.
++ **jms.awaitClientID** Controls whether a Connection with no ClientID configured in the URI will wait for a ClientID being set programatically (or the connection being used otherwise to signal none can be set) before sending the AMQP connection Open. Defaults to true.
 
 The Prefetch Policy controls how many messages the remote peer can send to the client and be held in a prefetch buffer for each consumer instance.
 

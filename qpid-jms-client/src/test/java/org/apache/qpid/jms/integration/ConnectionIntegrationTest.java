@@ -30,16 +30,19 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.Connection;
@@ -55,6 +58,7 @@ import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
+import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.provider.ProviderRedirectedException;
 import org.apache.qpid.jms.provider.amqp.AmqpSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -651,6 +655,60 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testUseDaemonThreadURIOption() throws Exception {
+        doUseDaemonThreadTestImpl(null);
+        doUseDaemonThreadTestImpl(false);
+        doUseDaemonThreadTestImpl(true);
+    }
+
+    private void doUseDaemonThreadTestImpl(Boolean useDaemonThread) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            String remoteURI = "amqp://localhost:" + testPeer.getServerPort();
+            if (useDaemonThread != null) {
+                remoteURI += "?jms.useDaemonThread=" + useDaemonThread;
+            }
+
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+
+            final CountDownLatch connectionEstablished = new CountDownLatch(1);
+            final AtomicBoolean daemonThread = new AtomicBoolean(false);
+
+            ConnectionFactory factory = new JmsConnectionFactory(remoteURI);
+            JmsConnection connection = (JmsConnection) factory.createConnection();
+
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    // Record whether the thread is daemon or not
+                    daemonThread.set(Thread.currentThread().isDaemon());
+
+                    connectionEstablished.countDown();
+                }
+            });
+
+            connection.start();
+
+            assertTrue("Connection established callback didn't trigger", connectionEstablished.await(5, TimeUnit.SECONDS));
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            if (useDaemonThread == null) {
+                // Expect default to be false when not configured
+                assertFalse(daemonThread.get());
+            } else {
+                // Else expect to match the URI option value
+                assertEquals(useDaemonThread, daemonThread.get());
+            }
         }
     }
 }

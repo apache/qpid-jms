@@ -62,6 +62,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private boolean localMessageExpiry;
     private boolean populateJMSXUserID;
     private boolean useDaemonThread;
+    private boolean awaitClientID = true;
     private long sendTimeout = DEFAULT_SEND_TIMEOUT;
     private long requestTimeout = DEFAULT_REQUEST_TIMEOUT;
     private long connectTimeout = DEFAULT_CONNECT_TIMEOUT;
@@ -95,6 +96,7 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
     private void copy(JmsConnectionInfo copy) {
         copy.clientId = clientId;
         copy.explicitClientID = explicitClientID;
+        copy.awaitClientID = awaitClientID;
         copy.username = username;
         copy.password = password;
         copy.forceAsyncSend = forceAsyncSend;
@@ -367,6 +369,14 @@ public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConne
 
     public void setUseDaemonThread(boolean useDaemonThread) {
         this.useDaemonThread = useDaemonThread;
+    }
+
+    public boolean isAwaitClientID() {
+        return awaitClientID;
+    }
+
+    public void setAwaitClientID(boolean awaitClientID) {
+        this.awaitClientID = awaitClientID;
     }
 
     @Override

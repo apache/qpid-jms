@@ -31,6 +31,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
 import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
@@ -39,6 +40,7 @@ import javax.jms.Topic;
 import javax.jms.TopicSubscriber;
 
 import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.provider.amqp.AmqpSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -1580,6 +1582,53 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
             // Now close connection, should work.
             testPeer.expectClose();
             connection.close();
+        }
+    }
+
+    // -------------------------------------- //
+
+    @Test(timeout = 20000)
+    public void testSharedTopicSubscriberBehavesLikeNoClientIDWasSetWhenAwaitClientIdOptionIsFalse() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            int serverPort = testPeer.getServerPort();
+
+            // Add server connection capability to indicate support for shared-subs
+            Symbol[] serverCapabilities = new Symbol[]{SHARED_SUBS};
+
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen(new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, serverCapabilities, null);
+            testPeer.expectBegin();
+
+            ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + serverPort + "?jms.awaitClientID=false");
+            Connection connection = factory.createConnection();
+
+            // Verify that all handlers complete, i.e. the awaitClientID=false option
+            // setting was effective in provoking the AMQP Open immediately even
+            // though it has no ClientID and we haven't used the Connection.
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String topicName = "myTopic";
+            Topic dest = session.createTopic(topicName);
+            String subscriptionName = "mySubscription";
+
+            // Expect a shared subscription with 'global' capability and link name qualifier,
+            // since this connection does not have a ClientID set.
+            Matcher<?> linkNameMatcher = equalTo(subscriptionName + SUB_NAME_DELIMITER + "global-volatile1");
+            testPeer.expectSharedVolatileSubscriberAttach(topicName, subscriptionName, linkNameMatcher, false);
+            testPeer.expectLinkFlow();
+
+            MessageConsumer subscriber = session.createSharedConsumer(dest, subscriptionName);
+
+            testPeer.expectDetach(true, true, true);
+            subscriber.close();
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 }

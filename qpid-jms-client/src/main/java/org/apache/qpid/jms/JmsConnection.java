@@ -166,7 +166,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
             throw JmsExceptionSupport.create(ex);
         }
 
-        if (connectionInfo.isExplicitClientID()) {
+        if (connectionInfo.isExplicitClientID() || !connectionInfo.isAwaitClientID()) {
             createJmsConnection();
         }
 

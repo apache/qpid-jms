@@ -80,6 +80,8 @@ public class JmsConnectionInfoTest {
         info.setUsername("user");
         boolean validatePropertyNames = !info.isValidatePropertyNames();
         info.setValidatePropertyNames(validatePropertyNames);
+        boolean awaitClientID = !info.isAwaitClientID();
+        info.setAwaitClientID(awaitClientID);
         info.setMessageIDPolicy(new JmsDefaultMessageIDPolicy());
         info.setPrefetchPolicy(new JmsDefaultPrefetchPolicy());
         info.setPresettlePolicy(new JmsDefaultPresettlePolicy());
@@ -90,6 +92,7 @@ public class JmsConnectionInfoTest {
         assertEquals(true, copy.isForceSyncSend());
         assertEquals("test", copy.getClientId());
         assertEquals(true, copy.isExplicitClientID());
+        assertEquals(awaitClientID, copy.isAwaitClientID());
         assertEquals(100, copy.getCloseTimeout());
         assertEquals(200, copy.getConnectTimeout());
         assertEquals(true, copy.isForceAsyncSend());

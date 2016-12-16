@@ -245,8 +245,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     protected JmsConnectionInfo configureConnectionInfo(String username, String password) throws JMSException {
         try {
             Map<String, String> properties = PropertyUtil.getProperties(this);
-            // We must ensure that we apply the clientID last, since setting it on
-            // the Connection object provokes establishing the underlying connection.
+            // Pull out the clientID prop, we need to act differently according to
+            // whether it was set in the URI or not.
             boolean userSpecifiedClientId = false;
             if (properties.containsKey(CLIENT_ID_PROP)) {
                 userSpecifiedClientId = true;
@@ -266,16 +266,20 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             connectionInfo.setDeserializationPolicy(deserializationPolicy.copy());
             connectionInfo.setSslContextOverride(sslContext);
 
+            // Set properties to make additional configuration changes
             PropertyUtil.setProperties(connectionInfo, properties);
+
+            // Ensure we use the user and pass provided for this particular connection
             connectionInfo.setUsername(username);
             connectionInfo.setPassword(password);
+
             connectionInfo.setConfiguredURI(remoteURI);
+
+            // Set the ClientID/container-id details
             if (userSpecifiedClientId) {
                 connectionInfo.setClientId(clientID, true);
             } else {
-                // If we aren't waiting on a client ID then we just treat a generated Client ID as
-                // the user specified version and connection open will commence.
-                connectionInfo.setClientId(getClientIdGenerator().generateId(), !isAwaitClientID());
+                connectionInfo.setClientId(getClientIdGenerator().generateId(), false);
             }
 
             return connectionInfo;

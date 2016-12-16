@@ -585,19 +585,10 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
-    public void testWaitForClientIDBeforeOpen() throws Exception {
-        doTestWaitForClientIDBeforeOpen(true);
-    }
-
-    @Test(timeout = 20000)
-    public void testDonNotWaitForClientIDBeforeOpen() throws Exception {
-        doTestWaitForClientIDBeforeOpen(false);
-    }
-
-    private void doTestWaitForClientIDBeforeOpen(boolean waitForClientID) throws Exception {
+    public void testDontAwaitClientIDBeforeOpen() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
-            String uri = "amqp://localhost:" + testPeer.getServerPort() + "?jms.awaitClientID=" + waitForClientID;
+            String uri = "amqp://localhost:" + testPeer.getServerPort() + "?jms.awaitClientID=false";
 
             testPeer.expectSaslAnonymous();
             testPeer.expectOpen();
@@ -606,12 +597,10 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             ConnectionFactory factory = new JmsConnectionFactory(uri);
             Connection connection = factory.createConnection();
 
-            // if configured to wait we set an ID to kick off the Open process.
-            if (waitForClientID) {
-                connection.setClientID("client-id");
-            }
-
-            testPeer.waitForAllHandlersToComplete(2000);
+            // Verify that all handlers complete, i.e. the awaitClientID=false option
+            // setting was effective in provoking the AMQP Open immediately even
+            // though it has no ClientID and we haven't used the Connection.
+            testPeer.waitForAllHandlersToComplete(3000);
 
             testPeer.expectClose();
             connection.close();

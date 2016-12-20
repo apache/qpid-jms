@@ -134,6 +134,36 @@ public class JmsQueueSessionTest extends JmsConnectionTestSupport {
         queueSession.createDurableSubscriber(topic, "subscriptionName", "color = red", false);
     }
 
+    @Test(timeout = 30000, expected=IllegalStateException.class)
+    public void testCreateDurableConsumerOnQueueSession() throws JMSException {
+        queueSession.createDurableConsumer(topic, "subscriptionName");
+    }
+
+    @Test(timeout = 30000, expected=IllegalStateException.class)
+    public void testCreateDurableConsumerWithSelectorOnQueueSession() throws JMSException {
+        queueSession.createDurableConsumer(topic, "subscriptionName", "color = red", false);
+    }
+
+    @Test(timeout = 30000, expected=IllegalStateException.class)
+    public void testCreateSharedConsumerOnQueueSession() throws JMSException {
+        queueSession.createSharedConsumer(topic, "subscriptionName");
+    }
+
+    @Test(timeout = 30000, expected=IllegalStateException.class)
+    public void testCreateSharedConsumerWithSelectorOnQueueSession() throws JMSException {
+        queueSession.createSharedConsumer(topic, "subscriptionName", "color = red");
+    }
+
+    @Test(timeout = 30000, expected=IllegalStateException.class)
+    public void testCreateSharedDurableConsumerOnQueueSession() throws JMSException {
+        queueSession.createSharedDurableConsumer(topic, "subscriptionName");
+    }
+
+    @Test(timeout = 30000, expected=IllegalStateException.class)
+    public void testCreateSharedDurableConsumerWithSelectorOnQueueSession() throws JMSException {
+        queueSession.createSharedConsumer(topic, "subscriptionName", "color = red");
+    }
+
     /**
      * Test that a call to <code>createTemporaryTopic()</code> method
      * on a <code>QueueSession</code> throws a

@@ -144,4 +144,36 @@ public class JmsQueueSession extends JmsSession implements AutoCloseable {
     public TopicSubscriber createSubscriber(Topic topic, String messageSelector, boolean noLocal) throws JMSException {
         throw new IllegalStateException("Operation not supported by a QueueSession");
     }
+
+    /**
+     * @see javax.jms.Session#createSharedConsumer(javax.jms.Topic, java.lang.String)
+     */
+    @Override
+    public MessageConsumer createSharedConsumer(Topic topic, String name) throws JMSException {
+        throw new IllegalStateException("Operation not supported by a QueueSession");
+    }
+
+    /**
+     * @see javax.jms.Session#createSharedConsumer(javax.jms.Topic, java.lang.String, java.lang.String)
+     */
+    @Override
+    public MessageConsumer createSharedConsumer(Topic topic, String name, String selector) throws JMSException {
+        throw new IllegalStateException("Operation not supported by a QueueSession");
+    }
+
+    /**
+     * @see javax.jms.Session#createSharedDurableConsumer(javax.jms.Topic, java.lang.String)
+     */
+    @Override
+    public MessageConsumer createSharedDurableConsumer(Topic topic, String name) throws JMSException {
+        throw new IllegalStateException("Operation not supported by a QueueSession");
+    }
+
+    /**
+     * @see javax.jms.Session#createSharedDurableConsumer(javax.jms.Topic, java.lang.String, java.lang.String)
+     */
+    @Override
+    public MessageConsumer createSharedDurableConsumer(Topic topic, String name, String selector) throws JMSException {
+        throw new IllegalStateException("Operation not supported by a QueueSession");
+    }
 }

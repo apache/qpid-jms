@@ -19,12 +19,14 @@ package org.apache.qpid.jms.consumer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.DeliveryMode;
@@ -528,6 +530,91 @@ public class JmsClientAckTest extends AmqpTestSupport {
             assertNotNull(msg);
             msg.acknowledge();
         }
+
+        assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return proxy.getQueueSize() == 0;
+            }
+        }));
+    }
+
+    @Test(timeout = 60000)
+    public void testRepeatedRecoveriesInAsyncListener() throws Exception {
+        final int MESSAGE_COUNT = 20;
+        final int ITERATIONS = 10;
+
+        final AtomicInteger messagesConsumed = new AtomicInteger();
+        final AtomicReference<Exception> failure = new AtomicReference<Exception>();
+
+        connection = createAmqpConnection();
+        connection.start();
+        final Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        Queue queue = session.createQueue(name.getMethodName());
+
+        sendMessages(connection, queue, MESSAGE_COUNT);
+
+        final QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+        assertTrue("Queue didn't receive all messages", Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                return proxy.getQueueSize() == MESSAGE_COUNT;
+            }
+        }));
+
+        // Consume the message...
+        MessageConsumer consumer = session.createConsumer(queue);
+        consumer.setMessageListener(new MessageListener() {
+
+            int retries = 0;
+
+            @Override
+            public void onMessage(Message message) {
+                try {
+                    LOG.info("Read message {}", message.getIntProperty(MESSAGE_NUMBER));
+                    if (message.getIntProperty(MESSAGE_NUMBER) != messagesConsumed.get() + 1) {
+                        failure.set(new IllegalArgumentException("Read message with wrong sequence"));
+                    }
+
+                    if (++retries == ITERATIONS) {
+                        messagesConsumed.incrementAndGet();
+                        retries = 0;
+                        message.acknowledge();
+
+                        // Check that only one message is consumed
+                        boolean consumed = Wait.waitFor(new Wait.Condition() {
+
+                            @Override
+                            public boolean isSatisified() throws Exception {
+                                return proxy.getQueueSize() == MESSAGE_COUNT - messagesConsumed.get();
+                            }
+                        }, 10000, 20);
+
+                        if (!consumed) {
+                            failure.set(new IllegalStateException("Broker Queue Size doesn't match expectations"));
+                        }
+                    } else {
+                        session.recover();
+                    }
+
+                } catch (Exception e) {
+                    failure.set(e);
+                }
+            }
+        });
+
+        assertTrue("Not all messages could be consumed, got " + messagesConsumed.get(), Wait.waitFor(new Wait.Condition() {
+
+            @Override
+            public boolean isSatisified() throws Exception {
+                LOG.info("Are we complete: error:{} nessages read:{}", failure.get(), messagesConsumed.get());
+                return failure.get() != null || messagesConsumed.get() == MESSAGE_COUNT;
+            }
+        }));
+
+        assertNull("Should not get any failures during this test", failure.get());
 
         assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
 

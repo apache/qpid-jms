@@ -121,7 +121,9 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
 
     @Override
     public void handleResourceClosure(AmqpProvider provider, Throwable cause) {
-        connectionSession.handleResourceClosure(getProvider(), cause);
+        if (connectionSession != null) {
+            connectionSession.handleResourceClosure(getProvider(), cause);
+        }
 
         List<AmqpSession> sessionList = new ArrayList<>(sessions.values());
         for (AmqpSession session : sessionList) {

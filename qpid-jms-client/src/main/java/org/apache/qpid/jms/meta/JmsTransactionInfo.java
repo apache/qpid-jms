@@ -16,7 +16,7 @@
  */
 package org.apache.qpid.jms.meta;
 
-public final class JmsTransactionInfo implements JmsResource, Comparable<JmsTransactionInfo> {
+public final class JmsTransactionInfo extends JmsAbstractResource implements Comparable<JmsTransactionInfo> {
 
     private final JmsSessionId sessionId;
     private final JmsTransactionId transactionId;

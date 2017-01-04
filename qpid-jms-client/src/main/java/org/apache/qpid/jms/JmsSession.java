@@ -75,6 +75,7 @@ import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
+import org.apache.qpid.jms.meta.JmsResource.ResourceState;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.policy.JmsDeserializationPolicy;
@@ -279,6 +280,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
     protected void shutdown(Throwable cause) throws JMSException {
         if (closed.compareAndSet(false, true)) {
+            sessionInfo.setState(ResourceState.CLOSED);
             setFailureCause(cause);
             stop();
             for (JmsMessageConsumer consumer : new ArrayList<JmsMessageConsumer>(this.consumers.values())) {
@@ -1227,19 +1229,20 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     }
 
     protected void onConnectionRecovery(Provider provider) throws Exception {
+        if (sessionInfo.isOpen()) {
+            ProviderFuture request = new ProviderFuture();
+            provider.create(sessionInfo, request);
+            request.sync();
 
-        ProviderFuture request = new ProviderFuture();
-        provider.create(sessionInfo, request);
-        request.sync();
+            transactionContext.onConnectionRecovery(provider);
 
-        transactionContext.onConnectionRecovery(provider);
+            for (JmsMessageProducer producer : producers.values()) {
+                producer.onConnectionRecovery(provider);
+            }
 
-        for (JmsMessageProducer producer : producers.values()) {
-            producer.onConnectionRecovery(provider);
-        }
-
-        for (JmsMessageConsumer consumer : consumers.values()) {
-            consumer.onConnectionRecovery(provider);
+            for (JmsMessageConsumer consumer : consumers.values()) {
+                consumer.onConnectionRecovery(provider);
+            }
         }
     }
 

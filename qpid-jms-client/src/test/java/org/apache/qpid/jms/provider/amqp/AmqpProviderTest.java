@@ -29,6 +29,7 @@ import java.net.URISyntaxException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.qpid.jms.meta.JmsAbstractResource;
 import org.apache.qpid.jms.meta.JmsAbstractResourceId;
 import org.apache.qpid.jms.meta.JmsConnectionId;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
@@ -405,7 +406,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
             provider = new AmqpProvider(getPeerURI(testPeer));
 
             final AtomicBoolean errorThrown = new AtomicBoolean();
-            JmsResource resourceInfo = new JmsResource() {
+            JmsResource resourceInfo = new JmsAbstractResource() {
                 @Override
                 public void visit(JmsResourceVistor visitor) {
                     errorThrown.set(true);

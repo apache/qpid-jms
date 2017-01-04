@@ -29,7 +29,7 @@ import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsPresettlePolicy;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
 
-public final class JmsSessionInfo implements JmsResource, Comparable<JmsSessionInfo> {
+public final class JmsSessionInfo extends JmsAbstractResource implements Comparable<JmsSessionInfo> {
 
     private final JmsSessionId sessionId;
 

@@ -22,6 +22,12 @@ package org.apache.qpid.jms.meta;
  */
 public interface JmsResource {
 
+    enum ResourceState {
+        INITIALIZED,
+        OPEN,
+        CLOSED;
+    }
+
     /**
      * Returns the assigned resource ID for this JmsResource instance.
      *
@@ -38,5 +44,18 @@ public interface JmsResource {
      * @throws Exception if an error occurs while visiting this resource.
      */
     void visit(JmsResourceVistor visitor) throws Exception;
+
+    /**
+     * @return the current state of this resource.
+     */
+    ResourceState getState();
+
+    /**
+     * Sets or updates the current state of this resource.
+     *
+     * @param state
+     * 		The new state to apply to this resource.
+     */
+    void setState(ResourceState state);
 
 }

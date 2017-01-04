@@ -35,6 +35,7 @@ import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
+import org.apache.qpid.jms.meta.JmsResource.ResourceState;
 import org.apache.qpid.jms.policy.JmsDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
@@ -185,6 +186,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
 
     protected void shutdown(Throwable cause) throws JMSException {
         if (closed.compareAndSet(false, true)) {
+            consumerInfo.setState(ResourceState.CLOSED);
             setFailureCause(cause);
             session.remove(this);
             stop(true);
@@ -668,15 +670,19 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     }
 
     protected void onConnectionRecovery(Provider provider) throws Exception {
-        ProviderFuture request = new ProviderFuture();
-        provider.create(consumerInfo, request);
-        request.sync();
+        if (consumerInfo.isOpen()) {
+            ProviderFuture request = new ProviderFuture();
+            provider.create(consumerInfo, request);
+            request.sync();
+        }
     }
 
     protected void onConnectionRecovered(Provider provider) throws Exception {
-        ProviderFuture request = new ProviderFuture();
-        provider.start(consumerInfo, request);
-        request.sync();
+        if (consumerInfo.isOpen()) {
+            ProviderFuture request = new ProviderFuture();
+            provider.start(consumerInfo, request);
+            request.sync();
+        }
     }
 
     protected void onConnectionRestored() {

@@ -62,6 +62,7 @@ import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.meta.JmsResource;
+import org.apache.qpid.jms.meta.JmsResource.ResourceState;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.meta.JmsTransactionId;
@@ -262,8 +263,9 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
      * Called to free all Connection resources.
      */
     protected void shutdown(Exception cause) throws JMSException {
-
         // NOTE - Once ConnectionConsumer is added we must shutdown those as well.
+
+        connectionInfo.setState(ResourceState.CLOSED);
 
         for (JmsSession session : sessions.values()) {
             session.shutdown(cause);

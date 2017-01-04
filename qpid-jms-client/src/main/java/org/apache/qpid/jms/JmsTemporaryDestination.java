@@ -30,6 +30,7 @@ public abstract class JmsTemporaryDestination extends JmsDestination implements 
 
     private boolean deleted;
     private JmsTemporaryDestinationId resourceId;
+    private ResourceState state = ResourceState.INITIALIZED;
 
     public JmsTemporaryDestination() {
         this(null, false);
@@ -46,6 +47,16 @@ public abstract class JmsTemporaryDestination extends JmsDestination implements 
         }
 
         return resourceId;
+    }
+
+    @Override
+	public ResourceState getState() {
+        return state;
+    }
+
+    @Override
+	public void setState(ResourceState state) {
+        this.state = state;
     }
 
     void setConnection(JmsConnection connection) {

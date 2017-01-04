@@ -22,6 +22,7 @@ import java.util.concurrent.ScheduledFuture;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsResource;
+import org.apache.qpid.jms.meta.JmsResource.ResourceState;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Endpoint;
@@ -84,6 +85,8 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
             parent.removeChildResource(this);
         }
 
+        resourceInfo.setState(ResourceState.CLOSED);
+
         // If already closed signal success or else the caller might never get notified.
         if (getEndpoint().getLocalState() == EndpointState.CLOSED ||
             getEndpoint().getRemoteState() == EndpointState.CLOSED) {
@@ -139,6 +142,8 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
         if (parent != null) {
             parent.removeChildResource(this);
         }
+
+        resourceInfo.setState(ResourceState.CLOSED);
 
         if (getEndpoint() != null) {
             // TODO: if this is a producer/consumer link then we may only be detached,

@@ -36,7 +36,7 @@ import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
  * Meta object that contains the JmsConnection identification and configuration
  * options.  Providers can extend this to add Provider specific data as needed.
  */
-public final class JmsConnectionInfo implements JmsResource, Comparable<JmsConnectionInfo> {
+public final class JmsConnectionInfo extends JmsAbstractResource implements Comparable<JmsConnectionInfo> {
 
     public static final long INFINITE = -1;
     public static final long DEFAULT_CONNECT_TIMEOUT = 15000;

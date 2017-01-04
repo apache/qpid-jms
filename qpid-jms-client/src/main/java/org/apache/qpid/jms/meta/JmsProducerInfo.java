@@ -19,7 +19,7 @@ package org.apache.qpid.jms.meta;
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.message.JmsMessageIDBuilder;
 
-public final class JmsProducerInfo implements JmsResource, Comparable<JmsProducerInfo> {
+public final class JmsProducerInfo extends JmsAbstractResource implements Comparable<JmsProducerInfo> {
 
     private final JmsProducerId producerId;
     private final JmsMessageIDBuilder messageIDBuilder;

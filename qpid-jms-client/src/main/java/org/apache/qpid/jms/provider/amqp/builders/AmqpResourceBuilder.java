@@ -22,6 +22,7 @@ import java.util.concurrent.ScheduledFuture;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsResource;
+import org.apache.qpid.jms.meta.JmsResource.ResourceState;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.amqp.AmqpEventSink;
 import org.apache.qpid.jms.provider.amqp.AmqpExceptionBuilder;
@@ -146,23 +147,22 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
         }
 
         if (isOpenedEndpointValid()) {
+            resourceInfo.setState(ResourceState.OPEN);
             getEndpoint().setContext(resource);
             getParent().addChildResource(resource);
             getRequest().onSuccess();
         } else {
-            getEndpoint().close();
-            getEndpoint().free();
-            getEndpoint().setContext(null);
-
             // TODO: Perhaps the validate method should thrown an exception so that we
             // can return a specific error message to the create initiator.
-            getRequest().onFailure(new IOException("Failed to open requested endpoint"));
+            handleClosed(provider, new IOException("Failed to open requested endpoint"));
         }
     }
 
     protected final void handleClosed(AmqpProvider provider, Throwable cause) {
         // If the resource being built is closed during the creation process
         // then this is always an error.
+
+        resourceInfo.setState(ResourceState.CLOSED);
 
         // Perform any post processing relating to closure during creation attempt
         afterClosed(getResource(), getResourceInfo());

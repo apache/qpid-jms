@@ -32,6 +32,7 @@ import javax.jms.MessageProducer;
 import org.apache.qpid.jms.message.JmsMessageIDBuilder;
 import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
+import org.apache.qpid.jms.meta.JmsResource.ResourceState;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderFuture;
 
@@ -107,6 +108,7 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
 
     protected void shutdown(Throwable cause) throws JMSException {
         if (closed.compareAndSet(false, true)) {
+            producerInfo.setState(ResourceState.CLOSED);
             failureCause.set(cause);
             session.remove(this);
         }
@@ -349,9 +351,11 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
     }
 
     protected void onConnectionRecovery(Provider provider) throws Exception {
-        ProviderFuture request = new ProviderFuture();
-        provider.create(producerInfo, request);
-        request.sync();
+        if (producerInfo.isOpen()) {
+            ProviderFuture request = new ProviderFuture();
+            provider.create(producerInfo, request);
+            request.sync();
+        }
     }
 
     protected void onConnectionRecovered(Provider provider) throws Exception {

@@ -22,7 +22,7 @@ import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
 import org.apache.qpid.jms.policy.JmsDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
 
-public final class JmsConsumerInfo implements JmsResource, Comparable<JmsConsumerInfo> {
+public final class JmsConsumerInfo extends JmsAbstractResource implements Comparable<JmsConsumerInfo> {
 
     private final JmsConsumerId consumerId;
     private JmsDestination destination;

@@ -30,23 +30,29 @@ import org.apache.qpid.proton.codec.Data;
  */
 public class AmqpDataFramer
 {
-    private static final int CAPACITY = 2024;
+    private static final int INITIAL_CAPACITY = 2048;
     private static final byte FRAME_PREAMBLE_SIZE_IN_FOUR_BYTE_WORDS = 2;
+    private static final int FRAME_HEADER_SIZE = 8;
 
     public static byte[] encodeFrame(FrameType type, int channel, DescribedType describedType, Binary payload)
     {
-        ByteBuffer buffer = ByteBuffer.allocate(CAPACITY);  //TODO: set a proper size
+        ByteBuffer buffer = ByteBuffer.allocate(INITIAL_CAPACITY);
 
-        buffer.position(8); // leave hole for frame header
+        buffer.position(FRAME_HEADER_SIZE); // leave hole for frame header
 
         if (describedType != null) {
             Data frameBody = Data.Factory.create();
             frameBody.putDescribedType(describedType);
-            frameBody.encode(buffer);
+
+            long encodedLength = frameBody.encode(buffer);
+            if(encodedLength > buffer.capacity() - FRAME_HEADER_SIZE) {
+                throw new IllegalStateException("Performative encoding exceeded buffer size");
+            }
         }
 
         if(payload != null)
         {
+            //TODO grow buffer if needed rather than throw BOE
             buffer.put(payload.asByteBuffer());
         }
 
@@ -63,4 +69,5 @@ public class AmqpDataFramer
         buffer.get(target, 0, frameSize);
         return target;
     }
+
 }

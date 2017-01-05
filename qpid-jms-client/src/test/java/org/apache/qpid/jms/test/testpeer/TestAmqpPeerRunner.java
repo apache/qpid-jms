@@ -206,7 +206,7 @@ class TestAmqpPeerRunner implements Runnable
 
     public void sendBytes(byte[] bytes)
     {
-        LOGGER.debug("Sending: {}", new Binary(bytes));
+        LOGGER.debug("Sending: {} ({} bytes)", new Binary(bytes), bytes.length);
         try
         {
             _networkOutputStream.write(bytes);

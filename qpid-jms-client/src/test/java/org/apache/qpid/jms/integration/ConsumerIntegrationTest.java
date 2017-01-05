@@ -20,12 +20,14 @@ package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -61,12 +63,17 @@ import org.apache.qpid.jms.test.testpeer.matchers.ReleasedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
+import org.apache.qpid.jms.util.QpidJMSTestRunner;
+import org.apache.qpid.jms.util.Repeat;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
+import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@RunWith(QpidJMSTestRunner.class)
 public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConsumerIntegrationTest.class);
@@ -1059,6 +1066,95 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectDetach(true, true, true);
             consumer.close();
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    @Repeat(repetitions = 1)
+    @Test(timeout=20000)
+    public void testRecoverOrderingWithAsyncConsumer() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicReference<Throwable> asyncError = new AtomicReference<Throwable>(null);
+
+        final int recoverCount = 5;
+        final int messageCount = 8;
+        final int testPayloadLength = 255; // Don't go over 255, Proton <= 0.16.0 issue affecting the test[ only].
+        String payload = new String(new byte[testPayloadLength], StandardCharsets.UTF_8);
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            final Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+            Queue destination = session.createQueue(getTestName());
+            connection.start();
+
+            testPeer.expectReceiverAttach();
+
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType(payload),
+                    messageCount, false, false, Matchers.greaterThan(UnsignedInteger.valueOf(messageCount)), 1, true);
+
+            MessageConsumer consumer = session.createConsumer(destination);
+            consumer.setMessageListener(new MessageListener() {
+                boolean complete;
+                private int messageSeen = 0;
+                private int expectedIndex = 0;
+
+                @Override
+                public void onMessage(Message message) {
+                    if (complete) {
+                        LOG.debug("Ignoring message as test already completed (either pass or fail)");
+                        return;
+                    }
+
+                    try {
+                        int actualIndex = message.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER);
+                        LOG.debug("Got message {}", actualIndex);
+                        assertEquals("Received Message Out Of Order", expectedIndex, actualIndex);
+
+                        // don't ack the message until we receive it X times
+                        if (messageSeen < recoverCount) {
+                            LOG.debug("Ignoring message " + actualIndex + " and calling recover");
+                            session.recover();
+                            messageSeen++;
+                        } else {
+                            messageSeen = 0;
+                            expectedIndex++;
+
+                            // Have the peer expect the accept the disposition (1-based, hence pre-incremented).
+                            testPeer.expectDisposition(true, new AcceptedMatcher(), expectedIndex, expectedIndex);
+
+                            LOG.debug("Acknowledging message {}", actualIndex);
+                            message.acknowledge();
+
+                            //testPeer.waitForAllHandlersToComplete(2000);
+
+                            if (expectedIndex == messageCount) {
+                                complete = true;
+                                latch.countDown();
+                            }
+                        }
+                    } catch (Throwable t) {
+                        complete = true;
+                        asyncError.set(t);
+                        latch.countDown();
+                    }
+                }
+            });
+
+            boolean await = latch.await(15, TimeUnit.SECONDS);
+            assertTrue("Messages not received within given timeout." + latch.getCount(), await);
+
+            Throwable ex = asyncError.get();
+            assertNull("Unexpected exception", ex);
+
+            testPeer.waitForAllHandlersToComplete(2000);
 
             testPeer.expectClose();
             connection.close();

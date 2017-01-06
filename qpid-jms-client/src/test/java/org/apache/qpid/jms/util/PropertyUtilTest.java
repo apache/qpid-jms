@@ -167,6 +167,8 @@ public class PropertyUtilTest {
         new PropertyUtil();
     }
 
+    //----- replaceQuery -----------------------------------------------------//
+
     @Test
     public void testReplaceQueryUsingMap() throws URISyntaxException {
         URI original = new URI("http://www.example.com?option=true");
@@ -188,12 +190,152 @@ public class PropertyUtilTest {
     }
 
     @Test
+    public void testReplaceQueryPreservesFragment() throws URISyntaxException {
+        URI original = new URI("http://www.example.com?option=true#fragment");
+        URI updated = PropertyUtil.replaceQuery(original, "param=replaced");
+
+        assertEquals("param=replaced", updated.getQuery());
+        assertEquals("fragment", updated.getFragment());
+    }
+
+    @Test
+    public void testReplaceQueryPreservesFragmentWhenNoQueryPresent() throws URISyntaxException {
+        URI original = new URI("http://www.example.com#fragment");
+        URI updated = PropertyUtil.replaceQuery(original, "param=replaced");
+
+        assertEquals("param=replaced", updated.getQuery());
+        assertEquals("fragment", updated.getFragment());
+    }
+
+    @Test
+    public void testReplaceQueryWithStringDoesNotReencode() throws URISyntaxException {
+        URI original = new URI("http://www.example.com?option=X");
+
+        final String encodedValue = "%25Ca%2BHn%2Fav";
+        final String decodedValue = "%Ca+Hn/av";
+
+        final String encodedKey = "user%2Bname";
+        final String decodedKey = "user+name";
+
+        String newQuery = encodedKey + "=" + encodedValue;
+
+        URI updated = PropertyUtil.replaceQuery(original, newQuery);
+
+        assertEquals(encodedKey + "=" + encodedValue, updated.getRawQuery());
+        assertEquals(decodedKey + "=" + decodedValue, updated.getQuery());
+    }
+
+    @Test
+    public void testReplaceQueryUsingMapEncodesParameters() throws URISyntaxException {
+        URI original = new URI("http://www.example.com?option=X");
+
+        final String encodedValue = "%25Ca%2BHn%2Fav";
+        final String decodedValue = "%Ca+Hn/av";
+
+        final String encodedKey = "user%2Bname";
+        final String decodedKey = "user+name";
+
+        Map<String, String> newQuery = new HashMap<String, String>();
+        newQuery.put(decodedKey, decodedValue);
+
+        URI updated = PropertyUtil.replaceQuery(original, newQuery);
+
+        assertEquals(encodedKey + "=" + encodedValue, updated.getRawQuery());
+        assertEquals(decodedKey + "=" + decodedValue, updated.getQuery());
+    }
+
+    @Test
+    public void testReplaceQueryIgnoresQueryInCompositeURI() throws URISyntaxException {
+        URI original = new URI("failover:(amqp://example.com:5672?amqp.traceFrames=true)");
+        URI expected = new URI("failover:(amqp://example.com:5672?amqp.traceFrames=true)?failover.maxReconnectAttempts=1");
+        URI updated = PropertyUtil.replaceQuery(original, "failover.maxReconnectAttempts=1");
+
+        assertEquals(expected, updated);
+    }
+
+    @Test
+    public void testReplaceQueryIgnoresQueryAndFragmentInCompositeURI() throws URISyntaxException {
+        URI original = new URI("failover:(amqp://example.com:5672?amqp.traceFrames=true#ignored)");
+        URI expected = new URI("failover:(amqp://example.com:5672?amqp.traceFrames=true#ignored)?failover.maxReconnectAttempts=1");
+        URI updated = PropertyUtil.replaceQuery(original, "failover.maxReconnectAttempts=1");
+
+        assertEquals(expected, updated);
+    }
+
+    @Test
+    public void testReplaceQueryIgnoresQueryInCompositeURIPreservesFragment() throws URISyntaxException {
+        URI original = new URI("failover:(amqp://example.com:5672?amqp.traceFrames=true)#fragment");
+        URI expected = new URI("failover:(amqp://example.com:5672?amqp.traceFrames=true)?failover.maxReconnectAttempts=1#fragment");
+        URI updated = PropertyUtil.replaceQuery(original, "failover.maxReconnectAttempts=1");
+
+        assertEquals(expected, updated);
+    }
+
+    @Test
+    public void testReplaceQueryIgnoresQueryInCompositeURIReplaceExisting() throws URISyntaxException {
+        URI original = new URI("failover:(amqp://example.com:5672?amqp.traceFrames=true)?failover.maxReconnectAttempts=2");
+        URI expected = new URI("failover:(amqp://example.com:5672?amqp.traceFrames=true)?failover.maxReconnectAttempts=1");
+        URI updated = PropertyUtil.replaceQuery(original, "failover.maxReconnectAttempts=1");
+
+        assertEquals(expected, updated);
+    }
+
+    @Test
+    public void testReplaceQueryIgnoresQueryInCompositeURIReplaceExistingPreservesFragment() throws URISyntaxException {
+        URI original = new URI("failover:(amqp://example.com:5672?amqp.traceFrames=true)?failover.maxReconnectAttempts=2#fragment");
+        URI expected = new URI("failover:(amqp://example.com:5672?amqp.traceFrames=true)?failover.maxReconnectAttempts=1#fragment");
+        URI updated = PropertyUtil.replaceQuery(original, "failover.maxReconnectAttempts=1");
+
+        assertEquals(expected, updated);
+    }
+
+    //----- eraseQuery -------------------------------------------------------//
+
+    @Test
     public void testEraseQuery() throws URISyntaxException {
         URI original = new URI("http://www.example.com?option=true");
         URI updated = PropertyUtil.eraseQuery(original);
 
         assertNull(updated.getQuery());
     }
+
+    @Test
+    public void testEraseQueryPreservesFragment() throws URISyntaxException {
+        URI original = new URI("http://www.example.com?option=true#fragment");
+        URI updated = PropertyUtil.eraseQuery(original);
+
+        assertNull(updated.getQuery());
+        assertEquals("fragment", updated.getFragment());
+    }
+
+    @Test
+    public void testEraseQueryPreservesFragmentWhenNoQueryPresent() throws URISyntaxException {
+        URI original = new URI("http://www.example.com#fragment");
+        URI updated = PropertyUtil.eraseQuery(original);
+
+        assertNull(updated.getQuery());
+        assertEquals("fragment", updated.getFragment());
+    }
+
+    @Test
+    public void testEraseQueryIgnoresQueryInCompositeURI() throws URISyntaxException {
+        URI original = new URI("failover:(amqp://example.com:5672?amqp.traceFrames=true)");
+        URI expected = new URI("failover:(amqp://example.com:5672?amqp.traceFrames=true)");
+        URI updated = PropertyUtil.eraseQuery(original);
+
+        assertEquals(expected, updated);
+    }
+
+    @Test
+    public void testEraseQueryIgnoresQueryAndFragmentInCompositeURI() throws URISyntaxException {
+        URI original = new URI("failover:(amqp://example.com:5672?amqp.traceFrames=true#ignored)?failover.maxReconnectAttempts=1");
+        URI expected = new URI("failover:(amqp://example.com:5672?amqp.traceFrames=true#ignored)");
+        URI updated = PropertyUtil.eraseQuery(original);
+
+        assertEquals(expected, updated);
+    }
+
+    //----- createQuery ------------------------------------------------------//
 
     @Test
     public void testCreateQuery() throws URISyntaxException {
@@ -206,6 +348,25 @@ public class PropertyUtilTest {
         assertNotNull(query);
         assertEquals("param1=value&param2=value", query);
     }
+
+    @Test
+    public void testCreateQueryEncodesParameters() throws URISyntaxException {
+
+        final String encodedValue = "%25Ca%2BHn%2Fav";
+        final String decodedValue = "%Ca+Hn/av";
+
+        final String encodedKey = "user%2Bname";
+        final String decodedKey = "user+name";
+
+        Map<String, String> source = new HashMap<String, String>();
+        source.put(decodedKey, decodedValue);
+
+        String result = PropertyUtil.createQueryString(source);
+
+        assertEquals(encodedKey + "=" + encodedValue, result);
+    }
+
+    //----- parseQuery -------------------------------------------------------//
 
     @Test
     public void testParseQueryFromURI() throws Exception {
@@ -290,6 +451,22 @@ public class PropertyUtilTest {
         assertTrue(result.isEmpty());
     }
 
+    @Test
+    public void testParseQueryDecodesParameters() throws Exception {
+        URI original = new URI("http://www.example.com?user%2Bname=%25Ca%2BHn%2Fav");
+
+        final String decodedKey = "user+name";
+        final String decodedValue = "%Ca+Hn/av";
+
+        Map<String, String> result = PropertyUtil.parseQuery(original);
+
+        assertEquals(1, result.size());
+        assertTrue(result.containsKey(decodedKey));
+        assertEquals(decodedValue, result.get(decodedKey));
+    }
+
+    //----- filterProperties -------------------------------------------------//
+
     @Test(expected=IllegalArgumentException.class)
     public void testFilterPropertiesNullProperties() throws Exception {
         PropertyUtil.filterProperties(null, "option.");
@@ -312,6 +489,8 @@ public class PropertyUtilTest {
         assertEquals("true", result.get("filtered1"));
         assertEquals("false", result.get("filtered2"));
     }
+
+    //----- setProperties ----------------------------------------------------//
 
     @Test
     public void testSetProperties() throws Exception {
@@ -385,6 +564,8 @@ public class PropertyUtilTest {
         assertEquals("foo", configObject.getFirstName());
         assertEquals("bar", configObject.getLastName());
     }
+
+    //----- getProperties ----------------------------------------------------//
 
     @Test
     public void testGetProperties() throws Exception {
@@ -461,6 +642,8 @@ public class PropertyUtilTest {
         Object result = PropertyUtil.getProperty(configObject, "notReadable");
         assertNull(result);
     }
+
+    //----- setProperty ------------------------------------------------------//
 
     @Test
     public void testSetProperty() throws Exception {
@@ -546,6 +729,8 @@ public class PropertyUtilTest {
         PropertyUtil.setProperties(new Options(), (Properties) null);
     }
 
+    //----- stripPrefix ------------------------------------------------------//
+
     @Test
     public void testStripPrefix() {
         String value = "prefixed.option";
@@ -565,6 +750,8 @@ public class PropertyUtilTest {
         assertNull(PropertyUtil.stripPrefix((String) null, "prefixed."));
     }
 
+    //----- stripBefore ------------------------------------------------------//
+
     @Test
     public void testStripBefore() {
         String value = "prefixed.option";
@@ -576,6 +763,8 @@ public class PropertyUtilTest {
     public void testStripBeforeNullString() {
         assertNull(PropertyUtil.stripBefore((String) null, '.'));
     }
+
+    //----- stripUpto ------------------------------------------------------//
 
     @Test
     public void testStripUpTo() {
@@ -589,73 +778,4 @@ public class PropertyUtilTest {
         assertNull(PropertyUtil.stripUpto((String) null, '.'));
     }
 
-    //----- Tests for URI options that are URL Encoded -----------------------//
-
-    @Test
-    public void testReplaceQueryWithStringDoesNotReencode() throws URISyntaxException {
-        URI original = new URI("http://www.example.com?option=X");
-
-        final String encodedValue = "%25Ca%2BHn%2Fav";
-        final String decodedValue = "%Ca+Hn/av";
-
-        final String encodedKey = "user%2Bname";
-        final String decodedKey = "user+name";
-
-        String newQuery = encodedKey + "=" + encodedValue;
-
-        URI updated = PropertyUtil.replaceQuery(original, newQuery);
-
-        assertEquals(encodedKey + "=" + encodedValue, updated.getRawQuery());
-        assertEquals(decodedKey + "=" + decodedValue, updated.getQuery());
-    }
-
-    @Test
-    public void testReplaceQueryUsingMapEncodesParameters() throws URISyntaxException {
-        URI original = new URI("http://www.example.com?option=X");
-
-        final String encodedValue = "%25Ca%2BHn%2Fav";
-        final String decodedValue = "%Ca+Hn/av";
-
-        final String encodedKey = "user%2Bname";
-        final String decodedKey = "user+name";
-
-        Map<String, String> newQuery = new HashMap<String, String>();
-        newQuery.put(decodedKey, decodedValue);
-
-        URI updated = PropertyUtil.replaceQuery(original, newQuery);
-
-        assertEquals(encodedKey + "=" + encodedValue, updated.getRawQuery());
-        assertEquals(decodedKey + "=" + decodedValue, updated.getQuery());
-    }
-
-    @Test
-    public void testParseQueryDecodesParameters() throws Exception {
-        URI original = new URI("http://www.example.com?user%2Bname=%25Ca%2BHn%2Fav");
-
-        final String decodedKey = "user+name";
-        final String decodedValue = "%Ca+Hn/av";
-
-        Map<String, String> result = PropertyUtil.parseQuery(original);
-
-        assertEquals(1, result.size());
-        assertTrue(result.containsKey(decodedKey));
-        assertEquals(decodedValue, result.get(decodedKey));
-    }
-
-    @Test
-    public void testCreateQueryEncodesParameters() throws URISyntaxException {
-
-        final String encodedValue = "%25Ca%2BHn%2Fav";
-        final String decodedValue = "%Ca+Hn/av";
-
-        final String encodedKey = "user%2Bname";
-        final String decodedKey = "user+name";
-
-        Map<String, String> source = new HashMap<String, String>();
-        source.put(decodedKey, decodedValue);
-
-        String result = PropertyUtil.createQueryString(source);
-
-        assertEquals(encodedKey + "=" + encodedValue, result);
-    }
 }

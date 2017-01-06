@@ -20,8 +20,13 @@
  */
 package org.apache.qpid.jms.integration;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
+
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -122,8 +127,20 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
 
             // Expect a PLAIN connection with decoded password from URL encoded value.
             String user = "user";
-            String pass = "CN24tCa+Hn/av";
-            String encodedPass = "CN24tCa%2BHn%2Fav";
+            String pass = " CN24tCa+Hn/av";
+
+            // If double decoded this value results in " CN24tCa Hn/av" as the decoded plus
+            // becomes a valid encoding for a space character and would be removed.
+            String encodedPass = "+CN24tCa%2BHn%2Fav";
+
+            String urlEncodedPassword = URLEncoder.encode(pass, "UTF-8");
+            String urlDecodedPassword = URLDecoder.decode(pass, "UTF-8");
+
+            // Inadvertent double decoding of the password should result in a different value
+            // which would fail this test.
+            assertEquals(encodedPass, urlEncodedPassword);
+            assertFalse(urlEncodedPassword.equals(urlDecodedPassword));
+            assertFalse(pass.equals(urlDecodedPassword));
 
             testPeer.expectSaslPlain(user, pass);
             testPeer.expectOpen();

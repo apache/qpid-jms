@@ -117,6 +117,37 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testSaslPlainConnectionWithURIEncodedCredentials() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            // Expect a PLAIN connection with decoded password from URL encoded value.
+            String user = "user";
+            String pass = "CN24tCa+Hn/av";
+            String encodedPass = "CN24tCa%2BHn%2Fav";
+
+            testPeer.expectSaslPlain(user, pass);
+            testPeer.expectOpen();
+
+            // Each connection creates a session for managing temporary destinations etc
+            testPeer.expectBegin();
+
+            ConnectionFactory factory = new JmsConnectionFactory(
+                "amqp://localhost:" + testPeer.getServerPort() +
+                "?jms.username=" + user + "&jms.password=" + encodedPass);
+
+            Connection connection = factory.createConnection();
+            // Set a clientID to provoke the actual AMQP connection process to occur.
+            connection.setClientID("clientName");
+
+            testPeer.waitForAllHandlersToComplete(1000);
+            assertNull(testPeer.getThrowable());
+
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
+
+    @Test(timeout = 20000)
     public void testSaslAnonymousConnection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             // Expect an ANOYMOUS connection

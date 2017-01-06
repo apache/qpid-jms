@@ -208,6 +208,7 @@ public class URISupport {
         if (ssp.indexOf('(') == 0 && checkParenthesis(ssp)) {
             return true;
         }
+
         return false;
     }
 
@@ -237,6 +238,7 @@ public class URISupport {
             }
             result = open == closed;
         }
+
         return result;
     }
 
@@ -360,11 +362,11 @@ public class URISupport {
      */
     public static Map<String, String> parseParameters(URI uri) throws URISyntaxException {
         if (!isCompositeURI(uri)) {
-            if (uri.getQuery() == null) {
+            if (uri.getRawQuery() == null) {
                 return Collections.emptyMap();
             } else {
                 try {
-                    return PropertyUtil.parseQuery(PropertyUtil.stripPrefix(uri.getQuery(), "?"));
+                    return PropertyUtil.parseQuery(PropertyUtil.stripPrefix(uri.getRawQuery(), "?"));
                 } catch (Exception e) {
                     throw new URISyntaxException(uri.toString(), e.getMessage());
                 }
@@ -384,7 +386,8 @@ public class URISupport {
     /**
      * Given a Key / Value mapping create and append a URI query value that represents the
      * mapped entries, return the newly updated URI that contains the value of the given URI and
-     * the appended query value.
+     * the appended query value.  The values in the parameters map should not be URL encoded values
+     * as this method will perform an encode on them resulting in double encoded values.
      *
      * @param uri
      *        The source URI that will have the Map entries appended as a URI query value.

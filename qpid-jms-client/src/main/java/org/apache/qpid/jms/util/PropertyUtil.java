@@ -41,25 +41,32 @@ import javax.net.ssl.SSLContext;
  */
 public class PropertyUtil {
 
+    private static final String UTF8 = "UTF-8";
+
     /**
      * Creates a URI from the original URI and the given parameters.
      *
+     * The string values in the Map will be URL Encoded by this method which means that if an
+     * already encoded value is passed it will be double encoded resulting in corrupt values
+     * in the newly created URI.
+     *
      * @param originalURI
      *        The URI whose current parameters are removed and replaced with the given remainder value.
-     * @param params
-     *        The URI params that should be used to replace the current ones in the target.
+     * @param properties
+     *        The URI properties that should be used to replace the current ones in the target.
      *
      * @return a new URI that matches the original one but has its query options replaced with
      *         the given ones.
      *
      * @throws URISyntaxException if the given URI is invalid.
      */
-    public static URI replaceQuery(URI originalURI, Map<String, String> params) throws URISyntaxException {
-        String s = createQueryString(params);
-        if (s.length() == 0) {
-            s = null;
+    public static URI replaceQuery(URI originalURI, Map<String, String> properties) throws URISyntaxException {
+        String queryString = createQueryString(properties);
+        if (queryString.length() == 0) {
+            queryString = null;
         }
-        return replaceQuery(originalURI, s);
+
+        return replaceQuery(originalURI, queryString);
     }
 
     /**
@@ -75,20 +82,40 @@ public class PropertyUtil {
      * @throws URISyntaxException if the given URI is invalid.
      */
     public static URI replaceQuery(URI uri, String query) throws URISyntaxException {
-        String schemeSpecificPart = uri.getRawSchemeSpecificPart();
+        String uriAsString = uri.toString();
+
+        String fragment = null;
+
+        // Strip existing fragment if any
+        int hashMark = uriAsString.lastIndexOf("#");
+        // make sure hash mark is not within parentheses
+        if (hashMark < uriAsString.lastIndexOf(")")) {
+            hashMark = -1;
+        }
+        if (hashMark > 0) {
+            fragment = uriAsString.substring(hashMark);
+            uriAsString = uriAsString.substring(0, hashMark);
+        }
+
         // strip existing query if any
-        int questionMark = schemeSpecificPart.lastIndexOf("?");
+        int questionMark = uriAsString.lastIndexOf("?");
         // make sure question mark is not within parentheses
-        if (questionMark < schemeSpecificPart.lastIndexOf(")")) {
+        if (questionMark < uriAsString.lastIndexOf(")")) {
             questionMark = -1;
         }
         if (questionMark > 0) {
-            schemeSpecificPart = schemeSpecificPart.substring(0, questionMark);
+            uriAsString = uriAsString.substring(0, questionMark);
         }
+
         if (query != null && query.length() > 0) {
-            schemeSpecificPart += "?" + query;
+            uriAsString += "?" + query;
         }
-        return new URI(uri.getScheme(), schemeSpecificPart, uri.getFragment());
+
+        if (fragment != null && fragment.length() > 0) {
+            uriAsString += fragment;
+        }
+
+        return new URI(uriAsString);
     }
 
     /**
@@ -107,7 +134,9 @@ public class PropertyUtil {
 
     /**
      * Given a key / value mapping, create and return a URI formatted query string that is valid
-     * and can be appended to a URI.
+     * and can be appended to a URI string.  The values in the given Map are URL Encoded during
+     * construction of the query string, if the original values were previously encoded this can
+     * result in double encoding.
      *
      * @param options
      *        The Mapping that will create the new Query string.
@@ -127,9 +156,10 @@ public class PropertyUtil {
                     } else {
                         rc.append("&");
                     }
-                    rc.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
+
+                    rc.append(URLEncoder.encode(entry.getKey(), UTF8));
                     rc.append("=");
-                    rc.append(URLEncoder.encode((String) entry.getValue(), "UTF-8"));
+                    rc.append(URLEncoder.encode((String) entry.getValue(), UTF8));
                 }
                 return rc.toString();
             } else {
@@ -141,49 +171,29 @@ public class PropertyUtil {
     }
 
     /**
-     * Get properties from a URI and return them in a new {@code Map<String, String>} instance.
-     *
-     * If the URI is null or the query string of the URI is null an empty Map is returned.
+     * Get properties from the Query portion of the given URI.
      *
      * @param uri
-     *        the URI whose parameters are to be parsed.
+     *        the URI whose Query string should be parsed.
      *
-     * @return <Code>Map</Code> of properties
+     * @return <Code>Map</Code> of properties from the parsed string.
      *
      * @throws Exception if an error occurs while parsing the query options.
      */
-    public static Map<String, String> parseParameters(URI uri) throws Exception {
-        if (uri == null || uri.getQuery() == null) {
-            return Collections.emptyMap();
-        }
-
-        return parseQuery(stripPrefix(uri.getQuery(), "?"));
-    }
-
-    /**
-     * Parse properties from a named resource -eg. a URI or a simple name e.g.
-     * {@literal foo?name="fred"&size=2}
-     *
-     * @param uri
-     *        the URI whose parameters are to be parsed.
-     *
-     * @return <Code>Map</Code> of properties
-     *
-     * @throws Exception if an error occurs while parsing the query options.
-     */
-    public static Map<String, String> parseParameters(String uri) throws Exception {
+    public static Map<String, String> parseQuery(URI uri) throws Exception {
         if (uri == null) {
             return Collections.emptyMap();
         }
 
-        return parseQuery(stripUpto(uri, '?'));
+        return parseQuery(uri.getRawQuery());
     }
 
     /**
-     * Get properties from a URI query string.
+     * Get properties from a URI Query String obtained by calling the getRawQuery method
+     * on a given URI or from some other source.
      *
      * @param queryString
-     *        the string value returned from a call to the URI class getQuery method.
+     *        the query string obtained from called getRawQuery on a given URI.
      *
      * @return <Code>Map</Code> of properties from the parsed string.
      *
@@ -196,8 +206,9 @@ public class PropertyUtil {
             for (int i = 0; i < parameters.length; i++) {
                 int p = parameters[i].indexOf("=");
                 if (p >= 0) {
-                    String name = URLDecoder.decode(parameters[i].substring(0, p), "UTF-8");
-                    String value = URLDecoder.decode(parameters[i].substring(p + 1), "UTF-8");
+                    String name = URLDecoder.decode(parameters[i].substring(0, p), UTF8);
+                    String value = URLDecoder.decode(parameters[i].substring(p + 1), UTF8);
+
                     rc.put(name, value);
                 } else {
                     rc.put(parameters[i], null);
@@ -240,79 +251,6 @@ public class PropertyUtil {
     }
 
     /**
-     * Enumerate the properties of the target object and add them as additional entries
-     * to the query string of the given string URI.
-     *
-     * @param uri
-     *        The string URI value to append the object properties to.
-     * @param bean
-     *        The Object whose properties will be added to the target URI.
-     *
-     * @return a new String value that is the original URI with the added bean properties.
-     *
-     * @throws Exception if an error occurs while enumerating the bean properties.
-     */
-    public static String addPropertiesToURIFromBean(String uri, Object bean) throws Exception {
-        Map<String, String> properties = PropertyUtil.getProperties(bean);
-        return PropertyUtil.addPropertiesToURI(uri, properties);
-    }
-
-    /**
-     * Enumerate the properties of the target object and add them as additional entries
-     * to the query string of the given URI.
-     *
-     * @param uri
-     *        The URI value to append the object properties to.
-     * @param properties
-     *        The Object whose properties will be added to the target URI.
-     *
-     * @return a new String value that is the original URI with the added bean properties.
-     *
-     * @throws Exception if an error occurs while enumerating the bean properties.
-     */
-    public static String addPropertiesToURI(URI uri, Map<String, String> properties) throws Exception {
-        return addPropertiesToURI(uri.toString(), properties);
-    }
-
-    /**
-     * Append the given properties to the query portion of the given URI.
-     *
-     * @param uri
-     *        The string URI value to append the object properties to.
-     * @param properties
-     *        The properties that will be added to the target URI.
-     *
-     * @return a new String value that is the original URI with the added properties.
-     *
-     * @throws Exception if an error occurs while building the new URI string.
-     */
-    public static String addPropertiesToURI(String uri, Map<String, String> properties) throws Exception {
-        String result = uri;
-        if (uri != null && properties != null) {
-            StringBuilder base = new StringBuilder(stripBefore(uri, '?'));
-            Map<String, String> map = parseParameters(uri);
-            if (!map.isEmpty()) {
-                map.putAll(properties);
-            } else {
-                map = properties;
-            }
-            if (!map.isEmpty()) {
-                base.append('?');
-                boolean first = true;
-                for (Map.Entry<String, String> entry : map.entrySet()) {
-                    if (!first) {
-                        base.append('&');
-                    }
-                    first = false;
-                    base.append(entry.getKey()).append("=").append(entry.getValue());
-                }
-                result = base.toString();
-            }
-        }
-        return result;
-    }
-
-    /**
      * Set properties on an object using the provided map. The return value
      * indicates if all properties from the given map were set on the target object.
      *
@@ -341,8 +279,6 @@ public class PropertyUtil {
 
         return Collections.unmodifiableMap(unmatched);
     }
-
-    //TODO: common impl for above and below methods.
 
     /**
      * Set properties on an object using the provided Properties object. The return value

@@ -27,6 +27,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.jms.util.URISupport.CompositeData;
@@ -55,10 +56,34 @@ public class URISupportTest {
     }
 
     @Test
-    public void testComposite() throws Exception {
+    public void testParseComposite() throws Exception {
         URI uri = new URI("test:(part1://host,part2://(sub1://part,sube2:part))");
         CompositeData data = URISupport.parseComposite(uri);
         assertEquals(2, data.getComponents().size());
+
+        assertFalse(URISupport.isCompositeURI(data.getComponents().get(0)));
+        assertTrue(URISupport.isCompositeURI(data.getComponents().get(1)));
+
+        assertTrue(data.getParameters().isEmpty());
+    }
+
+    @Test
+    public void testParseCompositeWithInnerURIsWithQueryValues() throws Exception {
+        URI uri = new URI("failover://(amqp://127.0.0.1:5678,amqp://127.0.0.2:5677,amqp://127.0.0.3:5676?amqp.traceFrames=false)?failover.useReconnectBackOff=false");
+        CompositeData data = URISupport.parseComposite(uri);
+        assertEquals(3, data.getComponents().size());
+
+        Map<String, String> parameters = data.getParameters();
+        assertEquals(1, parameters.size());
+
+        assertTrue(parameters.containsKey("failover.useReconnectBackOff"));
+        assertTrue(parameters.get("failover.useReconnectBackOff").equals("false"));
+
+        List<URI> uris = data.getComponents();
+
+        assertEquals(uris.get(0).toString(), "amqp://127.0.0.1:5678");
+        assertEquals(uris.get(1).toString(), "amqp://127.0.0.2:5677");
+        assertEquals(uris.get(2).toString(), "amqp://127.0.0.3:5676?amqp.traceFrames=false");
     }
 
     @Test
@@ -105,7 +130,7 @@ public class URISupportTest {
     public void testParsingURI() throws Exception {
         URI source = new URI("tcp://localhost:61626/foo/bar?cheese=Edam&x=123");
 
-        Map<String, String> map = PropertyUtil.parseParameters(source);
+        Map<String, String> map = PropertyUtil.parseQuery(source);
 
         assertEquals("Size: " + map, 2, map.size());
         assertMapKey(map, "cheese", "Edam");
@@ -120,7 +145,7 @@ public class URISupportTest {
     public void testParsingURIWithEmptyValuesInOptions() throws Exception {
         URI source = new URI("tcp://localhost:61626/foo/bar?cheese=&x=");
 
-        Map<String, String> map = PropertyUtil.parseParameters(source);
+        Map<String, String> map = PropertyUtil.parseQuery(source);
 
         assertEquals("Size: " + map, 2, map.size());
         assertMapKey(map, "cheese", "");

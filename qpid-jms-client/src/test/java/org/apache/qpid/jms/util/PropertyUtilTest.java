@@ -208,9 +208,9 @@ public class PropertyUtilTest {
     }
 
     @Test
-    public void testParseParametersFromURI() throws Exception {
+    public void testParseQueryFromURI() throws Exception {
         URI original = new URI("http://www.example.com?option=true&another=false");
-        Map<String, String> result = PropertyUtil.parseParameters(original);
+        Map<String, String> result = PropertyUtil.parseQuery(original);
 
         assertEquals(2, result.size());
         assertTrue(result.containsKey("option"));
@@ -220,23 +220,23 @@ public class PropertyUtilTest {
     }
 
     @Test
-    public void testParseParametersFromURIWithNoQuery() throws Exception {
+    public void testParseQueryFromURIWithNoQuery() throws Exception {
         URI original = new URI("http://www.example.com");
-        Map<String, String> result = PropertyUtil.parseParameters(original);
+        Map<String, String> result = PropertyUtil.parseQuery(original);
         assertNotNull(result);
         assertTrue(result.isEmpty());
     }
 
     @Test
-    public void testParseParametersFromNullURI() throws Exception {
-        Map<String, String> result = PropertyUtil.parseParameters((URI) null);
+    public void testParseQueryFromNullURI() throws Exception {
+        Map<String, String> result = PropertyUtil.parseQuery((URI) null);
         assertNotNull(result);
         assertTrue(result.isEmpty());
     }
 
     @Test
-    public void testParseParametersFromString() throws Exception {
-        Map<String, String> result = PropertyUtil.parseParameters("http://www.example.com?option=true&another=false");
+    public void testParseQueryFromString() throws Exception {
+        Map<String, String> result = PropertyUtil.parseQuery("option=true&another=false");
 
         assertTrue(result.size() == 2);
         assertTrue(result.containsKey("option"));
@@ -246,8 +246,8 @@ public class PropertyUtilTest {
     }
 
     @Test
-    public void testParseParametersFromStringWithNoValues() throws Exception {
-        Map<String, String> result = PropertyUtil.parseParameters("http://www.example.com?option=&another=");
+    public void testParseQueryFromStringWithNoValues() throws Exception {
+        Map<String, String> result = PropertyUtil.parseQuery("option=&another=");
 
         assertTrue(result.size() == 2);
         assertTrue(result.containsKey("option"));
@@ -257,28 +257,10 @@ public class PropertyUtilTest {
     }
 
     @Test
-    public void testParseParametersFromURIStringWithNoQuery() throws Exception {
-        Map<String, String> result = PropertyUtil.parseParameters("http://www.example.com");
+    public void testParseQueryFromNullURIString() throws Exception {
+        Map<String, String> result = PropertyUtil.parseQuery((String) null);
         assertNotNull(result);
         assertTrue(result.isEmpty());
-    }
-
-    @Test
-    public void testParseParametersFromNullURIString() throws Exception {
-        Map<String, String> result = PropertyUtil.parseParameters((String) null);
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    public void testParseQuery() throws Exception {
-        Map<String, String> result = PropertyUtil.parseQuery("option=true&another=false");
-
-        assertTrue(result.size() == 2);
-        assertTrue(result.containsKey("option"));
-        assertTrue(result.containsKey("another"));
-        assertEquals("true", result.get("option"));
-        assertEquals("false", result.get("another"));
     }
 
     @Test
@@ -329,102 +311,6 @@ public class PropertyUtilTest {
 
         assertEquals("true", result.get("filtered1"));
         assertEquals("false", result.get("filtered2"));
-    }
-
-    @Test
-    public void testAddPropertiesToURIFromBean() throws Exception {
-        String uriBase = "www.example.com";
-        Options configObject = new Options("foo", "bar");
-
-        String result = PropertyUtil.addPropertiesToURIFromBean(uriBase, configObject);
-        assertNotNull(result);
-        URI resultURI = new URI(result);
-        assertNotNull(resultURI.getQuery());
-
-        Map<String, String> props = PropertyUtil.parseQuery(resultURI.getQuery());
-        assertFalse(props.isEmpty());
-        assertTrue(props.containsKey("firstName"));
-        assertTrue(props.containsKey("lastName"));
-    }
-
-    @Test
-    public void testAddPropertiesToURIFromNullBean() throws Exception {
-        String uriBase = "www.example.com";
-        String result = PropertyUtil.addPropertiesToURIFromBean(uriBase, (Options) null);
-        assertNotNull(result);
-        URI resultURI = new URI(result);
-        assertNull(resultURI.getQuery());
-    }
-
-    @Test
-    public void testAddPropertiesToStringURIFromMap() throws Exception {
-        String uriBase = "www.example.com";
-
-        Map<String, String> properties = new HashMap<String, String>();
-        properties.put("option1", "true");
-        properties.put("option2", "false");
-
-        String result = PropertyUtil.addPropertiesToURI(uriBase, properties);
-        assertNotNull(result);
-        URI resultURI = new URI(result);
-        assertNotNull(resultURI.getQuery());
-
-        Map<String, String> parsed = PropertyUtil.parseQuery(resultURI.getQuery());
-        assertEquals(properties, parsed);
-    }
-
-    @Test
-    public void testAddPropertiesToStringURIFromEmptyMap() throws Exception {
-        String uriBase = "www.example.com";
-
-        String result = PropertyUtil.addPropertiesToURI(uriBase, null);
-        assertSame(uriBase, result);
-    }
-
-    @Test
-    public void testAddPropertiesToStringURIWithNullURI() throws Exception {
-        Map<String, String> properties = new HashMap<String, String>();
-        properties.put("option1", "true");
-        properties.put("option2", "false");
-
-        String result = PropertyUtil.addPropertiesToURI((String) null, properties);
-        assertNull(result);
-    }
-
-    @Test
-    public void testAddPropertiesToStringURIFromMapKeepsExisting() throws Exception {
-        String uriBase = "www.example.com?existing=keepMe";
-
-        Map<String, String> properties = new HashMap<String, String>();
-        properties.put("option1", "true");
-        properties.put("option2", "false");
-
-        String result = PropertyUtil.addPropertiesToURI(uriBase, properties);
-        assertNotNull(result);
-        URI resultURI = new URI(result);
-        assertNotNull(resultURI.getQuery());
-
-        Map<String, String> parsed = PropertyUtil.parseQuery(resultURI.getQuery());
-        assertEquals(3, parsed.size());
-        assertTrue(parsed.containsKey("existing"));
-        assertEquals("keepMe", parsed.get("existing"));
-    }
-
-    @Test
-    public void testAddPropertiesToURIFromMap() throws Exception {
-        URI uri = new URI("www.example.com");
-
-        Map<String, String> properties = new HashMap<String, String>();
-        properties.put("option1", "true");
-        properties.put("option2", "false");
-
-        String result = PropertyUtil.addPropertiesToURI(uri, properties);
-        assertNotNull(result);
-        URI resultURI = new URI(result);
-        assertNotNull(resultURI.getQuery());
-
-        Map<String, String> parsed = PropertyUtil.parseQuery(resultURI.getQuery());
-        assertEquals(properties, parsed);
     }
 
     @Test
@@ -701,5 +587,75 @@ public class PropertyUtilTest {
     @Test
     public void testStripUpToNullString() {
         assertNull(PropertyUtil.stripUpto((String) null, '.'));
+    }
+
+    //----- Tests for URI options that are URL Encoded -----------------------//
+
+    @Test
+    public void testReplaceQueryWithStringDoesNotReencode() throws URISyntaxException {
+        URI original = new URI("http://www.example.com?option=X");
+
+        final String encodedValue = "%25Ca%2BHn%2Fav";
+        final String decodedValue = "%Ca+Hn/av";
+
+        final String encodedKey = "user%2Bname";
+        final String decodedKey = "user+name";
+
+        String newQuery = encodedKey + "=" + encodedValue;
+
+        URI updated = PropertyUtil.replaceQuery(original, newQuery);
+
+        assertEquals(encodedKey + "=" + encodedValue, updated.getRawQuery());
+        assertEquals(decodedKey + "=" + decodedValue, updated.getQuery());
+    }
+
+    @Test
+    public void testReplaceQueryUsingMapEncodesParameters() throws URISyntaxException {
+        URI original = new URI("http://www.example.com?option=X");
+
+        final String encodedValue = "%25Ca%2BHn%2Fav";
+        final String decodedValue = "%Ca+Hn/av";
+
+        final String encodedKey = "user%2Bname";
+        final String decodedKey = "user+name";
+
+        Map<String, String> newQuery = new HashMap<String, String>();
+        newQuery.put(decodedKey, decodedValue);
+
+        URI updated = PropertyUtil.replaceQuery(original, newQuery);
+
+        assertEquals(encodedKey + "=" + encodedValue, updated.getRawQuery());
+        assertEquals(decodedKey + "=" + decodedValue, updated.getQuery());
+    }
+
+    @Test
+    public void testParseQueryDecodesParameters() throws Exception {
+        URI original = new URI("http://www.example.com?user%2Bname=%25Ca%2BHn%2Fav");
+
+        final String decodedKey = "user+name";
+        final String decodedValue = "%Ca+Hn/av";
+
+        Map<String, String> result = PropertyUtil.parseQuery(original);
+
+        assertEquals(1, result.size());
+        assertTrue(result.containsKey(decodedKey));
+        assertEquals(decodedValue, result.get(decodedKey));
+    }
+
+    @Test
+    public void testCreateQueryEncodesParameters() throws URISyntaxException {
+
+        final String encodedValue = "%25Ca%2BHn%2Fav";
+        final String decodedValue = "%Ca+Hn/av";
+
+        final String encodedKey = "user%2Bname";
+        final String decodedKey = "user+name";
+
+        Map<String, String> source = new HashMap<String, String>();
+        source.put(decodedKey, decodedValue);
+
+        String result = PropertyUtil.createQueryString(source);
+
+        assertEquals(encodedKey + "=" + encodedValue, result);
     }
 }

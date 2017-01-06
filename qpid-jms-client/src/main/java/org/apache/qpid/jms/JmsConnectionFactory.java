@@ -116,7 +116,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     }
 
     public JmsConnectionFactory(String remoteURI) {
-        this(createURI(remoteURI));
+        setRemoteURI(remoteURI);
     }
 
     public JmsConnectionFactory(URI remoteURI) {
@@ -386,14 +386,14 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
         }
 
         try {
-            if (this.remoteURI.getQuery() != null) {
-                Map<String, String> map = PropertyUtil.parseQuery(this.remoteURI.getQuery());
-                applyURIOptions(map);
-                this.remoteURI = PropertyUtil.replaceQuery(this.remoteURI, map);
-            } else if (URISupport.isCompositeURI(this.remoteURI)) {
+            if (URISupport.isCompositeURI(this.remoteURI)) {
                 CompositeData data = URISupport.parseComposite(this.remoteURI);
                 applyURIOptions(data.getParameters());
                 this.remoteURI = data.toURI();
+            } else if (this.remoteURI.getRawQuery() != null) {
+                Map<String, String> map = PropertyUtil.parseQuery(this.remoteURI);
+                applyURIOptions(map);
+                this.remoteURI = PropertyUtil.replaceQuery(this.remoteURI, map);
             }
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage());

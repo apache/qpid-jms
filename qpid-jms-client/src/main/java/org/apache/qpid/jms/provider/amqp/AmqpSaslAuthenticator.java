@@ -44,6 +44,8 @@ public class AmqpSaslAuthenticator {
     /**
      * Create the authenticator and initialize it.
      *
+     * @param request
+     * 	      The initial request that is awaiting the result of the authentication process.
      * @param sasl
      *        The Proton SASL entry point this class will use to manage the authentication.
      * @param info
@@ -83,7 +85,7 @@ public class AmqpSaslAuthenticator {
      *
      * @return true if the authentication process completed.
      */
-    public boolean authenticate() throws JMSSecurityException {
+    public boolean authenticate() {
         try {
             switch (sasl.getState()) {
                 case PN_SASL_IDLE:

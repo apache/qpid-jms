@@ -54,7 +54,6 @@ public class JmsInitialContextFactory implements InitialContextFactory {
     static final String DYNAMIC_QUEUES = "dynamicQueues";
     static final String DYNAMIC_TOPICS = "dynamicTopics";
 
-    @SuppressWarnings("unchecked")
     @Override
     public Context getInitialContext(Hashtable<?, ?> environment) throws NamingException {
         // Copy the environment to ensure we don't modify/reference it, it belongs to the caller.

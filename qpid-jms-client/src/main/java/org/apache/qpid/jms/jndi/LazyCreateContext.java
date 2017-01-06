@@ -24,7 +24,6 @@ import javax.naming.NamingException;
  *
  * @since 1.0
  */
-@SuppressWarnings("unchecked")
 public abstract class LazyCreateContext extends ReadOnlyContext {
 
     private static final long serialVersionUID = 5131341840091473967L;

@@ -1105,6 +1105,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
 
     /**
      * Verifies that subscriber cleanup occurs when the subscriber is remotely closed (after creation).
+     *
+     * @throws Exception if an unexpected error is encountered
      */
     @Test(timeout = 20000)
     public void testRemotelyDetachLinkWithDurableSharedConsumer() throws Exception {
@@ -1357,6 +1359,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
 
     /**
      * Verifies that subscriber cleanup occurs when the session it is on is remotely closed.
+     *
+     * @throws Exception if an unexpected error is encountered
      */
     @Test(timeout = 20000)
     public void testRemotelyEndSessionWithDurableSharedConsumer() throws Exception {
@@ -1439,6 +1443,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
 
     /**
      * Verifies that subscriber cleanup occurs when the session it is on is locally closed.
+     *
+     * @throws Exception if an unexpected error is encountered
      */
     @Test(timeout = 20000)
     public void testLocallyEndSessionWithSharedConsumer() throws Exception {
@@ -1521,6 +1527,8 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
      * Verifies that subscription name passed is not allowed to have the subscription name
      * delimiter used in the receiver link naming to separate the subscription name from
      * a suffix used to ensure unique link names are used on a connection.
+     *
+     * @throws Exception if an unexpected error is encountered
      */
     @Test(timeout = 20000)
     public void testSubscriptionNameNotAllowedToHaveNameSeparator() throws Exception {

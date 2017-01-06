@@ -21,9 +21,9 @@
 package org.apache.qpid.jms.integration;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -231,6 +231,8 @@ public class SslIntegrationTest extends QpidJmsTestCase {
      * Checks that configuring different SSLContext instances using different client key
      * stores via {@link JmsConnectionFactory#setSslContext(SSLContext)} results
      * in different certificates being observed server side following handshake.
+     *
+     * @throws Exception if an unexpected error is encountered
      */
     @Test(timeout = 20000)
     public void testCreateConnectionWithSslContextOverride() throws Exception {
@@ -294,6 +296,8 @@ public class SslIntegrationTest extends QpidJmsTestCase {
      * {@link JmsConnectionFactory#setSslContext(SSLContext)} overrides URI config
      * for store location etc, resulting in a different certificate being observed
      * server side following handshake.
+     *
+     * @throws Exception if an unexpected error is encountered
      */
     @Test(timeout = 20000)
     public void testCreateConnectionWithSslContextOverrideAndURIConfig() throws Exception {

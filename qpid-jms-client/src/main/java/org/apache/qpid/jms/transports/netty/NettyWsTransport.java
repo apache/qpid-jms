@@ -142,7 +142,7 @@ public class NettyWsTransport extends NettyTcpTransport {
             if (message instanceof FullHttpResponse) {
                 FullHttpResponse response = (FullHttpResponse) message;
                 throw new IllegalStateException(
-                    "Unexpected FullHttpResponse (getStatus=" + response.getStatus() +
+                    "Unexpected FullHttpResponse (getStatus=" + response.status() +
                     ", content=" + response.content().toString(StandardCharsets.UTF_8) + ')');
             }
 

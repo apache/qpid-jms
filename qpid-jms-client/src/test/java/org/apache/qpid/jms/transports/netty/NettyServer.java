@@ -55,9 +55,9 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
@@ -316,16 +316,16 @@ public abstract class NettyServer implements AutoCloseable {
 
     private static void sendHttpResponse(ChannelHandlerContext ctx, FullHttpRequest request, FullHttpResponse response) {
         // Generate an error page if response getStatus code is not OK (200).
-        if (response.getStatus().code() != 200) {
-            ByteBuf buf = Unpooled.copiedBuffer(response.getStatus().toString(), StandardCharsets.UTF_8);
+        if (response.status().code() != 200) {
+            ByteBuf buf = Unpooled.copiedBuffer(response.status().toString(), StandardCharsets.UTF_8);
             response.content().writeBytes(buf);
             buf.release();
-            HttpHeaders.setContentLength(response, response.content().readableBytes());
+            HttpUtil.setContentLength(response, response.content().readableBytes());
         }
 
         // Send the response and close the connection if necessary.
         ChannelFuture f = ctx.channel().writeAndFlush(response);
-        if (!HttpHeaders.isKeepAlive(request) || response.getStatus().code() != 200) {
+        if (!HttpUtil.isKeepAlive(request) || response.status().code() != 200) {
             f.addListener(ChannelFutureListener.CLOSE);
         }
     }

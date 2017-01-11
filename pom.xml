@@ -39,8 +39,8 @@
   </prerequisites>
 
   <properties>
-    <source-version>1.7</source-version>
-    <target-version>1.7</target-version>
+    <source-version>1.8</source-version>
+    <target-version>1.8</target-version>
 
     <!-- Dependency Versions for this Project -->
     <proton-version>0.16.0</proton-version>

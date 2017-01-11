@@ -120,14 +120,21 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
             if (getDrainTimeout() > 0) {
                 // If the remote doesn't respond we will close the consumer and break any
-                // blocked receive or stop calls that are waiting.
+                // blocked receive or stop calls that are waiting, unless the consumer is
+                // a participant in a transaction in which case we will just fail the request
+                // and leave the consumer open since the TX needs it to remain active.
                 final ScheduledFuture<?> future = getSession().schedule(new Runnable() {
                     @Override
                     public void run() {
                         LOG.trace("Consumer {} drain request timed out", getConsumerId());
                         Exception cause = new JmsOperationTimedOutException("Remote did not respond to a drain request in time");
-                        closeResource(session.getProvider(), cause, false);
-                        session.getProvider().pumpToProtonTransport();
+                        if (session.isTransacted() && session.getTransactionContext().isInTransaction(AmqpConsumer.this)) {
+                            stopRequest.onFailure(cause);
+                            stopRequest = null;
+                        } else {
+                            closeResource(session.getProvider(), cause, false);
+                            session.getProvider().pumpToProtonTransport();
+                        }
                     }
                 }, getDrainTimeout());
 

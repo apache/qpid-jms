@@ -174,8 +174,16 @@ public class AmqpTransactionContext implements AmqpResourceParent {
         txConsumers.add(consumer);
     }
 
+    public boolean isInTransaction(AmqpConsumer consumer) {
+        return txConsumers.contains(consumer);
+    }
+
     public void registerTxProducer(AmqpProducer producer) {
         txProducers.add(producer);
+    }
+
+    public boolean isInTransaction(AmqpProducer producer) {
+        return txProducers.contains(producer);
     }
 
     public AmqpSession getSession() {

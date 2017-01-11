@@ -1335,15 +1335,9 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             // Expect the consumer to be 'stopped' prior to rollback by issuing a 'drain'
             testPeer.expectLinkFlow(true, false, greaterThan(UnsignedInteger.ZERO));
 
-            // Expect the consumer to be closed after drain timeout
-            testPeer.expectDetach(true, true, true);
-
             // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
             // and reply with accepted and settled disposition to indicate the rollback succeeded
             testPeer.expectDischarge(txnId, true);
-
-            // Expect the release of the prefetched message from the consumer that was closed.
-            //testPeer.expectDispositionThatIsReleasedAndSettled();
 
             // Then expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.

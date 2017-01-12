@@ -20,6 +20,8 @@ package org.apache.qpid.jms.test.testpeer;
 
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DYNAMIC_NODE_LIFETIME_POLICY;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SHARED_SUBS;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SHARED;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.GLOBAL;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
@@ -29,6 +31,7 @@ import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
+import java.beans.DesignMode;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -1311,11 +1314,22 @@ public class TestAmqpPeer implements AutoCloseable
             responseSourceOverride.setExpiryPolicy(TerminusExpiryPolicy.NEVER);
 
             if(shared) {
-                responseSourceOverride.setCapabilities(new Symbol[]{SHARED_SUBS});
+                if(hasClientID) {
+                    responseSourceOverride.setCapabilities(new Symbol[]{SHARED});
+                } else {
+                    responseSourceOverride.setCapabilities(new Symbol[]{SHARED, GLOBAL});
+                }
             }
         }
 
-        expectReceiverAttach(linkNameMatcher, nullSourceMatcher, false, failLookup, false, false, errorType, errorMessage, responseSourceOverride, null, null);
+        // If we don't have a ClientID, expect link capabilities to hint that we are trying
+        // to reattach to a 'global' shared subscription.
+        Matcher<?> linkDesiredCapabilitiesMatcher = null;
+        if(!hasClientID) {
+            linkDesiredCapabilitiesMatcher = arrayContaining(new Symbol[] { SHARED, GLOBAL });
+        }
+
+        expectReceiverAttach(linkNameMatcher, nullSourceMatcher, false, failLookup, false, false, errorType, errorMessage, responseSourceOverride, linkDesiredCapabilitiesMatcher, null);
     }
 
     public void expectDetach(boolean expectClosed, boolean sendResponse, boolean replyClosed)

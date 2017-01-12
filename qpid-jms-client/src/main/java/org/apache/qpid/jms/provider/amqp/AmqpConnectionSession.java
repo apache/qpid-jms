@@ -28,6 +28,7 @@ import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.NoOpAsyncResult;
 import org.apache.qpid.jms.provider.WrappedAsyncResult;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpResourceBuilder;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.Target;
 import org.apache.qpid.proton.amqp.transport.ReceiverSettleMode;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
@@ -104,10 +105,11 @@ public class AmqpConnectionSession extends AmqpSession {
     private final class DurableSubscriptionReattachBuilder extends AmqpResourceBuilder<DurableSubscriptionReattach, AmqpSession, JmsSessionInfo, Receiver> {
 
         private final String linkName;
+        private final boolean hasClientID;
 
         public DurableSubscriptionReattachBuilder(AmqpSession parent, JmsSessionInfo resourceInfo, String linkName) {
             super(parent, resourceInfo);
-
+            this.hasClientID = parent.getConnection().getResourceInfo().isExplicitClientID();
             this.linkName = linkName;
         }
 
@@ -117,6 +119,12 @@ public class AmqpConnectionSession extends AmqpSession {
             receiver.setTarget(new Target());
             receiver.setSenderSettleMode(SenderSettleMode.UNSETTLED);
             receiver.setReceiverSettleMode(ReceiverSettleMode.FIRST);
+
+            if(!hasClientID) {
+              // We are trying to unsubscribe a 'global' shared subs using a 'null source lookup', add link
+              // desired capabilities as hints to the peer to consider this when trying to attach the link.
+              receiver.setDesiredCapabilities(new Symbol[] { AmqpSupport.SHARED, AmqpSupport.GLOBAL });
+            }
 
             return receiver;
         }

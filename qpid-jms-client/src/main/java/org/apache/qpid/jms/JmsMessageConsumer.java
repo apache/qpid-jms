@@ -60,9 +60,8 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     protected JmsConsumerInfo consumerInfo;
     protected final int acknowledgementMode;
     protected final AtomicBoolean closed = new AtomicBoolean();
-    protected boolean started;
-    protected MessageListener messageListener;
-    protected JmsMessageAvailableListener availableListener;
+    protected volatile MessageListener messageListener;
+    protected volatile JmsMessageAvailableListener availableListener;
     protected final MessageQueue messageQueue;
     protected final Lock lock = new ReentrantLock();
     protected final AtomicBoolean suspendedConnection = new AtomicBoolean();
@@ -79,7 +78,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         this.connection = session.getConnection();
         this.acknowledgementMode = session.acknowledgementMode();
 
-        if(destination.isTemporary()) {
+        if (destination.isTemporary()) {
             connection.checkConsumeFromTemporaryDestination((JmsTemporaryDestination) destination);
         }
 
@@ -496,14 +495,14 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                 this.messageQueue.enqueue(envelope);
             }
 
-            if (this.messageListener != null && this.started) {
-                session.getDispatcherExecutor().execute(new MessageDeliverTask());
-            } else {
-                if (availableListener != null) {
+            if (session.isStarted() && messageQueue.isRunning()) {
+                if (messageListener != null) {
+                    session.getDispatcherExecutor().execute(new MessageDeliverTask());
+                } else if (availableListener != null) {
                     session.getDispatcherExecutor().execute(new Runnable() {
                         @Override
                         public void run() {
-                            if (session.isStarted()) {
+                            if (messageQueue.isRunning()) {
                                 availableListener.onMessageAvailable(JmsMessageConsumer.this);
                             }
                         }
@@ -518,7 +517,6 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     public void start() {
         lock.lock();
         try {
-            this.started = true;
             this.messageQueue.start();
             drainMessageQueueToListener();
         } finally {
@@ -533,7 +531,6 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     private void stop(boolean closeMessageQueue) {
         lock.lock();
         try {
-            this.started = false;
             if (closeMessageQueue) {
                 this.messageQueue.close();
             } else {
@@ -565,7 +562,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     }
 
     void drainMessageQueueToListener() {
-        if (this.messageListener != null && this.started) {
+        if (messageListener != null && messageQueue.isRunning()) {
             session.getDispatcherExecutor().execute(new MessageDeliverTask());
         }
     }

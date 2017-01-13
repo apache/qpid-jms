@@ -637,19 +637,65 @@ public class JmsConnectionFactoryTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testSetRemoteURIThrowsOnEmptyStringURI() throws Exception {
+        JmsConnectionFactory cf = new JmsConnectionFactory();
+        try {
+            cf.setRemoteURI("");
+            fail("Should not allow a empty URI to be set.");
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    @Test
     public void testCreateWithNullURIRemoteURIThrows() throws Exception {
         try {
-            new JmsConnectionFactory("user", "pass", (URI) null);
+            new JmsConnectionFactory((URI) null);
             fail("Should not allow a null URI to be set.");
-        } catch (NullPointerException e) {
+        } catch (IllegalArgumentException e) {
         }
     }
 
     @Test
     public void testCreateWithNullURIStringRemoteURIThrows() throws Exception {
         try {
+            new JmsConnectionFactory((String) null);
+            fail("Should not allow a null URI to be set.");
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    @Test
+    public void testCreateWithEmptyURIStringRemoteURIThrows() throws Exception {
+        try {
+            new JmsConnectionFactory("");
+            fail("Should not allow a empty URI string to be set.");
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    @Test
+    public void testCreateWithCredentialsWithNullURIRemoteURIThrows() throws Exception {
+        try {
+            new JmsConnectionFactory("user", "pass", (URI) null);
+            fail("Should not allow a null URI to be set.");
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    @Test
+    public void testCreateWithCredentialsWithNullURIStringRemoteURIThrows() throws Exception {
+        try {
             new JmsConnectionFactory("user", "pass", (String) null);
             fail("Should not allow a null URI to be set.");
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    @Test
+    public void testCreateWithCredentialsWithEmptyURIStringRemoteURIThrows() throws Exception {
+        try {
+            new JmsConnectionFactory("user", "pass", "");
+            fail("Should not allow a empty URI string to be set.");
         } catch (IllegalArgumentException e) {
         }
     }

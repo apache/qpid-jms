@@ -116,23 +116,23 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     }
 
     public JmsConnectionFactory(String remoteURI) {
-        setRemoteURI(remoteURI);
-    }
-
-    public JmsConnectionFactory(URI remoteURI) {
-        setRemoteURI(remoteURI.toString());
-    }
-
-    public JmsConnectionFactory(String userName, String password, URI remoteURI) {
-        setUsername(userName);
-        setPassword(password);
-        setRemoteURI(remoteURI.toString());
+        setRemoteURI(remoteURI == null ? null : remoteURI);
     }
 
     public JmsConnectionFactory(String userName, String password, String remoteURI) {
         setUsername(userName);
         setPassword(password);
-        setRemoteURI(remoteURI);
+        setRemoteURI(remoteURI == null ? null : remoteURI);
+    }
+
+    public JmsConnectionFactory(URI remoteURI) {
+        setRemoteURI(remoteURI == null ? null : remoteURI.toString());
+    }
+
+    public JmsConnectionFactory(String userName, String password, URI remoteURI) {
+        setUsername(userName);
+        setPassword(password);
+        setRemoteURI(remoteURI == null ? null : remoteURI.toString());
     }
 
     @Override
@@ -376,8 +376,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      *        the remoteURI to set
      */
     public void setRemoteURI(String remoteURI) {
-        if (remoteURI == null) {
-            throw new IllegalArgumentException("remoteURI cannot be null");
+        if (remoteURI == null || remoteURI.isEmpty()) {
+            throw new IllegalArgumentException("Invalid URI: cannot be null or empty");
         }
         this.remoteURI = createURI(remoteURI);
 

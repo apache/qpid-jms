@@ -18,6 +18,7 @@ package org.apache.qpid.jms.transports;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
 import javax.net.ssl.SSLContext;
@@ -56,6 +57,11 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
     private static final String[] DISABLED_CIPHERS = new String[] {"CIPHER_C"};
 
     private static final SSLContext SSL_CONTEXT = Mockito.mock(SSLContext.class);
+
+    private static final String JAVAX_NET_SSL_KEY_STORE = "javax.net.ssl.keyStore";
+    private static final String JAVAX_NET_SSL_KEY_STORE_PASSWORD = "javax.net.ssl.keyStorePassword";
+    private static final String JAVAX_NET_SSL_TRUST_STORE = "javax.net.ssl.trustStore";
+    private static final String JAVAX_NET_SSL_TRUST_STORE_PASSWORD = "javax.net.ssl.trustStorePassword";
 
     @Test
     public void testCreate() {
@@ -164,4 +170,48 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
 
         return options;
     }
+
+    @Test
+    public void testSslSystemPropertiesInfluenceDefaults() {
+        String keystore = "keystore";
+        String keystorePass = "keystorePass";
+        String truststore = "truststore";
+        String truststorePass = "truststorePass";
+
+        setSslSystemPropertiesForCurrentTest(keystore, keystorePass, truststore, truststorePass);
+
+        TransportSslOptions options1 = new TransportSslOptions();
+
+        assertEquals(keystore, options1.getKeyStoreLocation());
+        assertEquals(keystorePass, options1.getKeyStorePassword());
+        assertEquals(truststore, options1.getTrustStoreLocation());
+        assertEquals(truststorePass, options1.getTrustStorePassword());
+
+        keystore +="2";
+        keystorePass +="2";
+        truststore +="2";
+        truststorePass +="2";
+
+        setSslSystemPropertiesForCurrentTest(keystore, keystorePass, truststore, truststorePass);
+
+        TransportSslOptions options2 = new TransportSslOptions();
+
+        assertEquals(keystore, options2.getKeyStoreLocation());
+        assertEquals(keystorePass, options2.getKeyStorePassword());
+        assertEquals(truststore, options2.getTrustStoreLocation());
+        assertEquals(truststorePass, options2.getTrustStorePassword());
+
+        assertNotEquals(options1.getKeyStoreLocation(), options2.getKeyStoreLocation());
+        assertNotEquals(options1.getKeyStorePassword(), options2.getKeyStorePassword());
+        assertNotEquals(options1.getTrustStoreLocation(), options2.getTrustStoreLocation());
+        assertNotEquals(options1.getTrustStorePassword(), options2.getTrustStorePassword());
+    }
+
+    private void setSslSystemPropertiesForCurrentTest(String keystore, String keystorePassword, String truststore, String truststorePassword) {
+        setTestSystemProperty(JAVAX_NET_SSL_KEY_STORE, keystore);
+        setTestSystemProperty(JAVAX_NET_SSL_KEY_STORE_PASSWORD, keystorePassword);
+        setTestSystemProperty(JAVAX_NET_SSL_TRUST_STORE, truststore);
+        setTestSystemProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD, truststorePassword);
+    }
+
 }

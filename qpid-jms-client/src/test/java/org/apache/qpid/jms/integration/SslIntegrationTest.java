@@ -56,6 +56,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
     private static final String CLIENT_JKS_KEYSTORE = "src/test/resources/client-jks.keystore";
     private static final String CLIENT2_JKS_KEYSTORE = "src/test/resources/client2-jks.keystore";
     private static final String PASSWORD = "password";
+    private static final String WRONG_PASSWORD = "wrong-password";
 
     private static final String CLIENT_KEY_ALIAS = "client";
     private static final String CLIENT_DN = "O=Client,CN=client";
@@ -379,6 +380,24 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         try {
             doConfigureStoresWithSslSystemPropertiesTestImpl(null);
             fail("Connection should have failed due to wrong CA");
+        } catch (JMSException jmse) {
+            // Expected
+        }
+
+        // Set properties with wrong key store password and expect connection to fail
+        setSslSystemPropertiesForCurrentTest(CLIENT_JKS_KEYSTORE, WRONG_PASSWORD, CLIENT_JKS_TRUSTSTORE, PASSWORD);
+        try {
+            doConfigureStoresWithSslSystemPropertiesTestImpl(null);
+            fail("Connection should have failed due to wrong keystore password");
+        } catch (JMSException jmse) {
+            // Expected
+        }
+
+        // Set properties with wrong trust store password and expect connection to fail
+        setSslSystemPropertiesForCurrentTest(CLIENT_JKS_KEYSTORE, PASSWORD, CLIENT_JKS_TRUSTSTORE, WRONG_PASSWORD);
+        try {
+            doConfigureStoresWithSslSystemPropertiesTestImpl(null);
+            fail("Connection should have failed due to wrong truststore password");
         } catch (JMSException jmse) {
             // Expected
         }

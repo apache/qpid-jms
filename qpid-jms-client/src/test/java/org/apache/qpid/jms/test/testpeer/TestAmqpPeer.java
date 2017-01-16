@@ -19,7 +19,6 @@
 package org.apache.qpid.jms.test.testpeer;
 
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DYNAMIC_NODE_LIFETIME_POLICY;
-import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SHARED_SUBS;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SHARED;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.GLOBAL;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -31,7 +30,6 @@ import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
-import java.beans.DesignMode;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;

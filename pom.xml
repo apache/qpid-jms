@@ -39,8 +39,8 @@
   </prerequisites>
 
   <properties>
-    <source-version>1.8</source-version>
-    <target-version>1.8</target-version>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
 
     <!-- Dependency Versions for this Project -->
     <proton-version>0.16.0</proton-version>
@@ -245,8 +245,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>${source-version}</source>
-          <target>${target-version}</target>
           <optimize>true</optimize>
           <debug>true</debug>
           <showDeprecation>true</showDeprecation>

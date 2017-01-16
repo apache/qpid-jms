@@ -377,9 +377,10 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         // Set properties with 'wrong ca' trust store and expect connection to fail
         setSslSystemPropertiesForCurrentTest(CLIENT_JKS_KEYSTORE, PASSWORD, OTHER_CA_TRUSTSTORE, PASSWORD);
         try {
-          doConfigureStoresWithSslSystemPropertiesTestImpl(null);
+            doConfigureStoresWithSslSystemPropertiesTestImpl(null);
+            fail("Connection should have failed due to wrong CA");
         } catch (JMSException jmse) {
-          // Expected
+            // Expected
         }
 
         // Set properties and expect connection as Client2

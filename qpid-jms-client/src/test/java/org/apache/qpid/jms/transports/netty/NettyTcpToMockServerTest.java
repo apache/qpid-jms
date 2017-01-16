@@ -320,7 +320,7 @@ public class NettyTcpToMockServerTest extends QpidJmsTestCase {
     }
 
     protected TransportOptions createServerOptions() {
-        return TransportOptions.INSTANCE.clone();
+        return new TransportOptions();
     }
 
     protected NettySimpleAmqpServer createServer(TransportOptions options) {

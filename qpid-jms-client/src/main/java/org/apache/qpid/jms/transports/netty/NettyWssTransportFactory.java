@@ -26,7 +26,7 @@ public class NettyWssTransportFactory extends NettyWsTransportFactory {
 
     @Override
     protected TransportOptions doCreateTransportOptions() {
-        return TransportSslOptions.INSTANCE.clone();
+        return new TransportSslOptions();
     }
 
     @Override

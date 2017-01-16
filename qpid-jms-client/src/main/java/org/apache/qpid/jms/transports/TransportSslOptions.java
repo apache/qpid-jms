@@ -37,8 +37,6 @@ public class TransportSslOptions extends TransportOptions {
     public static final List<String> DEFAULT_DISABLED_PROTOCOLS = Collections.unmodifiableList(Arrays.asList(new String[]{"SSLv2Hello", "SSLv3"}));
     public static final int DEFAULT_SSL_PORT = 5671;
 
-    public static final TransportSslOptions INSTANCE = new TransportSslOptions();
-
     private String keyStoreLocation;
     private String keyStorePassword;
     private String trustStoreLocation;
@@ -56,11 +54,11 @@ public class TransportSslOptions extends TransportOptions {
     private int defaultSslPort = DEFAULT_SSL_PORT;
     private SSLContext sslContextOverride;
 
-    static {
-        INSTANCE.setKeyStoreLocation(System.getProperty("javax.net.ssl.keyStore"));
-        INSTANCE.setKeyStorePassword(System.getProperty("javax.net.ssl.keyStorePassword"));
-        INSTANCE.setTrustStoreLocation(System.getProperty("javax.net.ssl.trustStore"));
-        INSTANCE.setTrustStorePassword(System.getProperty("javax.net.ssl.keyStorePassword"));
+    public TransportSslOptions() {
+        setKeyStoreLocation(System.getProperty("javax.net.ssl.keyStore"));
+        setKeyStorePassword(System.getProperty("javax.net.ssl.keyStorePassword"));
+        setTrustStoreLocation(System.getProperty("javax.net.ssl.trustStore"));
+        setTrustStorePassword(System.getProperty("javax.net.ssl.keyStorePassword"));
     }
 
     /**

@@ -26,7 +26,7 @@ public class NettySslTransportFactory extends NettyTcpTransportFactory {
 
     @Override
     protected TransportOptions doCreateTransportOptions() {
-        return TransportSslOptions.INSTANCE.clone();
+        return new TransportSslOptions();
     }
 
     @Override

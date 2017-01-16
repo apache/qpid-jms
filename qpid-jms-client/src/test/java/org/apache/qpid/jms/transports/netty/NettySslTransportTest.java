@@ -110,7 +110,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             int port = server.getServerPort();
             URI serverLocation = new URI("tcp://localhost:" + port);
 
-            TransportSslOptions options = TransportSslOptions.INSTANCE.clone();
+            TransportSslOptions options = new TransportSslOptions();
 
             options.setTrustStoreLocation(OTHER_CA_TRUSTSTORE);
             options.setTrustStorePassword(PASSWORD);
@@ -297,7 +297,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     }
 
     protected TransportSslOptions createClientOptionsIsVerify(boolean verifyHost) {
-        TransportSslOptions options = TransportSslOptions.INSTANCE.clone();
+        TransportSslOptions options = new TransportSslOptions();
 
         options.setKeyStoreLocation(CLIENT_KEYSTORE);
         options.setKeyStorePassword(PASSWORD);
@@ -311,7 +311,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
     @Override
     protected TransportSslOptions createServerOptions() {
-        TransportSslOptions options = TransportSslOptions.INSTANCE.clone();
+        TransportSslOptions options = new TransportSslOptions();
 
         options.setKeyStoreLocation(SERVER_KEYSTORE);
         options.setKeyStorePassword(PASSWORD);
@@ -324,7 +324,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     }
 
     protected TransportSslOptions createClientOptionsWithoutTrustStore(boolean trustAll) {
-        TransportSslOptions options = TransportSslOptions.INSTANCE.clone();
+        TransportSslOptions options = new TransportSslOptions();
 
         options.setStoreType(KEYSTORE_TYPE);
         options.setTrustAll(trustAll);

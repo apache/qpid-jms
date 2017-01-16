@@ -52,6 +52,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
     private static final String BROKER_JKS_TRUSTSTORE = "src/test/resources/broker-jks.truststore";
     private static final String CLIENT_MULTI_KEYSTORE = "src/test/resources/client-multiple-keys-jks.keystore";
     private static final String CLIENT_JKS_TRUSTSTORE = "src/test/resources/client-jks.truststore";
+    private static final String OTHER_CA_TRUSTSTORE = "src/test/resources/other-ca-jks.truststore";
     private static final String CLIENT_JKS_KEYSTORE = "src/test/resources/client-jks.keystore";
     private static final String CLIENT2_JKS_KEYSTORE = "src/test/resources/client2-jks.keystore";
     private static final String PASSWORD = "password";
@@ -63,6 +64,11 @@ public class SslIntegrationTest extends QpidJmsTestCase {
 
     private static final String ALIAS_DOES_NOT_EXIST = "alias.does.not.exist";
     private static final String ALIAS_CA_CERT = "ca";
+
+    private static final String JAVAX_NET_SSL_KEY_STORE = "javax.net.ssl.keyStore";
+    private static final String JAVAX_NET_SSL_KEY_STORE_PASSWORD = "javax.net.ssl.keyStorePassword";
+    private static final String JAVAX_NET_SSL_TRUST_STORE = "javax.net.ssl.trustStore";
+    private static final String JAVAX_NET_SSL_TRUST_STORE_PASSWORD = "javax.net.ssl.trustStorePassword";
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
@@ -344,6 +350,62 @@ public class SslIntegrationTest extends QpidJmsTestCase {
 
             Connection connection = factory.createConnection("guest", "guest");
             connection.start();
+
+            Socket socket = testPeer.getClientSocket();
+            assertTrue(socket instanceof SSLSocket);
+            SSLSession session = ((SSLSocket) socket).getSession();
+
+            Certificate[] peerCertificates = session.getPeerCertificates();
+            assertNotNull(peerCertificates);
+
+            Certificate cert = peerCertificates[0];
+            assertTrue(cert instanceof X509Certificate);
+            String dn = ((X509Certificate)cert).getSubjectX500Principal().getName();
+            assertEquals("Unexpected certificate DN", expectedDN, dn);
+
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testConfigureStoresWithSslSystemProperties() throws Exception {
+        // Set properties and expect connection as Client1
+        setSslSystemPropertiesForCurrentTest(CLIENT_JKS_KEYSTORE, PASSWORD, CLIENT_JKS_TRUSTSTORE, PASSWORD);
+        doConfigureStoresWithSslSystemPropertiesTestImpl(CLIENT_DN);
+
+        // Set properties with 'wrong ca' trust store and expect connection to fail
+        setSslSystemPropertiesForCurrentTest(CLIENT_JKS_KEYSTORE, PASSWORD, OTHER_CA_TRUSTSTORE, PASSWORD);
+        try {
+          doConfigureStoresWithSslSystemPropertiesTestImpl(null);
+        } catch (JMSException jmse) {
+          // Expected
+        }
+
+        // Set properties and expect connection as Client2
+        setSslSystemPropertiesForCurrentTest(CLIENT2_JKS_KEYSTORE, PASSWORD, CLIENT_JKS_TRUSTSTORE, PASSWORD);
+        doConfigureStoresWithSslSystemPropertiesTestImpl(CLIENT2_DN);
+    }
+
+    private void setSslSystemPropertiesForCurrentTest(String keystore, String keystorePassword, String truststore, String truststorePassword) {
+        setTestSystemProperty(JAVAX_NET_SSL_KEY_STORE, keystore);
+        setTestSystemProperty(JAVAX_NET_SSL_KEY_STORE_PASSWORD, keystorePassword);
+        setTestSystemProperty(JAVAX_NET_SSL_TRUST_STORE, truststore);
+        setTestSystemProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD, truststorePassword);
+    }
+
+    private void doConfigureStoresWithSslSystemPropertiesTestImpl(String expectedDN) throws Exception {
+        TransportSslOptions serverSslOptions = new TransportSslOptions();
+        serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
+        serverSslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
+        serverSslOptions.setKeyStorePassword(PASSWORD);
+        serverSslOptions.setTrustStorePassword(PASSWORD);
+        serverSslOptions.setVerifyHost(false);
+
+        SSLContext serverSslContext = TransportSupport.createSslContext(serverSslOptions);
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer(serverSslContext, true);) {
+            Connection connection = testFixture.establishConnecton(testPeer, true, null, null, null, true);
 
             Socket socket = testPeer.getClientSocket();
             assertTrue(socket instanceof SSLSocket);

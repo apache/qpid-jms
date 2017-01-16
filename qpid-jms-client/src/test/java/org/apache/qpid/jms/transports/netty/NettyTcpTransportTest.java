@@ -471,11 +471,11 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
     }
 
     protected TransportOptions createClientOptions() {
-        return TransportOptions.INSTANCE.clone();
+        return new TransportOptions();
     }
 
     protected TransportOptions createServerOptions() {
-        return TransportOptions.INSTANCE.clone();
+        return new TransportOptions();
     }
 
     protected void logTransportErrors() {

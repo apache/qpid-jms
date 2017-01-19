@@ -66,6 +66,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     protected final Lock lock = new ReentrantLock();
     protected final AtomicBoolean suspendedConnection = new AtomicBoolean();
     protected final AtomicReference<Throwable> failureCause = new AtomicReference<>();
+    protected final MessageDeliverTask deliveryTask = new MessageDeliverTask();
 
     protected JmsMessageConsumer(JmsConsumerId consumerId, JmsSession session, JmsDestination destination,
                                  String selector, boolean noLocal) throws JMSException {
@@ -497,7 +498,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
 
             if (session.isStarted() && messageQueue.isRunning()) {
                 if (messageListener != null) {
-                    session.getDispatcherExecutor().execute(new MessageDeliverTask());
+                    session.getDispatcherExecutor().execute(deliveryTask);
                 } else if (availableListener != null) {
                     session.getDispatcherExecutor().execute(new Runnable() {
                         @Override
@@ -563,7 +564,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
 
     void drainMessageQueueToListener() {
         if (messageListener != null && messageQueue.isRunning()) {
-            session.getDispatcherExecutor().execute(new MessageDeliverTask());
+            session.getDispatcherExecutor().execute(deliveryTask);
         }
     }
 
@@ -590,6 +591,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     @Override
     public void setMessageListener(MessageListener listener) throws JMSException {
         checkClosed();
+
         this.messageListener = listener;
         if (listener != null) {
             consumerInfo.setListener(true);

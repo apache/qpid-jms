@@ -185,8 +185,15 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             throw new javax.jms.IllegalStateException("Cannot call recover() on a transacted session");
         }
 
+        boolean wasStarted = isStarted();
+        stop();
+
         connection.recover(getSessionId());
         sessionRecovered = true;
+
+        if (wasStarted) {
+            start();
+        }
     }
 
     @Override
@@ -1183,6 +1190,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     public JmsTransactionContext getTransactionContext() {
         return transactionContext;
     }
+
 
     boolean isSessionRecovered() {
         return sessionRecovered;

@@ -64,6 +64,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     protected volatile JmsMessageAvailableListener availableListener;
     protected final MessageQueue messageQueue;
     protected final Lock lock = new ReentrantLock();
+    protected final Lock dispatchLock = new ReentrantLock();
     protected final AtomicBoolean suspendedConnection = new AtomicBoolean();
     protected final AtomicReference<Throwable> failureCause = new AtomicReference<>();
     protected final MessageDeliverTask deliveryTask = new MessageDeliverTask();
@@ -428,7 +429,6 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     }
 
     private JmsInboundMessageDispatch doAckConsumed(final JmsInboundMessageDispatch envelope) throws JMSException {
-        checkClosed();
         try {
             session.acknowledge(envelope, ACK_TYPE.ACCEPTED);
         } catch (JMSException ex) {
@@ -518,8 +518,10 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     public void start() {
         lock.lock();
         try {
-            this.messageQueue.start();
-            drainMessageQueueToListener();
+            if (!messageQueue.isRunning()) {
+                this.messageQueue.start();
+                drainMessageQueueToListener();
+            }
         } finally {
             lock.unlock();
         }
@@ -530,6 +532,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     }
 
     private void stop(boolean closeMessageQueue) {
+        dispatchLock.lock();
         lock.lock();
         try {
             if (closeMessageQueue) {
@@ -539,6 +542,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
             }
         } finally {
             lock.unlock();
+            dispatchLock.unlock();
         }
     }
 
@@ -560,12 +564,6 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         start();
 
         startConsumerResource();
-    }
-
-    void drainMessageQueueToListener() {
-        if (messageListener != null && messageQueue.isRunning()) {
-            session.getDispatcherExecutor().execute(deliveryTask);
-        }
     }
 
     /**
@@ -592,15 +590,19 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     public void setMessageListener(MessageListener listener) throws JMSException {
         checkClosed();
 
-        this.messageListener = listener;
-        if (listener != null) {
-            consumerInfo.setListener(true);
-            if (isPullConsumer()){
-                startConsumerResource();
+        dispatchLock.lock();
+        try {
+            messageListener = listener;
+            consumerInfo.setListener(listener != null);
+
+            if (listener != null) {
+                if (isPullConsumer()){
+                    startConsumerResource();
+                }
+                drainMessageQueueToListener();
             }
-            drainMessageQueueToListener();
-        } else {
-            consumerInfo.setListener(false);
+        } finally {
+            dispatchLock.unlock();
         }
     }
 
@@ -713,61 +715,101 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         return false;
     }
 
-    private final class MessageDeliverTask implements Runnable {
-        @Override
-        public void run() {
-            JmsInboundMessageDispatch envelope;
-            while (session.isStarted() && (envelope = messageQueue.dequeueNoWait()) != null) {
-                try {
-                    JmsMessage copy = null;
+    private void drainMessageQueueToListener() {
+        if (messageListener != null && session.isStarted() && messageQueue.isRunning()) {
+            session.getDispatcherExecutor().execute(new BoundedMessageDeliverTask(messageQueue.size()));
+        }
+    }
 
-                    if (consumeExpiredMessage(envelope)) {
-                        LOG.trace("{} filtered expired message: {}", getConsumerId(), envelope);
-                        doAckExpired(envelope);
-                    } else if (redeliveryExceeded(envelope)) {
-                        LOG.trace("{} filtered message with excessive redelivery count: {}", getConsumerId(), envelope);
-                        doAckUndeliverable(envelope);
+    private boolean deliverNextPending() {
+        if (session.isStarted() && messageQueue.isRunning() && messageListener != null) {
+            dispatchLock.lock();
+            try {
+                JmsInboundMessageDispatch envelope = messageQueue.dequeueNoWait();
+                if (envelope == null) {
+                    return false;
+                }
+
+                JmsMessage copy = null;
+
+                if (consumeExpiredMessage(envelope)) {
+                    LOG.trace("{} filtered expired message: {}", getConsumerId(), envelope);
+                    doAckExpired(envelope);
+                } else if (redeliveryExceeded(envelope)) {
+                    LOG.trace("{} filtered message with excessive redelivery count: {}", getConsumerId(), envelope);
+                    doAckUndeliverable(envelope);
+                } else {
+                    boolean deliveryFailed = false;
+                    boolean autoAckOrDupsOk = acknowledgementMode == Session.AUTO_ACKNOWLEDGE ||
+                                              acknowledgementMode == Session.DUPS_OK_ACKNOWLEDGE;
+                    if (autoAckOrDupsOk) {
+                        copy = copy(doAckDelivered(envelope));
                     } else {
-                        boolean deliveryFailed = false;
-                        boolean autoAckOrDupsOk = acknowledgementMode == Session.AUTO_ACKNOWLEDGE ||
-                                                  acknowledgementMode == Session.DUPS_OK_ACKNOWLEDGE;
-                        if (autoAckOrDupsOk) {
-                            copy = copy(doAckDelivered(envelope));
-                        } else {
-                            copy = copy(ackFromReceive(envelope));
-                        }
-                        session.clearSessionRecovered();
-
-                        try {
-                            messageListener.onMessage(copy);
-                        } catch (RuntimeException rte) {
-                            deliveryFailed = true;
-                        }
-
-                        if (autoAckOrDupsOk && !session.isSessionRecovered()) {
-                            if (!deliveryFailed) {
-                                doAckConsumed(envelope);
-                            } else {
-                                doAckReleased(envelope);
-                            }
-                        }
+                        copy = copy(ackFromReceive(envelope));
                     }
-                } catch (Exception e) {
-                    // TODO - There are two cases where we can get an error here, one being
-                    //        and error returned from the attempted ACK that was sent and the
-                    //        other being an error while attempting to copy the incoming message.
-                    //        We need to decide how to respond to these.
-                    session.getConnection().onException(e);
-                } finally {
-                    if (isPullConsumer()) {
-                        try {
-                            startConsumerResource();
-                        } catch (JMSException e) {
-                            LOG.error("Exception during credit replenishment for consumer listener {}", getConsumerId(), e);
+                    session.clearSessionRecovered();
+
+                    try {
+                        messageListener.onMessage(copy);
+                    } catch (RuntimeException rte) {
+                        deliveryFailed = true;
+                    }
+
+                    if (autoAckOrDupsOk && !session.isSessionRecovered()) {
+                        if (!deliveryFailed) {
+                            doAckConsumed(envelope);
+                        } else {
+                            doAckReleased(envelope);
                         }
                     }
                 }
+            } catch (Exception e) {
+                // TODO - There are two cases where we can get an error here, one being
+                //        and error returned from the attempted ACK that was sent and the
+                //        other being an error while attempting to copy the incoming message.
+                //        We need to decide how to respond to these.
+                session.getConnection().onException(e);
+            } finally {
+                dispatchLock.unlock();
+
+                if (isPullConsumer()) {
+                    try {
+                        startConsumerResource();
+                    } catch (JMSException e) {
+                        LOG.error("Exception during credit replenishment for consumer listener {}", getConsumerId(), e);
+                    }
+                }
             }
+        }
+
+        return !messageQueue.isEmpty();
+    }
+
+    private final class BoundedMessageDeliverTask implements Runnable {
+
+        private final int deliveryCount;
+
+        public BoundedMessageDeliverTask(int deliveryCount) {
+            this.deliveryCount = deliveryCount;
+        }
+
+        @Override
+        public void run() {
+            int current = 0;
+
+            while (session.isStarted() && messageQueue.isRunning() && current++ < deliveryCount) {
+                if (!deliverNextPending()) {
+                    return;  // Another task already drained the queue.
+                }
+            }
+        }
+    }
+
+    private final class MessageDeliverTask implements Runnable {
+
+        @Override
+        public void run() {
+            deliverNextPending();
         }
     }
 }

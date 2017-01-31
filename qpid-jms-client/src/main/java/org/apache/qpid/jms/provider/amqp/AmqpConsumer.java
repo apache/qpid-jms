@@ -33,6 +33,7 @@ import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
+import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.meta.JmsConsumerId;
@@ -71,10 +72,24 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     protected final ByteBuf incomingBuffer = Unpooled.buffer(INITIAL_BUFFER_CAPACITY);
     protected final AtomicLong incomingSequence = new AtomicLong(0);
 
+    protected boolean deferredClose;
+
     public AmqpConsumer(AmqpSession session, JmsConsumerInfo info, Receiver receiver) {
         super(info, receiver, session);
 
         this.session = session;
+    }
+
+    @Override
+    public void close(AsyncResult request) {
+        // If we have pending deliveries we remain open to allow for ACK or for a
+        // pending transaction that this consumer is active in to complete.
+        if (shouldDeferClose()) {
+            request.onSuccess();
+            deferredClose = true;
+        } else {
+            super.close(request);
+        }
     }
 
     /**
@@ -85,7 +100,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      */
     public void start(AsyncResult request) {
         JmsConsumerInfo consumerInfo = getResourceInfo();
-        if(consumerInfo.isListener() && consumerInfo.getPrefetchSize() == 0) {
+        if (consumerInfo.isListener() && consumerInfo.getPrefetchSize() == 0) {
             sendFlowForNoPrefetchListener();
         } else {
             sendFlowIfNeeded();
@@ -223,6 +238,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         }
 
         delivered.clear();
+
+        tryCompleteDeferredClose();
     }
 
     /**
@@ -296,6 +313,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         } else {
             LOG.warn("Unsupported Ack Type for message: {}", envelope);
         }
+
+        tryCompleteDeferredClose();
     }
 
     /**
@@ -438,6 +457,14 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     private boolean processDelivery(Delivery incoming) throws Exception {
         incoming.setDefaultDeliveryState(Released.getInstance());
+
+        // If we are awaiting to close for some conditions to be met then we don't
+        // need to decode or dispatch the message.
+        if (deferredClose) {
+            getEndpoint().advance();
+            return true;
+        }
+
         JmsMessage message = null;
         try {
             message = AmqpCodec.decodeMessage(this, unwrapIncomingMessage(incoming)).asJmsMessage();
@@ -452,26 +479,28 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             return false;
         }
 
-        getEndpoint().advance();
+        try {
+            // Let the message do any final processing before sending it onto a consumer.
+            // We could defer this to a later stage such as the JmsConnection or even in
+            // the JmsMessageConsumer dispatch method if we needed to.
+            message.onDispatch();
 
-        // Let the message do any final processing before sending it onto a consumer.
-        // We could defer this to a later stage such as the JmsConnection or even in
-        // the JmsMessageConsumer dispatch method if we needed to.
-        message.onDispatch();
+            JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch(getNextIncomingSequenceNumber());
+            envelope.setMessage(message);
+            envelope.setConsumerId(getResourceInfo().getId());
+            // Store link to delivery in the hint for use in acknowledge requests.
+            envelope.setProviderHint(incoming);
+            envelope.setMessageId(message.getFacade().getProviderMessageIdObject());
 
-        JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch(getNextIncomingSequenceNumber());
-        envelope.setMessage(message);
-        envelope.setConsumerId(getResourceInfo().getId());
-        // Store link to delivery in the hint for use in acknowledge requests.
-        envelope.setProviderHint(incoming);
-        envelope.setMessageId(message.getFacade().getProviderMessageIdObject());
+            // Store reference to envelope in delivery context for recovery
+            incoming.setContext(envelope);
 
-        // Store reference to envelope in delivery context for recovery
-        incoming.setContext(envelope);
+            deliver(envelope);
 
-        deliver(envelope);
-
-        return true;
+            return true;
+        } finally {
+            getEndpoint().advance();
+        }
     }
 
     protected long getNextIncomingSequenceNumber() {
@@ -600,7 +629,38 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         }
     }
 
-    //----- Inner classes used in message pull operations --------------------//
+    private boolean shouldDeferClose() {
+        return !delivered.isEmpty();
+    }
+
+    private void tryCompleteDeferredClose() {
+        if (deferredClose && delivered.isEmpty()) {
+            close(new DeferredCloseRequest());
+        }
+    }
+
+    //----- Inner class used to report on deferred close ---------------------//
+
+    protected final class DeferredCloseRequest implements AsyncResult {
+
+        @Override
+        public void onFailure(Throwable result) {
+            LOG.trace("Failed deferred close of consumer: {} - {}", getConsumerId(), result.getMessage());
+            getParent().getProvider().fireNonFatalProviderException(JmsExceptionSupport.create(result));
+        }
+
+        @Override
+        public void onSuccess() {
+            LOG.trace("Completed deferred close of consumer: {}", getConsumerId());
+        }
+
+        @Override
+        public boolean isComplete() {
+            return isClosed();
+        }
+    }
+
+    //----- Inner class used in message pull operations ----------------------//
 
     protected static final class ScheduledRequest implements AsyncResult {
 

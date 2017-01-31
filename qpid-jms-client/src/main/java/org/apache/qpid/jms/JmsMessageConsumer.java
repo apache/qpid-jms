@@ -78,7 +78,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                                  String name, String selector, boolean noLocal) throws JMSException {
         this.session = session;
         this.connection = session.getConnection();
-        this.acknowledgementMode = session.acknowledgementMode();
+        this.acknowledgementMode = isBrowser() ? Session.AUTO_ACKNOWLEDGE : session.acknowledgementMode();
 
         if (destination.isTemporary()) {
             connection.checkConsumeFromTemporaryDestination((JmsTemporaryDestination) destination);

@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.Connection;
+import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -58,7 +59,6 @@ import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
-import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ReleasedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
@@ -351,32 +351,37 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             MessageConsumer consumer = session.createDurableSubscriber(topic, subscriptionName);
 
             int consumeCount = 2;
+            Message receivedMessage = null;
+
             for (int i = 1; i <= consumeCount; i++) {
-                Message receivedMessage = consumer.receive(3000);
+                receivedMessage = consumer.receive(3000);
 
                 assertNotNull(receivedMessage);
                 assertTrue(receivedMessage instanceof TextMessage);
             }
 
+            // Expect the messages that were not delivered to be released.
+            for (int i = 1; i <= consumeCount; i++) {
+                testPeer.expectDisposition(true, new AcceptedMatcher());
+            }
+
+            receivedMessage.acknowledge();
+
             testPeer.expectDetach(false, true, false);
 
-            // Expect the messages that were not acked to be to be either
-            // modified or released depending on whether the app saw them
-            for (int i = 1; i <= consumeCount; i++) {
-                testPeer.expectDisposition(true, new ModifiedMatcher().withDeliveryFailed(equalTo(true)));
-            }
             for (int i = consumeCount + 1 ; i <= messageCount; i++) {
                 testPeer.expectDisposition(true, new ReleasedMatcher());
             }
+
             testPeer.expectEnd();
 
             consumer.close();
             session.close();
 
-            testPeer.waitForAllHandlersToComplete(3000);
-
             testPeer.expectClose();
             connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
         }
     }
 
@@ -1302,6 +1307,268 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testCloseClientAckAsyncConsumerCanStillAckMessages() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+            Queue queue = session.createQueue(getTestName());
+
+            int messageCount = 5;
+            int consumeCount = 5;
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), messageCount);
+
+            final CountDownLatch consumedLatch = new CountDownLatch(consumeCount);
+            final AtomicReference<Message> receivedMessage = new AtomicReference<>();
+
+            MessageConsumer consumer = session.createConsumer(queue);
+            consumer.setMessageListener(new MessageListener() {
+                @Override
+                public void onMessage(Message message) {
+                    receivedMessage.set(message);
+                    consumedLatch.countDown();
+                }
+            });
+
+            assertTrue("Did not consume all messages", consumedLatch.await(10, TimeUnit.SECONDS));
+
+            // Close should be deferred as these messages were delivered but not acknowledged.
+            consumer.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            for (int i = 1; i <= consumeCount; i++) {
+                testPeer.expectDisposition(true, new AcceptedMatcher());
+            }
+
+            // Ack the last read message, which should accept all previous messages as well.
+            receivedMessage.get().acknowledge();
+
+            // Now the consumer should close.
+            testPeer.expectDetach(true, true, true);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testCloseClientAckSyncConsumerCanStillAckMessages() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+            Queue queue = session.createQueue(getTestName());
+
+            int messageCount = 5;
+            int consumeCount = 4;
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), messageCount);
+
+            MessageConsumer consumer = session.createConsumer(queue);
+            Message receivedMessage = null;
+
+            for (int i = 1; i <= consumeCount; i++) {
+                receivedMessage = consumer.receive(3000);
+
+                assertNotNull(receivedMessage);
+                assertTrue(receivedMessage instanceof TextMessage);
+            }
+
+            // Close should be deferred as these messages were delivered but not acknowledged.
+            consumer.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            for (int i = 1; i <= consumeCount; i++) {
+                testPeer.expectDisposition(true, new AcceptedMatcher());
+            }
+
+            // Ack the last read message, which should accept all previous messages as well.
+            receivedMessage.acknowledge();
+
+            // Now the consumer should close.
+            testPeer.expectDetach(true, true, true);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testConsumerWithDeferredCloseActsAsClosed() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+            Queue queue = session.createQueue(getTestName());
+
+            int messageCount = 5;
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), messageCount);
+
+            MessageConsumer consumer = session.createConsumer(queue);
+
+            int consumeCount = 3;
+            Message receivedMessage = null;
+
+            for (int i = 1; i <= consumeCount; i++) {
+                receivedMessage = consumer.receive(3000);
+
+                assertNotNull(receivedMessage);
+                assertTrue(receivedMessage instanceof TextMessage);
+            }
+
+            // Close should be deferred as these messages were delivered but not acknowledged.
+            consumer.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            // Should not be able to consume from the consumer once closed.
+            try {
+                consumer.receive();
+                fail("Should throw as this consumer is closed.");
+            } catch (IllegalStateException ise) {}
+
+            try {
+                consumer.receive(100);
+                fail("Should throw as this consumer is closed.");
+            } catch (IllegalStateException ise) {}
+
+            try {
+                consumer.receiveNoWait();
+                fail("Should throw as this consumer is closed.");
+            } catch (IllegalStateException ise) {}
+
+            for (int i = 1; i <= consumeCount; i++) {
+                testPeer.expectDisposition(true, new AcceptedMatcher());
+            }
+
+            // Now the consumer should close.
+            testPeer.expectDetach(true, true, true);
+
+            // Ack the last read message, which should accept all previous messages as well.
+            receivedMessage.acknowledge();
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testDeferredCloseTimeoutAlertsExceptionListener() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final CountDownLatch errorLatch = new CountDownLatch(1);
+
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setCloseTimeout(500);
+            connection.setExceptionListener(new ExceptionListener() {
+
+                @Override
+                public void onException(JMSException exception) {
+                    if (exception instanceof JmsOperationTimedOutException) {
+                        errorLatch.countDown();
+                    }
+                }
+            });
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+            Queue queue = session.createQueue(getTestName());
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), 1);
+
+            MessageConsumer consumer = session.createConsumer(queue);
+            Message receivedMessage = consumer.receive(3000);
+
+            assertNotNull(receivedMessage);
+            assertTrue(receivedMessage instanceof TextMessage);
+
+            // Close should be deferred as these messages were delivered but not acknowledged.
+            consumer.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            testPeer.expectDisposition(true, new AcceptedMatcher());
+
+            // Ack the read message, which should accept all previous messages as well.
+            receivedMessage.acknowledge();
+
+            // Now the consumer should close.
+            testPeer.expectDetach(true, false, true);
+
+            assertTrue("Did not get timed out error", errorLatch.await(10, TimeUnit.SECONDS));
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testSessionCloseDoesNotDeferConsumerClose() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+            Queue queue = session.createQueue(getTestName());
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), 1);
+
+            MessageConsumer consumer = session.createConsumer(queue);
+
+            Message receivedMessage = consumer.receive(3000);
+
+            assertNotNull(receivedMessage);
+            assertTrue(receivedMessage instanceof TextMessage);
+
+            testPeer.waitForAllHandlersToComplete(3000);
+            testPeer.expectEnd();
+
+            session.close();
+
+            // Consumer and Session should be closed, not acknowledge allowed
+            try {
+                receivedMessage.acknowledge();
+                fail("Should not be allowed to call acknowledge after session closed.");
+            } catch (IllegalStateException ise) {
+            }
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
         }
     }
 }

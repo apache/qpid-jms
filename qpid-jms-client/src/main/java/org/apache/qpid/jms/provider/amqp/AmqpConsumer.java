@@ -22,12 +22,8 @@ import static org.apache.qpid.jms.provider.amqp.AmqpSupport.REJECTED;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.ListIterator;
-import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.atomic.AtomicLong;
 
 import javax.jms.JMSException;
 
@@ -41,6 +37,7 @@ import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderListener;
+import org.apache.qpid.jms.provider.WrappedAsyncResult;
 import org.apache.qpid.jms.provider.amqp.message.AmqpCodec;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.Binary;
@@ -65,13 +62,11 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     private static final int INITIAL_BUFFER_CAPACITY = 1024 * 128;
 
     protected final AmqpSession session;
-    protected final Map<JmsInboundMessageDispatch, Delivery> delivered = new LinkedHashMap<JmsInboundMessageDispatch, Delivery>();
-    protected boolean presettle;
     protected AsyncResult stopRequest;
     protected AsyncResult pullRequest;
     protected final ByteBuf incomingBuffer = Unpooled.buffer(INITIAL_BUFFER_CAPACITY);
-    protected final AtomicLong incomingSequence = new AtomicLong(0);
-
+    protected long incomingSequence;
+    protected long deliveredCount;
     protected boolean deferredClose;
 
     public AmqpConsumer(AmqpSession session, JmsConsumerInfo info, Receiver receiver) {
@@ -85,8 +80,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         // If we have pending deliveries we remain open to allow for ACK or for a
         // pending transaction that this consumer is active in to complete.
         if (shouldDeferClose()) {
-            request.onSuccess();
             deferredClose = true;
+            stop(new StopAndReleaseRequest(request));
         } else {
             super.close(request);
         }
@@ -213,31 +208,42 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      */
     public void acknowledge(ACK_TYPE ackType) {
         LOG.trace("Session Acknowledge for consumer {} with ack type {}", getResourceInfo().getId(), ackType);
-        for (Delivery delivery : delivered.values()) {
-            switch (ackType) {
-                case ACCEPTED:
-                    delivery.disposition(Accepted.getInstance());
-                    break;
-                case RELEASED:
-                    delivery.disposition(Released.getInstance());
-                    break;
-                case REJECTED:
-                    delivery.disposition(REJECTED);
-                    break;
-                case MODIFIED_FAILED:
-                    delivery.disposition(MODIFIED_FAILED);
-                    break;
-                case MODIFIED_FAILED_UNDELIVERABLE:
-                    delivery.disposition(MODIFIED_FAILED_UNDELIVERABLE);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid acknowledgement type specified: " + ackType);
+        Delivery delivery = getEndpoint().head();
+        while (delivery != null) {
+            Delivery current = delivery;
+            delivery = delivery.next();
+
+            if (!(current.getContext() instanceof JmsInboundMessageDispatch)) {
+                LOG.debug("{} Found incomplete delivery with no context during recover processing", AmqpConsumer.this);
+                continue;
             }
 
-            delivery.settle();
-        }
+            JmsInboundMessageDispatch envelope = (JmsInboundMessageDispatch) current.getContext();
+            if (envelope.isDelivered()) {
+                switch (ackType) {
+                    case ACCEPTED:
+                        current.disposition(Accepted.getInstance());
+                        break;
+                    case RELEASED:
+                        current.disposition(Released.getInstance());
+                        break;
+                    case REJECTED:
+                        current.disposition(REJECTED);
+                        break;
+                    case MODIFIED_FAILED:
+                        current.disposition(MODIFIED_FAILED);
+                        break;
+                    case MODIFIED_FAILED_UNDELIVERABLE:
+                        current.disposition(MODIFIED_FAILED_UNDELIVERABLE);
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Invalid acknowledgement type specified: " + ackType);
+                }
 
-        delivered.clear();
+                current.settle();
+                deliveredCount--;
+            }
+        }
 
         tryCompleteDeferredClose();
     }
@@ -260,28 +266,25 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         if (envelope.getProviderHint() instanceof Delivery) {
             delivery = (Delivery) envelope.getProviderHint();
         } else {
-            delivery = delivered.get(envelope);
-            if (delivery == null) {
-                LOG.warn("Received Ack for unknown message: {}", envelope);
-                return;
-            }
+            LOG.warn("Received Ack for unknown message: {}", envelope);
+            return;
         }
 
         if (ackType.equals(ACK_TYPE.DELIVERED)) {
             LOG.debug("Delivered Ack of message: {}", envelope);
-            if (!delivery.isSettled()) {
-                delivered.put(envelope, delivery);
-                delivery.setDefaultDeliveryState(MODIFIED_FAILED);
-            }
+            deliveredCount++;
+            envelope.setDelivered(true);
+            delivery.setDefaultDeliveryState(MODIFIED_FAILED);
             sendFlowIfNeeded();
+            return;
         } else if (ackType.equals(ACK_TYPE.ACCEPTED)) {
             // A Consumer may not always send a DELIVERED ack so we need to
             // check to ensure we don't add too much credit to the link.
-            if (delivery.isSettled() || delivered.remove(envelope) == null) {
+            if (!envelope.isDelivered()) {
                 sendFlowIfNeeded();
             }
             LOG.debug("Accepted Ack of message: {}", envelope);
-            if (!delivery.isSettled()) {
+            if (!delivery.remotelySettled()) {
                 if (session.isTransacted() && !getResourceInfo().isBrowser()) {
 
                     if (session.isTransactionFailed()) {
@@ -302,6 +305,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                     delivery.disposition(Accepted.getInstance());
                     delivery.settle();
                 }
+            } else {
+                delivery.settle();
             }
         } else if (ackType.equals(ACK_TYPE.MODIFIED_FAILED_UNDELIVERABLE)) {
             deliveryFailedUndeliverable(delivery);
@@ -312,6 +317,11 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             delivery.settle();
         } else {
             LOG.warn("Unsupported Ack Type for message: {}", envelope);
+            return;
+        }
+
+        if (envelope.isDelivered()) {
+            deliveredCount--;
         }
 
         tryCompleteDeferredClose();
@@ -355,19 +365,34 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      */
     public void recover() throws Exception {
         LOG.debug("Session Recover for consumer: {}", getResourceInfo().getId());
-        Collection<JmsInboundMessageDispatch> values = delivered.keySet();
-        ArrayList<JmsInboundMessageDispatch> envelopes = new ArrayList<JmsInboundMessageDispatch>(values);
-        ListIterator<JmsInboundMessageDispatch> reverseIterator = envelopes.listIterator(values.size());
 
-        while (reverseIterator.hasPrevious()) {
-            JmsInboundMessageDispatch envelope = reverseIterator.previous();
-            envelope.getMessage().getFacade().setRedeliveryCount(
-                envelope.getMessage().getFacade().getRedeliveryCount() + 1);
-            envelope.setEnqueueFirst(true);
-            deliver(envelope);
+        ArrayList<JmsInboundMessageDispatch> redispatchList = new ArrayList<JmsInboundMessageDispatch>();
+
+        Delivery delivery = getEndpoint().head();
+        while (delivery != null) {
+            Delivery current = delivery;
+            delivery = delivery.next();
+
+            if (!(current.getContext() instanceof JmsInboundMessageDispatch)) {
+                LOG.debug("{} Found incomplete delivery with no context during recover processing", AmqpConsumer.this);
+                continue;
+            }
+
+            JmsInboundMessageDispatch envelope = (JmsInboundMessageDispatch) current.getContext();
+            if (envelope.isDelivered()) {
+                envelope.getMessage().getFacade().setRedeliveryCount(
+                    envelope.getMessage().getFacade().getRedeliveryCount() + 1);
+                envelope.setEnqueueFirst(true);
+                envelope.setDelivered(false);
+
+                redispatchList.add(envelope);
+            }
         }
 
-        delivered.clear();
+        ListIterator<JmsInboundMessageDispatch> reverseIterator = redispatchList.listIterator(redispatchList.size());
+        while (reverseIterator.hasPrevious()) {
+            deliver(reverseIterator.previous());
+        }
     }
 
     /**
@@ -458,13 +483,6 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     private boolean processDelivery(Delivery incoming) throws Exception {
         incoming.setDefaultDeliveryState(Released.getInstance());
 
-        // If we are awaiting to close for some conditions to be met then we don't
-        // need to decode or dispatch the message.
-        if (deferredClose) {
-            getEndpoint().advance();
-            return true;
-        }
-
         JmsMessage message = null;
         try {
             message = AmqpCodec.decodeMessage(this, unwrapIncomingMessage(incoming)).asJmsMessage();
@@ -504,7 +522,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     protected long getNextIncomingSequenceNumber() {
-        return incomingSequence.incrementAndGet();
+        return ++incomingSequence;
     }
 
     @Override
@@ -532,16 +550,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         return this.getResourceInfo().getDestination();
     }
 
-    public boolean isPresettle() {
-        return presettle || getResourceInfo().isBrowser();
-    }
-
     public boolean isStopping() {
         return stopRequest != null;
-    }
-
-    public void setPresettle(boolean presettle) {
-        this.presettle = presettle;
     }
 
     public int getDrainTimeout() {
@@ -562,12 +572,14 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     protected void deliver(JmsInboundMessageDispatch envelope) throws Exception {
-        ProviderListener listener = session.getProvider().getProviderListener();
-        if (listener != null) {
-            LOG.debug("Dispatching received message: {}", envelope);
-            listener.onInboundMessage(envelope);
-        } else {
-            LOG.error("Provider listener is not set, message will be dropped: {}", envelope);
+        if (!deferredClose) {
+            ProviderListener listener = session.getProvider().getProviderListener();
+            if (listener != null) {
+                LOG.debug("Dispatching received message: {}", envelope);
+                listener.onInboundMessage(envelope);
+            } else {
+                LOG.error("Provider listener is not set, message will be dropped: {}", envelope);
+            }
         }
     }
 
@@ -595,9 +607,12 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     public void postCommit() {
+        tryCompleteDeferredClose();
     }
 
     public void postRollback() {
+        releasePrefetch();
+        tryCompleteDeferredClose();
     }
 
     @Override
@@ -630,18 +645,64 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     private boolean shouldDeferClose() {
-        return !delivered.isEmpty();
+        if (getSession().isTransacted() && getSession().getTransactionContext().isInTransaction(this)) {
+            return true;
+        }
+
+        if (deliveredCount > 0) {
+            return true;
+        }
+
+        return false;
     }
 
     private void tryCompleteDeferredClose() {
-        if (deferredClose && delivered.isEmpty()) {
-            close(new DeferredCloseRequest());
+        if (deferredClose && deliveredCount == 0) {
+            super.close(new DeferredCloseRequest());
+        }
+    }
+
+    private void releasePrefetch() {
+        Delivery delivery = getEndpoint().head();
+
+        while (delivery != null) {
+            Delivery current = delivery;
+            delivery = delivery.next();
+
+            if (!(current.getContext() instanceof JmsInboundMessageDispatch)) {
+                LOG.debug("{} Found incomplete delivery with no context during release processing", AmqpConsumer.this);
+                continue;
+            }
+
+            JmsInboundMessageDispatch envelope = (JmsInboundMessageDispatch) current.getContext();
+            if (!envelope.isDelivered()) {
+                current.disposition(Released.getInstance());
+                current.settle();
+            }
+        }
+
+    }
+
+    //----- Inner class used to report on deferred close ---------------------//
+
+    private final class StopAndReleaseRequest extends WrappedAsyncResult {
+
+        public StopAndReleaseRequest(AsyncResult closeRequest) {
+            super(closeRequest);
+        }
+
+        @Override
+        public void onSuccess() {
+            // Now that the link is drained we can release all the prefetched
+            // messages so that the remote can send them elsewhere.
+            releasePrefetch();
+            super.onSuccess();
         }
     }
 
     //----- Inner class used to report on deferred close ---------------------//
 
-    protected final class DeferredCloseRequest implements AsyncResult {
+    private final class DeferredCloseRequest implements AsyncResult {
 
         @Override
         public void onFailure(Throwable result) {
@@ -662,7 +723,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     //----- Inner class used in message pull operations ----------------------//
 
-    protected static final class ScheduledRequest implements AsyncResult {
+    private static final class ScheduledRequest implements AsyncResult {
 
         private final ScheduledFuture<?> sheduledTask;
         private final AsyncResult origRequest;

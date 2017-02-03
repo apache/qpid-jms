@@ -16,16 +16,13 @@
  */
 package org.apache.qpid.jms;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.jms.JMSException;
 import javax.jms.TransactionRolledBackException;
 
-import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsResourceId;
@@ -45,7 +42,6 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsLocalTransactionContext.class);
 
-    private final List<JmsTransactionSynchronization> synchronizations = new ArrayList<JmsTransactionSynchronization>();
     private final Map<JmsResourceId, JmsResourceId> participants = new HashMap<JmsResourceId, JmsResourceId>();
     private final JmsSession session;
     private final JmsConnection connection;
@@ -116,20 +112,6 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     }
 
     @Override
-    public void addSynchronization(JmsTransactionSynchronization sync) throws JMSException {
-        lock.writeLock().lock();
-        try {
-            if (sync.validate(this)) {
-                synchronizations.add(sync);
-            }
-        } catch (Exception e) {
-            throw JmsExceptionSupport.create(e);
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
-
-    @Override
     public boolean isInDoubt() {
         return transactionInfo != null ? transactionInfo.isInDoubt() : false;
     }
@@ -180,8 +162,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                 }
                 throw new TransactionRolledBackException("Transaction failed and has been rolled back.");
             } else {
-                LOG.debug("Commit: {} syncCount: {}", transactionInfo.getId(),
-                          (synchronizations != null ? synchronizations.size() : 0));
+                LOG.debug("Commit: {}", transactionInfo.getId());
 
                 JmsTransactionId oldTransactionId = transactionInfo.getId();
                 try {
@@ -205,7 +186,6 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                             LOG.trace("Local TX listener error ignored: {}", error);
                         }
                     }
-                    afterCommit();
                 } catch (JMSException cause) {
                     LOG.info("Commit failed for transaction: {}", oldTransactionId);
                     if (listener != null) {
@@ -215,7 +195,6 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                             LOG.trace("Local TX listener error ignored: {}", error);
                         }
                     }
-                    afterRollback();
                     throw cause;
                 } finally {
                     LOG.trace("Commit starting new TX after commit completed.");
@@ -235,8 +214,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     private void doRollback(boolean startNewTx) throws JMSException {
         lock.writeLock().lock();
         try {
-            LOG.debug("Rollback: {} syncCount: {}", transactionInfo.getId(),
-                      (synchronizations != null ? synchronizations.size() : 0));
+            LOG.debug("Rollback: {}", transactionInfo.getId());
             try {
                 connection.rollback(transactionInfo, new ProviderSynchronization() {
 
@@ -258,8 +236,6 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                         LOG.trace("Local TX listener error ignored: {}", error);
                     }
                 }
-
-                afterRollback();
             } finally {
                 if (startNewTx) {
                     LOG.trace("Rollback starting new TX after rollback completed.");
@@ -374,59 +350,5 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     private JmsTransactionInfo getNextTransactionInfo() {
         JmsTransactionId transactionId = connection.getNextTransactionId();
         return new JmsTransactionInfo(session.getSessionId(), transactionId);
-    }
-
-    /*
-     * Must be called with the write lock held to ensure the synchronizations list
-     * can be safely cleared.
-     */
-    private void afterRollback() throws JMSException {
-        if (synchronizations.isEmpty()) {
-            return;
-        }
-
-        Throwable firstException = null;
-        for (JmsTransactionSynchronization sync : synchronizations) {
-            try {
-                sync.afterRollback();
-            } catch (Throwable thrown) {
-                LOG.debug("Exception from afterRollback on " + sync, thrown);
-                if (firstException == null) {
-                    firstException = thrown;
-                }
-            }
-        }
-
-        synchronizations.clear();
-        if (firstException != null) {
-            throw JmsExceptionSupport.create(firstException);
-        }
-    }
-
-    /*
-     * Must be called with the write lock held to ensure the synchronizations list
-     * can be safely cleared.
-     */
-    private void afterCommit() throws JMSException {
-        if (synchronizations.isEmpty()) {
-            return;
-        }
-
-        Throwable firstException = null;
-        for (JmsTransactionSynchronization sync : synchronizations) {
-            try {
-                sync.afterCommit();
-            } catch (Throwable thrown) {
-                LOG.debug("Exception from afterCommit on " + sync, thrown);
-                if (firstException == null) {
-                    firstException = thrown;
-                }
-            }
-        }
-
-        synchronizations.clear();
-        if (firstException != null) {
-            throw JmsExceptionSupport.create(firstException);
-        }
     }
 }

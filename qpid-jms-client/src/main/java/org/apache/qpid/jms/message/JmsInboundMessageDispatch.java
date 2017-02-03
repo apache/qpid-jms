@@ -29,6 +29,7 @@ public class JmsInboundMessageDispatch extends JmsAbstractResourceId {
     private final long sequence;
     private JmsMessage message;
     private boolean enqueueFirst;
+    private boolean delivered;
 
     private transient String stringView;
 
@@ -62,6 +63,14 @@ public class JmsInboundMessageDispatch extends JmsAbstractResourceId {
 
     public boolean isEnqueueFirst() {
         return enqueueFirst;
+    }
+
+    public boolean isDelivered() {
+        return delivered;
+    }
+
+    public void setDelivered(boolean delivered) {
+        this.delivered = delivered;
     }
 
     public int getRedeliveryCount() {

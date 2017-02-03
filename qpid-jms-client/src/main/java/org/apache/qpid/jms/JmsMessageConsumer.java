@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -138,28 +137,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     @Override
     public void close() throws JMSException {
         if (!closed.get()) {
-            session.getTransactionContext().addSynchronization(new JmsTransactionSynchronization() {
-
-                @Override
-                public boolean validate(JmsTransactionContext context) throws Exception {
-                    if (isBrowser() || !context.isActiveInThisContext(getConsumerId())) {
-                        doClose();
-                        return false;
-                    }
-
-                    return true;
-                }
-
-                @Override
-                public void afterCommit() throws Exception {
-                    doClose();
-                }
-
-                @Override
-                public void afterRollback() throws Exception {
-                    doClose();
-                }
-            });
+            doClose();
         }
     }
 
@@ -549,20 +527,17 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     void suspendForRollback() throws JMSException {
         stop();
 
-        session.getConnection().stopResource(consumerInfo);
+        try {
+            session.getConnection().stopResource(consumerInfo);
+        } finally {
+            if (session.getTransactionContext().isActiveInThisContext(getConsumerId())) {
+                messageQueue.clear();
+            }
+        }
     }
 
     void resumeAfterRollback() throws JMSException {
-        if (!this.messageQueue.isEmpty()) {
-            List<JmsInboundMessageDispatch> drain = this.messageQueue.removeAll();
-            for (JmsInboundMessageDispatch envelope : drain) {
-                doAckReleased(envelope);
-            }
-            drain.clear();
-        }
-
         start();
-
         startConsumerResource();
     }
 

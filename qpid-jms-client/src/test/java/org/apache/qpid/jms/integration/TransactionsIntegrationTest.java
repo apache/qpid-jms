@@ -352,7 +352,10 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
     private void doCommitTransactedSessionWithConsumerTestImpl(int transferCount, int consumeCount, boolean closeConsumer, boolean closeBeforeCommit) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
+            final int DEFAULT_PREFETCH = 100;
+
+            // Set to fixed known value to reduce breakage if defaults are changed.
+            Connection connection = testFixture.establishConnecton(testPeer, "jms.prefetchPolicy.all=" + DEFAULT_PREFETCH);
             connection.start();
 
             testPeer.expectBegin();
@@ -387,13 +390,11 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                 assertTrue(receivedMessage instanceof TextMessage);
             }
 
-            // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
-            // and reply with accepted and settled disposition to indicate the commit succeeded
-            testPeer.expectDischarge(txnId, false);
-
             // Expect the consumer to close now
             if (closeConsumer && closeBeforeCommit) {
-                testPeer.expectDetach(true, true, true);
+
+                // Expect the client to then drain off all credit from the link.
+                testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(DEFAULT_PREFETCH - transferCount)));
 
                 // Expect the messages that were not consumed to be released
                 int unconsumed = transferCount - consumeCount;
@@ -401,7 +402,18 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                     testPeer.expectDispositionThatIsReleasedAndSettled();
                 }
 
+                // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
+                // and reply with accepted and settled disposition to indicate the commit succeeded
+                testPeer.expectDischarge(txnId, false);
+
+                // Now the deferred close should be performed.
+                testPeer.expectDetach(true, true, true);
+
                 messageConsumer.close();
+            } else {
+                // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
+                // and reply with accepted and settled disposition to indicate the commit succeeded
+                testPeer.expectDischarge(txnId, false);
             }
 
             // Then expect an unsettled 'declare' transfer to the txn coordinator, and
@@ -653,6 +665,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
     private void doRollbackTransactedSessionWithConsumerTestImpl(int transferCount, int consumeCount, boolean closeConsumer) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // Set to fixed known value to reduce breakage if defaults are changed.
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
 
@@ -691,24 +704,27 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             // Expect the consumer to be 'stopped' prior to rollback by issuing a 'drain'
             testPeer.expectLinkFlow(true, true, greaterThan(UnsignedInteger.ZERO));
 
-            // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
-            // and reply with accepted and settled disposition to indicate the rollback succeeded
-            testPeer.expectDischarge(txnId, true);
-
             if (closeConsumer) {
-                testPeer.expectDetach(true, true, true);
+
+                // Expect the messages that were not consumed to be released
                 int unconsumed = transferCount - consumeCount;
                 for (int i = 1; i <= unconsumed; i++) {
-                    testPeer.expectDisposition(true, new ReleasedMatcher());
+                    testPeer.expectDispositionThatIsReleasedAndSettled();
                 }
 
-                messageConsumer.close();
-            }
+                // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
+                // and reply with accepted and settled disposition to indicate the rollback succeeded
+                testPeer.expectDischarge(txnId, true);
 
-            // Then expect an unsettled 'declare' transfer to the txn coordinator, and
-            // reply with a declared disposition state containing the txnId.
-            txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            testPeer.expectDeclare(txnId);
+                // Now the deferred close should be performed.
+                testPeer.expectDetach(true, true, true);
+
+                messageConsumer.close();
+            } else {
+                // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
+                // and reply with accepted and settled disposition to indicate the rollback succeeded
+                testPeer.expectDischarge(txnId, true);
+            }
 
             if (!closeConsumer) {
                 // Expect the messages that were not consumed to be released
@@ -717,8 +733,18 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                     testPeer.expectDisposition(true, new ReleasedMatcher());
                 }
 
+                // Then expect an unsettled 'declare' transfer to the txn coordinator, and
+                // reply with a declared disposition state containing the txnId.
+                txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+                testPeer.expectDeclare(txnId);
+
                 // Expect the consumer to be 'started' again as rollback completes
                 testPeer.expectLinkFlow(false, false, greaterThan(UnsignedInteger.ZERO));
+            } else {
+                // Then expect an unsettled 'declare' transfer to the txn coordinator, and
+                // reply with a declared disposition state containing the txnId.
+                txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+                testPeer.expectDeclare(txnId);
             }
 
             testPeer.expectDischarge(txnId, true);
@@ -787,11 +813,6 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             // reply with a declared disposition state containing the txnId.
             txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
             testPeer.expectDeclare(txnId);
-
-            // Expect the messages that were not consumed to be released
-            for (int i = 1; i <= messageCount; i++) {
-                testPeer.expectDisposition(true, new ReleasedMatcher());
-            }
 
             // Expect the consumer to be 'started' again as rollback completes
             testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(messageCount)));
@@ -867,11 +888,6 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             // reply with a declared disposition state containing the txnId.
             txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
             testPeer.expectDeclare(txnId);
-
-            // Expect the messages that were not consumed to be released
-            for (int i = 1; i <= messageCount; i++) {
-                testPeer.expectDisposition(true, new ReleasedMatcher());
-            }
 
             // Expect the consumer to be 'started' again as rollback completes
             testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(messageCount)));

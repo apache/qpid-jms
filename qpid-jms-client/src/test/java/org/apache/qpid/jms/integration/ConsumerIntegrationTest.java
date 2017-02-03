@@ -1313,7 +1313,10 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
     @Test(timeout=20000)
     public void testCloseClientAckAsyncConsumerCanStillAckMessages() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
+            final int DEFAULT_PREFETCH = 100;
+
+            // Set to fixed known value to reduce breakage if defaults are changed.
+            Connection connection = testFixture.establishConnecton(testPeer, "jms.prefetchPolicy.all=" + DEFAULT_PREFETCH);
             connection.start();
 
             testPeer.expectBegin();
@@ -1341,6 +1344,9 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
             assertTrue("Did not consume all messages", consumedLatch.await(10, TimeUnit.SECONDS));
 
+            // Expect the client to then drain off all credit from the link.
+            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(DEFAULT_PREFETCH - messageCount)));
+
             // Close should be deferred as these messages were delivered but not acknowledged.
             consumer.close();
 
@@ -1366,7 +1372,10 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
     @Test(timeout=20000)
     public void testCloseClientAckSyncConsumerCanStillAckMessages() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
+            final int DEFAULT_PREFETCH = 100;
+
+            // Set to fixed known value to reduce breakage if defaults are changed.
+            Connection connection = testFixture.establishConnecton(testPeer, "jms.prefetchPolicy.all=" + DEFAULT_PREFETCH);
             connection.start();
 
             testPeer.expectBegin();
@@ -1375,7 +1384,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             Queue queue = session.createQueue(getTestName());
 
             int messageCount = 5;
-            int consumeCount = 4;
+            int consumeCount = 3;
 
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), messageCount);
@@ -1388,6 +1397,14 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
                 assertNotNull(receivedMessage);
                 assertTrue(receivedMessage instanceof TextMessage);
+            }
+
+            // Expect the client to then drain off all credit from the link.
+            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(DEFAULT_PREFETCH - messageCount)));
+
+            // Expect the prefetched messages to be released for dispatch elsewhere.
+            for (int i = 1; i <= messageCount - consumeCount; i++) {
+                testPeer.expectDisposition(true, new ReleasedMatcher());
             }
 
             // Close should be deferred as these messages were delivered but not acknowledged.
@@ -1415,7 +1432,10 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
     @Test(timeout=20000)
     public void testConsumerWithDeferredCloseActsAsClosed() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
+            final int DEFAULT_PREFETCH = 100;
+
+            // Set to fixed known value to reduce breakage if defaults are changed.
+            Connection connection = testFixture.establishConnecton(testPeer, "jms.prefetchPolicy.all=" + DEFAULT_PREFETCH);
             connection.start();
 
             testPeer.expectBegin();
@@ -1438,6 +1458,14 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
                 assertNotNull(receivedMessage);
                 assertTrue(receivedMessage instanceof TextMessage);
+            }
+
+            // Expect the client to then drain off all credit from the link.
+            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(DEFAULT_PREFETCH - messageCount)));
+
+            // Expect the prefetched messages to be released for dispatch elsewhere.
+            for (int i = 1; i <= messageCount - consumeCount; i++) {
+                testPeer.expectDisposition(true, new ReleasedMatcher());
             }
 
             // Close should be deferred as these messages were delivered but not acknowledged.
@@ -1483,8 +1511,11 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final CountDownLatch errorLatch = new CountDownLatch(1);
 
-            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
-            connection.setCloseTimeout(500);
+            final int DEFAULT_PREFETCH = 100;
+
+            // Set to fixed known value to reduce breakage if defaults are changed.
+            Connection connection = testFixture.establishConnecton(testPeer,
+                "jms.closeTimeout=500&jms.prefetchPolicy.all=" + DEFAULT_PREFETCH);
             connection.setExceptionListener(new ExceptionListener() {
 
                 @Override
@@ -1509,6 +1540,9 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
             assertNotNull(receivedMessage);
             assertTrue(receivedMessage instanceof TextMessage);
+
+            // Expect the client to then drain off all credit from the link.
+            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(DEFAULT_PREFETCH - 1)));
 
             // Close should be deferred as these messages were delivered but not acknowledged.
             consumer.close();

@@ -61,19 +61,6 @@ public interface JmsTransactionContext {
     void send(JmsConnection connection, JmsOutboundMessageDispatch envelope) throws JMSException;
 
     /**
-     * Adds the given Transaction synchronization to the current list. The
-     * registered synchronization will be notified of various event points
-     * in the lifetime of a transaction such as before and after commit or
-     * rollback.
-     *
-     * @param sync
-     *        the transaction synchronization to add.
-     *
-     * @throws JMSException if an error occurs during the send.
-     */
-    void addSynchronization(JmsTransactionSynchronization sync) throws JMSException;
-
-    /**
      * @return if the currently transaction has been marked as being in an unknown state.
      */
     boolean isInDoubt();

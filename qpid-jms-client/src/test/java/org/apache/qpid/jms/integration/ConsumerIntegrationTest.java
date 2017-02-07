@@ -1355,12 +1355,13 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             for (int i = 1; i <= consumeCount; i++) {
                 testPeer.expectDisposition(true, new AcceptedMatcher());
             }
+            // Now the consumer should close.
+            testPeer.expectDetach(true, true, true);
 
             // Ack the last read message, which should accept all previous messages as well.
             receivedMessage.get().acknowledge();
 
-            // Now the consumer should close.
-            testPeer.expectDetach(true, true, true);
+            testPeer.waitForAllHandlersToComplete(3000);
 
             testPeer.expectClose();
             connection.close();
@@ -1415,12 +1416,13 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             for (int i = 1; i <= consumeCount; i++) {
                 testPeer.expectDisposition(true, new AcceptedMatcher());
             }
+            // Now the consumer should close.
+            testPeer.expectDetach(true, true, true);
 
             // Ack the last read message, which should accept all previous messages as well.
             receivedMessage.acknowledge();
 
-            // Now the consumer should close.
-            testPeer.expectDetach(true, true, true);
+            testPeer.waitForAllHandlersToComplete(3000);
 
             testPeer.expectClose();
             connection.close();
@@ -1550,12 +1552,11 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(3000);
 
             testPeer.expectDisposition(true, new AcceptedMatcher());
+            // Now the consumer should close.
+            testPeer.expectDetach(true, false, true);
 
             // Ack the read message, which should accept all previous messages as well.
             receivedMessage.acknowledge();
-
-            // Now the consumer should close.
-            testPeer.expectDetach(true, false, true);
 
             assertTrue("Did not get timed out error", errorLatch.await(10, TimeUnit.SECONDS));
 

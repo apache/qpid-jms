@@ -57,6 +57,7 @@ import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
+import org.apache.qpid.jms.test.testpeer.basictypes.ConnectionError;
 import org.apache.qpid.jms.test.testpeer.basictypes.TerminusDurability;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Rejected;
@@ -217,6 +218,58 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             finalPeer.expectClose();
             connection.close();
             finalPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverHandlesRemotelyEndConnectionForced() throws Exception {
+        try (TestAmqpPeer forcingPeer = new TestAmqpPeer();
+             TestAmqpPeer backupPeer = new TestAmqpPeer();) {
+
+            final String forcingPeerURI = createPeerURI(forcingPeer);
+            final String backupPeerURI = createPeerURI(backupPeer);
+            LOG.info("Primary is at {}: Backup peer is at: {}", forcingPeerURI, backupPeerURI);
+
+            final CountDownLatch connectedToPrimary = new CountDownLatch(1);
+            final CountDownLatch connectedToBackup = new CountDownLatch(1);
+
+            forcingPeer.expectSaslAnonymous();
+            forcingPeer.expectOpen();
+            forcingPeer.expectBegin();
+            forcingPeer.remotelyCloseConnection(true, ConnectionError.CONNECTION_FORCED, "Server is going away", 10);
+
+            backupPeer.expectSaslAnonymous();
+            backupPeer.expectOpen();
+            backupPeer.expectBegin();
+
+            final JmsConnection connection = establishAnonymousConnecton(forcingPeer, backupPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (remoteURI.toString().equals(forcingPeerURI)) {
+                        connectedToPrimary.countDown();
+                    }
+                }
+
+                @Override
+                public void onConnectionRestored(URI remoteURI) {
+                    LOG.info("Connection Reestablished: {}", remoteURI);
+                    if (remoteURI.toString().equals(backupPeerURI)) {
+                        connectedToBackup.countDown();
+                    }
+                }
+            });
+            connection.start();
+
+            forcingPeer.waitForAllHandlersToComplete(3000);
+
+            assertTrue("Should connect to primary peer", connectedToPrimary.await(5, TimeUnit.SECONDS));
+            assertTrue("Should connect to backup peer", connectedToBackup.await(5, TimeUnit.SECONDS));
+
+            backupPeer.expectClose();
+            connection.close();
+            backupPeer.waitForAllHandlersToComplete(1000);
         }
     }
 

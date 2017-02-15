@@ -535,5 +535,38 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
 
         connection.close();
     }
-}
 
+    @Test(timeout = 90000)
+    public void testConsumerMessagesInOrder() throws Exception {
+
+        for (int i = 0; i < 5; ++i) {
+
+            connection = createAmqpConnection();
+            connection.start();
+
+            final int MESSAGE_COUNT = 20;
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            Queue queue = session.createQueue(name.getMethodName());
+
+            sendToAmqQueue(MESSAGE_COUNT);
+
+            MessageConsumer consumer = session.createConsumer(queue);
+
+            for (int j = 0; j < MESSAGE_COUNT; ++j) {
+                Message message = consumer.receive(5000);
+                assertNotNull(message);
+                assertEquals(j + 1, message.getIntProperty(MESSAGE_NUMBER));
+            }
+
+            session.close();
+
+            QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
+            proxy.purge();
+
+            assertEquals(0, proxy.getQueueSize());
+
+            consumer.close();
+        }
+    }
+}

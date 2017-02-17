@@ -19,6 +19,7 @@ package org.apache.qpid.jms.transactions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import javax.jms.Connection;
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.Message;
@@ -539,34 +541,50 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
     @Test(timeout = 90000)
     public void testConsumerMessagesInOrder() throws Exception {
 
-        for (int i = 0; i < 5; ++i) {
+        final int ITERATIONS = 5;
+        final int MESSAGE_COUNT = 4;
 
-            connection = createAmqpConnection();
-            connection.start();
+        for (int i = 0; i < ITERATIONS; i++) {
+            LOG.debug("##----------- Iteration {} -----------##", i);
+            Connection consumingConnection = createAmqpConnection();
+            Connection producingConnection = createAmqpConnection();
 
-            final int MESSAGE_COUNT = 20;
+            Session consumerSession = consumingConnection.createSession(true, Session.SESSION_TRANSACTED);
+            Queue queue = consumerSession.createQueue("my_queue");
+            MessageConsumer consumer = consumerSession.createConsumer(queue);
 
-            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-            Queue queue = session.createQueue(name.getMethodName());
+            Session producerSession = producingConnection.createSession(true, Session.SESSION_TRANSACTED);
+            MessageProducer producer = producerSession.createProducer(queue);
 
-            sendToAmqQueue(MESSAGE_COUNT);
+            ArrayList<TextMessage> received = new ArrayList<>();
 
-            MessageConsumer consumer = session.createConsumer(queue);
+            try {
+                for (int j = 0; j < MESSAGE_COUNT; j++) {
+                    producer.send(producerSession.createTextMessage("msg" + (j + 1)));
+                }
 
-            for (int j = 0; j < MESSAGE_COUNT; ++j) {
-                Message message = consumer.receive(5000);
-                assertNotNull(message);
-                assertEquals(j + 1, message.getIntProperty(MESSAGE_NUMBER));
+                producerSession.commit();
+
+                consumingConnection.start();
+
+                for (int k = 0; k < MESSAGE_COUNT; k++) {
+                    TextMessage tm = (TextMessage) consumer.receive(5000);
+                    assertNotNull(tm);
+                    received.add(tm);
+                }
+
+                for (int l = 0; l < MESSAGE_COUNT; l++) {
+                    TextMessage tm = received.get(l);
+                    assertNotNull(tm);
+                    if (!("msg" + (l + 1)).equals(tm.getText())) {
+                        fail("Out of order, expected " + ("msg" + (l + 1)) + " but got: " + tm.getText());
+                    }
+                }
+                consumerSession.commit();
+            } finally {
+                consumingConnection.close();
+                producingConnection.close();
             }
-
-            session.close();
-
-            QueueViewMBean proxy = getProxyToQueue(name.getMethodName());
-            proxy.purge();
-
-            assertEquals(0, proxy.getQueueSize());
-
-            consumer.close();
         }
     }
 }

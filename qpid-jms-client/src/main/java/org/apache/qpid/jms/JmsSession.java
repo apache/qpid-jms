@@ -28,7 +28,6 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -105,8 +104,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     private MessageListener messageListener;
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean started = new AtomicBoolean();
-    private final LinkedBlockingQueue<JmsInboundMessageDispatch> stoppedMessages =
-        new LinkedBlockingQueue<JmsInboundMessageDispatch>(10000);
     private final JmsSessionInfo sessionInfo;
     private final ReentrantLock sendLock = new ReentrantLock();
     private volatile ExecutorService deliveryExecutor;
@@ -996,10 +993,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
     protected void start() throws JMSException {
         if (started.compareAndSet(false, true)) {
-            JmsInboundMessageDispatch message = null;
-            while ((message = this.stoppedMessages.poll()) != null) {
-                deliver(message);
-            }
             for (JmsMessageConsumer consumer : consumers.values()) {
                 consumer.start();
             }
@@ -1204,11 +1197,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
     @Override
     public void onInboundMessage(JmsInboundMessageDispatch envelope) {
-        if (started.get()) {
-            deliver(envelope);
-        } else {
-            stoppedMessages.add(envelope);
-        }
+        deliver(envelope);
     }
 
     protected void onCompletedMessageSend(final JmsOutboundMessageDispatch envelope) {

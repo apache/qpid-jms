@@ -75,54 +75,54 @@ public class AmqpProviderTest extends QpidJmsTestCase {
 
     @Test(timeout=20000)
     public void testCreate() throws Exception {
-        provider = new AmqpProvider(getDefaultURI());
+        provider = new AmqpProviderFactory().createProvider(getDefaultURI());
     }
 
     @Test(timeout=20000, expected=RuntimeException.class)
     public void testGetMessageFactoryTrowsWhenNotConnected() throws Exception {
-        provider = new AmqpProvider(getDefaultURI());
+        provider = new AmqpProviderFactory().createProvider(getDefaultURI());
         provider.getMessageFactory();
     }
 
     @Test(timeout=20000)
     public void testUnInitializedProviderReturnsDefaultConnectTimeout() throws Exception {
-        provider = new AmqpProvider(getDefaultURI());
+        provider = new AmqpProviderFactory().createProvider(getDefaultURI());
         assertEquals(JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT, provider.getConnectTimeout());
     }
 
     @Test(timeout=20000)
     public void testUnInitializedProviderReturnsDefaultCloseTimeout() throws Exception {
-        provider = new AmqpProvider(getDefaultURI());
+        provider = new AmqpProviderFactory().createProvider(getDefaultURI());
         assertEquals(JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT, provider.getCloseTimeout());
     }
 
     @Test(timeout=20000)
     public void testUnInitializedProviderReturnsDefaultSendTimeout() throws Exception {
-        provider = new AmqpProvider(getDefaultURI());
+        provider = new AmqpProviderFactory().createProvider(getDefaultURI());
         assertEquals(JmsConnectionInfo.DEFAULT_SEND_TIMEOUT, provider.getSendTimeout());
     }
 
     @Test(timeout=20000)
     public void testUnInitializedProviderReturnsDefaultRequestTimeout() throws Exception {
-        provider = new AmqpProvider(getDefaultURI());
+        provider = new AmqpProviderFactory().createProvider(getDefaultURI());
         assertEquals(JmsConnectionInfo.DEFAULT_REQUEST_TIMEOUT, provider.getRequestTimeout());
     }
 
     @Test(timeout=20000)
     public void testGetDefaultDrainTimeout() throws Exception {
-        provider = new AmqpProvider(getDefaultURI());
+        provider = new AmqpProviderFactory().createProvider(getDefaultURI());
         assertEquals(TimeUnit.MINUTES.toMillis(1), provider.getDrainTimeout());
     }
 
     @Test(timeout=20000)
     public void testGetDefaultIdleTimeout() throws Exception {
-        provider = new AmqpProvider(getDefaultURI());
+        provider = new AmqpProviderFactory().createProvider(getDefaultURI());
         assertEquals(TimeUnit.MINUTES.toMillis(1), provider.getIdleTimeout());
     }
 
     @Test(timeout=20000)
     public void testEnableTraceFrames() throws Exception {
-        provider = new AmqpProvider(getDefaultURI());
+        provider = new AmqpProviderFactory().createProvider(getDefaultURI());
         TransportImpl transport = (TransportImpl) provider.getProtonTransport();
         assertNotNull(transport);
         assertNull(transport.getProtocolTracer());
@@ -131,19 +131,13 @@ public class AmqpProviderTest extends QpidJmsTestCase {
     }
 
     @Test(timeout=20000)
-    public void testConnectWithUnknownProtocol() throws Exception {
-        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
-            provider = new AmqpProvider(getPeerURI(testPeer));
-            provider.setTransportType("ftp");
-            try {
-                provider.connect(connectionInfo);
-                fail("Should have failed to connect.");
-            } catch (Exception ex) {
-            }
-
-            provider.close();
-
-            testPeer.waitForAllHandlersToComplete(1000);
+    public void testCreateFailsWithUnknownProtocol() throws Exception {
+        try {
+            AmqpProviderFactory factory = new AmqpProviderFactory();
+            factory.setTransportScheme("ftp");
+            factory.createProvider(new URI("ftp://localhost:5672"));
+            fail("Should have failed to connect.");
+        } catch (Exception ex) {
         }
     }
 
@@ -153,7 +147,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
             URI peerURI = getPeerURI(testPeer);
             testPeer.close();
 
-            provider = new AmqpProvider(peerURI);
+            provider = new AmqpProviderFactory().createProvider(peerURI);
             try {
                 provider.connect(connectionInfo);
                 fail("Should have failed to connect.");
@@ -166,7 +160,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
     public void testDisableSaslLayer() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
 
-            provider = new AmqpProvider(getPeerURI(testPeer));
+            provider = new AmqpProviderFactory().createProvider(getPeerURI(testPeer));
 
             provider.setSaslLayer(false);
             provider.connect(connectionInfo);
@@ -185,7 +179,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
             testPeer.expectSaslAnonymous();
 
-            provider = new AmqpProvider(getPeerURI(testPeer));
+            provider = new AmqpProviderFactory().createProvider(getPeerURI(testPeer));
 
             TransportImpl transport = (TransportImpl) provider.getProtonTransport();
 
@@ -210,7 +204,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
             testPeer.expectSaslAnonymous();
 
-            provider = new AmqpProvider(getPeerURI(testPeer));
+            provider = new AmqpProviderFactory().createProvider(getPeerURI(testPeer));
 
             TransportImpl transport = (TransportImpl) provider.getProtonTransport();
 
@@ -235,7 +229,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
             testPeer.expectSaslAnonymous();
 
-            provider = new AmqpProvider(getPeerURI(testPeer));
+            provider = new AmqpProviderFactory().createProvider(getPeerURI(testPeer));
 
             TransportImpl transport = (TransportImpl) provider.getProtonTransport();
 
@@ -259,7 +253,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
             testPeer.expectSaslAnonymous();
 
-            provider = new AmqpProvider(getPeerURI(testPeer));
+            provider = new AmqpProviderFactory().createProvider(getPeerURI(testPeer));
             provider.connect(connectionInfo);
 
             assertNull(provider.getProviderListener());
@@ -294,7 +288,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
             testPeer.expectSaslAnonymous();
 
-            provider = new AmqpProvider(getPeerURI(testPeer));
+            provider = new AmqpProviderFactory().createProvider(getPeerURI(testPeer));
             provider.connect(connectionInfo);
             assertTrue(provider.toString().contains("localhost"));
             assertTrue(provider.toString().contains(String.valueOf(testPeer.getServerPort())));
@@ -315,7 +309,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
             testPeer.expectOpen();
             testPeer.expectClose();
 
-            provider = new AmqpProvider(getPeerURI(testPeer));
+            provider = new AmqpProviderFactory().createProvider(getPeerURI(testPeer));
             provider.connect(connectionInfo);
             provider.close();
 
@@ -352,7 +346,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
             connectionInfo.setUsername(TEST_USERNAME);
             connectionInfo.setPassword(TEST_PASSWORD);
 
-            provider = new AmqpProvider(getPeerURI(testPeer));
+            provider = new AmqpProviderFactory().createProvider(getPeerURI(testPeer));
             testPeer.expectSaslPlain(TEST_USERNAME, TEST_PASSWORD);
             testPeer.expectOpen();
             testPeer.expectBegin();
@@ -403,7 +397,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
 
     private void doErrorDuringOperationFailsRequesTTestImpl(Op operation) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
-            provider = new AmqpProvider(getPeerURI(testPeer));
+            provider = new AmqpProviderFactory().createProvider(getPeerURI(testPeer));
 
             final AtomicBoolean errorThrown = new AtomicBoolean();
             JmsResource resourceInfo = new JmsAbstractResource() {

@@ -22,6 +22,7 @@ import static org.apache.qpid.jms.provider.amqp.AmqpSupport.PORT;
 import static org.junit.Assert.assertTrue;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -29,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
@@ -57,7 +57,7 @@ public class FailoverRedirectTest extends QpidJmsTestCase {
              TestAmqpPeer redirectedPeer = new TestAmqpPeer();) {
 
             final CountDownLatch connected = new CountDownLatch(1);
-            final String redirectURI = createPeerURI(redirectedPeer);
+            final URI redirectURI = createPeerURI(redirectedPeer);
             LOG.info("Backup peer is at: {}", redirectURI);
 
             redirectedPeer.expectSaslAnonymous();
@@ -76,7 +76,7 @@ public class FailoverRedirectTest extends QpidJmsTestCase {
                 @Override
                 public void onConnectionEstablished(URI remoteURI) {
                     LOG.info("Connection Established: {}", remoteURI);
-                    if (redirectURI.equals(remoteURI.toString())) {
+                    if (isExpectedHost(redirectURI, remoteURI)) {
                         connected.countDown();
                     }
                 }
@@ -100,8 +100,8 @@ public class FailoverRedirectTest extends QpidJmsTestCase {
             final CountDownLatch connectedToPrimary = new CountDownLatch(1);
             final CountDownLatch connectedToBackup = new CountDownLatch(1);
 
-            final String rejectingURI = createPeerURI(rejectingPeer);
-            final String redirectURI = createPeerURI(redirectedPeer);
+            final URI rejectingURI = createPeerURI(rejectingPeer);
+            final URI redirectURI = createPeerURI(redirectedPeer);
             LOG.info("Primary is at {}: Backup peer is at: {}", rejectingURI, redirectURI);
 
             redirectedPeer.expectSaslAnonymous();
@@ -123,7 +123,7 @@ public class FailoverRedirectTest extends QpidJmsTestCase {
                 @Override
                 public void onConnectionEstablished(URI remoteURI) {
                     LOG.info("Connection Established: {}", remoteURI);
-                    if (remoteURI.toString().equals(rejectingURI)) {
+                    if (isExpectedHost(rejectingURI, remoteURI)) {
                         connectedToPrimary.countDown();
                     }
                 }
@@ -131,7 +131,7 @@ public class FailoverRedirectTest extends QpidJmsTestCase {
                 @Override
                 public void onConnectionRestored(URI remoteURI) {
                     LOG.info("Connection Reestablished: {}", remoteURI);
-                    if (remoteURI.toString().equals(redirectURI)) {
+                    if (isExpectedHost(redirectURI, remoteURI)) {
                         connectedToBackup.countDown();
                     }
                 }
@@ -149,8 +149,8 @@ public class FailoverRedirectTest extends QpidJmsTestCase {
         }
     }
 
-    private JmsConnection establishAnonymousConnecton(TestAmqpPeer testPeer) throws JMSException {
-        final String remoteURI = "failover:(" + createPeerURI(testPeer) + ")";
+    private JmsConnection establishAnonymousConnecton(TestAmqpPeer testPeer) throws Exception {
+        final String remoteURI = "failover:(" + createPeerURI(testPeer).toString() + ")";
 
         ConnectionFactory factory = new JmsConnectionFactory(remoteURI);
         Connection connection = factory.createConnection();
@@ -158,7 +158,22 @@ public class FailoverRedirectTest extends QpidJmsTestCase {
         return (JmsConnection) connection;
     }
 
-    private String createPeerURI(TestAmqpPeer peer) {
-        return "amqp://localhost:" + peer.getServerPort();
+    private boolean isExpectedHost(URI expected, URI actual) {
+        if (!expected.getHost().equals(actual.getHost())) {
+            LOG.info("Expected host {} but got host {}", expected.getHost(), actual.getHost());
+            return false;
+        }
+
+        if (expected.getPort() != actual.getPort()) {
+            LOG.info("Expected host {} on port {} but got host {} on port {}",
+                expected.getHost(), expected.getPort(), actual.getHost(), actual.getPort());
+            return false;
+        }
+
+        return true;
+    }
+
+    private URI createPeerURI(TestAmqpPeer peer) throws URISyntaxException {
+        return new URI("amqp://localhost:" + peer.getServerPort());
     }
 }

@@ -33,4 +33,9 @@ public class NettySslTransportFactory extends NettyTcpTransportFactory {
     public String getName() {
         return "SSL";
     }
+
+    @Override
+    public boolean isSecure() {
+        return true;
+    }
 }

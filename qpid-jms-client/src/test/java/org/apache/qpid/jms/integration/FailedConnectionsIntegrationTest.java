@@ -20,10 +20,12 @@ import static org.apache.qpid.jms.provider.amqp.AmqpSupport.NETWORK_HOST;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.OPEN_HOSTNAME;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.PORT;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -171,9 +173,13 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
             } catch (JMSException jmsex) {
                 assertTrue(jmsex.getCause() instanceof ProviderRedirectedException);
                 ProviderRedirectedException redirectEx = (ProviderRedirectedException) jmsex.getCause();
-                assertEquals("vhost", redirectEx.getHostname());
-                assertEquals("127.0.0.1", redirectEx.getNetworkHost());
-                assertEquals(5672, redirectEx.getPort());
+
+                URI redirectionURI = redirectEx.getRedirectionURI();
+
+                assertNotNull(redirectionURI);
+                assertTrue("vhost", redirectionURI.getQuery().contains("amqp.vhost=vhost"));
+                assertEquals("127.0.0.1", redirectionURI.getHost());
+                assertEquals(5672, redirectionURI.getPort());
             } catch (Exception ex) {
                 fail("Should have thrown JMSException: " + ex);
             }

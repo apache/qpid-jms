@@ -258,4 +258,8 @@ class TestAmqpPeerRunner implements Runnable
     public boolean isSendSaslHeaderPreEmptively() {
         return _sendSaslHeaderPreEmptively;
     }
+
+    public boolean isSSL() {
+        return _serverSocket instanceof SSLServerSocket;
+    }
 }

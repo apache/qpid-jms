@@ -18,6 +18,7 @@ package org.apache.qpid.jms.provider;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
@@ -154,5 +155,16 @@ public interface ProviderListener {
      *        the exception object that is being reported to the listener.
      */
     void onProviderException(Exception cause);
+
+    /**
+     * Called when additional remote peers are discovered.
+     * <p>
+     * If new peers are discovered their URIs are provided to listeners to allow for
+     * failover or update of client connection information.
+     *
+     * @param remotes
+     * 		A list of remote peers that have been discovered.
+     */
+    void onRemoteDiscovery(List<URI> remotes);
 
 }

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -121,6 +122,8 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     private int maxReconnectAttempts = DEFAULT_MAX_RECONNECT_ATTEMPTS;
     private int startupMaxReconnectAttempts = DEFAULT_STARTUP_MAX_RECONNECT_ATTEMPTS;
     private int warnAfterReconnectAttempts = DEFAULT_WARN_AFTER_RECONNECT_ATTEMPTS;
+
+    private FailoverServerListBehaviour amqpOpenServerListBehaviour = FailoverServerListBehaviour.REPLACE;
 
     public FailoverProvider(Map<String, String> nestedOptions) {
         this(null, nestedOptions);
@@ -556,7 +559,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 if (cause instanceof ProviderRedirectedException) {
                     ProviderRedirectedException redirect = (ProviderRedirectedException) cause;
                     try {
-                        uris.addFirst(buildRedirectURI(failedURI, redirect));
+                        uris.addFirst(redirect.getRedirectionURI());
                     } catch (Exception error) {
                         LOG.warn("Could not construct redirection URI from remote provided information");
                     }
@@ -785,17 +788,6 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         }
     }
 
-    protected URI buildRedirectURI(URI sourceURI, ProviderRedirectedException redirect) throws Exception {
-        String scheme = sourceURI.getScheme();
-        String host = redirect.getNetworkHost();
-        String path = redirect.getPath();
-        int port = redirect.getPort();
-
-        URI result = new URI(scheme, null, host, port, path, null, null);
-
-        return result;
-    }
-
     //--------------- DefaultProviderListener overrides ----------------------//
 
     @Override
@@ -852,6 +844,57 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 if (!closingConnection.get() && !closed.get() && !failed.get()) {
                     LOG.debug("Failover: the provider reports an async error: {}", ex.getMessage());
                     listener.onProviderException(ex);
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onRemoteDiscovery(final List<URI> discovered) {
+        if (closingConnection.get() || closed.get() || failed.get()) {
+            return;
+        }
+
+        if (discovered == null || discovered.isEmpty()) {
+            return;
+        }
+
+        serializer.execute(new Runnable() {
+            @Override
+            public void run() {
+                if (!closingConnection.get() && !closed.get() && !failed.get()) {
+
+                    List<URI> newRemotes = new ArrayList<URI>(discovered);
+                    switch (amqpOpenServerListBehaviour) {
+                        case ADD:
+                            try {
+                                uris.addAll(discovered);
+                            } catch (Throwable err) {
+                                LOG.warn("Error while attempting to add discovered URIs: {}", discovered);
+                            }
+                            break;
+                        case REPLACE:
+                            // The current server is assumed not to be in the list of updated remote
+                            // as it is meant for the failover nodes. The pool will de-dup if it is.
+                            newRemotes.add(0, connectedURI);
+                            try {
+                                uris.replaceAll(newRemotes);
+                            } catch (Throwable err) {
+                                LOG.warn("Error while attempting to add discovered URIs: {}", discovered);
+                            }
+                            break;
+                        case IGNORE:
+                            // Do Nothing
+                            break;
+                        default:
+                            // Shouldnt get here, but do nothing if we do.
+                            break;
+                    }
+
+                    // Inform any listener that we've made a new discovery.
+                    if (listener != null) {
+                        listener.onRemoteDiscovery(discovered);
+                    }
                 }
             }
         });
@@ -997,6 +1040,14 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
     public long getRequestTimeout() {
         return this.requestTimeout;
+    }
+
+    public String getAmqpOpenServerListBehaviour() {
+        return amqpOpenServerListBehaviour.toString();
+    }
+
+    public void setAmqpOpenServerListBehaviour(String amqpOpenServerListBehaviour) {
+        this.amqpOpenServerListBehaviour = FailoverServerListBehaviour.valueOf(amqpOpenServerListBehaviour.toUpperCase(Locale.ENGLISH));
     }
 
     public Map<String, String> getNestedOptions() {
@@ -1216,4 +1267,8 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             super.onSuccess();
         }
     }
+
+    private static enum FailoverServerListBehaviour {
+        ADD, REPLACE, IGNORE
+    };
 }

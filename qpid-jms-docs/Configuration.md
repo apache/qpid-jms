@@ -198,6 +198,7 @@ These options apply to the behaviour of certain AMQP functionality.
 + **amqp.saslMechanisms** Which SASL mechanism(s) the client should allow selection of, if offered by the server and usable with the configured credentials. Comma separated if specifying more than 1 mechanism. Default is to allow selection from all the clients supported mechanisms, which are currently EXTERNAL, SCRAM-SHA-256, SCRAM-SHA-1, CRAM-MD5, PLAIN, and ANONYMOUS.
 + **amqp.maxFrameSize** The max-frame-size value in bytes that is advertised to the peer. Default is 1048576.
 + **amqp.drainTimeout** The time in milliseconds that the client will wait for a response from the remote when a consumer drain request is made. If no response is seen in the allotted timeout period the link will be considered failed and the associated consumer will be closed. Default is 60000.
++ **amqp.allowNonSecureRedirects** Controls whether an AMQP connection will allow for a redirect to an alternative host over a connection that is not secure when the existing connection is secure, e.g. redirecting an SSL connection to a raw TCP connection.  This value defaults to false.
 
 ### Failover Configuration options
 
@@ -222,6 +223,7 @@ The complete set of configuration options for failover is listed below:
 + **failover.startupMaxReconnectAttempts** For a client that has never connected to a remote peer before this option control how many attempts are made to connect before reporting the connection as failed.  The default is to use the value of maxReconnectAttempts.
 + **failover.warnAfterReconnectAttempts** Controls how often the client will log a message indicating that failover reconnection is being attempted.  The default is to log every 10 connection attempts.
 + **failover.randomize** When true the set of failover URIs is randomly shuffled prior to attempting to connect to one of them.  This can help to distribute client connections more evenly across multiple remote peers.  The default value is false.
++ **failover.amqpOpenServerListBehaviour** Controls how the failover transport behaves when the Open frame of the remote connection provides a list of failover hosts to the client.  This option accepts one of three values; REPLACE, ADD, or IGNORE (default is REPLACE).  If replacement is configured than all failover URIs other than the one for the current connection are replaced with those provided by the remote peer.  If ADD is configured then the URIs provided by the remote are added to the existing set of failover URIs.  If IGNORE is configured than any updates from the remote are dropped and no updates are made the the set of failover URIs.
 
 The failover URI also supports defining 'nested' options as a means of specifying AMQP and transport option values applicable to all the individual nested broker URI's, which can be useful to avoid repetition. This is accomplished using the same "transport." and "amqp." URI options outlined earlier for a non-failover broker URI but prefixed with *failover.nested.*. For example, to apply the same value for the *amqp.vhost* option to every broker connected to you might have a URI like:
 

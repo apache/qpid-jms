@@ -18,6 +18,7 @@ package org.apache.qpid.jms;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1367,6 +1368,26 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         // Report this to any registered exception listener, let the receiver
         // decide if it should be fatal.
         onAsyncException(cause);
+    }
+
+    @Override
+    public void onRemoteDiscovery(final List<URI> remotes) {
+        for (URI remote : remotes) {
+            LOG.trace("Discovered new remote at: {}", remote);
+        }
+
+        // Give listeners a chance to know what we've discovered.
+        if (!connectionListeners.isEmpty()) {
+            for (final JmsConnectionListener listener : connectionListeners) {
+                executor.submit(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        listener.onRemoteDiscovery(remotes);
+                    }
+                });
+            }
+        }
     }
 
     /**

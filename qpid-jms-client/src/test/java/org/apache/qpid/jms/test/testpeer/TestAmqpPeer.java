@@ -19,8 +19,8 @@
 package org.apache.qpid.jms.test.testpeer;
 
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DYNAMIC_NODE_LIFETIME_POLICY;
-import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SHARED;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.GLOBAL;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SHARED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
@@ -225,6 +225,11 @@ public class TestAmqpPeer implements AutoCloseable
     public Socket getClientSocket()
     {
         return _driverRunnable.getClientSocket();
+    }
+
+    public boolean isSSL()
+    {
+        return _driverRunnable.isSSL();
     }
 
     public int getAdvertisedIdleTimeout()

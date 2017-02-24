@@ -19,6 +19,7 @@ package org.apache.qpid.jms.provider.amqp;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -55,7 +56,7 @@ import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpClosedConnectionBuilder;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpConnectionBuilder;
-import org.apache.qpid.jms.transports.TransportFactory;
+import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.jms.util.ThreadPoolUtils;
@@ -66,7 +67,6 @@ import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Event;
 import org.apache.qpid.proton.engine.Event.Type;
 import org.apache.qpid.proton.engine.Sasl;
-import org.apache.qpid.proton.engine.Transport;
 import org.apache.qpid.proton.engine.impl.CollectorImpl;
 import org.apache.qpid.proton.engine.impl.ProtocolTracer;
 import org.apache.qpid.proton.engine.impl.TransportImpl;
@@ -106,8 +106,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private volatile ProviderListener listener;
     private AmqpConnection connection;
     private AmqpSaslAuthenticator authenticator;
-    private volatile org.apache.qpid.jms.transports.Transport transport;
-    private String transportType = AmqpProviderFactory.DEFAULT_TRANSPORT_TYPE;
+    private final Transport transport;
     private String vhost;
     private boolean traceFrames;
     private boolean traceBytes;
@@ -117,13 +116,16 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private int channelMax = DEFAULT_CHANNEL_MAX;
     private int idleTimeout = 60000;
     private int drainTimeout = 60000;
-    private long sessionOutoingWindow = -1; //Use proton default
+    private long sessionOutoingWindow = -1; // Use proton default
     private int maxFrameSize = DEFAULT_MAX_FRAME_SIZE;
+
+    private boolean allowNonSecureRedirects;
 
     private final URI remoteURI;
     private final AtomicBoolean closed = new AtomicBoolean();
     private ScheduledThreadPoolExecutor serializer;
-    private final Transport protonTransport = Transport.Factory.create();
+    private final org.apache.qpid.proton.engine.Transport protonTransport =
+        org.apache.qpid.proton.engine.Transport.Factory.create();
     private final Collector protonCollector = new CollectorImpl();
     private final Connection protonConnection = Connection.Factory.create();
 
@@ -135,9 +137,12 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
      *
      * @param remoteURI
      *        The URI of the AMQP broker this Provider instance will connect to.
+     * @param transport
+     * 		  The underlying Transport that will be used for wire level communications.
      */
-    public AmqpProvider(URI remoteURI) {
+    public AmqpProvider(URI remoteURI, Transport transport) {
         this.remoteURI = remoteURI;
+        this.transport = transport;
 
         serializer = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
 
@@ -184,7 +189,6 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
                     SSLContext sslContextOverride = connectionInfo.getSslContextOverride();
 
-                    transport = TransportFactory.create(getTransportType(), getRemoteURI());
                     transport.setTransportListener(AmqpProvider.this);
                     transport.connect(sslContextOverride);
 
@@ -1023,6 +1027,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         }
     }
 
+    public void fireRemotesDiscovered(List<URI> remotes) {
+        ProviderListener listener = this.listener;
+        if (listener != null) {
+            listener.onRemoteDiscovery(remotes);
+        }
+    }
+
     @Override
     public void addChildResource(AmqpResource resource) {
         if (resource instanceof AmqpConnection) {
@@ -1166,6 +1177,21 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         this.sessionOutoingWindow = sessionOutoingWindow;
     }
 
+    public boolean isAllowNonSecureRedirects() {
+        return allowNonSecureRedirects;
+    }
+
+    /**
+     * Should the AMQP connection allow a redirect or failover server update that redirects
+     * from a secure connection to an non-secure one (SSL to TCP).
+     *
+     * @param allowNonSecureRedirects
+     * 		the allowNonSecureRedirects value to apply to this AMQP connection.
+     */
+    public void setAllowNonSecureRedirects(boolean allowNonSecureRedirects) {
+        this.allowNonSecureRedirects = allowNonSecureRedirects;
+    }
+
     public long getCloseTimeout() {
         return connectionInfo != null ? connectionInfo.getCloseTimeout() : JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
     }
@@ -1195,12 +1221,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         this.channelMax = channelMax;
     }
 
-    String getTransportType() {
-        return transportType;
-    }
-
-    void setTransportType(String transportType) {
-        this.transportType = transportType;
+    public Transport getTransport() {
+        return transport;
     }
 
     @Override
@@ -1218,7 +1240,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         return remoteURI;
     }
 
-    public Transport getProtonTransport() {
+    public org.apache.qpid.proton.engine.Transport getProtonTransport() {
         return protonTransport;
     }
 

@@ -22,6 +22,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,46 +32,55 @@ import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.transport.AmqpError;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class AmqpSupportTest {
 
     @Test
-    public void testCreateRedirectionException() {
+    public void testCreateRedirectionException() throws URISyntaxException {
         ErrorCondition condition = new ErrorCondition();
+
+        AmqpProvider mockProvider = Mockito.mock(AmqpProvider.class);
+        Mockito.when(mockProvider.getRemoteURI()).thenReturn(new URI("amqp://localhost:5672"));
 
         Map<Symbol, Object> info = new HashMap<>();
         info.put(AmqpSupport.PORT, "5672");
         info.put(AmqpSupport.OPEN_HOSTNAME, "localhost.localdomain");
         info.put(AmqpSupport.NETWORK_HOST, "localhost");
         info.put(AmqpSupport.SCHEME, "amqp");
-        info.put(AmqpSupport.PATH, "websocket");
+        info.put(AmqpSupport.PATH, "/websocket");
 
         condition.setInfo(info);
 
         Symbol error = AmqpError.INTERNAL_ERROR;
         String message = "Failed to connect";
 
-        Exception result = AmqpSupport.createRedirectException(error, message, condition);
+        Exception result = AmqpSupport.createRedirectException(mockProvider, error, message, condition);
 
         assertNotNull(result);
         assertTrue(result instanceof ProviderRedirectedException);
 
         ProviderRedirectedException pre = (ProviderRedirectedException) result;
 
-        assertEquals(5672, pre.getPort());
-        assertEquals("localhost.localdomain", pre.getHostname());
-        assertEquals("localhost", pre.getNetworkHost());
-        assertEquals("amqp", pre.getScheme());
-        assertEquals("websocket", pre.getPath());
+        URI redirection = pre.getRedirectionURI();
+
+        assertEquals(5672, redirection.getPort());
+        assertTrue("localhost.localdomain", redirection.getQuery().contains("amqp.vhost=localhost.localdomain"));
+        assertEquals("localhost", redirection.getHost());
+        assertEquals("amqp", redirection.getScheme());
+        assertEquals("/websocket", redirection.getPath());
     }
 
     @Test
-    public void testCreateRedirectionExceptionWithNoRedirectInfo() {
+    public void testCreateRedirectionExceptionWithNoRedirectInfo() throws URISyntaxException {
+        AmqpProvider mockProvider = Mockito.mock(AmqpProvider.class);
+        Mockito.when(mockProvider.getRemoteURI()).thenReturn(new URI("amqp://localhost:5672"));
+
         ErrorCondition condition = new ErrorCondition();
         Symbol error = AmqpError.INTERNAL_ERROR;
         String message = "Failed to connect";
 
-        Exception result = AmqpSupport.createRedirectException(error, message, condition);
+        Exception result = AmqpSupport.createRedirectException(mockProvider, error, message, condition);
 
         assertNotNull(result);
         assertFalse(result instanceof ProviderRedirectedException);
@@ -77,7 +88,10 @@ public class AmqpSupportTest {
     }
 
     @Test
-    public void testCreateRedirectionExceptionWithNoNetworkHost() {
+    public void testCreateRedirectionExceptionWithNoNetworkHost() throws URISyntaxException {
+        AmqpProvider mockProvider = Mockito.mock(AmqpProvider.class);
+        Mockito.when(mockProvider.getRemoteURI()).thenReturn(new URI("amqp://localhost:5672"));
+
         ErrorCondition condition = new ErrorCondition();
 
         Map<Symbol, Object> info = new HashMap<>();
@@ -91,7 +105,7 @@ public class AmqpSupportTest {
         Symbol error = AmqpError.INTERNAL_ERROR;
         String message = "Failed to connect";
 
-        Exception result = AmqpSupport.createRedirectException(error, message, condition);
+        Exception result = AmqpSupport.createRedirectException(mockProvider, error, message, condition);
 
         assertNotNull(result);
         assertFalse(result instanceof ProviderRedirectedException);
@@ -99,7 +113,10 @@ public class AmqpSupportTest {
     }
 
     @Test
-    public void testCreateRedirectionExceptionWithEmptyNetworkHost() {
+    public void testCreateRedirectionExceptionWithEmptyNetworkHost() throws URISyntaxException {
+        AmqpProvider mockProvider = Mockito.mock(AmqpProvider.class);
+        Mockito.when(mockProvider.getRemoteURI()).thenReturn(new URI("amqp://localhost:5672"));
+
         ErrorCondition condition = new ErrorCondition();
 
         Map<Symbol, Object> info = new HashMap<>();
@@ -114,7 +131,7 @@ public class AmqpSupportTest {
         Symbol error = AmqpError.INTERNAL_ERROR;
         String message = "Failed to connect";
 
-        Exception result = AmqpSupport.createRedirectException(error, message, condition);
+        Exception result = AmqpSupport.createRedirectException(mockProvider, error, message, condition);
 
         assertNotNull(result);
         assertFalse(result instanceof ProviderRedirectedException);
@@ -122,7 +139,10 @@ public class AmqpSupportTest {
     }
 
     @Test
-    public void testCreateRedirectionExceptionWithInvalidPort() {
+    public void testCreateRedirectionExceptionWithInvalidPort() throws URISyntaxException {
+        AmqpProvider mockProvider = Mockito.mock(AmqpProvider.class);
+        Mockito.when(mockProvider.getRemoteURI()).thenReturn(new URI("amqp://localhost:5672"));
+
         ErrorCondition condition = new ErrorCondition();
 
         Map<Symbol, Object> info = new HashMap<>();
@@ -137,7 +157,7 @@ public class AmqpSupportTest {
         Symbol error = AmqpError.INTERNAL_ERROR;
         String message = "Failed to connect";
 
-        Exception result = AmqpSupport.createRedirectException(error, message, condition);
+        Exception result = AmqpSupport.createRedirectException(mockProvider, error, message, condition);
 
         assertNotNull(result);
         assertFalse(result instanceof ProviderRedirectedException);

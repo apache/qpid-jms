@@ -21,6 +21,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -405,8 +406,11 @@ public class URISupport {
     /**
      * Given a Key / Value mapping create and append a URI query value that represents the
      * mapped entries, return the newly updated URI that contains the value of the given URI and
-     * the appended query value. Each entry in the query string is prefixed by the supplied
-     * optionPrefix string.
+     * the appended query value.  Only values in the given options map that start with the provided
+     * prefix are appended to the provided URI, the prefix is stripped off before the insertion.
+     * <P>
+     * This method replaces the value of any matching query string options in the original URI with
+     * the value given in the provided query parameters map.
      *
      * @param uri
      *        The source URI that will have the Map entries appended as a URI query value.
@@ -422,18 +426,20 @@ public class URISupport {
      */
     public static URI applyParameters(URI uri, Map<String, String> queryParameters, String optionPrefix) throws URISyntaxException {
         if (queryParameters != null && !queryParameters.isEmpty()) {
-            StringBuffer newQuery = uri.getRawQuery() != null ? new StringBuffer(uri.getRawQuery()) : new StringBuffer();
+
+            Map<String, String> currentParameters = new LinkedHashMap<String, String>(parseParameters(uri));
+
+            // Replace any old values with the new value from the provided map.
             for (Map.Entry<String, String> param : queryParameters.entrySet()) {
                 if (param.getKey().startsWith(optionPrefix)) {
-                    if (newQuery.length() != 0) {
-                        newQuery.append('&');
-                    }
                     final String key = param.getKey().substring(optionPrefix.length());
-                    newQuery.append(key).append('=').append(param.getValue());
+                    currentParameters.put(key, param.getValue());
                 }
             }
-            uri = PropertyUtil.replaceQuery(uri, newQuery.toString());
+
+            uri = PropertyUtil.replaceQuery(uri, currentParameters);
         }
+
         return uri;
     }
 }

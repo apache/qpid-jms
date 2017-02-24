@@ -19,10 +19,12 @@ package org.apache.qpid.jms.provider.amqp;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.ANONYMOUS_RELAY;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.CONNECTION_OPEN_FAILED;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DELAYED_DELIVERY;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.FAILOVER_SERVER_LIST;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.QUEUE_PREFIX;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SHARED_SUBS;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.TOPIC_PREFIX;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -42,11 +44,13 @@ public class AmqpConnectionProperties {
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConnectionProperties.class);
 
     private final JmsConnectionInfo connectionInfo;
+    private final AmqpProvider provider;
 
     private boolean delayedDeliverySupported = false;
     private boolean anonymousRelaySupported = false;
     private boolean sharedSubsSupported = false;
     private boolean connectionOpenFailed = false;
+    private final List<AmqpRedirect> failoverServerList = new ArrayList<>();
 
     /**
      * Creates a new instance of this class with default values read from the
@@ -54,9 +58,12 @@ public class AmqpConnectionProperties {
      *
      * @param connectionInfo
      *        the JmsConnectionInfo object used to populate defaults.
+     * @param provider
+     *        the provider instance associated with this object
      */
-    public AmqpConnectionProperties(JmsConnectionInfo connectionInfo) {
+    public AmqpConnectionProperties(JmsConnectionInfo connectionInfo, AmqpProvider provider) {
         this.connectionInfo = connectionInfo;
+        this.provider = provider;
     }
 
     /**
@@ -92,6 +99,7 @@ public class AmqpConnectionProperties {
         }
     }
 
+    @SuppressWarnings("unchecked")
     protected void processProperties(Map<Symbol, Object> properties) {
         if (properties.containsKey(QUEUE_PREFIX)) {
             Object o = properties.get(QUEUE_PREFIX);
@@ -113,6 +121,31 @@ public class AmqpConnectionProperties {
             LOG.trace("Remote sent Connection Establishment Failed marker.");
             connectionOpenFailed = true;
         }
+
+        if (properties.containsKey(FAILOVER_SERVER_LIST)) {
+            LOG.trace("Remote sent Failover Server List.");
+            Object o = properties.get(FAILOVER_SERVER_LIST);
+            if (o instanceof List) {
+                for (Map<Symbol, Object> redirection : (List<Map<Symbol, Object>>) o) {
+                    try {
+                        failoverServerList.add(new AmqpRedirect(redirection, provider).validate());
+                    } catch (Exception ex) {
+                        LOG.debug("Invalid redirection value given in failover server list: {}", ex.getMessage());
+                    }
+                }
+
+                LOG.trace("Failover Server List: {}", failoverServerList);
+            }
+        }
+    }
+
+    /**
+     * Get any advertised failover server list details.
+     *
+     * @return return the advertised failover server list details, list is empty if no server list given.
+     */
+    public List<AmqpRedirect> getFailoverServerList() {
+        return failoverServerList;
     }
 
     /**

@@ -457,9 +457,12 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             assertTrue(asyncError.get().getCause() instanceof ProviderRedirectedException);
 
             ProviderRedirectedException redirect = (ProviderRedirectedException) asyncError.get().getCause();
-            assertEquals(redirectVhost, redirect.getHostname());
-            assertEquals(redirectNetworkHost, redirect.getNetworkHost());
-            assertEquals(redirectPort, redirect.getPort());
+            URI redirectionURI = redirect.getRedirectionURI();
+
+            assertNotNull(redirectionURI);
+            assertTrue(redirectVhost, redirectionURI.getQuery().contains("amqp.vhost=" + redirectVhost));
+            assertEquals(redirectNetworkHost, redirectionURI.getHost());
+            assertEquals(redirectPort, redirectionURI.getPort());
 
             testPeer.waitForAllHandlersToComplete(1000);
 

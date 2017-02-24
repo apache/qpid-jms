@@ -80,7 +80,8 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
                 } else if (state instanceof Rejected) {
                     LOG.debug("Last TX request failed: {}", txId);
                     Rejected rejected = (Rejected) state;
-                    Exception cause = AmqpSupport.convertToException(getEndpoint(), rejected.getError());
+                    Exception cause = AmqpSupport.convertToException(
+                        getParent().getProvider(), getEndpoint(), rejected.getError());
                     JMSException failureCause = null;
                     if (txId.getProviderContext().equals(COMMIT_MARKER)) {
                         failureCause = new TransactionRolledBackException(cause.getMessage());

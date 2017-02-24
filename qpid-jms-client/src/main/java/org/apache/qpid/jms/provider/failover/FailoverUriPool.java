@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -167,6 +168,25 @@ public class FailoverUriPool {
 
     /**
      * Adds a new URI to the pool if not already contained within.  The URI will have
+     * any nest options that have been configured added to its existing set of options.
+     *
+     * @param uris
+     *        The new list of URIs to add to the pool.
+     */
+    public void addAll(List<URI> uris) {
+        if (uris == null || uris.isEmpty()) {
+            return;
+        }
+
+        synchronized (uris) {
+            for (URI uri : uris) {
+                add(uri);
+            }
+        }
+    }
+
+    /**
+     * Adds a new URI to the pool if not already contained within.  The URI will have
      * any nested options that have been configured added to its existing set of options.
      *
      * The URI is added to the head of the pooled URIs and will be the next value that
@@ -220,6 +240,41 @@ public class FailoverUriPool {
     }
 
     /**
+     * Removes all currently configured URIs from the pool, no new URIs will be
+     * served from this pool until new ones are added.
+     */
+    public void removeAll() {
+        synchronized (uris) {
+            uris.clear();
+        }
+    }
+
+    /**
+     * Removes all currently configured URIs from the pool and replaces them with
+     * the new set given.
+     *
+     * @param replacements
+     * 		The new set of failover URIs to serve from this pool.
+     */
+    public void replaceAll(List<URI> replacements) {
+        synchronized (uris) {
+            uris.clear();
+            addAll(replacements);
+        }
+    }
+
+    /**
+     * Gets the current list of URIs. The returned list is a copy.
+     *
+     * @return a copy of the current list of URIs in the pool.
+     */
+    public List<URI> getList() {
+        synchronized (uris) {
+            return new ArrayList<>(uris);
+        }
+    }
+
+    /**
      * Returns the currently set value for nested options which will be added to each
      * URI that is returned from the pool.
      *
@@ -259,7 +314,7 @@ public class FailoverUriPool {
                 if (firstAddr.equals(secondAddr)) {
                     result = true;
                 }
-            } catch(IOException e) {
+            } catch (IOException e) {
                 if (firstAddr == null) {
                     LOG.error("Failed to Lookup INetAddress for URI[ " + first + " ] : " + e);
                 } else {

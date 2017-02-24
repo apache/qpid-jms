@@ -18,6 +18,7 @@ package org.apache.qpid.jms.provider;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 
 import javax.jms.JMSException;
 
@@ -202,6 +203,11 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
     @Override
     public void onProviderException(Exception cause) {
         listener.onProviderException(cause);
+    }
+
+    @Override
+    public void onRemoteDiscovery(List<URI> remotes) {
+        listener.onRemoteDiscovery(remotes);
     }
 
     /**

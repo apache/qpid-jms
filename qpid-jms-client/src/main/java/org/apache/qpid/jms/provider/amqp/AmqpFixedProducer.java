@@ -237,7 +237,7 @@ public class AmqpFixedProducer extends AmqpProducer {
                     remoteError = getEndpoint().getRemoteCondition();
                 }
 
-                deliveryError = AmqpSupport.convertToException(getEndpoint(), remoteError);
+                deliveryError = AmqpSupport.convertToException(getParent().getProvider(), getEndpoint(), remoteError);
             } else if (outcome instanceof Released) {
                 LOG.trace("Outcome of delivery was released: {}", delivery);
                 deliveryError = new JMSException("Delivery failed: released by receiver");

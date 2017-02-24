@@ -18,7 +18,10 @@ package org.apache.qpid.jms.provider.amqp.builders;
 
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SOLE_CONNECTION_CAPABILITY;
 
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.jms.Session;
@@ -28,6 +31,7 @@ import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpProvider;
+import org.apache.qpid.jms.provider.amqp.AmqpRedirect;
 import org.apache.qpid.jms.provider.amqp.AmqpSupport;
 import org.apache.qpid.jms.util.MetaDataSupport;
 import org.apache.qpid.proton.amqp.Symbol;
@@ -129,6 +133,23 @@ public class AmqpConnectionBuilder extends AmqpResourceBuilder<AmqpConnection, A
         // be determined, this allows us to check for close pending.
         getResource().getProperties().initialize(
             getEndpoint().getRemoteOfferedCapabilities(), getEndpoint().getRemoteProperties());
+
+        // If there are failover servers in the open then we signal that to the listeners
+        List<AmqpRedirect> failoverList = getResource().getProperties().getFailoverServerList();
+        if (!failoverList.isEmpty()) {
+            List<URI> failoverURIs = new ArrayList<>();
+            for (AmqpRedirect redirect : failoverList) {
+                try {
+                    failoverURIs.add(redirect.toURI());
+                } catch (Exception ex) {
+                    LOG.trace("Error while creating URI from failover server: {}", redirect);
+                }
+            }
+
+            if (!failoverURIs.isEmpty()) {
+                getResource().getProvider().fireRemotesDiscovered(failoverURIs);
+            }
+        }
     }
 
     @Override

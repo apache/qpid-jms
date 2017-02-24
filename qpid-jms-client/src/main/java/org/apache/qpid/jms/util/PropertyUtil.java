@@ -27,7 +27,6 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -201,7 +200,7 @@ public class PropertyUtil {
      */
     public static Map<String, String> parseQuery(String queryString) throws Exception {
         if (queryString != null && !queryString.isEmpty()) {
-            Map<String, String> rc = new HashMap<String, String>();
+            Map<String, String> rc = new LinkedHashMap<String, String>();
             String[] parameters = queryString.split("&");
             for (int i = 0; i < parameters.length; i++) {
                 int p = parameters[i].indexOf("=");
@@ -236,7 +235,7 @@ public class PropertyUtil {
             throw new IllegalArgumentException("The given properties object was null.");
         }
 
-        HashMap<String, String> rc = new HashMap<String, String>(properties.size());
+        Map<String, String> rc = new LinkedHashMap<String, String>(properties.size());
 
         for (Iterator<Entry<String, String>> iter = properties.entrySet().iterator(); iter.hasNext();) {
             Entry<String, String> entry = iter.next();
@@ -269,7 +268,7 @@ public class PropertyUtil {
             throw new IllegalArgumentException("Given Properties object cannot be null");
         }
 
-        Map<String, String> unmatched = new HashMap<String, String>();
+        Map<String, String> unmatched = new LinkedHashMap<String, String>();
 
         for (Map.Entry<String, String> entry : properties.entrySet()) {
             if (!setProperty(target, entry.getKey(), entry.getValue())) {
@@ -299,7 +298,7 @@ public class PropertyUtil {
             throw new IllegalArgumentException("Given Properties object cannot be null");
         }
 
-        Map<String, Object> unmatched = new HashMap<String, Object>();
+        Map<String, Object> unmatched = new LinkedHashMap<String, Object>();
 
         for (Map.Entry<Object, Object> entry : properties.entrySet()) {
             if (!setProperty(target, (String) entry.getKey(), entry.getValue())) {

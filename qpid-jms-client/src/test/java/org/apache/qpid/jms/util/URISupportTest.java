@@ -272,14 +272,29 @@ public class URISupportTest {
         parameters.put("t.proxyHost", "localhost");
         parameters.put("t.proxyPort", "80");
 
+        uri = URISupport.applyParameters(uri, parameters, "t.");
+        Map<String,String> appliedParameters = URISupport.parseParameters(uri);
+        assertEquals("all params applied with no prefix", 3, appliedParameters.size());
+        verifyParams(appliedParameters);
+    }
+
+    @Test
+    public void testApplyParametersOverwritesOriginalParameters() throws Exception {
+        URI uri = new URI("http://0.0.0.0:61616?proxyHost=host&proxyPort=21&timeout=1000");
+
+        Map<String,String> parameters = new HashMap<String, String>();
+        parameters.put("proxyHost", "localhost");
+        parameters.put("proxyPort", "80");
+
         uri = URISupport.applyParameters(uri, parameters);
         Map<String,String> appliedParameters = URISupport.parseParameters(uri);
         assertEquals("all params applied with no prefix", 3, appliedParameters.size());
+        verifyParams(appliedParameters);
     }
 
     private void verifyParams(Map<String,String> parameters) {
-        assertEquals(parameters.get("proxyHost"), "localhost");
-        assertEquals(parameters.get("proxyPort"), "80");
+        assertEquals("localhost", parameters.get("proxyHost"));
+        assertEquals("80", parameters.get("proxyPort"));
     }
 
     //---- isCompositeURI ----------------------------------------------------//

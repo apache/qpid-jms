@@ -29,6 +29,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -299,6 +300,33 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
     }
 
     @Test
+    public void testAddAllHandlesNulls() throws URISyntaxException {
+        FailoverUriPool pool = new FailoverUriPool(uris, null);
+        pool.setRandomize(false);
+        pool.addAll(null);
+
+        assertEquals(uris.size(), pool.size());
+    }
+
+    @Test
+    public void testAddAllHandlesEmpty() throws URISyntaxException {
+        FailoverUriPool pool = new FailoverUriPool(uris, null);
+        pool.setRandomize(false);
+        pool.addAll(Collections.emptyList());
+
+        assertEquals(uris.size(), pool.size());
+    }
+
+    @Test
+    public void testAddAll() throws URISyntaxException {
+        FailoverUriPool pool = new FailoverUriPool(null, null);
+        pool.setRandomize(false);
+        pool.addAll(uris);
+
+        assertEquals(uris.size(), pool.size());
+    }
+
+    @Test
     public void testRemoveURIFromPool() throws URISyntaxException {
         FailoverUriPool pool = new FailoverUriPool(uris, null);
         pool.setRandomize(false);
@@ -525,5 +553,17 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
         }
 
         return resolutionWorks;
+    }
+
+    @Test
+    public void testRemoveAll() throws URISyntaxException {
+        FailoverUriPool pool = new FailoverUriPool(uris, null);
+        assertEquals(uris.size(), pool.size());
+
+        pool.removeAll();
+        assertTrue(pool.isEmpty());
+        assertEquals(0, pool.size());
+
+        pool.removeAll();
     }
 }

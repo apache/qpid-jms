@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.provider;
 
 import java.io.IOException;
+import java.net.URI;
 
 /**
  * {@link IOException} derivative that defines that the remote peer has requested that this
@@ -26,54 +27,18 @@ public class ProviderRedirectedException extends IOException {
 
     private static final long serialVersionUID = 5872211116061710369L;
 
-    private final String hostname;
-    private final String networkHost;
-    private final String scheme;
-    private final String path;
-    private final int port;
+    private final URI redirect;
 
-    public ProviderRedirectedException(String reason, String scheme, String hostname, String networkHost, int port, String path) {
+    public ProviderRedirectedException(String reason, URI redirect) {
         super(reason);
 
-        this.scheme = scheme;
-        this.hostname = hostname;
-        this.networkHost = networkHost;
-        this.port = port;
-        this.path = path;
+        this.redirect = redirect;
     }
 
     /**
-     * @return the host name of the container being redirected to.
+     * @return the URI that represents the redirection.
      */
-    public String getHostname() {
-        return hostname;
-    }
-
-    /**
-     * @return the DNS host name or IP address of the peer this connection is being redirected to.
-     */
-    public String getNetworkHost() {
-        return networkHost;
-    }
-
-    /**
-     * @return the port number on the peer this connection is being redirected to.
-     */
-    public int getPort() {
-        return port;
-    }
-
-    /**
-     * @return the scheme that the remote indicated the redirect connection should use.
-     */
-    public String getScheme() {
-        return scheme;
-    }
-
-    /**
-     * @return the path that the remote indicated should be path of the redirect URI.
-     */
-    public String getPath() {
-        return path;
+    public URI getRedirectionURI() {
+        return redirect;
     }
 }

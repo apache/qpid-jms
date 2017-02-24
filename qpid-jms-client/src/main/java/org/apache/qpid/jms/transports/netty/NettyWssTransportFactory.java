@@ -33,4 +33,9 @@ public class NettyWssTransportFactory extends NettyWsTransportFactory {
     public String getName() {
         return "WSS";
     }
+
+    @Override
+    public boolean isSecure() {
+        return true;
+    }
 }

@@ -51,6 +51,9 @@ public class AmqpSupport {
     public static final Symbol INVALID_FIELD = Symbol.valueOf("invalid-field");
     public static final Symbol CONTAINER_ID = Symbol.valueOf("container-id");
 
+    // Symbols used to announce failover server list (in addition to redirect symbols below)
+    public static final Symbol FAILOVER_SERVER_LIST = Symbol.valueOf("failover-server-list");
+
     // Symbols used to announce connection redirect ErrorCondition 'info'
     public static final Symbol PATH = Symbol.valueOf("path");
     public static final Symbol SCHEME = Symbol.valueOf("scheme");
@@ -101,6 +104,8 @@ public class AmqpSupport {
      * Given an ErrorCondition instance create a new Exception that best matches
      * the error type.
      *
+     * @param provider
+     * 		the AMQP provider instance that originates this exception
      * @param endpoint
      *      The target of the error.
      * @param errorCondition
@@ -108,14 +113,16 @@ public class AmqpSupport {
      *
      * @return a new Exception instance that best matches the ErrorCondition value.
      */
-    public static Exception convertToException(Endpoint endpoint, ErrorCondition errorCondition) {
-        return convertToException(endpoint, errorCondition, null);
+    public static Exception convertToException(AmqpProvider provider, Endpoint endpoint, ErrorCondition errorCondition) {
+        return convertToException(provider, endpoint, errorCondition, null);
     }
 
     /**
      * Given an ErrorCondition instance create a new Exception that best matches
      * the error type.
      *
+     * @param provider
+     * 		the AMQP provider instance that originates this exception
      * @param endpoint
      *      The target of the error.
      * @param errorCondition
@@ -125,7 +132,7 @@ public class AmqpSupport {
      *
      * @return a new Exception instance that best matches the ErrorCondition value.
      */
-    public static Exception convertToException(Endpoint endpoint, ErrorCondition errorCondition, Exception defaultException) {
+    public static Exception convertToException(AmqpProvider provider, Endpoint endpoint, ErrorCondition errorCondition, Exception defaultException) {
         Exception remoteError = defaultException;
 
         if (errorCondition != null && errorCondition.getCondition() != null) {
@@ -145,7 +152,7 @@ public class AmqpSupport {
             } else if (error.equals(TransactionErrors.TRANSACTION_ROLLBACK)) {
                 remoteError = new TransactionRolledBackException(message);
             } else if (error.equals(ConnectionError.REDIRECT)) {
-                remoteError = createRedirectException(error, message, errorCondition);
+                remoteError = createRedirectException(provider, error, message, errorCondition);
             } else if (error.equals(AmqpError.INVALID_FIELD)) {
                 Map<?, ?> info = errorCondition.getInfo();
                 if (info != null && CONTAINER_ID.equals(info.get(INVALID_FIELD))) {
@@ -192,6 +199,8 @@ public class AmqpSupport {
      * When a redirect type exception is received this method is called to create the
      * appropriate redirect exception type containing the error details needed.
      *
+     * @param provider
+     * 		  the AMQP provider instance that originates this exception
      * @param error
      *        the Symbol that defines the redirection error type.
      * @param message
@@ -201,32 +210,20 @@ public class AmqpSupport {
      *
      * @return an Exception that captures the details of the redirection error.
      */
-    public static Exception createRedirectException(Symbol error, String message, ErrorCondition condition) {
+    public static Exception createRedirectException(AmqpProvider provider, Symbol error, String message, ErrorCondition condition) {
         Exception result = null;
         Map<?, ?> info = condition.getInfo();
 
         if (info == null) {
             result = new IOException(message + " : Redirection information not set.");
         } else {
-            String hostname = (String) info.get(OPEN_HOSTNAME);
-            String path = (String) info.get(PATH);
-            String scheme = (String) info.get(SCHEME);
+            @SuppressWarnings("unchecked")
+            AmqpRedirect redirect = new AmqpRedirect((Map<Symbol, Object>) info, provider);
 
-            String networkHost = (String) info.get(NETWORK_HOST);
-            int port = 0;
-
-            if (networkHost == null || networkHost.isEmpty()) {
-                result = new IOException(message + " : Redirection information not set.");
-            } else {
-                try {
-                    port = Integer.parseInt(info.get(PORT).toString());
-                } catch (Exception ex) {
-                    result = new IOException(message + " : Redirection information not set.");
-                }
-            }
-
-            if (result == null) {
-                result = new ProviderRedirectedException(message, scheme, hostname, networkHost, port, path);
+            try {
+                result = new ProviderRedirectedException(message, redirect.validate().toURI());
+            } catch (Exception ex) {
+                result = new IOException(message + " : " + ex.getMessage());
             }
         }
 

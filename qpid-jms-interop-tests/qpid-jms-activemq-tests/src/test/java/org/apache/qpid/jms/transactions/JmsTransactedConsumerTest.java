@@ -372,6 +372,10 @@ public class JmsTransactedConsumerTest extends AmqpTestSupport {
             @Override
             public void onProducerClosed(MessageProducer producer, Throwable cause) {
             }
+
+            @Override
+            public void onRemoteDiscovery(List<URI> remotes) {
+            }
         });
 
         MessageProducer pr = session.createProducer(queue);

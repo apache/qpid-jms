@@ -48,7 +48,7 @@ public abstract class ProviderFactory {
     public abstract Provider createProvider(URI remoteURI) throws Exception;
 
     /**
-     * @return the name of this JMS Provider.
+     * @return the name of this Provider.
      */
     public abstract String getName();
 
@@ -92,8 +92,28 @@ public abstract class ProviderFactory {
      * @throws IOException if an error occurs while locating the factory.
      */
     public static ProviderFactory findProviderFactory(URI location) throws IOException {
-        String scheme = location.getScheme();
-        if (scheme == null) {
+        if (location == null) {
+            throw new IOException("No Provider location specified.");
+        }
+
+        return findProviderFactory(location.getScheme());
+    }
+
+    /**
+     * Searches for a ProviderFactory by using the scheme given.
+     *
+     * The search first checks the local cache of provider factories before moving on
+     * to search in the class path.
+     *
+     * @param scheme
+     *        The URI scheme that describes the desired factory.
+     *
+     * @return a provider factory instance matching the scheme.
+     *
+     * @throws IOException if an error occurs while locating the factory.
+     */
+    public static ProviderFactory findProviderFactory(String scheme) throws IOException {
+        if (scheme == null || scheme.isEmpty()) {
             throw new IOException("No Provider scheme specified.");
         }
 

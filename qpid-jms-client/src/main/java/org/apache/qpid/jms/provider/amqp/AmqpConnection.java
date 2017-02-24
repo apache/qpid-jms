@@ -66,7 +66,7 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
         this.amqpMessageFactory = new AmqpJmsMessageFactory(this);
 
         // Create connection properties initialized with defaults from the JmsConnectionInfo
-        this.properties = new AmqpConnectionProperties(info);
+        this.properties = new AmqpConnectionProperties(info, provider);
     }
 
     public void createSession(JmsSessionInfo sessionInfo, AsyncResult request) {

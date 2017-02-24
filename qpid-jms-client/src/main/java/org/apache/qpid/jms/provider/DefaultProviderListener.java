@@ -18,6 +18,7 @@ package org.apache.qpid.jms.provider;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
@@ -70,5 +71,9 @@ public class DefaultProviderListener implements ProviderListener {
 
     @Override
     public void onProviderException(Exception cause) {
+    }
+
+    @Override
+    public void onRemoteDiscovery(List<URI> remotes) {
     }
 }

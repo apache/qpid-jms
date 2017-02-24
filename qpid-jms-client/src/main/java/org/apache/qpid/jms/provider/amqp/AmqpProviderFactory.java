@@ -19,8 +19,9 @@ package org.apache.qpid.jms.provider.amqp;
 import java.net.URI;
 import java.util.Map;
 
-import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderFactory;
+import org.apache.qpid.jms.transports.Transport;
+import org.apache.qpid.jms.transports.TransportFactory;
 import org.apache.qpid.jms.util.PropertyUtil;
 
 /**
@@ -28,21 +29,22 @@ import org.apache.qpid.jms.util.PropertyUtil;
  */
 public class AmqpProviderFactory extends ProviderFactory {
 
-    public static final String DEFAULT_TRANSPORT_TYPE = "tcp";
+    public static final String DEFAULT_TRANSPORT_SCHEME = "tcp";
+    public static final String DEFAULT_PROVIDER_SCHEME = "amqp";
 
-    private String transportType = DEFAULT_TRANSPORT_TYPE;
+    private String transportScheme = DEFAULT_TRANSPORT_SCHEME;
+    private String providerScheme = DEFAULT_PROVIDER_SCHEME;
 
     @Override
-    public Provider createProvider(URI remoteURI) throws Exception {
+    public AmqpProvider createProvider(URI remoteURI) throws Exception {
 
         Map<String, String> map = PropertyUtil.parseQuery(remoteURI.getQuery());
         Map<String, String> providerOptions = PropertyUtil.filterProperties(map, "amqp.");
 
-        remoteURI = PropertyUtil.replaceQuery(remoteURI, map);
+        // Clear off any amqp.X values from the transport before creation.
+        Transport transport = TransportFactory.create(getTransportScheme(), PropertyUtil.replaceQuery(remoteURI, map));
 
-        AmqpProvider result = new AmqpProvider(remoteURI);
-
-        result.setTransportType(getTransportType());
+        AmqpProvider result = new AmqpProvider(remoteURI, transport);
 
         Map<String, String> unused = PropertyUtil.setProperties(result, providerOptions);
         if (!unused.isEmpty()) {
@@ -62,18 +64,27 @@ public class AmqpProviderFactory extends ProviderFactory {
         return "AMQP";
     }
 
-    /**
-     * @return the transport type used for this provider factory such as 'tcp' or 'ssl'
-     */
-    public String getTransportType() {
-        return transportType;
+    public String getTransportScheme() {
+        return transportScheme;
     }
 
     /**
-     * @param transportType
+     * @param transportScheme
      *        the transport type name to use when creating a new provider.
      */
-    public void setTransportType(String transportType) {
-        this.transportType = transportType;
+    public void setTransportScheme(String transportScheme) {
+        this.transportScheme = transportScheme;
+    }
+
+    public String getProviderScheme() {
+        return providerScheme;
+    }
+
+    /**
+     * @param providerScheme
+     * 		the providerScheme to use to identify the AMQP provider
+     */
+    public void setProviderScheme(String providerScheme) {
+        this.providerScheme = providerScheme;
     }
 }

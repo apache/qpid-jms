@@ -217,7 +217,7 @@ public class NettyTcpToMockServerTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test(timeout = 20 * 1000)
     public void testConnectToWSServerWhenRedirectedWithNewPath() throws Exception {
         try (NettySimpleAmqpServer primary = createWSServer(createServerOptions());
              NettySimpleAmqpServer redirect = createWSServer(createServerOptions())) {
@@ -314,7 +314,7 @@ public class NettyTcpToMockServerTest extends QpidJmsTestCase {
     protected URI createFailoverURI(NettyServer server) throws Exception {
         URI serverURI = createConnectionURI(server, null);
 
-        String failoverURI = "failover:(" + serverURI.toString() + ")";
+        String failoverURI = "failover:(" + serverURI.toString() + "?amqp.vhost=localhost)?failover.maxReconnectAttempts=3";
 
         return new URI(failoverURI);
     }

@@ -21,6 +21,7 @@ import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
 import java.net.URI;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -233,5 +234,9 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
 
     @Override
     public void onProducerClosed(MessageProducer producer, Throwable cause) {
+    }
+
+    @Override
+    public void onRemoteDiscovery(List<URI> remotes) {
     }
 }

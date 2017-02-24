@@ -259,7 +259,7 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
         if (isAwaitingClose()) {
             closeResource(provider, null, true); // Close was expected so ignore any endpoint errors.
         } else {
-            closeResource(provider, AmqpSupport.convertToException(getEndpoint(), getEndpoint().getRemoteCondition()), true);
+            closeResource(provider, AmqpSupport.convertToException(provider, getEndpoint(), getEndpoint().getRemoteCondition()), true);
         }
     }
 

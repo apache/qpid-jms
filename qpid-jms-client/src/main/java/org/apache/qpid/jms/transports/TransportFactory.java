@@ -100,6 +100,13 @@ public abstract class TransportFactory {
     public abstract String getName();
 
     /**
+     * @return true if the Transport that this factory provides uses a secure channel.
+     */
+    public boolean isSecure() {
+        return false;
+    }
+
+    /**
      * Static create method that performs the TransportFactory search and handles the
      * configuration and setup.
      *

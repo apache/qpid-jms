@@ -321,6 +321,10 @@ public class FailoverUriPoolTest extends QpidJmsTestCase {
     public void testAddAll() throws URISyntaxException {
         FailoverUriPool pool = new FailoverUriPool(null, null);
         pool.setRandomize(false);
+
+        assertEquals(0, pool.size());
+        assertFalse(uris.isEmpty());
+
         pool.addAll(uris);
 
         assertEquals(uris.size(), pool.size());

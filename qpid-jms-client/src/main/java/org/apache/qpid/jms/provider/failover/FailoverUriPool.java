@@ -167,19 +167,19 @@ public class FailoverUriPool {
     }
 
     /**
-     * Adds a new URI to the pool if not already contained within.  The URI will have
-     * any nest options that have been configured added to its existing set of options.
+     * Adds a list of new URIs to the pool if not already contained within.  The URIs will have
+     * any nest options that have been configured added to their existing set of options.
      *
-     * @param uris
+     * @param additions
      *        The new list of URIs to add to the pool.
      */
-    public void addAll(List<URI> uris) {
-        if (uris == null || uris.isEmpty()) {
+    public void addAll(List<URI> additions) {
+        if (additions == null || additions.isEmpty()) {
             return;
         }
 
         synchronized (uris) {
-            for (URI uri : uris) {
+            for (URI uri : additions) {
                 add(uri);
             }
         }

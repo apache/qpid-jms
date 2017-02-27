@@ -476,7 +476,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
 
             assertFailoverURIList(connection, afterOpenFailoverURIs);
 
-            // Verify the client fails over to the advertised backup, and uses the correct AMQP hostname when doing so
+            // Verify the client fails over to the advertised backup
             backupPeer.expectSaslAnonymous();
             backupPeer.expectOpen();
             backupPeer.expectBegin();
@@ -586,8 +586,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
 
             assertFailoverURIList(connection, afterOpenFailoverURIs);
 
-            // Verify the client fails over to the advertised backup, and uses
-            // the correct AMQP hostname when doing so
+            // Verify the client fails over to the advertised backup
             backupPeer.expectSaslAnonymous();
             backupPeer.expectOpen();
             backupPeer.expectBegin();
@@ -698,8 +697,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
 
             assertFailoverURIList(connection, afterOpenFailoverURIs);
 
-            // Verify the client fails over to the advertised backup, and uses
-            // the correct AMQP hostname when doing so
+            // Verify the client fails over to the advertised backup
             backupPeer.expectSaslAnonymous();
             backupPeer.expectOpen();
             backupPeer.expectBegin();
@@ -815,8 +813,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
 
             assertFailoverURIList(connection, afterOpenFailoverURIs);
 
-            // Verify the client fails over to the advertised backup, and uses
-            // the correct AMQP hostname when doing so
+            // Verify the client fails over to the advertised backup
             backupPeer.expectSaslAnonymous();
             backupPeer.expectOpen();
             backupPeer.expectBegin();
@@ -924,7 +921,8 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
 
             assertTrue("Should connect to primary peer", connectedToPrimary.await(5, TimeUnit.SECONDS));
 
-            // Verify the failover URIs are as expected, now containing initial peer and the backup1
+            // Verify the failover URIs are as expected, now containing initial peer and if non-secure redirect
+            // was permitted, the non-secure backup as well.
             List<URI> afterOpenFailoverURIs = new ArrayList<>();
             afterOpenFailoverURIs.add(new URI(primaryPeerURI + "?" + connectionOptions));
             if (allow) {
@@ -951,8 +949,8 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
 
     /*
      * Verify that when the Open frame contains a failover server list and we are connected via
-     * the 'amqp' transport and the redirect contains a 'ws' scheme that failover reconnect list
-     * is updated to contain the 'amqpws' redirect.
+     * the 'amqp' transport and the redirect contains a 'wss' scheme that failover reconnect list
+     * is updated to contain the 'amqpwss' redirect.
      */
     @Test(timeout = 20000)
     public void testFailoverAcceptsUpdateUsingTransportSchemeWSS() throws Exception {
@@ -1031,7 +1029,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
 
             assertTrue("Should connect to primary peer", connectedToPrimary.await(5, TimeUnit.SECONDS));
 
-            // Verify the failover URIs are as expected, now containing initial peer and the backup1
+            // Verify the failover URIs are as expected, containing initial peer and a backup with expected uri scheme.
             List<URI> afterOpenFailoverURIs = new ArrayList<>();
             afterOpenFailoverURIs.add(new URI(primaryPeerURI + "?" + connectionOptions));
             afterOpenFailoverURIs.add(new URI(expected + "://localhost:5673?" + connectionOptions));

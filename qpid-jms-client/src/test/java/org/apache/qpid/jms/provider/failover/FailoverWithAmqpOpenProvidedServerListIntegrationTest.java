@@ -110,9 +110,9 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
 
             String failoverParams = null;
             if (replace) {
-                failoverParams = "?failover.maxReconnectAttempts=10&failover.amqpOpenServerListBehaviour=REPLACE";
+                failoverParams = "?failover.maxReconnectAttempts=10&failover.amqpOpenServerListAction=REPLACE";
             } else {
-                failoverParams = "?failover.maxReconnectAttempts=10&failover.amqpOpenServerListBehaviour=ADD";
+                failoverParams = "?failover.maxReconnectAttempts=10&failover.amqpOpenServerListAction=ADD";
             }
 
             // We only give it the primary/dropping peer details. It can only connect to the backup
@@ -253,7 +253,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
             // Expect the authentication as soon as the connection object is created
             primaryPeer.expectSaslAnonymous();
 
-            String failoverParams = "?failover.maxReconnectAttempts=10&failover.amqpOpenServerListBehaviour=IGNORE";
+            String failoverParams = "?failover.maxReconnectAttempts=10&failover.amqpOpenServerListAction=IGNORE";
 
             // We only give it the primary peer details. It can only connect to the backup
             // peer by identifying the details in the announced failover-server-list.

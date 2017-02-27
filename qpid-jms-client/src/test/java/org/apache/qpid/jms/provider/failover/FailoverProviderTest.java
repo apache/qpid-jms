@@ -421,26 +421,26 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
     }
 
     @Test(timeout = 30000)
-    public void testAmqpOpenServerListBehaviourDefault() {
+    public void testAmqpOpenServerListActionDefault() {
         provider = new FailoverProvider(uris);
-        assertEquals("REPLACE", provider.getAmqpOpenServerListBehaviour());
+        assertEquals("REPLACE", provider.getAmqpOpenServerListAction());
     }
 
     @Test(timeout = 30000)
-    public void testSetGetAmqpOpenServerListBehaviour() {
+    public void testSetGetAmqpOpenServerListAction() {
         provider = new FailoverProvider(uris);
-        String behaviour = "ADD";
-        assertFalse(behaviour.equals(provider.getAmqpOpenServerListBehaviour()));
+        String action = "ADD";
+        assertFalse(action.equals(provider.getAmqpOpenServerListAction()));
 
-        provider.setAmqpOpenServerListBehaviour(behaviour);
-        assertEquals(behaviour, provider.getAmqpOpenServerListBehaviour());
+        provider.setAmqpOpenServerListAction(action);
+        assertEquals(action, provider.getAmqpOpenServerListAction());
     }
 
     @Test(timeout = 30000)
-    public void testSetInvalidAmqpOpenServerListBehaviourThrowsIAE() {
+    public void testSetInvalidAmqpOpenServerListActionThrowsIAE() {
         provider = new FailoverProvider(uris);
         try {
-            provider.setAmqpOpenServerListBehaviour("invalid");
+            provider.setAmqpOpenServerListAction("invalid");
             fail("no exception was thrown");
         } catch (IllegalArgumentException iae) {
             // Expected

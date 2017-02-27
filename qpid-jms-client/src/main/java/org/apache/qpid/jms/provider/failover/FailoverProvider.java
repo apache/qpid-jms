@@ -123,7 +123,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     private int startupMaxReconnectAttempts = DEFAULT_STARTUP_MAX_RECONNECT_ATTEMPTS;
     private int warnAfterReconnectAttempts = DEFAULT_WARN_AFTER_RECONNECT_ATTEMPTS;
 
-    private FailoverServerListBehaviour amqpOpenServerListBehaviour = FailoverServerListBehaviour.REPLACE;
+    private FailoverServerListAction amqpOpenServerListAction = FailoverServerListAction.REPLACE;
 
     public FailoverProvider(Map<String, String> nestedOptions) {
         this(null, nestedOptions);
@@ -865,7 +865,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 if (!closingConnection.get() && !closed.get() && !failed.get()) {
 
                     List<URI> newRemotes = new ArrayList<URI>(discovered);
-                    switch (amqpOpenServerListBehaviour) {
+                    switch (amqpOpenServerListAction) {
                         case ADD:
                             try {
                                 uris.addAll(discovered);
@@ -1042,12 +1042,12 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         return this.requestTimeout;
     }
 
-    public String getAmqpOpenServerListBehaviour() {
-        return amqpOpenServerListBehaviour.toString();
+    public String getAmqpOpenServerListAction() {
+        return amqpOpenServerListAction.toString();
     }
 
-    public void setAmqpOpenServerListBehaviour(String amqpOpenServerListBehaviour) {
-        this.amqpOpenServerListBehaviour = FailoverServerListBehaviour.valueOf(amqpOpenServerListBehaviour.toUpperCase(Locale.ENGLISH));
+    public void setAmqpOpenServerListAction(String amqpOpenServerListAction) {
+        this.amqpOpenServerListAction = FailoverServerListAction.valueOf(amqpOpenServerListAction.toUpperCase(Locale.ENGLISH));
     }
 
     public Map<String, String> getNestedOptions() {
@@ -1268,7 +1268,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         }
     }
 
-    private static enum FailoverServerListBehaviour {
+    private static enum FailoverServerListAction {
         ADD, REPLACE, IGNORE
     };
 }

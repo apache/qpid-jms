@@ -40,6 +40,7 @@ import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
+import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.transports.TransportSslOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
 import org.apache.qpid.jms.util.PropertyUtil;
@@ -480,7 +481,15 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
             backupPeer.expectSaslAnonymous();
             backupPeer.expectOpen();
             backupPeer.expectBegin();
+            backupPeer.expectBegin();
 
+            // Create a predictable connection drop condition
+            primaryPeer.expectBegin();
+            primaryPeer.remotelyCloseConnection(true, AmqpError.INTERNAL_ERROR, "Remote is going down");
+
+            connection.createSession();
+
+            primaryPeer.waitForAllHandlersToComplete(100);
             primaryPeer.close();
 
             assertTrue("Should connect to backup peer", connectedToBackup.await(5, TimeUnit.SECONDS));
@@ -590,7 +599,15 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
             backupPeer.expectSaslAnonymous();
             backupPeer.expectOpen();
             backupPeer.expectBegin();
+            backupPeer.expectBegin();
 
+            // Create a predictable connection drop condition
+            primaryPeer.expectBegin();
+            primaryPeer.remotelyCloseConnection(true, AmqpError.INTERNAL_ERROR, "Remote is going down");
+
+            connection.createSession();
+
+            primaryPeer.waitForAllHandlersToComplete(100);
             primaryPeer.close();
 
             assertTrue("Should connect to backup peer", connectedToBackup.await(5, TimeUnit.SECONDS));
@@ -701,7 +718,15 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
             backupPeer.expectSaslAnonymous();
             backupPeer.expectOpen();
             backupPeer.expectBegin();
+            backupPeer.expectBegin();
 
+            // Create a predictable connection drop condition
+            primaryPeer.expectBegin();
+            primaryPeer.remotelyCloseConnection(true, AmqpError.INTERNAL_ERROR, "Remote is going down");
+
+            connection.createSession();
+
+            primaryPeer.waitForAllHandlersToComplete(100);
             primaryPeer.close();
 
             assertTrue("Should connect to backup peer", connectedToBackup.await(5, TimeUnit.SECONDS));
@@ -817,7 +842,15 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
             backupPeer.expectSaslAnonymous();
             backupPeer.expectOpen();
             backupPeer.expectBegin();
+            backupPeer.expectBegin();
 
+            // Create a predictable connection drop condition
+            primaryPeer.expectBegin();
+            primaryPeer.remotelyCloseConnection(true, AmqpError.INTERNAL_ERROR, "Remote is going down");
+
+            connection.createSession();
+
+            primaryPeer.waitForAllHandlersToComplete(100);
             primaryPeer.close();
 
             assertTrue("Should connect to backup peer", connectedToBackup.await(5, TimeUnit.SECONDS));

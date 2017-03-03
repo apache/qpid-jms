@@ -303,17 +303,6 @@ public class AmqpFixedProducer extends AmqpProducer {
         }
     }
 
-    @Override
-    public void addSendCompletionWatcher(AsyncResult watcher) {
-        // If none pending signal done already.
-        // TODO - If we don't include blocked sends then update this.
-        if (blocked.isEmpty() && sent.isEmpty()) {
-            watcher.onSuccess();
-        } else {
-            this.sendCompletionWatcher = watcher;
-        }
-    }
-
     //----- Class used to manage held sends ----------------------------------//
 
     private class InFlightSend implements AsyncResult, AmqpExceptionBuilder {

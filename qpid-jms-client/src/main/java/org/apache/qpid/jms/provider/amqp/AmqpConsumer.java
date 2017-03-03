@@ -138,7 +138,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                     public void run() {
                         LOG.trace("Consumer {} drain request timed out", getConsumerId());
                         Exception cause = new JmsOperationTimedOutException("Remote did not respond to a drain request in time");
-                        if (session.isTransacted() && session.getTransactionContext().isInTransaction(AmqpConsumer.this)) {
+                        if (session.isTransacted() && session.getTransactionContext().isInTransaction(getConsumerId())) {
                             stopRequest.onFailure(cause);
                             stopRequest = null;
                         } else {
@@ -645,7 +645,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     private boolean shouldDeferClose() {
-        if (getSession().isTransacted() && getSession().getTransactionContext().isInTransaction(this)) {
+        if (getSession().isTransacted() && getSession().getTransactionContext().isInTransaction(getConsumerId())) {
             return true;
         }
 

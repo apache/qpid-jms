@@ -139,12 +139,6 @@ public class AmqpAnonymousFallbackProducer extends AmqpProducer {
         return new JmsProducerId(producerIdKey, -1, producerIdCount++);
     }
 
-    @Override
-    public void addSendCompletionWatcher(AsyncResult watcher) {
-        throw new UnsupportedOperationException(
-            "The fallback producer parent should never have a watcher assigned.");
-    }
-
     //----- AsyncResult objects used to complete the sends -------------------//
 
     private abstract class AnonymousRequest extends WrappedAsyncResult {

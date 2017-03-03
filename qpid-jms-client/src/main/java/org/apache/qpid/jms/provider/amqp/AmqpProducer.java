@@ -94,14 +94,4 @@ public abstract class AmqpProducer extends AmqpAbstractResource<JmsProducerInfo,
     public void setDelayedDeliverySupported(boolean delayedDeliverySupported) {
         this.delayedDeliverySupported = delayedDeliverySupported;
     }
-
-    /**
-     * Allows a completion request to be added to this producer that will be notified
-     * once all outstanding sends have completed.
-     *
-     * @param watcher
-     *      The AsyncResult that will be signaled once this producer has no pending sends.
-     */
-    public abstract void addSendCompletionWatcher(AsyncResult watcher);
-
 }

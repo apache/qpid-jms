@@ -17,12 +17,14 @@
 package org.apache.qpid.jms.provider.amqp;
 
 import java.io.IOException;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.jms.IllegalStateException;
 import javax.jms.TransactionRolledBackException;
 
+import org.apache.qpid.jms.meta.JmsConsumerId;
+import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.meta.JmsTransactionInfo;
@@ -43,8 +45,8 @@ public class AmqpTransactionContext implements AmqpResourceParent {
     private static final Logger LOG = LoggerFactory.getLogger(AmqpTransactionContext.class);
 
     private final AmqpSession session;
-    private final Set<AmqpConsumer> txConsumers = new LinkedHashSet<AmqpConsumer>();
-    private final Set<AmqpProducer> txProducers = new LinkedHashSet<AmqpProducer>();
+    private final Map<JmsConsumerId, AmqpConsumer> txConsumers = new HashMap<>();
+    private final Map<JmsProducerId, AmqpProducer> txProducers = new HashMap<>();
 
     private JmsTransactionId current;
     private AmqpTransactionCoordinator coordinator;
@@ -130,15 +132,8 @@ public class AmqpTransactionContext implements AmqpResourceParent {
 
         DischargeCompletion dischargeResult = new DischargeCompletion(request, true);
 
-        if (txProducers.isEmpty()) {
-            LOG.trace("TX Context[{}] committing current TX[[]]", this, current);
-            coordinator.discharge(current, dischargeResult, true);
-        } else {
-            SendCompletion producersSendCompletion = new SendCompletion(transactionInfo, dischargeResult, txProducers.size(), true);
-            for (AmqpProducer producer : txProducers) {
-                producer.addSendCompletionWatcher(producersSendCompletion);
-            }
-        }
+        LOG.trace("TX Context[{}] committing current TX[[]]", this, current);
+        coordinator.discharge(current, dischargeResult, true);
     }
 
     public void rollback(JmsTransactionInfo transactionInfo, final AsyncResult request) throws Exception {
@@ -157,33 +152,26 @@ public class AmqpTransactionContext implements AmqpResourceParent {
 
         DischargeCompletion dischargeResult = new DischargeCompletion(request, false);
 
-        if (txProducers.isEmpty()) {
-            LOG.trace("TX Context[{}] rolling back current TX[[]]", this, current);
-            coordinator.discharge(current, dischargeResult, false);
-        } else {
-            SendCompletion producersSendCompletion = new SendCompletion(transactionInfo, dischargeResult, txProducers.size(), false);
-            for (AmqpProducer producer : txProducers) {
-                producer.addSendCompletionWatcher(producersSendCompletion);
-            }
-        }
+        LOG.trace("TX Context[{}] rolling back current TX[[]]", this, current);
+        coordinator.discharge(current, dischargeResult, false);
     }
 
     //----- Context utility methods ------------------------------------------//
 
     public void registerTxConsumer(AmqpConsumer consumer) {
-        txConsumers.add(consumer);
+        txConsumers.put(consumer.getConsumerId(), consumer);
     }
 
-    public boolean isInTransaction(AmqpConsumer consumer) {
-        return txConsumers.contains(consumer);
+    public boolean isInTransaction(JmsConsumerId consumerId) {
+        return txConsumers.containsKey(consumerId);
     }
 
     public void registerTxProducer(AmqpProducer producer) {
-        txProducers.add(producer);
+        txProducers.put(producer.getProducerId(), producer);
     }
 
-    public boolean isInTransaction(AmqpProducer producer) {
-        return txProducers.contains(producer);
+    public boolean isInTransaction(JmsProducerId producerId) {
+        return txProducers.containsKey(producerId);
     }
 
     public AmqpSession getSession() {
@@ -214,19 +202,19 @@ public class AmqpTransactionContext implements AmqpResourceParent {
     //----- Transaction pre / post completion --------------------------------//
 
     private void preCommit() {
-        for (AmqpConsumer consumer : txConsumers) {
+        for (AmqpConsumer consumer : txConsumers.values()) {
             consumer.preCommit();
         }
     }
 
     private void preRollback() {
-        for (AmqpConsumer consumer : txConsumers) {
+        for (AmqpConsumer consumer : txConsumers.values()) {
             consumer.preRollback();
         }
     }
 
     private void postCommit() {
-        for (AmqpConsumer consumer : txConsumers) {
+        for (AmqpConsumer consumer : txConsumers.values()) {
             consumer.postCommit();
         }
 
@@ -235,7 +223,7 @@ public class AmqpTransactionContext implements AmqpResourceParent {
     }
 
     private void postRollback() {
-        for (AmqpConsumer consumer : txConsumers) {
+        for (AmqpConsumer consumer : txConsumers.values()) {
             consumer.postRollback();
         }
 

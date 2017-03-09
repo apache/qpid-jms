@@ -263,7 +263,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         } else {
                             // If the SASL authentication occurred but failed then we don't
                             // need to do an open / close
-                            if (authenticator != null && !authenticator.wasSuccessful()) {
+                            if (authenticator != null && (!authenticator.isComplete() || !authenticator.wasSuccessful())) {
                                 request.onSuccess();
                                 return;
                             }
@@ -765,28 +765,34 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
             @Override
             public void run() {
-                if (isTraceBytes()) {
-                    TRACE_BYTES.info("Received: {}", ByteBufUtil.hexDump(input));
+                try {
+                    if (isTraceBytes()) {
+                        TRACE_BYTES.info("Received: {}", ByteBufUtil.hexDump(input));
+                    }
+
+                    ByteBuffer source = input.nioBuffer();
+
+                    do {
+                        ByteBuffer buffer = protonTransport.getInputBuffer();
+                        int limit = Math.min(buffer.remaining(), source.remaining());
+                        ByteBuffer duplicate = source.duplicate();
+                        duplicate.limit(source.position() + limit);
+                        buffer.put(duplicate);
+                        protonTransport.processInput().checkIsOk();
+                        source.position(source.position() + limit);
+                    } while (source.hasRemaining());
+
+                    ReferenceCountUtil.release(input);
+
+                    // Process the state changes from the latest data and then answer back
+                    // any pending updates to the Broker.
+                    processUpdates();
+                    pumpToProtonTransport();
+                } catch (Throwable t) {
+                    LOG.warn("Caught problem during data processing: {}", t.getMessage(), t);
+
+                    fireProviderException(t);
                 }
-
-                ByteBuffer source = input.nioBuffer();
-
-                do {
-                    ByteBuffer buffer = protonTransport.getInputBuffer();
-                    int limit = Math.min(buffer.remaining(), source.remaining());
-                    ByteBuffer duplicate = source.duplicate();
-                    duplicate.limit(source.position() + limit);
-                    buffer.put(duplicate);
-                    protonTransport.processInput();
-                    source.position(source.position() + limit);
-                } while (source.hasRemaining());
-
-                ReferenceCountUtil.release(input);
-
-                // Process the state changes from the latest data and then answer back
-                // any pending updates to the Broker.
-                processUpdates();
-                pumpToProtonTransport();
             }
         });
     }

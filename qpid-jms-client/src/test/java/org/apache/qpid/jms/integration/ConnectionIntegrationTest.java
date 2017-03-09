@@ -23,6 +23,7 @@ package org.apache.qpid.jms.integration;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.NETWORK_HOST;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.OPEN_HOSTNAME;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.PORT;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
@@ -33,6 +34,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -72,6 +74,7 @@ import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.transaction.TxnCapability;
+import org.apache.qpid.proton.engine.impl.AmqpHeader;
 import org.hamcrest.Matcher;
 import org.junit.Test;
 
@@ -84,6 +87,32 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             Connection connection = testFixture.establishConnecton(testPeer);
             testPeer.expectClose();
             connection.close();
+        }
+    }
+
+    @Test(timeout = 10000)
+    public void testCreateConnectionToNonSaslPeer() throws Exception {
+        doConnectionWithUnexpectedHeaderTestImpl(AmqpHeader.HEADER);
+    }
+
+    @Test(timeout = 10000)
+    public void testCreateConnectionToNonAmqpPeer() throws Exception {
+        byte[] responseHeader = new byte[] { 'N', 'O', 'T', '-', 'A', 'M', 'Q', 'P' };
+        doConnectionWithUnexpectedHeaderTestImpl(responseHeader);
+    }
+
+    private void doConnectionWithUnexpectedHeaderTestImpl(byte[] responseHeader) throws Exception, IOException {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            testPeer.expectHeader(AmqpHeader.SASL_HEADER, responseHeader);
+
+            ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort());
+            try {
+                factory.createConnection("guest", "guest");
+                fail("Expected connection creation to fail");
+            } catch (JMSException jmse) {
+                assertThat(jmse.getMessage(), containsString("SASL header mismatch"));
+            }
         }
     }
 

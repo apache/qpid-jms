@@ -433,6 +433,11 @@ public class TestAmqpPeer implements AutoCloseable
         return openFrame;
     }
 
+    public void expectHeader(byte[] header, byte[] response)
+    {
+        addHandler(new HeaderHandlerImpl(header, response));
+    }
+
     private void expectSaslAuthentication(Symbol mechanism, Matcher<Binary> initialResponseMatcher, Matcher<?> hostnameMatcher, boolean sendSaslHeaderResponse)
     {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(mechanism);

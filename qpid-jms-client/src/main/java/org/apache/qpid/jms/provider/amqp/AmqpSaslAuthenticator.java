@@ -40,6 +40,7 @@ public class AmqpSaslAuthenticator {
     private final Principal localPrincipal;
     private Set<String> mechanismsRestriction;
     private final AsyncResult authenticationRequest;
+    private boolean complete;
 
     /**
      * Create the authenticator and initialize it.
@@ -106,7 +107,13 @@ public class AmqpSaslAuthenticator {
             authenticationRequest.onFailure(result);
         }
 
-        return authenticationRequest.isComplete();
+        complete = authenticationRequest.isComplete();
+
+        return complete;
+    }
+
+    public boolean isComplete() {
+       return complete;
     }
 
     public boolean wasSuccessful() throws IllegalStateException {

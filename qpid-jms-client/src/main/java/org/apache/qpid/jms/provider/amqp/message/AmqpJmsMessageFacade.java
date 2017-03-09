@@ -248,10 +248,9 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     protected void copyInto(AmqpJmsMessageFacade target) {
         target.connection = connection;
-
-        if (consumerDestination != null) {
-            target.consumerDestination = consumerDestination;
-        }
+        target.consumerDestination = consumerDestination;
+        target.syntheticExpiration = syntheticExpiration;
+        target.userSpecifiedTTL = userSpecifiedTTL;
 
         if (destination != null) {
             target.setDestination(destination);
@@ -261,34 +260,10 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             target.setReplyTo(replyTo);
         }
 
-        if (syntheticExpiration != null) {
-            target.syntheticExpiration = syntheticExpiration;
-        }
-
-        if (userSpecifiedTTL != null) {
-            target.userSpecifiedTTL = userSpecifiedTTL;
-        }
-
         target.setAmqpHeader(header);
 
         if (properties != null) {
-            Properties targetProperties = new Properties();
-
-            targetProperties.setMessageId(properties.getMessageId());
-            targetProperties.setUserId(properties.getUserId());
-            targetProperties.setTo(properties.getTo());
-            targetProperties.setSubject(properties.getSubject());
-            targetProperties.setReplyTo(properties.getReplyTo());
-            targetProperties.setCorrelationId(properties.getCorrelationId());
-            targetProperties.setContentType(properties.getContentType());
-            targetProperties.setContentEncoding(properties.getContentEncoding());
-            targetProperties.setAbsoluteExpiryTime(properties.getAbsoluteExpiryTime());
-            targetProperties.setCreationTime(properties.getCreationTime());
-            targetProperties.setGroupId(properties.getGroupId());
-            targetProperties.setGroupSequence(properties.getGroupSequence());
-            targetProperties.setReplyToGroupId(properties.getReplyToGroupId());
-
-            target.setProperties(targetProperties);
+            target.setProperties(new Properties(properties));
         }
 
         target.setBody(body);

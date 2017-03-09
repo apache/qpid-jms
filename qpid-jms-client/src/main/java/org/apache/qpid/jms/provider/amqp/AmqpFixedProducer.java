@@ -33,7 +33,6 @@ import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.util.IOExceptionSupport;
-import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.Modified;
 import org.apache.qpid.proton.amqp.messaging.Outcome;
@@ -133,10 +132,7 @@ public class AmqpFixedProducer extends AmqpProducer {
 
         if (session.isTransacted()) {
             AmqpTransactionContext context = session.getTransactionContext();
-            Binary amqpTxId = context.getAmqpTransactionId();
-            TransactionalState state = new TransactionalState();
-            state.setTxnId(amqpTxId);
-            delivery.disposition(state);
+            delivery.disposition(context.getTxnEnrolledState());
             context.registerTxProducer(this);
         }
 

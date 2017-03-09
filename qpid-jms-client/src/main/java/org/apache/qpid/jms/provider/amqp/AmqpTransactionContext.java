@@ -31,6 +31,8 @@ import org.apache.qpid.jms.meta.JmsTransactionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpTransactionCoordinatorBuilder;
 import org.apache.qpid.proton.amqp.Binary;
+import org.apache.qpid.proton.amqp.messaging.Accepted;
+import org.apache.qpid.proton.amqp.transaction.TransactionalState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +51,8 @@ public class AmqpTransactionContext implements AmqpResourceParent {
     private final Map<JmsProducerId, AmqpProducer> txProducers = new HashMap<>();
 
     private JmsTransactionId current;
+    private TransactionalState cachedAcceptedState;
+    private TransactionalState cachedTransactedState;
     private AmqpTransactionCoordinator coordinator;
 
     /**
@@ -73,12 +77,19 @@ public class AmqpTransactionContext implements AmqpResourceParent {
             @Override
             public void onSuccess() {
                 current = txId;
+                cachedAcceptedState = new TransactionalState();
+                cachedAcceptedState.setOutcome(Accepted.getInstance());
+                cachedAcceptedState.setTxnId(getAmqpTransactionId());
+                cachedTransactedState = new TransactionalState();
+                cachedTransactedState.setTxnId(getAmqpTransactionId());
                 request.onSuccess();
             }
 
             @Override
             public void onFailure(Throwable result) {
                 current = null;
+                cachedAcceptedState = null;
+                cachedTransactedState = null;
                 request.onFailure(result);
             }
 
@@ -176,6 +187,14 @@ public class AmqpTransactionContext implements AmqpResourceParent {
 
     public AmqpSession getSession() {
         return session;
+    }
+
+    public TransactionalState getTxnAcceptState() {
+        return cachedAcceptedState;
+    }
+
+    public TransactionalState getTxnEnrolledState() {
+        return cachedTransactedState;
     }
 
     public JmsTransactionId getTransactionId() {

@@ -43,7 +43,6 @@ import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.Released;
-import org.apache.qpid.proton.amqp.transaction.TransactionalState;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Receiver;
 import org.slf4j.Logger;
@@ -294,10 +293,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
                     Binary txnId = session.getTransactionContext().getAmqpTransactionId();
                     if (txnId != null) {
-                        TransactionalState txState = new TransactionalState();
-                        txState.setOutcome(Accepted.getInstance());
-                        txState.setTxnId(txnId);
-                        delivery.disposition(txState);
+                        delivery.disposition(session.getTransactionContext().getTxnAcceptState());
                         delivery.settle();
                         session.getTransactionContext().registerTxConsumer(this);
                     }
@@ -586,6 +582,11 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     protected ByteBuf unwrapIncomingMessage(Delivery incoming) {
         int count;
 
+        // Attempt to preemptively size the buffer for the incoming delivery.
+        if (incomingBuffer.capacity() < incoming.available()) {
+            incomingBuffer.capacity(incoming.available());
+        }
+
         while ((count = getEndpoint().recv(incomingBuffer.array(), incomingBuffer.writerIndex(), incomingBuffer.writableBytes())) > 0) {
             incomingBuffer.writerIndex(incomingBuffer.writerIndex() + count);
             if (!incomingBuffer.isWritable()) {
@@ -680,7 +681,6 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                 current.settle();
             }
         }
-
     }
 
     //----- Inner class used to report on deferred close ---------------------//

@@ -325,9 +325,9 @@
 
   <repositories>
     <repository>
-      <!-- Proton-J 0.18.0 (RC1) -->
-      <id>proton-staging-repo</id>
-      <url>https://repository.apache.org/content/repositories/orgapacheqpid-1101/</url>
+      <!-- Temporary to pick up Proton-J 0.18.0 until it hits central -->
+      <id>apache-releases</id>
+      <url>https://repository.apache.org/content/repositories/releases</url>
       <releases>
         <enabled>true</enabled>
       </releases>

@@ -30,6 +30,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -42,7 +44,9 @@ import javax.jms.TextMessage;
 import javax.jms.TransactionRolledBackException;
 
 import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
+import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -391,6 +395,14 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                 testPeer.expectDisposition(true, stateMatcher);
             }
 
+            final CountDownLatch expected = new CountDownLatch(transferCount);
+            ((JmsConnection) connection).addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onInboundMessage(JmsInboundMessageDispatch envelope) {
+                    expected.countDown();
+                }
+            });
+
             MessageConsumer messageConsumer = session.createConsumer(queue);
 
             for (int i = 1; i <= consumeCount; i++) {
@@ -399,6 +411,9 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                 assertNotNull(receivedMessage);
                 assertTrue(receivedMessage instanceof TextMessage);
             }
+
+            // Ensure all the messages arrived so that the matching below is deterministic
+            assertTrue("Expected transfers didnt occur: " + expected.getCount(), expected.await(10, TimeUnit.SECONDS));
 
             // Expect the consumer to close now
             if (closeConsumer && closeBeforeCommit) {

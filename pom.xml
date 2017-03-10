@@ -322,18 +322,4 @@
       </build>
     </profile>
   </profiles>
-
-  <repositories>
-    <repository>
-      <!-- Temporary to pick up Proton-J 0.18.0 until it hits central -->
-      <id>apache-releases</id>
-      <url>https://repository.apache.org/content/repositories/releases</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
 </project>

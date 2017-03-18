@@ -47,6 +47,7 @@ import org.apache.qpid.jms.policy.JmsMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsPrefetchPolicy;
 import org.apache.qpid.jms.policy.JmsPresettlePolicy;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
+import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.junit.Test;
@@ -547,6 +548,11 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         @Override
         public int getMaxRedeliveries(JmsDestination destination) {
             return JmsDefaultRedeliveryPolicy.DEFAULT_MAX_REDELIVERIES;
+        }
+
+        @Override
+        public ACK_TYPE getAckType(JmsDestination destination) {
+            return ACK_TYPE.MODIFIED_FAILED_UNDELIVERABLE;
         }
     }
 }

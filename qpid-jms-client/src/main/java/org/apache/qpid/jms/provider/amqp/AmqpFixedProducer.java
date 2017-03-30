@@ -210,6 +210,14 @@ public class AmqpFixedProducer extends AmqpProducer {
         if (state != null) {
 
             InFlightSend send = (InFlightSend) delivery.getContext();
+
+            if (state instanceof Accepted) {
+                LOG.trace("Outcome of delivery was accepted: {}", delivery);
+                send.onSuccess();
+                super.processDeliveryUpdates(provider, delivery);
+                return;
+            }
+
             Exception deliveryError = null;
             Outcome outcome = null;
 

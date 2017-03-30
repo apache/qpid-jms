@@ -135,20 +135,22 @@ public class NettyTcpTransport implements Transport {
             sslHandler = null;
         }
 
-        if (!getTransportOptions().isUseEpoll() || !Epoll.isAvailable()) {
-            LOG.trace("Netty Transport using NIO mode");
-            group = new NioEventLoopGroup(1);
-        } else {
+        boolean useEpoll = getTransportOptions().isUseEpoll() && Epoll.isAvailable();
+
+        if (useEpoll) {
             LOG.trace("Netty Transport using Epoll mode");
             group = new EpollEventLoopGroup(1);
+        } else {
+            LOG.trace("Netty Transport using NIO mode");
+            group = new NioEventLoopGroup(1);
         }
 
         bootstrap = new Bootstrap();
         bootstrap.group(group);
-        if (getTransportOptions().isUseEpoll() || !Epoll.isAvailable()) {
-            bootstrap.channel(NioSocketChannel.class);
-        } else {
+        if (useEpoll) {
             bootstrap.channel(EpollSocketChannel.class);
+        } else {
+            bootstrap.channel(NioSocketChannel.class);
         }
         bootstrap.handler(new ChannelInitializer<Channel>() {
             @Override

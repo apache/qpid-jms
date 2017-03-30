@@ -30,6 +30,7 @@ public class TransportOptions implements Cloneable {
     public static final int DEFAULT_SO_TIMEOUT = -1;
     public static final int DEFAULT_CONNECT_TIMEOUT = 60000;
     public static final int DEFAULT_TCP_PORT = 5672;
+    public static final boolean DEFAULT_USE_EPOLL = true;
 
     private int sendBufferSize = DEFAULT_SEND_BUFFER_SIZE;
     private int receiveBufferSize = DEFAULT_RECEIVE_BUFFER_SIZE;
@@ -40,6 +41,7 @@ public class TransportOptions implements Cloneable {
     private boolean tcpKeepAlive = DEFAULT_TCP_KEEP_ALIVE;
     private boolean tcpNoDelay = DEFAULT_TCP_NO_DELAY;
     private int defaultTcpPort = DEFAULT_TCP_PORT;
+    private boolean useEpoll = DEFAULT_USE_EPOLL;
 
     /**
      * @return the currently set send buffer size in bytes.
@@ -161,6 +163,24 @@ public class TransportOptions implements Cloneable {
         this.defaultTcpPort = defaultTcpPort;
     }
 
+
+    /**
+     * @return the true if use of of the netty epoll transport is used.
+     */
+    public boolean isUseEpoll() {
+        return useEpoll;
+    }
+
+    /**
+     * Determines if the netty epoll transport can be used if available on this platform.
+     *
+     * @param useEpoll
+     * 		should use of available epoll transport be used.
+     */
+    public void setUseEpoll(boolean useEpoll) {
+        this.useEpoll = useEpoll;
+    }
+
     @Override
     public TransportOptions clone() {
         return copyOptions(new TransportOptions());
@@ -180,6 +200,7 @@ public class TransportOptions implements Cloneable {
         copy.setTcpNoDelay(isTcpNoDelay());
         copy.setTrafficClass(getTrafficClass());
         copy.setDefaultTcpPort(getDefaultTcpPort());
+        copy.setUseEpoll(isUseEpoll());
 
         return copy;
     }

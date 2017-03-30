@@ -47,6 +47,9 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.epoll.Epoll;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslHandler;
@@ -132,11 +135,21 @@ public class NettyTcpTransport implements Transport {
             sslHandler = null;
         }
 
-        group = new NioEventLoopGroup(1);
+        if (getTransportOptions().isUseEpoll() || !Epoll.isAvailable()) {
+            LOG.trace("Netty Transport using NIO mode");
+            group = new NioEventLoopGroup(1);
+        } else {
+            LOG.trace("Netty Transport using Epoll mode");
+            group = new EpollEventLoopGroup(1);
+        }
 
         bootstrap = new Bootstrap();
         bootstrap.group(group);
-        bootstrap.channel(NioSocketChannel.class);
+        if (getTransportOptions().isUseEpoll() || !Epoll.isAvailable()) {
+            bootstrap.channel(NioSocketChannel.class);
+        } else {
+            bootstrap.channel(EpollSocketChannel.class);
+        }
         bootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
             public void initChannel(Channel connectedChannel) throws Exception {
@@ -368,7 +381,6 @@ public class NettyTcpTransport implements Transport {
         bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
         bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
         bootstrap.option(ChannelOption.SO_LINGER, options.getSoLinger());
-        bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
 
         if (options.getSendBufferSize() != -1) {
             bootstrap.option(ChannelOption.SO_SNDBUF, options.getSendBufferSize());

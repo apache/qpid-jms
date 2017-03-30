@@ -70,6 +70,8 @@
 
     <!-- surefire forked jvm arguments -->
     <argLine>-Xmx2g -enableassertions ${jacoco-config}</argLine>
+
+    <netty-transport-native-epoll-classifier>linux-x86_64</netty-transport-native-epoll-classifier>
   </properties>
 
   <issueManagement>
@@ -136,6 +138,12 @@
         <groupId>io.netty</groupId>
         <artifactId>netty-transport</artifactId>
         <version>${netty-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-transport-native-epoll</artifactId>
+        <version>${netty-version}</version>
+        <classifier>${netty-transport-native-epoll-classifier}</classifier>
       </dependency>
       <dependency>
         <groupId>io.netty</groupId>

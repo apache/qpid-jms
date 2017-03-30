@@ -36,6 +36,7 @@ public class TransportOptionsTest extends QpidJmsTestCase {
     public static final int TEST_SO_TIMEOUT = 10;
     public static final int TEST_CONNECT_TIMEOUT = 90000;
     public static final int TEST_DEFAULT_TCP_PORT = 5682;
+    public static final boolean TEST_USE_EPOLL_VALUE = !TransportOptions.DEFAULT_USE_EPOLL;
 
     @Test
     public void testCreate() {
@@ -57,6 +58,7 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         assertEquals(TEST_SO_TIMEOUT, options.getSoTimeout());
         assertEquals(TEST_CONNECT_TIMEOUT, options.getConnectTimeout());
         assertEquals(TEST_DEFAULT_TCP_PORT, options.getDefaultTcpPort());
+        assertEquals(TEST_USE_EPOLL_VALUE, options.isUseEpoll());
     }
 
     @Test
@@ -72,6 +74,7 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         assertEquals(TEST_SO_TIMEOUT, options.getSoTimeout());
         assertEquals(TEST_CONNECT_TIMEOUT, options.getConnectTimeout());
         assertEquals(TEST_DEFAULT_TCP_PORT, options.getDefaultTcpPort());
+        assertEquals(TEST_USE_EPOLL_VALUE, options.isUseEpoll());
     }
 
     @Test
@@ -139,6 +142,7 @@ public class TransportOptionsTest extends QpidJmsTestCase {
         options.setSoTimeout(TEST_SO_TIMEOUT);
         options.setConnectTimeout(TEST_CONNECT_TIMEOUT);
         options.setDefaultTcpPort(TEST_DEFAULT_TCP_PORT);
+        options.setUseEpoll(TEST_USE_EPOLL_VALUE);
 
         return options;
     }

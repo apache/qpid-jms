@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.policy;
 
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 
 /**
  * Interface for a Redelivery Policy object used to determine how many times a Message
@@ -41,4 +42,15 @@ public interface JmsRedeliveryPolicy {
      */
     int getMaxRedeliveries(JmsDestination destination);
 
+    /**
+     * Returns the configured acknowledge type that will be used when rejecting the
+     * message by this client for the given destination.
+     *
+     * @param destination
+     *      the destination that the subscription is redelivering from.
+     *
+     * @return the ackType
+     *         the acknowledge type to use when rejecting messages.
+     */
+    ACK_TYPE getAckType(JmsDestination destination);
 }

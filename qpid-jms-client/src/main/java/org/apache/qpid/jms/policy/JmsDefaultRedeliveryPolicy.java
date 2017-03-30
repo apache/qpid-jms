@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.policy;
 
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 
 /**
  * Defines the policy used to manage redelivered and recovered Messages.
@@ -24,15 +25,19 @@ import org.apache.qpid.jms.JmsDestination;
 public class JmsDefaultRedeliveryPolicy implements JmsRedeliveryPolicy {
 
     public static final int DEFAULT_MAX_REDELIVERIES = -1;
+    public static final ACK_TYPE DEFAULT_ACK_TYPE = ACK_TYPE.MODIFIED_FAILED_UNDELIVERABLE;
 
     private int maxRedeliveries;
+    private ACK_TYPE ackType;
 
     public JmsDefaultRedeliveryPolicy() {
         maxRedeliveries = DEFAULT_MAX_REDELIVERIES;
+        ackType = DEFAULT_ACK_TYPE;
     }
 
     public JmsDefaultRedeliveryPolicy(JmsDefaultRedeliveryPolicy source) {
         maxRedeliveries = source.maxRedeliveries;
+        ackType = source.ackType;
     }
 
     @Override
@@ -43,6 +48,32 @@ public class JmsDefaultRedeliveryPolicy implements JmsRedeliveryPolicy {
     @Override
     public int getMaxRedeliveries(JmsDestination destination) {
         return maxRedeliveries;
+    }
+
+    @Override
+    public ACK_TYPE getAckType(JmsDestination destination) {
+        return ackType;
+    }
+
+    /**
+     * Returns the configured acknowledge type that will be used when rejecting messages.
+     * <p>
+     * Default acknowledgement type is ACK_TYPE.MODIFIED_FAILED_UNDELIVERABLE.
+     *
+     * @return the ackType
+     *         the acknowledge type to use when rejecting messages.
+     */
+    public ACK_TYPE getAckType() {
+        return ackType;
+    }
+
+    /**
+     * Set the acknowledgement type to use when rejecting messages.
+     * 
+     * @param ackType
+     */
+    public void setAckType(ACK_TYPE ackType) {
+        this.ackType = ackType;
     }
 
     /**
@@ -73,6 +104,7 @@ public class JmsDefaultRedeliveryPolicy implements JmsRedeliveryPolicy {
         final int prime = 31;
         int result = 1;
         result = prime * result + maxRedeliveries;
+        result = prime * result + ackType.ordinal();
         return result;
     }
 
@@ -91,10 +123,7 @@ public class JmsDefaultRedeliveryPolicy implements JmsRedeliveryPolicy {
         }
 
         JmsDefaultRedeliveryPolicy other = (JmsDefaultRedeliveryPolicy) obj;
-        if (maxRedeliveries != other.maxRedeliveries) {
-            return false;
-        }
 
-        return true;
+        return maxRedeliveries == other.maxRedeliveries && ackType == other.ackType;
     }
 }

@@ -323,7 +323,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                     performPullIfRequired(timeout, false);
                 } else if (redeliveryExceeded(envelope)) {
                     LOG.debug("{} filtered message with excessive redelivery count: {}", getConsumerId(), envelope);
-                    doAckUndeliverable(envelope);
+                    doRejectRedelivery(envelope);
                     if (timeout > 0) {
                         timeout = Math.max(deadline - System.currentTimeMillis(), 0);
                     }
@@ -435,9 +435,10 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         }
     }
 
-    private void doAckUndeliverable(final JmsInboundMessageDispatch envelope) throws JMSException {
+    private void doRejectRedelivery(final JmsInboundMessageDispatch envelope) throws JMSException {
         try {
-            session.acknowledge(envelope, ACK_TYPE.MODIFIED_FAILED_UNDELIVERABLE);
+            JmsRedeliveryPolicy redeliveryPolicy = consumerInfo.getRedeliveryPolicy();
+            session.acknowledge(envelope, redeliveryPolicy.getAckType(getDestination()));
         } catch (JMSException ex) {
             session.onException(ex);
             throw ex;
@@ -712,7 +713,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                     doAckExpired(envelope);
                 } else if (redeliveryExceeded(envelope)) {
                     LOG.trace("{} filtered message with excessive redelivery count: {}", getConsumerId(), envelope);
-                    doAckUndeliverable(envelope);
+                    doRejectRedelivery(envelope);
                 } else {
                     boolean deliveryFailed = false;
                     boolean autoAckOrDupsOk = acknowledgementMode == Session.AUTO_ACKNOWLEDGE ||

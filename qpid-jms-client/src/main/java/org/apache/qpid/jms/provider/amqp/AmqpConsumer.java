@@ -308,6 +308,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             deliveryFailedUndeliverable(delivery);
         } else if (ackType.equals(ACK_TYPE.EXPIRED)) {
             deliveryFailedUndeliverable(delivery);
+        } else if (ackType.equals(ACK_TYPE.REJECTED)) {
+            deliveryRejected(delivery);
         } else if (ackType.equals(ACK_TYPE.RELEASED)) {
             delivery.disposition(Released.getInstance());
             delivery.settle();
@@ -561,6 +563,14 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     protected void deliveryFailedUndeliverable(Delivery incoming) {
         incoming.disposition(MODIFIED_FAILED_UNDELIVERABLE);
+        incoming.settle();
+        // TODO: this flows credit, which we might not want, e.g if
+        // a drain was issued to stop the link.
+        sendFlowIfNeeded();
+    }
+
+    protected void deliveryRejected(Delivery incoming) {
+        incoming.disposition(REJECTED);
         incoming.settle();
         // TODO: this flows credit, which we might not want, e.g if
         // a drain was issued to stop the link.

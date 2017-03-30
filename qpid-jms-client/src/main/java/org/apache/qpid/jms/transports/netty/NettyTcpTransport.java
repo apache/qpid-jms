@@ -135,7 +135,7 @@ public class NettyTcpTransport implements Transport {
             sslHandler = null;
         }
 
-        if (getTransportOptions().isUseEpoll() || !Epoll.isAvailable()) {
+        if (!getTransportOptions().isUseEpoll() || !Epoll.isAvailable()) {
             LOG.trace("Netty Transport using NIO mode");
             group = new NioEventLoopGroup(1);
         } else {

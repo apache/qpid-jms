@@ -178,7 +178,7 @@ The complete set of SSL Transport options is listed below:
 + **transport.trustAll** Whether to trust the provided server certificate implicitly, regardless of any configured trust store. Defaults to false.
 + **transport.verifyHost** Whether to verify that the hostname being connected to matches with the provided server certificate. Defaults to true.
 + **transport.keyAlias** The alias to use when selecting a keypair from the keystore if required to send a client certificate to the server. No default.
-+ **transport.useEpoll** When true the transport will use the a native Epoll layer if available instead of the NIO based version which can improve performance (defaults to true).
++ **transport.useEpoll** When true the transport will use the native Epoll layer when available instead of the NIO layer, which can improve performance. Defaults to true.
 
 ### Websocket Transport Configuration options
 

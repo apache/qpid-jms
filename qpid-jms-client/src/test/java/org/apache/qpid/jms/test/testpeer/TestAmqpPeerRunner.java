@@ -95,6 +95,7 @@ class TestAmqpPeerRunner implements Runnable
         )
         {
             _clientSocket = clientSocket;
+            _clientSocket.setTcpNoDelay(true);
             _networkOutputStream = networkOutputStream;
 
             if (_sendSaslHeaderPreEmptively) {

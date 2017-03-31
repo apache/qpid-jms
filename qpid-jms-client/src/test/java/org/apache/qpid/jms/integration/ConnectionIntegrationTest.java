@@ -732,4 +732,38 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             }
         }
     }
+
+    @Test(timeout = 20000)
+    public void testConnectionWithPreemptiveServerOpen() throws Exception {
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            // Ensure the Connection awaits a ClientID being set or not, giving time for the preemptive server Open
+            String uri = "amqp://localhost:" + testPeer.getServerPort() + "?jms.awaitClientID=true";
+
+            testPeer.expectSaslAnonymousWithServerAmqpHeaderSentPreemptively();
+            testPeer.sendPreemptiveServerAmqpHeader();
+            testPeer.sendPreemptiveServerOpenFrame();
+            // Then expect the clients header to arrive, but defer responding since the servers was already sent.
+            testPeer.expectHeader(AmqpHeader.HEADER, null);
+
+            ConnectionFactory factory = new JmsConnectionFactory(uri);
+            Connection connection = factory.createConnection();
+
+            // Then expect the clients Open frame to arrive, but defer responding since the servers was already sent
+            // before the clients AMQP connection open is provoked.
+            testPeer.expectOpen(null, null, true);
+            testPeer.expectBegin();
+
+            Thread.sleep(10); // Gives a little more time for the preemptive Open to actually arrive.
+
+            // Use the connection to provoke the Open
+            connection.setClientID("client-id");
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
 }

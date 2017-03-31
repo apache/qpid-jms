@@ -363,6 +363,17 @@ public class TestAmqpPeer implements AutoCloseable
         _driverRunnable.sendBytes(header);
     }
 
+    public void sendPreemptiveServerAmqpHeader() {
+        // Arrange to send the AMQP header after the previous handler
+        CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
+        comp.add(new AmqpPeerRunnable() {
+            @Override
+            public void run() {
+                sendHeader(AmqpHeader.HEADER);
+            }
+        });
+    }
+
     public void sendEmptyFrame(boolean deferWrite)
     {
         sendFrame(FrameType.AMQP, 0, null, null, deferWrite, 0);
@@ -438,7 +449,8 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(new HeaderHandlerImpl(header, response));
     }
 
-    private void expectSaslAuthentication(Symbol mechanism, Matcher<Binary> initialResponseMatcher, Matcher<?> hostnameMatcher, boolean sendSaslHeaderResponse)
+    private void expectSaslAuthentication(Symbol mechanism, Matcher<Binary> initialResponseMatcher, Matcher<?> hostnameMatcher,
+                                          boolean sendSaslHeaderResponse, boolean amqpHeaderSentPreemptively)
     {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(mechanism);
         byte[] saslHeaderResponse = null;
@@ -477,7 +489,10 @@ public class TestAmqpPeer implements AutoCloseable
 
         addHandler(saslInitMatcher);
 
-        addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
+        if (!amqpHeaderSentPreemptively)
+        {
+            addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
+        }
     }
 
     public void expectSaslPlain(String username, String password)
@@ -490,7 +505,7 @@ public class TestAmqpPeer implements AutoCloseable
 
         Matcher<Binary> initialResponseMatcher = equalTo(new Binary(data));
 
-        expectSaslAuthentication(PLAIN, initialResponseMatcher, null, true);
+        expectSaslAuthentication(PLAIN, initialResponseMatcher, null, true, false);
     }
 
     public void expectSaslExternal()
@@ -500,7 +515,7 @@ public class TestAmqpPeer implements AutoCloseable
             throw new IllegalStateException("need-client-cert must be enabled on the test peer");
         }
 
-        expectSaslAuthentication(EXTERNAL, equalTo(new Binary(new byte[0])), null, true);
+        expectSaslAuthentication(EXTERNAL, equalTo(new Binary(new byte[0])), null, true, false);
     }
 
     public void expectSaslAnonymous()
@@ -510,14 +525,19 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectSaslAnonymous(Matcher<?> hostnameMatcher)
     {
-        expectSaslAuthentication(ANONYMOUS, equalTo(new Binary(new byte[0])), hostnameMatcher, true);
+        expectSaslAuthentication(ANONYMOUS, equalTo(new Binary(new byte[0])), hostnameMatcher, true, false);
     }
 
     public void expectSaslAnonymousWithPreEmptiveServerHeader()
     {
         assertThat("Peer should be created with instruction to send preemptively", _driverRunnable.isSendSaslHeaderPreEmptively(), equalTo(true));
         boolean sendSaslHeaderResponse = false; // Must arrange for the server to have already sent it preemptively
-        expectSaslAuthentication(ANONYMOUS, equalTo(new Binary(new byte[0])), null, sendSaslHeaderResponse);
+        expectSaslAuthentication(ANONYMOUS, equalTo(new Binary(new byte[0])), null, sendSaslHeaderResponse, false);
+    }
+
+    public void expectSaslAnonymousWithServerAmqpHeaderSentPreemptively()
+    {
+        expectSaslAuthentication(ANONYMOUS, equalTo(new Binary(new byte[0])), null, true, true);
     }
 
     public void expectFailingSaslAuthentication(Symbol[] serverMechs, Symbol clientSelectedMech)
@@ -596,6 +616,14 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectOpen(Symbol[] desiredCapabilities, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties) {
         expectOpen(desiredCapabilities, serverCapabilities, null, serverProperties, null, null, false);
+    }
+
+    public void sendPreemptiveServerOpenFrame() {
+        // Arrange to send the Open frame after the previous handler
+        OpenFrame open = createOpenFrame();
+
+        CompositeAmqpPeerRunnable comp = insertCompsiteActionForLastHandler();
+        comp.add(new FrameSender(this, FrameType.AMQP, 0, open, null));
     }
 
     public void expectOpen(Symbol[] desiredCapabilities, Symbol[] serverCapabilities,

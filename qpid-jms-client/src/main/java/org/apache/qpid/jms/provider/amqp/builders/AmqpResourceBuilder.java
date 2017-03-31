@@ -32,6 +32,7 @@ import org.apache.qpid.jms.provider.amqp.AmqpResourceParent;
 import org.apache.qpid.jms.provider.amqp.AmqpSupport;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Endpoint;
+import org.apache.qpid.proton.engine.EndpointState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,11 +80,13 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
         // Create the resource object now
         resource = createResource(parent, resourceInfo, endpoint);
 
+        AmqpProvider provider = parent.getProvider();
+
         if (getRequestTimeout() > JmsConnectionInfo.INFINITE) {
 
             // Attempt to schedule a cancellation of the pending open request, can return
             // null if there is no configured request timeout.
-            requestTimeoutTask = parent.getProvider().scheduleRequestTimeout(new AsyncResult() {
+            requestTimeoutTask = provider.scheduleRequestTimeout(new AsyncResult() {
 
                 @Override
                 public void onSuccess() {
@@ -92,7 +95,7 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
 
                 @Override
                 public void onFailure(Throwable result) {
-                    handleClosed(parent.getProvider(), result);
+                    handleClosed(provider, result);
                 }
 
                 @Override
@@ -101,6 +104,16 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
                 }
 
             }, getRequestTimeout(), this);
+        }
+
+        // Check it wasn't already opened, if it is then handle it
+        if (endpoint.getRemoteState() != EndpointState.UNINITIALIZED) {
+            provider.scheduleExecuteAndPump(new Runnable() {
+                @Override
+                public void run() {
+                    handleOpened(provider);
+                }
+            });
         }
     }
 

@@ -821,6 +821,25 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         }
     }
 
+    public void scheduleExecuteAndPump(Runnable task) {
+        serializer.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    try {
+                        task.run();
+                    } finally {
+                        pumpToProtonTransport();
+                    }
+                } catch (Throwable t) {
+                    LOG.warn("Caught problem during task processing: {}", t.getMessage(), t);
+
+                    fireProviderException(t);
+                }
+            }
+        });
+    }
+
     /**
      * Callback method for the Transport to report that the underlying connection
      * has closed.  When called this method will queue a new task that will check for

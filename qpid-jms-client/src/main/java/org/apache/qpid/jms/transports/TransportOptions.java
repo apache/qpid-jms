@@ -31,7 +31,7 @@ public class TransportOptions implements Cloneable {
     public static final int DEFAULT_CONNECT_TIMEOUT = 60000;
     public static final int DEFAULT_TCP_PORT = 5672;
     public static final boolean DEFAULT_USE_EPOLL = true;
-    public static final boolean DEFAULT_TRACE_BYTES = true;
+    public static final boolean DEFAULT_TRACE_BYTES = false;
 
     private int sendBufferSize = DEFAULT_SEND_BUFFER_SIZE;
     private int receiveBufferSize = DEFAULT_RECEIVE_BUFFER_SIZE;

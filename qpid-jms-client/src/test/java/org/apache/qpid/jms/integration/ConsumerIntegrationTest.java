@@ -1390,6 +1390,14 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), messageCount);
 
+            final CountDownLatch expected = new CountDownLatch(messageCount);
+            ((JmsConnection) connection).addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onInboundMessage(JmsInboundMessageDispatch envelope) {
+                    expected.countDown();
+                }
+            });
+
             MessageConsumer consumer = session.createConsumer(queue);
             Message receivedMessage = null;
 
@@ -1399,6 +1407,9 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
                 assertNotNull(receivedMessage);
                 assertTrue(receivedMessage instanceof TextMessage);
             }
+
+            // Ensure all the messages arrived so that the matching below is deterministic
+            assertTrue("Expected transfers didnt occur: " + expected.getCount(), expected.await(5, TimeUnit.SECONDS));
 
             // Expect the client to then drain off all credit from the link.
             testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(DEFAULT_PREFETCH - messageCount)));
@@ -1450,6 +1461,14 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), messageCount);
 
+            final CountDownLatch expected = new CountDownLatch(messageCount);
+            ((JmsConnection) connection).addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onInboundMessage(JmsInboundMessageDispatch envelope) {
+                    expected.countDown();
+                }
+            });
+
             MessageConsumer consumer = session.createConsumer(queue);
 
             int consumeCount = 3;
@@ -1461,6 +1480,9 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
                 assertNotNull(receivedMessage);
                 assertTrue(receivedMessage instanceof TextMessage);
             }
+
+            // Ensure all the messages arrived so that the matching below is deterministic
+            assertTrue("Expected transfers didnt occur: " + expected.getCount(), expected.await(5, TimeUnit.SECONDS));
 
             // Expect the client to then drain off all credit from the link.
             testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(DEFAULT_PREFETCH - messageCount)));

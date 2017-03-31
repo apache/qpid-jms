@@ -31,6 +31,7 @@ public class TransportOptions implements Cloneable {
     public static final int DEFAULT_CONNECT_TIMEOUT = 60000;
     public static final int DEFAULT_TCP_PORT = 5672;
     public static final boolean DEFAULT_USE_EPOLL = true;
+    public static final boolean DEFAULT_TRACE_BYTES = true;
 
     private int sendBufferSize = DEFAULT_SEND_BUFFER_SIZE;
     private int receiveBufferSize = DEFAULT_RECEIVE_BUFFER_SIZE;
@@ -42,6 +43,7 @@ public class TransportOptions implements Cloneable {
     private boolean tcpNoDelay = DEFAULT_TCP_NO_DELAY;
     private int defaultTcpPort = DEFAULT_TCP_PORT;
     private boolean useEpoll = DEFAULT_USE_EPOLL;
+    private boolean traceBytes = DEFAULT_TRACE_BYTES;
 
     /**
      * @return the currently set send buffer size in bytes.
@@ -181,6 +183,23 @@ public class TransportOptions implements Cloneable {
         this.useEpoll = useEpoll;
     }
 
+    /**
+     * @return true if the transport should enable byte tracing
+     */
+    public boolean isTraceBytes() {
+        return traceBytes;
+    }
+
+    /**
+     * Determines if the transport should add a logger for bytes in / out
+     *
+     * @param traceBytes
+     * 		should the transport log the bytes in and out.
+     */
+    public void setTraceBytes(boolean traceBytes) {
+        this.traceBytes = traceBytes;
+    }
+
     @Override
     public TransportOptions clone() {
         return copyOptions(new TransportOptions());
@@ -201,6 +220,7 @@ public class TransportOptions implements Cloneable {
         copy.setTrafficClass(getTrafficClass());
         copy.setDefaultTcpPort(getDefaultTcpPort());
         copy.setUseEpoll(isUseEpoll());
+        copy.setTraceBytes(isTraceBytes());
 
         return copy;
     }

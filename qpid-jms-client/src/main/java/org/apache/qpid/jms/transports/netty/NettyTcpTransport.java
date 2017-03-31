@@ -52,6 +52,7 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -401,6 +402,10 @@ public class NettyTcpTransport implements Transport {
     private void configureChannel(final Channel channel, final SslHandler sslHandler) throws Exception {
         if (isSecure()) {
             channel.pipeline().addLast(sslHandler);
+        }
+
+        if (getTransportOptions().isTraceBytes()) {
+            channel.pipeline().addLast("logger", new LoggingHandler(getClass()));
         }
 
         addAdditionalHandlers(channel.pipeline());

@@ -165,23 +165,33 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                 LOG.debug("Commit: {}", transactionInfo.getId());
 
                 JmsTransactionId oldTransactionId = transactionInfo.getId();
+                final JmsTransactionInfo nextTx = getNextTransactionInfo();
+
                 try {
-                    connection.commit(transactionInfo, new ProviderSynchronization() {
+                    connection.commit(transactionInfo, nextTx, new ProviderSynchronization() {
 
                         @Override
                         public void onPendingSuccess() {
                             reset();
+                            JmsLocalTransactionContext.this.transactionInfo = nextTx;
                         }
 
                         @Override
                         public void onPendingFailure(Throwable cause) {
                             reset();
+                            JmsLocalTransactionContext.this.transactionInfo = nextTx;
                         }
                     });
 
                     if (listener != null) {
                         try {
                             listener.onTransactionCommitted();
+                        } catch (Throwable error) {
+                            LOG.trace("Local TX listener error ignored: {}", error);
+                        }
+
+                        try {
+                            listener.onTransactionStarted();
                         } catch (Throwable error) {
                             LOG.trace("Local TX listener error ignored: {}", error);
                         }
@@ -195,10 +205,22 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                             LOG.trace("Local TX listener error ignored: {}", error);
                         }
                     }
+
+                    try {
+                        // If the provider failed to start a new transaction there will not be
+                        // a current provider transaction id present, so we attempt to create
+                        // one to recover our state.
+                        if (nextTx.getId().getProviderTxId() == null) {
+                            begin();
+                        }
+                    } catch (Exception e) {
+                        // TODO
+                        // At this point the transacted session is now unrecoverable, we should
+                        // probably close it.
+                        LOG.info("Failed to start new Transaction after failed commit of: {}", oldTransactionId);
+                    }
+
                     throw cause;
-                } finally {
-                    LOG.trace("Commit starting new TX after commit completed.");
-                    begin();
                 }
             }
         } finally {
@@ -215,17 +237,27 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
         lock.writeLock().lock();
         try {
             LOG.debug("Rollback: {}", transactionInfo.getId());
+            JmsTransactionId oldTransactionId = transactionInfo.getId();
+            final JmsTransactionInfo nextTx;
+            if (startNewTx) {
+                nextTx = getNextTransactionInfo();
+            } else {
+                nextTx = null;
+            }
+
             try {
-                connection.rollback(transactionInfo, new ProviderSynchronization() {
+                connection.rollback(transactionInfo, nextTx, new ProviderSynchronization() {
 
                     @Override
                     public void onPendingSuccess() {
                         reset();
+                        JmsLocalTransactionContext.this.transactionInfo = nextTx;
                     }
 
                     @Override
                     public void onPendingFailure(Throwable cause) {
                         reset();
+                        JmsLocalTransactionContext.this.transactionInfo = nextTx;
                     }
                 });
 
@@ -235,12 +267,40 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                     } catch (Throwable error) {
                         LOG.trace("Local TX listener error ignored: {}", error);
                     }
+
+                    try {
+                        if (startNewTx) {
+                            listener.onTransactionStarted();
+                        }
+                    } catch (Throwable error) {
+                        LOG.trace("Local TX listener error ignored: {}", error);
+                    }
                 }
-            } finally {
-                if (startNewTx) {
-                    LOG.trace("Rollback starting new TX after rollback completed.");
-                    begin();
+            } catch (JMSException cause) {
+                LOG.info("Rollback failed for transaction: {}", oldTransactionId);
+                if (listener != null) {
+                    try {
+                        listener.onTransactionRolledBack();
+                    } catch (Throwable error) {
+                        LOG.trace("Local TX listener error ignored: {}", error);
+                    }
                 }
+
+                try {
+                    // If the provider failed to start a new transaction there will not be
+                    // a current provider transaction id present, so we attempt to create
+                    // one to recover our state.
+                    if (startNewTx && nextTx.getId().getProviderTxId() == null) {
+                        begin();
+                    }
+                } catch (Exception e) {
+                    // TODO
+                    // At this point the transacted session is now unrecoverable, we should
+                    // probably close it.
+                    LOG.info("Failed to start new Transaction after failed rollback of: {}", oldTransactionId);
+                }
+
+                throw cause;
             }
         } finally {
             lock.writeLock().unlock();

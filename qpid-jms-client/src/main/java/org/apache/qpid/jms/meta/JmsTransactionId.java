@@ -67,6 +67,10 @@ public final class JmsTransactionId extends JmsAbstractResourceId implements Com
         return result;
     }
 
+    public Object getProviderTxId() {
+        return getProviderHint();
+    }
+
     public long getValue() {
         return value;
     }

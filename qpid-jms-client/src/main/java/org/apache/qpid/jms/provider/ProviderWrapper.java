@@ -111,13 +111,13 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
     }
 
     @Override
-    public void commit(JmsTransactionInfo transactionInfo, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
-        next.commit(transactionInfo, request);
+    public void commit(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
+        next.commit(transactionInfo, nextTransactionInfo, request);
     }
 
     @Override
-    public void rollback(JmsTransactionInfo transactionInfo, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
-        next.rollback(transactionInfo, request);
+    public void rollback(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
+        next.rollback(transactionInfo, nextTransactionInfo, request);
     }
 
     @Override

@@ -635,7 +635,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     }
 
     @Override
-    public void commit(final JmsTransactionInfo transactionInfo, final AsyncResult request) throws IOException {
+    public void commit(final JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionId, final AsyncResult request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -644,7 +644,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 try {
                     checkClosed();
                     AmqpSession session = connection.getSession(transactionInfo.getSessionId());
-                    session.commit(transactionInfo, request);
+                    session.commit(transactionInfo, nextTransactionId, request);
                     pumpToProtonTransport(request);
                 } catch (Throwable t) {
                     request.onFailure(t);
@@ -654,7 +654,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     }
 
     @Override
-    public void rollback(final JmsTransactionInfo transactionInfo, final AsyncResult request) throws IOException {
+    public void rollback(final JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionId, final AsyncResult request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -663,7 +663,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 try {
                     checkClosed();
                     AmqpSession session = connection.getSession(transactionInfo.getSessionId());
-                    session.rollback(transactionInfo, request);
+                    session.rollback(transactionInfo, nextTransactionId, request);
                     pumpToProtonTransport(request);
                 } catch (Throwable t) {
                     request.onFailure(t);

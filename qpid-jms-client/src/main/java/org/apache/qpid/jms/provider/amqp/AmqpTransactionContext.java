@@ -128,7 +128,7 @@ public class AmqpTransactionContext implements AmqpResourceParent {
         }
     }
 
-    public void commit(final JmsTransactionInfo transactionInfo, final AsyncResult request) throws Exception {
+    public void commit(final JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, final AsyncResult request) throws Exception {
         if (!transactionInfo.getId().equals(current)) {
             if (!transactionInfo.isInDoubt() && current == null) {
                 throw new IllegalStateException("Commit called with no active Transaction.");
@@ -141,13 +141,25 @@ public class AmqpTransactionContext implements AmqpResourceParent {
 
         preCommit();
 
-        DischargeCompletion dischargeResult = new DischargeCompletion(request, true);
-
         LOG.trace("TX Context[{}] committing current TX[[]]", this, current);
-        coordinator.discharge(current, dischargeResult, true);
+
+        DischargeCompletion completion = new DischargeCompletion(request, nextTransactionInfo, true);
+
+        coordinator.discharge(current, completion);
+        current = null;
+
+        if (completion.isPipelined()) {
+            // If the discharge completed abnormally then we don't bother creating a new TX as the
+            // caller will determine how to recover.
+            if (!completion.isComplete()) {
+                begin(nextTransactionInfo.getId(), completion.getDeclareCompletion());
+            } else {
+                completion.getDeclareCompletion().onFailure(completion.getFailureCause());
+            }
+        }
     }
 
-    public void rollback(JmsTransactionInfo transactionInfo, final AsyncResult request) throws Exception {
+    public void rollback(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, final AsyncResult request) throws Exception {
         if (!transactionInfo.getId().equals(current)) {
             if (!transactionInfo.isInDoubt() && current == null) {
                 throw new IllegalStateException("Rollback called with no active Transaction.");
@@ -161,10 +173,22 @@ public class AmqpTransactionContext implements AmqpResourceParent {
 
         preRollback();
 
-        DischargeCompletion dischargeResult = new DischargeCompletion(request, false);
-
         LOG.trace("TX Context[{}] rolling back current TX[[]]", this, current);
-        coordinator.discharge(current, dischargeResult, false);
+
+        DischargeCompletion completion = new DischargeCompletion(request, nextTransactionInfo, false);
+
+        coordinator.discharge(current, completion);
+        current = null;
+
+        if (completion.isPipelined()) {
+            // If the discharge completed abnormally then we don't bother creating a new TX as the
+            // caller will determine how to recover.
+            if (!completion.isComplete()) {
+                begin(nextTransactionInfo.getId(), completion.getDeclareCompletion());
+            } else {
+                completion.getDeclareCompletion().onFailure(completion.getFailureCause());
+            }
+        }
     }
 
     //----- Context utility methods ------------------------------------------//
@@ -273,91 +297,144 @@ public class AmqpTransactionContext implements AmqpResourceParent {
 
     //----- Completion for Commit or Rollback operation ----------------------//
 
-    private class DischargeCompletion implements AsyncResult {
+    private abstract class Completion implements AsyncResult {
 
-        private final AsyncResult request;
-        private final boolean commit;
+        protected boolean complete;
+        protected Throwable failure;
 
-        public DischargeCompletion(AsyncResult request, boolean commit) {
-            this.request = request;
-            this.commit = commit;
+        @Override
+        public boolean isComplete() {
+            return complete;
+        }
+
+        public Throwable getFailureCause() {
+            return failure;
+        }
+    }
+
+    private class DeclareCompletion extends Completion {
+
+        protected final DischargeCompletion parent;
+
+        public DeclareCompletion(DischargeCompletion parent) {
+            this.parent = parent;
         }
 
         @Override
         public void onFailure(Throwable result) {
-            cleanup();
-            request.onFailure(result);
+            complete = true;
+            failure = result;
+            parent.onDeclareFailure(result);
         }
 
         @Override
         public void onSuccess() {
-            cleanup();
-            request.onSuccess();
+            complete = true;
+            parent.onDeclareSuccess();
+        }
+    }
+
+    public class DischargeCompletion extends Completion {
+
+        private final DeclareCompletion declare;
+
+        private final AsyncResult request;
+        private final boolean commit;
+
+        public DischargeCompletion(AsyncResult request, JmsTransactionInfo nextTx, boolean commit) {
+            this.request = request;
+            this.commit = commit;
+
+            if (nextTx != null) {
+                this.declare = new DeclareCompletion(this);
+            } else {
+                this.declare = null;
+            }
+        }
+
+        public DeclareCompletion getDeclareCompletion() {
+            return declare;
+        }
+
+        public boolean isCommit() {
+            return commit;
+        }
+
+        public boolean isPipelined() {
+            return declare != null;
         }
 
         @Override
-        public boolean isComplete() {
-            return request.isComplete();
+        public void onFailure(Throwable result) {
+            complete = true;
+            failure = result;
+            onDischargeFailure(result);
+        }
+
+        @Override
+        public void onSuccess() {
+            complete = true;
+            onDischargeSuccess();
+        }
+
+        public void onDeclareSuccess() {
+            // If the discharge has not completed yet we wait until it does
+            // so we end up with the correct result.
+            if (isComplete()) {
+                if (getFailureCause() == null) {
+                    request.onSuccess();
+                } else {
+                    request.onFailure(getFailureCause());
+                }
+            }
+        }
+
+        public void onDischargeSuccess() {
+            cleanup();
+
+            // If the declare already returned a result we can proceed otherwise
+            // we need to wait for it finish in order to get the correct outcome.
+            if (declare == null) {
+                request.onSuccess();
+            } else if (declare.isComplete()) {
+                if (declare.getFailureCause() == null) {
+                    request.onSuccess();
+                } else {
+                    request.onFailure(declare.getFailureCause());
+                }
+            }
+        }
+
+        public void onDeclareFailure(Throwable failure) {
+            // If the discharge has not completed yet we wait until it does
+            // so we end up with the correct result.
+            if (isComplete()) {
+                if (getFailureCause() == null) {
+                    request.onFailure(failure);
+                } else {
+                    request.onFailure(getFailureCause());
+                }
+            }
+        }
+
+        public void onDischargeFailure(Throwable failure) {
+            cleanup();
+
+            // If the declare already returned a result we can proceed otherwise
+            // we need to wait for it finish in order to get the correct outcome.
+            if (declare == null) {
+                request.onFailure(failure);
+            } else if (declare.isComplete()) {
+                request.onFailure(failure);
+            }
         }
 
         private void cleanup() {
-            current = null;
             if (commit) {
                 postCommit();
             } else {
                 postRollback();
             }
-        }
-    }
-
-    //----- Completion result for Producers ----------------------------------//
-
-    @SuppressWarnings("unused")
-    private class SendCompletion implements AsyncResult {
-
-        private int pendingCompletions;
-
-        private final JmsTransactionInfo info;
-        private final DischargeCompletion request;
-
-        private boolean commit;
-
-        public SendCompletion(JmsTransactionInfo info, DischargeCompletion request, int pendingCompletions, boolean commit) {
-            this.info = info;
-            this.request = request;
-            this.pendingCompletions = pendingCompletions;
-            this.commit = commit;
-        }
-
-        @Override
-        public void onFailure(Throwable result) {
-            if (--pendingCompletions == 0) {
-                try {
-                    LOG.trace("TX Context[{}] rolling back current TX[[]]", this, current);
-                    coordinator.discharge(current, request, false);
-                } catch (Throwable error) {
-                    request.onFailure(error);
-                }
-            } else {
-                commit = false;
-            }
-        }
-
-        @Override
-        public void onSuccess() {
-            if (--pendingCompletions == 0) {
-                try {
-                    LOG.trace("TX Context[{}] {} current TX[[]]", this, commit ? "committing" : "rolling back" ,current);
-                    coordinator.discharge(current, request, commit);
-                } catch (Throwable error) {
-                    request.onFailure(error);
-                }
-            }
-        }
-
-        @Override
-        public boolean isComplete() {
-            return request.isComplete();
         }
     }
 }

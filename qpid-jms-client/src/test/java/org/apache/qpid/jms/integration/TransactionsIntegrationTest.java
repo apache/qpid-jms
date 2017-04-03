@@ -30,6 +30,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -109,6 +111,9 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             session.close();
 
+            testPeer.expectClose();
+            connection.close();
+
             testPeer.waitForAllHandlersToComplete(1000);
         }
     }
@@ -124,8 +129,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             // First expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a Declared disposition state containing the txnId.
-            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            testPeer.expectDeclare(txnId);
+            Binary txnId1 = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            testPeer.expectDeclare(txnId1);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
@@ -142,11 +147,11 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             messageMatcher.setMessageAnnotationsMatcher(new MessageAnnotationsSectionMatcher(true));
 
             TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
-            stateMatcher.withTxnId(equalTo(txnId));
+            stateMatcher.withTxnId(equalTo(txnId1));
             stateMatcher.withOutcome(nullValue());
 
             TransactionalState txState = new TransactionalState();
-            txState.setTxnId(txnId);
+            txState.setTxnId(txnId1);
             txState.setOutcome(new Accepted());
 
             testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
@@ -155,14 +160,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
             // and reply with rejected and settled disposition to indicate the commit failed
-            testPeer.expectDischarge(txnId, false, new Rejected());
+            testPeer.expectDischarge(txnId1, false, new Rejected());
 
             // Then expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.
-            txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
-            testPeer.expectDeclare(txnId);
-            testPeer.expectDischarge(txnId, true);
-            testPeer.expectClose();
+            Binary txnId2 = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
+            testPeer.expectDeclare(txnId2);
 
             try {
                 session.commit();
@@ -170,6 +173,9 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             } catch (TransactionRolledBackException jmsTxRb) {
             }
 
+            // session should roll back on close
+            testPeer.expectDischarge(txnId2, true);
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -187,8 +193,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             // First expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a Declared disposition state containing the txnId.
-            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            testPeer.expectDeclare(txnId);
+            Binary txnId1 = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            testPeer.expectDeclare(txnId1);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
@@ -205,11 +211,11 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             messageMatcher.setMessageAnnotationsMatcher(new MessageAnnotationsSectionMatcher(true));
 
             TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
-            stateMatcher.withTxnId(equalTo(txnId));
+            stateMatcher.withTxnId(equalTo(txnId1));
             stateMatcher.withOutcome(nullValue());
 
             TransactionalState txState = new TransactionalState();
-            txState.setTxnId(txnId);
+            txState.setTxnId(txnId1);
             txState.setOutcome(new Accepted());
 
             testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
@@ -219,12 +225,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
             // and reply with rejected and settled disposition to indicate the commit failed
             Rejected commitFailure = new Rejected(new Error(Symbol.valueOf("failed"), "Unknown error"));
-            testPeer.expectDischarge(txnId, false, commitFailure);
+            testPeer.expectDischarge(txnId1, false, commitFailure);
 
             // Then expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.
-            txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
-            testPeer.expectDeclare(txnId);
+            Binary txnId2 = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
+            testPeer.expectDeclare(txnId2);
 
             try {
                 session.commit();
@@ -236,19 +242,19 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             // TransactionalState with the above txnId but has no outcome. Respond with a
             // TransactionalState with Accepted outcome.
             stateMatcher = new TransactionalStateMatcher();
-            stateMatcher.withTxnId(equalTo(txnId));
+            stateMatcher.withTxnId(equalTo(txnId2));
             stateMatcher.withOutcome(nullValue());
 
             txState = new TransactionalState();
-            txState.setTxnId(txnId);
+            txState.setTxnId(txnId2);
             txState.setOutcome(new Accepted());
 
             testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
-            testPeer.expectDischarge(txnId, true);
-            testPeer.expectClose();
+            testPeer.expectDischarge(txnId2, true);
 
             producer.send(session.createMessage());
 
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -266,8 +272,9 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             // First expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a Declared disposition state containing the txnId.
-            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            testPeer.expectDeclare(txnId);
+            Binary txnId1 = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            Binary txnId2 = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
+            testPeer.expectDeclare(txnId1);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");
@@ -284,11 +291,11 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             messageMatcher.setMessageAnnotationsMatcher(new MessageAnnotationsSectionMatcher(true));
 
             TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
-            stateMatcher.withTxnId(equalTo(txnId));
+            stateMatcher.withTxnId(equalTo(txnId1));
             stateMatcher.withOutcome(nullValue());
 
             TransactionalState txState = new TransactionalState();
-            txState.setTxnId(txnId);
+            txState.setTxnId(txnId1);
             txState.setOutcome(new Accepted());
 
             testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
@@ -298,12 +305,11 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
             // and reply with rejected and settled disposition to indicate the rollback failed
             Rejected commitFailure = new Rejected(new Error(Symbol.valueOf("failed"), "Unknown error"));
-            testPeer.expectDischarge(txnId, true, commitFailure);
+            testPeer.expectDischarge(txnId1, true, commitFailure);
 
             // Then expect an unsettled 'declare' transfer to the txn coordinator, and
             // reply with a declared disposition state containing the txnId.
-            txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
-            testPeer.expectDeclare(txnId);
+            testPeer.expectDeclare(txnId2);
 
             try {
                 session.rollback();
@@ -315,19 +321,19 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             // TransactionalState with the above txnId but has no outcome. Respond with a
             // TransactionalState with Accepted outcome.
             stateMatcher = new TransactionalStateMatcher();
-            stateMatcher.withTxnId(equalTo(txnId));
+            stateMatcher.withTxnId(equalTo(txnId2));
             stateMatcher.withOutcome(nullValue());
 
             txState = new TransactionalState();
-            txState.setTxnId(txnId);
+            txState.setTxnId(txnId2);
             txState.setOutcome(new Accepted());
 
             testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
-            testPeer.expectDischarge(txnId, true);
-            testPeer.expectClose();
+            testPeer.expectDischarge(txnId2, true);
 
             producer.send(session.createMessage());
 
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -431,6 +437,11 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                 // and reply with accepted and settled disposition to indicate the commit succeeded
                 testPeer.expectDischarge(txnId, false);
 
+                // Then expect an unsettled 'declare' transfer to the txn coordinator, and
+                // reply with a declared disposition state containing the txnId.
+                txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
+                testPeer.expectDeclare(txnId);
+
                 // Now the deferred close should be performed.
                 testPeer.expectDetach(true, true, true);
 
@@ -439,12 +450,12 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                 // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
                 // and reply with accepted and settled disposition to indicate the commit succeeded
                 testPeer.expectDischarge(txnId, false);
-            }
 
-            // Then expect an unsettled 'declare' transfer to the txn coordinator, and
-            // reply with a declared disposition state containing the txnId.
-            txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
-            testPeer.expectDeclare(txnId);
+                // Then expect an unsettled 'declare' transfer to the txn coordinator, and
+                // reply with a declared disposition state containing the txnId.
+                txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
+                testPeer.expectDeclare(txnId);
+            }
 
             session.commit();
 
@@ -506,10 +517,10 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
             testPeer.expectDeclare(txnId);
             testPeer.expectDischarge(txnId, true);
-            testPeer.expectClose();
 
             session.commit();
 
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -553,10 +564,10 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
             testPeer.expectDeclare(txnId);
             testPeer.expectDischarge(txnId, true);
-            testPeer.expectClose();
 
             session.rollback();
 
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -601,10 +612,10 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
             testPeer.expectDischarge(txnId, true);
-            testPeer.expectClose();
 
             producer.send(session.createMessage());
 
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -741,6 +752,11 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                 // and reply with accepted and settled disposition to indicate the rollback succeeded
                 testPeer.expectDischarge(txnId, true);
 
+                // Then expect an unsettled 'declare' transfer to the txn coordinator, and
+                // reply with a declared disposition state containing the txnId.
+                txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+                testPeer.expectDeclare(txnId);
+
                 // Now the deferred close should be performed.
                 testPeer.expectDetach(true, true, true);
 
@@ -749,34 +765,26 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                 // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
                 // and reply with accepted and settled disposition to indicate the rollback succeeded
                 testPeer.expectDischarge(txnId, true);
-            }
 
-            if (!closeConsumer) {
+                // Then expect an unsettled 'declare' transfer to the txn coordinator, and
+                // reply with a declared disposition state containing the txnId.
+                txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+                testPeer.expectDeclare(txnId);
+
                 // Expect the messages that were not consumed to be released
                 int unconsumed = transferCount - consumeCount;
                 for (int i = 1; i <= unconsumed; i++) {
                     testPeer.expectDisposition(true, new ReleasedMatcher());
                 }
 
-                // Then expect an unsettled 'declare' transfer to the txn coordinator, and
-                // reply with a declared disposition state containing the txnId.
-                txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-                testPeer.expectDeclare(txnId);
-
                 // Expect the consumer to be 'started' again as rollback completes
                 testPeer.expectLinkFlow(false, false, greaterThan(UnsignedInteger.ZERO));
-            } else {
-                // Then expect an unsettled 'declare' transfer to the txn coordinator, and
-                // reply with a declared disposition state containing the txnId.
-                txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-                testPeer.expectDeclare(txnId);
             }
 
             testPeer.expectDischarge(txnId, true);
-            testPeer.expectClose();
-
             session.rollback();
 
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -843,10 +851,9 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(messageCount)));
 
             testPeer.expectDischarge(txnId, true);
-            testPeer.expectClose();
-
             session.rollback();
 
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -917,10 +924,10 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             // Expect the consumer to be 'started' again as rollback completes
             testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(messageCount)));
             testPeer.expectDischarge(txnId, true);
-            testPeer.expectClose();
 
             session.rollback();
 
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -955,10 +962,9 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.expectReceiverAttach(notNullValue(), sourceMatcher);
             testPeer.expectLinkFlow();
             testPeer.expectDischarge(txnId, true);
-            testPeer.expectClose();
-
             session.createConsumer(queue);
 
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -1005,13 +1011,14 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin();
             testPeer.expectCoordinatorAttach();
 
-            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            testPeer.expectDeclare(txnId);
-            testPeer.remotelyCloseLastCoordinatorLinkOnDischarge(txnId, false);
+            Binary txnId1 = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            Binary txnId2 = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
+
+            testPeer.expectDeclare(txnId1);
+            testPeer.remotelyCloseLastCoordinatorLinkOnDischarge(txnId1, false, true, txnId2);
             testPeer.expectCoordinatorAttach();
-            testPeer.expectDeclare(txnId);
-            testPeer.expectDischarge(txnId, true);
-            testPeer.expectClose();
+            testPeer.expectDeclare(txnId2);
+            testPeer.expectDischarge(txnId2, true);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
 
@@ -1022,6 +1029,43 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                 LOG.info("Caught expected TransactionRolledBackException");
             }
 
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testRollbackErrorWhenCoordinatorRemotelyClosed() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            testPeer.expectDeclare(txnId);
+            testPeer.remotelyCloseLastCoordinatorLink();
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            testPeer.expectCoordinatorAttach();
+            testPeer.expectDeclare(txnId);
+
+            testPeer.expectDischarge(txnId, true);
+
+            try {
+                session.commit();
+                fail("Transaction should have rolled back");
+            } catch (TransactionRolledBackException ex) {
+                LOG.info("Caught expected TransactionRolledBackException");
+            }
+
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -1037,13 +1081,14 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin();
             testPeer.expectCoordinatorAttach();
 
-            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            testPeer.expectDeclare(txnId);
-            testPeer.remotelyCloseLastCoordinatorLinkOnDischarge(txnId, true);
+            Binary txnId1 = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            Binary txnId2 = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
+
+            testPeer.expectDeclare(txnId1);
+            testPeer.remotelyCloseLastCoordinatorLinkOnDischarge(txnId1, true, true, txnId2);
             testPeer.expectCoordinatorAttach();
-            testPeer.expectDeclare(txnId);
-            testPeer.expectDischarge(txnId, true);
-            testPeer.expectClose();
+            testPeer.expectDeclare(txnId2);
+            testPeer.expectDischarge(txnId2, true);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
 
@@ -1054,6 +1099,43 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                 LOG.info("Caught expected JMSException");
             }
 
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testJMSExceptionOnRollbackWhenCoordinatorRemotelyClosed() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            testPeer.expectDeclare(txnId);
+            testPeer.remotelyCloseLastCoordinatorLink();
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            testPeer.expectCoordinatorAttach();
+            testPeer.expectDeclare(txnId);
+
+            testPeer.expectDischarge(txnId, true);
+
+            try {
+                session.rollback();
+                fail("Rollback should have thrown a JMSException");
+            } catch (JMSException ex) {
+                LOG.info("Caught expected JMSException");
+            }
+
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -1096,7 +1178,6 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             // Expect that the session TX will rollback on close.
             testPeer.expectDischarge(txnId, true);
-            testPeer.expectClose();
 
             try {
                 session.commit();
@@ -1104,6 +1185,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             } catch (TransactionRolledBackException jmsTxRb) {
             }
 
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -1151,7 +1233,6 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             // Expect that the session TX will rollback on close.
             testPeer.expectDischarge(txnId, true);
-            testPeer.expectClose();
 
             try {
                 session.commit();
@@ -1159,6 +1240,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             } catch (TransactionRolledBackException jmsTxRb) {
             }
 
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -1175,7 +1257,6 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin();
             testPeer.expectCoordinatorAttach();
             testPeer.expectDeclareButDoNotRespond();
-            testPeer.expectClose();
 
             try {
                 connection.createSession(true, Session.SESSION_TRANSACTED);
@@ -1186,6 +1267,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                 LOG.error("Caught -> ", error);
             }
 
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -1207,7 +1289,6 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             // Closed session should roll-back the TX with a failed discharge
             testPeer.expectDischargeButDoNotRespond(txnId, true);
-            testPeer.expectClose();
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
 
@@ -1220,6 +1301,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                 LOG.error("Caught -> ", error);
             }
 
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -1236,16 +1318,18 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin();
             testPeer.expectCoordinatorAttach();
 
-            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            testPeer.expectDeclare(txnId);
+            Binary txnId1 = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            Binary txnId2 = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
+            testPeer.expectDeclare(txnId1);
 
-            // Closed session should roll-back the TX with a failed discharge
-            testPeer.expectDischargeButDoNotRespond(txnId, true);
+            // Expect discharge but don't respond so that the request timeout kicks in and fails
+            // the discharge.  The pipelined declare should arrive as well and be discharged as the
+            // client attempts to recover to a known good state.
+            testPeer.expectDischargeButDoNotRespond(txnId1, true);
 
             // Session should throw from the rollback and then try and recover.
-            testPeer.expectDeclare(txnId);
-            testPeer.expectDischarge(txnId, true);
-            testPeer.expectClose();
+            testPeer.expectDeclare(txnId2);
+            testPeer.expectDischarge(txnId2, true);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
 
@@ -1258,6 +1342,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                 LOG.error("Caught -> ", error);
             }
 
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -1274,16 +1359,15 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin();
             testPeer.expectCoordinatorAttach();
 
-            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            testPeer.expectDeclare(txnId);
+            Binary txnId1 = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            Binary txnId2 = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
+            testPeer.expectDeclare(txnId1);
 
-            // Closed session should roll-back the TX with a failed discharge
-            testPeer.expectDischargeButDoNotRespond(txnId, false);
-
-            // Session should throw from the commit and then try and recover.
-            testPeer.expectDeclare(txnId);
-            testPeer.expectDischarge(txnId, true);
-            testPeer.expectClose();
+            // Expect discharge but don't respond so that the request timeout kicks in and fails
+            // the discharge.  The pipelined declare should arrive as well and we respond with
+            // successful declare.
+            testPeer.expectDischargeButDoNotRespond(txnId1, false);
+            testPeer.expectDeclare(txnId2);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
 
@@ -1296,6 +1380,10 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                 LOG.error("Caught -> ", error);
             }
 
+            // Session rolls back on close
+            testPeer.expectDischarge(txnId2, true);
+
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -1312,17 +1400,22 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin();
             testPeer.expectCoordinatorAttach();
 
-            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
-            testPeer.expectDeclare(txnId);
+            Binary txnId1 = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            Binary txnId2 = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
+            testPeer.expectDeclare(txnId1);
 
-            // Closed session should roll-back the TX with a failed discharge
-            testPeer.expectDischargeButDoNotRespond(txnId, false);
-
-            // Session should throw from the commit and then try and recover.
+            // Expect discharge and don't respond so that the request timeout kicks in
+            // Expect pipelined declare and don't response so that the request timeout kicks in.
+            // The commit operation should throw a timed out exception at that point.
+            testPeer.expectDischargeButDoNotRespond(txnId1, false);
             testPeer.expectDeclareButDoNotRespond();
-            testPeer.expectClose();
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+
+            // After the pipelined operations both time out, the session should attempt to
+            // recover by creating a new TX, then on close the session should roll it back
+            testPeer.expectDeclare(txnId2);
+            testPeer.expectDischarge(txnId2, true);
 
             try {
                 session.commit();
@@ -1333,6 +1426,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                 LOG.error("Caught -> ", error);
             }
 
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -1385,13 +1479,13 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
             testPeer.expectDeclare(txnId);
             testPeer.expectDischarge(txnId, true);
-            testPeer.expectClose();
 
             try {
                 session.rollback();
                 fail("Should throw a timed out exception");
             } catch (JmsOperationTimedOutException jmsEx) {}
 
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
@@ -1451,6 +1545,83 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.expectEnd();
 
             session.close();
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout=60000)
+    public void testConsumeManyWithSingleTXPerMessage() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            final int messageCount = 10;
+
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+
+            Deque<Binary> txnIdDeque = new ArrayDeque<>(3);
+            txnIdDeque.offer(new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4}));
+            txnIdDeque.offer(new Binary(new byte[]{ (byte) 2, (byte) 4, (byte) 6, (byte) 8}));
+            txnIdDeque.offer(new Binary(new byte[]{ (byte) 5, (byte) 4, (byte) 3, (byte) 2}));
+
+            // First expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a declared disposition state containing the txnId.
+            Binary txnId = txnIdDeque.removeFirst();
+            txnIdDeque.addLast(txnId);
+            testPeer.expectDeclare(txnId);
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            Queue queue = session.createQueue("myQueue");
+
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+            // Expect the browser enumeration to create a underlying consumer
+            testPeer.expectReceiverAttach();
+            // Expect initial credit to be sent, respond with some messages that are tagged with
+            // a sequence number we can use to determine if order is maintained.
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent,
+                messageCount, false, false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH)), 1, false, true);
+
+            MessageConsumer consumer = session.createConsumer(queue);
+
+            for (int i = 0; i < messageCount; i++) {
+                // Then expect an *settled* TransactionalState disposition for each message once received by the consumer
+                TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
+                stateMatcher.withTxnId(equalTo(txnId));
+                stateMatcher.withOutcome(new AcceptedMatcher());
+
+                testPeer.expectDisposition(true, stateMatcher);
+
+                Message message = consumer.receive(500);
+                assertNotNull(message);
+                assertEquals(i, message.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER));
+
+                // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
+                // and reply with accepted and settled disposition to indicate the commit succeeded
+                testPeer.expectDischarge(txnId, false);
+
+                // Expect the next transaction to start.
+                txnId = txnIdDeque.removeFirst();
+                txnIdDeque.addLast(txnId);
+                testPeer.expectDeclare(txnId);
+
+                session.commit();
+            }
+
+            // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
+            // and reply with accepted and settled disposition to indicate the rollback succeeded
+            testPeer.expectDischarge(txnId, true);
+            testPeer.expectEnd();
+
+            session.close();
+
+            testPeer.expectClose();
+            connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
         }

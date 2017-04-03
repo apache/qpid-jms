@@ -149,17 +149,19 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
      *
      * @param transactionInfo
      *        the JmsTransactionInfo describing the transaction being committed.
+     * @param nextTransactionInfo
+     *        the JmsTransactionInfo describing the transaction that should be started immediately.
      * @param request
      *        The request that will be signaled on completion of this operation.
      *
      * @throws Exception if an error occurs while performing the operation.
      */
-    public void commit(JmsTransactionInfo transactionInfo, AsyncResult request) throws Exception {
+    public void commit(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, AsyncResult request) throws Exception {
         if (!getResourceInfo().isTransacted()) {
             throw new IllegalStateException("Non-transacted Session cannot commit a TX.");
         }
 
-        getTransactionContext().commit(transactionInfo, request);
+        getTransactionContext().commit(transactionInfo, nextTransactionInfo, request);
     }
 
     /**
@@ -167,17 +169,19 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
      *
      * @param transactionInfo
      *        the JmsTransactionInfo describing the transaction being rolled back.
+     * @param nextTransactionInfo
+     *        the JmsTransactionInfo describing the transaction that should be started immediately.
      * @param request
      *        The request that will be signaled on completion of this operation.
      *
      * @throws Exception if an error occurs while performing the operation.
      */
-    public void rollback(JmsTransactionInfo transactionInfo, AsyncResult request) throws Exception {
+    public void rollback(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, AsyncResult request) throws Exception {
         if (!getResourceInfo().isTransacted()) {
             throw new IllegalStateException("Non-transacted Session cannot rollback a TX.");
         }
 
-        getTransactionContext().rollback(transactionInfo, request);
+        getTransactionContext().rollback(transactionInfo, nextTransactionInfo, request);
     }
 
     /**

@@ -419,12 +419,12 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     }
 
     @Override
-    public void commit(final JmsTransactionInfo transactionInfo, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
+    public void commit(final JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
         checkClosed();
         final FailoverRequest pending = new FailoverRequest(request, requestTimeout) {
             @Override
             public void doTask() throws Exception {
-                provider.commit(transactionInfo, this);
+                provider.commit(transactionInfo, nextTransactionInfo, this);
             }
 
             @Override
@@ -442,12 +442,12 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     }
 
     @Override
-    public void rollback(final JmsTransactionInfo transactionInfo, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
+    public void rollback(final JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, AsyncResult request) throws IOException, JMSException, UnsupportedOperationException {
         checkClosed();
         final FailoverRequest pending = new FailoverRequest(request, requestTimeout) {
             @Override
             public void doTask() throws Exception {
-                provider.rollback(transactionInfo, this);
+                provider.rollback(transactionInfo, nextTransactionInfo, this);
             }
 
             @Override

@@ -228,11 +228,13 @@ public class ProviderWrapperTest extends QpidJmsTestCase{
         JmsSessionId sessionId = new JmsSessionId("ID:TEST", 1);
         JmsTransactionId txId = new JmsTransactionId(connectionId, 1);
         JmsTransactionInfo txInfo = new JmsTransactionInfo(sessionId, txId);
+        JmsTransactionId nextTxId = new JmsTransactionId(connectionId, 2);
+        JmsTransactionInfo nextTxInfo = new JmsTransactionInfo(sessionId, nextTxId);
 
         ProviderWrapper<Provider> wrapper = new ProviderWrapper<Provider>(mockProvider);
 
-        wrapper.commit(txInfo, result);
-        Mockito.verify(mockProvider).commit(txInfo, result);
+        wrapper.commit(txInfo, nextTxInfo, result);
+        Mockito.verify(mockProvider).commit(txInfo, nextTxInfo, result);
     }
 
     @Test
@@ -243,11 +245,13 @@ public class ProviderWrapperTest extends QpidJmsTestCase{
         JmsSessionId sessionId = new JmsSessionId("ID:TEST", 1);
         JmsTransactionId txId = new JmsTransactionId(connectionId, 1);
         JmsTransactionInfo txInfo = new JmsTransactionInfo(sessionId, txId);
+        JmsTransactionId nextTxId = new JmsTransactionId(connectionId, 2);
+        JmsTransactionInfo nextTxInfo = new JmsTransactionInfo(sessionId, nextTxId);
 
         ProviderWrapper<Provider> wrapper = new ProviderWrapper<Provider>(mockProvider);
 
-        wrapper.rollback(txInfo, result);
-        Mockito.verify(mockProvider).rollback(txInfo, result);
+        wrapper.rollback(txInfo, nextTxInfo, result);
+        Mockito.verify(mockProvider).rollback(txInfo, nextTxInfo, result);
     }
 
     @Test

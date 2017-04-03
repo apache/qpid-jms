@@ -227,7 +227,12 @@ public interface Provider {
         throws IOException, JMSException;
 
     /**
-     * Called to commit an open transaction.
+     * Called to commit an open transaction, and start a new one if a new transaction info
+     * object is provided.
+     *
+     * If this method throws an exception it is either because the commit failed, or the start
+     * of the next transaction failed.  The caller can investigate the state of the provided
+     * next transaction object to determine if a new transaction was created.
      *
      * If the provider is unable to support transactions then it should throw an
      * UnsupportedOperationException to indicate this.  The Provider may also throw a
@@ -235,26 +240,35 @@ public interface Provider {
      *
      * @param transactionInfo
      *        the transaction info that describes the transaction being committed.
+     * @param nextTransactionInfo
+     * 		  the transaction info that describes the new transaction that should be created.
      * @param request
      *        The request object that should be signaled when this operation completes.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      * @throws JMSException if an error occurs due to JMS violation such not authorized.
      */
-    void commit(JmsTransactionInfo transactionInfo, AsyncResult request) throws IOException, JMSException;
+    void commit(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, AsyncResult request) throws IOException, JMSException;
 
     /**
-     * Called to roll back an open transaction.
+     * Called to roll back an open transaction, and start a new one if a new transaction info
+     * object is provided.
+     *
+     * If this method throws an exception it is either because the commit failed, or the start
+     * of the next transaction failed.  The caller can investigate the state of the provided
+     * next transaction object to determine if a new transaction was created.
      *
      * @param transactionInfo
      *        the transaction info that describes the transaction being rolled back.
+     * @param nextTransactionInfo
+     * 		  the transaction info that describes the new transaction that should be created.
      * @param request
      *        The request object that should be signaled when this operation completes.
      *
      * @throws IOException if an error occurs or the Provider is already closed.
      * @throws JMSException if an error occurs due to JMS violation such not authorized.
      */
-    void rollback(JmsTransactionInfo transactionInfo, AsyncResult request) throws IOException, JMSException;
+    void rollback(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionInfo, AsyncResult request) throws IOException, JMSException;
 
     /**
      * Called to recover all unacknowledged messages for a Session in client Ack mode.

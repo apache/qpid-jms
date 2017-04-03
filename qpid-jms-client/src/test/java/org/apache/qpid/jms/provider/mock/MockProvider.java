@@ -339,7 +339,7 @@ public class MockProvider implements Provider {
     }
 
     @Override
-    public void commit(final JmsTransactionInfo transactionInfo, final AsyncResult request) throws IOException, JMSException {
+    public void commit(final JmsTransactionInfo transactionInfo, final JmsTransactionInfo nextTransactionInfo, final AsyncResult request) throws IOException, JMSException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -357,7 +357,7 @@ public class MockProvider implements Provider {
     }
 
     @Override
-    public void rollback(final JmsTransactionInfo transactionInfo, final AsyncResult request) throws IOException, JMSException {
+    public void rollback(final JmsTransactionInfo transactionInfo, final JmsTransactionInfo nextTransactionInfo, final AsyncResult request) throws IOException, JMSException {
         checkClosed();
         serializer.execute(new Runnable() {
 

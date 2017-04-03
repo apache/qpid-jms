@@ -116,7 +116,7 @@ public class FailoverProviderClosedTest extends FailoverProviderTestSupport {
         ProviderFuture request = new ProviderFuture();
         JmsTransactionId txId = new JmsTransactionId(connection.getId(), 1);
         JmsTransactionInfo txInfo = new JmsTransactionInfo(session.getId(), txId);
-        provider.commit(txInfo, request);
+        provider.commit(txInfo, null, request);
     }
 
     @Test(timeout=30000, expected=IOException.class)
@@ -124,7 +124,7 @@ public class FailoverProviderClosedTest extends FailoverProviderTestSupport {
         ProviderFuture request = new ProviderFuture();
         JmsTransactionId txId = new JmsTransactionId(connection.getId(), 1);
         JmsTransactionInfo txInfo = new JmsTransactionInfo(session.getId(), txId);
-        provider.rollback(txInfo, request);
+        provider.rollback(txInfo, null, request);
     }
 
     @Test(timeout=30000, expected=IOException.class)

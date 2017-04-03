@@ -21,8 +21,8 @@ package org.apache.qpid.jms.meta;
  */
 public abstract class JmsAbstractResourceId implements JmsResourceId {
 
-    protected transient Object providerHint;
-    protected transient Object providerContext;
+    protected transient volatile Object providerHint;
+    protected transient volatile Object providerContext;
     protected transient int hashCode;
 
     @Override

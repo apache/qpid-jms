@@ -84,6 +84,7 @@ public class AmqpTestSupport extends QpidJmsTestSupport {
             "amqp://0.0.0.0:" + port +
             "?transport.transformer=" + getAmqpTransformer() +
             "&transport.socketBufferSize=" + getSocketBufferSize() +
+            "&transport.tcpNoDelay=true" +
             "&ioBufferSize=" + getIOBufferSize());
         connector.setName("amqp");
         if (isAmqpDiscovery()) {

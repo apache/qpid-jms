@@ -747,18 +747,18 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         }
     }
 
-    void commit(JmsTransactionInfo transactionInfo) throws JMSException {
-        commit(transactionInfo, null);
+    void commit(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionId) throws JMSException {
+        commit(transactionInfo, nextTransactionId, null);
     }
 
-    void commit(JmsTransactionInfo transactionInfo, ProviderSynchronization synchronization) throws JMSException {
+    void commit(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionId, ProviderSynchronization synchronization) throws JMSException {
         checkClosedOrFailed();
 
         try {
             ProviderFuture request = new ProviderFuture(synchronization);
             requests.put(request, request);
             try {
-                provider.commit(transactionInfo, request);
+                provider.commit(transactionInfo, nextTransactionId, request);
                 request.sync();
             } finally {
                 requests.remove(request);
@@ -768,18 +768,18 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         }
     }
 
-    void rollback(JmsTransactionInfo transactionInfo) throws JMSException {
-        rollback(transactionInfo, null);
+    void rollback(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionId) throws JMSException {
+        rollback(transactionInfo, nextTransactionId, null);
     }
 
-    void rollback(JmsTransactionInfo transactionInfo, ProviderSynchronization synchronization) throws JMSException {
+    void rollback(JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionId, ProviderSynchronization synchronization) throws JMSException {
         checkClosedOrFailed();
 
         try {
             ProviderFuture request = new ProviderFuture(synchronization);
             requests.put(request, request);
             try {
-                provider.rollback(transactionInfo, request);
+                provider.rollback(transactionInfo, nextTransactionId, request);
                 request.sync();
             } finally {
                 requests.remove(request);

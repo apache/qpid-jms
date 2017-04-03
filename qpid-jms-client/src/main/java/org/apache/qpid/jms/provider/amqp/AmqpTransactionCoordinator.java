@@ -29,6 +29,7 @@ import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.amqp.AmqpTransactionContext.DischargeCompletion;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
@@ -58,20 +59,26 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
 
     private final AmqpTransferTagGenerator tagGenerator = new AmqpTransferTagGenerator();
 
-    private Delivery pendingDelivery;
-    private AsyncResult pendingRequest;
-    private ScheduledFuture<?> pendingTimeout;
-
     public AmqpTransactionCoordinator(JmsSessionInfo resourceInfo, Sender endpoint, AmqpResourceParent parent) {
         super(resourceInfo, endpoint, parent);
     }
 
     @Override
     public void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws IOException {
+
         try {
-            if (pendingDelivery != null && pendingDelivery.remotelySettled()) {
-                DeliveryState state = pendingDelivery.getRemoteState();
-                JmsTransactionId txId = (JmsTransactionId) pendingDelivery.getContext();
+            if (delivery != null && delivery.remotelySettled()) {
+                DeliveryState state = delivery.getRemoteState();
+
+                if (delivery.getContext() == null || !(delivery.getContext() instanceof OperationContext)) {
+                    return;
+                }
+
+                OperationContext context = (OperationContext) delivery.getContext();
+
+                AsyncResult pendingRequest = context.getRequest();
+                JmsTransactionId txId = context.getTransactionId();
+
                 if (state instanceof Declared) {
                     LOG.debug("New TX started: {}", txId);
                     Declared declared = (Declared) state;
@@ -89,6 +96,7 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
                         failureCause = new JMSException(cause.getMessage());
                     }
 
+                    txId.setProviderHint(null);
                     pendingRequest.onFailure(failureCause);
                 } else {
                     LOG.debug("Last TX request succeeded: {}", txId);
@@ -96,13 +104,11 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
                 }
 
                 // Reset state for next TX action.
-                pendingDelivery.settle();
+                delivery.settle();
                 pendingRequest = null;
-                pendingDelivery = null;
 
-                if (pendingTimeout != null) {
-                    pendingTimeout.cancel(false);
-                    pendingTimeout = null;
+                if (context.getTimeout() != null) {
+                    context.getTimeout().cancel(false);
                 }
             }
 
@@ -113,37 +119,35 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
     }
 
     public void declare(JmsTransactionId txId, AsyncResult request) throws Exception {
-        if (txId.getProviderHint() != null) {
-            throw new IllegalStateException("Declar called while a TX is still Active.");
-        }
 
         if (isClosed()) {
             request.onFailure(new JMSException("Cannot start new transaction: Coordinator remotely closed"));
             return;
         }
 
+        if (txId.getProviderHint() != null) {
+            throw new IllegalStateException("Declar called while a TX is still Active.");
+        }
+
         Message message = Message.Factory.create();
         Declare declare = new Declare();
         message.setBody(new AmqpValue(declare));
 
-        pendingDelivery = getEndpoint().delivery(tagGenerator.getNextTag());
-        pendingDelivery.setContext(txId);
-        pendingRequest = request;
+        ScheduledFuture<?> timeout = scheduleTimeoutIfNeeded("Timed out waiting for discharge of TX.", request);
+        OperationContext context = new OperationContext(txId, request, timeout);
 
-        scheduleTimeoutIfNeeded("Timed out waiting for declare of new TX.");
+        Delivery delivery = getEndpoint().delivery(tagGenerator.getNextTag());
+        delivery.setContext(context);
 
         sendTxCommand(message);
     }
 
-    public void discharge(JmsTransactionId txId, AsyncResult request, boolean commit) throws Exception {
-        if (txId.getProviderHint() == null) {
-            throw new IllegalStateException("Discharge called with no active Transaction.");
-        }
+    public void discharge(JmsTransactionId txId, DischargeCompletion request) throws Exception {
 
         if (isClosed()) {
             Exception failureCause = null;
 
-            if (commit) {
+            if (request.isCommit()) {
                 failureCause = new TransactionRolledBackException("Transaction inbout: Coordinator remotely closed");
             } else {
                 failureCause = new JMSException("Rollback cannot complete: Coordinator remotely closed");
@@ -153,20 +157,24 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
             return;
         }
 
+        if (txId.getProviderHint() == null) {
+            throw new IllegalStateException("Discharge called with no active Transaction.");
+        }
+
         // Store the context of this action in the transaction ID for later completion.
-        txId.setProviderContext(commit ? COMMIT_MARKER : ROLLBACK_MARKER);
+        txId.setProviderContext(request.isCommit() ? COMMIT_MARKER : ROLLBACK_MARKER);
 
         Message message = Message.Factory.create();
         Discharge discharge = new Discharge();
-        discharge.setFail(!commit);
+        discharge.setFail(!request.isCommit());
         discharge.setTxnId((Binary) txId.getProviderHint());
         message.setBody(new AmqpValue(discharge));
 
-        pendingDelivery = getEndpoint().delivery(tagGenerator.getNextTag());
-        pendingDelivery.setContext(txId);
-        pendingRequest = request;
+        ScheduledFuture<?> timeout = scheduleTimeoutIfNeeded("Timed out waiting for discharge of TX.", request);
+        OperationContext context = new OperationContext(txId, request, timeout);
 
-        scheduleTimeoutIfNeeded("Timed out waiting for discharge of TX.");
+        Delivery delivery = getEndpoint().delivery(tagGenerator.getNextTag());
+        delivery.setContext(context);
 
         sendTxCommand(message);
     }
@@ -178,9 +186,15 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
 
         // Alert any pending operation that the link failed to complete the pending
         // begin / commit / rollback operation.
-        if (pendingRequest != null) {
-            pendingRequest.onFailure(cause);
-            pendingRequest = null;
+        Delivery pending = getEndpoint().head();
+        while (pending != null) {
+            Delivery nextPending = pending.next();
+            if (pending.getContext() != null && pending.getContext() instanceof OperationContext) {
+                OperationContext context = (OperationContext) pending.getContext();
+                context.request.onFailure(cause);
+            }
+
+            pending = nextPending;
         }
 
         // Override the base class version because we do not want to propagate
@@ -202,10 +216,37 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
 
     //----- Internal implementation ------------------------------------------//
 
-    private void scheduleTimeoutIfNeeded(String cause) {
+    private class OperationContext {
+
+        private final AsyncResult request;
+        private final ScheduledFuture<?> timeout;
+        private final JmsTransactionId transactionId;
+
+        public OperationContext(JmsTransactionId transactionId, AsyncResult request, ScheduledFuture<?> timeout) {
+            this.transactionId = transactionId;
+            this.request = request;
+            this.timeout = timeout;
+        }
+
+        public JmsTransactionId getTransactionId() {
+            return transactionId;
+        }
+
+        public AsyncResult getRequest() {
+            return request;
+        }
+
+        public ScheduledFuture<?> getTimeout() {
+            return timeout;
+        }
+    }
+
+    private ScheduledFuture<?> scheduleTimeoutIfNeeded(String cause, AsyncResult pendingRequest) {
         AmqpProvider provider = getParent().getProvider();
         if (provider.getRequestTimeout() != JmsConnectionInfo.INFINITE) {
-            provider.scheduleRequestTimeout(pendingRequest, provider.getRequestTimeout(), new JmsOperationTimedOutException(cause));
+            return provider.scheduleRequestTimeout(pendingRequest, provider.getRequestTimeout(), new JmsOperationTimedOutException(cause));
+        } else {
+            return null;
         }
     }
 

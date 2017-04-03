@@ -1966,15 +1966,20 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void remotelyCloseLastCoordinatorLinkOnDischarge(Binary txnId, boolean dischargeState)
     {
-        remotelyCloseLastCoordinatorLinkOnDischarge(txnId, dischargeState, true, true, TransactionError.TRANSACTION_ROLLBACK, "Discharge of TX failed.");
+        remotelyCloseLastCoordinatorLinkOnDischarge(txnId, dischargeState, true, true, TransactionError.TRANSACTION_ROLLBACK, "Discharge of TX failed.", false, null);
+    }
+
+    public void remotelyCloseLastCoordinatorLinkOnDischarge(Binary txnId, boolean dischargeState, boolean pipelinedDeclare, Binary nextTxnId)
+    {
+        remotelyCloseLastCoordinatorLinkOnDischarge(txnId, dischargeState, true, true, TransactionError.TRANSACTION_ROLLBACK, "Discharge of TX failed.", pipelinedDeclare, nextTxnId);
     }
 
     public void remotelyCloseLastCoordinatorLinkOnDischarge(Binary txnId, boolean dischargeState, Symbol errorType, String errorMessage)
     {
-        remotelyCloseLastCoordinatorLinkOnDischarge(txnId, dischargeState, true, true, errorType, errorMessage);
+        remotelyCloseLastCoordinatorLinkOnDischarge(txnId, dischargeState, true, true, errorType, errorMessage, false, null);
     }
 
-    public void remotelyCloseLastCoordinatorLinkOnDischarge(Binary txnId, boolean dischargeState, boolean expectDetachResponse, boolean closed, Symbol errorType, String errorMessage) {
+    public void remotelyCloseLastCoordinatorLinkOnDischarge(Binary txnId, boolean dischargeState, boolean expectDetachResponse, boolean closed, Symbol errorType, String errorMessage, boolean pipelinedDeclare, Binary nextTxnId) {
         // Expect an unsettled 'discharge' transfer to the txn coordinator containing the txnId,
         // and reply with given response and settled disposition to indicate the outcome.
         Discharge discharge = new Discharge();
@@ -1985,6 +1990,15 @@ public class TestAmqpPeer implements AutoCloseable
         dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
 
         expectTransfer(dischargeMatcher, nullValue(), false, false, null, false);
+
+        if (pipelinedDeclare) {
+            Declare declare = new Declare();
+
+            TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
+            declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(declare));
+
+            expectTransfer(declareMatcher, nullValue(), false, false, new Declared().setTxnId(nextTxnId), true);
+        }
 
         remotelyCloseLastCoordinatorLink(expectDetachResponse, closed, errorType, errorMessage);
     }

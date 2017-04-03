@@ -512,7 +512,22 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
     }
 
     private void assertEpoll(String message, boolean expected, Transport transport) throws Exception {
-        Field group = transport.getClass().getDeclaredField("group");
+        Field group = null;
+        Class<?> transportType = transport.getClass();
+
+        while (transportType != null && group == null) {
+            try {
+                group = transportType.getDeclaredField("group");
+            } catch (NoSuchFieldException error) {
+                transportType = transportType.getSuperclass();
+                if (Object.class.equals(transportType)) {
+                    transportType = null;
+                }
+            }
+        }
+
+        assertNotNull("Transport implementation unknown", group);
+
         group.setAccessible(true);
         if (expected) {
             assertTrue(message, group.get(transport) instanceof EpollEventLoopGroup);

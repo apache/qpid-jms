@@ -22,8 +22,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +42,8 @@ import org.slf4j.LoggerFactory;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.epoll.Epoll;
+import io.netty.channel.epoll.EpollEventLoopGroup;
 
 /**
  * Test basic functionality of the Netty based TCP transport.
@@ -459,6 +463,61 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 fail("Should throw on send of closed transport");
             } catch (IOException ex) {
             }
+        }
+    }
+
+    @Test(timeout = 60 * 1000)
+    public void testConnectToServerWithEpollEnabled() throws Exception {
+        doTestEpollSupport(true);
+    }
+
+    @Test(timeout = 60 * 1000)
+    public void testConnectToServerWithEpollDisabled() throws Exception {
+        doTestEpollSupport(false);
+    }
+
+    private void doTestEpollSupport(boolean useEpoll) throws Exception {
+        assumeTrue(Epoll.isAvailable());
+
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            TransportOptions options = createClientOptions();
+            options.setUseEpoll(useEpoll);
+
+            Transport transport = createTransport(serverLocation, testListener, options);
+            try {
+                transport.connect(null);
+                LOG.info("Connected to server:{} as expected.", serverLocation);
+            } catch (Exception e) {
+                fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
+            }
+
+            assertTrue(transport.isConnected());
+            assertEquals(serverLocation, transport.getRemoteLocation());
+            assertEpoll("Transport should be using Epoll", useEpoll, transport);
+
+            transport.close();
+
+            // Additional close should not fail or cause other problems.
+            transport.close();
+        }
+
+        assertTrue(!transportClosed);  // Normal shutdown does not trigger the event.
+        assertTrue(exceptions.isEmpty());
+        assertTrue(data.isEmpty());
+    }
+
+    private void assertEpoll(String message, boolean expected, Transport transport) throws Exception {
+        Field group = transport.getClass().getDeclaredField("group");
+        group.setAccessible(true);
+        if (expected) {
+            assertTrue(message, group.get(transport) instanceof EpollEventLoopGroup);
+        } else {
+            assertFalse(message, group.get(transport) instanceof EpollEventLoopGroup);
         }
     }
 

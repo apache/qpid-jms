@@ -31,14 +31,18 @@ import javax.jms.Session;
 import javax.jms.TransactionRolledBackException;
 
 import org.apache.activemq.broker.jmx.QueueViewMBean;
+import org.apache.activemq.junit.ActiveMQTestRunner;
+import org.apache.activemq.junit.Repeat;
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.support.AmqpTestSupport;
 import org.apache.qpid.jms.support.Wait;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * Test MessageProducer behavior when in a TX and failover occurs.
  */
+@RunWith(ActiveMQTestRunner.class)
 public class JmsTxProducerFailoverTest extends AmqpTestSupport {
 
     @Override
@@ -193,6 +197,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
      * sends the commit will fail and no messages are left on the broker.
      */
     @Test(timeout=60000)
+    @Repeat(repetitions = 1)
     public void testTxProducerSendWorksButCommitFails() throws Exception {
         URI brokerURI = new URI(getAmqpFailoverURI());
 

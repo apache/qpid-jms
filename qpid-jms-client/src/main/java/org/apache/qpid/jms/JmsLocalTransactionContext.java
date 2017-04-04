@@ -348,12 +348,17 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                         transactionInfo.setInDoubt(true);
                     }
                 });
+
+                LOG.trace("Transaction recovery creating new TX:{} after failover.", transactionInfo.getId());
+
                 provider.create(transactionInfo, request);
                 request.sync();
             } finally {
                 lock.writeLock().unlock();
             }
         } else {
+            LOG.trace("Transaction recovery marking current TX:{} as in-doubt.", transactionInfo.getId());
+
             // We did not get the lock so there is an operation in progress and our only
             // option is to mark the state as failed so a commit will roll back.
             transactionInfo.setInDoubt(true);

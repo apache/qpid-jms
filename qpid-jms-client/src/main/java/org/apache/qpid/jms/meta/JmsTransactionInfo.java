@@ -20,7 +20,7 @@ public final class JmsTransactionInfo extends JmsAbstractResource implements Com
 
     private final JmsSessionId sessionId;
     private final JmsTransactionId transactionId;
-    private boolean inDoubt;
+    private volatile boolean inDoubt;
 
     public JmsTransactionInfo(JmsSessionId sessionId, JmsTransactionId transactionId) {
         if (sessionId == null) {

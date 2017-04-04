@@ -548,5 +548,10 @@ public class ConnectionFactoryIntegrationTest extends QpidJmsTestCase {
         public int getMaxRedeliveries(JmsDestination destination) {
             return JmsDefaultRedeliveryPolicy.DEFAULT_MAX_REDELIVERIES;
         }
+
+        @Override
+        public int getOutcome(JmsDestination destination) {
+            return JmsDefaultRedeliveryPolicy.DEFAULT_OUTCOME;
+        }
     }
 }

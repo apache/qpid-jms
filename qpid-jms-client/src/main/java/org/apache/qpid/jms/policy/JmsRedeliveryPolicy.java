@@ -36,9 +36,31 @@ public interface JmsRedeliveryPolicy {
      * @param destination
      *      the destination that the subscription is redelivering from.
      *
-     * @return the maxRedeliveries
-     *         the maximum number of redeliveries allowed before a message is rejected.
+     * @return the maximum number of redeliveries allowed before a message is rejected.
      */
     int getMaxRedeliveries(JmsDestination destination);
+
+    /**
+     * Returns the configured outcome that will be used when rejecting the
+     * message by this client for the given destination when the message has
+     * reached the maximum redelivery threshold.
+     *
+     * The outcome returned here maps to AMQP outcomes using the following
+     * integer values:
+     *
+     * <p><ul>
+     *  <li>ACCEPTED = 1
+     *  <li>REJECTED = 2
+     *  <li>RELEASED = 3
+     *  <li>MODIFIED_FAILED = 4
+     *  <li>MODIFIED_FAILED_UNDELIVERABLE = 5
+     * </ul><p>
+     *
+     * @param destination
+     *      the destination that the subscription is redelivering from.
+     *
+     * @return the outcome to use when rejecting messages.
+     */
+    int getOutcome(JmsDestination destination);
 
 }

@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.policy;
 
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.message.JmsMessageSupport;
 
 /**
  * Defines the policy used to manage redelivered and recovered Messages.
@@ -24,15 +25,19 @@ import org.apache.qpid.jms.JmsDestination;
 public class JmsDefaultRedeliveryPolicy implements JmsRedeliveryPolicy {
 
     public static final int DEFAULT_MAX_REDELIVERIES = -1;
+    public static final int DEFAULT_OUTCOME = JmsMessageSupport.MODIFIED_FAILED_UNDELIVERABLE;
 
     private int maxRedeliveries;
+    private int outcome;
 
     public JmsDefaultRedeliveryPolicy() {
         maxRedeliveries = DEFAULT_MAX_REDELIVERIES;
+        outcome = DEFAULT_OUTCOME;
     }
 
     public JmsDefaultRedeliveryPolicy(JmsDefaultRedeliveryPolicy source) {
         maxRedeliveries = source.maxRedeliveries;
+        outcome = source.outcome;
     }
 
     @Override
@@ -45,12 +50,37 @@ public class JmsDefaultRedeliveryPolicy implements JmsRedeliveryPolicy {
         return maxRedeliveries;
     }
 
+    @Override
+    public int getOutcome(JmsDestination destination) {
+        return outcome;
+    }
+
+    /**
+     * Returns the configured default outcome that will be used when rejecting messages.
+     * <p>
+     * Default acknowledgement type is Modified with Undeliverable here set to true.
+     *
+     * @return the default outcome used when rejecting messages.
+     */
+    public int getOutcome() {
+        return outcome;
+    }
+
+    /**
+     * Set the default outcome to use when rejecting messages.
+     *
+     * @param outcome
+     * 		the default outcome applied to a rejected delivery.
+     */
+    public void setOutcome(int outcome) {
+        this.outcome = outcome;
+    }
+
     /**
      * Returns the configured maximum redeliveries that a message will be
      * allowed to have before it is rejected by this client.
      *
-     * @return the maxRedeliveries
-     *         the maximum number of redeliveries allowed before a message is rejected.
+     * @return the maximum number of redeliveries allowed before a message is rejected.
      */
     public int getMaxRedeliveries() {
         return maxRedeliveries;
@@ -73,6 +103,7 @@ public class JmsDefaultRedeliveryPolicy implements JmsRedeliveryPolicy {
         final int prime = 31;
         int result = 1;
         result = prime * result + maxRedeliveries;
+        result = prime * result + outcome;
         return result;
     }
 
@@ -91,10 +122,7 @@ public class JmsDefaultRedeliveryPolicy implements JmsRedeliveryPolicy {
         }
 
         JmsDefaultRedeliveryPolicy other = (JmsDefaultRedeliveryPolicy) obj;
-        if (maxRedeliveries != other.maxRedeliveries) {
-            return false;
-        }
 
-        return true;
+        return maxRedeliveries == other.maxRedeliveries && outcome == other.outcome;
     }
 }

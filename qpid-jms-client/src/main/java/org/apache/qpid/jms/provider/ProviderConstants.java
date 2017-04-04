@@ -31,7 +31,6 @@ public final class ProviderConstants {
         MODIFIED_FAILED,
         MODIFIED_FAILED_UNDELIVERABLE,
         // Conceptual
-        DELIVERED,
-        EXPIRED;
+        DELIVERED
     }
 }

@@ -17,11 +17,9 @@
 package org.apache.qpid.jms;
 
 import static org.apache.qpid.jms.message.JmsMessageSupport.ACCEPTED;
+import static org.apache.qpid.jms.message.JmsMessageSupport.lookupAckTypeForDisposition;
 
 import javax.jms.JMSException;
-
-import org.apache.qpid.jms.message.JmsMessageSupport;
-import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 
 public final class JmsAcknowledgeCallback {
 
@@ -38,23 +36,6 @@ public final class JmsAcknowledgeCallback {
         }
 
         session.acknowledge(lookupAckTypeForDisposition(getAckType()));
-    }
-
-    private ACK_TYPE lookupAckTypeForDisposition(int dispositionType) throws JMSException {
-        switch (dispositionType) {
-            case JmsMessageSupport.ACCEPTED:
-                return ACK_TYPE.ACCEPTED;
-            case JmsMessageSupport.REJECTED:
-                return ACK_TYPE.REJECTED;
-            case JmsMessageSupport.RELEASED:
-                return ACK_TYPE.RELEASED;
-            case JmsMessageSupport.MODIFIED_FAILED:
-                return ACK_TYPE.MODIFIED_FAILED;
-            case JmsMessageSupport.MODIFIED_FAILED_UNDELIVERABLE:
-                return ACK_TYPE.MODIFIED_FAILED_UNDELIVERABLE;
-            default:
-                throw new JMSException("Unable to determine ack type for disposition: " + dispositionType);
-        }
     }
 
     /**

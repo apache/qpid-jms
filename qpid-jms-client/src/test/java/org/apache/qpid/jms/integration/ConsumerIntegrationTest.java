@@ -58,7 +58,10 @@ import org.apache.qpid.jms.test.testpeer.AmqpPeerRunnable;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
+import org.apache.qpid.jms.test.testpeer.describedtypes.sections.HeaderDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.RejectedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ReleasedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
@@ -67,6 +70,7 @@ import org.apache.qpid.jms.util.QpidJMSTestRunner;
 import org.apache.qpid.jms.util.Repeat;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
+import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -1626,6 +1630,107 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testRedeliveryPolicyOutcomeAppliedAccepted() throws Exception {
+        doTestRedeliveryPolicyOutcomeApplied(1);
+    }
+
+    @Test(timeout=20000)
+    public void testRedeliveryPolicyOutcomeAppliedRejected() throws Exception {
+        doTestRedeliveryPolicyOutcomeApplied(2);
+    }
+
+    @Test(timeout=20000)
+    public void testRedeliveryPolicyOutcomeAppliedReleased() throws Exception {
+        doTestRedeliveryPolicyOutcomeApplied(3);
+    }
+
+    @Test(timeout=20000)
+    public void testRedeliveryPolicyOutcomeAppliedModifiedFailed() throws Exception {
+        doTestRedeliveryPolicyOutcomeApplied(4);
+    }
+
+    @Test(timeout=20000)
+    public void testRedeliveryPolicyOutcomeAppliedModifiedFailedUndeliverable() throws Exception {
+        doTestRedeliveryPolicyOutcomeApplied(5);
+    }
+
+    private void doTestRedeliveryPolicyOutcomeApplied(int outcome) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            Connection connection = testFixture.establishConnecton(testPeer,
+                "?jms.redeliveryPolicy.maxRedeliveries=1&jms.redeliveryPolicy.outcome=" + outcome);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            HeaderDescribedType header = new HeaderDescribedType();
+            header.setDeliveryCount(new UnsignedInteger(2));
+
+            testPeer.expectReceiverAttach();
+            // Send some messages that have exceeded the specified re-delivery count
+            testPeer.expectLinkFlowRespondWithTransfer(header, null, null, null, new AmqpValueDescribedType("redelivered-content"), 1);
+            // Send a message that has not exceeded the delivery count
+            String expectedContent = "not-redelivered";
+            testPeer.sendTransferToLastOpenedLinkOnLastOpenedSession(null, null, null, null, new AmqpValueDescribedType(expectedContent), 2);
+
+            Matcher<?> outcomeMatcher = null;
+
+            // Expect a disposition matching the given outcome index:
+            //
+            //  ACCEPTED = 1
+            //  REJECTED = 2
+            //  RELEASED = 3
+            //  MODIFIED_FAILED = 4
+            //  MODIFIED_FAILED_UNDELIVERABLE = 5
+            switch (outcome) {
+                case 1:
+                    outcomeMatcher = new AcceptedMatcher();
+                    break;
+                case 2:
+                    outcomeMatcher = new RejectedMatcher();
+                    break;
+                case 3:
+                    outcomeMatcher = new ReleasedMatcher();
+                    break;
+                case 4:
+                    ModifiedMatcher failed = new ModifiedMatcher();
+                    failed.withDeliveryFailed(equalTo(true));
+                    outcomeMatcher = failed;
+                    break;
+                case 5:
+                    ModifiedMatcher undeliverable = new ModifiedMatcher();
+                    undeliverable.withDeliveryFailed(equalTo(true));
+                    undeliverable.withUndeliverableHere(equalTo(true));
+                    outcomeMatcher = undeliverable;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Test passed invalid outcome value");
+            }
+
+            // Expect a settled disposition matching the configured redelivery policy outcome
+            testPeer.expectDisposition(true, outcomeMatcher);
+
+            // Then expect an Accepted disposition for the good message
+            testPeer.expectDisposition(true, new AcceptedMatcher());
+
+            final MessageConsumer consumer = session.createConsumer(queue);
+
+            Message m = consumer.receive(6000);
+            assertNotNull("Should have reiceved the final message", m);
+            assertTrue("Should have received the final message", m instanceof TextMessage);
+            assertEquals("Unexpected content", expectedContent, ((TextMessage)m).getText());
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(2000);
         }
     }
 }

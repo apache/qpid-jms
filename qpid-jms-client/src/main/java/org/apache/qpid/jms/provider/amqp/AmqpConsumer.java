@@ -43,6 +43,7 @@ import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.Released;
+import org.apache.qpid.proton.amqp.transport.DeliveryState;
 import org.apache.qpid.proton.engine.Delivery;
 import org.apache.qpid.proton.engine.Receiver;
 import org.slf4j.Logger;
@@ -304,10 +305,12 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             } else {
                 delivery.settle();
             }
+        } else if (ackType.equals(ACK_TYPE.MODIFIED_FAILED)) {
+            settleDelivery(delivery, MODIFIED_FAILED);
         } else if (ackType.equals(ACK_TYPE.MODIFIED_FAILED_UNDELIVERABLE)) {
-            deliveryFailedUndeliverable(delivery);
-        } else if (ackType.equals(ACK_TYPE.EXPIRED)) {
-            deliveryFailedUndeliverable(delivery);
+            settleDelivery(delivery, MODIFIED_FAILED_UNDELIVERABLE);
+        } else if (ackType.equals(ACK_TYPE.REJECTED)) {
+            settleDelivery(delivery, REJECTED);
         } else if (ackType.equals(ACK_TYPE.RELEASED)) {
             delivery.disposition(Released.getInstance());
             delivery.settle();
@@ -489,7 +492,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             //        In the future once the JMS mapping is complete we should be
             //        able to convert everything to some message even if its just
             //        a bytes messages as a fall back.
-            deliveryFailedUndeliverable(incoming);
+            settleDelivery(incoming, MODIFIED_FAILED_UNDELIVERABLE);
             return false;
         }
 
@@ -559,8 +562,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         return "AmqpConsumer { " + getResourceInfo().getId() + " }";
     }
 
-    protected void deliveryFailedUndeliverable(Delivery incoming) {
-        incoming.disposition(MODIFIED_FAILED_UNDELIVERABLE);
+    protected void settleDelivery(Delivery incoming, DeliveryState state) {
+        incoming.disposition(state);
         incoming.settle();
         // TODO: this flows credit, which we might not want, e.g if
         // a drain was issued to stop the link.

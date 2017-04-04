@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms;
 
+import static org.apache.qpid.jms.message.JmsMessageSupport.lookupAckTypeForDisposition;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -323,7 +325,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                     performPullIfRequired(timeout, false);
                 } else if (redeliveryExceeded(envelope)) {
                     LOG.debug("{} filtered message with excessive redelivery count: {}", getConsumerId(), envelope);
-                    doAckUndeliverable(envelope);
+                    applyRedeliveryPolicyOutcome(envelope);
                     if (timeout > 0) {
                         timeout = Math.max(deadline - System.currentTimeMillis(), 0);
                     }
@@ -428,16 +430,17 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
 
     private void doAckExpired(final JmsInboundMessageDispatch envelope) throws JMSException {
         try {
-            session.acknowledge(envelope, ACK_TYPE.EXPIRED);
+            session.acknowledge(envelope, ACK_TYPE.MODIFIED_FAILED_UNDELIVERABLE);
         } catch (JMSException ex) {
             session.onException(ex);
             throw ex;
         }
     }
 
-    private void doAckUndeliverable(final JmsInboundMessageDispatch envelope) throws JMSException {
+    private void applyRedeliveryPolicyOutcome(final JmsInboundMessageDispatch envelope) throws JMSException {
         try {
-            session.acknowledge(envelope, ACK_TYPE.MODIFIED_FAILED_UNDELIVERABLE);
+            JmsRedeliveryPolicy redeliveryPolicy = consumerInfo.getRedeliveryPolicy();
+            session.acknowledge(envelope, lookupAckTypeForDisposition(redeliveryPolicy.getOutcome(getDestination())));
         } catch (JMSException ex) {
             session.onException(ex);
             throw ex;
@@ -712,7 +715,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                     doAckExpired(envelope);
                 } else if (redeliveryExceeded(envelope)) {
                     LOG.trace("{} filtered message with excessive redelivery count: {}", getConsumerId(), envelope);
-                    doAckUndeliverable(envelope);
+                    applyRedeliveryPolicyOutcome(envelope);
                 } else {
                     boolean deliveryFailed = false;
                     boolean autoAckOrDupsOk = acknowledgementMode == Session.AUTO_ACKNOWLEDGE ||

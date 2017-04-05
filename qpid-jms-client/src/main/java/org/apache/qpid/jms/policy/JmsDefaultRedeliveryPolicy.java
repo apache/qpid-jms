@@ -102,7 +102,16 @@ public class JmsDefaultRedeliveryPolicy implements JmsRedeliveryPolicy {
     }
 
     /**
-     * Set the default outcome to use when rejecting messages.
+     * Set the default outcome to use when rejecting messages using an numeric value, the
+     * possible values are:
+     *
+     * <p><ul>
+     *  <li>ACCEPTED = 1
+     *  <li>REJECTED = 2
+     *  <li>RELEASED = 3
+     *  <li>MODIFIED_FAILED = 4
+     *  <li>MODIFIED_FAILED_UNDELIVERABLE = 5
+     * </ul><p>
      *
      * @param outcome
      * 		the default outcome applied to a rejected delivery.
@@ -112,7 +121,17 @@ public class JmsDefaultRedeliveryPolicy implements JmsRedeliveryPolicy {
     }
 
     /**
-     * Set the default outcome to use when rejecting messages.
+     * Set the default outcome to use when rejecting messages using a string value which can
+     * either be the string version of the numeric outcome values or the string name of the
+     * desired outcome, the string names allowed are:
+     *
+     * <p><ul>
+     *  <li>ACCEPTED
+     *  <li>REJECTED
+     *  <li>RELEASED
+     *  <li>MODIFIED_FAILED
+     *  <li>MODIFIED_FAILED_UNDELIVERABLE
+     * </ul><p>
      *
      * @param outcome
      * 		the default outcome applied to a rejected delivery.

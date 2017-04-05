@@ -116,6 +116,7 @@ The Prefetch Policy controls how many messages the remote peer can send to the c
 The Redelivery Policy controls how redelivered messages are handled on the client.
 
 + **jms.redeliveryPolicy.maxRedeliveries** controls when an incoming message is rejected based on the number of times it has been redelivered, the default value is (-1) disabled.  A value of zero would indicate no message redeliveries are accepted, a value of five would allow a message to be redelivered five times, etc.
++ **jms.redeliveryPolicy.outcome** controls the outcome that is applied to a message that is being rejected due to it having exceeded the configured maxRedeliveries value.  This option is configured on the URI using the following set of outcome options:  ACCEPTED, REJECTED, RELEASED, MODIFIED_FAILED and MODIFIED_FAILED_UNDELIVERABLE. The default outcome value is MODIFIED_FAILED_UNDELIVERABLE.
 
 The MessageID Policy controls the type of the Message ID assigned to messages sent from the client.
 

@@ -22,6 +22,8 @@ import static org.junit.Assert.assertTrue;
 
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsQueue;
+import org.apache.qpid.jms.JmsTopic;
+import org.apache.qpid.jms.message.JmsMessageSupport;
 import org.junit.Test;
 
 /**
@@ -35,6 +37,32 @@ public class JmsDefaultRedeliveryPolicyTest {
         JmsDefaultRedeliveryPolicy policy = new JmsDefaultRedeliveryPolicy();
 
         assertEquals(JmsDefaultRedeliveryPolicy.DEFAULT_MAX_REDELIVERIES, policy.getMaxRedeliveries(destination));
+    }
+
+    @Test
+    public void testCopyConstructor() {
+        JmsDefaultRedeliveryPolicy policy = new JmsDefaultRedeliveryPolicy();
+
+        policy.setOutcome(JmsMessageSupport.ACCEPTED);
+        policy.setMaxRedeliveries(1000);
+
+        JmsDefaultRedeliveryPolicy clone = new JmsDefaultRedeliveryPolicy(policy);
+
+        assertEquals(JmsMessageSupport.ACCEPTED, clone.getOutcome());
+        assertEquals(1000, clone.getMaxRedeliveries());
+    }
+
+    @Test
+    public void testCopy() {
+        JmsDefaultRedeliveryPolicy policy = new JmsDefaultRedeliveryPolicy();
+
+        policy.setOutcome(JmsMessageSupport.ACCEPTED);
+        policy.setMaxRedeliveries(1000);
+
+        JmsDefaultRedeliveryPolicy clone = policy.copy();
+
+        assertEquals(JmsMessageSupport.ACCEPTED, clone.getOutcome());
+        assertEquals(1000, clone.getMaxRedeliveries());
     }
 
     @Test
@@ -66,6 +94,93 @@ public class JmsDefaultRedeliveryPolicyTest {
 
         assertFalse(policy1.equals(policy2));
         assertFalse(policy2.equals(policy1));
+
+        policy1.setMaxRedeliveries(5);
+        policy2.setMaxRedeliveries(5);
+
+        policy1.setOutcome(1);
+        policy2.setOutcome(2);
+
+        assertFalse(policy1.equals(policy2));
+        assertFalse(policy2.equals(policy1));
+    }
+
+    @Test
+    public void testSetOutcomeFromInt() {
+        JmsDefaultRedeliveryPolicy policy = new JmsDefaultRedeliveryPolicy();
+
+        assertEquals(JmsDefaultRedeliveryPolicy.DEFAULT_OUTCOME, policy.getOutcome());
+
+        policy.setOutcome(JmsMessageSupport.ACCEPTED);
+        assertEquals(JmsMessageSupport.ACCEPTED, policy.getOutcome());
+
+        policy.setOutcome(JmsMessageSupport.REJECTED);
+        assertEquals(JmsMessageSupport.REJECTED, policy.getOutcome());
+
+        policy.setOutcome(JmsMessageSupport.RELEASED);
+        assertEquals(JmsMessageSupport.RELEASED, policy.getOutcome());
+
+        policy.setOutcome(JmsMessageSupport.MODIFIED_FAILED);
+        assertEquals(JmsMessageSupport.MODIFIED_FAILED, policy.getOutcome());
+
+        policy.setOutcome(JmsMessageSupport.MODIFIED_FAILED_UNDELIVERABLE);
+        assertEquals(JmsMessageSupport.MODIFIED_FAILED_UNDELIVERABLE, policy.getOutcome());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetOutcomeWithInvalidIntValue() {
+        JmsDefaultRedeliveryPolicy policy = new JmsDefaultRedeliveryPolicy();
+        policy.setOutcome(100);
+    }
+
+    @Test
+    public void testSetOutcomeFromString() {
+        JmsDefaultRedeliveryPolicy policy = new JmsDefaultRedeliveryPolicy();
+
+        assertEquals(JmsDefaultRedeliveryPolicy.DEFAULT_OUTCOME, policy.getOutcome());
+
+        policy.setOutcome("ACCEPTED");
+        assertEquals(JmsMessageSupport.ACCEPTED, policy.getOutcome());
+
+        policy.setOutcome("REJECTED");
+        assertEquals(JmsMessageSupport.REJECTED, policy.getOutcome());
+
+        policy.setOutcome("RELEASED");
+        assertEquals(JmsMessageSupport.RELEASED, policy.getOutcome());
+
+        policy.setOutcome("MODIFIED_FAILED");
+        assertEquals(JmsMessageSupport.MODIFIED_FAILED, policy.getOutcome());
+
+        policy.setOutcome("MODIFIED_FAILED_UNDELIVERABLE");
+        assertEquals(JmsMessageSupport.MODIFIED_FAILED_UNDELIVERABLE, policy.getOutcome());
+    }
+
+    @Test
+    public void testSetOutcomeFromStringUsingIntString() {
+        JmsDefaultRedeliveryPolicy policy = new JmsDefaultRedeliveryPolicy();
+
+        assertEquals(JmsDefaultRedeliveryPolicy.DEFAULT_OUTCOME, policy.getOutcome());
+
+        policy.setOutcome(Integer.toString(JmsMessageSupport.ACCEPTED));
+
+        assertEquals(JmsMessageSupport.ACCEPTED, policy.getOutcome());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetOutcomeWithInvaliStringValue() {
+        JmsDefaultRedeliveryPolicy policy = new JmsDefaultRedeliveryPolicy();
+        policy.setOutcome("FOO");
+    }
+
+    @Test
+    public void testGetOutcomeWithDestination() {
+        JmsDefaultRedeliveryPolicy policy = new JmsDefaultRedeliveryPolicy();
+
+        assertEquals(JmsDefaultRedeliveryPolicy.DEFAULT_OUTCOME, policy.getOutcome(new JmsTopic()));
+
+        policy.setOutcome(JmsMessageSupport.ACCEPTED);
+
+        assertEquals(JmsMessageSupport.ACCEPTED, policy.getOutcome(new JmsTopic()));
     }
 
     @Test

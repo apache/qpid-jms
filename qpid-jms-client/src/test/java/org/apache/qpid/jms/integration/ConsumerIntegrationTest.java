@@ -1635,34 +1635,87 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout=20000)
     public void testRedeliveryPolicyOutcomeAppliedAccepted() throws Exception {
-        doTestRedeliveryPolicyOutcomeApplied(1);
+        doTestRedeliveryPolicyOutcomeApplied(1, false);
     }
 
     @Test(timeout=20000)
     public void testRedeliveryPolicyOutcomeAppliedRejected() throws Exception {
-        doTestRedeliveryPolicyOutcomeApplied(2);
+        doTestRedeliveryPolicyOutcomeApplied(2, false);
     }
 
     @Test(timeout=20000)
     public void testRedeliveryPolicyOutcomeAppliedReleased() throws Exception {
-        doTestRedeliveryPolicyOutcomeApplied(3);
+        doTestRedeliveryPolicyOutcomeApplied(3, false);
     }
 
     @Test(timeout=20000)
     public void testRedeliveryPolicyOutcomeAppliedModifiedFailed() throws Exception {
-        doTestRedeliveryPolicyOutcomeApplied(4);
+        doTestRedeliveryPolicyOutcomeApplied(4, false);
     }
 
     @Test(timeout=20000)
     public void testRedeliveryPolicyOutcomeAppliedModifiedFailedUndeliverable() throws Exception {
-        doTestRedeliveryPolicyOutcomeApplied(5);
+        doTestRedeliveryPolicyOutcomeApplied(5, false);
     }
 
-    private void doTestRedeliveryPolicyOutcomeApplied(int outcome) throws Exception {
+    @Test(timeout=20000)
+    public void testRedeliveryPolicyOutcomeAppliedAcceptedString() throws Exception {
+        doTestRedeliveryPolicyOutcomeApplied(1, true);
+    }
+
+    @Test(timeout=20000)
+    public void testRedeliveryPolicyOutcomeAppliedRejectedString() throws Exception {
+        doTestRedeliveryPolicyOutcomeApplied(2, true);
+    }
+
+    @Test(timeout=20000)
+    public void testRedeliveryPolicyOutcomeAppliedReleasedString() throws Exception {
+        doTestRedeliveryPolicyOutcomeApplied(3, true);
+    }
+
+    @Test(timeout=20000)
+    public void testRedeliveryPolicyOutcomeAppliedModifiedFailedString() throws Exception {
+        doTestRedeliveryPolicyOutcomeApplied(4, true);
+    }
+
+    @Test(timeout=20000)
+    public void testRedeliveryPolicyOutcomeAppliedModifiedFailedUndeliverableString() throws Exception {
+        doTestRedeliveryPolicyOutcomeApplied(5, true);
+    }
+
+    private void doTestRedeliveryPolicyOutcomeApplied(int outcome, boolean useStringOption) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
+            Object outcomeValue = outcome;
+            if (useStringOption) {
+                //  ACCEPTED = 1
+                //  REJECTED = 2
+                //  RELEASED = 3
+                //  MODIFIED_FAILED = 4
+                //  MODIFIED_FAILED_UNDELIVERABLE = 5
+                switch (outcome) {
+                    case 1:
+                        outcomeValue = "ACCEPTED";
+                        break;
+                    case 2:
+                        outcomeValue = "REJECTED";
+                        break;
+                    case 3:
+                        outcomeValue = "RELEASED";
+                        break;
+                    case 4:
+                        outcomeValue = "MODIFIED_FAILED";
+                        break;
+                    case 5:
+                        outcomeValue = "MODIFIED_FAILED_UNDELIVERABLE";
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Test passed invalid outcome value");
+                }
+            }
+
             Connection connection = testFixture.establishConnecton(testPeer,
-                "?jms.redeliveryPolicy.maxRedeliveries=1&jms.redeliveryPolicy.outcome=" + outcome);
+                "?jms.redeliveryPolicy.maxRedeliveries=1&jms.redeliveryPolicy.outcome=" + outcomeValue);
             connection.start();
 
             testPeer.expectBegin();

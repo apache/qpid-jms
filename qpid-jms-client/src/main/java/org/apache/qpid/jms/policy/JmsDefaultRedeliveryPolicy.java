@@ -30,6 +30,41 @@ public class JmsDefaultRedeliveryPolicy implements JmsRedeliveryPolicy {
     private int maxRedeliveries;
     private int outcome;
 
+    private enum OUTCOME {
+        ACCEPTED(JmsMessageSupport.ACCEPTED),
+        REJECTED(JmsMessageSupport.REJECTED),
+        RELEASED(JmsMessageSupport.RELEASED),
+        MODIFIED_FAILED(JmsMessageSupport.MODIFIED_FAILED),
+        MODIFIED_FAILED_UNDELIVERABLE(JmsMessageSupport.MODIFIED_FAILED_UNDELIVERABLE);
+
+        private final int outcome;
+
+        private OUTCOME(int outcome) {
+            this.outcome = outcome;
+        }
+
+        public int getOutcomeOrdinal() {
+            return outcome;
+        }
+
+        public static OUTCOME getMappedOutcome(int value) {
+            switch (value) {
+                case JmsMessageSupport.ACCEPTED:
+                    return ACCEPTED;
+                case JmsMessageSupport.REJECTED:
+                    return REJECTED;
+                case JmsMessageSupport.RELEASED:
+                    return RELEASED;
+                case JmsMessageSupport.MODIFIED_FAILED:
+                    return MODIFIED_FAILED;
+                case JmsMessageSupport.MODIFIED_FAILED_UNDELIVERABLE:
+                    return MODIFIED_FAILED_UNDELIVERABLE;
+                default:
+                    throw new IllegalArgumentException("Specified outcome is not a legal value: " + value);
+            }
+        }
+    };
+
     public JmsDefaultRedeliveryPolicy() {
         maxRedeliveries = DEFAULT_MAX_REDELIVERIES;
         outcome = DEFAULT_OUTCOME;
@@ -58,7 +93,7 @@ public class JmsDefaultRedeliveryPolicy implements JmsRedeliveryPolicy {
     /**
      * Returns the configured default outcome that will be used when rejecting messages.
      * <p>
-     * Default acknowledgement type is Modified with Undeliverable here set to true.
+     * Default acknowledgement type is Modified with Failed and Undeliverable here set to true.
      *
      * @return the default outcome used when rejecting messages.
      */
@@ -73,7 +108,25 @@ public class JmsDefaultRedeliveryPolicy implements JmsRedeliveryPolicy {
      * 		the default outcome applied to a rejected delivery.
      */
     public void setOutcome(int outcome) {
-        this.outcome = outcome;
+        this.outcome = OUTCOME.getMappedOutcome(outcome).getOutcomeOrdinal();
+    }
+
+    /**
+     * Set the default outcome to use when rejecting messages.
+     *
+     * @param outcome
+     * 		the default outcome applied to a rejected delivery.
+     */
+    public void setOutcome(String outcome) {
+        try {
+            this.outcome = OUTCOME.valueOf(outcome.toUpperCase()).getOutcomeOrdinal();
+        } catch (IllegalArgumentException iae) {
+            try {
+                setOutcome(Integer.parseInt(outcome));
+            } catch (NumberFormatException e) {
+                throw iae;
+            }
+        }
     }
 
     /**

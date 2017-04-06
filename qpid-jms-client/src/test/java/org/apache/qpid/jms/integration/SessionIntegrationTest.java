@@ -813,27 +813,47 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 20000)
     public void testCreateConsumerSourceContainsQueueCapability() throws Exception {
-        doCreateConsumerSourceContainsCapabilityTestImpl(Queue.class);
+        doCreateConsumerSourceContainsCapabilityTestImpl(Queue.class, true);
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateConsumerSourceContainsQueueCapabilityWithoutClientID() throws Exception {
+        doCreateConsumerSourceContainsCapabilityTestImpl(Queue.class, false);
     }
 
     @Test(timeout = 20000)
     public void testCreateConsumerSourceContainsTopicCapability() throws Exception {
-        doCreateConsumerSourceContainsCapabilityTestImpl(Topic.class);
+        doCreateConsumerSourceContainsCapabilityTestImpl(Topic.class, true);
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateConsumerSourceContainsTopicCapabilityWithoutClientID() throws Exception {
+        doCreateConsumerSourceContainsCapabilityTestImpl(Topic.class, false);
     }
 
     @Test(timeout = 20000)
     public void testCreateConsumerSourceContainsTempQueueCapability() throws Exception {
-        doCreateConsumerSourceContainsCapabilityTestImpl(TemporaryQueue.class);
+        doCreateConsumerSourceContainsCapabilityTestImpl(TemporaryQueue.class, true);
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateConsumerSourceContainsTempQueueCapabilityWithoutClientID() throws Exception {
+        doCreateConsumerSourceContainsCapabilityTestImpl(TemporaryQueue.class, false);
     }
 
     @Test(timeout = 20000)
     public void testCreateConsumerSourceContainsTempTopicCapability() throws Exception {
-        doCreateConsumerSourceContainsCapabilityTestImpl(TemporaryTopic.class);
+        doCreateConsumerSourceContainsCapabilityTestImpl(TemporaryTopic.class, true);
     }
 
-    private void doCreateConsumerSourceContainsCapabilityTestImpl(Class<? extends Destination> destType) throws JMSException, Exception, IOException {
+    @Test(timeout = 20000)
+    public void testCreateConsumerSourceContainsTempTopicCapabilityWithoutClientID() throws Exception {
+        doCreateConsumerSourceContainsCapabilityTestImpl(TemporaryTopic.class, false);
+    }
+
+    private void doCreateConsumerSourceContainsCapabilityTestImpl(Class<? extends Destination> destType, boolean setClientID) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            Connection connection = testFixture.establishConnecton(testPeer);
+            Connection connection = testFixture.establishConnecton(testPeer, false, null, null, null, setClientID);
             testPeer.expectBegin();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

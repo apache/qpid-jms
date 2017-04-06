@@ -228,10 +228,10 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
 
         if(resourceInfo.isShared()) {
             capabilities.add(AmqpSupport.SHARED);
-        }
 
-        if(!resourceInfo.isExplicitClientID()) {
-            capabilities.add(AmqpSupport.GLOBAL);
+            if(!resourceInfo.isExplicitClientID()) {
+                capabilities.add(AmqpSupport.GLOBAL);
+            }
         }
 
         if(!capabilities.isEmpty()) {

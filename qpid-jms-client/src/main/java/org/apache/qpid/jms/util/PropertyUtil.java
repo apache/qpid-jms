@@ -26,9 +26,11 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -406,18 +408,35 @@ public class PropertyUtil {
             }
 
             Class<? extends Object> clazz = target.getClass();
-            Method setter = findSetterMethod(clazz, name);
-            if (setter == null) {
+            List<Method> setters = findSetterMethod(clazz, name);
+            if (setters == null || setters.isEmpty()) {
                 return false;
             }
-            // If the type is null or it matches the needed type, just use the
-            // value directly
-            if (value == null || value.getClass() == setter.getParameterTypes()[0]) {
-                setter.invoke(target, new Object[] { value });
-            } else {
-                setter.invoke(target, new Object[] { convert(value, setter.getParameterTypes()[0]) });
+
+            Throwable failure = null;
+            for (Method setter : setters) {
+                // If the type is null or it matches the needed type, just use the
+                // value directly
+                if (value == null || value.getClass() == setter.getParameterTypes()[0]) {
+                    try {
+                        setter.invoke(target, new Object[] { value });
+                        failure = null;
+                        break;
+                    } catch (Throwable error) {
+                        failure = error;
+                    }
+                } else {
+                    try {
+                        setter.invoke(target, new Object[] { convert(value, setter.getParameterTypes()[0]) });
+                        failure = null;
+                        break;
+                    } catch (Throwable error) {
+                        failure = error;
+                    }
+                }
             }
-            return true;
+
+            return failure == null;
         } catch (Throwable ignore) {
             return false;
         }
@@ -484,7 +503,9 @@ public class PropertyUtil {
         return result;
     }
 
-    private static Method findSetterMethod(Class<? extends Object> clazz, String name) {
+    private static List<Method> findSetterMethod(Class<? extends Object> clazz, String name) {
+        List<Method> matches = new ArrayList<>();
+
         // Build the method name.
         name = "set" + name.substring(0, 1).toUpperCase() + name.substring(1);
         Method[] methods = clazz.getMethods();
@@ -492,10 +513,11 @@ public class PropertyUtil {
             Method method = methods[i];
             Class<? extends Object> params[] = method.getParameterTypes();
             if (method.getName().equals(name) && params.length == 1) {
-                return method;
+                matches.add(method);
             }
         }
-        return null;
+
+        return matches;
     }
 
     private static Object convert(Object value, Class<?> type) throws Exception {

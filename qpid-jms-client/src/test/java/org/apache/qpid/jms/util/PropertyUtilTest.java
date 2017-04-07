@@ -59,6 +59,7 @@ public class PropertyUtilTest {
         private String throwsWhenSet;
         private String requiresTwo;
         private String notReadable;
+        private int intOption;
 
         private int numberValue;
         private boolean booleanValue;
@@ -159,6 +160,18 @@ public class PropertyUtilTest {
 
         public void setStringArray(String[] stringArray) {
             this.stringArray = stringArray;
+        }
+
+        public void setIntOption(int value) {
+            this.intOption = value;
+        }
+
+        public void setIntOption(String value) {
+            this.intOption = Integer.parseInt(value);
+        }
+
+        public int getIntOption() {
+            return intOption;
         }
     }
 
@@ -727,6 +740,27 @@ public class PropertyUtilTest {
     @Test(expected=IllegalArgumentException.class)
     public void testSetPropertiesWithNullProperties() {
         PropertyUtil.setProperties(new Options(), (Properties) null);
+    }
+
+    @Test
+    public void testSetPropertyWithTwoSettersUsingString() throws Exception {
+        Options configObject = new Options();
+        assertTrue(PropertyUtil.setProperty(configObject, "intOption", "1"));
+        assertEquals(1, configObject.getIntOption());
+    }
+
+    @Test
+    public void testSetPropertyWithTwoSettersUsingInt() throws Exception {
+        Options configObject = new Options();
+        assertTrue(PropertyUtil.setProperty(configObject, "intOption", 1));
+        assertEquals(1, configObject.getIntOption());
+    }
+
+    @Test
+    public void testSetPropertyWithTwoSettersUsingBadValueIsNotApplied() throws Exception {
+        Options configObject = new Options();
+        assertFalse(PropertyUtil.setProperty(configObject, "intOption", Long.MAX_VALUE));
+        assertEquals(0, configObject.getIntOption());
     }
 
     //----- stripPrefix ------------------------------------------------------//

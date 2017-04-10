@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
+import javax.jms.TransactionRolledBackException;
 
 import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.JmsSendTimedOutException;
@@ -435,6 +436,13 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             @Override
             public String toString() {
                 return "TX commit -> " + transactionInfo.getId();
+            }
+
+            @Override
+            protected Exception createOfflineFailureException(IOException error) {
+                Exception ex = new TransactionRolledBackException("Commit failed, connection offline: " + error.getMessage());
+                ex.initCause(error);
+                return ex;
             }
         };
 
@@ -1197,14 +1205,18 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             }
         }
 
-        public JMSException createTimedOutException() {
+        protected JMSException createTimedOutException() {
             return new JmsOperationTimedOutException("Timed out waiting on " +  this);
+        }
+
+        protected Exception createOfflineFailureException(IOException error) {
+            return IOExceptionSupport.create(error);
         }
 
         private void whenOffline(IOException error) {
             if (failureWhenOffline()) {
                 requests.remove(id);
-                getWrappedRequest().onFailure(IOExceptionSupport.create(error));
+                getWrappedRequest().onFailure(createOfflineFailureException(error));
             } else if (succeedsWhenOffline()) {
                 onSuccess();
             } else {

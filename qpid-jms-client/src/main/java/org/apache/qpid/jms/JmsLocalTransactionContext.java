@@ -206,6 +206,8 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                         }
                     }
 
+                    throw cause;
+                } finally {
                     try {
                         // If the provider failed to start a new transaction there will not be
                         // a current provider transaction id present, so we attempt to create
@@ -217,10 +219,8 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                         // TODO
                         // At this point the transacted session is now unrecoverable, we should
                         // probably close it.
-                        LOG.info("Failed to start new Transaction after failed commit of: {}", oldTransactionId);
+                        LOG.info("Failed to start new Transaction after failed rollback of: {}", oldTransactionId);
                     }
-
-                    throw cause;
                 }
             }
         } finally {
@@ -286,6 +286,8 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                     }
                 }
 
+                throw cause;
+            } finally {
                 try {
                     // If the provider failed to start a new transaction there will not be
                     // a current provider transaction id present, so we attempt to create
@@ -299,8 +301,6 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                     // probably close it.
                     LOG.info("Failed to start new Transaction after failed rollback of: {}", oldTransactionId);
                 }
-
-                throw cause;
             }
         } finally {
             lock.writeLock().unlock();

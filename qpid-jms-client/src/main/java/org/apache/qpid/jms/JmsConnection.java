@@ -165,6 +165,10 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
                 provider.close();
             } catch (Throwable ignored) {}
 
+            try {
+                executor.shutdown();
+            } catch (Throwable ignored) {}
+
             throw JmsExceptionSupport.create(ex);
         }
 

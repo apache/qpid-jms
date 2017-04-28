@@ -91,7 +91,7 @@ public class AmqpFixedProducer extends AmqpProducer {
             request.onFailure(new IllegalStateException("The MessageProducer is closed"));
         }
 
-        if (!delayedDeliverySupported && envelope.getMessage().getJMSDeliveryTime() != 0) {
+        if (!delayedDeliverySupported && envelope.getMessage().getFacade().isDeliveryTimeTransmitted()) {
             // Don't allow sends with delay if the remote has not said it can handle them
             request.onFailure(new JMSException("Remote does not support delayed message delivery"));
         } else if (getEndpoint().getCredit() <= 0) {

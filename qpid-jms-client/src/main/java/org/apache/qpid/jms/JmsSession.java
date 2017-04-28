@@ -796,12 +796,12 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             // updating our own message instances, avoids using the interface
             // in case the JMS 1.1 Message API is actually being used due to
             // being on the classpath too.
-            long deliveryTime = 0;
+            long deliveryTime = timeStamp;
             if (hasDelay) {
                 deliveryTime = timeStamp + deliveryDelay;
             }
 
-            outbound.setJMSDeliveryTime(deliveryTime);
+            outbound.getFacade().setDeliveryTime(deliveryTime, hasDelay);
             if(!isJmsMessage) {
                 // If the original was a foreign message, we still need to update it too.
                 setForeignMessageDeliveryTime(original, deliveryTime);

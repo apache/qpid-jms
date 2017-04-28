@@ -309,7 +309,7 @@ public class JmsMessage implements javax.jms.Message {
     @Override
     public void setJMSDeliveryTime(long deliveryTime) throws JMSException {
         checkReadOnly();
-        facade.setDeliveryTime(deliveryTime);
+        facade.setDeliveryTime(deliveryTime, true);
     }
 
     @Override

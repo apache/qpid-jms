@@ -61,6 +61,7 @@ public class JmsTestMessageFacade implements JmsMessageFacade {
     protected Object messageId;
     protected long expiration;
     protected long deliveryTime;
+    protected boolean deliveryTimeTransmitted;
     protected long timestamp;
     protected String correlationId;
     protected boolean persistent = true;
@@ -290,8 +291,14 @@ public class JmsTestMessageFacade implements JmsMessageFacade {
     }
 
     @Override
-    public void setDeliveryTime(long deliveryTime) {
+    public void setDeliveryTime(long deliveryTime, boolean transmit) {
         this.deliveryTime = deliveryTime;
+        this.deliveryTimeTransmitted = transmit;
+    }
+
+    @Override
+    public boolean isDeliveryTimeTransmitted() {
+        return deliveryTimeTransmitted;
     }
 
     @Override

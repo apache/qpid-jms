@@ -70,6 +70,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     private JmsDestination consumerDestination;
 
     private Long syntheticExpiration;
+    private long syntheticDeliveryTime;
 
     /**
      * Used to record the value of JMS_AMQP_TTL property
@@ -105,6 +106,10 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         Long absoluteExpiryTime = getAbsoluteExpiryTime();
         if (absoluteExpiryTime == null && ttl != null) {
             syntheticExpiration = System.currentTimeMillis() + ttl;
+        }
+
+        if (getMessageAnnotation(JMS_DELIVERY_TIME) == null) {
+            syntheticDeliveryTime = getTimestamp();
         }
     }
 
@@ -250,6 +255,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         target.connection = connection;
         target.consumerDestination = consumerDestination;
         target.syntheticExpiration = syntheticExpiration;
+        target.syntheticDeliveryTime = syntheticDeliveryTime;
         target.userSpecifiedTTL = userSpecifiedTTL;
 
         if (destination != null) {
@@ -548,16 +554,23 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             return (long) deliveryTime;
         }
 
-        return 0l;
+        return syntheticDeliveryTime;
     }
 
     @Override
-    public void setDeliveryTime(long deliveryTime) {
-        if (deliveryTime != 0) {
+    public void setDeliveryTime(long deliveryTime, boolean transmit) {
+        if (deliveryTime != 0 && transmit) {
+            syntheticDeliveryTime = 0;
             setMessageAnnotation(JMS_DELIVERY_TIME, deliveryTime);
         } else {
+            syntheticDeliveryTime = deliveryTime;
             removeMessageAnnotation(JMS_DELIVERY_TIME);
         }
+    }
+
+    @Override
+    public boolean isDeliveryTimeTransmitted() {
+        return getMessageAnnotation(JMS_DELIVERY_TIME) != null;
     }
 
     /**

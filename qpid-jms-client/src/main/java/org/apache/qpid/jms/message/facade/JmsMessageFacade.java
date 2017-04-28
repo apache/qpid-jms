@@ -325,8 +325,10 @@ public interface JmsMessageFacade {
      *
      * @param deliveryTime
      *        the earliest time that the message should be made available for delivery.
+     * @param transmit
+     *        whether to transmit an annotation containing the value (if non-zero)
      */
-    void setDeliveryTime(long deliveryTime);
+    void setDeliveryTime(long deliveryTime, boolean transmit);
 
     /**
      * Gets the Destination value that was assigned to this message at the time it was
@@ -456,5 +458,12 @@ public interface JmsMessageFacade {
      * @return an Object that represents the encoded form of the message for the target provider.
      */
     Object encodeMessage();
+
+    /**
+     * Returns whether the delivery time is being transmitted, i.e. incorporates an actual delivery delay.
+     *
+     * @return true if delivery time is being transmitted as an annotation
+     */
+    boolean isDeliveryTimeTransmitted();
 
 }

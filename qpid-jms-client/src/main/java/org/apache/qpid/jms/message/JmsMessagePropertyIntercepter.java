@@ -652,7 +652,7 @@ public class JmsMessagePropertyIntercepter {
                 if (rc == null) {
                     throw new JMSException("Property JMSDeliveryTime cannot be set from a " + value.getClass().getName() + ".");
                 }
-                message.getFacade().setDeliveryTime(rc.longValue());
+                message.getFacade().setDeliveryTime(rc.longValue(), true);
             }
 
             @Override
@@ -662,7 +662,7 @@ public class JmsMessagePropertyIntercepter {
 
             @Override
             public void clearProperty(JmsMessage message) {
-                message.getFacade().setDeliveryTime(0);
+                message.getFacade().setDeliveryTime(0, true);
             }
 
             @Override

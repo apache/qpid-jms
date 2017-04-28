@@ -2267,4 +2267,62 @@ public class MessageIntegrationTest extends QpidJmsTestCase
         public void onException(Message message, Exception exception) {
         }
     }
+
+    //==== DeliveryTime Handling ====
+    //===============================
+
+    @Test(timeout = 20000)
+    public void testReceivedMessageWithDeliveryTimeAnnotation() throws Exception {
+        doReceivedMessageDeliveryTimeTestImpl(true);
+    }
+
+    @Test(timeout = 20000)
+    public void testReceivedMessageWithoutDeliveryTimeAnnotation() throws Exception {
+        doReceivedMessageDeliveryTimeTestImpl(false);
+    }
+
+    private void doReceivedMessageDeliveryTimeTestImpl(boolean setDeliveryTimeAnnotation)
+            throws JMSException, InterruptedException, Exception, IOException {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            final long creationTime = System.currentTimeMillis();
+            final long deliveryTime = creationTime + 13526;
+
+            MessageAnnotationsDescribedType msgAnnotations = null;
+            if(setDeliveryTimeAnnotation) {
+                msgAnnotations = new MessageAnnotationsDescribedType();
+                msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_DELIVERY_TIME, deliveryTime);
+            }
+
+            PropertiesDescribedType props = new PropertiesDescribedType();
+            props.setTo("myAddress");
+            props.setMessageId("ID:myMessageIDString");
+            props.setCreationTime(new Date(creationTime));
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, msgAnnotations, props, null, new AmqpValueDescribedType(null));
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+            Message receivedMessage = messageConsumer.receive(3000);
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            assertNotNull("should have recieved a message", receivedMessage);
+
+            long expectedDeliveryTime = setDeliveryTimeAnnotation ? deliveryTime : creationTime;
+            assertEquals("Unexpected delivery time", expectedDeliveryTime, receivedMessage.getJMSDeliveryTime());
+        }
+    }
 }

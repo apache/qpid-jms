@@ -1815,7 +1815,7 @@ public class JmsMessagePropertyIntercepterTest {
         JmsMessage message = Mockito.mock(JmsMapMessage.class);
         Mockito.when(message.getFacade()).thenReturn(facade);
         JmsMessagePropertyIntercepter.setProperty(message, JMS_DELIVERYTIME, 65536L);
-        Mockito.verify(facade).setDeliveryTime(65536L);
+        Mockito.verify(facade).setDeliveryTime(65536L, true);
     }
 
     @Test
@@ -1884,8 +1884,8 @@ public class JmsMessagePropertyIntercepterTest {
         JmsMessage message = Mockito.mock(JmsMapMessage.class);
         Mockito.when(message.getFacade()).thenReturn(facade);
         JmsMessagePropertyIntercepter.clearProperties(message, true);
-        Mockito.verify(facade, Mockito.never()).setDeliveryTime(0);
+        Mockito.verify(facade, Mockito.never()).setDeliveryTime(0, true);
         JmsMessagePropertyIntercepter.clearProperties(message, false);
-        Mockito.verify(facade).setDeliveryTime(0);
+        Mockito.verify(facade).setDeliveryTime(0, true);
     }
 }

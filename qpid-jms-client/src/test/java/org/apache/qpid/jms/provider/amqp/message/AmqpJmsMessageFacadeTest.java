@@ -2192,6 +2192,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         source.setRedeliveryCount(12);
         source.setTimestamp(150L);
         source.setUserId("Cookie-Monster");
+        source.setDeliveryTime(123456, false);
 
         source.setProperty("APP-Prop-1", "APP-Prop-1-Value");
         source.setProperty("APP-Prop-2", "APP-Prop-2-Value");
@@ -2215,6 +2216,8 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         assertEquals(source.getRedeliveryCount(), copy.getRedeliveryCount());
         assertEquals(source.getTimestamp(), copy.getTimestamp());
         assertEquals(source.getUserId(), copy.getUserId());
+        assertEquals(source.getDeliveryTime(), copy.getDeliveryTime());
+
 
         // There should be two since none of the extended options were set
         assertEquals(2, copy.getPropertyNames().size());

@@ -18,6 +18,10 @@
  */
 package org.apache.qpid.jms.producer;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.both;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -57,6 +61,7 @@ import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.provider.mock.MockRemotePeer;
+import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -938,18 +943,35 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
     private void doTestSendAppliesDeliveryDelayMessageBody(Class<?> bodyType) throws JMSException {
         JMSProducer producer = context.createProducer();
 
+        // Create matcher to expect the DeliveryTime to be set to a value
+        // representing 'now', within a upper delta for execution time.
+        long deliveryTimeLower = System.currentTimeMillis();
+        long deliveryTimeUpper = deliveryTimeLower + 3000;
+        Matcher<Long> inRange = both(greaterThanOrEqualTo(deliveryTimeLower)).and(lessThanOrEqualTo(deliveryTimeUpper));
+
         sendWithBodyOfType(producer, bodyType);
+
         JmsOutboundMessageDispatch envelope = remotePeer.getLastReceivedMessage();
         assertNotNull(envelope);
         JmsMessage message = envelope.getMessage();
-        assertTrue(message.getJMSDeliveryTime() == 0);
+        assertThat(message.getJMSDeliveryTime(), inRange);
 
-        producer.setDeliveryDelay(2000);
+        // Repeat with a non-zero delay
+        int deliveryDelay = 123456;
+        producer.setDeliveryDelay(deliveryDelay);
+
+        // Create matcher to expect the DeliveryTime to be set to a value
+        // representing 'now' + delivery-delay, within a upper delta for execution time.
+        deliveryTimeLower = System.currentTimeMillis();
+        deliveryTimeUpper = deliveryTimeLower + deliveryDelay + 3000;
+        inRange = both(greaterThanOrEqualTo(deliveryTimeLower)).and(lessThanOrEqualTo(deliveryTimeUpper));
+
         sendWithBodyOfType(producer, bodyType);
+
         envelope = remotePeer.getLastReceivedMessage();
         assertNotNull(envelope);
         message = envelope.getMessage();
-        assertFalse(message.getJMSDeliveryTime() == 0);
+        assertThat(message.getJMSDeliveryTime(), inRange);
     }
 
     @Test

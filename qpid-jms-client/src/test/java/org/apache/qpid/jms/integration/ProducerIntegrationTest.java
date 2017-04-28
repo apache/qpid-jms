@@ -19,6 +19,7 @@
 package org.apache.qpid.jms.integration;
 
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DELAYED_DELIVERY;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
@@ -28,6 +29,7 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -66,6 +68,7 @@ import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.JmsSendTimedOutException;
 import org.apache.qpid.jms.message.foreign.ForeignJmsMessage;
+import org.apache.qpid.jms.provider.amqp.AmqpSupport;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageIdHelper;
 import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -93,6 +96,7 @@ import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.hamcrest.core.CombinableMatcher;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -2674,6 +2678,72 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testSendingMessageSetsJMSDeliveryTimeWithDelay() throws Exception {
+        doSendingMessageSetsJMSDeliveryTimeTestImpl(true);
+    }
+
+    @Test(timeout = 20000)
+    public void testSendingMessageSetsJMSDeliveryTimeWithoutDelay() throws Exception {
+        doSendingMessageSetsJMSDeliveryTimeTestImpl(false);
+    }
+
+    private void doSendingMessageSetsJMSDeliveryTimeTestImpl(boolean deliveryDelay) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            // add connection capability to indicate server support for DELAYED-DELIVERY
+            Connection connection = testFixture.establishConnecton(testPeer, new Symbol[]{ DELAYED_DELIVERY });
+
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            String queueName = "myQueue";
+            Queue queue = session.createQueue(queueName);
+            MessageProducer producer = session.createProducer(queue);
+
+            int delay = 0;
+            if(deliveryDelay) {
+                delay = 123456;
+                producer.setDeliveryDelay(delay);
+            }
+
+            // Create matcher to expect the DeliveryTime to be set to a value
+            // representing 'now' [+ delivery-delay], within a upper delta for execution time.
+            long deliveryTimeLower = System.currentTimeMillis();
+            long deliveryTimeUpper = deliveryTimeLower + delay + 3000;
+            Matcher<Long> inRange = both(greaterThanOrEqualTo(deliveryTimeLower)).and(lessThanOrEqualTo(deliveryTimeUpper));
+            Symbol DELIVERY_TIME = Symbol.valueOf("x-opt-delivery-time");
+
+            String text = "myMessage";
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(new MessageHeaderSectionMatcher(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            if(deliveryDelay) {
+                msgAnnotationsMatcher.withEntry(DELIVERY_TIME, inRange);
+            }
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(new MessagePropertiesSectionMatcher(true));
+            messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(text));
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createTextMessage(text);
+
+            producer.send(message);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            if (!deliveryDelay) {
+                assertFalse("Message should not have delivery time annotation",
+                        msgAnnotationsMatcher.keyExistsInReceivedAnnotations(DELIVERY_TIME));
+            }
+
+            assertThat(message.getJMSDeliveryTime(), inRange);
         }
     }
 

@@ -114,4 +114,21 @@ public interface Transport {
      */
     Principal getLocalPrincipal();
 
+    /**
+     * Sets the Maximum Frame Size the transport should accept from the remote.  This option
+     * is not applicable to all transport types, those that support validating the incoming
+     * frame size should apply the configured value.
+     *
+     * @param maxFrameSize
+     * 		The maximum frame size to accept from the remote.
+     */
+    void setMaxFrameSize(int maxFrameSize);
+
+    /**
+     * Returns the currently configured maximum frame size setting.
+     *
+     * @return the current max frame size setting for this transport.
+     */
+    int getMaxFrameSize();
+
 }

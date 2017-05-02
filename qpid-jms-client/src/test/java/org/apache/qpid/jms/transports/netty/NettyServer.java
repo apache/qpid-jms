@@ -85,6 +85,7 @@ public abstract class NettyServer implements AutoCloseable {
     private int serverPort;
     private final boolean needClientAuth;
     private final boolean webSocketServer;
+    private int maxFrameSize = NettyTcpTransport.DEFAULT_MAX_FRAME_SIZE;
     private String webSocketPath = WEBSOCKET_PATH;
     private volatile SslHandler sslHandler;
 
@@ -118,6 +119,14 @@ public abstract class NettyServer implements AutoCloseable {
 
     public void setWebSocketPath(String webSocketPath) {
         this.webSocketPath = webSocketPath;
+    }
+
+    public int getMaxFrameSize() {
+        return maxFrameSize;
+    }
+
+    public void setMaxFrameSize(int maxFrameSize) {
+        this.maxFrameSize = maxFrameSize;
     }
 
     protected URI getConnectionURI() throws Exception {
@@ -183,7 +192,7 @@ public abstract class NettyServer implements AutoCloseable {
                     if (webSocketServer) {
                         ch.pipeline().addLast(new HttpServerCodec());
                         ch.pipeline().addLast(new HttpObjectAggregator(65536));
-                        ch.pipeline().addLast(new WebSocketServerProtocolHandler(getWebSocketPath(), "amqp", true));
+                        ch.pipeline().addLast(new WebSocketServerProtocolHandler(getWebSocketPath(), "amqp", true, maxFrameSize));
                     }
 
                     ch.pipeline().addLast(new NettyServerOutboundHandler());
@@ -270,7 +279,6 @@ public abstract class NettyServer implements AutoCloseable {
                     public void operationComplete(Future<Channel> future) throws Exception {
                         LOG.info("Server -> SSL handshake completed. Succeeded: {}", future.isSuccess());
                         if (!future.isSuccess()) {
-                            sslHandler.close();
                             ctx.close();
                         }
                     }

@@ -191,6 +191,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     SSLContext sslContextOverride = connectionInfo.getSslContextOverride();
 
                     transport.setTransportListener(AmqpProvider.this);
+                    transport.setMaxFrameSize(maxFrameSize);
                     transport.connect(sslContextOverride);
 
                     if (saslLayer) {

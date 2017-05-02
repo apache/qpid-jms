@@ -22,13 +22,19 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 /**
  * Test the Netty based WebSocket Transport
@@ -51,7 +57,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
         }
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test(timeout = 60000)
     public void testConnectToServerUsingCorrectPath() throws Exception {
         final String WEBSOCKET_PATH = "/testpath";
 
@@ -84,7 +90,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
         assertTrue(data.isEmpty());
     }
 
-    @Test(timeout = 60 * 1000)
+    @Test(timeout = 60000)
     public void testConnectToServerUsingIncorrectPath() throws Exception {
         final String WEBSOCKET_PATH = "/testpath";
 
@@ -113,5 +119,125 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
         assertTrue(!transportClosed);  // Normal shutdown does not trigger the event.
         assertTrue(exceptions.isEmpty());
         assertTrue(data.isEmpty());
+    }
+
+    @Test(timeout = 60000)
+    public void testConnectionsSendReceiveLargeDataWhenFrameSizeAllowsIt() throws Exception {
+        final int FRAME_SIZE = 8192;
+
+        ByteBuf sendBuffer = Unpooled.buffer(FRAME_SIZE);
+        for (int i = 0; i < FRAME_SIZE; ++i) {
+            sendBuffer.writeByte('A');
+        }
+
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
+            // Server should pass the data through without issue with this size
+            server.setMaxFrameSize(FRAME_SIZE);
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            List<Transport> transports = new ArrayList<Transport>();
+
+            Transport transport = createTransport(serverLocation, testListener, createClientOptions());
+            try {
+                // The transport should allow for the size of data we sent.
+                transport.setMaxFrameSize(FRAME_SIZE);
+                transport.connect(null);
+                transport.send(sendBuffer.copy());
+                transports.add(transport);
+            } catch (Exception e) {
+                fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
+            }
+
+            assertTrue(Wait.waitFor(new Wait.Condition() {
+
+                @Override
+                public boolean isSatisified() throws Exception {
+                    LOG.debug("Checking completion: read {} expecting {}", bytesRead.get(), FRAME_SIZE);
+                    return bytesRead.get() == FRAME_SIZE || !transport.isConnected();
+                }
+            }));
+
+            assertTrue("Connection failed while receiving.", transport.isConnected());
+
+            transport.close();
+        }
+
+        assertTrue(exceptions.isEmpty());
+    }
+
+    @Test(timeout = 60000)
+    public void testConnectionsSendReceiveLargeDataFailsDueToMaxFrameSize() throws Exception {
+        final int FRAME_SIZE = 1024;
+
+        ByteBuf sendBuffer = Unpooled.buffer(FRAME_SIZE);
+        for (int i = 0; i < FRAME_SIZE; ++i) {
+            sendBuffer.writeByte('A');
+        }
+
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
+            // Server should pass the data through, client should choke on the incoming size.
+            server.setMaxFrameSize(FRAME_SIZE);
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            List<Transport> transports = new ArrayList<Transport>();
+
+            Transport transport = createTransport(serverLocation, testListener, createClientOptions());
+            try {
+                // Transport can't receive anything bigger so it should fail the connection
+                // when data arrives that is larger than this value.
+                transport.setMaxFrameSize(FRAME_SIZE / 2);
+                transport.connect(null);
+                transport.send(sendBuffer.copy());
+                transports.add(transport);
+            } catch (Exception e) {
+                fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
+            }
+
+            assertTrue("Transport should have lost connection", Wait.waitFor(() -> !transport.isConnected()));
+        }
+
+        assertFalse(exceptions.isEmpty());
+    }
+
+    @Test(timeout = 60000)
+    public void testTransportDetectsConnectionDropWhenServerEnforcesMaxFrameSize() throws Exception {
+        final int FRAME_SIZE = 1024;
+
+        ByteBuf sendBuffer = Unpooled.buffer(FRAME_SIZE);
+        for (int i = 0; i < FRAME_SIZE; ++i) {
+            sendBuffer.writeByte('A');
+        }
+
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
+            // Server won't accept the data as it's to large and will close the connection.
+            server.setMaxFrameSize(FRAME_SIZE / 2);
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            List<Transport> transports = new ArrayList<Transport>();
+
+            Transport transport = createTransport(serverLocation, testListener, createClientOptions());
+            try {
+                // Transport allows bigger frames in so that server is the one causing the failure.
+                transport.setMaxFrameSize(FRAME_SIZE);
+                transport.connect(null);
+                transport.send(sendBuffer.copy());
+                transports.add(transport);
+            } catch (Exception e) {
+                fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
+            }
+
+            assertTrue("Transport should have lost connection", Wait.waitFor(() -> !transport.isConnected()));
+        }
+
+        assertFalse(exceptions.isEmpty());
     }
 }

@@ -21,6 +21,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -145,8 +146,8 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
                 // The transport should allow for the size of data we sent.
                 transport.setMaxFrameSize(FRAME_SIZE);
                 transport.connect(null);
-                transport.send(sendBuffer.copy());
                 transports.add(transport);
+                transport.send(sendBuffer.copy());
             } catch (Exception e) {
                 fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
             }
@@ -193,8 +194,8 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
                 // when data arrives that is larger than this value.
                 transport.setMaxFrameSize(FRAME_SIZE / 2);
                 transport.connect(null);
-                transport.send(sendBuffer.copy());
                 transports.add(transport);
+                transport.send(sendBuffer.copy());
             } catch (Exception e) {
                 fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
             }
@@ -224,20 +225,31 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
 
             List<Transport> transports = new ArrayList<Transport>();
 
-            Transport transport = createTransport(serverLocation, testListener, createClientOptions());
+            final Transport transport = createTransport(serverLocation, testListener, createClientOptions());
             try {
                 // Transport allows bigger frames in so that server is the one causing the failure.
                 transport.setMaxFrameSize(FRAME_SIZE);
                 transport.connect(null);
-                transport.send(sendBuffer.copy());
                 transports.add(transport);
+                transport.send(sendBuffer.copy());
             } catch (Exception e) {
                 fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
             }
 
-            assertTrue("Transport should have lost connection", Wait.waitFor(() -> !transport.isConnected()));
-        }
+            assertTrue("Transport should have lost connection", Wait.waitFor(new Wait.Condition() {
 
-        assertFalse(exceptions.isEmpty());
+                @Override
+                public boolean isSatisified() throws Exception {
+                    try {
+                        transport.send(sendBuffer);
+                    } catch (IOException e) {
+                        LOG.info("Transport send caught error:", e);
+                        return true;
+                    }
+
+                    return false;
+                }
+            }));
+        }
     }
 }

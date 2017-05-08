@@ -1091,7 +1091,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
         final int recoverCount = 5;
         final int messageCount = 8;
-        final int testPayloadLength = 255; // Don't go over 255, Proton <= 0.16.0 issue affecting the test[ only].
+        final int testPayloadLength = 255;
         String payload = new String(new byte[testPayloadLength], StandardCharsets.UTF_8);
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {

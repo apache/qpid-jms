@@ -38,10 +38,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 public class Server {
-
     public static void main(String[] args) throws Exception {
-	    	System.out.println("[SERVER] Awaiting Message...");
-	
 	        try {
 	            // The configuration for the Qpid InitialContextFactory has been supplied in
 	            // a jndi.properties file in the classpath, which results in it being picked
@@ -56,32 +53,23 @@ public class Server {
 	            connection.start();
 	
 	            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-	            
 	
 	            MessageConsumer messageConsumer = session.createConsumer(queue);
-	            while (true) {
+	            MessageProducer messageProducer = session.createProducer(null);
 	            
-		            long start = System.currentTimeMillis();
+	            while (true) {
+	                System.out.println("[SERVER] Awaiting Message...");
 		            
 		            //Receive a message
-		            Message receivedMessage = messageConsumer.receive(0);
-		                
-		            long finish = System.currentTimeMillis();
-		            long taken = finish - start;
-	
-		            System.out.println("[SERVER] Received the message in " + taken + "ms");
+		            Message receivedMessage = messageConsumer.receive();
+		            System.out.println("[SERVER] Received the message.");
 		            
 		            //Create new message to return to client
 		            Destination replyDestination = receivedMessage.getJMSReplyTo();
-		            TextMessage newMessage = session.createTextMessage(interpretMessage(receivedMessage));
-		            MessageProducer messageProducer = session.createProducer(null);
-		            newMessage.setJMSDestination(replyDestination);
+		            TextMessage newMessage = session.createTextMessage(capitalize(receivedMessage));
 		            messageProducer.send(replyDestination, newMessage, DeliveryMode.NON_PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
-		            System.out.println("[SERVER] The message has been interpreted and sent back to the client.");
+		            System.out.println("[SERVER] Returned new message to client.");
 	            }
-	            
-	            
-	            
 	        } catch (Exception exp) {
 	            System.out.println("[SERVER] Caught exception, exiting.");
 	            exp.printStackTrace(System.out);
@@ -89,23 +77,10 @@ public class Server {
 	        }
     }
     
-    //Interpret received message and create a new one
-    private static String interpretMessage(Message receivedMessage) throws Exception
+    //Generate capitalized text to send back to client.
+    private static String capitalize(Message receivedMessage) throws Exception
     {
-    	//If the message will be capitalized
-    	if (receivedMessage.getStringProperty("FUNCTION").equals("capitalize")) {
     		return ((TextMessage) receivedMessage).getText().toUpperCase();
-    		
-    	//If the message will be sorted
-    	} else if (receivedMessage.getStringProperty("FUNCTION").equals("sort")) {
-    		ObjectMessage receivedObject = (ObjectMessage) receivedMessage;
-    		if (receivedObject.getObject() instanceof ArrayList) {
-    			ArrayList<Integer> newList = (ArrayList<Integer>) receivedObject.getObject();
-    			Collections.sort(newList);
-    			return newList.toString();
-    		}
-    	}
-    	return null;
     }
 
     private static class MyExceptionListener implements ExceptionListener {

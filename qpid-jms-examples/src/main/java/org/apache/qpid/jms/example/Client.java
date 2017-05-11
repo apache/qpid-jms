@@ -1,4 +1,23 @@
-
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
 package org.apache.qpid.jms.example;
 
 import javax.jms.Connection;
@@ -16,12 +35,9 @@ import javax.jms.TextMessage;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Scanner;
-
 public class Client {
     private static final int DELIVERY_MODE = DeliveryMode.NON_PERSISTENT;
+
     public static void main(String[] args) throws Exception {
         try {
             // The configuration for the Qpid InitialContextFactory has been supplied in
@@ -37,162 +53,48 @@ public class Client {
             connection.start();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            
-            //Create message and temporary queue to send to and from.
-            Message messageToBeSent = userInterface(session);
-            TemporaryQueue tempQ = session.createTemporaryQueue();
-            messageToBeSent.setJMSReplyTo(tempQ);
 
+            //Creates a message and temporary queue to send to and from.
+            int random = (int) (Math.random()*3);
+            TextMessage messageToBeSent;
+            if (random == 0) {
+                messageToBeSent = session.createTextMessage("first example message");
+            } else if (random == 1) {
+                messageToBeSent = session.createTextMessage("second example message");
+            } else {
+                messageToBeSent = session.createTextMessage("third example message");
+            }
+
+            TemporaryQueue tempQueue = session.createTemporaryQueue();
+            messageToBeSent.setJMSReplyTo(tempQueue);
             MessageProducer messageProducer = session.createProducer(queue);
-            
+
             //Send the message
             messageProducer.send(messageToBeSent, DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
-            System.out.println("[CLIENT] The message has been sent.");
-            
-            
-            MessageConsumer messageConsumer = session.createConsumer(tempQ);
-            long start = System.currentTimeMillis();
-            boolean deductTimeout = false;
-            int timeout = 1000;
-            
+            System.out.println("[CLIENT] The message with text \"" + messageToBeSent.getText() +"\" has been sent.");
+
+            MessageConsumer messageConsumer = session.createConsumer(tempQueue);
+
             //Receive the server response
-            TextMessage newMessage = (TextMessage) messageConsumer.receive(timeout);
-            if (newMessage != null) {
-            	System.out.print("[CLIENT] Response from server received in ");
+            TextMessage receivedMessage = (TextMessage) messageConsumer.receive(1000);
+            if (receivedMessage != null) {
+                System.out.println("[CLIENT] Response from server received.");
             } else {
                 System.out.println("[CLIENT] Response not received within timeout, stopping.");
-                deductTimeout = true;
             }
-                
-            long finish = System.currentTimeMillis();
-            long taken = finish - start;
-            if (deductTimeout) {
-                taken -= timeout;
-            }
-            if (newMessage != null) {
-            	System.out.println(taken + "ms");
-            }
-            
+
             //Display response and close client.
-            System.out.println("[CLIENT] Here is the interpreted message:\n" + newMessage.getText() + "\n[CLIENT] Quitting Client.");
+            System.out.println("[CLIENT] Here is the interpreted message:\n" + receivedMessage.getText() + "\n[CLIENT] Quitting Client.");
             connection.close();
             System.exit(1);
-            
+
         } catch (Exception exp) {
             System.out.println("[CLIENT] Caught exception, exiting.");
             exp.printStackTrace(System.out);
             System.exit(1);
         }
     }
-    
-    //UI to generate message
-    private static Message userInterface(Session session) throws Exception {
-    	System.out.print("From this client class, you can specify what you want the server to do.\n"
-    					+ "Choose an option:\n"
-    					+ "(1) Capitalize an inputted text message\n"
-    					+ "(2) Sort an inputted array of integers\n"
-    					+ "(3) Sort a randomly generated array of integers\n"
-    					+ "Your input: ");
-    	Scanner key = new Scanner(System.in);
-    	String userResponse = key.nextLine();
-    	
-    	//Errorcheck user response
-    	while (!userResponse.equals("1") && !userResponse.equals("2") && !userResponse.equals("3")) {
-    		System.out.print("Invalid option. Repeat input: ");
-    		userResponse = key.nextLine();
-    	}
-    	
-    	if (userResponse.equals("1")) {
-    		return capitalize(key, session);
-    	} else if (userResponse.equals("2")) {
-    		return sort(key, session, false);
-    	} else {
-    		return sort(key, session, true);
-    	}
-    }
-    
-    //Generates a text message to capitalize
-    private static Message capitalize(Scanner key, Session session) throws Exception {
-    	System.out.print("Input the text message you want to be capitalized: ");
-    	String userResponse = key.nextLine();
-    	
-    	//Errorcheck user response
-    	while (userResponse.trim().equals("")) {
-    		System.out.print("Input can not be blank. Try again: ");
-    		userResponse = key.nextLine();
-    	}
-    	key.close();
-    	Message message = session.createTextMessage(userResponse);
-    	message.setStringProperty("FUNCTION", "capitalize");
-    	return message;
-    }
-    
-    //Generates a list of integers to sort
-    private static Message sort(Scanner key, Session session, boolean isRandom) throws Exception {
-    	ArrayList<Integer> AL = new ArrayList<Integer>();
-    	String userResponse;
-    	
-    	//If the list will be created by the user
-    	if (!isRandom) {
-	    	int inputCount = 1;
-	    	System.out.println("Input each array element, or type \"done\" to stop.");
-	    	while (true) {
-	    		System.out.print("Input " + inputCount + ": ");
-	    		userResponse = key.nextLine();
-	    		
-	    		//Errorcheck user response
-	    		if (isNumeric(userResponse)) {
-	    			AL.add(Integer.parseInt(userResponse));
-	    			inputCount++;
-	    		}
-	    		else if (userResponse.equalsIgnoreCase("done")) {
-	    			if (inputCount == 1) {
-	    				System.out.println("There must be at least one number to send.");
-	    			}
-	    			else {
-	    				break;
-	    			}
-	    		}
-	    		else {
-	    			System.out.println("The input must either be a number input, or the terminating word \"done\".");
-	    		}
-	    	}
-	    	
-	    //If the list will be randomly generated
-    	} else {
-    		System.out.print("How many random integers will be generated?\nYour input: ");
-    		userResponse = key.nextLine();
-    		
-    		//Errorcheck user response
-    		while (true) {
-    			if (isNumeric(userResponse)) {
-    				if (Integer.parseInt(userResponse) > 0) {
-    					break;
-    				}
-    			}
-    			System.out.print("Input must be positive integer. Try again: ");
-    			userResponse = key.nextLine();
-    		}
-    		for (int i = 0; i < Integer.parseInt(userResponse); i++) {
-        		AL.add((int) (100*Math.random()));
-    		}
-    	}
-    	key.close();
-    	Message message = session.createObjectMessage((Serializable) AL);
-    	message.setStringProperty("FUNCTION", "sort");
-    	return message;
-    }
-    
-    private static boolean isNumeric(String str) {  
-		try {
-			Integer.parseInt(str);  
-		}
-		catch(NumberFormatException nfe) {
-			return false;  
-		}
-		return true;
-	}
-    
+
     private static class MyExceptionListener implements ExceptionListener {
         @Override
         public void onException(JMSException exception) {

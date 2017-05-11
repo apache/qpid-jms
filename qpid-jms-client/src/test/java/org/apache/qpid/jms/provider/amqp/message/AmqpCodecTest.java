@@ -75,7 +75,7 @@ public class AmqpCodecTest extends QpidJmsTestCase {
 
         JmsConsumerId consumerId = new JmsConsumerId("ID:MOCK:1", 1, 1);
         mockConsumer = Mockito.mock(AmqpConsumer.class);
-        Mockito.when(mockConsumer.getResourceInfo()).thenReturn(new JmsConsumerInfo(consumerId));
+        Mockito.when(mockConsumer.getResourceInfo()).thenReturn(new JmsConsumerInfo(consumerId, null));
     }
 
     //----- AmqpHeader encode and decode -------------------------------------//

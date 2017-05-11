@@ -1683,6 +1683,11 @@ public class TestAmqpPeer implements AutoCloseable
                 }
             });
 
+            if(i != messageCount -1) {
+                // Ensure all but the last transfer are set to defer, ensure they go in one write.
+                transferResponseSender.setDeferWrite(true);
+            }
+
             composite.add(transferResponseSender);
         }
 

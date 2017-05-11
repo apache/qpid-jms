@@ -332,7 +332,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
      * or we are stopping then we never send credit here.
      */
     private void sendFlowIfNeeded() {
-        if (getResourceInfo().getPrefetchSize() == 0 || isStopping()) {
+        int prefetchSize = getResourceInfo().getPrefetchSize();
+        if (prefetchSize == 0 || isStopping()) {
             // TODO: isStopping isn't effective when this method is called following
             // processing the last of any messages received while stopping, since that
             // happens just after we stopped. That may be ok in some situations however, and
@@ -341,10 +342,16 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         }
 
         int currentCredit = getEndpoint().getCredit();
-        if (currentCredit <= getResourceInfo().getPrefetchSize() * 0.3) {
-            int newCredit = getResourceInfo().getPrefetchSize() - currentCredit;
-            LOG.trace("Consumer {} granting additional credit: {}", getConsumerId(), newCredit);
-            getEndpoint().flow(newCredit);
+        if (currentCredit <= prefetchSize * 0.5) {
+            int prefetchedMessageCount = getResourceInfo().getPrefetchedMessageCount();
+
+            int potentialPrefetch = currentCredit + prefetchedMessageCount;
+            if(potentialPrefetch <= prefetchSize * 0.7) {
+                int additionalCredit = prefetchSize - currentCredit - prefetchedMessageCount;
+
+                LOG.trace("Consumer {} granting additional credit: {}", getConsumerId(), additionalCredit);
+                getEndpoint().flow(additionalCredit);
+            }
         }
     }
 

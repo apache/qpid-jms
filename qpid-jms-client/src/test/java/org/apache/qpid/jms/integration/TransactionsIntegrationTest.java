@@ -815,11 +815,11 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
 
             session.createConsumer(queue);
 
-            // Create a producer to use in provoking creation of the AMQP transaction
+            // Create a producer
             testPeer.expectSenderAttach();
             MessageProducer producer = session.createProducer(queue);
 
-            // Expect the message which provoked creating the transaction
+            // Expect the message
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(new MessageHeaderSectionMatcher(true));
             messageMatcher.setMessageAnnotationsMatcher( new MessageAnnotationsSectionMatcher(true));
@@ -842,17 +842,14 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             // and reply with accepted and settled disposition to indicate the rollback succeeded
             testPeer.expectDischarge(txnId, true);
 
-            // Now expect an unsettled 'declare' transfer to the txn coordinator, and
+            // Now expect an unsettled 'declare' transfer to the txn coordinator for the next txn, and
             // reply with a declared disposition state containing the txnId.
             txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
             testPeer.expectDeclare(txnId);
 
-            // Expect the consumer to be 'started' again as rollback completes
-            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(messageCount)));
-
-            testPeer.expectDischarge(txnId, true);
             session.rollback();
 
+            testPeer.expectDischarge(txnId, true);
             testPeer.expectClose();
             connection.close();
 
@@ -921,12 +918,9 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
             testPeer.expectDeclare(txnId);
 
-            // Expect the consumer to be 'started' again as rollback completes
-            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(messageCount)));
-            testPeer.expectDischarge(txnId, true);
-
             session.rollback();
 
+            testPeer.expectDischarge(txnId, true);
             testPeer.expectClose();
             connection.close();
 

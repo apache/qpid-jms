@@ -208,8 +208,8 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             // at which point we send one, and a response flow to indicate the rest of the credit was drained.
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent,
                 1, true, true, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)), 1, true, false);
-            // Expect the credit window to be opened again.
-            testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
+            // Expect the credit window to be opened again, but accounting for the message we just prefetched.
+            testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH - 1)));
             testPeer.expectDetach(true, true, true);
 
             QueueBrowser browser = session.createBrowser(queue);
@@ -246,8 +246,8 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             // at which point we send one, and a response flow to indicate the rest of the credit was drained.
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent,
                 1, true, true, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)), 1, true, false);
-            // Expect the credit window to be opened again.
-            testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
+            // Expect the credit window to be opened again, but accounting for the message we just prefetched.
+            testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH - 1)));
             testPeer.expectDetach(true, true, true);
 
             QueueBrowser browser = session.createBrowser(queue);
@@ -296,8 +296,8 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             // at which point we send one, and a response flow to indicate the rest of the credit was drained.
             testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent,
                 1, true, true, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)), 1, true, false);
-            // Expect a non-draining flow to reopen the credit window again afterwards
-            testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH)));
+            // Expect a non-draining flow to reopen the credit window again afterwards, but accounting for the message we just prefetched.
+            testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_BROWSER_PREFETCH - 1)));
 
             QueueBrowser browser = session.createBrowser(queue);
             Enumeration<?> queueView = browser.getEnumeration();

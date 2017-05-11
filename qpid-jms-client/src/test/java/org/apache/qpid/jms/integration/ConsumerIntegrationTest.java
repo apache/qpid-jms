@@ -889,8 +889,9 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlowThenPerformUnexpectedDeliveryCountAdvanceThenCreditTopupThenTransfers(prefetch, topUp, messageCount);
 
-            // Expect consumer to top up the credit window to <prefetch> when accepting the messages
-            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(prefetch)));
+            // Expect consumer to top up the credit window to <prefetch-1> when accepting the first message, accounting
+            // for the fact the second prefetched message is still in its local buffer.
+            testPeer.expectLinkFlow(false, false, equalTo(UnsignedInteger.valueOf(prefetch-1)));
             testPeer.expectDisposition(true, new AcceptedMatcher(), 0, 0);
             testPeer.expectDisposition(true, new AcceptedMatcher(), 1, 1);
 
@@ -1784,6 +1785,144 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testLinkCreditReplenishmentWithPrefetchFilled() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final int prefetch = 10;
+            int initialMessageCount = 10;
+
+            Connection connection = testFixture.establishConnecton(testPeer, "?jms.prefetchPolicy.all=" + prefetch);
+            connection.start();
+
+            final CountDownLatch expected = new CountDownLatch(initialMessageCount);
+            ((JmsConnection) connection).addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onInboundMessage(JmsInboundMessageDispatch envelope) {
+                    expected.countDown();
+                }
+            });
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+            testPeer.expectReceiverAttach();
+
+            // Expect initial credit to be sent, respond with some messages using it all
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent,
+                initialMessageCount, false, false, equalTo(UnsignedInteger.valueOf(prefetch)), 1, false, false);
+
+            MessageConsumer consumer = session.createConsumer(queue);
+
+            // Ensure all the messages arrived so that the matching below is deterministic
+            assertTrue("Expected transfers didnt occur: " + expected.getCount(), expected.await(5, TimeUnit.SECONDS));
+
+            // Now consume the first 2 messages, expect the ack processing NOT to provoke flowing more credit, as over
+            // 70% of the max potential prefetch (8 outstanding local messages) remains in play.
+            int consumed = 0;
+            for (consumed = 1; consumed <= 2; consumed ++) {
+                testPeer.expectDisposition(true, new AcceptedMatcher(), consumed, consumed);
+                Message message = consumer.receiveNoWait();
+                assertNotNull("Should have received a message " + consumed, message);
+            }
+
+            // Now consume 3rd message, expect the ack processing to provoke flowing more credit as it hits the
+            // 70% low threshhold (credit + prefetched) for replenishing the credit to max out the prefetch window
+            // again, accounting for the already-prefetched but still not yet consumed messages.
+            // Also have the peer send more messages using all the remaining credit granted.
+            consumed = 3;
+            int newOutstandingCredit = 3;
+            assertEquals("Peer cant send more messages than we will have credit for", newOutstandingCredit, prefetch - initialMessageCount + consumed);
+
+            final CountDownLatch expected2 = new CountDownLatch(newOutstandingCredit);
+            ((JmsConnection) connection).addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onInboundMessage(JmsInboundMessageDispatch envelope) {
+                    expected2.countDown();
+                }
+            });
+
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent,
+                    newOutstandingCredit, false, false, equalTo(UnsignedInteger.valueOf(newOutstandingCredit)), initialMessageCount + 1, false, false);
+            testPeer.expectDisposition(true, new AcceptedMatcher(), consumed, consumed);
+
+            Message message = consumer.receiveNoWait();
+            assertNotNull("Should have received a 3rd message " + consumed, message);
+
+            // Ensure all the new messages arrived so that the matching below is deterministic
+            assertTrue("Expected transfers didnt occur: " + expected2.getCount(), expected2.await(5, TimeUnit.SECONDS));
+
+            // Consume the rest of the messages, 4-13. Expect only dispositions initially until the threshold, then
+            // another flow expanding the window to the limit again, then more dispositions, then another flow as the
+            // threshold is crossed again when the buffered message count decreases further.
+            for (consumed = 4; consumed < prefetch + newOutstandingCredit; consumed++) {
+                if(consumed == 3 + newOutstandingCredit) {
+                    testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.valueOf(newOutstandingCredit)));
+                } else if(consumed == 3 + newOutstandingCredit * 2) {
+                    testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.valueOf(newOutstandingCredit * 2)));
+                }
+                testPeer.expectDisposition(true, new AcceptedMatcher(), consumed, consumed);
+
+                message = consumer.receiveNoWait();
+                assertNotNull("Should have received a message " + consumed, message);
+            }
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testLinkCreditReplenishmentWithPrefetchTrickleFeed() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final int prefetch = 10;
+
+            Connection connection = testFixture.establishConnecton(testPeer, "?jms.prefetchPolicy.all=" + prefetch);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+            testPeer.expectReceiverAttach();
+
+            // Expect initial credit to be sent, respond with a single message.
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent,
+                1, false, false, equalTo(UnsignedInteger.valueOf(prefetch)), 1, false, false);
+
+            MessageConsumer consumer = session.createConsumer(queue);
+
+            // Now consume a message and have the peer send another in response, repeat until consumed 15 messages
+            int consumed = 0;
+            for (consumed = 1; consumed <= 15; consumed ++) {
+                if(consumed == 5 || consumed == 10 || consumed == 15) {
+                    testPeer.expectLinkFlow(false, equalTo(UnsignedInteger.valueOf(prefetch)));
+                }
+
+                testPeer.expectDisposition(true, new AcceptedMatcher(), consumed, consumed);
+                if(consumed != 15) {
+                    testPeer.sendTransferToLastOpenedLinkOnLastOpenedSession(null, null, null, null, amqpValueNullContent, consumed +1);
+                }
+
+                Message message = consumer.receive(3000);
+                assertNotNull("Should have received a message " + consumed, message);
+            }
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
         }
     }
 }

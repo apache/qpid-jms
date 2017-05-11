@@ -21,6 +21,7 @@ import org.apache.qpid.jms.policy.JmsDefaultDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
 import org.apache.qpid.jms.policy.JmsDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
+import org.apache.qpid.jms.util.MessageQueue;
 
 public final class JmsConsumerInfo extends JmsAbstractResource implements Comparable<JmsConsumerInfo> {
 
@@ -38,6 +39,7 @@ public final class JmsConsumerInfo extends JmsAbstractResource implements Compar
     private boolean localMessageExpiry;
     private boolean presettle;
     private volatile boolean listener;
+    private final MessageQueue messageQueue;
 
     private JmsRedeliveryPolicy redeliveryPolicy;
     private JmsDeserializationPolicy deserializationPolicy;
@@ -45,23 +47,16 @@ public final class JmsConsumerInfo extends JmsAbstractResource implements Compar
     // Can be used to track the last consumed message.
     private transient long lastDeliveredSequenceId;
 
-    public JmsConsumerInfo(JmsConsumerId consumerId) {
+    public JmsConsumerInfo(JmsConsumerId consumerId, MessageQueue messageQueue) {
         if (consumerId == null) {
             throw new IllegalArgumentException("Consumer ID cannot be null");
         }
         this.consumerId = consumerId;
-    }
-
-    public JmsConsumerInfo(JmsSessionInfo sessionInfo, long consumerId) {
-        if (sessionInfo == null) {
-            throw new IllegalArgumentException("Session info object cannot be null");
-        }
-
-        this.consumerId = new JmsConsumerId(sessionInfo.getId(), consumerId);
+        this.messageQueue = messageQueue;
     }
 
     public JmsConsumerInfo copy() {
-        JmsConsumerInfo info = new JmsConsumerInfo(consumerId);
+        JmsConsumerInfo info = new JmsConsumerInfo(consumerId, messageQueue);
         copy(info);
         return info;
     }
@@ -81,6 +76,10 @@ public final class JmsConsumerInfo extends JmsAbstractResource implements Compar
         info.redeliveryPolicy = getRedeliveryPolicy().copy();
         info.deserializationPolicy = getDeserializationPolicy().copy();
         info.listener = listener;
+    }
+
+    public int getPrefetchedMessageCount() {
+        return messageQueue.size();
     }
 
     @Override

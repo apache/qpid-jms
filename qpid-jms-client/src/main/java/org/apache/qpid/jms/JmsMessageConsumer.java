@@ -95,7 +95,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         JmsRedeliveryPolicy redeliveryPolicy = session.getRedeliveryPolicy().copy();
         JmsDeserializationPolicy deserializationPolicy = session.getDeserializationPolicy().copy();
 
-        consumerInfo = new JmsConsumerInfo(consumerId);
+        consumerInfo = new JmsConsumerInfo(consumerId, messageQueue);
         consumerInfo.setExplicitClientID(connection.isExplicitClientID());
         consumerInfo.setSelector(selector);
         consumerInfo.setDurable(isDurableSubscription());

@@ -54,39 +54,36 @@ public class Client {
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            //Creates a message and temporary queue to send to and from.
-            int random = (int) (Math.random()*3);
-            TextMessage messageToBeSent;
-            if (random == 0) {
-                messageToBeSent = session.createTextMessage("first example message");
-            } else if (random == 1) {
-                messageToBeSent = session.createTextMessage("second example message");
-            } else {
-                messageToBeSent = session.createTextMessage("third example message");
-            }
-
+            //Create a temporary queue to receive from, producer, and consumer.
             TemporaryQueue tempQueue = session.createTemporaryQueue();
-            messageToBeSent.setJMSReplyTo(tempQueue);
             MessageProducer messageProducer = session.createProducer(queue);
-
-            //Send the message
-            messageProducer.send(messageToBeSent, DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
-            System.out.println("[CLIENT] The message with text \"" + messageToBeSent.getText() +"\" has been sent.");
-
             MessageConsumer messageConsumer = session.createConsumer(tempQueue);
 
-            //Receive the server response
-            TextMessage receivedMessage = (TextMessage) messageConsumer.receive(1000);
-            if (receivedMessage != null) {
-                System.out.println("[CLIENT] Response from server received.");
-            } else {
-                System.out.println("[CLIENT] Response not received within timeout, stopping.");
+            //Create and send four messages.
+            String[] messageTexts = new String[] { "Twas brillig, and the slithy toves",
+                                                   "Did gire and gymble in the wabe.",
+                                                   "All mimsy were the borogroves,",
+                                                   "And the mome raths outgrabe." };
+
+            for (String text : messageTexts) {
+                TextMessage messageToBeSent = session.createTextMessage(text);
+                messageToBeSent.setJMSReplyTo(tempQueue);
+
+                messageProducer.send(messageToBeSent, DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
             }
 
-            //Display response and close client.
-            System.out.println("[CLIENT] Here is the interpreted message:\n" + receivedMessage.getText() + "\n[CLIENT] Quitting Client.");
-            connection.close();
-            System.exit(1);
+            //Receive the messages.
+            for (int i = 1; i <= messageTexts.length; i++) {
+                TextMessage receivedMessage = (TextMessage) messageConsumer.receive(1000);
+                if (receivedMessage != null) {
+                    System.out.println("[CLIENT] Received Message " + i + ": " + messageTexts[i-1] + " ---> " + receivedMessage.getText());
+                } else {
+                    System.out.println("[CLIENT] Message " + i + " was not received within the timeout.");
+                }
+            }
+
+            System.out.println("[CLIENT] Exiting...");
+            System.exit(0);
 
         } catch (Exception exp) {
             System.out.println("[CLIENT] Caught exception, exiting.");

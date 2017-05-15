@@ -39,48 +39,40 @@ import java.util.Collections;
 
 public class Server {
     public static void main(String[] args) throws Exception {
-	        try {
-	            // The configuration for the Qpid InitialContextFactory has been supplied in
-	            // a jndi.properties file in the classpath, which results in it being picked
-	            // up automatically by the InitialContext constructor.
-	            Context context = new InitialContext();
-	
-	            ConnectionFactory factory = (ConnectionFactory) context.lookup("myFactoryLookup");
-	            Destination queue = (Destination) context.lookup("myQueueLookup");
-	
-	            Connection connection = factory.createConnection(System.getProperty("USER"), System.getProperty("PASSWORD"));
-	            connection.setExceptionListener(new MyExceptionListener());
-	            connection.start();
-	
-	            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-	
-	            MessageConsumer messageConsumer = session.createConsumer(queue);
-	            MessageProducer messageProducer = session.createProducer(null);
-	            
-	            while (true) {
-	                System.out.println("[SERVER] Awaiting Message...");
-		            
-		            //Receive a message
-		            Message receivedMessage = messageConsumer.receive();
-		            System.out.println("[SERVER] Received the message.");
-		            
-		            //Create new message to return to client
-		            Destination replyDestination = receivedMessage.getJMSReplyTo();
-		            TextMessage newMessage = session.createTextMessage(capitalize(receivedMessage));
-		            messageProducer.send(replyDestination, newMessage, DeliveryMode.NON_PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
-		            System.out.println("[SERVER] Returned new message to client.");
-	            }
-	        } catch (Exception exp) {
-	            System.out.println("[SERVER] Caught exception, exiting.");
-	            exp.printStackTrace(System.out);
-	            System.exit(1);
+	    try {
+	        // The configuration for the Qpid InitialContextFactory has been supplied in
+	        // a jndi.properties file in the classpath, which results in it being picked
+	        // up automatically by the InitialContext constructor.
+	        Context context = new InitialContext();
+
+	        ConnectionFactory factory = (ConnectionFactory) context.lookup("myFactoryLookup");
+	        Destination queue = (Destination) context.lookup("myQueueLookup");
+
+	        Connection connection = factory.createConnection(System.getProperty("USER"), System.getProperty("PASSWORD"));
+	        connection.setExceptionListener(new MyExceptionListener());
+	        connection.start();
+
+	        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+	        MessageConsumer messageConsumer = session.createConsumer(queue);
+	        MessageProducer messageProducer = session.createProducer(null);
+
+            while (true) {
+    	        //Receive messages and return a new uppercase message.
+		        TextMessage receivedMessage = (TextMessage) messageConsumer.receive();
+
+		        System.out.println("[SERVER] Received: " + receivedMessage.getText());
+
+		        TextMessage responseMessage = session.createTextMessage(receivedMessage.getText().toUpperCase());
+
+		        messageProducer.send(receivedMessage.getJMSReplyTo(), responseMessage, DeliveryMode.NON_PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
 	        }
-    }
-    
-    //Generate capitalized text to send back to client.
-    private static String capitalize(Message receivedMessage) throws Exception
-    {
-    		return ((TextMessage) receivedMessage).getText().toUpperCase();
+
+        } catch (Exception exp) {
+	        System.out.println("[SERVER] Caught exception, exiting.");
+	        exp.printStackTrace(System.out);
+	        System.exit(1);
+	    }
     }
 
     private static class MyExceptionListener implements ExceptionListener {

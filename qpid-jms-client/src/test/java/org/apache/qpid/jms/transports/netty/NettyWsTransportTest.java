@@ -30,11 +30,13 @@ import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
+import org.apache.qpid.jms.transports.netty.NettyTcpTransportTest.NettyTransportListener;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 
 /**
@@ -153,17 +155,81 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
             }
 
             assertTrue(Wait.waitFor(new Wait.Condition() {
-
                 @Override
                 public boolean isSatisified() throws Exception {
                     LOG.debug("Checking completion: read {} expecting {}", bytesRead.get(), FRAME_SIZE);
                     return bytesRead.get() == FRAME_SIZE || !transport.isConnected();
                 }
-            }));
+            }, 10000, 50));
 
             assertTrue("Connection failed while receiving.", transport.isConnected());
 
             transport.close();
+        }
+
+        assertTrue(exceptions.isEmpty());
+    }
+
+    @Test(timeout = 20000)
+    public void testConnectionReceivesFragmentedData() throws Exception {
+        final int FRAME_SIZE = 5317;
+
+        ByteBuf sendBuffer = Unpooled.buffer(FRAME_SIZE);
+        for (int i = 0; i < FRAME_SIZE; ++i) {
+            sendBuffer.writeByte('A' + (i % 10));
+        }
+
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
+            server.setMaxFrameSize(FRAME_SIZE);
+            // Server should fragment the data as it goes through
+            server.setFragmentWrites(true);
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            List<Transport> transports = new ArrayList<Transport>();
+
+            TransportOptions createClientOptions = createClientOptions();
+            createClientOptions.setTraceBytes(true);
+
+            NettyTransportListener wsListener = new NettyTransportListener(true);
+
+            Transport transport = createTransport(serverLocation, wsListener, createClientOptions);
+            try {
+                transport.setMaxFrameSize(FRAME_SIZE);
+                transport.connect(null);
+                transports.add(transport);
+                transport.send(sendBuffer.copy());
+            } catch (Exception e) {
+                fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
+            }
+
+            assertTrue(Wait.waitFor(new Wait.Condition() {
+                @Override
+                public boolean isSatisified() throws Exception {
+                    LOG.debug("Checking completion: read {} expecting {}", bytesRead.get(), FRAME_SIZE);
+                    return bytesRead.get() == FRAME_SIZE || !transport.isConnected();
+                }
+            }, 10000, 50));
+
+            assertTrue("Connection failed while receiving.", transport.isConnected());
+
+            transport.close();
+
+            assertEquals("Expected 2 data packets due to seperate websocket frames", 2, data.size());
+
+            ByteBuf receivedBuffer = Unpooled.buffer(FRAME_SIZE);
+            for(ByteBuf buf : data) {
+               buf.readBytes(receivedBuffer, buf.readableBytes());
+            }
+
+            assertEquals("Unexpected data length", FRAME_SIZE, receivedBuffer.readableBytes());
+            assertTrue("Unexpected data", ByteBufUtil.equals(sendBuffer, 0, receivedBuffer, 0, FRAME_SIZE));
+        } finally {
+            for (ByteBuf buf : data) {
+                buf.release();
+            }
         }
 
         assertTrue(exceptions.isEmpty());
@@ -237,7 +303,6 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
             }
 
             assertTrue("Transport should have lost connection", Wait.waitFor(new Wait.Condition() {
-
                 @Override
                 public boolean isSatisified() throws Exception {
                     try {
@@ -249,7 +314,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
 
                     return false;
                 }
-            }));
+            }, 10000, 50));
         }
     }
 }

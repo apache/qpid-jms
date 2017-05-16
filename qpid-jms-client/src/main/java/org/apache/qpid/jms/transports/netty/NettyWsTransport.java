@@ -36,6 +36,7 @@ import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
@@ -156,6 +157,10 @@ public class NettyWsTransport extends NettyTcpTransport {
                 BinaryWebSocketFrame binaryFrame = (BinaryWebSocketFrame) frame;
                 LOG.trace("WebSocket Client received data: {} bytes", binaryFrame.content().readableBytes());
                 listener.onData(binaryFrame.content());
+            } else if (frame instanceof ContinuationWebSocketFrame) {
+                ContinuationWebSocketFrame continuationFrame = (ContinuationWebSocketFrame) frame;
+                LOG.trace("WebSocket Client received data continuation: {} bytes", continuationFrame.content().readableBytes());
+                listener.onData(continuationFrame.content());
             } else if (frame instanceof PingWebSocketFrame) {
                 LOG.trace("WebSocket Client received ping, response with pong");
                 ch.write(new PongWebSocketFrame(frame.content()));

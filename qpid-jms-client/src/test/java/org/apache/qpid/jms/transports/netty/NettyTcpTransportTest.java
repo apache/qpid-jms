@@ -59,7 +59,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
     protected final List<ByteBuf> data = new ArrayList<ByteBuf>();
     protected final AtomicInteger bytesRead = new AtomicInteger();
 
-    protected final TransportListener testListener = new NettyTransportListener();
+    protected final TransportListener testListener = new NettyTransportListener(false);
 
     @Test(timeout = 60 * 1000)
     public void testCloseOnNeverConnectedTransport() throws Exception {
@@ -256,13 +256,12 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
             }
 
             assertTrue(Wait.waitFor(new Wait.Condition() {
-
                 @Override
                 public boolean isSatisified() throws Exception {
                     LOG.debug("Checking completion: read {} expecting {}", bytesRead.get(), (FRAME_SIZE * CONNECTION_COUNT));
                     return bytesRead.get() == (FRAME_SIZE * CONNECTION_COUNT);
                 }
-            }));
+            }, 10000, 50));
 
             for (Transport transport : transports) {
                 transport.close();
@@ -297,12 +296,11 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
         final Transport connectedTransport = transport;
         assertTrue(Wait.waitFor(new Wait.Condition() {
-
             @Override
             public boolean isSatisified() throws Exception {
                 return !connectedTransport.isConnected();
             }
-        }));
+        }, 10000, 50));
 
         assertTrue(data.isEmpty());
 
@@ -367,12 +365,11 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
             transport.send(sendBuffer);
 
             assertTrue(Wait.waitFor(new Wait.Condition() {
-
                 @Override
                 public boolean isSatisified() throws Exception {
                     return !data.isEmpty();
                 }
-            }));
+            }, 10000, 50));
 
             assertEquals(SEND_BYTE_COUNT, data.get(0).readableBytes());
 
@@ -421,12 +418,11 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
             }
 
             assertTrue(Wait.waitFor(new Wait.Condition() {
-
                 @Override
                 public boolean isSatisified() throws Exception {
                     return bytesRead.get() == (byteCount * iterations);
                 }
-            }));
+            }, 10000, 50));
 
             transport.close();
         }
@@ -568,13 +564,22 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         return new NettyEchoServer(options, needClientAuth);
     }
 
-    private class NettyTransportListener implements TransportListener {
+    public class NettyTransportListener implements TransportListener {
+        final boolean retainDataBufs;
+
+        NettyTransportListener(boolean retainDataBufs) {
+            this.retainDataBufs = retainDataBufs;
+        }
 
         @Override
         public void onData(ByteBuf incoming) {
             LOG.debug("Client has new incoming data of size: {}", incoming.readableBytes());
             data.add(incoming);
             bytesRead.addAndGet(incoming.readableBytes());
+
+            if(retainDataBufs) {
+                incoming.retain();
+            }
         }
 
         @Override

@@ -59,6 +59,7 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.logging.LogLevel;
@@ -87,6 +88,7 @@ public abstract class NettyServer implements AutoCloseable {
     private final boolean webSocketServer;
     private int maxFrameSize = NettyTcpTransport.DEFAULT_MAX_FRAME_SIZE;
     private String webSocketPath = WEBSOCKET_PATH;
+    private volatile boolean fragmentWrites;
     private volatile SslHandler sslHandler;
 
     private final AtomicBoolean started = new AtomicBoolean();
@@ -127,6 +129,18 @@ public abstract class NettyServer implements AutoCloseable {
 
     public void setMaxFrameSize(int maxFrameSize) {
         this.maxFrameSize = maxFrameSize;
+    }
+
+    public void setFragmentWrites(boolean fragmentWrites) {
+        if(!webSocketServer) {
+            throw new IllegalStateException("Only applicable to WebSocket servers");
+        }
+
+        this.fragmentWrites = fragmentWrites;
+    }
+
+    public boolean isFragmentWrites() {
+        return fragmentWrites;
     }
 
     protected URI getConnectionURI() throws Exception {
@@ -259,8 +273,24 @@ public abstract class NettyServer implements AutoCloseable {
         public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
             LOG.trace("NettyServerHandler: Channel write: {}", msg);
             if (isWebSocketServer() && msg instanceof ByteBuf) {
-                BinaryWebSocketFrame frame = new BinaryWebSocketFrame((ByteBuf) msg);
-                ctx.write(frame, promise);
+                if(isFragmentWrites()) {
+                    ByteBuf orig = (ByteBuf) msg;
+                    int origIndex = orig.readerIndex();
+                    int split = orig.readableBytes()/2;
+
+                    ByteBuf part1 = orig.copy(origIndex, split);
+                    LOG.trace("NettyServerHandler: Part1: {}", part1);
+                    orig.readerIndex(origIndex + split);
+                    LOG.trace("NettyServerHandler: Part2: {}", orig);
+
+                    BinaryWebSocketFrame frame1 = new BinaryWebSocketFrame(false, 0, part1);
+                    ctx.writeAndFlush(frame1);
+                    ContinuationWebSocketFrame frame2 = new ContinuationWebSocketFrame(true, 0, orig);
+                    ctx.write(frame2, promise);
+                } else {
+                    BinaryWebSocketFrame frame = new BinaryWebSocketFrame((ByteBuf) msg);
+                    ctx.write(frame, promise);
+                }
             } else {
                 ctx.write(msg, promise);
             }

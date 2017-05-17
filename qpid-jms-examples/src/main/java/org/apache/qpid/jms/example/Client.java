@@ -36,8 +36,6 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 
 public class Client {
-    private static final int DELIVERY_MODE = DeliveryMode.NON_PERSISTENT;
-
     public static void main(String[] args) throws Exception {
         try {
             // The configuration for the Qpid InitialContextFactory has been supplied in
@@ -54,37 +52,33 @@ public class Client {
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            //Create a temporary queue to receive from, producer, and consumer.
-            TemporaryQueue tempQueue = session.createTemporaryQueue();
+            //Create a temporary queue and consumer to receive responses, and a producer to send requests.
+            TemporaryQueue responseQueue = session.createTemporaryQueue();
+            MessageConsumer messageConsumer = session.createConsumer(responseQueue);
             MessageProducer messageProducer = session.createProducer(queue);
-            MessageConsumer messageConsumer = session.createConsumer(tempQueue);
 
-            //Create and send four messages.
-            String[] messageTexts = new String[] { "Twas brillig, and the slithy toves",
-                                                   "Did gire and gymble in the wabe.",
-                                                   "All mimsy were the borogroves,",
-                                                   "And the mome raths outgrabe." };
+            //Send some requests and receive the responses.
+            String[] requests = new String[] { "Twas brillig, and the slithy toves",
+                                               "Did gire and gymble in the wabe.",
+                                               "All mimsy were the borogroves,",
+                                               "And the mome raths outgrabe." };
 
-            for (String text : messageTexts) {
-                TextMessage messageToBeSent = session.createTextMessage(text);
-                messageToBeSent.setJMSReplyTo(tempQueue);
+            for (String request : requests) {
+                TextMessage requestMessage = session.createTextMessage(request);
+                requestMessage.setJMSReplyTo(responseQueue);
 
-                messageProducer.send(messageToBeSent, DELIVERY_MODE, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
-            }
+                messageProducer.send(requestMessage, DeliveryMode.NON_PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
 
-            //Receive the messages.
-            for (int i = 1; i <= messageTexts.length; i++) {
-                TextMessage receivedMessage = (TextMessage) messageConsumer.receive(1000);
-                if (receivedMessage != null) {
-                    System.out.println("[CLIENT] Received Message " + i + ": " + messageTexts[i-1] + " ---> " + receivedMessage.getText());
+                TextMessage responseMessage = (TextMessage) messageConsumer.receive(2000);
+                if (responseMessage != null) {
+                    System.out.println("[CLIENT] " + request + " ---> " + responseMessage.getText());
                 } else {
-                    System.out.println("[CLIENT] Message " + i + " was not received within the timeout.");
+                    System.out.println("[CLIENT] Response for '" + request +"' was not received within the timeout, exiting.");
+                    break;
                 }
             }
 
-            System.out.println("[CLIENT] Exiting...");
-            System.exit(0);
-
+            connection.close();
         } catch (Exception exp) {
             System.out.println("[CLIENT] Caught exception, exiting.");
             exp.printStackTrace(System.out);

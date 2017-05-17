@@ -31,48 +31,45 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
-import javax.jms.ObjectMessage;
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import java.util.ArrayList;
-import java.util.Collections;
 
 public class Server {
     public static void main(String[] args) throws Exception {
-	    try {
-	        // The configuration for the Qpid InitialContextFactory has been supplied in
-	        // a jndi.properties file in the classpath, which results in it being picked
-	        // up automatically by the InitialContext constructor.
-	        Context context = new InitialContext();
+        try {
+            // The configuration for the Qpid InitialContextFactory has been supplied in
+            // a jndi.properties file in the classpath, which results in it being picked
+            // up automatically by the InitialContext constructor.
+            Context context = new InitialContext();
 
-	        ConnectionFactory factory = (ConnectionFactory) context.lookup("myFactoryLookup");
-	        Destination queue = (Destination) context.lookup("myQueueLookup");
+            ConnectionFactory factory = (ConnectionFactory) context.lookup("myFactoryLookup");
+            Destination queue = (Destination) context.lookup("myQueueLookup");
 
-	        Connection connection = factory.createConnection(System.getProperty("USER"), System.getProperty("PASSWORD"));
-	        connection.setExceptionListener(new MyExceptionListener());
-	        connection.start();
+            Connection connection = factory.createConnection(System.getProperty("USER"), System.getProperty("PASSWORD"));
+            connection.setExceptionListener(new MyExceptionListener());
+            connection.start();
 
-	        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-	        MessageConsumer messageConsumer = session.createConsumer(queue);
-	        MessageProducer messageProducer = session.createProducer(null);
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+            MessageProducer messageProducer = session.createProducer(null);
 
             while (true) {
-    	        //Receive messages and return a new uppercase message.
-		        TextMessage receivedMessage = (TextMessage) messageConsumer.receive();
+                //Receive messages and return a new uppercase message.
+                TextMessage requestMessage = (TextMessage) messageConsumer.receive();
 
-		        System.out.println("[SERVER] Received: " + receivedMessage.getText());
+                System.out.println("[SERVER] Received: " + requestMessage.getText());
 
-		        TextMessage responseMessage = session.createTextMessage(receivedMessage.getText().toUpperCase());
+                TextMessage responseMessage = session.createTextMessage(requestMessage.getText().toUpperCase());
 
-		        messageProducer.send(receivedMessage.getJMSReplyTo(), responseMessage, DeliveryMode.NON_PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
-	        }
+                messageProducer.send(requestMessage.getJMSReplyTo(), responseMessage, DeliveryMode.NON_PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+            }
 
         } catch (Exception exp) {
-	        System.out.println("[SERVER] Caught exception, exiting.");
-	        exp.printStackTrace(System.out);
-	        System.exit(1);
-	    }
+            System.out.println("[SERVER] Caught exception, exiting.");
+            exp.printStackTrace(System.out);
+            System.exit(1);
+        }
     }
 
     private static class MyExceptionListener implements ExceptionListener {

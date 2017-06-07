@@ -142,6 +142,39 @@ public class FailedConnectionsIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testConnectionFactoryCreateConnectionWithInvalidClientIdThrowsICIDEWhenInvalidContainerHintPresent() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final String remoteURI = "amqp://localhost:" + testPeer.getServerPort();
+
+            Map<Symbol, Object> errorInfo = new HashMap<Symbol, Object>();
+            errorInfo.put(AmqpSupport.INVALID_FIELD, AmqpSupport.CONTAINER_ID);
+
+            testPeer.rejectConnect(AmqpError.INVALID_FIELD, "Client ID already in use", errorInfo);
+
+            Connection connection = null;
+            try {
+                JmsConnectionFactory factory = new JmsConnectionFactory(remoteURI);
+
+                // Setting on factory prompts the open to fire on create as opposed to waiting
+                // for the setClientID method or the start method on Connection to be called.
+                factory.setClientID("in-use-client-id");
+
+                connection = factory.createConnection();
+
+                fail("Should have thrown InvalidClientIDException");
+            } catch (InvalidClientIDException e) {
+                // Expected
+            } finally {
+                if (connection != null) {
+                    connection.close();
+                }
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
     public void testConnectSecurityViolation() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             testPeer.rejectConnect(AmqpError.UNAUTHORIZED_ACCESS, "Anonymous connections not allowed", null);

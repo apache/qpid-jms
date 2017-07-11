@@ -3,5 +3,5 @@ sudo: false
 jdk:
   - oraclejdk8
 after_success:
-  - mvn jacoco:report
+  - mvn jacoco:report jacoco:report-aggregate
   - bash <(curl -s https://codecov.io/bash)

@@ -138,6 +138,11 @@ public class AmqpSaslAuthenticator {
 
     private void handleSaslCompletion() {
         try {
+            if (sasl.pending() != 0) {
+                byte[] additionalData = new byte[sasl.pending()];
+                sasl.recv(additionalData, 0, additionalData.length);
+                mechanism.getChallengeResponse(additionalData);
+            }
             mechanism.verifyCompletion();
             complete = true;
         } catch (Throwable error) {

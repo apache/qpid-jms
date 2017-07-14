@@ -28,7 +28,6 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -87,6 +86,7 @@ import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.selector.SelectorParser;
 import org.apache.qpid.jms.selector.filter.FilterException;
+import org.apache.qpid.jms.util.QpidJMSThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1067,15 +1067,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     }
 
     private ExecutorService createExecutor(final String threadNameSuffix) {
-        return Executors.newSingleThreadExecutor(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable runner) {
-                Thread executor = new Thread(runner);
-                executor.setName("JmsSession ["+ sessionInfo.getId() + "] " + threadNameSuffix);
-                executor.setDaemon(true);
-                return executor;
-            }
-        });
+        return Executors.newSingleThreadExecutor(new QpidJMSThreadFactory("JmsSession ["+ sessionInfo.getId() + "] " + threadNameSuffix, true));
     }
 
     protected JmsSessionInfo getSessionInfo() {

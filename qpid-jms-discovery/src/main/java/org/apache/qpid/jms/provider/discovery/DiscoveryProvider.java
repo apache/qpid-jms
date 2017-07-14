@@ -23,10 +23,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 
 import org.apache.qpid.jms.provider.ProviderWrapper;
 import org.apache.qpid.jms.provider.failover.FailoverProvider;
+import org.apache.qpid.jms.util.QpidJMSThreadFactory;
 import org.apache.qpid.jms.util.ThreadPoolUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -157,16 +157,8 @@ public class DiscoveryProvider extends ProviderWrapper<FailoverProvider> impleme
 
     private ScheduledExecutorService getSharedScheduler() {
         if (sharedScheduler == null) {
-            sharedScheduler = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-
-                @Override
-                public Thread newThread(Runnable runner) {
-                    Thread serial = new Thread(runner);
-                    serial.setDaemon(true);
-                    serial.setName(DiscoveryProvider.this.getClass().getSimpleName() + ":[" + getDiscoveryURI() + "]");
-                    return serial;
-                }
-            });
+            sharedScheduler = Executors.newSingleThreadScheduledExecutor(
+                new QpidJMSThreadFactory("DiscoveryProvider :[" + getDiscoveryURI() + "]", true));
         }
 
         return sharedScheduler;

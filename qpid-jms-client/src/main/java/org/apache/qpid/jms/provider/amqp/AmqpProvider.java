@@ -24,7 +24,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -59,6 +58,7 @@ import org.apache.qpid.jms.provider.amqp.builders.AmqpConnectionBuilder;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.util.IOExceptionSupport;
+import org.apache.qpid.jms.util.QpidJMSThreadFactory;
 import org.apache.qpid.jms.util.ThreadPoolUtils;
 import org.apache.qpid.proton.engine.Collector;
 import org.apache.qpid.proton.engine.Connection;
@@ -144,19 +144,9 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         this.remoteURI = remoteURI;
         this.transport = transport;
 
-        serializer = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-
-            @Override
-            public Thread newThread(Runnable runner) {
-                Thread serial = new Thread(runner);
-                serial.setDaemon(true);
-                serial.setName(AmqpProvider.this.getClass().getSimpleName() + ":(" +
-                               PROVIDER_SEQUENCE.incrementAndGet() + "):[" +
-                               getRemoteURI().getScheme() + "://" +
-                               getRemoteURI().getHost() + ":" + getRemoteURI().getPort() + "]");
-                return serial;
-            }
-        });
+        serializer = new ScheduledThreadPoolExecutor(1, new QpidJMSThreadFactory(
+            "AmqpProvider :(" + PROVIDER_SEQUENCE.incrementAndGet() + "):[" +
+            remoteURI.getScheme() + "://" + remoteURI.getHost() + ":" + remoteURI.getPort() + "]", true));
 
         serializer.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
         serializer.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);

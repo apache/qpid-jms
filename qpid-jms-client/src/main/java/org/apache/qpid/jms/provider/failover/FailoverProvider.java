@@ -26,7 +26,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -56,6 +55,7 @@ import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.ProviderRedirectedException;
 import org.apache.qpid.jms.provider.WrappedAsyncResult;
 import org.apache.qpid.jms.util.IOExceptionSupport;
+import org.apache.qpid.jms.util.QpidJMSThreadFactory;
 import org.apache.qpid.jms.util.ThreadPoolUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -137,34 +137,14 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     public FailoverProvider(List<URI> uris, Map<String, String> nestedOptions) {
         this.uris = new FailoverUriPool(uris, nestedOptions);
 
-        serializer = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-
-            @Override
-            public Thread newThread(Runnable runner) {
-                Thread serial = new Thread(runner);
-                serial.setDaemon(true);
-                serial.setName("FailoverProvider: serialization thread");
-                return serial;
-            }
-        });
-
+        serializer = new ScheduledThreadPoolExecutor(1, new QpidJMSThreadFactory("FailoverProvider: serialization thread", true));
         serializer.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
         serializer.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
 
         // All Connection attempts happen in this schedulers thread.  Once a connection
         // is established it will hand the open connection back to the serializer thread
         // for state recovery.
-        connectionHub = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-
-            @Override
-            public Thread newThread(Runnable runner) {
-                Thread serial = new Thread(runner);
-                serial.setDaemon(true);
-                serial.setName("FailoverProvider: connect thread");
-                return serial;
-            }
-        });
-
+        connectionHub = new ScheduledThreadPoolExecutor(1, new QpidJMSThreadFactory("FailoverProvider: connect thread", true));
         connectionHub.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
         connectionHub.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
     }

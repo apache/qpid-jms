@@ -27,7 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -64,6 +65,7 @@ import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
 import javax.jms.TopicSubscriber;
 
+import org.apache.qpid.jms.exceptions.JmsConnectionFailedException;
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
@@ -86,6 +88,7 @@ import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.selector.SelectorParser;
 import org.apache.qpid.jms.selector.filter.FilterException;
+import org.apache.qpid.jms.util.NoOpExecutor;
 import org.apache.qpid.jms.util.QpidJMSThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -260,7 +263,10 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     protected void doClose() throws JMSException {
         boolean interrupted = Thread.interrupted();
         shutdown();
-        connection.destroyResource(sessionInfo);
+        try {
+            connection.destroyResource(sessionInfo);
+        } catch (JmsConnectionFailedException jmsex) {
+        }
         connection.removeSession(sessionInfo);
         if (interrupted) {
             Thread.currentThread().interrupt();
@@ -299,19 +305,17 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
             // Ensure that no asynchronous completion sends remain blocked after close.
             synchronized (sessionInfo) {
-                if (completionExcecutor != null) {
-                    if (cause == null) {
-                        cause = new JMSException("Session closed remotely before message transfer result was notified");
-                    }
+                ensureCompletionExecutorExists();
+                if (cause == null) {
+                    cause = new JMSException("Session closed remotely before message transfer result was notified");
+                }
 
-                    completionExcecutor.execute(new FailOrCompleteAsyncCompletionsTask(JmsExceptionSupport.create(cause)));
-                    completionExcecutor.shutdown();
-                    try {
-                        completionExcecutor.awaitTermination(connection.getCloseTimeout(), TimeUnit.MILLISECONDS);
-                    } catch (InterruptedException e) {
-                        LOG.trace("Session close awaiting send completions was interrupted");
-                    }
-                    completionExcecutor = null;
+                completionExcecutor.execute(new FailOrCompleteAsyncCompletionsTask(JmsExceptionSupport.create(cause)));
+                completionExcecutor.shutdown();
+                try {
+                    completionExcecutor.awaitTermination(connection.getCloseTimeout(), TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    LOG.trace("Session close awaiting send completions was interrupted");
                 }
             }
         }
@@ -1027,17 +1031,23 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         if (exec == null) {
             synchronized (sessionInfo) {
                 if (deliveryExecutor == null) {
-                    deliveryExecutor = createExecutor("delivery dispatcher");
-                }
+                    if (!closed.get()) {
+                        exec = createExecutor("delivery dispatcher");
+                        exec.execute(new Runnable() {
 
-                exec = deliveryExecutor;
-                exec.execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                JmsSession.this.deliveryThread = Thread.currentThread();
+                            }
+                        });
 
-                    @Override
-                    public void run() {
-                        JmsSession.this.deliveryThread = Thread.currentThread();
+                        deliveryExecutor = exec;
+                    } else {
+                        return NoOpExecutor.INSTANCE;
                     }
-                });
+                } else {
+                    exec = deliveryExecutor;
+                }
             }
         }
 
@@ -1045,21 +1055,35 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     }
 
     Executor getCompletionExecutor() {
+        return getCompletionExecutor(false);
+    }
+
+    private void ensureCompletionExecutorExists() {
+        getCompletionExecutor(true);
+    }
+
+    private Executor getCompletionExecutor(boolean ignoreClosed) {
         ExecutorService exec = completionExcecutor;
         if (exec == null) {
             synchronized (sessionInfo) {
                 if (completionExcecutor == null) {
-                    completionExcecutor = createExecutor("completion dispatcher");
-                }
+                    if (!closed.get() || ignoreClosed) {
+                        exec = createExecutor("completion dispatcher");
+                        exec.execute(new Runnable() {
 
-                exec = completionExcecutor;
-                exec.execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                JmsSession.this.completionThread = Thread.currentThread();
+                            }
+                        });
 
-                    @Override
-                    public void run() {
-                        JmsSession.this.completionThread = Thread.currentThread();
+                        completionExcecutor = exec;
+                    } else {
+                        return NoOpExecutor.INSTANCE;
                     }
-                });
+                } else {
+                    exec = completionExcecutor;
+                }
             }
         }
 
@@ -1067,7 +1091,12 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     }
 
     private ExecutorService createExecutor(final String threadNameSuffix) {
-        return Executors.newSingleThreadExecutor(new QpidJMSThreadFactory("JmsSession ["+ sessionInfo.getId() + "] " + threadNameSuffix, true));
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(1, 1, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(),
+            new QpidJMSThreadFactory("JmsSession ["+ sessionInfo.getId() + "] " + threadNameSuffix, true));
+
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());
+
+        return executor;
     }
 
     protected JmsSessionInfo getSessionInfo() {
@@ -1201,7 +1230,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     }
 
     protected void onConnectionInterrupted() {
-
         transactionContext.onConnectionInterrupted();
 
         // TODO - Synthesize a better exception

@@ -125,6 +125,8 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         executor = new ThreadPoolExecutor(1, 1, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(),
             new QpidJMSThreadFactory("QpidJMS Connection Executor: " + connectionInfo.getId(), connectionInfo.isUseDaemonThread()));
 
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());
+
         // We need to start the core thread in order for it to prevent JVM shutdown as our
         // single non-daemon thread.
         executor.execute(new Runnable() {

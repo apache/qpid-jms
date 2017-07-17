@@ -31,6 +31,7 @@ import javax.jms.MessageFormatException;
 import javax.jms.MessageListener;
 import javax.jms.Session;
 
+import org.apache.qpid.jms.exceptions.JmsConnectionFailedException;
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
@@ -151,7 +152,10 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
      */
     protected void doClose() throws JMSException {
         shutdown();
-        this.connection.destroyResource(consumerInfo);
+        try {
+            this.connection.destroyResource(consumerInfo);
+        } catch (JmsConnectionFailedException jmsex) {
+        }
     }
 
     /**

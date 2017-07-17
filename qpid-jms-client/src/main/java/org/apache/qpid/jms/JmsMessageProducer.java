@@ -29,6 +29,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 
+import org.apache.qpid.jms.exceptions.JmsConnectionFailedException;
 import org.apache.qpid.jms.message.JmsMessageIDBuilder;
 import org.apache.qpid.jms.meta.JmsProducerId;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
@@ -92,7 +93,10 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
     protected void doClose() throws JMSException {
         session.checkIsCompletionThread();
         shutdown();
-        connection.destroyResource(producerInfo);
+        try {
+            connection.destroyResource(producerInfo);
+        } catch (JmsConnectionFailedException jmsEx) {
+        }
     }
 
     /**

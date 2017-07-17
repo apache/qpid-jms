@@ -36,6 +36,7 @@ import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.util.ResourceLeakDetector;
+import io.netty.util.ResourceLeakDetector.Level;
 
 /**
  * Test basic functionality of the Netty based TCP transport.
@@ -459,6 +462,45 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 fail("Should throw on send of closed transport");
             } catch (IOException ex) {
             }
+        }
+    }
+
+    @Ignore("Used for checking for transport level leaks, my be unstable on CI.")
+    @Test(timeout = 60 * 1000)
+    public void testSendToClosedTransportFailsButDoesNotLeak() throws Exception {
+        Transport transport = null;
+
+        ResourceLeakDetector.setLevel(Level.PARANOID);
+
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            for (int i = 0; i < 256; ++i) {
+                transport = createTransport(serverLocation, testListener, createClientOptions());
+                try {
+                    transport.connect(null);
+                    LOG.info("Connected to server:{} as expected.", serverLocation);
+                } catch (Exception e) {
+                    fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
+                }
+
+                assertTrue(transport.isConnected());
+
+                ByteBuf sendBuffer = transport.allocateSendBuffer(10 * 1024 * 1024);
+
+                transport.close();
+
+                try {
+                    transport.send(sendBuffer);
+                    fail("Should throw on send of closed transport");
+                } catch (IOException ex) {
+                }
+            }
+
+            System.gc();
         }
     }
 

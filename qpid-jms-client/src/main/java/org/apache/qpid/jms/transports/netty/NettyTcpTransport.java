@@ -54,6 +54,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
@@ -249,7 +250,8 @@ public class NettyTcpTransport implements Transport {
 
     @Override
     public void send(ByteBuf output) throws IOException {
-        checkConnected();
+        checkConnected(output);
+
         int length = output.readableBytes();
         if (length == 0) {
             return;
@@ -368,6 +370,13 @@ public class NettyTcpTransport implements Transport {
 
     protected final void checkConnected() throws IOException {
         if (!connected.get()) {
+            throw new IOException("Cannot send to a non-connected transport.");
+        }
+    }
+
+    private void checkConnected(ByteBuf output) throws IOException {
+        if (!connected.get()) {
+            ReferenceCountUtil.release(output);
             throw new IOException("Cannot send to a non-connected transport.");
         }
     }

@@ -627,7 +627,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     }
 
     @Override
-    public void commit(final JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionId, final AsyncResult request) throws IOException {
+    public void commit(final JmsTransactionInfo transactionInfo, final JmsTransactionInfo nextTransactionId, final AsyncResult request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -646,7 +646,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     }
 
     @Override
-    public void rollback(final JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionId, final AsyncResult request) throws IOException {
+    public void rollback(final JmsTransactionInfo transactionInfo, final JmsTransactionInfo nextTransactionId, final AsyncResult request) throws IOException {
         checkClosed();
         serializer.execute(new Runnable() {
 
@@ -813,7 +813,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         }
     }
 
-    public void scheduleExecuteAndPump(Runnable task) {
+    public void scheduleExecuteAndPump(final Runnable task) {
         serializer.execute(new Runnable() {
             @Override
             public void run() {

@@ -16,17 +16,13 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import java.security.Principal;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.function.Function;
 
 import javax.jms.JMSSecurityException;
 import javax.security.sasl.SaslException;
 
-import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.sasl.Mechanism;
-import org.apache.qpid.jms.sasl.SaslMechanismFinder;
 import org.apache.qpid.proton.engine.Sasl;
 
 /**
@@ -35,11 +31,10 @@ import org.apache.qpid.proton.engine.Sasl;
 public class AmqpSaslAuthenticator {
 
     private final Sasl sasl;
-    private final JmsConnectionInfo info;
-    private Mechanism mechanism;
-    private final Principal localPrincipal;
-    private Set<String> mechanismsRestriction;
     private final AsyncResult authenticationRequest;
+    private final Function<String[], Mechanism> mechanismFinder;
+
+    private Mechanism mechanism;
     private boolean complete;
 
     /**
@@ -49,33 +44,13 @@ public class AmqpSaslAuthenticator {
      * 	      The initial request that is awaiting the result of the authentication process.
      * @param sasl
      *        The Proton SASL entry point this class will use to manage the authentication.
-     * @param info
-     *        The Connection information used to provide credentials to the remote peer.
-     * @param localPrincipal
-     *        The local Principal associated with the transport, or null if there is none.
-     * @param mechanismsRestriction
-     *        The possible mechanism(s) to which the client should restrict its
-     *        mechanism selection to if offered by the server
+     * @param mechanismFinder
+     *        An object that is used to locate the most correct SASL Mechanism to perform the authentication.
      */
-    public AmqpSaslAuthenticator(AsyncResult request, Sasl sasl, JmsConnectionInfo info, Principal localPrincipal, String[] mechanismsRestriction) {
+    public AmqpSaslAuthenticator(AsyncResult request, Sasl sasl, Function<String[], Mechanism> mechanismFinder) {
         this.sasl = sasl;
-        this.info = info;
-        this.localPrincipal = localPrincipal;
         this.authenticationRequest = request;
-
-        if (mechanismsRestriction != null) {
-            Set<String> mechs = new HashSet<String>();
-            for (int i = 0; i < mechanismsRestriction.length; i++) {
-                String mech = mechanismsRestriction[i];
-                if (!mech.trim().isEmpty()) {
-                    mechs.add(mech);
-                }
-            }
-
-            if (!mechs.isEmpty()) {
-                this.mechanismsRestriction = mechs;
-            }
-        }
+        this.mechanismFinder = mechanismFinder;
     }
 
     /**
@@ -137,12 +112,8 @@ public class AmqpSaslAuthenticator {
         try {
             String[] remoteMechanisms = sasl.getRemoteMechanisms();
             if (remoteMechanisms != null && remoteMechanisms.length != 0) {
-                mechanism = SaslMechanismFinder.findMatchingMechanism(info.getUsername(), info.getPassword(), localPrincipal, mechanismsRestriction, remoteMechanisms);
+                mechanism = mechanismFinder.apply(remoteMechanisms);
                 if (mechanism != null) {
-                    mechanism.setUsername(info.getUsername());
-                    mechanism.setPassword(info.getPassword());
-                    // TODO - set additional options from URI.
-
                     sasl.setMechanisms(mechanism.getName());
                     byte[] response = mechanism.getInitialResponse();
                     if (response != null) {

@@ -28,6 +28,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionConsumer;
@@ -96,11 +97,10 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean closing = new AtomicBoolean();
     private final AtomicBoolean started = new AtomicBoolean();
-    private final AtomicBoolean failed = new AtomicBoolean();
+    private final AtomicReference<IOException> failureCause = new AtomicReference<>();
     private final JmsConnectionInfo connectionInfo;
     private final ThreadPoolExecutor executor;
 
-    private volatile IOException firstFailureError;
     private ExceptionListener exceptionListener;
     private JmsMessageFactory messageFactory;
     private Provider provider;
@@ -186,7 +186,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
         try {
 
-            if (!closed.get() && !failed.get()) {
+            if (!closed.get() && !isFailed()) {
                 // do not fail if already closed as specified by the JMS specification.
                 doStop(false);
             }
@@ -203,7 +203,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
                     session.shutdown();
                 }
 
-                if (isConnected() && !failed.get()) {
+                if (isConnected() && !isFailed()) {
                     ProviderFuture request = new ProviderFuture();
                     requests.put(request, request);
                     try {
@@ -272,7 +272,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
             session.shutdown(cause);
         }
 
-        if (isConnected() && !failed.get() && !closing.get()) {
+        if (isConnected() && !isFailed() && !closing.get()) {
             destroyResource(connectionInfo);
         }
 
@@ -554,8 +554,8 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
     protected void checkClosedOrFailed() throws JMSException {
         checkClosed();
-        if (failed.get()) {
-            throw new JmsConnectionFailedException(firstFailureError);
+        if (failureCause.get() != null) {
+            throw new JmsConnectionFailedException(failureCause.get());
         }
     }
 
@@ -1029,7 +1029,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     }
 
     public boolean isFailed() {
-        return failed.get();
+        return failureCause.get() != null;
     }
 
     public JmsConnectionId getId() {
@@ -1417,10 +1417,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         }
     }
 
-    protected void providerFailed(IOException error) {
-        failed.set(true);
-        if (firstFailureError == null) {
-            firstFailureError = error;
-        }
+    protected void providerFailed(IOException cause) {
+        failureCause.compareAndSet(null, cause);
     }
 }

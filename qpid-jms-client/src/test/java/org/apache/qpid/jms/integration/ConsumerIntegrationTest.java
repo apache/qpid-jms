@@ -969,7 +969,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test // (timeout=20000)
     public void testMessageListenerCallsConnectionStopThrowsIllegalStateException() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicReference<Exception> asyncError = new AtomicReference<Exception>(null);
@@ -1005,7 +1005,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
                 }
             });
 
-            boolean await = latch.await(3000, TimeUnit.MILLISECONDS);
+            boolean await = latch.await(3, TimeUnit.MINUTES);
             assertTrue("Messages not received within given timeout. Count remaining: " + latch.getCount(), await);
 
             assertNotNull("Expected IllegalStateException", asyncError.get());

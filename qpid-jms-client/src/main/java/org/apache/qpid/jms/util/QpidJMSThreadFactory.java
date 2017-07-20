@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.util;
 
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Simple ThreadFactory object
@@ -25,6 +26,7 @@ public class QpidJMSThreadFactory implements ThreadFactory {
 
     private String threadName;
     private boolean daemon;
+    private AtomicReference<Thread> threadTracker;
 
     /**
      * Creates a new Thread factory that will create threads with the
@@ -40,9 +42,49 @@ public class QpidJMSThreadFactory implements ThreadFactory {
         this.daemon = daemon;
     }
 
+    /**
+     * Creates a new Thread factory that will create threads with the
+     * given name and daemon state.
+     *
+     * This constructor accepts an AtomicReference to track the Thread that
+     * was last created from this factory.  This is most useful for a single
+     * threaded executor where the Id of the internal execution thread needs
+     * to be known for some reason.
+     *
+     * @param threadName
+     * 		the name that will be used for each thread created.
+     * @param daemon
+     * 		should the created thread be a daemon thread.
+     * @param threadTracker
+     * 		AtomicReference that will be updated any time a new Thread is created.
+     */
+    public QpidJMSThreadFactory(String threadName, boolean daemon, AtomicReference<Thread> threadTracker) {
+        this.threadName = threadName;
+        this.daemon = daemon;
+        this.threadTracker = threadTracker;
+    }
+
     @Override
-    public Thread newThread(Runnable target) {
-        Thread thread = new Thread(target, threadName);
+    public Thread newThread(final Runnable target) {
+        Runnable runner = target;
+
+        if (threadTracker != null) {
+            runner = new Runnable() {
+
+                @Override
+                public void run() {
+                    threadTracker.set(Thread.currentThread());
+
+                    try {
+                        target.run();
+                    } finally {
+                        threadTracker.set(null);
+                    }
+                }
+            };
+        }
+
+        Thread thread = new Thread(runner, threadName);
         thread.setDaemon(daemon);
         return thread;
     }

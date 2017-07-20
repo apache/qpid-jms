@@ -111,8 +111,8 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     private final ReentrantLock sendLock = new ReentrantLock();
     private volatile ExecutorService deliveryExecutor;
     private volatile ExecutorService completionExcecutor;
-    private Thread deliveryThread;
-    private Thread completionThread;
+    private AtomicReference<Thread> deliveryThread = new AtomicReference<Thread>();
+    private AtomicReference<Thread> completionThread = new AtomicReference<Thread>();
 
     private final AtomicLong consumerIdGenerator = new AtomicLong();
     private final AtomicLong producerIdGenerator = new AtomicLong();
@@ -144,6 +144,10 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
         // We always keep an open TX so start now.
         getTransactionContext().begin();
+
+        // Start the completion executor now as it's needed throughout the
+        // lifetime of the Session.
+        getCompletionExecutor();
     }
 
     int acknowledgementMode() {
@@ -305,7 +309,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
             // Ensure that no asynchronous completion sends remain blocked after close.
             synchronized (sessionInfo) {
-                ensureCompletionExecutorExists();
                 if (cause == null) {
                     cause = new JMSException("Session closed remotely before message transfer result was notified");
                 }
@@ -1032,16 +1035,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             synchronized (sessionInfo) {
                 if (deliveryExecutor == null) {
                     if (!closed.get()) {
-                        exec = createExecutor("delivery dispatcher");
-                        exec.execute(new Runnable() {
-
-                            @Override
-                            public void run() {
-                                JmsSession.this.deliveryThread = Thread.currentThread();
-                            }
-                        });
-
-                        deliveryExecutor = exec;
+                        deliveryExecutor = exec = createExecutor("delivery dispatcher", deliveryThread);
                     } else {
                         return NoOpExecutor.INSTANCE;
                     }
@@ -1055,29 +1049,12 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     }
 
     Executor getCompletionExecutor() {
-        return getCompletionExecutor(false);
-    }
-
-    private void ensureCompletionExecutorExists() {
-        getCompletionExecutor(true);
-    }
-
-    private Executor getCompletionExecutor(boolean ignoreClosed) {
         ExecutorService exec = completionExcecutor;
         if (exec == null) {
             synchronized (sessionInfo) {
                 if (completionExcecutor == null) {
-                    if (!closed.get() || ignoreClosed) {
-                        exec = createExecutor("completion dispatcher");
-                        exec.execute(new Runnable() {
-
-                            @Override
-                            public void run() {
-                                JmsSession.this.completionThread = Thread.currentThread();
-                            }
-                        });
-
-                        completionExcecutor = exec;
+                    if (!closed.get()) {
+                        completionExcecutor = exec = createExecutor("completion dispatcher", completionThread);;
                     } else {
                         return NoOpExecutor.INSTANCE;
                     }
@@ -1090,9 +1067,9 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         return exec;
     }
 
-    private ExecutorService createExecutor(final String threadNameSuffix) {
+    private ExecutorService createExecutor(final String threadNameSuffix, AtomicReference<Thread> threadTracker) {
         ThreadPoolExecutor executor = new ThreadPoolExecutor(1, 1, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(),
-            new QpidJMSThreadFactory("JmsSession ["+ sessionInfo.getId() + "] " + threadNameSuffix, true));
+            new QpidJMSThreadFactory("JmsSession ["+ sessionInfo.getId() + "] " + threadNameSuffix, true, threadTracker));
 
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());
 
@@ -1154,13 +1131,13 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     }
 
     void checkIsDeliveryThread() throws JMSException {
-        if (Thread.currentThread().equals(deliveryThread)) {
+        if (Thread.currentThread().equals(deliveryThread.get())) {
             throw new IllegalStateException("Illegal invocation from MessageListener callback");
         }
     }
 
     void checkIsCompletionThread() throws JMSException {
-        if (Thread.currentThread().equals(completionThread)) {
+        if (Thread.currentThread().equals(completionThread.get())) {
             throw new IllegalStateException("Illegal invocation from CompletionListener callback");
         }
     }

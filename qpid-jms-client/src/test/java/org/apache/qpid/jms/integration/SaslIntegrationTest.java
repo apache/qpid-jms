@@ -41,8 +41,12 @@ import org.apache.qpid.jms.transports.TransportSslOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SaslIntegrationTest extends QpidJmsTestCase {
+
+    private static final Logger LOG = LoggerFactory.getLogger(SaslIntegrationTest.class);
 
     private static final Symbol ANONYMOUS = Symbol.valueOf("ANONYMOUS");
     private static final Symbol PLAIN = Symbol.valueOf("PLAIN");
@@ -235,6 +239,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
                 // Expected, we deliberately failed the SASL process,
                 // we only wanted to verify the correct mechanism
                 // was selected, other tests verify the remainder.
+
+                LOG.info("Caught expected security exception: {}", jmsse.getMessage());
             }
 
             if (wait) {

@@ -947,12 +947,21 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         }
 
         try {
-            if (authenticator.authenticate()) {
+            authenticator.tryAuthenticate();
+
+            if (authenticator.isComplete()) {
                 if (!authenticator.wasSuccessful()) {
-                    // Close the transport to avoid emitting any additional frames.
+                    // Close the transport to avoid emitting any additional frames if the
+                    // authentication process was unsuccessful, then signal the completion
+                    // to avoid any race with the caller triggering any other traffic.
+                    // Don't release the authenticator as we need it on close to know what
+                    // the state of authentication was.
                     org.apache.qpid.proton.engine.Transport t = protonConnection.getTransport();
                     t.close_head();
+                    authenticator.signalCompletion();
                 } else {
+                    // Signal completion and release the authenticator we won't use it again.
+                    authenticator.signalCompletion();
                     authenticator = null;
                 }
             }

@@ -19,7 +19,6 @@ package org.apache.qpid.jms.provider.amqp;
 import java.util.function.Function;
 
 import javax.jms.JMSSecurityException;
-import javax.security.sasl.SaslException;
 
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.sasl.Mechanism;
@@ -36,6 +35,7 @@ public class AmqpSaslAuthenticator {
 
     private Mechanism mechanism;
     private boolean complete;
+    private JMSSecurityException failureCause;
 
     /**
      * Create the authenticator and initialize it.
@@ -58,10 +58,8 @@ public class AmqpSaslAuthenticator {
      * method must be called by the managing entity until the return value is true indicating a
      * successful authentication or a JMSSecurityException is thrown indicating that the
      * handshake failed.
-     *
-     * @return true if the authentication process completed.
      */
-    public boolean authenticate() {
+    public void tryAuthenticate() {
         try {
             switch (sasl.getState()) {
                 case PN_SASL_IDLE:
@@ -74,17 +72,14 @@ public class AmqpSaslAuthenticator {
                     handleSaslFail();
                     break;
                 case PN_SASL_PASS:
-                    authenticationRequest.onSuccess();
+                    handleSaslCompletion();
+                    break;
                 default:
                     break;
             }
-        } catch (JMSSecurityException result) {
-            authenticationRequest.onFailure(result);
+        } catch (Throwable error) {
+            recordFailure(error.getMessage(), error);
         }
-
-        complete = authenticationRequest.isComplete();
-
-        return complete;
     }
 
     public boolean isComplete() {
@@ -92,23 +87,22 @@ public class AmqpSaslAuthenticator {
     }
 
     public boolean wasSuccessful() throws IllegalStateException {
-        switch (sasl.getState()) {
-            case PN_SASL_CONF:
-            case PN_SASL_IDLE:
-            case PN_SASL_STEP:
-                break;
-            case PN_SASL_FAIL:
-                return false;
-            case PN_SASL_PASS:
-                return true;
-            default:
-                break;
+        if (complete) {
+            return failureCause == null;
+        } else {
+            throw new IllegalStateException("Authentication has not completed yet.");
         }
-
-        throw new IllegalStateException("Authentication has not completed yet.");
     }
 
-    private void handleSaslInit() throws JMSSecurityException {
+    public void signalCompletion() {
+        if (failureCause != null) {
+            authenticationRequest.onFailure(failureCause);
+        } else {
+            authenticationRequest.onSuccess();
+        }
+    }
+
+    private void handleSaslInit() {
         try {
             String[] remoteMechanisms = sasl.getRemoteMechanisms();
             if (remoteMechanisms != null && remoteMechanisms.length != 0) {
@@ -120,18 +114,15 @@ public class AmqpSaslAuthenticator {
                         sasl.send(response, 0, response.length);
                     }
                 } else {
-                    throw new JMSSecurityException("Could not find a suitable SASL mechanism for the remote peer using the available credentials.");
+                    recordFailure("Could not find a suitable SASL mechanism for the remote peer using the available credentials.", null);
                 }
             }
-        } catch (SaslException se) {
-            JMSSecurityException jmsse = new JMSSecurityException("Exception while processing SASL init: " + se.getMessage());
-            jmsse.setLinkedException(se);
-            jmsse.initCause(se);
-            throw jmsse;
+        } catch (Throwable error) {
+            recordFailure("Exception while processing SASL init: " + error.getMessage(), error);
         }
     }
 
-    private void handleSaslStep() throws JMSSecurityException {
+    private void handleSaslStep() {
         try {
             if (sasl.pending() != 0) {
                 byte[] challenge = new byte[sasl.pending()];
@@ -139,19 +130,35 @@ public class AmqpSaslAuthenticator {
                 byte[] response = mechanism.getChallengeResponse(challenge);
                 sasl.send(response, 0, response.length);
             }
-        } catch (SaslException se) {
-            JMSSecurityException jmsse = new JMSSecurityException("Exception while processing SASL step: " + se.getMessage());
-            jmsse.setLinkedException(se);
-            jmsse.initCause(se);
-            throw jmsse;
+        } catch (Throwable error) {
+            recordFailure("Exception while processing SASL step: " + error.getMessage(), error);
         }
     }
 
-    private void handleSaslFail() throws JMSSecurityException {
+    private void handleSaslFail() {
         if (mechanism != null) {
-            throw new JMSSecurityException("Client failed to authenticate using SASL: " + mechanism.getName());
+            recordFailure("Client failed to authenticate using SASL: " + mechanism.getName(), null);
         } else {
-            throw new JMSSecurityException("Client failed to authenticate");
+            recordFailure("Client failed to authenticate", null);
         }
+    }
+
+    private void handleSaslCompletion() {
+        try {
+            mechanism.verifyCompletion();
+            complete = true;
+        } catch (Throwable error) {
+            recordFailure("Exception while processing SASL exchange completion: " + error.getMessage(), error);
+        }
+    }
+
+    private void recordFailure(String message, Throwable cause) {
+        failureCause = new JMSSecurityException(message);
+        if (cause instanceof Exception) {
+            failureCause.setLinkedException((Exception) cause);
+        }
+        failureCause.initCause(cause);
+
+        complete = true;
     }
 }

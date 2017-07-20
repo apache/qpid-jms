@@ -83,6 +83,16 @@ public interface Mechanism extends Comparable<Mechanism> {
     byte[] getChallengeResponse(byte[] challenge) throws SaslException;
 
     /**
+     * Verifies that the SASL exchange has completed successfully. This is
+     * an opportunity for the mechanism to ensure that all mandatory
+     * steps have been completed successfully and to cleanup and resources
+     * that are held by this Mechanism.
+     *
+     * @throws SaslException if the outcome of the SASL exchange is not valid for this Mechanism
+     */
+    void verifyCompletion() throws SaslException;
+
+    /**
      * Sets the user name value for this Mechanism.  The Mechanism can ignore this
      * value if it does not utilize user name in it's authentication processing.
      *
@@ -114,6 +124,19 @@ public interface Mechanism extends Comparable<Mechanism> {
      */
     String getPassword();
 
+    /**
+     * Allows the mechanism to determine if it can be used given the authentication
+     * provided.
+     *
+     * @param username
+     * 		The user name given to the client for authentication.
+     * @param password
+     * 		The password given to the client for authentication.
+     * @param localPrincipal
+     * 		The local Principal configured for the client for authentication.
+     *
+     * @return if this Mechanism is able to validate using the given credentials.
+     */
     boolean isApplicable(String username, String password, Principal localPrincipal);
 
 }

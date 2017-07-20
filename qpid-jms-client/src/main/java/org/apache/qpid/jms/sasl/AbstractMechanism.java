@@ -28,8 +28,11 @@ public abstract class AbstractMechanism implements Mechanism {
     private String password;
 
     @Override
-    public int compareTo(Mechanism other) {
+    public void verifyCompletion() {
+    }
 
+    @Override
+    public int compareTo(Mechanism other) {
         if (getPriority() < other.getPriority()) {
             return -1;
         } else if (getPriority() > other.getPriority()) {

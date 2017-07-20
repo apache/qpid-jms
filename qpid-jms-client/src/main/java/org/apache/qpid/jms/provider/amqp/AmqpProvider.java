@@ -21,6 +21,7 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -57,11 +58,13 @@ import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpClosedConnectionBuilder;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpConnectionBuilder;
+import org.apache.qpid.jms.sasl.GssapiMechanism;
 import org.apache.qpid.jms.sasl.Mechanism;
 import org.apache.qpid.jms.sasl.SaslMechanismFinder;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.util.IOExceptionSupport;
+import org.apache.qpid.jms.util.PropertyUtil;
 import org.apache.qpid.jms.util.QpidJMSThreadFactory;
 import org.apache.qpid.jms.util.ThreadPoolUtils;
 import org.apache.qpid.proton.engine.Collector;
@@ -1379,7 +1382,20 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         if (mechanism != null) {
             mechanism.setUsername(connectionInfo.getUsername());
             mechanism.setPassword(connectionInfo.getPassword());
-            // TODO - set additional options from URI.
+
+            if (GssapiMechanism.NAME.equals(mechanism.getName())) {
+                try {
+                    Map<String, String> props =
+                            PropertyUtil.filterProperties(PropertyUtil.parseQuery(getRemoteURI()), "sasl.");
+                    if (!props.containsKey("serverName")) {
+                        props.put("serverName", remoteURI.getHost());
+                    }
+                    PropertyUtil.setProperties(mechanism, props);
+                    PropertyUtil.setProperty(mechanism, "options", props);
+                } catch (Exception badConfig) {
+                    throw new RuntimeException("Failed to apply sasl url params to mechanism: " + mechanism.getName() + ", reason: " + badConfig.toString(), badConfig);
+                }
+            }
         }
 
         return mechanism;

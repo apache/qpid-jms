@@ -93,6 +93,17 @@
       <artifactId>hamcrest-all</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-minikdc</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.directory.jdbm</groupId>
+      <artifactId>apacheds-jdbm2</artifactId>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 
   <build>

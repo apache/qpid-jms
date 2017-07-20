@@ -54,6 +54,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     private static final Symbol SCRAM_SHA_1 = Symbol.valueOf("SCRAM-SHA-1");
     private static final Symbol SCRAM_SHA_256 = Symbol.valueOf("SCRAM-SHA-256");
     private static final Symbol EXTERNAL = Symbol.valueOf("EXTERNAL");
+    private static final Symbol GSSAPI = Symbol.valueOf("GSSAPI");
 
     private static final String BROKER_JKS_KEYSTORE = "src/test/resources/broker-jks.keystore";
     private static final String BROKER_JKS_TRUSTSTORE = "src/test/resources/broker-jks.truststore";

@@ -20,7 +20,6 @@ import java.util.function.Function;
 
 import javax.jms.JMSSecurityException;
 
-import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.sasl.Mechanism;
 import org.apache.qpid.proton.engine.Sasl;
 
@@ -30,7 +29,6 @@ import org.apache.qpid.proton.engine.Sasl;
 public class AmqpSaslAuthenticator {
 
     private final Sasl sasl;
-    private final AsyncResult authenticationRequest;
     private final Function<String[], Mechanism> mechanismFinder;
 
     private Mechanism mechanism;
@@ -40,16 +38,13 @@ public class AmqpSaslAuthenticator {
     /**
      * Create the authenticator and initialize it.
      *
-     * @param request
-     * 	      The initial request that is awaiting the result of the authentication process.
      * @param sasl
      *        The Proton SASL entry point this class will use to manage the authentication.
      * @param mechanismFinder
      *        An object that is used to locate the most correct SASL Mechanism to perform the authentication.
      */
-    public AmqpSaslAuthenticator(AsyncResult request, Sasl sasl, Function<String[], Mechanism> mechanismFinder) {
+    public AmqpSaslAuthenticator(Sasl sasl, Function<String[], Mechanism> mechanismFinder) {
         this.sasl = sasl;
-        this.authenticationRequest = request;
         this.mechanismFinder = mechanismFinder;
     }
 
@@ -86,19 +81,15 @@ public class AmqpSaslAuthenticator {
        return complete;
     }
 
+    public JMSSecurityException getFailureCause() {
+        return failureCause;
+    }
+
     public boolean wasSuccessful() throws IllegalStateException {
         if (complete) {
             return failureCause == null;
         } else {
             throw new IllegalStateException("Authentication has not completed yet.");
-        }
-    }
-
-    public void signalCompletion() {
-        if (failureCause != null) {
-            authenticationRequest.onFailure(failureCause);
-        } else {
-            authenticationRequest.onSuccess();
         }
     }
 

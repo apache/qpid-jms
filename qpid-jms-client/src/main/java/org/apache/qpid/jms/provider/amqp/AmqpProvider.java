@@ -201,7 +201,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
                         sasl.setRemoteHostname(hostname);
 
-                        authenticator = new AmqpSaslAuthenticator(connectionRequest, sasl, (remoteMechanisms) -> findSaslMechanism(remoteMechanisms));
+                        authenticator = new AmqpSaslAuthenticator(sasl, (remoteMechanisms) -> findSaslMechanism(remoteMechanisms));
 
                         pumpToProtonTransport();
                     } else {
@@ -958,10 +958,10 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     // the state of authentication was.
                     org.apache.qpid.proton.engine.Transport t = protonConnection.getTransport();
                     t.close_head();
-                    authenticator.signalCompletion();
+                    connectionRequest.onFailure(authenticator.getFailureCause());
                 } else {
                     // Signal completion and release the authenticator we won't use it again.
-                    authenticator.signalCompletion();
+                    connectionRequest.onSuccess();
                     authenticator = null;
                 }
             }

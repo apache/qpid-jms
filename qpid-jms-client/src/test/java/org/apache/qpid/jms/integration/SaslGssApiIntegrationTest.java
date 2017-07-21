@@ -52,17 +52,18 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
     private static final String serviceName = "amqp/localhost";
 
     private MiniKdc kdc;
+    private final boolean debug = false;
 
     @Before
-    public void setUpKerberso() throws Exception {
-        Path tempDirectory = Files.createTempDirectory("junit.test.");
+    public void setUpKerberos() throws Exception {
+        Path tempDirectory = Files.createTempDirectory("junit.SaslGssApiIntegrationTest.");
         File root = tempDirectory.toFile();
         root.deleteOnExit();
         kdc = new MiniKdc(MiniKdc.createConf(), new File(root, "kdc"));
         kdc.start();
 
         // hard coded match, default_keytab_name in minikdc-krb5.conf template
-        File userKeyTab = new File("target/test.krb5.keytab");
+        File userKeyTab = new File("target/SaslGssApiIntegrationTest.krb5.keytab");
         kdc.createPrincipal(userKeyTab, "client", serviceName);
 
         Keytab kt = Keytab.read(userKeyTab);
@@ -70,11 +71,13 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
             LOG.info("KeyTab Kerb PrincipalNames:" + entry.getPrincipalName());
         }
 
-        java.util.logging.Logger logger = java.util.logging.Logger.getLogger("javax.security.sasl");
-        logger.setLevel(java.util.logging.Level.FINEST);
-        logger.addHandler(new java.util.logging.ConsoleHandler());
-        for (java.util.logging.Handler handler: logger.getHandlers()) {
-            handler.setLevel(java.util.logging.Level.FINEST);
+        if (debug) {
+            java.util.logging.Logger logger = java.util.logging.Logger.getLogger("javax.security.sasl");
+            logger.setLevel(java.util.logging.Level.FINEST);
+            logger.addHandler(new java.util.logging.ConsoleHandler());
+            for (java.util.logging.Handler handler : logger.getHandlers()) {
+                handler.setLevel(java.util.logging.Level.FINEST);
+            }
         }
     }
 
@@ -89,7 +92,7 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
     public void testSaslGssApiKrbConnection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
-            testPeer.expectGSSAPI(GSSAPI, serviceName);
+            testPeer.expectSaslGSSAPI(serviceName);
             testPeer.expectOpen();
 
             // Each connection creates a session for managing temporary destinations etc
@@ -113,7 +116,7 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
     public void testSaslGssApiKrbConnectionJmsUser() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
-            testPeer.expectGSSAPI(GSSAPI, serviceName);
+            testPeer.expectSaslGSSAPI(serviceName);
             testPeer.expectOpen();
 
             // Each connection creates a session for managing temporary destinations etc
@@ -138,10 +141,10 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 20000)
     public void testSaslGssApiKrbConfigConnection() throws Exception {
         setTestSystemProperty("java.security.auth.login.config",
-                SaslGssApiIntegrationTest.class.getClassLoader().getResource("login.config").getPath());
+                SaslGssApiIntegrationTest.class.getClassLoader().getResource("SaslGssApiIntegrationTest-login.config").getPath());
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
-            testPeer.expectGSSAPI(GSSAPI, serviceName);
+            testPeer.expectSaslGSSAPI(serviceName);
             testPeer.expectOpen();
 
             // Each connection creates a session for managing temporary destinations etc
@@ -166,7 +169,7 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
         final String loginConfigScope = "KRB5-CLIENT-DOES-NOT-EXIST";
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
-            testPeer.expectGSSAPIFail(GSSAPI);
+            testPeer.expectSaslGSSAPIFail();
 
             String uriOptions = "?sasl.configScope=" + loginConfigScope + "&sasl.protocol=amqp&sasl.server=localhost&amqp.saslMechanisms=" + GSSAPI.toString();
             ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + uriOptions);

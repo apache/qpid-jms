@@ -1387,8 +1387,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 try {
                     Map<String, String> props =
                             PropertyUtil.filterProperties(PropertyUtil.parseQuery(getRemoteURI()), "sasl.");
-                    if (!props.containsKey("server")) {
-                        props.put("server", remoteURI.getHost());
+                    if (!props.containsKey("serverName")) {
+                        props.put("serverName", remoteURI.getHost());
                     }
                     PropertyUtil.setProperties(mechanism, props);
                 } catch (Exception badConfig) {

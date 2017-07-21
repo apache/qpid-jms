@@ -131,6 +131,7 @@ public class TestAmqpPeer implements AutoCloseable
     private static final Symbol ANONYMOUS = Symbol.valueOf("ANONYMOUS");
     private static final Symbol EXTERNAL = Symbol.valueOf("EXTERNAL");
     private static final Symbol PLAIN = Symbol.valueOf("PLAIN");
+    private static final Symbol GSSAPI = Symbol.valueOf("GSSAPI");
     private static final UnsignedByte SASL_OK = UnsignedByte.valueOf((byte)0);
     private static final UnsignedByte SASL_FAIL_AUTH = UnsignedByte.valueOf((byte)1);
     private static final int CONNECTION_CHANNEL = 0;
@@ -512,21 +513,21 @@ public class TestAmqpPeer implements AutoCloseable
         }
     }
 
-    public void expectGSSAPIFail(Symbol mech) throws Exception {
-        SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(mech);
+    public void expectSaslGSSAPIFail() throws Exception {
+        SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(GSSAPI);
 
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
                 new FrameSender(
                         this, FrameType.SASL, 0,
                         saslMechanismsFrame, null)));
 
-        addHandler(new SaslInitMatcher().withMechanism(equalTo(mech)));
+        addHandler(new SaslInitMatcher().withMechanism(equalTo(GSSAPI)));
 
     }
 
-    public void expectGSSAPI(Symbol mech, String serviceName) throws Exception {
+    public void expectSaslGSSAPI(String serviceName) throws Exception {
 
-        SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(mech);
+        SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(GSSAPI);
 
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
                 new FrameSender(
@@ -557,14 +558,14 @@ public class TestAmqpPeer implements AutoCloseable
         final SaslServer saslServer = Subject.doAs(serverSubject, new PrivilegedExceptionAction<SaslServer>() {
             @Override
             public SaslServer run() throws Exception {
-                return Sasl.createSaslServer(mech.toString(), null, null, config, handler);
+                return Sasl.createSaslServer(GSSAPI.toString(), null, null, config, handler);
             }
         });
 
         final SaslChallengeFrame challengeFrame = new SaslChallengeFrame();
 
         SaslInitMatcher saslInitMatcher = new SaslInitMatcher()
-                .withMechanism(equalTo(mech))
+                .withMechanism(equalTo(GSSAPI))
                 .withInitialResponse(new BaseMatcher<Binary>() {
 
                     @Override

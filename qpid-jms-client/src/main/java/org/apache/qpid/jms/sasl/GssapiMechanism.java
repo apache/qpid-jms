@@ -38,7 +38,7 @@ public class GssapiMechanism extends AbstractMechanism {
     private Subject subject;
     private SaslClient saslClient;
     private String protocol = "amqp";
-    private String server = null;
+    private String serverName = null;
     private String configScope = null;
 
     // a gss/sasl service name, x@y, morphs to a krbPrincipal a/y@REALM
@@ -71,7 +71,7 @@ public class GssapiMechanism extends AbstractMechanism {
 
                 @Override
                 public byte[] run() throws Exception {
-                    saslClient = Sasl.createSaslClient(new String[]{getName()}, null, protocol, server, null, null);
+                    saslClient = Sasl.createSaslClient(new String[]{NAME}, null, protocol, serverName, null, null);
                     if (saslClient.hasInitialResponse()) {
                         return saslClient.evaluateChallenge(new byte[0]);
                     }
@@ -112,29 +112,56 @@ public class GssapiMechanism extends AbstractMechanism {
         return true;
     }
 
+    private static final boolean IBM_JAVA =  System.getProperty("java.vendor").contains("IBM");
     public static Configuration kerb5InlineConfig(String principal, boolean initiator) {
-        final Map<String, String> krb5LoginModuleOptions = new HashMap<>();
-        krb5LoginModuleOptions.put("isInitiator", String.valueOf(initiator));
-        krb5LoginModuleOptions.put("principal", principal);
-        krb5LoginModuleOptions.put("useKeyTab", "true");
-        krb5LoginModuleOptions.put("storeKey", "true");
-        krb5LoginModuleOptions.put("doNotPrompt", "true");
-        krb5LoginModuleOptions.put("renewTGT", "true");
-        krb5LoginModuleOptions.put("refreshKrb5Config", "true");
-        krb5LoginModuleOptions.put("useTicketCache", "true");
-        String ticketCache = System.getenv("KRB5CCNAME");
-        if (ticketCache != null) {
-            krb5LoginModuleOptions.put("ticketCache", ticketCache);
+        final Map<String, String> options = new HashMap<>();
+        if (IBM_JAVA) {
+            options.put("principal", principal);
+            options.put("renewable", "true");
+            options.put("credsType", initiator ? "initiator" : "acceptor");
+        } else {
+            options.put("isInitiator", String.valueOf(initiator));
+            options.put("principal", principal);
+            options.put("useKeyTab", "true");
+            options.put("storeKey", "true");
+            options.put("doNotPrompt", "true");
+            options.put("renewTGT", "true");
+            options.put("refreshKrb5Config", "true");
+            options.put("useTicketCache", "true");
+            String ticketCache = System.getenv("KRB5CCNAME");
+
+            if (IBM_JAVA) {
+                // If cache is specified via env variable, it takes priority
+                if (ticketCache != null) {
+                    // IBM JAVA only respects system property so copy ticket cache to system property
+                    // The first value searched when "useDefaultCcache" is true.
+                    System.setProperty("KRB5CCNAME", ticketCache);
+                } else {
+                    ticketCache = System.getProperty("KRB5CCNAME");
+                }
+                if (ticketCache != null) {
+                    options.put("useDefaultCcache", "true");
+                }
+            } else {
+                if (ticketCache != null) {
+                    options.put("ticketCache", ticketCache);
+                }
+            }
         }
         return new Configuration() {
             @Override
             public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
                 return new AppConfigurationEntry[]{
-                        new AppConfigurationEntry("com.sun.security.auth.module.Krb5LoginModule",
+                        new AppConfigurationEntry(getKrb5LoginModuleName(),
                                 AppConfigurationEntry.LoginModuleControlFlag.REQUIRED,
-                                krb5LoginModuleOptions)};
+                                options)};
             }
         };
+    }
+
+    private static String getKrb5LoginModuleName() {
+        return IBM_JAVA ? "com.ibm.security.auth.module.Krb5LoginModule"
+                : "com.sun.security.auth.module.Krb5LoginModule";
     }
 
     public String getProtocol() {
@@ -145,12 +172,12 @@ public class GssapiMechanism extends AbstractMechanism {
         this.protocol = protocol;
     }
 
-    public String getServer() {
-        return server;
+    public String getServerName() {
+        return serverName;
     }
 
-    public void setServer(String server) {
-        this.server = server;
+    public void setServerName(String serverName) {
+        this.serverName = serverName;
     }
 
     public String getConfigScope() {

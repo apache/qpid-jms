@@ -1391,6 +1391,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         props.put("serverName", remoteURI.getHost());
                     }
                     PropertyUtil.setProperties(mechanism, props);
+                    PropertyUtil.setProperty(mechanism, "options", props);
                 } catch (Exception badConfig) {
                     throw new RuntimeException("Failed to apply sasl url params to mechanism: " + mechanism.getName() + ", reason: " + badConfig.toString(), badConfig);
                 }

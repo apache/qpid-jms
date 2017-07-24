@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.sasl;
 
+import org.apache.qpid.jms.util.PropertyUtil;
+
 import javax.security.auth.Subject;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
@@ -40,6 +42,7 @@ public class GssapiMechanism extends AbstractMechanism {
     private String protocol = "amqp";
     private String serverName = null;
     private String configScope = null;
+    private Map<String, String> options = new HashMap<String, String>();
 
     // a gss/sasl service name, x@y, morphs to a krbPrincipal a/y@REALM
 
@@ -62,7 +65,7 @@ public class GssapiMechanism extends AbstractMechanism {
             } else {
                 // inline keytab config using user as principal
                 loginContext = new LoginContext("", null, null,
-                        kerb5InlineConfig(getUsername(), true));
+                        kerb5InlineConfig(getUsername(), options));
             }
             loginContext.login();
             subject = loginContext.getSubject();
@@ -112,42 +115,16 @@ public class GssapiMechanism extends AbstractMechanism {
         return true;
     }
 
-    private static final boolean IBM_JAVA =  System.getProperty("java.vendor").contains("IBM");
-    public static Configuration kerb5InlineConfig(String principal, boolean initiator) {
+    public static Configuration kerb5InlineConfig(String principal, final Map<String, String> userOptions) {
         final Map<String, String> options = new HashMap<>();
-        if (IBM_JAVA) {
-            options.put("principal", principal);
-            options.put("renewable", "true");
-            options.put("credsType", initiator ? "initiator" : "acceptor");
-        } else {
-            options.put("isInitiator", String.valueOf(initiator));
-            options.put("principal", principal);
-            options.put("useKeyTab", "true");
-            options.put("storeKey", "true");
-            options.put("doNotPrompt", "true");
-            options.put("renewTGT", "true");
-            options.put("refreshKrb5Config", "true");
-            options.put("useTicketCache", "true");
-            String ticketCache = System.getenv("KRB5CCNAME");
-
-            if (IBM_JAVA) {
-                // If cache is specified via env variable, it takes priority
-                if (ticketCache != null) {
-                    // IBM JAVA only respects system property so copy ticket cache to system property
-                    // The first value searched when "useDefaultCcache" is true.
-                    System.setProperty("KRB5CCNAME", ticketCache);
-                } else {
-                    ticketCache = System.getProperty("KRB5CCNAME");
-                }
-                if (ticketCache != null) {
-                    options.put("useDefaultCcache", "true");
-                }
-            } else {
-                if (ticketCache != null) {
-                    options.put("ticketCache", ticketCache);
-                }
-            }
+        options.put("principal", principal);
+        options.put("useKeyTab", "true");
+        options.put("storeKey", "true");
+        String ticketCache = System.getenv("KRB5CCNAME");
+        if (ticketCache != null) {
+            options.put("ticketCache", ticketCache);
         }
+        options.putAll(PropertyUtil.filterProperties(userOptions, "krb5."));
         return new Configuration() {
             @Override
             public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
@@ -159,6 +136,7 @@ public class GssapiMechanism extends AbstractMechanism {
         };
     }
 
+    private static final boolean IBM_JAVA =  System.getProperty("java.vendor").contains("IBM");
     private static String getKrb5LoginModuleName() {
         return IBM_JAVA ? "com.ibm.security.auth.module.Krb5LoginModule"
                 : "com.sun.security.auth.module.Krb5LoginModule";
@@ -186,5 +164,13 @@ public class GssapiMechanism extends AbstractMechanism {
 
     public void setConfigScope(String configScope) {
         this.configScope = configScope;
+    }
+
+    public Map<String, String> getOptions() {
+        return options;
+    }
+
+    public void setOptions(Map<String, String> options) {
+        this.options = options;
     }
 }

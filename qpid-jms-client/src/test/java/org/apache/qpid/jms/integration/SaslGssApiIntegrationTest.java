@@ -136,6 +136,30 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Test(timeout = 20000)
+    public void testSaslGssApiKrb5ConfigOptionOverridePrincipal() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            testPeer.expectSaslGSSAPI(serviceName);
+            testPeer.expectOpen();
+
+            // Each connection creates a session for managing temporary destinations etc
+            testPeer.expectBegin();
+
+            String uriOptions = "?jms.username=getsOverridden&sasl.krb5.principal=client&amqp.saslMechanisms=" + GSSAPI.toString();
+            ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + uriOptions);
+            Connection connection = factory.createConnection();
+            // Set a clientID to provoke the actual AMQP connection process to occur.
+            connection.setClientID("clientName");
+
+            testPeer.waitForAllHandlersToComplete(1000);
+            assertNull(testPeer.getThrowable());
+
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
+
 
 
     @Test(timeout = 20000)

@@ -28,6 +28,7 @@ import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -56,6 +57,10 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
 
     @Before
     public void setUpKerberos() throws Exception {
+
+        // login.config or url overrides necessary for the IBM krb5 login module
+        Assume.assumeFalse(System.getProperty("java.vendor").contains("IBM"));
+
         Path tempDirectory = Files.createTempDirectory("junit.SaslGssApiIntegrationTest.");
         File root = tempDirectory.toFile();
         root.deleteOnExit();

@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.sasl;
 
+import javax.security.sasl.SaslException;
+
 /**
  * Base class for SASL Authentication Mechanism that implements the basic
  * methods of a Mechanism class.
@@ -28,7 +30,7 @@ public abstract class AbstractMechanism implements Mechanism {
     private String password;
 
     @Override
-    public void verifyCompletion() {
+    public void verifyCompletion() throws SaslException {
     }
 
     @Override

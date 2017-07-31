@@ -19,6 +19,7 @@ package org.apache.qpid.jms.provider.amqp;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -1383,18 +1384,15 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
             mechanism.setUsername(connectionInfo.getUsername());
             mechanism.setPassword(connectionInfo.getPassword());
 
-            if (GssapiMechanism.NAME.equals(mechanism.getName())) {
-                try {
-                    Map<String, String> props =
-                            PropertyUtil.filterProperties(PropertyUtil.parseQuery(getRemoteURI()), "sasl.");
-                    if (!props.containsKey("serverName")) {
-                        props.put("serverName", remoteURI.getHost());
-                    }
-                    PropertyUtil.setProperties(mechanism, props);
-                    PropertyUtil.setProperty(mechanism, "options", props);
-                } catch (Exception badConfig) {
-                    throw new RuntimeException("Failed to apply sasl url params to mechanism: " + mechanism.getName() + ", reason: " + badConfig.toString(), badConfig);
+            try {
+                Map<String, String> saslOptions = PropertyUtil.filterProperties(PropertyUtil.parseQuery(getRemoteURI()), "sasl.options.");
+                if (!saslOptions.containsKey("serverName")) {
+                    saslOptions.put("serverName", remoteURI.getHost());
                 }
+
+                mechanism.init(Collections.unmodifiableMap(saslOptions));
+            } catch (Exception ex) {
+                throw new RuntimeException("Failed to apply sasl options to mechanism: " + mechanism.getName() + ", reason: " + ex.toString(), ex);
             }
         }
 

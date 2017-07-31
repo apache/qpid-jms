@@ -74,4 +74,11 @@ public class ExternalMechanismTest {
             }
         }));
     }
+
+    @Test
+    public void testIsEnabledByDefault() {
+        ExternalMechanism mech = new ExternalMechanism();
+
+        assertTrue("Should be enabled by default", mech.isEnabledByDefault());
+    }
 }

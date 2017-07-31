@@ -55,7 +55,6 @@
     <mockito-version>1.10.19</mockito-version>
     <hamcrest-version>1.3</hamcrest-version>
     <hadoop-minikdc-version>2.8.1</hadoop-minikdc-version>
-    <directory-jdbm2-version>2.0.0-M3</directory-jdbm2-version>
 
     <!-- Maven Plugin Versions for this Project -->
     <maven-javacc-plugin-version>2.6</maven-javacc-plugin-version>
@@ -186,12 +185,6 @@
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-minikdc</artifactId>
         <version>${hadoop-minikdc-version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.directory.jdbm</groupId>
-        <artifactId>apacheds-jdbm2</artifactId>
-        <version>${directory-jdbm2-version}</version>
         <scope>test</scope>
       </dependency>
     </dependencies>

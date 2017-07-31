@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms.sasl;
 
+import java.util.Map;
+
 import javax.security.sasl.SaslException;
 
 /**
@@ -28,6 +30,10 @@ public abstract class AbstractMechanism implements Mechanism {
 
     private String username;
     private String password;
+
+    @Override
+    public void init(Map<String, String> options) {
+    }
 
     @Override
     public void verifyCompletion() throws SaslException {
@@ -67,5 +73,10 @@ public abstract class AbstractMechanism implements Mechanism {
     @Override
     public String toString() {
         return "SASL-" + getName();
+    }
+
+    @Override
+    public boolean isEnabledByDefault() {
+        return true;
     }
 }

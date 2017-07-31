@@ -117,7 +117,7 @@ class TestAmqpPeerRunner implements Runnable
                 {
                     ByteBuffer networkInputByteBuffer = ByteBuffer.wrap(networkInputBytes, 0, bytesRead);
 
-                    LOGGER.debug("Read: {}", new Binary(networkInputBytes, 0, bytesRead));
+                    LOGGER.debug("Read: {} ({} bytes)", new Binary(networkInputBytes, 0, bytesRead), bytesRead);
 
                     try {
                         _testFrameParser.input(networkInputByteBuffer);

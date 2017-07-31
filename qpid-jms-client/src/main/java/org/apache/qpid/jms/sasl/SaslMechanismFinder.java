@@ -73,10 +73,16 @@ public class SaslMechanismFinder {
             MechanismFactory factory = findMechanismFactory(remoteMechanism);
             if (factory != null) {
                 Mechanism mech = factory.createMechanism();
-                if(mechRestrictions != null && !mechRestrictions.contains(remoteMechanism)) {
+
+                boolean mechConfigured = mechRestrictions != null && mechRestrictions.contains(remoteMechanism);
+                if(mechRestrictions != null && !mechConfigured) {
                     LOG.debug("Skipping {} mechanism because it is not in the configured mechanisms restriction set", remoteMechanism);
                 } else if(mech.isApplicable(username, password, localPrincipal)) {
-                    found.add(mech);
+                    if(mech.isEnabledByDefault() || mechConfigured) {
+                        found.add(mech);
+                    } else {
+                        LOG.debug("Skipping {} mechanism as it must be explicitly enabled in the configured sasl mechanisms", mech);
+                    }
                 } else {
                     LOG.debug("Skipping {} mechanism because the available credentials are not sufficient", mech);
                 }

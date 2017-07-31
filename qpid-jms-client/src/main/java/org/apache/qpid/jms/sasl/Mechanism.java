@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.sasl;
 
 import java.security.Principal;
+import java.util.Map;
 
 import javax.security.sasl.SaslException;
 
@@ -60,6 +61,14 @@ public interface Mechanism extends Comparable<Mechanism> {
      * @return the well known name of this SASL mechanism.
      */
     String getName();
+
+    /**
+     * Perform any configuration initiation required by the mechanism.
+     *
+     * @param options
+     *        An immutable map of sasl options. Will always be non-null.
+     */
+    void init(Map<String, String> options);
 
     /**
      * Create an initial response based on selected mechanism.
@@ -139,4 +148,11 @@ public interface Mechanism extends Comparable<Mechanism> {
      */
     boolean isApplicable(String username, String password, Principal localPrincipal);
 
+    /**
+     * Allows the mechanism to indicate if it is enabled by default, or only when explicitly enabled
+     * through configuring the permitted sasl mechanisms.
+     *
+     * @return true if this Mechanism is enabled by default.
+     */
+    boolean isEnabledByDefault();
 }

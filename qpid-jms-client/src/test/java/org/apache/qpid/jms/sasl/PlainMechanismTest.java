@@ -104,4 +104,11 @@ public class PlainMechanismTest {
             }
         }));
     }
+
+    @Test
+    public void testIsEnabledByDefault() {
+        PlainMechanism mech = new PlainMechanism();
+
+        assertTrue("Should be enabled by default", mech.isEnabledByDefault());
+    }
 }

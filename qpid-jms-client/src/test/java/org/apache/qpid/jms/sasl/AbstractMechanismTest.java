@@ -68,5 +68,10 @@ public class AbstractMechanismTest {
         public boolean isApplicable(String username, String password, Principal localPrincipal) {
             return false;
         }
+
+        @Override
+        public boolean isEnabledByDefault() {
+            return false;
+        }
     }
 }

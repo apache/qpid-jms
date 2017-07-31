@@ -99,11 +99,11 @@ public class AmqpSaslAuthenticator {
             if (remoteMechanisms != null && remoteMechanisms.length != 0) {
                 mechanism = mechanismFinder.apply(remoteMechanisms);
                 if (mechanism != null) {
-                    sasl.setMechanisms(mechanism.getName());
                     byte[] response = mechanism.getInitialResponse();
                     if (response != null) {
                         sasl.send(response, 0, response.length);
                     }
+                    sasl.setMechanisms(mechanism.getName());
                 } else {
                     recordFailure("Could not find a suitable SASL mechanism for the remote peer using the available credentials.", null);
                 }

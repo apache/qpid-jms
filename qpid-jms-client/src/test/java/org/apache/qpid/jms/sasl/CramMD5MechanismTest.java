@@ -85,4 +85,11 @@ public class CramMD5MechanismTest {
             }
         }));
     }
+
+    @Test
+    public void testIsEnabledByDefault() {
+        CramMD5Mechanism mech = new CramMD5Mechanism();
+
+        assertTrue("Should be enabled by default", mech.isEnabledByDefault());
+    }
 }

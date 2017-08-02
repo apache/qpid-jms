@@ -26,9 +26,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.security.sasl.SaslException;
 
 /**
- * Implements the SASL PLAIN authentication Mechanism.
- *
- * User name and Password values are sent without being encrypted.
+ * Implements the SASL CRAM-MD5 authentication Mechanism.
  */
 public class CramMD5Mechanism extends AbstractMechanism {
 
@@ -82,6 +80,14 @@ public class CramMD5Mechanism extends AbstractMechanism {
             }
         } else {
             return EMPTY;
+        }
+    }
+
+    @Override
+    public void verifyCompletion() throws SaslException {
+        super.verifyCompletion();
+        if (!sentResponse) {
+            throw new SaslException("SASL exchange was not fully completed.");
         }
     }
 

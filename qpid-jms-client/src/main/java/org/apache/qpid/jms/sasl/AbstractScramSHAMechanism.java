@@ -96,6 +96,16 @@ abstract class AbstractScramSHAMechanism extends AbstractMechanism {
         return response;
     }
 
+    @Override
+    public void verifyCompletion() throws SaslException {
+        super.verifyCompletion();
+        if (state != State.COMPLETE) {
+            throw new SaslException(String.format("SASL exchange was not fully completed." +
+                                                  " Expected state %s but actual state %s",
+                                                  State.COMPLETE, state));
+        }
+    }
+
     private byte[] calculateClientProof(final byte[] challenge) throws SaslException {
         try {
             String serverFirstMessage = new String(challenge, StandardCharsets.US_ASCII);

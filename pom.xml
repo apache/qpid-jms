@@ -337,4 +337,19 @@
       </build>
     </profile>
   </profiles>
+
+
+  <repositories>
+    <repository>
+      <!-- Proton-J 0.20.0 (RC1) -->
+      <id>proton-j-staging-repo</id>
+      <url>https://repository.apache.org/content/repositories/orgapacheqpid-1111/</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
 </project>

@@ -258,6 +258,8 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             txCoordinatorMatcher.withCapabilities(arrayContaining(TxnCapability.LOCAL_TXN));
             testPeer.expectSenderAttach(notNullValue(), txCoordinatorMatcher, true, true, false, 0, null, null);
             testPeer.expectDetach(true, false, false);
+            // Expect the AMQP session to be closed due to the JMS session creation failure.
+            testPeer.expectEnd();
 
             try {
                 connection.createSession(true, Session.SESSION_TRANSACTED);

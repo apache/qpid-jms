@@ -52,6 +52,7 @@ import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
+import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Declare;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Declared;
@@ -1251,6 +1252,8 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin();
             testPeer.expectCoordinatorAttach();
             testPeer.expectDeclareButDoNotRespond();
+            // Expect the AMQP session to be closed due to the JMS session creation failure.
+            testPeer.expectEnd();
 
             try {
                 connection.createSession(true, Session.SESSION_TRANSACTED);
@@ -1259,6 +1262,66 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             } catch (Throwable error) {
                 fail("Should have caught an timed out exception:");
                 LOG.error("Caught -> ", error);
+            }
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testSessionCreateFailsOnDeclareRejection() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+
+            // First expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a Rejected disposition state to indicate failure.
+            testPeer.expectDeclareAndReject();
+            // Expect the AMQP session to be closed due to the JMS session creation failure.
+            testPeer.expectEnd();
+
+            try {
+                connection.createSession(true, Session.SESSION_TRANSACTED);
+                fail("should have thrown");
+            } catch (JMSException jmse) {
+                // Expected
+            }
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testSessionCreateFailsOnCoordinatorLinkRefusal() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            // Expect coordinator link, refuse it, expect detach reply
+            String errorMessage = "CoordinatorLinkRefusal-breadcrumb";
+            testPeer.expectCoordinatorAttach(true, false, AmqpError.NOT_IMPLEMENTED, errorMessage);
+            testPeer.expectDetach(true, false, false);
+
+            // Expect the AMQP session to be closed due to the JMS session creation failure.
+            testPeer.expectEnd();
+
+            try {
+                connection.createSession(true, Session.SESSION_TRANSACTED);
+                fail("should have thrown");
+            } catch (JMSException jmse) {
+                assertNotNull(jmse.getMessage());
+                assertTrue("Expected exception message to contain breadcrumb", jmse.getMessage().contains(errorMessage));
             }
 
             testPeer.expectClose();

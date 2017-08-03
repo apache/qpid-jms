@@ -78,6 +78,7 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.EndFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.FlowFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.FrameDescriptorMapping;
 import org.apache.qpid.jms.test.testpeer.describedtypes.OpenFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Rejected;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Released;
 import org.apache.qpid.jms.test.testpeer.describedtypes.SaslChallengeFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.SaslMechanismsFrame;
@@ -2080,6 +2081,14 @@ public class TestAmqpPeer implements AutoCloseable
         declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
 
         expectTransfer(declareMatcher, nullValue(), false, false, null, false);
+    }
+
+    public void expectDeclareAndReject()
+    {
+        TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
+        declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
+
+        expectTransfer(declareMatcher, nullValue(), false, new Rejected(), true);
     }
 
     public void expectDischarge(Binary txnId, boolean dischargeState) {

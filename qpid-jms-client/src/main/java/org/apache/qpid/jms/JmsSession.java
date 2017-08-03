@@ -142,8 +142,19 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
         connection.createResource(sessionInfo);
 
-        // We always keep an open TX so start now.
-        getTransactionContext().begin();
+        // We always keep an open TX if transacted so start now.
+        try {
+            getTransactionContext().begin();
+        } catch (Exception e) {
+            // failed, close the AMQP session before we throw
+            try {
+                connection.destroyResource(sessionInfo);
+            } catch (Exception ex) {
+                // Ignore, throw original error
+            }
+
+            throw e;
+        }
 
         // Start the completion executor now as it's needed throughout the
         // lifetime of the Session.

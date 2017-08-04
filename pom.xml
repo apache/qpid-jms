@@ -24,7 +24,7 @@
 
   <groupId>org.apache.qpid</groupId>
   <artifactId>qpid-jms-parent</artifactId>
-  <version>0.24.0</version>
+  <version>0.25.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>QpidJMS</name>
   <inceptionYear>2013</inceptionYear>
@@ -84,7 +84,7 @@
     <connection>scm:git:http://git-wip-us.apache.org/repos/asf/qpid-jms.git</connection>
     <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/qpid-jms.git</developerConnection>
     <url>https://git-wip-us.apache.org/repos/asf?p=qpid-jms.git</url>
-    <tag>0.24.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <modules>

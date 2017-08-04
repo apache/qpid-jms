@@ -197,7 +197,7 @@ These options apply to the behaviour of certain AMQP functionality.
 + **amqp.idleTimeout** The idle timeout in milliseconds after which the connection will be failed if the peer sends no AMQP frames. Default is 60000.
 + **amqp.vhost** The vhost to connect to. Used to populate the Sasl and Open hostname fields. Default is the main hostname from the Connection URI.
 + **amqp.saslLayer** Controls whether connections should use a SASL layer or not. Default is true.
-+ **amqp.saslMechanisms** Which SASL mechanism(s) the client should allow selection of, if offered by the server and usable with the configured credentials. Comma separated if specifying more than 1 mechanism. Default is to allow selection from all the clients supported mechanisms, which are currently EXTERNAL, SCRAM-SHA-256, SCRAM-SHA-1, CRAM-MD5, PLAIN, and ANONYMOUS.
++ **amqp.saslMechanisms** Which SASL mechanism(s) the client should allow selection of, if offered by the server and usable with the configured credentials. Comma separated if specifying more than 1 mechanism. The clients supported mechanisms are currently EXTERNAL, SCRAM-SHA-256, SCRAM-SHA-1, CRAM-MD5, PLAIN, ANONYMOUS, and GSSAPI for Kerberos.  Default is to allow selection from all mechanisms except GSSAPI, which must be specified here to enable.
 + **amqp.maxFrameSize** The max-frame-size value in bytes that is advertised to the peer. Default is 1048576.
 + **amqp.drainTimeout** The time in milliseconds that the client will wait for a response from the remote when a consumer drain request is made. If no response is seen in the allotted timeout period the link will be considered failed and the associated consumer will be closed. Default is 60000.
 + **amqp.allowNonSecureRedirects** Controls whether an AMQP connection will allow for a redirect to an alternative host over a connection that is not secure when the existing connection is secure, e.g. redirecting an SSL connection to a raw TCP connection.  This value defaults to false.
@@ -271,3 +271,38 @@ When debugging some issues, it may sometimes be useful to enable additional prot
 
 + Set the environment variable (not Java system property) *PN_TRACE_FRM* to *true*, which will cause Proton to emit frame logging to stdout.
 + Add the option *amqp.traceFrames=true* to your connection URI to have the client add a protocol tracer to Proton, and configure the *org.apache.qpid.jms.provider.amqp.FRAMES* Logger to *TRACE* level to include the output in your logs.
+
+
+## Authenticating using Kerberos
+
+The client can be configured to authenticate using Kerberos when used with an appropriately configured server. To do so, you must:
+
+1.  Configure the client to use the GSSAPI mechanism for SASL authentication using the *amqp.saslMechanisms* URI option, e.g:
+
+        amqp://myhost:5672?amqp.saslMechanisms=GSSAPI
+        failover:(amqp://myhost:5672?amqp.saslMechanisms=GSSAPI)
+
+2.  Set the *java.security.auth.login.config* system property to the path of a JAAS Login Configuration file containing appropriate configuration for a Kerberos LoginModule, e.g:
+
+        -Djava.security.auth.login.config=/path/to/login.config
+
+    An example login.config configuration file might look like the following:
+
+        amqp-jms-client {
+            com.sun.security.auth.module.Krb5LoginModule required
+            useTicketCache=true;
+        };
+
+The precise configuration used will depend on how you wish the credentials to be established for the connection, and the particular LoginModule in use. For details of the Sun/Oracle Krb5LoginModule, see [https://docs.oracle.com/javase/8/docs/jre/api/security/jaas/spec/com/sun/security/auth/module/Krb5LoginModule.html](https://docs.oracle.com/javase/8/docs/jre/api/security/jaas/spec/com/sun/security/auth/module/Krb5LoginModule.html). For details of the IBM Java 8 Krb5LoginModule, see [https://www.ibm.com/support/knowledgecenter/en/SSYKE2_8.0.0/com.ibm.java.security.api.doc/jgss/com/ibm/security/auth/module/Krb5LoginModule.html](https://www.ibm.com/support/knowledgecenter/en/SSYKE2_8.0.0/com.ibm.java.security.api.doc/jgss/com/ibm/security/auth/module/Krb5LoginModule.html).
+
+It is possible to configure the LoginModule to establish the credentials to use for the Kerberos process, such as specifying a Principal and whether to use an existing ticket cache or keytab. If however the LoginModule configuration does not provide means to establish all necessary credentials, it may then request and be passed the username and/or password values from the client Connection object if they were either supplied when creating the Connection using the ConnectionFactory or previously configured via its URI options.
+
+Note that Kerberos is only only supported for authentication purposes. Use SSL/TLS connections for encryption.
+
+The following URI options can be used to influence the Kerberos authentication process:
+
++ **sasl.options.configScope** The Login Configuration entry name to use when authenticating. Default is "amqp-jms-client".
++ **sasl.options.protocol** The protocol value used during the GSSAPI SASL process. Default is "amqp".
++ **sasl.options.serverName** The serverName value used during the GSSAPI SASL process. Default is the server hostname from the connection URI.
+
+Similar to the "amqp." and "transport." options detailed previously, these options must be specified on a per-host basis or as all-host nested options in a failover URI.

@@ -25,8 +25,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -109,8 +111,8 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     private final AtomicBoolean started = new AtomicBoolean();
     private final JmsSessionInfo sessionInfo;
     private final ReentrantLock sendLock = new ReentrantLock();
-    private volatile ExecutorService deliveryExecutor;
-    private volatile ExecutorService completionExcecutor;
+    private volatile ThreadPoolExecutor deliveryExecutor;
+    private volatile ThreadPoolExecutor completionExcecutor;
     private AtomicReference<Thread> deliveryThread = new AtomicReference<Thread>();
     private AtomicReference<Thread> completionThread = new AtomicReference<Thread>();
 
@@ -155,10 +157,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
             throw e;
         }
-
-        // Start the completion executor now as it's needed throughout the
-        // lifetime of the Session.
-        getCompletionExecutor();
     }
 
     int acknowledgementMode() {
@@ -308,6 +306,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             sessionInfo.setState(ResourceState.CLOSED);
             setFailureCause(cause);
             stop();
+
             for (JmsMessageConsumer consumer : new ArrayList<JmsMessageConsumer>(this.consumers.values())) {
                 consumer.shutdown(cause);
             }
@@ -324,13 +323,14 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                     cause = new JMSException("Session closed remotely before message transfer result was notified");
                 }
 
-                completionExcecutor.execute(new FailOrCompleteAsyncCompletionsTask(JmsExceptionSupport.create(cause)));
-                completionExcecutor.shutdown();
-                try {
-                    completionExcecutor.awaitTermination(connection.getCloseTimeout(), TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    LOG.trace("Session close awaiting send completions was interrupted");
-                }
+                getCompletionExecutor().execute(new FailOrCompleteAsyncCompletionsTask(JmsExceptionSupport.create(cause)));
+                getCompletionExecutor().shutdown();
+            }
+
+            try {
+                getCompletionExecutor().awaitTermination(connection.getCloseTimeout(), TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                LOG.trace("Session close awaiting send completions was interrupted");
             }
         }
     }
@@ -1041,7 +1041,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     }
 
     Executor getDispatcherExecutor() {
-        ExecutorService exec = deliveryExecutor;
+        ThreadPoolExecutor exec = deliveryExecutor;
         if (exec == null) {
             synchronized (sessionInfo) {
                 if (deliveryExecutor == null) {
@@ -1059,18 +1059,24 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         return exec;
     }
 
-    Executor getCompletionExecutor() {
-        ExecutorService exec = completionExcecutor;
+    private ExecutorService getCompletionExecutor() {
+        ThreadPoolExecutor exec = completionExcecutor;
         if (exec == null) {
             synchronized (sessionInfo) {
-                if (completionExcecutor == null) {
-                    if (!closed.get()) {
-                        completionExcecutor = exec = createExecutor("completion dispatcher", completionThread);;
-                    } else {
-                        return NoOpExecutor.INSTANCE;
+                exec = completionExcecutor;
+                if (exec == null) {
+                    exec = createExecutor("completion dispatcher", completionThread);
+
+                    // Ensure work thread is fully up before allowing other threads
+                    // to attempt to execute on this instance.
+                    Future<?> starter = exec.submit(() -> {});
+                    try {
+                        starter.get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        LOG.trace("Completion Executor starter task failed: {}", e.getMessage());
                     }
-                } else {
-                    exec = completionExcecutor;
+
+                    completionExcecutor = exec;
                 }
             }
         }
@@ -1078,11 +1084,21 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         return exec;
     }
 
-    private ExecutorService createExecutor(final String threadNameSuffix, AtomicReference<Thread> threadTracker) {
+    private ThreadPoolExecutor createExecutor(final String threadNameSuffix, AtomicReference<Thread> threadTracker) {
         ThreadPoolExecutor executor = new ThreadPoolExecutor(1, 1, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(),
             new QpidJMSThreadFactory("JmsSession ["+ sessionInfo.getId() + "] " + threadNameSuffix, true, threadTracker));
 
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardOldestPolicy() {
+
+            @Override
+            public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
+                // Completely ignore the task if the session has closed.
+                if (!closed.get()) {
+                    LOG.trace("Task {} rejected from executor: {}", r, e);
+                    super.rejectedExecution(r, e);
+                }
+            }
+        });
 
         return executor;
     }

@@ -1019,6 +1019,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Repeat(repetitions = 1)
     @Test(timeout = 20000)
     public void testRemotelyCloseProducerWithSendWaitingForCredit() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {

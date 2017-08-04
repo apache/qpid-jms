@@ -16,17 +16,23 @@
  */
 package org.apache.qpid.jms.util;
 
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Simple ThreadFactory object
  */
 public class QpidJMSThreadFactory implements ThreadFactory {
 
-    private String threadName;
-    private boolean daemon;
-    private AtomicReference<Thread> threadTracker;
+    private static final Logger LOG = LoggerFactory.getLogger(QpidJMSThreadFactory.class);
+
+    private final String threadName;
+    private final boolean daemon;
+    private final AtomicReference<Thread> threadTracker;
 
     /**
      * Creates a new Thread factory that will create threads with the
@@ -40,6 +46,7 @@ public class QpidJMSThreadFactory implements ThreadFactory {
     public QpidJMSThreadFactory(String threadName, boolean daemon) {
         this.threadName = threadName;
         this.daemon = daemon;
+        this.threadTracker = null;
     }
 
     /**
@@ -86,6 +93,15 @@ public class QpidJMSThreadFactory implements ThreadFactory {
 
         Thread thread = new Thread(runner, threadName);
         thread.setDaemon(daemon);
+        thread.setUncaughtExceptionHandler(new UncaughtExceptionHandler() {
+
+            @Override
+            public void uncaughtException(Thread target, Throwable error) {
+                LOG.warn("Thread: {} failed due to an uncaught exception: {}", target.getName(), error.getMessage());
+                LOG.trace("Uncaught Stacktrace: ", error);
+            }
+        });
+
         return thread;
     }
 }

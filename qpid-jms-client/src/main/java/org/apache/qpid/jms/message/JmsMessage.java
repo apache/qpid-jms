@@ -420,12 +420,12 @@ public class JmsMessage implements javax.jms.Message {
 
     @Override
     public void setFloatProperty(String name, float value) throws JMSException {
-        setObjectProperty(name, new Float(value));
+        setObjectProperty(name, Float.valueOf(value));
     }
 
     @Override
     public void setDoubleProperty(String name, double value) throws JMSException {
-        setObjectProperty(name, new Double(value));
+        setObjectProperty(name, Double.valueOf(value));
     }
 
     @Override

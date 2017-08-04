@@ -22,11 +22,11 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.util.Arrays;
+import java.util.Base64;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.sasl.SaslException;
-import javax.xml.bind.DatatypeConverter;
 
 abstract class AbstractScramSHAMechanism extends AbstractMechanism {
     private static final byte[] INT_1 = new byte[]{0, 0, 0, 1};
@@ -126,7 +126,7 @@ abstract class AbstractScramSHAMechanism extends AbstractMechanism {
                 throw new SaslException("Server challenge '" + serverFirstMessage + "' cannot be parsed, cannot find salt");
             }
             String base64Salt = parts[1].substring(2);
-            salt = DatatypeConverter.parseBase64Binary(base64Salt);
+            salt = Base64.getDecoder().decode(base64Salt);
             if (!parts[2].startsWith("i=")) {
                 throw new SaslException("Server challenge '" + serverFirstMessage + "' cannot be parsed, cannot find iteration count");
             }
@@ -140,7 +140,7 @@ abstract class AbstractScramSHAMechanism extends AbstractMechanism {
 
 
             String clientFinalMessageWithoutProof =
-                    "c=" + DatatypeConverter.printBase64Binary(GS2_HEADER.getBytes(StandardCharsets.US_ASCII))
+                    "c=" + Base64.getEncoder().encodeToString(GS2_HEADER.getBytes(StandardCharsets.US_ASCII))
                             + ",r=" + serverNonce;
 
             String authMessage = clientFirstMessageBare
@@ -159,7 +159,7 @@ abstract class AbstractScramSHAMechanism extends AbstractMechanism {
             serverSignature = computeHmac(serverKey, authMessage);
 
             String finalMessageWithProof = clientFinalMessageWithoutProof
-                    + ",p=" + DatatypeConverter.printBase64Binary(clientProof);
+                    + ",p=" + Base64.getEncoder().encodeToString(clientProof);
             return finalMessageWithProof.getBytes();
         } catch (NoSuchAlgorithmException e) {
             throw new SaslException(e.getMessage(), e);
@@ -172,7 +172,7 @@ abstract class AbstractScramSHAMechanism extends AbstractMechanism {
         if (!parts[0].startsWith("v=")) {
             throw new SaslException("Server final message did not contain verifier");
         }
-        byte[] serverSignature = DatatypeConverter.parseBase64Binary(parts[0].substring(2));
+        byte[] serverSignature = Base64.getDecoder().decode(parts[0].substring(2));
         if (!Arrays.equals(this.serverSignature, serverSignature)) {
             throw new SaslException("Server signature did not match");
         }

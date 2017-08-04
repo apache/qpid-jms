@@ -51,8 +51,8 @@
     <activemq-version>5.15.0</activemq-version>
     <junit-version>4.12</junit-version>
     <fuse-joram-tests-version>1.0</fuse-joram-tests-version>
-    <jetty-version>9.2.13.v20150730</jetty-version>
-    <mockito-version>1.10.19</mockito-version>
+    <jetty-version>9.4.6.v20170531</jetty-version>
+    <mockito-version>2.8.47</mockito-version>
     <hamcrest-version>1.3</hamcrest-version>
     <hadoop-minikdc-version>2.8.1</hadoop-minikdc-version>
 
@@ -62,7 +62,7 @@
     <maven-idea-plugin-version>2.5</maven-idea-plugin-version>
     <maven-bundle-plugin-version>3.2.0</maven-bundle-plugin-version>
     <findbugs-maven-plugin-version>3.0.2</findbugs-maven-plugin-version>
-    <jacoco-plugin-version>0.7.5.201505241946</jacoco-plugin-version>
+    <jacoco-plugin-version>0.7.9</jacoco-plugin-version>
 
     <!-- Test properties -->
     <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
@@ -171,7 +171,7 @@
       </dependency>
       <dependency>
         <groupId>org.mockito</groupId>
-        <artifactId>mockito-all</artifactId>
+        <artifactId>mockito-core</artifactId>
         <version>${mockito-version}</version>
         <scope>test</scope>
       </dependency>

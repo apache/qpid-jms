@@ -38,6 +38,7 @@ import javax.jms.IllegalStateException;
 import javax.jms.IllegalStateRuntimeException;
 import javax.jms.JMSContext;
 import javax.jms.JMSException;
+import javax.jms.JMSRuntimeException;
 import javax.jms.JMSSecurityException;
 import javax.jms.MapMessage;
 import javax.jms.Message;
@@ -118,6 +119,24 @@ public class JmsContextTest extends JmsConnectionTestSupport {
             context.createContext(JMSContext.CLIENT_ACKNOWLEDGE);
             fail("Should throw state exception");
         } catch (IllegalStateRuntimeException isre) {
+        }
+    }
+
+    @Test
+    public void testCreateContextWithNegativeSessionModeThrowsJMSRE() {
+        try {
+            context.createContext(-1);
+            fail("Should throw JMSRuntimeException");
+        } catch (JMSRuntimeException jmsre) {
+        }
+    }
+
+    @Test
+    public void testCreateContextWithSessionModeOutOfRangeThrowsJMSRE() {
+        try {
+            context.createContext(4);
+            fail("Should throw JMSRuntimeException");
+        } catch (JMSRuntimeException jmsre) {
         }
     }
 

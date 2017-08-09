@@ -27,7 +27,6 @@ import javax.jms.ConnectionFactory;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSContext;
 import javax.jms.JMSException;
-import javax.jms.JMSRuntimeException;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
 import javax.jms.TopicConnection;
@@ -307,7 +306,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     @Override
     public JMSContext createContext(String username, String password, int sessionMode) {
-        validateSessionMode(sessionMode);
+        JmsSession.validateSessionMode(sessionMode);
         try {
             JmsConnection connection = (JmsConnection) createConnection(username, password);
             return new JmsContext(connection, sessionMode);
@@ -410,18 +409,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
                 + " Unused parameters=[" + unused + "]."
                 + " This connection factory cannot be started.";
             throw new IllegalArgumentException(msg);
-        }
-    }
-
-    private static void validateSessionMode(int mode) {
-        switch (mode) {
-            case JMSContext.AUTO_ACKNOWLEDGE:
-            case JMSContext.CLIENT_ACKNOWLEDGE:
-            case JMSContext.DUPS_OK_ACKNOWLEDGE:
-            case JMSContext.SESSION_TRANSACTED:
-                return;
-            default:
-                throw new JMSRuntimeException("Invalid Session Mode: " + mode);
         }
     }
 

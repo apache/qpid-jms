@@ -28,6 +28,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Map;
 
 import javax.jms.BytesMessage;
 import javax.jms.CompletionListener;
@@ -36,6 +37,7 @@ import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageFormatException;
 import javax.jms.MessageNotWriteableException;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
@@ -273,6 +275,68 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
             producer.send(receivedBytesMessage);
 
             testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testGetBodyBytesMessageFailsWhenWrongTypeRequested() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            PropertiesDescribedType properties = new PropertiesDescribedType();
+            properties.setContentType(Symbol.valueOf(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE));
+
+            MessageAnnotationsDescribedType msgAnnotations = null;
+            msgAnnotations = new MessageAnnotationsDescribedType();
+            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE, AmqpMessageSupport.JMS_BYTES_MESSAGE);
+
+            final byte[] expectedContent = "expectedContent".getBytes();
+            DescribedType dataContent = new DataDescribedType(new Binary(expectedContent));
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, msgAnnotations, properties, null, dataContent, 2);
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+
+            Message readMsg1 = messageConsumer.receive(1000);
+            Message readMsg2 = messageConsumer.receive(1000);
+
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            assertNotNull(readMsg1);
+            assertNotNull(readMsg2);
+
+            try {
+                readMsg1.getBody(String.class);
+                fail("Should have thrown MessageFormatException");
+            } catch (MessageFormatException mfe) {
+            }
+
+            try {
+                readMsg2.getBody(Map.class);
+                fail("Should have thrown MessageFormatException");
+            } catch (MessageFormatException mfe) {
+            }
+
+            byte[] received1 = readMsg1.getBody(byte[].class);
+            byte[] received2 = (byte[]) readMsg2.getBody(Object.class);
+
+            assertTrue(Arrays.equals(expectedContent, received1));
+            assertTrue(Arrays.equals(expectedContent, received2));
+
+            testPeer.expectClose();
+
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);

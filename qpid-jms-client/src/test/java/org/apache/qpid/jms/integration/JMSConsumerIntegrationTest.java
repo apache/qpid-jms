@@ -561,4 +561,61 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(3000);
         }
     }
+
+    @Test(timeout = 20000)
+    public void testReceiveBodyBytesMessageFailsWhenWrongTypeRequested() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            JMSContext context = testFixture.createJMSContext(testPeer);
+
+            testPeer.expectBegin();
+
+            Queue queue = context.createQueue("myQueue");
+
+            PropertiesDescribedType properties = new PropertiesDescribedType();
+            properties.setContentType(Symbol.valueOf(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE));
+
+            MessageAnnotationsDescribedType msgAnnotations = null;
+            msgAnnotations = new MessageAnnotationsDescribedType();
+            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE, AmqpMessageSupport.JMS_BYTES_MESSAGE);
+
+            final byte[] expectedContent = "expectedContent".getBytes();
+            DescribedType dataContent = new DataDescribedType(new Binary(expectedContent));
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, msgAnnotations, properties, null, dataContent, 2);
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+            testPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            JMSConsumer messageConsumer = context.createConsumer(queue);
+            try {
+                messageConsumer.receiveBody(String.class, 3000);
+                fail("Should not read as String type");
+            } catch (MessageFormatRuntimeException mfre) {
+            }
+
+            byte[] received1 = messageConsumer.receiveBody(byte[].class, 3000);
+
+            try {
+                messageConsumer.receiveBody(Map.class, 3000);
+                fail("Should not read as Map type");
+            } catch (MessageFormatRuntimeException mfre) {
+            }
+
+            byte[] received2 = (byte[]) messageConsumer.receiveBody(Object.class, 3000);
+
+            testPeer.waitForAllHandlersToComplete(3000);
+
+            assertNotNull(received1);
+            assertNotNull(received2);
+            assertTrue(Arrays.equals(expectedContent, received1));
+            assertTrue(Arrays.equals(expectedContent, received2));
+
+            testPeer.expectEnd();
+            testPeer.expectClose();
+
+            context.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
 }

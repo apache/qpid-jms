@@ -18,6 +18,7 @@ package org.apache.qpid.jms.message;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -25,7 +26,10 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 import javax.jms.BytesMessage;
 import javax.jms.JMSException;
@@ -974,6 +978,44 @@ public class JmsBytesMessageTest {
         } catch (Exception e) {
             fail("should have thrown MessageFormatException");
         }
+
+        try {
+            bytesMessage.getBody(String.class);
+            fail("should have thrown MessageFormatException");
+        } catch (MessageFormatException mfe) {
+        } catch (Exception e) {
+            fail("should have thrown MessageFormatException");
+        }
+
+        try {
+            bytesMessage.getBody(Map.class);
+            fail("should have thrown MessageFormatException");
+        } catch (MessageFormatException mfe) {
+        } catch (Exception e) {
+            fail("should have thrown MessageFormatException");
+        }
+
+        try {
+            bytesMessage.getBody(List.class);
+            fail("should have thrown MessageFormatException");
+        } catch (MessageFormatException mfe) {
+        } catch (Exception e) {
+            fail("should have thrown MessageFormatException");
+        }
+
+        try {
+            bytesMessage.getBody(Array.class);
+            fail("should have thrown MessageFormatException");
+        } catch (MessageFormatException mfe) {
+        } catch (Exception e) {
+            fail("should have thrown MessageFormatException");
+        }
+
+        byte[] read1 = bytesMessage.getBody(byte[].class);
+        assertNotNull(read1);
+
+        byte[] read2 = (byte[]) bytesMessage.getBody(Object.class);
+        assertNotNull(read2);
     }
 
     //---------- Test for misc message methods -------------------------------//

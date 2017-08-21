@@ -79,12 +79,12 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
         kdc.createPrincipal(userKeyTab, CLIENT_PRINCIPAL_LOGIN_CONFIG, CLIENT_PRINCIPAL_FACTORY_USERNAME,
                 CLIENT_PRINCIPAL_URI_USERNAME, CLIENT_PRINCIPAL_DEFAULT_CONFIG_SCOPE, SERVICE_PRINCIPAL);
 
-        Keytab kt = Keytab.read(userKeyTab);
-        for (KeytabEntry entry : kt.getEntries()) {
-            LOG.info("KeyTab Kerb PrincipalNames:" + entry.getPrincipalName());
-        }
-
         if (DEBUG) {
+            Keytab kt = Keytab.read(userKeyTab);
+            for (KeytabEntry entry : kt.getEntries()) {
+                LOG.info("KeyTab Entry: PrincipalName:" + entry.getPrincipalName() + " ; KeyInfo:"+ entry.getKey().getKeyType());
+            }
+
             java.util.logging.Logger logger = java.util.logging.Logger.getLogger("javax.security.sasl");
             logger.setLevel(java.util.logging.Level.FINEST);
             logger.addHandler(new java.util.logging.ConsoleHandler());

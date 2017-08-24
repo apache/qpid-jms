@@ -31,6 +31,7 @@ public class TransportOptions implements Cloneable {
     public static final int DEFAULT_CONNECT_TIMEOUT = 60000;
     public static final int DEFAULT_TCP_PORT = 5672;
     public static final boolean DEFAULT_USE_EPOLL = true;
+    public static final boolean DEFAULT_USE_KQUEUE = false;
     public static final boolean DEFAULT_TRACE_BYTES = false;
 
     private int sendBufferSize = DEFAULT_SEND_BUFFER_SIZE;
@@ -43,6 +44,7 @@ public class TransportOptions implements Cloneable {
     private boolean tcpNoDelay = DEFAULT_TCP_NO_DELAY;
     private int defaultTcpPort = DEFAULT_TCP_PORT;
     private boolean useEpoll = DEFAULT_USE_EPOLL;
+    private boolean useKQueue = DEFAULT_USE_KQUEUE;
     private boolean traceBytes = DEFAULT_TRACE_BYTES;
 
     /**
@@ -181,6 +183,23 @@ public class TransportOptions implements Cloneable {
      */
     public void setUseEpoll(boolean useEpoll) {
         this.useEpoll = useEpoll;
+    }
+
+    /**
+     * @return the true if use of of the netty kqueue transport is used.
+     */
+    public boolean isUseKQueue() {
+        return useKQueue;
+    }
+
+    /**
+     * Determines if the netty kqueue transport can be used if available on this platform.
+     *
+     * @param useKQueue
+     * 		should use of available kqueue transport be used.
+     */
+    public void setUseKQueue(boolean useKQueue) {
+        this.useKQueue = useKQueue;
     }
 
     /**

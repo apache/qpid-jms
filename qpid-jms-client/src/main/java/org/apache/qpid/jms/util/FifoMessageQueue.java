@@ -16,8 +16,9 @@
  */
 package org.apache.qpid.jms.util;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.Deque;
 import java.util.List;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
@@ -27,12 +28,12 @@ import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
  */
 public final class FifoMessageQueue extends AbstractMessageQueue {
 
-    protected final LinkedList<JmsInboundMessageDispatch> list = new LinkedList<JmsInboundMessageDispatch>();
+    protected final Deque<JmsInboundMessageDispatch> queue = new ArrayDeque<JmsInboundMessageDispatch>();
 
     @Override
     public void enqueueFirst(JmsInboundMessageDispatch envelope) {
         synchronized (getLock()) {
-            list.addFirst(envelope);
+            queue.addFirst(envelope);
             getLock().notify();
         }
     }
@@ -40,7 +41,7 @@ public final class FifoMessageQueue extends AbstractMessageQueue {
     @Override
     public void enqueue(JmsInboundMessageDispatch envelope) {
         synchronized (getLock()) {
-            list.addLast(envelope);
+            queue.addLast(envelope);
             getLock().notify();
         }
     }
@@ -48,32 +49,32 @@ public final class FifoMessageQueue extends AbstractMessageQueue {
     @Override
     public boolean isEmpty() {
         synchronized (getLock()) {
-            return list.isEmpty();
+            return queue.isEmpty();
         }
     }
 
     @Override
     public int size() {
         synchronized (getLock()) {
-            return list.size();
+            return queue.size();
         }
     }
 
     @Override
     public void clear() {
         synchronized (getLock()) {
-            list.clear();
+            queue.clear();
         }
     }
 
     @Override
     public List<JmsInboundMessageDispatch> removeAll() {
         synchronized (getLock()) {
-            ArrayList<JmsInboundMessageDispatch> rc = new ArrayList<JmsInboundMessageDispatch>(list.size());
-            for (JmsInboundMessageDispatch entry : list) {
+            ArrayList<JmsInboundMessageDispatch> rc = new ArrayList<JmsInboundMessageDispatch>(queue.size());
+            for (JmsInboundMessageDispatch entry : queue) {
                 rc.add(entry);
             }
-            list.clear();
+            queue.clear();
             return rc;
         }
     }
@@ -81,17 +82,17 @@ public final class FifoMessageQueue extends AbstractMessageQueue {
     @Override
     public String toString() {
         synchronized (getLock()) {
-            return list.toString();
+            return queue.toString();
         }
     }
 
     @Override
     protected JmsInboundMessageDispatch removeFirst() {
-        return list.removeFirst();
+        return queue.removeFirst();
     }
 
     @Override
     protected JmsInboundMessageDispatch peekFirst() {
-        return list.peekFirst();
+        return queue.peekFirst();
     }
 }

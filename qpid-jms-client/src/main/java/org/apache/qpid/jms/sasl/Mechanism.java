@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.sasl;
 
 import java.security.Principal;
+import java.util.Map;
 
 import javax.security.sasl.SaslException;
 
@@ -62,6 +63,14 @@ public interface Mechanism extends Comparable<Mechanism> {
     String getName();
 
     /**
+     * Perform any configuration initiation required by the mechanism.
+     *
+     * @param options
+     *        An immutable map of sasl options. Will always be non-null.
+     */
+    void init(Map<String, String> options);
+
+    /**
      * Create an initial response based on selected mechanism.
      *
      * May be null if there is no initial response.
@@ -81,6 +90,16 @@ public interface Mechanism extends Comparable<Mechanism> {
      * @throws SaslException if an error occurs computing the response.
      */
     byte[] getChallengeResponse(byte[] challenge) throws SaslException;
+
+    /**
+     * Verifies that the SASL exchange has completed successfully. This is
+     * an opportunity for the mechanism to ensure that all mandatory
+     * steps have been completed successfully and to cleanup and resources
+     * that are held by this Mechanism.
+     *
+     * @throws SaslException if the outcome of the SASL exchange is not valid for this Mechanism
+     */
+    void verifyCompletion() throws SaslException;
 
     /**
      * Sets the user name value for this Mechanism.  The Mechanism can ignore this
@@ -114,6 +133,26 @@ public interface Mechanism extends Comparable<Mechanism> {
      */
     String getPassword();
 
+    /**
+     * Allows the mechanism to determine if it can be used given the authentication
+     * provided.
+     *
+     * @param username
+     * 		The user name given to the client for authentication.
+     * @param password
+     * 		The password given to the client for authentication.
+     * @param localPrincipal
+     * 		The local Principal configured for the client for authentication.
+     *
+     * @return if this Mechanism is able to validate using the given credentials.
+     */
     boolean isApplicable(String username, String password, Principal localPrincipal);
 
+    /**
+     * Allows the mechanism to indicate if it is enabled by default, or only when explicitly enabled
+     * through configuring the permitted sasl mechanisms.
+     *
+     * @return true if this Mechanism is enabled by default.
+     */
+    boolean isEnabledByDefault();
 }

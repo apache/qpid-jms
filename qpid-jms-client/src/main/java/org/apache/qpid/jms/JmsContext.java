@@ -278,6 +278,8 @@ public class JmsContext implements JMSContext, AutoCloseable {
             throw new IllegalStateRuntimeException("The Connection is closed");
         }
 
+        JmsSession.validateSessionMode(sessionMode);
+
         connectionRefCount.incrementAndGet();
 
         return new JmsContext(connection, sessionMode, connectionRefCount);

@@ -90,7 +90,7 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
                     Exception cause = AmqpSupport.convertToException(
                         getParent().getProvider(), getEndpoint(), rejected.getError());
                     JMSException failureCause = null;
-                    if (txId.getProviderContext().equals(COMMIT_MARKER)) {
+                    if (COMMIT_MARKER.equals(txId.getProviderContext())){
                         failureCause = new TransactionRolledBackException(cause.getMessage());
                     } else {
                         failureCause = new JMSException(cause.getMessage());
@@ -133,7 +133,7 @@ public class AmqpTransactionCoordinator extends AmqpAbstractResource<JmsSessionI
         Declare declare = new Declare();
         message.setBody(new AmqpValue(declare));
 
-        ScheduledFuture<?> timeout = scheduleTimeoutIfNeeded("Timed out waiting for discharge of TX.", request);
+        ScheduledFuture<?> timeout = scheduleTimeoutIfNeeded("Timed out waiting for declare of TX.", request);
         OperationContext context = new OperationContext(txId, request, timeout);
 
         Delivery delivery = getEndpoint().delivery(tagGenerator.getNextTag());

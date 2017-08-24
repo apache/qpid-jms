@@ -16,6 +16,10 @@
  */
 package org.apache.qpid.jms.sasl;
 
+import java.util.Map;
+
+import javax.security.sasl.SaslException;
+
 /**
  * Base class for SASL Authentication Mechanism that implements the basic
  * methods of a Mechanism class.
@@ -28,8 +32,15 @@ public abstract class AbstractMechanism implements Mechanism {
     private String password;
 
     @Override
-    public int compareTo(Mechanism other) {
+    public void init(Map<String, String> options) {
+    }
 
+    @Override
+    public void verifyCompletion() throws SaslException {
+    }
+
+    @Override
+    public int compareTo(Mechanism other) {
         if (getPriority() < other.getPriority()) {
             return -1;
         } else if (getPriority() > other.getPriority()) {
@@ -62,5 +73,10 @@ public abstract class AbstractMechanism implements Mechanism {
     @Override
     public String toString() {
         return "SASL-" + getName();
+    }
+
+    @Override
+    public boolean isEnabledByDefault() {
+        return true;
     }
 }

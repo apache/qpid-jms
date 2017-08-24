@@ -103,4 +103,11 @@ public class AnonymousMechanismTest {
             }
         }));
     }
+
+    @Test
+    public void testIsEnabledByDefault() {
+        AnonymousMechanism mech = new AnonymousMechanism();
+
+        assertTrue("Should be enabled by default", mech.isEnabledByDefault());
+    }
 }

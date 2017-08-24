@@ -56,6 +56,8 @@ public abstract class AbstractScramSHAMechanismTestBase {
 
         byte[] expectedFinalChallengeResponse = "".getBytes();
         assertArrayEquals(expectedFinalChallengeResponse, mechanism.getChallengeResponse(serverFinalMessage));
+
+        mechanism.verifyCompletion();
     }
 
     @Test
@@ -132,6 +134,24 @@ public abstract class AbstractScramSHAMechanismTestBase {
         mechanism.getChallengeResponse(serverFirstMessage);
         try {
             mechanism.getChallengeResponse("v=badserverfinal".getBytes());
+            fail("Exception not thrown");
+        } catch (SaslException e) {
+            // PASS
+        }
+    }
+
+    @Test
+    public void testIncompleteExchange() throws Exception {
+        Mechanism mechanism = getConfiguredMechanism();
+
+        byte[] clientInitialResponse = mechanism.getInitialResponse();
+        assertArrayEquals(expectedClientInitialResponse, clientInitialResponse);
+
+        byte[] clientFinalMessage = mechanism.getChallengeResponse(serverFirstMessage);
+        assertArrayEquals(expectedClientFinalMessage, clientFinalMessage);
+
+        try {
+            mechanism.verifyCompletion();
             fail("Exception not thrown");
         } catch (SaslException e) {
             // PASS

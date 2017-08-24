@@ -209,10 +209,10 @@ public class JmsStreamMessageTest {
     public void testClearBodyAppliesCorrectState() throws JMSException {
         JmsStreamMessage streamMessage = factory.createStreamMessage();
         try {
-            streamMessage.writeObject(new Long(2));
+            streamMessage.writeObject(Long.valueOf(2));
             streamMessage.clearBody();
             assertFalse(streamMessage.isReadOnlyBody());
-            streamMessage.writeObject(new Long(2));
+            streamMessage.writeObject(Long.valueOf(2));
             streamMessage.readObject();
             fail("should throw exception");
         } catch (MessageNotReadableException mnwe) {

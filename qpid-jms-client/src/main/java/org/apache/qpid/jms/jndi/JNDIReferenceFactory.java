@@ -56,14 +56,13 @@ public class JNDIReferenceFactory implements ObjectFactory {
      *         if building the instance from Reference fails (usually class not found)
      */
     @Override
-    public Object getObjectInstance(Object object, Name name, Context nameCtx, Hashtable<?, ?> environment)
-            throws Exception {
+    public Object getObjectInstance(Object object, Name name, Context nameCtx, Hashtable<?, ?> environment) throws Exception {
         Object result = null;
         if (object instanceof Reference) {
             Reference reference = (Reference) object;
             Class<?> theClass = loadClass(this, reference.getClassName());
             if (JNDIStorable.class.isAssignableFrom(theClass)) {
-                JNDIStorable store = (JNDIStorable) theClass.newInstance();
+                JNDIStorable store = (JNDIStorable) theClass.getDeclaredConstructor().newInstance();
                 Map<String, String> properties = new HashMap<String, String>();
                 for (Enumeration<RefAddr> iter = reference.getAll(); iter.hasMoreElements();) {
                     StringRefAddr addr = (StringRefAddr) iter.nextElement();

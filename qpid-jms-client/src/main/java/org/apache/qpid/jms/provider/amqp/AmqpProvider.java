@@ -19,7 +19,11 @@ package org.apache.qpid.jms.provider.amqp;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -55,9 +59,12 @@ import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpClosedConnectionBuilder;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpConnectionBuilder;
+import org.apache.qpid.jms.sasl.Mechanism;
+import org.apache.qpid.jms.sasl.SaslMechanismFinder;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.util.IOExceptionSupport;
+import org.apache.qpid.jms.util.PropertyUtil;
 import org.apache.qpid.jms.util.QpidJMSThreadFactory;
 import org.apache.qpid.jms.util.ThreadPoolUtils;
 import org.apache.qpid.proton.engine.Collector;
@@ -111,7 +118,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private boolean traceFrames;
     private boolean traceBytes;
     private boolean saslLayer = true;
-    private String[] saslMechanisms;
+    private Set<String> saslMechanisms;
     private JmsConnectionInfo connectionInfo;
     private int channelMax = DEFAULT_CHANNEL_MAX;
     private int idleTimeout = 60000;
@@ -197,7 +204,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
                         sasl.setRemoteHostname(hostname);
 
-                        authenticator = new AmqpSaslAuthenticator(connectionRequest, sasl, connectionInfo, transport.getLocalPrincipal(), saslMechanisms);
+                        authenticator = new AmqpSaslAuthenticator(sasl, (remoteMechanisms) -> findSaslMechanism(remoteMechanisms));
 
                         pumpToProtonTransport();
                     } else {
@@ -943,12 +950,21 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         }
 
         try {
-            if (authenticator.authenticate()) {
+            authenticator.tryAuthenticate();
+
+            if (authenticator.isComplete()) {
                 if (!authenticator.wasSuccessful()) {
-                    // Close the transport to avoid emitting any additional frames.
+                    // Close the transport to avoid emitting any additional frames if the
+                    // authentication process was unsuccessful, then signal the completion
+                    // to avoid any race with the caller triggering any other traffic.
+                    // Don't release the authenticator as we need it on close to know what
+                    // the state of authentication was.
                     org.apache.qpid.proton.engine.Transport t = protonConnection.getTransport();
                     t.close_head();
+                    connectionRequest.onFailure(authenticator.getFailureCause());
                 } else {
+                    // Signal completion and release the authenticator we won't use it again.
+                    connectionRequest.onSuccess();
                     authenticator = null;
                 }
             }
@@ -1103,7 +1119,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         this.saslLayer = saslLayer;
     }
 
-    public String[] getSaslMechanisms() {
+    public Set<String> getSaslMechanisms() {
         return saslMechanisms;
     }
 
@@ -1114,7 +1130,23 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
      * @param saslMechanisms the mechanisms to restrict choice to, or null not to restrict.
      */
     public void setSaslMechanisms(String[] saslMechanisms) {
-        this.saslMechanisms = saslMechanisms;
+        Set<String> saslMechanismSet = null;
+
+        if (saslMechanisms != null && saslMechanisms.length > 0) {
+            Set<String> mechs = new HashSet<String>();
+            for (int i = 0; i < saslMechanisms.length; i++) {
+                String mech = saslMechanisms[i];
+                if (!mech.trim().isEmpty()) {
+                    mechs.add(mech);
+                }
+            }
+
+            if (!mechs.isEmpty()) {
+                saslMechanismSet = mechs;
+            }
+        }
+
+        this.saslMechanisms = saslMechanismSet;
     }
 
     public String getVhost() {
@@ -1340,6 +1372,30 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         if (closed.get()) {
             throw new ProviderClosedException("This Provider is already closed");
         }
+    }
+
+    private Mechanism findSaslMechanism(String[] remoteMechanisms) {
+
+        Mechanism mechanism = SaslMechanismFinder.findMatchingMechanism(
+            connectionInfo.getUsername(), connectionInfo.getPassword(), transport.getLocalPrincipal(), saslMechanisms, remoteMechanisms);
+
+        if (mechanism != null) {
+            mechanism.setUsername(connectionInfo.getUsername());
+            mechanism.setPassword(connectionInfo.getPassword());
+
+            try {
+                Map<String, String> saslOptions = PropertyUtil.filterProperties(PropertyUtil.parseQuery(getRemoteURI()), "sasl.options.");
+                if (!saslOptions.containsKey("serverName")) {
+                    saslOptions.put("serverName", remoteURI.getHost());
+                }
+
+                mechanism.init(Collections.unmodifiableMap(saslOptions));
+            } catch (Exception ex) {
+                throw new RuntimeException("Failed to apply sasl options to mechanism: " + mechanism.getName() + ", reason: " + ex.toString(), ex);
+            }
+        }
+
+        return mechanism;
     }
 
     private final class IdleTimeoutCheck implements Runnable {

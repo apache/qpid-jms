@@ -248,7 +248,7 @@ public class JmsDefaultDeserializationPolicyTest {
     public void testDeserializeVectorUsingPolicy() throws Exception {
         Vector<Object> vector = new Vector<Object>();
         vector.add("pi");
-        vector.add(new Integer(314159));
+        vector.add(Integer.valueOf(314159));
         vector.add(new Vector<String>());
         vector.add(Boolean.FALSE);
 
@@ -285,7 +285,7 @@ public class JmsDefaultDeserializationPolicyTest {
         HashMap<Object, Object> map = new HashMap<Object, Object>();
 
         map.put("a", "Value");
-        map.put("b", new Integer(1));
+        map.put("b", Integer.valueOf(1));
         map.put("c", new Vector<Object>());
         map.put("d", Boolean.FALSE);
 
@@ -319,7 +319,7 @@ public class JmsDefaultDeserializationPolicyTest {
         assertEquals(4, map.size());
 
         assertEquals("Value", map.get("a"));
-        assertEquals(new Integer(1), map.get("b"));
+        assertEquals(Integer.valueOf(1), map.get("b"));
         assertEquals(new Vector<Object>(), map.get("c"));
         assertEquals(Boolean.FALSE, map.get("d"));
     }

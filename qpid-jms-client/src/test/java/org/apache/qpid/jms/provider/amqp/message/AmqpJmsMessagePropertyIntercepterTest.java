@@ -25,6 +25,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anySet;
 
 import java.util.Set;
 
@@ -114,7 +115,7 @@ public class AmqpJmsMessagePropertyIntercepterTest {
         AmqpJmsMessageFacade message = createAmqpMessageFacade();
         Mockito.when(message.hasAmqpTimeToLiveOverride()).thenReturn(true);
         Mockito.when(message.getAmqpTimeToLiveOverride()).thenReturn(65536L);
-        Mockito.when(message.getApplicationPropertyNames(Mockito.anySetOf(String.class))).then(new PassPropertyNames());
+        Mockito.when(message.getApplicationPropertyNames(anySet())).then(new PassPropertyNames());
         assertTrue(AmqpJmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_AMQP_TTL));
     }
 
@@ -183,7 +184,7 @@ public class AmqpJmsMessagePropertyIntercepterTest {
     public void testJmsAmqpReplyToGroupIdInPropertyNamesWhenSet() throws JMSException {
         String testValue = "ReplyToGroupId";
         AmqpJmsMessageFacade message = createAmqpMessageFacade();
-        Mockito.when(message.getApplicationPropertyNames(Mockito.anySetOf(String.class))).then(new PassPropertyNames());
+        Mockito.when(message.getApplicationPropertyNames(anySet())).then(new PassPropertyNames());
         Mockito.when(message.getReplyToGroupId()).thenReturn(testValue);
         assertTrue(AmqpJmsMessagePropertyIntercepter.getPropertyNames(message).contains(JMS_AMQP_REPLY_TO_GROUP_ID));
     }
@@ -307,13 +308,13 @@ public class AmqpJmsMessagePropertyIntercepterTest {
 
     private AmqpJmsMessageFacade createAmqpMessageFacade() {
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
-        Mockito.when(message.getApplicationPropertyNames(Mockito.anySetOf(String.class))).then(new PassPropertyNames());
+        Mockito.when(message.getApplicationPropertyNames(anySet())).then(new PassPropertyNames());
         return message;
     }
 
     private AmqpJmsObjectMessageFacade createAmqpObjectMessageFacade() {
         AmqpJmsObjectMessageFacade message = Mockito.mock(AmqpJmsObjectMessageFacade.class);
-        Mockito.when(message.getApplicationPropertyNames(Mockito.anySetOf(String.class))).then(new PassPropertyNames());
+        Mockito.when(message.getApplicationPropertyNames(anySet())).then(new PassPropertyNames());
         return message;
     }
 

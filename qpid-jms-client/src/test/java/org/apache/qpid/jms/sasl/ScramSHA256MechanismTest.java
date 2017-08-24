@@ -16,6 +16,10 @@
  */
 package org.apache.qpid.jms.sasl;
 
+import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+
 /**
  * The known good used by these tests is taken from the example in RFC 7677 section 3.
  */
@@ -45,5 +49,12 @@ public class ScramSHA256MechanismTest extends AbstractScramSHAMechanismTestBase 
         mech.setUsername(USERNAME);
         mech.setPassword(PASSWORD);
         return mech;
+    }
+
+    @Test
+    public void testIsEnabledByDefault() {
+        ScramSHA256Mechanism mech = new ScramSHA256Mechanism();
+
+        assertTrue("Should be enabled by default", mech.isEnabledByDefault());
     }
 }

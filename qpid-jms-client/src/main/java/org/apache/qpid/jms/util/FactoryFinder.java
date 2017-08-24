@@ -19,6 +19,7 @@ package org.apache.qpid.jms.util;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -56,8 +57,11 @@ public class FactoryFinder<T extends Object> {
          * @throws ResourceNotFoundException if the path does not exist.
          * @throws IOException if the search encounter an IO error.
          * @throws ClassNotFoundException if the class that is to be loaded cannot be found.
+         * @throws InvocationTargetException if the constructor of the found factory throws an exception
+         * @throws NoSuchMethodException if the factory class found does not have a suitable constructor
+         * @throws SecurityException if a security error occurs trying to create the factory instance.
          */
-        public Object create(String path) throws IllegalAccessException, InstantiationException, IOException, ClassNotFoundException, ResourceNotFoundException;
+        public Object create(String path) throws IllegalAccessException, InstantiationException, IOException, ClassNotFoundException, ResourceNotFoundException, NoSuchMethodException, SecurityException, InvocationTargetException;
 
     }
 
@@ -115,8 +119,11 @@ public class FactoryFinder<T extends Object> {
      * @throws IOException if the search encounter an IO error.
      * @throws ClassNotFoundException if the class that is to be loaded cannot be found.
      * @throws ClassCastException if the found object is not assignable to the request factory type.
+     * @throws InvocationTargetException if the constructor of the found factory throws an exception
+     * @throws NoSuchMethodException if the factory class found does not have a suitable constructor
+     * @throws SecurityException if a security error occurs trying to create the factory instance.
      */
-    public T newInstance(String key) throws IllegalAccessException, InstantiationException, IOException, ClassNotFoundException, ClassCastException, ResourceNotFoundException {
+    public T newInstance(String key) throws IllegalAccessException, InstantiationException, IOException, ClassNotFoundException, ClassCastException, ResourceNotFoundException, InvocationTargetException, NoSuchMethodException, SecurityException {
         T factory = cachedFactories.get(key);
         if (factory == null) {
             Object found = objectFactory.create(path + key);
@@ -156,7 +163,7 @@ public class FactoryFinder<T extends Object> {
         final ConcurrentHashMap<String, Properties> propertiesMap = new ConcurrentHashMap<String, Properties>();
 
         @Override
-        public Object create(final String path) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException, ResourceNotFoundException {
+        public Object create(final String path) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException, ResourceNotFoundException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
             Class<?> clazz = classMap.get(path);
             Properties properties = propertiesMap.get(path);
 
@@ -173,7 +180,7 @@ public class FactoryFinder<T extends Object> {
                 }
             }
 
-            Object factory = clazz.newInstance();
+            Object factory = clazz.getDeclaredConstructor().newInstance();
 
             if (!PropertyUtil.setProperties(factory, properties).isEmpty()) {
                 String msg = ""

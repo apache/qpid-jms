@@ -32,14 +32,28 @@ import static org.hamcrest.Matchers.nullValue;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.SSLContext;
+import javax.security.auth.Subject;
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.callback.UnsupportedCallbackException;
+import javax.security.auth.login.AppConfigurationEntry;
+import javax.security.auth.login.Configuration;
+import javax.security.auth.login.LoginContext;
+import javax.security.sasl.AuthorizeCallback;
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslServer;
 
 import org.apache.qpid.jms.provider.amqp.AmqpSupport;
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
@@ -64,7 +78,9 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.EndFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.FlowFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.FrameDescriptorMapping;
 import org.apache.qpid.jms.test.testpeer.describedtypes.OpenFrame;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Rejected;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Released;
+import org.apache.qpid.jms.test.testpeer.describedtypes.SaslChallengeFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.SaslMechanismsFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.SaslOutcomeFrame;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Source;
@@ -86,6 +102,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.EndMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.FlowMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.OpenMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.SaslInitMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.SaslResponseMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.SourceMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.TargetMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.TransferMatcher;
@@ -99,6 +116,8 @@ import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.UnsignedShort;
 import org.apache.qpid.proton.codec.Data;
 import org.apache.qpid.proton.engine.impl.AmqpHeader;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -114,6 +133,7 @@ public class TestAmqpPeer implements AutoCloseable
     private static final Symbol ANONYMOUS = Symbol.valueOf("ANONYMOUS");
     private static final Symbol EXTERNAL = Symbol.valueOf("EXTERNAL");
     private static final Symbol PLAIN = Symbol.valueOf("PLAIN");
+    private static final Symbol GSSAPI = Symbol.valueOf("GSSAPI");
     private static final UnsignedByte SASL_OK = UnsignedByte.valueOf((byte)0);
     private static final UnsignedByte SASL_FAIL_AUTH = UnsignedByte.valueOf((byte)1);
     private static final int CONNECTION_CHANNEL = 0;
@@ -493,6 +513,183 @@ public class TestAmqpPeer implements AutoCloseable
         {
             addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
         }
+    }
+
+    public void expectSaslGSSAPIFail() throws Exception {
+        SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(GSSAPI);
+
+        addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
+                new FrameSender(
+                        this, FrameType.SASL, 0,
+                        saslMechanismsFrame, null)));
+    }
+
+    public void expectSaslGSSAPI(String serviceName, String keyTab, String clientAuthId) throws Exception {
+
+        SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(GSSAPI);
+
+        addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
+                new FrameSender(
+                        this, FrameType.SASL, 0,
+                        saslMechanismsFrame, null)));
+
+        // setup server gss context
+        final Map<String, String> options = new HashMap<>();
+        options.put("principal", serviceName);
+        options.put("useKeyTab", "true");
+        options.put("keyTab", keyTab);
+        options.put("storeKey", "true");
+        options.put("isInitiator", "false");
+        Configuration loginCconfiguration = new Configuration() {
+            @Override
+            public AppConfigurationEntry[] getAppConfigurationEntry(String name) {
+                return new AppConfigurationEntry[]{
+                        new AppConfigurationEntry("com.sun.security.auth.module.Krb5LoginModule",
+                                AppConfigurationEntry.LoginModuleControlFlag.REQUIRED,
+                                options)};
+            }
+        };
+
+        LoginContext loginContext = new LoginContext("", null, null, loginCconfiguration);
+        loginContext.login();
+        final Subject serverSubject =loginContext.getSubject();
+
+        LOGGER.info("saslServer subject:" + serverSubject.getPrivateCredentials());
+
+        Map<String, ?> config = new HashMap<>();
+        final CallbackHandler handler = new CallbackHandler() {
+            @Override
+            public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
+                LOGGER.info("Here with: " + Arrays.asList(callbacks));
+                for (Callback callback :callbacks) {
+                    if (callback instanceof AuthorizeCallback) {
+                        AuthorizeCallback authorizeCallback = (AuthorizeCallback) callback;
+                        authorizeCallback.setAuthorized(authorizeCallback.getAuthenticationID().equals(authorizeCallback.getAuthorizationID()));
+                    }
+                }
+            }
+        };
+        final SaslServer saslServer = Subject.doAs(serverSubject, new PrivilegedExceptionAction<SaslServer>() {
+            @Override
+            public SaslServer run() throws Exception {
+                return Sasl.createSaslServer(GSSAPI.toString(), null, null, config, handler);
+            }
+        });
+
+        final SaslChallengeFrame challengeFrame = new SaslChallengeFrame();
+
+        SaslInitMatcher saslInitMatcher = new SaslInitMatcher()
+                .withMechanism(equalTo(GSSAPI))
+                .withInitialResponse(new BaseMatcher<Binary>() {
+
+                    @Override
+                    public void describeTo(Description description) {}
+
+                    @Override
+                    public boolean matches(Object o) {
+                        if (o == null) {
+                            LOGGER.error("Got null initial response!");
+                            return false;
+                        }
+                        final Binary binary = (Binary) o;
+                        // validate via sasl
+                        try {
+                            byte[] token = Subject.doAs(serverSubject, new PrivilegedExceptionAction<byte[]>() {
+                                @Override
+                                public byte[] run() throws Exception {
+                                    LOGGER.info("Evaluate Response.. size:" + binary.getLength());
+                                    return saslServer.evaluateResponse(binary.getArray());
+                                }
+                            });
+
+                            challengeFrame.setChallenge(new Binary(token));
+
+                        } catch (PrivilegedActionException e) {
+                            e.printStackTrace();
+                            throw new RuntimeException("failed to eval response", e);
+                        }
+                        LOGGER.info("Complete:" + saslServer.isComplete());
+
+                        return true;
+                    }
+                }).onCompletion(new AmqpPeerRunnable() {
+                    @Override
+                    public void run() {
+                        LOGGER.info("Send challenge..");
+                        TestAmqpPeer.this.sendFrame(
+                                FrameType.SASL, 0,
+                                challengeFrame,
+                                null,
+                                false, 0);
+                    }
+                });
+
+        AtomicBoolean succeeded = new AtomicBoolean(false);
+        SaslResponseMatcher responseMatcher = new SaslResponseMatcher().withResponse(new BaseMatcher<Binary>() {
+            @Override
+            public void describeTo(Description description) {}
+
+            @Override
+            public boolean matches(Object o) {
+                final Binary binary = (Binary) o;
+                // validate via sasl
+
+                byte[] additionalData = null;
+                try {
+                    additionalData = Subject.doAs(serverSubject, new PrivilegedExceptionAction<byte[]>() {
+                        @Override
+                        public byte[] run() throws Exception {
+                            LOGGER.info("Evaluate response.. size:" + binary.getLength());
+                            return saslServer.evaluateResponse(binary.getArray());
+                        }
+                    });
+                } catch (PrivilegedActionException e) {
+                    e.printStackTrace();
+                    throw new RuntimeException("failed to evaluate challenge response", e);
+                }
+
+                boolean complete = saslServer.isComplete();
+                boolean expectedAuthId = false;
+                if(complete) {
+                    expectedAuthId = clientAuthId.equals(saslServer.getAuthorizationID());
+                    LOGGER.info("Authorized ID: " + saslServer.getAuthorizationID());
+                }
+
+                LOGGER.info("Complete:" + complete + ", expectedAuthID:" + expectedAuthId +", additionalData:" + additionalData);
+
+                if(complete && expectedAuthId && additionalData == null) {
+                    succeeded.set(true);
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }).onCompletion(new AmqpPeerRunnable() {
+            @Override
+            public void run() {
+                SaslOutcomeFrame saslOutcome = new SaslOutcomeFrame();
+                if (saslServer.isComplete() && succeeded.get()) {
+                    saslOutcome.setCode(SASL_OK);
+                } else {
+                    saslOutcome.setCode(SASL_FAIL_AUTH);
+                }
+
+                LOGGER.info("Send Outcome");
+                TestAmqpPeer.this.sendFrame(
+                        FrameType.SASL, 0,
+                        saslOutcome,
+                        null,
+                        false, 0);
+
+                // Now that we processed the SASL layer AMQP header, reset the
+                // peer to expect the non-SASL AMQP header.
+                _driverRunnable.expectHeader();
+            }
+        });
+
+        addHandler(saslInitMatcher);
+        addHandler(responseMatcher);
+        addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
     }
 
     public void expectSaslPlain(String username, String password)
@@ -1884,6 +2081,14 @@ public class TestAmqpPeer implements AutoCloseable
         declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
 
         expectTransfer(declareMatcher, nullValue(), false, false, null, false);
+    }
+
+    public void expectDeclareAndReject()
+    {
+        TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
+        declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
+
+        expectTransfer(declareMatcher, nullValue(), false, new Rejected(), true);
     }
 
     public void expectDischarge(Binary txnId, boolean dischargeState) {

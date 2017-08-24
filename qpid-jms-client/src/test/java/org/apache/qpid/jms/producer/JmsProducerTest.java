@@ -28,6 +28,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -65,7 +71,6 @@ import org.hamcrest.Matcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Matchers;
 import org.mockito.Mockito;
 
 /**
@@ -1264,7 +1269,7 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
         Mockito.when(session.createTemporaryQueue()).thenReturn(new JmsTemporaryQueue());
         Mockito.when(session.createMessage()).thenReturn(message);
 
-        Mockito.doThrow(IllegalStateException.class).when(message).setJMSCorrelationID(Matchers.anyString());
+        Mockito.doThrow(IllegalStateException.class).when(message).setJMSCorrelationID(anyString());
 
         JmsProducer producer = new JmsProducer(session, messageProducer);
 
@@ -1338,7 +1343,7 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
         Mockito.when(session.createTemporaryQueue()).thenReturn(new JmsTemporaryQueue());
         Mockito.when(session.createMessage()).thenReturn(Mockito.mock(Message.class));
 
-        Mockito.doThrow(IllegalStateException.class).when(session).createTextMessage(Matchers.anyString());
+        Mockito.doThrow(IllegalStateException.class).when(session).createTextMessage(anyString());
 
         JmsProducer producer = new JmsProducer(session, messageProducer);
 
@@ -1383,9 +1388,9 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
 
         Mockito.doThrow(new InvalidDestinationException("ide"))
                 .when(mockSession)
-                .send(Mockito.any(JmsMessageProducer.class), Mockito.any(Destination.class), Mockito.any(Message.class),
-                      Mockito.any(int.class), Mockito.any(int.class), Mockito.any(long.class), Mockito.any(boolean.class),
-                      Mockito.any(boolean.class), Mockito.any(long.class), Mockito.any(CompletionListener.class));
+                .send(any(JmsMessageProducer.class), nullable(Destination.class), any(Message.class),
+                      anyInt(), anyInt(), anyLong(), anyBoolean(),
+                      anyBoolean(), anyLong(), nullable(CompletionListener.class));
 
         JmsProducer producer = new JmsProducer(mockSession, mockMessageProducer);
 
@@ -1394,9 +1399,9 @@ public class JmsProducerTest extends JmsConnectionTestSupport {
             fail("Should have thrown an InvalidDestinationRuntimeException");
         } catch (InvalidDestinationRuntimeException idre) {}
 
-        Mockito.verify(mockSession).send(Mockito.any(JmsMessageProducer.class), Mockito.any(Destination.class), Mockito.any(Message.class),
-                Mockito.any(int.class), Mockito.any(int.class), Mockito.any(long.class), Mockito.any(boolean.class),
-                Mockito.any(boolean.class), Mockito.any(long.class), Mockito.any(CompletionListener.class));
+        Mockito.verify(mockSession).send(any(JmsMessageProducer.class), nullable(Destination.class), any(Message.class),
+                anyInt(), anyInt(), anyLong(), anyBoolean(),
+                anyBoolean(), anyLong(), nullable(CompletionListener.class));
     }
 
     //----- Internal Support -------------------------------------------------//

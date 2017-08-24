@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.qpid</groupId>
     <artifactId>qpid-jms-parent</artifactId>
-    <version>0.24.0-SNAPSHOT</version>
+    <version>0.25.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>qpid-jms-client</artifactId>
@@ -85,12 +85,17 @@
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
-      <artifactId>mockito-all</artifactId>
+      <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-all</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-minikdc</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -121,7 +126,7 @@
             <Export-Package>org.apache.qpid.jms.*</Export-Package>
             <Import-Package>
             io.netty.*;version="[4.1.0,4.2.0)",
-            org.apache.qpid.proton.*;version="[0.19.0,0.20.0)",
+            org.apache.qpid.proton.*;version="[0.20.0,0.21.0)",
             *</Import-Package>
             <Dynamic-ImportPackage>*</Dynamic-ImportPackage>
           </instructions>

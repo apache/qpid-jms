@@ -142,7 +142,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
 
             List<Transport> transports = new ArrayList<Transport>();
 
-            Transport transport = createTransport(serverLocation, testListener, createClientOptions());
+            final Transport transport = createTransport(serverLocation, testListener, createClientOptions());
             try {
                 // The transport should allow for the size of data we sent.
                 transport.setMaxFrameSize(FRAME_SIZE);
@@ -194,7 +194,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
 
             NettyTransportListener wsListener = new NettyTransportListener(true);
 
-            Transport transport = createTransport(serverLocation, wsListener, createClientOptions);
+            final Transport transport = createTransport(serverLocation, wsListener, createClientOptions);
             try {
                 transport.setMaxFrameSize(FRAME_SIZE);
                 transport.connect(null);
@@ -253,7 +253,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
 
             List<Transport> transports = new ArrayList<Transport>();
 
-            Transport transport = createTransport(serverLocation, testListener, createClientOptions());
+            final Transport transport = createTransport(serverLocation, testListener, createClientOptions());
             try {
                 // Transport can't receive anything bigger so it should fail the connection
                 // when data arrives that is larger than this value.
@@ -265,7 +265,12 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
                 fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
             }
 
-            assertTrue("Transport should have lost connection", Wait.waitFor(() -> !transport.isConnected()));
+            assertTrue("Transport should have lost connection", Wait.waitFor(new Wait.Condition() {
+                @Override
+                public boolean isSatisified() throws Exception {
+                    return !transport.isConnected();
+                }
+            }));
         }
 
         assertFalse(exceptions.isEmpty());
@@ -275,7 +280,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
     public void testTransportDetectsConnectionDropWhenServerEnforcesMaxFrameSize() throws Exception {
         final int FRAME_SIZE = 1024;
 
-        ByteBuf sendBuffer = Unpooled.buffer(FRAME_SIZE);
+        final ByteBuf sendBuffer = Unpooled.buffer(FRAME_SIZE);
         for (int i = 0; i < FRAME_SIZE; ++i) {
             sendBuffer.writeByte('A');
         }

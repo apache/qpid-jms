@@ -83,7 +83,7 @@
                   <descriptors>
                     <descriptor>src/main/assembly/src.xml</descriptor>
                   </descriptors>
-                  <tarLongFileMode>gnu</tarLongFileMode>
+                  <tarLongFileMode>warn</tarLongFileMode>
                 </configuration>
               </execution>
             </executions>

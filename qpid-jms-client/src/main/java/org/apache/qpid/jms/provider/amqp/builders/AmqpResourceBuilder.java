@@ -80,7 +80,7 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
         // Create the resource object now
         resource = createResource(parent, resourceInfo, endpoint);
 
-        AmqpProvider provider = parent.getProvider();
+        final AmqpProvider provider = parent.getProvider();
 
         if (getRequestTimeout() > JmsConnectionInfo.INFINITE) {
 

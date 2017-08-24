@@ -73,6 +73,7 @@
     <argLine>-Xmx2g -enableassertions ${jacoco-config}</argLine>
 
     <netty-transport-native-epoll-classifier>linux-x86_64</netty-transport-native-epoll-classifier>
+    <netty-transport-native-kqueue-classifier>osx-x86_64</netty-transport-native-kqueue-classifier>
   </properties>
 
   <issueManagement>
@@ -145,6 +146,12 @@
         <artifactId>netty-transport-native-epoll</artifactId>
         <version>${netty-version}</version>
         <classifier>${netty-transport-native-epoll-classifier}</classifier>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-transport-native-kqueue</artifactId>
+        <version>${netty-version}</version>
+        <classifier>${netty-transport-native-kqueue-classifier}</classifier>
       </dependency>
       <dependency>
         <groupId>io.netty</groupId>

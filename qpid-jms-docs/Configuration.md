@@ -180,6 +180,7 @@ The complete set of SSL Transport options is listed below:
 + **transport.verifyHost** Whether to verify that the hostname being connected to matches with the provided server certificate. Defaults to true.
 + **transport.keyAlias** The alias to use when selecting a keypair from the keystore if required to send a client certificate to the server. No default.
 + **transport.useEpoll** When true the transport will use the native Epoll layer when available instead of the NIO layer, which can improve performance. Defaults to true.
++ **transport.useKQueue** When true the transport will use the native KQueue layer when available instead of the NIO layer, which can improve performance. Defaults to false.
 
 ### Websocket Transport Configuration options
 

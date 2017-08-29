@@ -346,7 +346,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             int prefetchedMessageCount = getResourceInfo().getPrefetchedMessageCount();
 
             int potentialPrefetch = currentCredit + prefetchedMessageCount;
-            if(potentialPrefetch <= prefetchSize * 0.7) {
+            if (potentialPrefetch <= prefetchSize * 0.7) {
                 int additionalCredit = prefetchSize - currentCredit - prefetchedMessageCount;
 
                 LOG.trace("Consumer {} granting additional credit: {}", getConsumerId(), additionalCredit);
@@ -501,6 +501,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             //        a bytes messages as a fall back.
             settleDelivery(incoming, MODIFIED_FAILED_UNDELIVERABLE);
             return false;
+        } finally {
+            incomingBuffer.clear();
         }
 
         try {
@@ -604,11 +606,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             }
         }
 
-        try {
-            return incomingBuffer.duplicate();
-        } finally {
-            incomingBuffer.clear();
-        }
+        return incomingBuffer;
     }
 
     public void preCommit() {

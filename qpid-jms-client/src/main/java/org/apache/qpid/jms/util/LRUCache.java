@@ -20,7 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * A Simple LRU Cache based on a LinkedHashMap.
+ * A Simple LRU Cache based on a LinkedHashMap. Not thread-safe.
  *
  * @param <K> The type of the map key.
  * @param <V> The type of the map value.

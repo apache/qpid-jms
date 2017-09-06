@@ -86,15 +86,17 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
             connection.checkConsumeFromTemporaryDestination((JmsTemporaryDestination) destination);
         }
 
-        if (connection.isLocalMessagePriority()) {
-            this.messageQueue = new PriorityMessageQueue();
-        } else {
-            this.messageQueue = new FifoMessageQueue();
-        }
-
         JmsPrefetchPolicy prefetchPolicy = session.getPrefetchPolicy();
         JmsRedeliveryPolicy redeliveryPolicy = session.getRedeliveryPolicy().copy();
         JmsDeserializationPolicy deserializationPolicy = session.getDeserializationPolicy().copy();
+
+        int configuredPrefetch = prefetchPolicy.getConfiguredPrefetch(session, destination, isDurableSubscription(), isBrowser());
+
+        if (connection.isLocalMessagePriority()) {
+            this.messageQueue = new PriorityMessageQueue();
+        } else {
+            this.messageQueue = new FifoMessageQueue(configuredPrefetch);
+        }
 
         consumerInfo = new JmsConsumerInfo(consumerId, messageQueue);
         consumerInfo.setExplicitClientID(connection.isExplicitClientID());
@@ -106,8 +108,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         consumerInfo.setAcknowledgementMode(acknowledgementMode);
         consumerInfo.setNoLocal(noLocal);
         consumerInfo.setBrowser(isBrowser());
-        consumerInfo.setPrefetchSize(
-            prefetchPolicy.getConfiguredPrefetch(session, destination, isDurableSubscription(), isBrowser()));
+        consumerInfo.setPrefetchSize(configuredPrefetch);
         consumerInfo.setRedeliveryPolicy(redeliveryPolicy);
         consumerInfo.setLocalMessageExpiry(connection.isLocalMessageExpiry());
         consumerInfo.setPresettle(session.getPresettlePolicy().isConsumerPresttled(session, destination));

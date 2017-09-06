@@ -47,7 +47,7 @@ public class FifoMessageQueueTest {
 
     @Before
     public void setUp() {
-        queue = new FifoMessageQueue();
+        queue = new FifoMessageQueue(1000);
         queue.start();
     }
 
@@ -63,7 +63,7 @@ public class FifoMessageQueueTest {
 
     @Test
     public void testCreate() {
-        FifoMessageQueue queue = new FifoMessageQueue();
+        FifoMessageQueue queue = new FifoMessageQueue(1000);
 
         assertFalse(queue.isClosed());
         assertTrue(queue.isEmpty());

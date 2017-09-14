@@ -18,6 +18,7 @@ package org.apache.qpid.jms.message;
 
 import org.apache.qpid.jms.meta.JmsAbstractResourceId;
 import org.apache.qpid.jms.meta.JmsConsumerId;
+import org.apache.qpid.jms.meta.JmsConsumerInfo;
 
 /**
  * Envelope used to deliver incoming messages to their targeted consumer.
@@ -31,6 +32,7 @@ public class JmsInboundMessageDispatch extends JmsAbstractResourceId {
     private boolean enqueueFirst;
     private boolean delivered;
 
+    private transient JmsConsumerInfo consumerInfo;
     private transient String stringView;
 
     public JmsInboundMessageDispatch(long sequence) {
@@ -81,6 +83,14 @@ public class JmsInboundMessageDispatch extends JmsAbstractResourceId {
         }
 
         return redeliveryCount;
+    }
+
+    public JmsConsumerInfo getConsumerInfo() {
+        return consumerInfo;
+    }
+
+    public void setConsumerInfo(JmsConsumerInfo consumerInfo) {
+        this.consumerInfo = consumerInfo;
     }
 
     @Override

@@ -382,7 +382,14 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
                         @Override
                         public void processConsumerInfo(JmsConsumerInfo consumerInfo) throws Exception {
-                            AmqpSession session = connection.getSession(consumerInfo.getParentId());
+                            final AmqpSession session;
+
+                            if (consumerInfo.isConnectionConsumer()) {
+                                session = connection.getConnectionSession();
+                            } else {
+                                session = connection.getSession(consumerInfo.getParentId());
+                            }
+
                             session.createConsumer(consumerInfo, request);
                         }
 

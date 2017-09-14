@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms;
 
+import static org.apache.qpid.jms.message.JmsMessageSupport.lookupAckTypeForDisposition;
+
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -92,6 +94,8 @@ import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.selector.SelectorParser;
 import org.apache.qpid.jms.selector.filter.FilterException;
+import org.apache.qpid.jms.util.FifoMessageQueue;
+import org.apache.qpid.jms.util.MessageQueue;
 import org.apache.qpid.jms.util.NoOpExecutor;
 import org.apache.qpid.jms.util.QpidJMSThreadFactory;
 import org.slf4j.Logger;
@@ -113,6 +117,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     private final Map<JmsProducerId, JmsMessageProducer> producers = new ConcurrentHashMap<JmsProducerId, JmsMessageProducer>();
     private final Map<JmsConsumerId, JmsMessageConsumer> consumers = new ConcurrentHashMap<JmsConsumerId, JmsMessageConsumer>();
     private MessageListener messageListener;
+    private final MessageQueue sessionQueue = new FifoMessageQueue(16);
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean started = new AtomicBoolean();
     private final JmsSessionInfo sessionInfo;
@@ -193,7 +198,10 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
     @Override
     public void setMessageListener(MessageListener listener) throws JMSException {
-        checkClosed();
+        if (listener != null) {
+            checkClosed();
+        }
+
         this.messageListener = listener;
     }
 
@@ -250,17 +258,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         for (JmsMessageConsumer c : consumers.values()) {
             c.resumeAfterRollback();
         }
-    }
-
-    @Override
-    public void run() {
-        try {
-            checkClosed();
-        } catch (IllegalStateException e) {
-            throw new RuntimeException(e);
-        }
-
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -721,6 +718,55 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         return connection.createTemporaryTopic();
     }
 
+    //----- Session dispatch support -----------------------------------------//
+
+    @Override
+    public void run() {
+        try {
+            checkClosed();
+        } catch (IllegalStateException ex) {
+            throw new RuntimeException(ex);
+        }
+
+        JmsInboundMessageDispatch envelope = null;
+        while ((envelope = sessionQueue.dequeueNoWait()) != null) {
+            try {
+                JmsMessage copy = null;
+
+                if (envelope.getMessage().isExpired()) {
+                    LOG.trace("{} filtered expired message: {}", envelope.getConsumerId(), envelope);
+                    acknowledge(envelope, ACK_TYPE.MODIFIED_FAILED_UNDELIVERABLE);
+                } else if (redeliveryExceeded(envelope)) {
+                    LOG.trace("{} filtered message with excessive redelivery count: {}", envelope.getConsumerId(), envelope);
+                    JmsRedeliveryPolicy redeliveryPolicy = envelope.getConsumerInfo().getRedeliveryPolicy();
+                    acknowledge(envelope, lookupAckTypeForDisposition(redeliveryPolicy.getOutcome(envelope.getConsumerInfo().getDestination())));
+                } else {
+                    boolean deliveryFailed = false;
+
+                    copy = acknowledge(envelope, ACK_TYPE.DELIVERED).getMessage().copy();
+
+                    clearSessionRecovered();
+
+                    try {
+                        messageListener.onMessage(copy);
+                    } catch (RuntimeException rte) {
+                        deliveryFailed = true;
+                    }
+
+                    if (!isSessionRecovered()) {
+                        if (!deliveryFailed) {
+                            acknowledge(envelope, ACK_TYPE.ACCEPTED);
+                        } else {
+                            acknowledge(envelope, ACK_TYPE.RELEASED);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                getConnection().onException(e);
+            }
+        }
+    }
+
     //----- Session Implementation methods -----------------------------------//
 
     protected void add(JmsMessageConsumer consumer) throws JMSException {
@@ -921,8 +967,9 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         }
     }
 
-    void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws JMSException {
+    JmsInboundMessageDispatch acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws JMSException {
         transactionContext.acknowledge(connection, envelope, ackType);
+        return envelope;
     }
 
     /**
@@ -1061,6 +1108,8 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             for (JmsMessageConsumer consumer : consumers.values()) {
                 consumer.start();
             }
+
+            sessionQueue.start();
         }
     }
 
@@ -1070,6 +1119,8 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         for (JmsMessageConsumer consumer : consumers.values()) {
             consumer.stop();
         }
+
+        sessionQueue.stop();
 
         synchronized (sessionInfo) {
             if (deliveryExecutor != null) {
@@ -1280,6 +1331,17 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         }
     }
 
+    boolean redeliveryExceeded(JmsInboundMessageDispatch envelope) {
+        LOG.trace("checking envelope with {} redeliveries", envelope.getRedeliveryCount());
+
+        JmsConsumerInfo consumerInfo = envelope.getConsumerInfo();
+
+        JmsRedeliveryPolicy redeliveryPolicy = consumerInfo.getRedeliveryPolicy();
+        return redeliveryPolicy != null &&
+               redeliveryPolicy.getMaxRedeliveries(consumerInfo.getDestination()) >= 0 &&
+               redeliveryPolicy.getMaxRedeliveries(consumerInfo.getDestination()) < envelope.getRedeliveryCount();
+    }
+
     //----- Event handlers ---------------------------------------------------//
 
     @Override
@@ -1354,14 +1416,15 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         if (id == null) {
             this.connection.onException(new JMSException("No ConsumerId set for " + envelope.getMessage()));
         }
-        if (messageListener != null) {
-            messageListener.onMessage(envelope.getMessage());
-        } else {
-            JmsMessageConsumer consumer = consumers.get(id);
-            if (consumer != null) {
-                consumer.onInboundMessage(envelope);
-            }
+
+        JmsMessageConsumer consumer = consumers.get(id);
+        if (consumer != null) {
+            consumer.onInboundMessage(envelope);
         }
+    }
+
+    void enqueueInSession(JmsInboundMessageDispatch envelope) {
+        sessionQueue.enqueue(envelope);
     }
 
     //----- Asynchronous Send Helpers ----------------------------------------//

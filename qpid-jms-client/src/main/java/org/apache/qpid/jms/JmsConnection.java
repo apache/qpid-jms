@@ -55,6 +55,7 @@ import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.message.JmsMessageFactory;
+import org.apache.qpid.jms.message.JmsMessageTransformation;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsConnectionId;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
@@ -80,6 +81,9 @@ import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.ProviderSynchronization;
+import org.apache.qpid.jms.util.FifoMessageQueue;
+import org.apache.qpid.jms.util.MessageQueue;
+import org.apache.qpid.jms.util.PriorityMessageQueue;
 import org.apache.qpid.jms.util.QpidJMSThreadFactory;
 import org.apache.qpid.jms.util.ThreadPoolUtils;
 import org.slf4j.Logger;
@@ -92,7 +96,8 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsConnection.class);
 
-    private final Map<JmsSessionId, JmsSession> sessions = new ConcurrentHashMap<JmsSessionId, JmsSession>();
+    private final Map<JmsSessionId, JmsSession> sessions = new ConcurrentHashMap<>();
+    private final Map<JmsConsumerId, JmsConnectionConsumer> connectionConsumers = new ConcurrentHashMap<>();
     private final AtomicBoolean connected = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean closing = new AtomicBoolean();
@@ -105,15 +110,13 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     private JmsMessageFactory messageFactory;
     private Provider provider;
 
-    private final Set<JmsConnectionListener> connectionListeners =
-        new CopyOnWriteArraySet<JmsConnectionListener>();
-    private final Map<JmsTemporaryDestination, JmsTemporaryDestination> tempDestinations =
-        new ConcurrentHashMap<JmsTemporaryDestination, JmsTemporaryDestination>();
+    private final Set<JmsConnectionListener> connectionListeners = new CopyOnWriteArraySet<>();
+    private final Map<JmsTemporaryDestination, JmsTemporaryDestination> tempDestinations = new ConcurrentHashMap<>();
     private final AtomicLong sessionIdGenerator = new AtomicLong();
     private final AtomicLong tempDestIdGenerator = new AtomicLong();
     private final AtomicLong transactionIdGenerator = new AtomicLong();
-
-    private final Map<AsyncResult, AsyncResult> requests = new ConcurrentHashMap<AsyncResult, AsyncResult>();
+    private final AtomicLong connectionConsumerIdGenerator = new AtomicLong();
+    private final Map<AsyncResult, AsyncResult> requests = new ConcurrentHashMap<>();
 
     protected JmsConnection(final JmsConnectionInfo connectionInfo, Provider provider) throws JMSException {
 
@@ -205,6 +208,10 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
                     session.shutdown();
                 }
 
+                for (JmsConnectionConsumer connectionConsumer : connectionConsumers.values()) {
+                    connectionConsumer.shutdown();
+                }
+
                 if (isConnected() && !isFailed()) {
                     ProviderFuture request = new ProviderFuture();
                     requests.put(request, request);
@@ -272,6 +279,10 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
         for (JmsSession session : sessions.values()) {
             session.shutdown(cause);
+        }
+
+        for (JmsConnectionConsumer connectionConsumer : connectionConsumers.values()) {
+            connectionConsumer.shutdown();
         }
 
         if (isConnected() && !isFailed() && !closing.get()) {
@@ -345,9 +356,13 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         createJmsConnection();
         if (started.compareAndSet(false, true)) {
             try {
-                for (JmsSession s : sessions.values()) {
-                    s.start();
+                for (JmsSession session : sessions.values()) {
+                    session.start();
                 }
+
+                for (JmsConnectionConsumer connectionConsumer : connectionConsumers.values()) {
+                    connectionConsumer.start();
+                 }
             } catch (Exception e) {
                 throw JmsExceptionSupport.create(e);
             }
@@ -379,9 +394,15 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         }
 
         if (started.compareAndSet(true, false)) {
-            synchronized(sessions) {
-                for (JmsSession s : sessions.values()) {
-                    s.stop();
+            synchronized (sessions) {
+                for (JmsSession session : sessions.values()) {
+                    session.stop();
+                }
+            }
+
+            synchronized (connectionConsumers) {
+                for (JmsConnectionConsumer connectionConsumer : connectionConsumers.values()) {
+                    connectionConsumer.stop();
                 }
             }
         }
@@ -391,47 +412,94 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     public ConnectionConsumer createSharedConnectionConsumer(Topic topic, String subscriptionName, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
         checkClosedOrFailed();
         createJmsConnection();
-        throw new JMSException("Not supported");
+
+        return createConnectionConsumer(topic, messageSelector, sessionPool, maxMessages, subscriptionName, false, true);
     }
 
     @Override
     public ConnectionConsumer createSharedDurableConnectionConsumer(Topic topic, String subscriptionName, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
         checkClosedOrFailed();
         createJmsConnection();
-        throw new JMSException("Not supported");
+
+        return createConnectionConsumer(topic, messageSelector, sessionPool, maxMessages, subscriptionName, true, true);
     }
 
     @Override
-    public ConnectionConsumer createDurableConnectionConsumer(Topic topic, String subscriptionName,
-                                                              String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
+    public ConnectionConsumer createDurableConnectionConsumer(Topic topic, String subscriptionName, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
         checkClosedOrFailed();
         createJmsConnection();
-        throw new JMSException("Not supported");
+
+        return createConnectionConsumer(topic, messageSelector, sessionPool, maxMessages, subscriptionName, true, false);
     }
 
     @Override
-    public ConnectionConsumer createConnectionConsumer(Destination destination, String messageSelector,
-                                                       ServerSessionPool sessionPool, int maxMessages) throws JMSException {
+    public ConnectionConsumer createConnectionConsumer(Destination destination, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
         checkClosedOrFailed();
         createJmsConnection();
-        throw new JMSException("Not supported");
+
+        return createConnectionConsumer(destination, messageSelector, sessionPool, maxMessages, null, false, false);
     }
 
     @Override
-    public ConnectionConsumer createConnectionConsumer(Topic topic, String messageSelector,
-                                                       ServerSessionPool sessionPool, int maxMessages) throws JMSException {
+    public ConnectionConsumer createConnectionConsumer(Topic topic, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
         checkClosedOrFailed();
         createJmsConnection();
-        throw new JMSException("Not supported");
+
+        return createConnectionConsumer(topic, messageSelector, sessionPool, maxMessages, null, false, false);
     }
 
     @Override
-    public ConnectionConsumer createConnectionConsumer(Queue queue, String messageSelector,
-                                                       ServerSessionPool sessionPool, int maxMessages) throws JMSException {
+    public ConnectionConsumer createConnectionConsumer(Queue queue, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
         checkClosedOrFailed();
         createJmsConnection();
-        throw new JMSException("Not supported");
+
+        return createConnectionConsumer(queue, messageSelector, sessionPool, maxMessages, null, false, false);
     }
+
+    private ConnectionConsumer createConnectionConsumer(Destination destination, String messageSelector, ServerSessionPool sessionPool, int maxMessages, String subscriptionName, boolean durable, boolean shared) throws JMSException {
+        JmsDestination jmsDestination = JmsMessageTransformation.transformDestination(this, destination);
+
+        int configuredPrefetch = getPrefetchPolicy().getConfiguredPrefetch((JmsSession) null, jmsDestination, durable, false);
+
+        final MessageQueue messageQueue;
+
+        if (isLocalMessagePriority()) {
+            messageQueue = new PriorityMessageQueue();
+        } else {
+            messageQueue = new FifoMessageQueue(configuredPrefetch);
+        }
+
+        JmsConsumerInfo consumerInfo = new JmsConsumerInfo(getNextConnectionConsumerId(), messageQueue);
+        consumerInfo.setExplicitClientID(isExplicitClientID());
+        consumerInfo.setSelector(messageSelector);
+        consumerInfo.setDurable(durable);
+        consumerInfo.setSubscriptionName(subscriptionName);
+        consumerInfo.setShared(shared);
+        consumerInfo.setDestination(jmsDestination);
+        consumerInfo.setAcknowledgementMode(Session.AUTO_ACKNOWLEDGE);
+        consumerInfo.setNoLocal(false);
+        consumerInfo.setBrowser(false);
+        consumerInfo.setPrefetchSize(configuredPrefetch);
+        consumerInfo.setRedeliveryPolicy(getRedeliveryPolicy().copy());
+        consumerInfo.setLocalMessageExpiry(isLocalMessageExpiry());
+        consumerInfo.setPresettle(false);
+        consumerInfo.setDeserializationPolicy(getDeserializationPolicy().copy());
+        consumerInfo.setMaxMessages(maxMessages);
+        consumerInfo.setConnectionConsumer(true);
+
+        JmsConnectionConsumer consumer = new JmsConnectionConsumer(this, consumerInfo, messageQueue, sessionPool);
+
+        try {
+            consumer.init();
+            if (started.get()) {
+                consumer.start();
+            }
+            return consumer;
+        } catch (JMSException jmsEx) {
+            consumer.close();
+            throw jmsEx;
+        }
+     }
 
     @Override
     public TopicSession createTopicSession(boolean transacted, int acknowledgeMode) throws JMSException {
@@ -495,6 +563,14 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
     protected void addSession(JmsSessionInfo sessionInfo, JmsSession session) {
         sessions.put(sessionInfo.getId(), session);
+    }
+
+    protected void removeConnectionConsumer(JmsConsumerInfo consumerInfo) throws JMSException {
+        connectionConsumers.remove(consumerInfo.getId());
+    }
+
+    protected void addConnectionConsumer(JmsConsumerInfo consumerInfo, JmsConnectionConsumer consumer) {
+        connectionConsumers.put(consumerInfo.getId(), consumer);
     }
 
     private void createJmsConnection() throws JMSException {
@@ -587,6 +663,10 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
     protected JmsTransactionId getNextTransactionId() {
         return new JmsTransactionId(connectionInfo.getId(), transactionIdGenerator.incrementAndGet());
+    }
+
+    protected JmsConsumerId getNextConnectionConsumerId() {
+        return new JmsConsumerId(connectionInfo.getId().toString(), -1, connectionConsumerIdGenerator.incrementAndGet());
     }
 
     protected synchronized boolean isExplicitClientID() {
@@ -1106,6 +1186,11 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         JmsMessageDispatcher dispatcher = sessions.get(envelope.getConsumerId().getParentId());
         if (dispatcher != null) {
             dispatcher.onInboundMessage(envelope);
+        } else {
+            dispatcher = connectionConsumers.get(envelope.getConsumerId());
+            if (dispatcher != null) {
+                dispatcher.onInboundMessage(envelope);
+            }
         }
 
         // Run the application callbacks on the connection executor to allow the provider to
@@ -1176,6 +1261,15 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
             request.sync();
         }
 
+        for (JmsConnectionConsumer connectionConsumer : connectionConsumers.values()) {
+            JmsConsumerInfo consumerInfo = connectionConsumer.getConsumerInfo();
+            if (consumerInfo.isOpen()) {
+                request = new ProviderFuture();
+                provider.create(consumerInfo, request);
+                request.sync();
+            }
+        }
+
         for (JmsSession session : sessions.values()) {
             session.onConnectionRecovery(provider);
         }
@@ -1187,6 +1281,15 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
         setMessageFactory(provider.getMessageFactory());
         connectionInfo.setConnectedURI(provider.getRemoteURI());
+
+        for (JmsConnectionConsumer connectionConsumer : connectionConsumers.values()) {
+            JmsConsumerInfo consumerInfo = connectionConsumer.getConsumerInfo();
+            if (consumerInfo.isOpen()) {
+                ProviderFuture request = new ProviderFuture();
+                provider.start(consumerInfo, request);
+                request.sync();
+            }
+        }
 
         for (JmsSession session : sessions.values()) {
             session.onConnectionRecovered(provider);
@@ -1317,14 +1420,22 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
                     }
                 }
             } else if (resource instanceof JmsConsumerInfo) {
-                JmsSessionId parentId = ((JmsConsumerInfo) resource).getParentId();
-                JmsSession session = sessions.get(parentId);
-                if (session != null) {
-                    JmsMessageConsumer consumer = session.lookup((JmsConsumerId) resource.getId());
+                JmsConsumerInfo consumerInfo = (JmsConsumerInfo) resource;
+                if (consumerInfo.isConnectionConsumer()) {
+                    JmsConnectionConsumer consumer = connectionConsumers.get(consumerInfo.getId());
                     if (consumer != null) {
                         consumer.setFailureCause(cause);
                     }
-                }
+                } else {
+                    JmsSessionId parentId = consumerInfo.getParentId();
+                    JmsSession session = sessions.get(parentId);
+                    if (session != null) {
+                        JmsMessageConsumer consumer = session.lookup((JmsConsumerId) resource.getId());
+                        if (consumer != null) {
+                            consumer.setFailureCause(cause);
+                        }
+                    }
+                 }
             }
 
             executor.execute(new Runnable() {
@@ -1351,16 +1462,32 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
                             }
                         }
                     } else if (resource instanceof JmsConsumerInfo) {
-                        JmsSessionId parentId = ((JmsConsumerInfo) resource).getParentId();
-                        JmsSession session = sessions.get(parentId);
-                        if (session != null) {
-                            JmsMessageConsumer consumer = session.consumerClosed((JmsConsumerInfo) resource, cause);
-                            if (consumer != null) {
-                                for (JmsConnectionListener listener : connectionListeners) {
-                                    listener.onConsumerClosed(consumer, cause);
+                        JmsConsumerInfo consumerInfo = (JmsConsumerInfo) resource;
+                        if (consumerInfo.isConnectionConsumer()) {
+                            JmsConnectionConsumer consumer = connectionConsumers.get(consumerInfo.getId());
+                             if (consumer != null) {
+                                try {
+                                    if (consumer != null) {
+                                        consumer.shutdown(cause);
+                                    }
+                                } catch (Throwable error) {
+                                    LOG.trace("Ignoring exception thrown during cleanup of closed connection consumer", error);
                                 }
+
+                                onAsyncException(new JMSException("Connection Consumer remotely closed").initCause(cause));
                             }
-                        }
+                        } else {
+                            JmsSessionId parentId = consumerInfo.getParentId();
+                            JmsSession session = sessions.get(parentId);
+                            if (session != null) {
+                                JmsMessageConsumer consumer = session.consumerClosed((JmsConsumerInfo) resource, cause);
+                                if (consumer != null) {
+                                    for (JmsConnectionListener listener : connectionListeners) {
+                                        listener.onConsumerClosed(consumer, cause);
+                                    }
+                                 }
+                             }
+                         }
                     } else {
                         LOG.info("A JMS resource has been remotely closed: {}", resource);
                     }

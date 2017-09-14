@@ -328,7 +328,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                         timeout = Math.max(deadline - System.currentTimeMillis(), 0);
                     }
                     performPullIfRequired(timeout, false);
-                } else if (redeliveryExceeded(envelope)) {
+                } else if (session.redeliveryExceeded(envelope)) {
                     LOG.debug("{} filtered message with excessive redelivery count: {}", getConsumerId(), envelope);
                     applyRedeliveryPolicyOutcome(envelope);
                     if (timeout > 0) {
@@ -354,15 +354,6 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         }
 
         return false;
-    }
-
-    protected boolean redeliveryExceeded(JmsInboundMessageDispatch envelope) {
-        LOG.trace("checking envelope with {} redeliveries", envelope.getRedeliveryCount());
-
-        JmsRedeliveryPolicy redeliveryPolicy = consumerInfo.getRedeliveryPolicy();
-        return redeliveryPolicy != null &&
-               redeliveryPolicy.getMaxRedeliveries(getDestination()) >= 0 &&
-               redeliveryPolicy.getMaxRedeliveries(getDestination()) < envelope.getRedeliveryCount();
     }
 
     protected void checkClosed() throws IllegalStateException {
@@ -470,6 +461,8 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
      */
     @Override
     public void onInboundMessage(final JmsInboundMessageDispatch envelope) {
+        envelope.setConsumerInfo(consumerInfo);
+
         lock.lock();
         try {
             if (acknowledgementMode == Session.CLIENT_ACKNOWLEDGE) {
@@ -720,7 +713,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
                 if (consumeExpiredMessage(envelope)) {
                     LOG.trace("{} filtered expired message: {}", getConsumerId(), envelope);
                     doAckExpired(envelope);
-                } else if (redeliveryExceeded(envelope)) {
+                } else if (session.redeliveryExceeded(envelope)) {
                     LOG.trace("{} filtered message with excessive redelivery count: {}", getConsumerId(), envelope);
                     applyRedeliveryPolicyOutcome(envelope);
                 } else {

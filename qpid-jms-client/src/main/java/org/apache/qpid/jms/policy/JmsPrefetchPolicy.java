@@ -36,7 +36,7 @@ public interface JmsPrefetchPolicy {
      * Returns the prefetch value to use when creating a MessageConsumer instance.
      *
      * @param session
-     *      the Session that own the MessageConsumer being created.
+     *      the Session that own the MessageConsumer being created. (null for a ConnectionConsumer).
      * @param destination
      *      the Destination that the consumer will be subscribed to.
      * @param durable

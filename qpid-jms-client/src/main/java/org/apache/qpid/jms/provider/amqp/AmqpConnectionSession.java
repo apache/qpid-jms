@@ -85,11 +85,27 @@ public class AmqpConnectionSession extends AmqpSession {
     }
 
     @Override
+    public void addChildResource(AmqpResource resource) {
+        // When a Connection Consumer is created the Connection is doing so
+        // without a known session to associate it with, we link up the consumer
+        // to this session by adding this session as the provider hint on the
+        // consumer's parent session ID.
+        if (resource instanceof AmqpConsumer) {
+            AmqpConsumer consumer = (AmqpConsumer) resource;
+            consumer.getConsumerId().getParentId().setProviderHint(this);
+        }
+
+        super.addChildResource(resource);
+    }
+
+    @Override
     public void handleResourceClosure(AmqpProvider provider, Throwable cause) {
         List<AsyncResult> pending = new ArrayList<>(pendingUnsubs.values());
         for (AsyncResult unsubscribeRequest : pending) {
             unsubscribeRequest.onFailure(cause);
         }
+
+        super.handleResourceClosure(provider, cause);
     }
 
     private static final class DurableSubscriptionReattach extends AmqpAbstractResource<JmsSessionInfo, Receiver> {

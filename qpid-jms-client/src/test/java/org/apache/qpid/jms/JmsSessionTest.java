@@ -364,11 +364,6 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
     public void testSessionRunFailsWhenSessionIsClosed() throws Exception {
         JmsSession session = (JmsSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        try {
-            session.run();
-            fail("Not implemented");
-        } catch (UnsupportedOperationException usoe) {}
-
         session.close();
 
         try {

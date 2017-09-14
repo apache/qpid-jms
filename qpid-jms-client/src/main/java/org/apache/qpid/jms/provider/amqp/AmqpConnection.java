@@ -177,6 +177,15 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
     }
 
     /**
+     * Retrieves the AmqpConnectionSession owned by this AmqpConnection.
+     *
+     * @return the AmqpConnectionSession owned by this AmqpConnection.
+     */
+    public AmqpConnectionSession getConnectionSession() {
+        return connectionSession;
+    }
+
+    /**
      * @return true if anonymous producers should be cached or closed on send complete.
      */
     public boolean isAnonymousProducerCache() {

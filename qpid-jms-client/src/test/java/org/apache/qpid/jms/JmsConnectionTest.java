@@ -305,42 +305,4 @@ public class JmsConnectionTest {
         int minor = metaData.getProviderMinorVersion();
         assertTrue("Expected non-zero provider major(" + major + ") / minor(" + minor +") version.", (major + minor) != 0);
     }
-
-    //----- Currently these are unimplemented, these will fail after that ----//
-
-    @Test(timeout=30000, expected=JMSException.class)
-    public void testCreateConnectionConsumer() throws Exception {
-        connection = new JmsConnection(connectionInfo, provider);
-        connection.createConnectionConsumer((JmsDestination) new JmsTopic(), "", null, 1);
-    }
-
-    @Test(timeout=30000, expected=JMSException.class)
-    public void testCreateConnectionTopicConsumer() throws Exception {
-        connection = new JmsConnection(connectionInfo, provider);
-        connection.createConnectionConsumer(new JmsTopic(), "", null, 1);
-    }
-
-    @Test(timeout=30000, expected=JMSException.class)
-    public void testCreateConnectionQueueConsumer() throws Exception {
-        connection = new JmsConnection(connectionInfo, provider);
-        connection.createConnectionConsumer(new JmsQueue(), "", null, 1);
-    }
-
-    @Test(timeout=30000, expected=JMSException.class)
-    public void testCreateDurableConnectionQueueConsumer() throws Exception {
-        connection = new JmsConnection(connectionInfo, provider);
-        connection.createDurableConnectionConsumer(new JmsTopic(), "", "", null, 1);
-    }
-
-    @Test(timeout=30000, expected=JMSException.class)
-    public void testCreateSharedConnectionConsumer() throws Exception {
-        connection = new JmsConnection(connectionInfo, provider);
-        connection.createSharedConnectionConsumer(new JmsTopic(), "id", "", null, 1);
-    }
-
-    @Test(timeout=30000, expected=JMSException.class)
-    public void testCreateSharedDurableConnectionConsumer() throws Exception {
-        connection = new JmsConnection(connectionInfo, provider);
-        connection.createSharedDurableConnectionConsumer(new JmsTopic(), "id", "", null, 1);
-    }
 }

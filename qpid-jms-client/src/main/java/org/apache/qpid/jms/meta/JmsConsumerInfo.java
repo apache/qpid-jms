@@ -38,6 +38,8 @@ public final class JmsConsumerInfo extends JmsAbstractResource implements Compar
     private int acknowledgementMode;
     private boolean localMessageExpiry;
     private boolean presettle;
+    private boolean connectionConsumer;
+    private int maxMessages;
     private volatile boolean listener;
     private final MessageQueue messageQueue;
 
@@ -76,6 +78,8 @@ public final class JmsConsumerInfo extends JmsAbstractResource implements Compar
         info.redeliveryPolicy = getRedeliveryPolicy().copy();
         info.deserializationPolicy = getDeserializationPolicy().copy();
         info.listener = listener;
+        info.connectionConsumer = connectionConsumer;
+        info.maxMessages = maxMessages;
     }
 
     public int getPrefetchedMessageCount() {
@@ -223,6 +227,22 @@ public final class JmsConsumerInfo extends JmsAbstractResource implements Compar
 
     public void setPresettle(boolean presettle) {
         this.presettle = presettle;
+    }
+
+    public boolean isConnectionConsumer() {
+        return connectionConsumer;
+    }
+
+    public void setConnectionConsumer(boolean connectionConsumer) {
+        this.connectionConsumer = connectionConsumer;
+    }
+
+    public int getMaxMessages() {
+        return maxMessages;
+    }
+
+    public void setMaxMessages(int maxMessages) {
+        this.maxMessages = maxMessages;
     }
 
     @Override

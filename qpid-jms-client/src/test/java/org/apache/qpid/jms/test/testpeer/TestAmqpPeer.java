@@ -763,6 +763,14 @@ public class TestAmqpPeer implements AutoCloseable
         addHandler(saslInitMatcher);
     }
 
+    public void expectSaslMechanismNegotiationFailure(Symbol[] serverMechs)
+    {
+        SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(serverMechs);
+        FrameSender mechanismsFrameSender = new FrameSender(this, FrameType.SASL, 0, saslMechanismsFrame, null);
+
+        addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER, mechanismsFrameSender));
+    }
+
     /**
      * Expect a connection that does not use a SASL layer, but proceeds straight
      * to the AMQP connection (useful to skip a stage for connections that don't

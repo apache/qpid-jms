@@ -22,6 +22,7 @@ package org.apache.qpid.jms.integration;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
@@ -32,6 +33,7 @@ import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
+import javax.jms.JMSSecurityRuntimeException;
 import javax.net.ssl.SSLContext;
 
 import org.apache.qpid.jms.JmsConnectionFactory;
@@ -360,6 +362,51 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
                 // Expected, we deliberately failed the SASL process,
                 // we only wanted to verify the correct mechanism
                 // was selected, other tests verify the remainder.
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testMechanismNegotiationFailsToFindMatch() throws Exception {
+        doMechanismNegotiationFailsToFindMatchTestImpl(false);
+    }
+
+    @Test(timeout = 20000)
+    public void testMechanismNegotiationFailsToFindMatchWithJmsContext() throws Exception {
+        doMechanismNegotiationFailsToFindMatchTestImpl(true);
+    }
+
+    private void doMechanismNegotiationFailsToFindMatchTestImpl(boolean createContext) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            String failureMessageBreadcrumb = "Could not find a suitable SASL mechanism."
+                    + " No supported mechanism, or none usable with the available credentials. Server offered: [SCRAM-SHA-1, UNKNOWN, PLAIN]";
+            Symbol[] serverMechs = new Symbol[] { SCRAM_SHA_1, Symbol.valueOf("UNKNOWN"), PLAIN};
+
+            testPeer.expectSaslMechanismNegotiationFailure(serverMechs);
+
+            String uriOptions = "?jms.clientID=myclientid";
+            ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + uriOptions);
+            if(createContext) {
+                try {
+                    factory.createContext(null, null);
+                    fail("Excepted exception to be thrown");
+                } catch (JMSSecurityRuntimeException jmssre) {
+                    // Expected, we deliberately failed the mechanism negotiation process.
+                    assertNotNull("Expected an exception message", jmssre.getMessage());
+                    assertEquals("Unexpected message details", jmssre.getMessage(), failureMessageBreadcrumb);
+                }
+            } else {
+                try {
+                    factory.createConnection(null, null);
+                    fail("Excepted exception to be thrown");
+                } catch (JMSSecurityException jmsse) {
+                    // Expected, we deliberately failed the mechanism negotiation process.
+                    assertNotNull("Expected an exception message", jmsse.getMessage());
+                    assertEquals("Unexpected message details", jmsse.getMessage(), failureMessageBreadcrumb);
+                }
             }
 
             testPeer.waitForAllHandlersToComplete(1000);

@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.JMSException;
+import javax.jms.JMSSecurityRuntimeException;
 import javax.net.ssl.SSLContext;
 
 import org.apache.qpid.jms.JmsTemporaryDestination;
@@ -1374,25 +1375,23 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         }
     }
 
-    private Mechanism findSaslMechanism(String[] remoteMechanisms) {
+    private Mechanism findSaslMechanism(String[] remoteMechanisms) throws JMSSecurityRuntimeException {
 
         Mechanism mechanism = SaslMechanismFinder.findMatchingMechanism(
             connectionInfo.getUsername(), connectionInfo.getPassword(), transport.getLocalPrincipal(), saslMechanisms, remoteMechanisms);
 
-        if (mechanism != null) {
-            mechanism.setUsername(connectionInfo.getUsername());
-            mechanism.setPassword(connectionInfo.getPassword());
+        mechanism.setUsername(connectionInfo.getUsername());
+        mechanism.setPassword(connectionInfo.getPassword());
 
-            try {
-                Map<String, String> saslOptions = PropertyUtil.filterProperties(PropertyUtil.parseQuery(getRemoteURI()), "sasl.options.");
-                if (!saslOptions.containsKey("serverName")) {
-                    saslOptions.put("serverName", remoteURI.getHost());
-                }
-
-                mechanism.init(Collections.unmodifiableMap(saslOptions));
-            } catch (Exception ex) {
-                throw new RuntimeException("Failed to apply sasl options to mechanism: " + mechanism.getName() + ", reason: " + ex.toString(), ex);
+        try {
+            Map<String, String> saslOptions = PropertyUtil.filterProperties(PropertyUtil.parseQuery(getRemoteURI()), "sasl.options.");
+            if (!saslOptions.containsKey("serverName")) {
+                saslOptions.put("serverName", remoteURI.getHost());
             }
+
+            mechanism.init(Collections.unmodifiableMap(saslOptions));
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to apply sasl options to mechanism: " + mechanism.getName() + ", reason: " + ex.toString(), ex);
         }
 
         return mechanism;

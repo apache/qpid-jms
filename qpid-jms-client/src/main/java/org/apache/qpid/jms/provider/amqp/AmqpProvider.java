@@ -1018,7 +1018,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         // Using nano time since it is not related to the wall clock, which may change
         long now = TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
         long deadline = protonTransport.tick(now);
-        if (deadline > 0) {
+        if (deadline != 0) {
             long delay = deadline - now;
             LOG.trace("IdleTimeoutCheck being initiated, initial delay: {}", delay);
             nextIdleTimeoutCheck = serializer.schedule(new IdleTimeoutCheck(), delay, TimeUnit.MILLISECONDS);
@@ -1415,7 +1415,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         fireProviderException(new IOException("Transport closed due to the peer exceeding our requested idle-timeout"));
                     }
                 } else {
-                    if (deadline > 0) {
+                    if (deadline != 0) {
                         long delay = deadline - now;
                         checkScheduled = true;
                         LOG.trace("IdleTimeoutCheck rescheduling with delay: {}", delay);

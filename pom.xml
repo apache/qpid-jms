@@ -43,7 +43,7 @@
     <maven.compiler.target>1.8</maven.compiler.target>
 
     <!-- Dependency Versions for this Project -->
-    <proton-version>0.20.0</proton-version>
+    <proton-version>0.22.0</proton-version>
     <netty-version>4.1.14.Final</netty-version>
     <slf4j-version>1.7.25</slf4j-version>
     <geronimo.jms.2.spec.version>1.0-alpha-2</geronimo.jms.2.spec.version>

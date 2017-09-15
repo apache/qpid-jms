@@ -131,7 +131,7 @@
             <Export-Package>org.apache.qpid.jms.*</Export-Package>
             <Import-Package>
             io.netty.*;version="[4.1.0,4.2.0)",
-            org.apache.qpid.proton.*;version="[0.20.0,0.21.0)",
+            org.apache.qpid.proton.*;version="[0.22.0,0.23.0)",
             *</Import-Package>
             <Dynamic-ImportPackage>*</Dynamic-ImportPackage>
           </instructions>

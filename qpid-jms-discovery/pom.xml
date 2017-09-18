@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.qpid</groupId>
     <artifactId>qpid-jms-parent</artifactId>
-    <version>0.25.0-SNAPSHOT</version>
+    <version>0.25.0</version>
   </parent>
 
   <artifactId>qpid-jms-discovery</artifactId>

@@ -16,6 +16,7 @@
  */
 package org.apache.qpid.jms.provider.amqp.builders;
 
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.ANONYMOUS_RELAY;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SOLE_CONNECTION_CAPABILITY;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DELAYED_DELIVERY;
 
@@ -117,7 +118,7 @@ public class AmqpConnectionBuilder extends AmqpResourceBuilder<AmqpConnection, A
         Connection connection = getParent().getProtonConnection();
         connection.setHostname(hostname);
         connection.setContainer(resourceInfo.getClientId());
-        connection.setDesiredCapabilities(new Symbol[] { SOLE_CONNECTION_CAPABILITY, DELAYED_DELIVERY });
+        connection.setDesiredCapabilities(new Symbol[] { SOLE_CONNECTION_CAPABILITY, DELAYED_DELIVERY, ANONYMOUS_RELAY});
         connection.setProperties(props);
 
         return connection;

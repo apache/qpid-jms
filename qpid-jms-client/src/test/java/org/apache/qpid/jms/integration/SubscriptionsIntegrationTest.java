@@ -1604,7 +1604,7 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
             Symbol[] serverCapabilities = new Symbol[]{SHARED_SUBS};
 
             testPeer.expectSaslAnonymous();
-            testPeer.expectOpen(new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, serverCapabilities, null);
+            testPeer.expectOpen(null, serverCapabilities);
             testPeer.expectBegin();
 
             ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + serverPort + "?jms.awaitClientID=false");

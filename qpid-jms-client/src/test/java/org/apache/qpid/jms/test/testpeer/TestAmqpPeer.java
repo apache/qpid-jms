@@ -18,9 +18,12 @@
  */
 package org.apache.qpid.jms.test.testpeer;
 
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DELAYED_DELIVERY;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DYNAMIC_NODE_LIFETIME_POLICY;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.GLOBAL;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SHARED;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SOLE_CONNECTION_CAPABILITY;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
@@ -139,6 +142,7 @@ public class TestAmqpPeer implements AutoCloseable
     private static final UnsignedByte SASL_FAIL_AUTH = UnsignedByte.valueOf((byte)1);
     private static final int CONNECTION_CHANNEL = 0;
     private static final int DEFAULT_PRODUCER_CREDIT = 100;
+    private static final Symbol[] DEFAULT_DESIRED_CAPABILITIES = new Symbol[] { SOLE_CONNECTION_CAPABILITY, DELAYED_DELIVERY};
 
     private volatile AssertionError _firstAssertionError = null;
     private final TestAmqpPeerRunner _driverRunnable;
@@ -809,7 +813,11 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     public void expectOpen(Map<Symbol, Object> serverProperties) {
-        expectOpen(new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, serverProperties, null, null, false);
+        expectOpen(DEFAULT_DESIRED_CAPABILITIES, new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, null, serverProperties, null, null, false);
+    }
+
+    public void expectOpen(Map<Symbol, Object> serverProperties, Symbol[] serverCapabilities) {
+        expectOpen(DEFAULT_DESIRED_CAPABILITIES, serverCapabilities, null, serverProperties, null, null, false);
     }
 
     public void expectOpen(Matcher<?> clientPropertiesMatcher, Matcher<?> hostnameMatcher, boolean deferOpened) {
@@ -817,11 +825,7 @@ public class TestAmqpPeer implements AutoCloseable
     }
 
     public void expectOpen(Matcher<?> clientPropertiesMatcher, Matcher<?> idleTimeoutMatcher, Matcher<?> hostnameMatcher, boolean deferOpened) {
-        expectOpen(new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, clientPropertiesMatcher, null, null, hostnameMatcher, deferOpened);
-    }
-
-    public void expectOpen(Symbol[] desiredCapabilities, Symbol[] serverCapabilities, Map<Symbol, Object> serverProperties) {
-        expectOpen(desiredCapabilities, serverCapabilities, null, serverProperties, null, null, false);
+        expectOpen(DEFAULT_DESIRED_CAPABILITIES, new Symbol[] { AmqpSupport.SOLE_CONNECTION_CAPABILITY }, clientPropertiesMatcher, null, null, hostnameMatcher, deferOpened);
     }
 
     public void sendPreemptiveServerOpenFrame() {

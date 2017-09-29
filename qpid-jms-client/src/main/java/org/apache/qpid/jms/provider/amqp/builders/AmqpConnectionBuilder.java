@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.provider.amqp.builders;
 
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SOLE_CONNECTION_CAPABILITY;
+import static org.apache.qpid.jms.provider.amqp.AmqpSupport.DELAYED_DELIVERY;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -116,7 +117,7 @@ public class AmqpConnectionBuilder extends AmqpResourceBuilder<AmqpConnection, A
         Connection connection = getParent().getProtonConnection();
         connection.setHostname(hostname);
         connection.setContainer(resourceInfo.getClientId());
-        connection.setDesiredCapabilities(new Symbol[] { SOLE_CONNECTION_CAPABILITY });
+        connection.setDesiredCapabilities(new Symbol[] { SOLE_CONNECTION_CAPABILITY, DELAYED_DELIVERY });
         connection.setProperties(props);
 
         return connection;

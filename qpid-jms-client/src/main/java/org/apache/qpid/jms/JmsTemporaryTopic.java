@@ -46,6 +46,6 @@ public class JmsTemporaryTopic extends JmsTemporaryDestination implements Tempor
      */
     @Override
     public String getTopicName() {
-        return getName();
+        return getAddress();
     }
 }

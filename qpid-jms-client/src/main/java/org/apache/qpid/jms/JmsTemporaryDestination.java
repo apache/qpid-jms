@@ -50,12 +50,12 @@ public abstract class JmsTemporaryDestination extends JmsDestination implements 
     }
 
     @Override
-	public ResourceState getState() {
+    public ResourceState getState() {
         return state;
     }
 
     @Override
-	public void setState(ResourceState state) {
+    public void setState(ResourceState state) {
         this.state = state;
     }
 
@@ -99,7 +99,7 @@ public abstract class JmsTemporaryDestination extends JmsDestination implements 
     private class JmsTemporaryDestinationId extends JmsAbstractResourceId implements Comparable<JmsTemporaryDestinationId> {
 
         public String getDestinationName() {
-            return getName();
+            return getAddress();
         }
 
         @Override

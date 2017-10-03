@@ -37,6 +37,6 @@ public class JmsQueue extends JmsDestination implements Queue {
      */
     @Override
     public String getQueueName() {
-        return getName();
+        return getAddress();
     }
 }

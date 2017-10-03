@@ -119,7 +119,7 @@ public class JmsMessagePropertyIntercepterTest {
         Mockito.when(message.getFacade()).thenReturn(facade);
         JmsDestination destination = new JmsQueue("TestDestination");
         Mockito.when(facade.getDestination()).thenReturn(destination);
-        assertEquals(destination.getName(), JmsMessagePropertyIntercepter.getProperty(message, JMS_DESTINATION));
+        assertEquals(destination.getAddress(), JmsMessagePropertyIntercepter.getProperty(message, JMS_DESTINATION));
     }
 
     @Test(expected=JMSException.class)
@@ -231,7 +231,7 @@ public class JmsMessagePropertyIntercepterTest {
         Mockito.when(message.getFacade()).thenReturn(facade);
         JmsDestination destination = new JmsQueue("TestDestination");
         Mockito.when(facade.getReplyTo()).thenReturn(destination);
-        assertEquals(destination.getName(), JmsMessagePropertyIntercepter.getProperty(message, JMS_REPLYTO));
+        assertEquals(destination.getAddress(), JmsMessagePropertyIntercepter.getProperty(message, JMS_REPLYTO));
     }
 
     @Test(expected=JMSException.class)

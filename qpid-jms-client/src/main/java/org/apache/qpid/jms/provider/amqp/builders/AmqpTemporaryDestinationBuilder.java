@@ -53,7 +53,7 @@ public class AmqpTemporaryDestinationBuilder extends AmqpResourceBuilder<AmqpTem
     @Override
     protected Sender createEndpoint(JmsTemporaryDestination resourceInfo) {
         // Form a link name, use the local generated name with a prefix to aid debugging
-        String localDestinationName = resourceInfo.getName();
+        String localDestinationName = resourceInfo.getAddress();
         String senderLinkName = null;
         if (resourceInfo.isQueue()) {
             senderLinkName = "qpid-jms:" + TEMP_QUEUE_CREATOR + localDestinationName;
@@ -107,10 +107,10 @@ public class AmqpTemporaryDestinationBuilder extends AmqpResourceBuilder<AmqpTem
     protected void afterOpened() {
         if (!isClosePending()) {
             // Once our sender is opened we can read the updated name from the target address.
-            String oldDestinationName = resourceInfo.getName();
+            String oldDestinationName = resourceInfo.getAddress();
             String destinationName = getEndpoint().getRemoteTarget().getAddress();
 
-            resourceInfo.setName(destinationName);
+            resourceInfo.setAddress(destinationName);
 
             LOG.trace("Updated temp destination to: {} from: {}", destinationName, oldDestinationName);
         }

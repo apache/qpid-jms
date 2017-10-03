@@ -46,6 +46,6 @@ public class JmsTemporaryQueue extends JmsTemporaryDestination implements Tempor
      */
     @Override
     public String getQueueName() {
-        return getName();
+        return getAddress();
     }
 }

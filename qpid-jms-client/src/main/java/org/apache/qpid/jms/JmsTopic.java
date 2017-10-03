@@ -37,6 +37,6 @@ public class JmsTopic extends JmsDestination implements Topic {
      */
     @Override
     public String getTopicName() {
-        return getName();
+        return getAddress();
     }
 }

@@ -30,34 +30,35 @@ import org.apache.qpid.jms.jndi.JNDIStorable;
  * Jms Destination
  */
 public abstract class JmsDestination extends JNDIStorable implements Externalizable, javax.jms.Destination, Comparable<JmsDestination> {
-    private static final String NAME_PROP = "name";
+    private static final String NAME_PROP = "address";
+    private static final String LEGACY_NAME_PROP = "name";
 
-    protected transient String name;
+    protected transient String address;
     protected transient boolean topic;
     protected transient boolean temporary;
     protected transient int hashValue;
     protected transient JmsConnection connection;
 
-    protected JmsDestination(String name, boolean topic, boolean temporary) {
-        this.name = name;
+    protected JmsDestination(String address, boolean topic, boolean temporary) {
+        this.address = address;
         this.topic = topic;
         this.temporary = temporary;
     }
 
     @Override
     public String toString() {
-        return name;
+        return address;
     }
 
     /**
-     * @return name of destination
+     * @return address of destination
      */
-    public String getName() {
-        return this.name;
+    public String getAddress() {
+        return this.address;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setAddress(String address) {
+        this.address = address;
     }
 
     /**
@@ -83,17 +84,18 @@ public abstract class JmsDestination extends JNDIStorable implements Externaliza
 
     @Override
     protected Map<String, String> buildFromProperties(Map<String, String> props) {
-        setName(getProperty(props, NAME_PROP, ""));
+        setAddress(getProperty(props, NAME_PROP, getProperty(props, LEGACY_NAME_PROP, "")));
 
         Map<String, String> unused = new HashMap<String,String>(props);
         unused.remove(NAME_PROP);
+        unused.remove(LEGACY_NAME_PROP);
 
         return Collections.unmodifiableMap(unused);
     }
 
     @Override
     protected void populateProperties(Map<String, String> props) {
-        props.put(NAME_PROP, getName());
+        props.put(NAME_PROP, getAddress());
     }
 
     /**
@@ -110,7 +112,7 @@ public abstract class JmsDestination extends JNDIStorable implements Externaliza
                 return 0;
             }
             if (isTemporary() == other.isTemporary()) {
-                return getName().compareTo(other.getName());
+                return getAddress().compareTo(other.getAddress());
             }
             return -1;
         }
@@ -127,9 +129,9 @@ public abstract class JmsDestination extends JNDIStorable implements Externaliza
         }
 
         JmsDestination other = (JmsDestination) o;
-        if (name == null && other.name != null) {
+        if (address == null && other.address != null) {
             return false;
-        } else if (name != null && !name.equals(other.name)) {
+        } else if (address != null && !address.equals(other.address)) {
             return false;
         }
 
@@ -148,7 +150,7 @@ public abstract class JmsDestination extends JNDIStorable implements Externaliza
         if (hashValue == 0) {
             final int prime = 31;
             hashValue = 1;
-            hashValue = prime * hashValue + ((name == null) ? 0 : name.hashCode());
+            hashValue = prime * hashValue + ((address == null) ? 0 : address.hashCode());
             hashValue = prime * hashValue + (temporary ? 1231 : 1237);
             hashValue = prime * hashValue + (topic ? 1231 : 1237);
         }
@@ -157,11 +159,11 @@ public abstract class JmsDestination extends JNDIStorable implements Externaliza
 
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-        out.writeUTF(getName());
+        out.writeUTF(getAddress());
     }
 
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        setName(in.readUTF());
+        setAddress(in.readUTF());
     }
 }

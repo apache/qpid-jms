@@ -87,13 +87,13 @@ public class AmqpDestinationHelperTest {
         Mockito.when(message.getToAddress()).thenReturn(testAddress);
 
         JmsDestination consumerDestination = Mockito.mock(JmsDestination.class);
-        Mockito.when(consumerDestination.getName()).thenReturn("ConsumerDestination");
+        Mockito.when(consumerDestination.getAddress()).thenReturn("ConsumerDestination");
 
         JmsDestination destination = helper.getJmsDestination(message, consumerDestination);
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -109,7 +109,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
 
@@ -126,7 +126,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isTopic());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -142,7 +142,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertTrue(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -158,7 +158,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isTopic());
         assertTrue(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     // --- new byte destination type annotations --- //
@@ -177,7 +177,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -202,7 +202,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -227,7 +227,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isTopic());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -250,7 +250,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertTrue(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -273,7 +273,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isTopic());
         assertTrue(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     // --- legacy string destination type annotations --- //
@@ -292,7 +292,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -309,7 +309,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -325,7 +325,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -341,7 +341,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isTopic());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -355,7 +355,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertTrue(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -369,7 +369,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isTopic());
         assertTrue(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     //========================================================================//
@@ -409,7 +409,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -425,7 +425,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isTopic());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -441,7 +441,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isTopic());
         assertTrue(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -457,7 +457,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertTrue(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -469,13 +469,13 @@ public class AmqpDestinationHelperTest {
         Mockito.when(message.getReplyToAddress()).thenReturn(testAddress);
 
         JmsDestination consumerDestination = Mockito.mock(JmsDestination.class);
-        Mockito.when(consumerDestination.getName()).thenReturn("ConsumerDestination");
+        Mockito.when(consumerDestination.getAddress()).thenReturn("ConsumerDestination");
 
         JmsDestination destination = helper.getJmsReplyTo(message, consumerDestination);
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     // --- new byte destination type annotations --- //
@@ -494,7 +494,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -519,7 +519,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -544,7 +544,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isTopic());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -567,7 +567,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertTrue(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -590,7 +590,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isTopic());
         assertTrue(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     // --- legacy string destination type annotations --- //
@@ -609,7 +609,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -626,7 +626,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -642,7 +642,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -658,7 +658,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isTopic());
         assertFalse(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -672,7 +672,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isQueue());
         assertTrue(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     @Test
@@ -686,7 +686,7 @@ public class AmqpDestinationHelperTest {
         assertNotNull(destination);
         assertTrue(destination.isTopic());
         assertTrue(destination.isTemporary());
-        assertEquals(testAddress, destination.getName());
+        assertEquals(testAddress, destination.getAddress());
     }
 
     //========================================================================//
@@ -782,7 +782,7 @@ public class AmqpDestinationHelperTest {
     public void testSetToAddressFromDestinationWithAnonymousDestination() {
         String testAddress = "testAddress";
         JmsDestination destination = Mockito.mock(JmsDestination.class);
-        Mockito.when(destination.getName()).thenReturn(testAddress);
+        Mockito.when(destination.getAddress()).thenReturn(testAddress);
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
 
         helper.setToAddressFromDestination(message, destination);
@@ -884,7 +884,7 @@ public class AmqpDestinationHelperTest {
     public void testSetReplyToAddressFromDestinationWithAnonymousDestination() {
         String testAddress = "testAddress";
         JmsDestination destination = Mockito.mock(JmsDestination.class);
-        Mockito.when(destination.getName()).thenReturn(testAddress);
+        Mockito.when(destination.getAddress()).thenReturn(testAddress);
         AmqpJmsMessageFacade message = Mockito.mock(AmqpJmsMessageFacade.class);
 
         helper.setReplyToAddressFromDestination(message, destination);

@@ -197,7 +197,7 @@ public class AmqpDestinationHelper {
             return null;
         }
 
-        final String name = destination.getName();
+        final String name = destination.getAddress();
 
         // Add prefix if necessary
         if (!destination.isTemporary()) {

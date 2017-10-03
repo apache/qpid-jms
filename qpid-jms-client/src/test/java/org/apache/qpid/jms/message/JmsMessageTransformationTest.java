@@ -401,7 +401,7 @@ public class JmsMessageTransformationTest {
         assertNotNull(transformed);
         assertTrue(transformed.isTopic());
         assertFalse(transformed.isTemporary());
-        assertEquals(DESTINATION_NAME, transformed.getName());
+        assertEquals(DESTINATION_NAME, transformed.getAddress());
     }
 
     @Test
@@ -413,7 +413,7 @@ public class JmsMessageTransformationTest {
         assertNotNull(transformed);
         assertTrue(transformed.isQueue());
         assertFalse(transformed.isTemporary());
-        assertEquals(DESTINATION_NAME, transformed.getName());
+        assertEquals(DESTINATION_NAME, transformed.getAddress());
     }
 
     @Test
@@ -431,7 +431,7 @@ public class JmsMessageTransformationTest {
         assertNotNull(transformed);
         assertTrue(transformed.isTopic());
         assertFalse(transformed.isTemporary());
-        assertEquals(DESTINATION_NAME, transformed.getName());
+        assertEquals(DESTINATION_NAME, transformed.getAddress());
     }
 
     @Test
@@ -442,7 +442,7 @@ public class JmsMessageTransformationTest {
         assertNotNull(transformed);
         assertTrue(transformed.isQueue());
         assertFalse(transformed.isTemporary());
-        assertEquals(DESTINATION_NAME, transformed.getName());
+        assertEquals(DESTINATION_NAME, transformed.getAddress());
     }
 
     @Test
@@ -453,7 +453,7 @@ public class JmsMessageTransformationTest {
         assertNotNull(transformed);
         assertTrue(transformed.isQueue());
         assertTrue(transformed.isTemporary());
-        assertEquals(DESTINATION_NAME, transformed.getName());
+        assertEquals(DESTINATION_NAME, transformed.getAddress());
     }
 
     @Test
@@ -464,7 +464,7 @@ public class JmsMessageTransformationTest {
         assertNotNull(transformed);
         assertTrue(transformed.isTopic());
         assertTrue(transformed.isTemporary());
-        assertEquals(DESTINATION_NAME, transformed.getName());
+        assertEquals(DESTINATION_NAME, transformed.getAddress());
     }
 
     //---------- Mocking support ---------------------------------------------//

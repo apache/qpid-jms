@@ -231,9 +231,9 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
     }
 
     @Test(timeout = 30000)
-    public void testMaxReconnectAttempts() throws Exception {
+    public void testMaxReconnectAttemptsWithOneURI() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(
-            "failover:(mock://localhost?mock.failOnConnect=true)" +
+            "failover:(mock://localhost1?mock.failOnConnect=true)" +
             "?failover.maxReconnectAttempts=5" +
             "&failover.useReconnectBackOff=false");
 
@@ -252,6 +252,34 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertEquals(5, mockPeer.getContextStats().getProvidersCreated());
         assertEquals(5, mockPeer.getContextStats().getConnectionAttempts());
         assertEquals(5, mockPeer.getContextStats().getCloseAttempts());
+    }
+
+    @Test(timeout = 30000)
+    public void testMaxReconnectAttemptsWithMultipleURIs() throws Exception {
+        JmsConnectionFactory factory = new JmsConnectionFactory(
+            "failover:(mock://localhost1?mock.failOnConnect=true," +
+                      "mock://localhost2?mock.failOnConnect=true," +
+                      "mock://localhost3?mock.failOnConnect=true)" +
+            "?failover.maxReconnectAttempts=5" +
+            "&failover.reconnectDelay=1" +
+            "&failover.useReconnectBackOff=false");
+
+        Connection connection = null;
+        try {
+            connection = factory.createConnection();
+            connection.start();
+            fail("Should have stopped after five retries.");
+        } catch (JMSException ex) {
+        } finally {
+            if (connection != null) {
+                connection.close();
+            }
+        }
+
+        // The number should scale by the number of URIs in the list
+        assertEquals(15, mockPeer.getContextStats().getProvidersCreated());
+        assertEquals(15, mockPeer.getContextStats().getConnectionAttempts());
+        assertEquals(15, mockPeer.getContextStats().getCloseAttempts());
     }
 
     @Test(timeout = 30000)

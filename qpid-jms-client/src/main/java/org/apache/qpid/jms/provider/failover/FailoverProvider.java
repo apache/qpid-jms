@@ -682,26 +682,33 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
                 reconnectAttempts++;
                 Throwable failure = null;
-                URI target = uris.getNext();
-                if (target != null) {
-                    Provider provider = null;
-                    try {
-                        LOG.debug("Connection attempt:[{}] to: {} in-progress", reconnectAttempts, target);
-                        provider = ProviderFactory.create(target);
-                        provider.connect(connectionInfo);
-                        initializeNewConnection(provider);
-                        return;
-                    } catch (Throwable e) {
-                        LOG.info("Connection attempt:[{}] to: {} failed", reconnectAttempts, target);
-                        failure = e;
+                if (!uris.isEmpty()) {
+                    for (int i = 0; i < uris.size(); ++i) {
+                        URI target = uris.getNext();
+                        if (target == null) {
+                            LOG.warn("Failover URI collection unexpectedly modified during connection attempt.");
+                            continue;
+                        }
+
+                        Provider provider = null;
                         try {
-                            if (provider != null) {
-                                provider.close();
-                            }
-                        } catch (Throwable ex) {}
+                            LOG.debug("Connection attempt:[{}] to: {} in-progress", reconnectAttempts, target);
+                            provider = ProviderFactory.create(target);
+                            provider.connect(connectionInfo);
+                            initializeNewConnection(provider);
+                            return;
+                        } catch (Throwable e) {
+                            LOG.info("Connection attempt:[{}] to: {} failed", reconnectAttempts, target);
+                            failure = e;
+                            try {
+                                if (provider != null) {
+                                    provider.close();
+                                }
+                            } catch (Throwable ex) {}
+                        }
                     }
                 } else {
-                    LOG.debug("No target URI available to connect to");
+                    LOG.debug("No remote URI available to connect to in failover list");
                 }
 
                 if (reconnectLimit != UNLIMITED && reconnectAttempts >= reconnectLimit) {
@@ -866,6 +873,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                             // as it is meant for the failover nodes. The pool will de-dup if it is.
                             newRemotes.add(0, connectedURI);
                             try {
+                                LOG.info("Replacing uris:{} with new set: {}", uris, newRemotes);
                                 uris.replaceAll(newRemotes);
                             } catch (Throwable err) {
                                 LOG.warn("Error while attempting to add discovered URIs: {}", discovered);
@@ -875,7 +883,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                             // Do Nothing
                             break;
                         default:
-                            // Shouldnt get here, but do nothing if we do.
+                            // Shouldn't get here, but do nothing if we do.
                             break;
                     }
 
@@ -891,7 +899,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     //--------------- URI update and rebalance methods -----------------------//
 
     public void add(final URI uri) {
-        serializer.execute(new Runnable() {
+        connectionHub.execute(new Runnable() {
             @Override
             public void run() {
                 uris.add(uri);
@@ -900,7 +908,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     }
 
     public void remove(final URI uri) {
-        serializer.execute(new Runnable() {
+        connectionHub.execute(new Runnable() {
             @Override
             public void run() {
                 uris.remove(uri);

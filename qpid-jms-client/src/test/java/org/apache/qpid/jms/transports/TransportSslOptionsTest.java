@@ -68,7 +68,8 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         TransportSslOptions options = new TransportSslOptions();
 
         assertEquals(TransportSslOptions.DEFAULT_TRUST_ALL, options.isTrustAll());
-        assertEquals(TransportSslOptions.DEFAULT_STORE_TYPE, options.getStoreType());
+        assertEquals(TransportSslOptions.DEFAULT_STORE_TYPE, options.getKeyStoreType());
+        assertEquals(TransportSslOptions.DEFAULT_STORE_TYPE, options.getTrustStoreType());
 
         assertEquals(TransportSslOptions.DEFAULT_CONTEXT_PROTOCOL, options.getContextProtocol());
         assertNull(options.getEnabledProtocols());
@@ -102,7 +103,8 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         assertEquals(PASSWORD, options.getKeyStorePassword());
         assertEquals(CLIENT_TRUSTSTORE, options.getTrustStoreLocation());
         assertEquals(PASSWORD, options.getTrustStorePassword());
-        assertEquals(KEYSTORE_TYPE, options.getStoreType());
+        assertEquals(KEYSTORE_TYPE, options.getKeyStoreType());
+        assertEquals(KEYSTORE_TYPE, options.getTrustStoreType());
         assertEquals(KEY_ALIAS, options.getKeyAlias());
         assertEquals(CONTEXT_PROTOCOL, options.getContextProtocol());
         assertEquals(SSL_CONTEXT, options.getSslContextOverride());
@@ -130,7 +132,8 @@ public class TransportSslOptionsTest extends QpidJmsTestCase {
         assertEquals(PASSWORD, options.getKeyStorePassword());
         assertEquals(CLIENT_TRUSTSTORE, options.getTrustStoreLocation());
         assertEquals(PASSWORD, options.getTrustStorePassword());
-        assertEquals(KEYSTORE_TYPE, options.getStoreType());
+        assertEquals(KEYSTORE_TYPE, options.getKeyStoreType());
+        assertEquals(KEYSTORE_TYPE, options.getTrustStoreType());
         assertEquals(KEY_ALIAS, options.getKeyAlias());
         assertEquals(CONTEXT_PROTOCOL, options.getContextProtocol());
         assertEquals(SSL_CONTEXT, options.getSslContextOverride());

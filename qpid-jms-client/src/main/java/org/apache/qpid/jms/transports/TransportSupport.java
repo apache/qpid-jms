@@ -223,7 +223,7 @@ public class TransportSupport {
 
         String storeLocation = options.getTrustStoreLocation();
         String storePassword = options.getTrustStorePassword();
-        String storeType = options.getStoreType();
+        String storeType = options.getTrustStoreType();
 
         LOG.trace("Attempt to load TrustStore from location {} of type {}", storeLocation, storeType);
 
@@ -242,7 +242,7 @@ public class TransportSupport {
 
         String storeLocation = options.getKeyStoreLocation();
         String storePassword = options.getKeyStorePassword();
-        String storeType = options.getStoreType();
+        String storeType = options.getKeyStoreType();
         String alias = options.getKeyAlias();
 
         LOG.trace("Attempt to load KeyStore from location {} of type {}", storeLocation, storeType);

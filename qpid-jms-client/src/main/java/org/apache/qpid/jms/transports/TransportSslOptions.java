@@ -46,7 +46,8 @@ public class TransportSslOptions extends TransportOptions {
     private String keyStorePassword;
     private String trustStoreLocation;
     private String trustStorePassword;
-    private String storeType = DEFAULT_STORE_TYPE;
+    private String keyStoreType = DEFAULT_STORE_TYPE;
+    private String trustStoreType = DEFAULT_STORE_TYPE;
     private String[] enabledCipherSuites;
     private String[] disabledCipherSuites;
     private String[] enabledProtocols;
@@ -126,18 +127,42 @@ public class TransportSslOptions extends TransportOptions {
     }
 
     /**
-     * @return the storeType
-     */
-    public String getStoreType() {
-        return storeType;
-    }
-
-    /**
      * @param storeType
      *        the format that the store files are encoded in.
      */
     public void setStoreType(String storeType) {
-        this.storeType = storeType;
+        setKeyStoreType(storeType);
+        setTrustStoreType(storeType);
+    }
+
+    /**
+     * @return the keyStoreType
+     */
+    public String getKeyStoreType() {
+        return keyStoreType;
+    }
+
+    /**
+     * @param keyStoreType
+     *        the format that the keyStore file is encoded in
+     */
+    public void setKeyStoreType(String keyStoreType) {
+        this.keyStoreType = keyStoreType;
+    }
+
+    /**
+     * @return the trustStoreType
+     */
+    public String getTrustStoreType() {
+        return trustStoreType;
+    }
+
+    /**
+     * @param trustStoreType
+     *        the format that the trustStore file is encoded in
+     */
+    public void setTrustStoreType(String trustStoreType) {
+        this.trustStoreType = trustStoreType;
     }
 
     /**
@@ -293,7 +318,8 @@ public class TransportSslOptions extends TransportOptions {
         copy.setKeyStorePassword(getKeyStorePassword());
         copy.setTrustStoreLocation(getTrustStoreLocation());
         copy.setTrustStorePassword(getTrustStorePassword());
-        copy.setStoreType(getStoreType());
+        copy.setKeyStoreType(getKeyStoreType());
+        copy.setTrustStoreType(getTrustStoreType());
         copy.setEnabledCipherSuites(getEnabledCipherSuites());
         copy.setDisabledCipherSuites(getDisabledCipherSuites());
         copy.setEnabledProtocols(getEnabledProtocols());

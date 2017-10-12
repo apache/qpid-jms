@@ -38,16 +38,18 @@ public class TransportSslOptions extends TransportOptions {
     public static final int DEFAULT_SSL_PORT = 5671;
 
     private static final String JAVAX_NET_SSL_KEY_STORE = "javax.net.ssl.keyStore";
+    private static final String JAVAX_NET_SSL_KEY_STORE_TYPE = "javax.net.ssl.keyStoreType";
     private static final String JAVAX_NET_SSL_KEY_STORE_PASSWORD = "javax.net.ssl.keyStorePassword";
     private static final String JAVAX_NET_SSL_TRUST_STORE = "javax.net.ssl.trustStore";
+    private static final String JAVAX_NET_SSL_TRUST_STORE_TYPE = "javax.net.ssl.trustStoreType";
     private static final String JAVAX_NET_SSL_TRUST_STORE_PASSWORD = "javax.net.ssl.trustStorePassword";
 
     private String keyStoreLocation;
     private String keyStorePassword;
     private String trustStoreLocation;
     private String trustStorePassword;
-    private String keyStoreType = DEFAULT_STORE_TYPE;
-    private String trustStoreType = DEFAULT_STORE_TYPE;
+    private String keyStoreType;
+    private String trustStoreType;
     private String[] enabledCipherSuites;
     private String[] disabledCipherSuites;
     private String[] enabledProtocols;
@@ -62,8 +64,10 @@ public class TransportSslOptions extends TransportOptions {
 
     public TransportSslOptions() {
         setKeyStoreLocation(System.getProperty(JAVAX_NET_SSL_KEY_STORE));
+        setKeyStoreType(System.getProperty(JAVAX_NET_SSL_KEY_STORE_TYPE, DEFAULT_STORE_TYPE));
         setKeyStorePassword(System.getProperty(JAVAX_NET_SSL_KEY_STORE_PASSWORD));
         setTrustStoreLocation(System.getProperty(JAVAX_NET_SSL_TRUST_STORE));
+        setTrustStoreType(System.getProperty(JAVAX_NET_SSL_TRUST_STORE_TYPE, DEFAULT_STORE_TYPE));
         setTrustStorePassword(System.getProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD));
     }
 

@@ -49,12 +49,17 @@ import org.junit.Test;
 public class SslIntegrationTest extends QpidJmsTestCase {
 
     private static final String BROKER_JKS_KEYSTORE = "src/test/resources/broker-jks.keystore";
+    private static final String BROKER_PKCS12_KEYSTORE = "src/test/resources/broker-pkcs12.keystore";
     private static final String BROKER_JKS_TRUSTSTORE = "src/test/resources/broker-jks.truststore";
+    private static final String BROKER_PKCS12_TRUSTSTORE = "src/test/resources/broker-pkcs12.truststore";
     private static final String CLIENT_MULTI_KEYSTORE = "src/test/resources/client-multiple-keys-jks.keystore";
     private static final String CLIENT_JKS_TRUSTSTORE = "src/test/resources/client-jks.truststore";
+    private static final String CLIENT_PKCS12_TRUSTSTORE = "src/test/resources/client-pkcs12.truststore";
     private static final String OTHER_CA_TRUSTSTORE = "src/test/resources/other-ca-jks.truststore";
     private static final String CLIENT_JKS_KEYSTORE = "src/test/resources/client-jks.keystore";
+    private static final String CLIENT_PKCS12_KEYSTORE = "src/test/resources/client-pkcs12.keystore";
     private static final String CLIENT2_JKS_KEYSTORE = "src/test/resources/client2-jks.keystore";
+    private static final String CUSTOM_STORE_TYPE_PKCS12 = "pkcs12";
     private static final String PASSWORD = "password";
     private static final String WRONG_PASSWORD = "wrong-password";
 
@@ -67,8 +72,10 @@ public class SslIntegrationTest extends QpidJmsTestCase {
     private static final String ALIAS_CA_CERT = "ca";
 
     private static final String JAVAX_NET_SSL_KEY_STORE = "javax.net.ssl.keyStore";
+    private static final String JAVAX_NET_SSL_KEY_STORE_TYPE = "javax.net.ssl.keyStoreType";
     private static final String JAVAX_NET_SSL_KEY_STORE_PASSWORD = "javax.net.ssl.keyStorePassword";
     private static final String JAVAX_NET_SSL_TRUST_STORE = "javax.net.ssl.trustStore";
+    private static final String JAVAX_NET_SSL_TRUST_STORE_TYPE = "javax.net.ssl.trustStoreType";
     private static final String JAVAX_NET_SSL_TRUST_STORE_PASSWORD = "javax.net.ssl.trustStorePassword";
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
@@ -407,6 +414,13 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         doConfigureStoresWithSslSystemPropertiesTestImpl(CLIENT2_DN);
     }
 
+    @Test(timeout = 20000)
+    public void testConfigurePkcs12StoresWithSslSystemProperties() throws Exception {
+        // Set properties and expect connection as Client1
+        setSslSystemPropertiesForCurrentTest(CLIENT_PKCS12_KEYSTORE, CUSTOM_STORE_TYPE_PKCS12, PASSWORD, CLIENT_PKCS12_TRUSTSTORE, CUSTOM_STORE_TYPE_PKCS12, PASSWORD);
+        doConfigureStoresWithSslSystemPropertiesTestImpl(CLIENT_DN, true);
+    }
+
     private void setSslSystemPropertiesForCurrentTest(String keystore, String keystorePassword, String truststore, String truststorePassword) {
         setTestSystemProperty(JAVAX_NET_SSL_KEY_STORE, keystore);
         setTestSystemProperty(JAVAX_NET_SSL_KEY_STORE_PASSWORD, keystorePassword);
@@ -414,13 +428,37 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         setTestSystemProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD, truststorePassword);
     }
 
+    private void setSslSystemPropertiesForCurrentTest(String keystore, String keystoreType, String keystorePassword, String truststore, String truststoreType, String truststorePassword) {
+        setTestSystemProperty(JAVAX_NET_SSL_KEY_STORE, keystore);
+        setTestSystemProperty(JAVAX_NET_SSL_KEY_STORE_TYPE, keystoreType);
+        setTestSystemProperty(JAVAX_NET_SSL_KEY_STORE_PASSWORD, keystorePassword);
+        setTestSystemProperty(JAVAX_NET_SSL_TRUST_STORE, truststore);
+        setTestSystemProperty(JAVAX_NET_SSL_TRUST_STORE_TYPE, truststoreType);
+        setTestSystemProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD, truststorePassword);
+    }
+
     private void doConfigureStoresWithSslSystemPropertiesTestImpl(String expectedDN) throws Exception {
+        doConfigureStoresWithSslSystemPropertiesTestImpl(expectedDN, false);
+    }
+
+    private void doConfigureStoresWithSslSystemPropertiesTestImpl(String expectedDN, boolean usePkcs12Store) throws Exception {
         TransportSslOptions serverSslOptions = new TransportSslOptions();
-        serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
-        serverSslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
-        serverSslOptions.setKeyStorePassword(PASSWORD);
-        serverSslOptions.setTrustStorePassword(PASSWORD);
-        serverSslOptions.setVerifyHost(false);
+
+        if (!usePkcs12Store) {
+            serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
+            serverSslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
+            serverSslOptions.setKeyStorePassword(PASSWORD);
+            serverSslOptions.setTrustStorePassword(PASSWORD);
+            serverSslOptions.setVerifyHost(false);
+        } else {
+            serverSslOptions.setKeyStoreLocation(BROKER_PKCS12_KEYSTORE);
+            serverSslOptions.setTrustStoreLocation(BROKER_PKCS12_TRUSTSTORE);
+            serverSslOptions.setKeyStoreType(CUSTOM_STORE_TYPE_PKCS12);
+            serverSslOptions.setTrustStoreType(CUSTOM_STORE_TYPE_PKCS12);
+            serverSslOptions.setKeyStorePassword(PASSWORD);
+            serverSslOptions.setTrustStorePassword(PASSWORD);
+            serverSslOptions.setVerifyHost(false);
+        }
 
         SSLContext serverSslContext = TransportSupport.createSslContext(serverSslOptions);
 

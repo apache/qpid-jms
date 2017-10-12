@@ -57,6 +57,7 @@ public class NettySslTransportFactoryTest {
     public static final String[] CUSTOM_DISABLED_CIPHER_SUITES = {"Suite-3", "Suite-4"};
     public static final String CUSTOM_DISABLED_CIPHER_SUITES_STRING = "Suite-3,Suite-4";
     public static final String CUSTOM_STORE_TYPE = "jceks";
+    public static final String CUSTOM_STORE_TYPE_PKCS12 = "pkcs12";
     public static final boolean CUSTOM_TRUST_ALL = true;
     public static final boolean CUSTOM_VERIFY_HOST = false;
     public static final String CUSTOM_KEY_ALIAS = "myTestAlias";
@@ -94,7 +95,8 @@ public class NettySslTransportFactoryTest {
         assertArrayEquals(TransportSslOptions.DEFAULT_DISABLED_PROTOCOLS.toArray(new String[0]), sslOptions.getDisabledProtocols());
         assertNull(sslOptions.getEnabledCipherSuites());
 
-        assertEquals(TransportSslOptions.DEFAULT_STORE_TYPE, sslOptions.getStoreType());
+        assertEquals(TransportSslOptions.DEFAULT_STORE_TYPE, sslOptions.getKeyStoreType());
+        assertEquals(TransportSslOptions.DEFAULT_STORE_TYPE, sslOptions.getTrustStoreType());
         assertEquals(TransportSslOptions.DEFAULT_VERIFY_HOST, sslOptions.isVerifyHost());
         assertNull(sslOptions.getKeyAlias());
     }
@@ -176,9 +178,59 @@ public class NettySslTransportFactoryTest {
         List<String> customDisabledChiperSuites = Arrays.asList(CUSTOM_DISABLED_CIPHER_SUITES);
         assertThat(disabledCipherSuites, containsInAnyOrder(customDisabledChiperSuites.toArray()));
 
-        assertEquals(CUSTOM_STORE_TYPE, sslOptions.getStoreType());
+        assertEquals(CUSTOM_STORE_TYPE, sslOptions.getKeyStoreType());
+        assertEquals(CUSTOM_STORE_TYPE, sslOptions.getTrustStoreType());
         assertEquals(CUSTOM_VERIFY_HOST, sslOptions.isVerifyHost());
         assertEquals(CUSTOM_KEY_ALIAS, sslOptions.getKeyAlias());
         assertEquals(CUSTOM_CONTEXT_PROTOCOL, sslOptions.getContextProtocol());
+    }
+
+    @Test
+    public void testDifferentKeyStoreType() throws Exception {
+        URI BASE_URI = new URI("tcp://localhost:5672");
+        URI configuredURI = new URI(BASE_URI.toString() + "?" +
+            "transport.keyStoreType=" + CUSTOM_STORE_TYPE);
+
+        NettySslTransportFactory factory = new NettySslTransportFactory();
+        Transport transport = factory.createTransport(configuredURI);
+        TransportOptions options = transport.getTransportOptions();
+        assertTrue(options instanceof TransportSslOptions);
+        TransportSslOptions sslOptions = (TransportSslOptions) options;
+
+        assertEquals(CUSTOM_STORE_TYPE, sslOptions.getKeyStoreType());
+        assertEquals(TransportSslOptions.DEFAULT_STORE_TYPE, sslOptions.getTrustStoreType());
+    }
+
+    @Test
+    public void testDifferentTrustStoreType() throws Exception {
+        URI BASE_URI = new URI("tcp://localhost:5672");
+        URI configuredURI = new URI(BASE_URI.toString() + "?" +
+            "transport.trustStoreType=" + CUSTOM_STORE_TYPE);
+
+        NettySslTransportFactory factory = new NettySslTransportFactory();
+        Transport transport = factory.createTransport(configuredURI);
+        TransportOptions options = transport.getTransportOptions();
+        assertTrue(options instanceof TransportSslOptions);
+        TransportSslOptions sslOptions = (TransportSslOptions) options;
+
+        assertEquals(TransportSslOptions.DEFAULT_STORE_TYPE, sslOptions.getKeyStoreType());
+        assertEquals(CUSTOM_STORE_TYPE, sslOptions.getTrustStoreType());
+    }
+
+    @Test
+    public void testDifferentKeyStoreAndTrustStoreType() throws Exception {
+        URI BASE_URI = new URI("tcp://localhost:5672");
+        URI configuredURI = new URI(BASE_URI.toString() + "?" +
+                "transport.keyStoreType=" + CUSTOM_STORE_TYPE_PKCS12 + "&" +
+                "transport.trustStoreType=" + CUSTOM_STORE_TYPE);
+
+        NettySslTransportFactory factory = new NettySslTransportFactory();
+        Transport transport = factory.createTransport(configuredURI);
+        TransportOptions options = transport.getTransportOptions();
+        assertTrue(options instanceof TransportSslOptions);
+        TransportSslOptions sslOptions = (TransportSslOptions) options;
+
+        assertEquals(CUSTOM_STORE_TYPE_PKCS12, sslOptions.getKeyStoreType());
+        assertEquals(CUSTOM_STORE_TYPE, sslOptions.getTrustStoreType());
     }
 }

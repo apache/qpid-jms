@@ -170,7 +170,9 @@ The complete set of SSL Transport options is listed below:
 + **transport.keyStorePassword**  default is to read from the system property "javax.net.ssl.keyStorePassword"
 + **transport.trustStoreLocation**  default is to read from the system property "javax.net.ssl.trustStore"
 + **transport.trustStorePassword**  default is to read from the system property "javax.net.ssl.trustStorePassword"
-+ **transport.storeType** The type of trust store being used. Default is "JKS".
++ **transport.keyStoreType** The type of keyStore being used. Default is to read from the system property "javax.net.ssl.keyStoreType" If not set then default is "JKS".
++ **transport.trustStoreType** The type of trustStore being used. Default is to read from the system property "javax.net.ssl.trustStoreType" If not set then default is "JKS". 
++ **transport.storeType** This will set both the keystoreType and trustStoreType to the same value. If not set then the keyStoreType and trustStoreType will default to the values specified above.
 + **transport.contextProtocol** The protocol argument used when getting an SSLContext. Default is "TLS".
 + **transport.enabledCipherSuites** The cipher suites to enable, comma separated. No default, meaning the context default ciphers are used. Any disabled ciphers are removed from this.
 + **transport.disabledCipherSuites** The cipher suites to disable, comma separated. Ciphers listed here are removed from the enabled ciphers. No default.

@@ -69,7 +69,7 @@ abstract class AbstractScramSHAMechanism extends AbstractMechanism {
             throw new SaslException("Request for initial response not expected in state " + state);
         }
         StringBuilder buf = new StringBuilder("n=");
-        buf.append(saslPrep(getUsername()));
+        buf.append(escapeUsername(saslPrep(getUsername())));
         buf.append(",r=");
         buf.append(clientNonce);
         clientFirstMessageBare = buf.toString();
@@ -221,6 +221,10 @@ abstract class AbstractScramSHAMechanism extends AbstractMechanism {
             throw new SaslException("Can only encode names and passwords which are restricted to ASCII characters");
         }
 
+        return name;
+    }
+
+    private String escapeUsername(String name) {
         name = name.replace("=", "=3D");
         name = name.replace(",", "=2C");
         return name;

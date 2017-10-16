@@ -37,6 +37,7 @@ import static org.hamcrest.Matchers.nullValue;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
@@ -701,8 +702,8 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectSaslPlain(String username, String password)
     {
-        byte[] usernameBytes = username.getBytes();
-        byte[] passwordBytes = password.getBytes();
+        byte[] usernameBytes = username.getBytes(StandardCharsets.UTF_8);
+        byte[] passwordBytes = password.getBytes(StandardCharsets.UTF_8);
         byte[] data = new byte[usernameBytes.length+passwordBytes.length+2];
         System.arraycopy(usernameBytes, 0, data, 1, usernameBytes.length);
         System.arraycopy(passwordBytes, 0, data, 2 + usernameBytes.length, passwordBytes.length);

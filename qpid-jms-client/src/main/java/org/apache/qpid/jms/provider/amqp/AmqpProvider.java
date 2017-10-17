@@ -218,7 +218,9 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         });
 
         if (connectionInfo.getConnectTimeout() != JmsConnectionInfo.INFINITE) {
-            connectRequest.sync(connectionInfo.getConnectTimeout(), TimeUnit.MILLISECONDS);
+            if (!connectRequest.sync(connectionInfo.getConnectTimeout(), TimeUnit.MILLISECONDS)) {
+                throw new IOException("Timed out while waiting to connect");
+            }
         } else {
             connectRequest.sync();
         }

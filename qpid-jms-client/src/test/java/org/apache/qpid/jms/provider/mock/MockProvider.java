@@ -18,6 +18,8 @@ package org.apache.qpid.jms.provider.mock;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -167,6 +169,11 @@ public class MockProvider implements Provider {
     @Override
     public URI getRemoteURI() {
         return remoteURI;
+    }
+
+    @Override
+    public List<URI> getAlternateURIs() {
+        return Collections.emptyList();
     }
 
     @Override
@@ -513,5 +520,4 @@ public class MockProvider implements Provider {
             throw new ProviderClosedException("This Provider is already closed");
         }
     }
-
 }

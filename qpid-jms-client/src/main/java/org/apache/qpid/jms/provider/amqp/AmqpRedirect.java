@@ -200,6 +200,15 @@ public class AmqpRedirect {
         return URISupport.applyParameters(result, queryOptions);
     }
 
+    @Override
+    public String toString() {
+        try {
+            return toURI().toString();
+        } catch (Exception ex) {
+            return "<Invalid-Redirect-Value>";
+        }
+    }
+
     private static ProviderFactory findProviderFactoryByTransportScheme(String scheme) throws IOException {
         if (scheme == null || scheme.isEmpty()) {
             throw new IOException("No Transport scheme specified.");

@@ -594,21 +594,31 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 try {
                     FailoverProvider.this.provider = provider;
                     provider.setProviderListener(FailoverProvider.this);
+                    connectedURI = provider.getRemoteURI();
 
                     if (!firstConnection) {
                         LOG.debug("Signalling connection recovery: {}", provider);
 
                         // Stage 1: Allow listener to recover its resources
-                        listener.onConnectionRecovery(provider);
+                        try {
+                            listener.onConnectionRecovery(provider);
+                        } finally {
+                            // Stage 2: If the provider knows of others lets add them to the URI pool
+                            //          even if something failed here we can learn of new hosts so we
+                            //          always process the potential Open frame failover URI results.
+                            processAlternates(provider.getAlternateURIs());
+                        }
 
-                        // Stage 2: Connection state recovered, get newly configured message factory.
+                        // Stage 3: Connection state recovered, get newly configured message factory.
                         FailoverProvider.this.messageFactory.set(provider.getMessageFactory());
 
-                        // Stage 3: Restart consumers, send pull commands, etc.
+                        // Stage 4: Restart consumers, send pull commands, etc.
                         listener.onConnectionRecovered(provider);
 
-                        // Stage 4: Let the client know that connection has restored.
+                        // Stage 5: Let the client know that connection has restored.
                         listener.onConnectionRestored(provider.getRemoteURI());
+                    } else {
+                        processAlternates(provider.getAlternateURIs());
                     }
 
                     // Last step: Send pending actions.
@@ -619,7 +629,6 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
                     nextReconnectDelay = reconnectDelay;
                     reconnectAttempts = 0;
-                    connectedURI = provider.getRemoteURI();
                     uris.connected();
 
                     // Cancel timeout processing since we are connected again.  We waited until
@@ -844,56 +853,36 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         });
     }
 
-    @Override
-    public void onRemoteDiscovery(final List<URI> discovered) {
-        if (closingConnection.get() || closed.get() || failed.get()) {
-            return;
-        }
-
-        if (discovered == null || discovered.isEmpty()) {
-            return;
-        }
-
-        serializer.execute(new Runnable() {
-            @Override
-            public void run() {
-                if (!closingConnection.get() && !closed.get() && !failed.get()) {
-
-                    List<URI> newRemotes = new ArrayList<URI>(discovered);
-                    switch (amqpOpenServerListAction) {
-                        case ADD:
-                            try {
-                                uris.addAll(discovered);
-                            } catch (Throwable err) {
-                                LOG.warn("Error while attempting to add discovered URIs: {}", discovered);
-                            }
-                            break;
-                        case REPLACE:
-                            // The current server is assumed not to be in the list of updated remote
-                            // as it is meant for the failover nodes. The pool will de-dup if it is.
-                            newRemotes.add(0, connectedURI);
-                            try {
-                                LOG.info("Replacing uris:{} with new set: {}", uris, newRemotes);
-                                uris.replaceAll(newRemotes);
-                            } catch (Throwable err) {
-                                LOG.warn("Error while attempting to add discovered URIs: {}", discovered);
-                            }
-                            break;
-                        case IGNORE:
-                            // Do Nothing
-                            break;
-                        default:
-                            // Shouldn't get here, but do nothing if we do.
-                            break;
+    private void processAlternates(List<URI> alternates) {
+        if (!alternates.isEmpty()) {
+            List<URI> newRemotes = new ArrayList<URI>(alternates);
+            switch (amqpOpenServerListAction) {
+                case ADD:
+                    try {
+                        uris.addAll(alternates);
+                    } catch (Throwable err) {
+                        LOG.warn("Error while attempting to add discovered URIs: {}", alternates);
                     }
-
-                    // Inform any listener that we've made a new discovery.
-                    if (listener != null) {
-                        listener.onRemoteDiscovery(discovered);
+                    break;
+                case REPLACE:
+                    // The current server is assumed not to be in the list of updated remote
+                    // as it is meant for the failover nodes. The pool will de-dup if it is.
+                    newRemotes.add(0, connectedURI);
+                    try {
+                        LOG.info("Replacing uris:{} with new set: {}", uris, newRemotes);
+                        uris.replaceAll(newRemotes);
+                    } catch (Throwable err) {
+                        LOG.warn("Error while attempting to add discovered URIs: {}", alternates);
                     }
-                }
+                    break;
+                case IGNORE:
+                    // Do Nothing
+                    break;
+                default:
+                    // Shouldn't get here, but do nothing if we do.
+                    break;
             }
-        });
+        }
     }
 
     //--------------- URI update and rebalance methods -----------------------//
@@ -926,6 +915,16 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
         }
         return null;
     }
+
+
+    @Override
+    public List<URI> getAlternateURIs() {
+        Provider provider = this.provider;
+        if (provider != null) {
+            return provider.getAlternateURIs();
+        }
+        return null;
+    };
 
     @Override
     public void setProviderListener(ProviderListener listener) {
@@ -1236,6 +1235,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     if (firstConnection) {
                         LOG.trace("First connection requst has completed:");
                         FailoverProvider.this.messageFactory.set(provider.getMessageFactory());
+                        processAlternates(provider.getAlternateURIs());
                         listener.onConnectionEstablished(provider.getRemoteURI());
                         firstConnection = false;
                     } else {
@@ -1257,6 +1257,9 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 serializer.execute(new Runnable() {
                     @Override
                     public void run() {
+                        // If we managed to receive an Open frame it might contain
+                        // a failover update so process it before handling the error.
+                        processAlternates(provider.getAlternateURIs());
                         handleProviderFailure(IOExceptionSupport.create(result));
                     }
                 });
@@ -1270,5 +1273,5 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
     private static enum FailoverServerListAction {
         ADD, REPLACE, IGNORE
-    };
+    }
 }

@@ -19,6 +19,7 @@ package org.apache.qpid.jms.provider.amqp;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -112,7 +113,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private static final NoOpAsyncResult NOOP_REQUEST = new NoOpAsyncResult();
 
     private volatile ProviderListener listener;
-    private AmqpConnection connection;
+    private volatile AmqpConnection connection;
     private AmqpSaslAuthenticator authenticator;
     private final Transport transport;
     private String vhost;
@@ -1063,13 +1064,6 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         }
     }
 
-    public void fireRemotesDiscovered(List<URI> remotes) {
-        ProviderListener listener = this.listener;
-        if (listener != null) {
-            listener.onRemoteDiscovery(remotes);
-        }
-    }
-
     @Override
     public void addChildResource(AmqpResource resource) {
         if (resource instanceof AmqpConnection) {
@@ -1290,6 +1284,27 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     @Override
     public URI getRemoteURI() {
         return remoteURI;
+    }
+
+    @Override
+    public List<URI> getAlternateURIs() {
+        List<URI> alternates = new ArrayList<>();
+
+        if (connection != null) {
+            // If there are failover servers in the open then we signal that to the listeners
+            List<AmqpRedirect> failoverList = connection.getProperties().getFailoverServerList();
+            if (!failoverList.isEmpty()) {
+                for (AmqpRedirect redirect : failoverList) {
+                    try {
+                        alternates.add(redirect.toURI());
+                    } catch (Exception ex) {
+                        LOG.trace("Error while creating URI from failover server: {}", redirect);
+                    }
+                }
+            }
+        }
+
+        return alternates;
     }
 
     public org.apache.qpid.proton.engine.Transport getProtonTransport() {

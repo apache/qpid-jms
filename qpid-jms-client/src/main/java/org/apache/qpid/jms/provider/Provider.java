@@ -18,6 +18,7 @@ package org.apache.qpid.jms.provider;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 
 import javax.jms.JMSException;
 
@@ -76,6 +77,15 @@ public interface Provider {
      * @return the URI used to configure this Provider.
      */
     URI getRemoteURI();
+
+    /**
+     * Returns a {@link List} of alternate remote peers (possibly found via discovery) to
+     * which the caller can attempt a recoonect should this provider connection fail. If there
+     * are no known alternates this method returns an empty {@link List}.
+     *
+     * @return a List or alternate remote URIs that could be connected to later.
+     */
+    List<URI> getAlternateURIs();
 
     /**
      * Create the Provider version of the given JmsResource.

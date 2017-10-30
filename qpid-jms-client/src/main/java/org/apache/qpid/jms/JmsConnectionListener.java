@@ -17,7 +17,6 @@
 package org.apache.qpid.jms;
 
 import java.net.URI;
-import java.util.List;
 
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -104,13 +103,5 @@ public interface JmsConnectionListener {
      *      The exception that provides additional context on the closure.
      */
     void onProducerClosed(MessageProducer producer, Throwable cause);
-
-    /**
-     * Called when additional remote peers are discovered by this connection.
-     *
-     * @param remotes
-     * 		A list of remote peers that have been discovered.
-     */
-    void onRemoteDiscovery(List<URI> remotes);
 
 }

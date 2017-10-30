@@ -19,7 +19,6 @@
 package org.apache.qpid.jms;
 
 import java.net.URI;
-import java.util.List;
 
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -59,9 +58,5 @@ public class JmsDefaultConnectionListener implements JmsConnectionListener {
 
     @Override
     public void onProducerClosed(MessageProducer producer, Throwable cause) {
-    }
-
-    @Override
-    public void onRemoteDiscovery(List<URI> remotes) {
     }
 }

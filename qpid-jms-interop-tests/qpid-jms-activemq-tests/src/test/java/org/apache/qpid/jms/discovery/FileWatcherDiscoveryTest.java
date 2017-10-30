@@ -22,7 +22,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.URI;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -219,10 +218,6 @@ public class FileWatcherDiscoveryTest extends AmqpTestSupport {
 
             @Override
             public void onProducerClosed(MessageProducer producer, Throwable cause) {
-            }
-
-            @Override
-            public void onRemoteDiscovery(List<URI> remotes) {
             }
         });
 

@@ -148,10 +148,6 @@ public class AmqpConnectionBuilder extends AmqpResourceBuilder<AmqpConnection, A
                     LOG.trace("Error while creating URI from failover server: {}", redirect);
                 }
             }
-
-            if (!failoverURIs.isEmpty()) {
-                getResource().getProvider().fireRemotesDiscovered(failoverURIs);
-            }
         }
     }
 

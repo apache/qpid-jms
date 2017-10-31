@@ -869,7 +869,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     // as it is meant for the failover nodes. The pool will de-dup if it is.
                     newRemotes.add(0, connectedURI);
                     try {
-                        LOG.info("Replacing uris:{} with new set: {}", uris, newRemotes);
+                        LOG.debug("Replacing uris:{} with new set: {}", uris, newRemotes);
                         uris.replaceAll(newRemotes);
                     } catch (Throwable err) {
                         LOG.warn("Error while attempting to add discovered URIs: {}", alternates);

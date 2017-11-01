@@ -257,9 +257,9 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
     @Test(timeout = 30000)
     public void testMaxReconnectAttemptsWithMultipleURIs() throws Exception {
         JmsConnectionFactory factory = new JmsConnectionFactory(
-            "failover:(mock://localhost1?mock.failOnConnect=true," +
-                      "mock://localhost2?mock.failOnConnect=true," +
-                      "mock://localhost3?mock.failOnConnect=true)" +
+            "failover:(mock://192.168.2.1?mock.failOnConnect=true," +
+                      "mock://192.168.2.2?mock.failOnConnect=true," +
+                      "mock://192.168.2.3?mock.failOnConnect=true)" +
             "?failover.maxReconnectAttempts=5" +
             "&failover.reconnectDelay=1" +
             "&failover.useReconnectBackOff=false");

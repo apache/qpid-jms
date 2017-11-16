@@ -31,9 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.netty.channel.epoll.Epoll;
-import io.netty.channel.kqueue.KQueue;
-import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.transports.Transport;
@@ -46,7 +43,10 @@ import org.slf4j.LoggerFactory;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.kqueue.KQueue;
+import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.ResourceLeakDetector.Level;
 
@@ -492,6 +492,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 assertTrue(transport.isConnected());
 
                 ByteBuf sendBuffer = transport.allocateSendBuffer(10 * 1024 * 1024);
+                sendBuffer.writeBytes(new byte[] {0, 1, 2, 3, 4});
 
                 transport.close();
 

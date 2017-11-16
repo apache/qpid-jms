@@ -16,6 +16,7 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -97,6 +98,18 @@ public class AmqpConnectionSession extends AmqpSession {
             super(resource, receiver, parent);
         }
 
+        @Override
+        public void processRemoteClose(AmqpProvider provider) throws IOException {
+            // For unsubscribe we care if the remote signaled an error on the close since
+            // that would indicate that the unsubscribe did not succeed and we want to throw
+            // that from the unsubscribe call.
+            if (getEndpoint().getRemoteCondition().getCondition() != null) {
+                closeResource(provider, AmqpSupport.convertToException(provider, getEndpoint(), getEndpoint().getRemoteCondition()), true);
+            } else {
+                closeResource(provider, null, true);
+            }
+        }
+
         public String getLinkName() {
             return getEndpoint().getName();
         }
@@ -120,7 +133,7 @@ public class AmqpConnectionSession extends AmqpSession {
             receiver.setSenderSettleMode(SenderSettleMode.UNSETTLED);
             receiver.setReceiverSettleMode(ReceiverSettleMode.FIRST);
 
-            if(!hasClientID) {
+            if (!hasClientID) {
               // We are trying to unsubscribe a 'global' shared subs using a 'null source lookup', add link
               // desired capabilities as hints to the peer to consider this when trying to attach the link.
               receiver.setDesiredCapabilities(new Symbol[] { AmqpSupport.SHARED, AmqpSupport.GLOBAL });

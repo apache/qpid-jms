@@ -49,10 +49,14 @@ import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.hamcrest.Matcher;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
+
+    private static final Logger LOG = LoggerFactory.getLogger(SubscriptionsIntegrationTest.class);
 
     // -------------------------------------- //
 
@@ -1093,6 +1097,47 @@ public class SubscriptionsIntegrationTest extends QpidJmsTestCase {
             testPeer.expectDetach(true, true, true);
 
             session.unsubscribe(subscriptionName);
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    /**
+     * Verifies that an unsubscribe attempt detects when the remote indicates that
+     * the request failed by attaching an error condition to the detach response.
+     *
+     * @throws Exception if an unexpected exception occurs
+     */
+    @Test(timeout = 20000)
+    public void testUnsubscribeFailsWhenRemoteDetachResponseIndicatesFailure() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            String topicName = "myTopic";
+            String subscriptionName = "mySubscription";
+
+            // Try to unsubscribe, should be able to (strictly speaking an unsub attempt
+            // would probably fail normally, due to no subscription, but this test
+            // doesn't care about that, just that the attempt proceeds, so overlook that.
+            testPeer.expectDurableSubUnsubscribeNullSourceLookup(false, false, subscriptionName, topicName, true);
+            testPeer.expectDetach(true, true, true, AmqpError.RESOURCE_LOCKED,
+                    "Cannot unsubscibe when there are active consumers");
+
+            try {
+                session.unsubscribe(subscriptionName);
+                fail("Should throw an error if the remote indicate detach failed");
+            } catch (JMSException jmsEx) {
+                LOG.info("Caught expected exception on unsubscribe: {}", jmsEx.getMessage());
+            }
 
             testPeer.waitForAllHandlersToComplete(1000);
 

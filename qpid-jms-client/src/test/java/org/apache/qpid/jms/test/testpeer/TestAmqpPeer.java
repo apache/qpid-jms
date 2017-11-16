@@ -25,7 +25,6 @@ import static org.apache.qpid.jms.provider.amqp.AmqpSupport.GLOBAL;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SHARED;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SHARED_SUBS;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SOLE_CONNECTION_CAPABILITY;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
@@ -1583,6 +1582,11 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectDetach(boolean expectClosed, boolean sendResponse, boolean replyClosed)
     {
+        expectDetach(expectClosed, sendResponse, replyClosed, null, null);
+    }
+
+    public void expectDetach(boolean expectClosed, boolean sendResponse, boolean replyClosed, Symbol errorType, String errorMessage)
+    {
         Matcher<Boolean> closeMatcher = null;
         if(expectClosed)
         {
@@ -1601,6 +1605,15 @@ public class TestAmqpPeer implements AutoCloseable
             if(replyClosed)
             {
                 detachResponse.setClosed(replyClosed);
+            }
+
+            if (errorType != null) {
+                org.apache.qpid.jms.test.testpeer.describedtypes.Error detachError = new org.apache.qpid.jms.test.testpeer.describedtypes.Error();
+                detachError.setCondition(errorType);
+                detachError.setDescription(errorMessage);
+                detachResponse.setError(detachError);
+            } else {
+                detachResponse.setError(null);
             }
 
             // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.

@@ -1899,7 +1899,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
     @Test
     public void testGetProperties() throws Exception {
-        Map<Object, Object> applicationPropertiesMap = new HashMap<Object, Object>();
+        Map<String, Object> applicationPropertiesMap = new HashMap<>();
         applicationPropertiesMap.put(TEST_PROP_A, TEST_VALUE_STRING_A);
         applicationPropertiesMap.put(TEST_PROP_B, TEST_VALUE_STRING_B);
 
@@ -1928,7 +1928,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
     @Test
     public void testGetPropertyNames() throws Exception {
-        Map<Object, Object> applicationPropertiesMap = new HashMap<Object, Object>();
+        Map<String, Object> applicationPropertiesMap = new HashMap<>();
         applicationPropertiesMap.put(TEST_PROP_A, TEST_VALUE_STRING_A);
         applicationPropertiesMap.put(TEST_PROP_B, TEST_VALUE_STRING_B);
 
@@ -1955,7 +1955,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
     @Test
     public void testClearProperties() throws Exception {
-        Map<Object, Object> applicationPropertiesMap = new HashMap<Object, Object>();
+        Map<String, Object> applicationPropertiesMap = new HashMap<>();
         applicationPropertiesMap.put(TEST_PROP_A, TEST_VALUE_STRING_A);
 
         Message message = Proton.message();
@@ -1974,7 +1974,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
     @Test
     public void testPropertyExists() throws Exception {
-        Map<Object, Object> applicationPropertiesMap = new HashMap<Object, Object>();
+        Map<String, Object> applicationPropertiesMap = new HashMap<>();
         applicationPropertiesMap.put(TEST_PROP_A, TEST_VALUE_STRING_A);
 
         Message message = Proton.message();
@@ -1997,7 +1997,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
     @Test
     public void testGetProperty() throws Exception {
-        Map<Object, Object> applicationPropertiesMap = new HashMap<Object, Object>();
+        Map<String, Object> applicationPropertiesMap = new HashMap<>();
         applicationPropertiesMap.put(TEST_PROP_A, TEST_VALUE_STRING_A);
 
         Message message = Proton.message();
@@ -2018,7 +2018,6 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         amqpMessageFacade.setProperty(TEST_PROP_A, TEST_VALUE_STRING_A);
         assertEquals(TEST_VALUE_STRING_A, amqpMessageFacade.getProperty(TEST_PROP_A));
 
-        @SuppressWarnings("unchecked")
         Map<String, Object> underlyingApplicationProps = amqpMessageFacade.getApplicationProperties().getValue();
         assertTrue(underlyingApplicationProps.containsKey(TEST_PROP_A));
         assertEquals(TEST_VALUE_STRING_A, underlyingApplicationProps.get(TEST_PROP_A));

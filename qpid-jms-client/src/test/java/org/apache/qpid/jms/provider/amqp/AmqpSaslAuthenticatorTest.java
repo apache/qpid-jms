@@ -39,6 +39,7 @@ import javax.security.sasl.SaslException;
 import org.apache.qpid.jms.sasl.Mechanism;
 import org.apache.qpid.proton.engine.Sasl;
 import org.apache.qpid.proton.engine.Sasl.SaslState;
+import org.apache.qpid.proton.engine.Transport;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.stubbing.Answer;
@@ -52,6 +53,7 @@ public class AmqpSaslAuthenticatorTest {
     private static final byte[] EMPTY_BYTES = {};
 
     private final Sasl sasl = mock(Sasl.class);
+    private final Transport transport = mock(Transport.class);
 
     @Before
     public void setUp() {
@@ -63,8 +65,8 @@ public class AmqpSaslAuthenticatorTest {
     public void testNullSaslMechanismReturnedErroneously() throws Exception {
         Function<String[], Mechanism> mechanismFunction = mechanismName -> null;
 
-        AmqpSaslAuthenticator authenticator = new AmqpSaslAuthenticator(sasl, mechanismFunction);
-        authenticator.tryAuthenticate();
+        AmqpSaslAuthenticator authenticator = new AmqpSaslAuthenticator(mechanismFunction);
+        authenticator.handleSaslMechanisms(sasl, transport);
 
         assertTrue(authenticator.isComplete());
         assertFalse(authenticator.wasSuccessful());
@@ -78,8 +80,8 @@ public class AmqpSaslAuthenticatorTest {
             throw new JMSSecurityRuntimeException("reasons");
         };
 
-        AmqpSaslAuthenticator authenticator = new AmqpSaslAuthenticator(sasl, mechanismFunction);
-        authenticator.tryAuthenticate();
+        AmqpSaslAuthenticator authenticator = new AmqpSaslAuthenticator(mechanismFunction);
+        authenticator.handleSaslMechanisms(sasl, transport);
 
         assertTrue(authenticator.isComplete());
         assertFalse(authenticator.wasSuccessful());
@@ -90,20 +92,20 @@ public class AmqpSaslAuthenticatorTest {
     @Test
     public void testAuthenticationSuccess() throws Exception {
         Mechanism mechanism = new TestSaslMechanism(INITIAL_RESPONSE, EXPECTED_CHALLENGE, RESPONSE);
-        AmqpSaslAuthenticator authenticator = new AmqpSaslAuthenticator(sasl, mechanismName -> mechanism);
+        AmqpSaslAuthenticator authenticator = new AmqpSaslAuthenticator(mechanismName -> mechanism);
 
-        authenticator.tryAuthenticate();
+        authenticator.handleSaslMechanisms(sasl, transport);
         verify(sasl).setMechanisms(mechanism.getName());
         verifySaslMockReceived(sasl, INITIAL_RESPONSE);
 
         when(sasl.getState()).thenReturn(SaslState.PN_SASL_STEP);
         configureSaslMockToProduce(sasl, EXPECTED_CHALLENGE);
-        authenticator.tryAuthenticate();
+        authenticator.handleSaslChallenge(sasl, transport);
         verifySaslMockReceived(sasl, RESPONSE);
 
         when(sasl.getState()).thenReturn(SaslState.PN_SASL_PASS);
         configureSaslMockToProduce(sasl, EMPTY_BYTES);
-        authenticator.tryAuthenticate();
+        authenticator.handleSaslOutcome(sasl, transport);
 
         assertTrue(authenticator.isComplete());
         assertTrue(authenticator.wasSuccessful());
@@ -113,14 +115,14 @@ public class AmqpSaslAuthenticatorTest {
     @Test
     public void testAuthenticationSuccessWithoutChallengeStep() throws Exception {
         Mechanism mechanism = new TestSaslMechanism(INITIAL_RESPONSE);
-        AmqpSaslAuthenticator authenticator = new AmqpSaslAuthenticator(sasl, mechanismName -> mechanism);
+        AmqpSaslAuthenticator authenticator = new AmqpSaslAuthenticator(mechanismName -> mechanism);
 
-        authenticator.tryAuthenticate();
+        authenticator.handleSaslMechanisms(sasl, transport);
         verifySaslMockReceived(sasl, INITIAL_RESPONSE);
 
         when(sasl.getState()).thenReturn(SaslState.PN_SASL_PASS);
         configureSaslMockToProduce(sasl, EMPTY_BYTES);
-        authenticator.tryAuthenticate();
+        authenticator.handleSaslOutcome(sasl, transport);
 
         assertTrue(authenticator.isComplete());
         assertTrue(authenticator.wasSuccessful());
@@ -129,13 +131,13 @@ public class AmqpSaslAuthenticatorTest {
     @Test
     public void testPeerSignalsAuthenticationFail() throws Exception {
         Mechanism mechanism = new TestSaslMechanism(INITIAL_RESPONSE);
-        AmqpSaslAuthenticator authenticator = new AmqpSaslAuthenticator(sasl, mechanismName -> mechanism);
+        AmqpSaslAuthenticator authenticator = new AmqpSaslAuthenticator(mechanismName -> mechanism);
 
-        authenticator.tryAuthenticate();
+        authenticator.handleSaslMechanisms(sasl, transport);
         verifySaslMockReceived(sasl, INITIAL_RESPONSE);
 
         when(sasl.getState()).thenReturn(SaslState.PN_SASL_FAIL);
-        authenticator.tryAuthenticate();
+        authenticator.handleSaslOutcome(sasl, transport);
 
         assertTrue(authenticator.isComplete());
         assertFalse(authenticator.wasSuccessful());
@@ -148,20 +150,20 @@ public class AmqpSaslAuthenticatorTest {
         Mechanism mechanism = new TestSaslMechanism(INITIAL_RESPONSE,
                                                     EXPECTED_CHALLENGE, RESPONSE,
                                                     EMPTY_BYTES, EMPTY_BYTES);
-        AmqpSaslAuthenticator authenticator = new AmqpSaslAuthenticator(sasl, mechanismName -> mechanism);
+        AmqpSaslAuthenticator authenticator = new AmqpSaslAuthenticator(mechanismName -> mechanism);
 
         when(sasl.getState()).thenReturn(SaslState.PN_SASL_IDLE);
-        authenticator.tryAuthenticate();
+        authenticator.handleSaslMechanisms(sasl, transport);
         verifySaslMockReceived(sasl, INITIAL_RESPONSE);
 
         when(sasl.getState()).thenReturn(SaslState.PN_SASL_STEP);
         configureSaslMockToProduce(sasl, EXPECTED_CHALLENGE);
-        authenticator.tryAuthenticate();
+        authenticator.handleSaslChallenge(sasl, transport);
         verifySaslMockReceived(sasl, RESPONSE);
 
         when(sasl.getState()).thenReturn(SaslState.PN_SASL_PASS);
         configureSaslMockToProduce(sasl, EMPTY_BYTES);
-        authenticator.tryAuthenticate();
+        authenticator.handleSaslOutcome(sasl, transport);
 
         assertTrue(authenticator.isComplete());
         assertFalse(authenticator.wasSuccessful());

@@ -23,13 +23,13 @@ import javax.jms.JMSSecurityRuntimeException;
 
 import org.apache.qpid.jms.sasl.Mechanism;
 import org.apache.qpid.proton.engine.Sasl;
+import org.apache.qpid.proton.engine.Transport;
 
 /**
  * Manage the SASL authentication process
  */
 public class AmqpSaslAuthenticator {
 
-    private final Sasl sasl;
     private final Function<String[], Mechanism> mechanismFinder;
 
     private Mechanism mechanism;
@@ -39,43 +39,11 @@ public class AmqpSaslAuthenticator {
     /**
      * Create the authenticator and initialize it.
      *
-     * @param sasl
-     *        The Proton SASL entry point this class will use to manage the authentication.
      * @param mechanismFinder
      *        An object that is used to locate the most correct SASL Mechanism to perform the authentication.
      */
-    public AmqpSaslAuthenticator(Sasl sasl, Function<String[], Mechanism> mechanismFinder) {
-        this.sasl = sasl;
+    public AmqpSaslAuthenticator(Function<String[], Mechanism> mechanismFinder) {
         this.mechanismFinder = mechanismFinder;
-    }
-
-    /**
-     * Process the SASL authentication cycle until such time as an outcome is determine. This
-     * method must be called by the managing entity until the return value is true indicating a
-     * successful authentication or a JMSSecurityException is thrown indicating that the
-     * handshake failed.
-     */
-    public void tryAuthenticate() {
-        try {
-            switch (sasl.getState()) {
-                case PN_SASL_IDLE:
-                    handleSaslInit();
-                    break;
-                case PN_SASL_STEP:
-                    handleSaslStep();
-                    break;
-                case PN_SASL_FAIL:
-                    handleSaslFail();
-                    break;
-                case PN_SASL_PASS:
-                    handleSaslCompletion();
-                    break;
-                default:
-                    break;
-            }
-        } catch (Throwable error) {
-            recordFailure(error.getMessage(), error);
-        }
     }
 
     public boolean isComplete() {
@@ -94,7 +62,9 @@ public class AmqpSaslAuthenticator {
         }
     }
 
-    private void handleSaslInit() {
+    //----- SaslListener implementation --------------------------------------//
+
+    public void handleSaslMechanisms(Sasl sasl, Transport transport) {
         try {
             String[] remoteMechanisms = sasl.getRemoteMechanisms();
             if (remoteMechanisms != null && remoteMechanisms.length != 0) {
@@ -116,7 +86,7 @@ public class AmqpSaslAuthenticator {
         }
     }
 
-    private void handleSaslStep() {
+    public void handleSaslChallenge(Sasl sasl, Transport transport) {
         try {
             if (sasl.pending() != 0) {
                 byte[] challenge = new byte[sasl.pending()];
@@ -131,6 +101,25 @@ public class AmqpSaslAuthenticator {
         }
     }
 
+    public void handleSaslOutcome(Sasl sasl, Transport transport) {
+        try {
+            switch (sasl.getState()) {
+                case PN_SASL_FAIL:
+                    handleSaslFail();
+                    break;
+                case PN_SASL_PASS:
+                    handleSaslCompletion(sasl);
+                    break;
+                default:
+                    break;
+            }
+        } catch (Throwable error) {
+            recordFailure(error.getMessage(), error);
+        }
+    }
+
+    //----- Internal support methods -----------------------------------------//
+
     private void handleSaslFail() {
         if (mechanism != null) {
             recordFailure("Client failed to authenticate using SASL: " + mechanism.getName(), null);
@@ -139,7 +128,7 @@ public class AmqpSaslAuthenticator {
         }
     }
 
-    private void handleSaslCompletion() {
+    private void handleSaslCompletion(Sasl sasl) {
         try {
             if (sasl.pending() != 0) {
                 byte[] additionalData = new byte[sasl.pending()];

@@ -76,6 +76,7 @@ import org.apache.qpid.proton.engine.EndpointState;
 import org.apache.qpid.proton.engine.Event;
 import org.apache.qpid.proton.engine.Event.Type;
 import org.apache.qpid.proton.engine.Sasl;
+import org.apache.qpid.proton.engine.SaslListener;
 import org.apache.qpid.proton.engine.impl.CollectorImpl;
 import org.apache.qpid.proton.engine.impl.ProtocolTracer;
 import org.apache.qpid.proton.engine.impl.TransportImpl;
@@ -99,7 +100,7 @@ import io.netty.util.ReferenceCountUtil;
  * All work within this Provider is serialized to a single Thread.  Any asynchronous exceptions
  * will be dispatched from that Thread and all in-bound requests are handled there as well.
  */
-public class AmqpProvider implements Provider, TransportListener , AmqpResourceParent {
+public class AmqpProvider implements Provider, TransportListener , AmqpResourceParent, SaslListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpProvider.class);
 
@@ -205,8 +206,9 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         }
 
                         sasl.setRemoteHostname(hostname);
+                        sasl.setListener(AmqpProvider.this);
 
-                        authenticator = new AmqpSaslAuthenticator(sasl, (remoteMechanisms) -> findSaslMechanism(remoteMechanisms));
+                        authenticator = new AmqpSaslAuthenticator((remoteMechanisms) -> findSaslMechanism(remoteMechanisms));
 
                         pumpToProtonTransport();
                     } else {
@@ -866,6 +868,62 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
         }
     }
 
+    @Override
+    public void onSaslMechanisms(Sasl sasl, org.apache.qpid.proton.engine.Transport transport) {
+        authenticator.handleSaslMechanisms(sasl, transport);
+        checkSaslAuthenticationState();
+    }
+
+    @Override
+    public void onSaslChallenge(Sasl sasl, org.apache.qpid.proton.engine.Transport transport) {
+        authenticator.handleSaslChallenge(sasl, transport);
+        checkSaslAuthenticationState();
+    }
+
+    @Override
+    public void onSaslOutcome(Sasl sasl, org.apache.qpid.proton.engine.Transport transport) {
+        authenticator.handleSaslOutcome(sasl, transport);
+        checkSaslAuthenticationState();
+    }
+
+    @Override
+    public void onSaslInit(Sasl sasl, org.apache.qpid.proton.engine.Transport transport) {
+        // Server only event
+    }
+
+    @Override
+    public void onSaslResponse(Sasl sasl, org.apache.qpid.proton.engine.Transport transport) {
+        // Server only event
+    }
+
+    private void checkSaslAuthenticationState() {
+        try {
+            if (authenticator.isComplete()) {
+                if (!authenticator.wasSuccessful()) {
+                    // Close the transport to avoid emitting any additional frames if the
+                    // authentication process was unsuccessful, then signal the completion
+                    // to avoid any race with the caller triggering any other traffic.
+                    // Don't release the authenticator as we need it on close to know what
+                    // the state of authentication was.
+                    org.apache.qpid.proton.engine.Transport t = protonConnection.getTransport();
+                    t.close_head();
+                    connectionRequest.onFailure(authenticator.getFailureCause());
+                } else {
+                    // Signal completion and release the authenticator we won't use it again.
+                    connectionRequest.onSuccess();
+                    authenticator = null;
+                }
+            }
+        } catch (Throwable ex) {
+            try {
+                org.apache.qpid.proton.engine.Transport t = protonConnection.getTransport();
+                t.close_head();
+            } finally {
+                fireProviderException(ex);
+            }
+        }
+    }
+
     private void processUpdates() {
         try {
             Event protonEvent = null;
@@ -936,48 +994,11 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
                 protonCollector.pop();
             }
-
-            // We have to do this to pump SASL bytes in as SASL is not event driven yet.
-            processSaslAuthentication();
         } catch (Throwable t) {
             try {
                 LOG.warn("Caught problem during update processing: {}", t.getMessage(), t);
             } finally {
                 fireProviderException(t);
-            }
-        }
-    }
-
-    private void processSaslAuthentication() {
-        if (authenticator == null) {
-            return;
-        }
-
-        try {
-            authenticator.tryAuthenticate();
-
-            if (authenticator.isComplete()) {
-                if (!authenticator.wasSuccessful()) {
-                    // Close the transport to avoid emitting any additional frames if the
-                    // authentication process was unsuccessful, then signal the completion
-                    // to avoid any race with the caller triggering any other traffic.
-                    // Don't release the authenticator as we need it on close to know what
-                    // the state of authentication was.
-                    org.apache.qpid.proton.engine.Transport t = protonConnection.getTransport();
-                    t.close_head();
-                    connectionRequest.onFailure(authenticator.getFailureCause());
-                } else {
-                    // Signal completion and release the authenticator we won't use it again.
-                    connectionRequest.onSuccess();
-                    authenticator = null;
-                }
-            }
-        } catch (Throwable ex) {
-            try {
-                org.apache.qpid.proton.engine.Transport t = protonConnection.getTransport();
-                t.close_head();
-            } finally {
-                fireProviderException(ex);
             }
         }
     }

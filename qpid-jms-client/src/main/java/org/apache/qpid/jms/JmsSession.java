@@ -104,6 +104,9 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsSession.class);
 
+    private static final int ARTEMIS_PRE_ACKNOWLEDGE = 100;
+    private static final int NO_ACKNOWLEDGE = 257;
+
     private final JmsConnection connection;
     private final int acknowledgementMode;
     private final Map<JmsProducerId, JmsMessageProducer> producers = new ConcurrentHashMap<JmsProducerId, JmsMessageProducer>();
@@ -975,6 +978,16 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         return acknowledgementMode == Session.DUPS_OK_ACKNOWLEDGE;
     }
 
+    /**
+     * Checks whether the session uses presettlement for all consumers.
+     *
+     * @return true if the session is using a presettlement for consumers.
+     */
+    public boolean isNoAcknowledge() {
+        return acknowledgementMode == NO_ACKNOWLEDGE ||
+               acknowledgementMode == ARTEMIS_PRE_ACKNOWLEDGE;
+    }
+
     protected void checkClosed() throws IllegalStateException {
         if (closed.get()) {
             IllegalStateException jmsEx = null;
@@ -1226,6 +1239,8 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             case JMSContext.CLIENT_ACKNOWLEDGE:
             case JMSContext.DUPS_OK_ACKNOWLEDGE:
             case JMSContext.SESSION_TRANSACTED:
+            case ARTEMIS_PRE_ACKNOWLEDGE:
+            case NO_ACKNOWLEDGE:
                 return;
             default:
                 throw new JMSRuntimeException("Invalid Session Mode: " + mode);

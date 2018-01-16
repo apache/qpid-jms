@@ -46,6 +46,9 @@ import org.mockito.Mockito;
  */
 public class JmsSessionTest extends JmsConnectionTestSupport {
 
+    private static final int NO_ACKNOWLEDGE = 257;
+    private static final int ARTEMIS_PRE_ACKNOWLEDGE = 100;
+
     @Override
     @Before
     public void setUp() throws Exception {
@@ -76,6 +79,10 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         assertEquals(Session.DUPS_OK_ACKNOWLEDGE, session.getAcknowledgeMode());
         session = (JmsSession) connection.createSession(true, Session.SESSION_TRANSACTED);
         assertEquals(Session.SESSION_TRANSACTED, session.getAcknowledgeMode());
+        session = (JmsSession) connection.createSession(false, NO_ACKNOWLEDGE);
+        assertEquals(NO_ACKNOWLEDGE, session.getAcknowledgeMode());
+        session = (JmsSession) connection.createSession(false, ARTEMIS_PRE_ACKNOWLEDGE);
+        assertEquals(ARTEMIS_PRE_ACKNOWLEDGE, session.getAcknowledgeMode());
     }
 
     @Test(timeout = 10000)
@@ -84,6 +91,7 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         assertTrue(session.isAutoAcknowledge());
         assertFalse(session.isClientAcknowledge());
         assertFalse(session.isDupsOkAcknowledge());
+        assertFalse(session.isNoAcknowledge());
     }
 
     @Test(timeout = 10000)
@@ -92,6 +100,7 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         assertFalse(session.isAutoAcknowledge());
         assertFalse(session.isClientAcknowledge());
         assertTrue(session.isDupsOkAcknowledge());
+        assertFalse(session.isNoAcknowledge());
     }
 
     @Test(timeout = 10000)
@@ -100,6 +109,25 @@ public class JmsSessionTest extends JmsConnectionTestSupport {
         assertFalse(session.isAutoAcknowledge());
         assertTrue(session.isClientAcknowledge());
         assertFalse(session.isDupsOkAcknowledge());
+        assertFalse(session.isNoAcknowledge());
+    }
+
+    @Test(timeout = 10000)
+    public void testIsNoAcknowledge() throws JMSException {
+        JmsSession session = (JmsSession) connection.createSession(false, NO_ACKNOWLEDGE);
+        assertFalse(session.isAutoAcknowledge());
+        assertFalse(session.isClientAcknowledge());
+        assertFalse(session.isDupsOkAcknowledge());
+        assertTrue(session.isNoAcknowledge());
+    }
+
+    @Test(timeout = 10000)
+    public void testIsNoAcknowledgeWithArtemisMode() throws JMSException {
+        JmsSession session = (JmsSession) connection.createSession(false, ARTEMIS_PRE_ACKNOWLEDGE);
+        assertFalse(session.isAutoAcknowledge());
+        assertFalse(session.isClientAcknowledge());
+        assertFalse(session.isDupsOkAcknowledge());
+        assertTrue(session.isNoAcknowledge());
     }
 
     @Test(timeout = 10000)

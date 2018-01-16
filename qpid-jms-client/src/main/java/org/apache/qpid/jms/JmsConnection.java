@@ -38,6 +38,7 @@ import javax.jms.IllegalStateException;
 import javax.jms.InvalidClientIDException;
 import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
+import javax.jms.JMSRuntimeException;
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
 import javax.jms.QueueSession;
@@ -475,8 +476,12 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
         if (transacted) {
             result = Session.SESSION_TRANSACTED;
-        } else if (acknowledgeMode < Session.SESSION_TRANSACTED || acknowledgeMode > Session.DUPS_OK_ACKNOWLEDGE){
-            throw new JMSException("acknowledgeMode " + acknowledgeMode + " cannot be used for an non-transacted Session");
+        } else {
+            try {
+                JmsSession.validateSessionMode(acknowledgeMode);
+            } catch (JMSRuntimeException jmsre) {
+                throw new JMSException("acknowledgeMode " + acknowledgeMode + " cannot be used for an non-transacted Session");
+            }
         }
 
         return result;

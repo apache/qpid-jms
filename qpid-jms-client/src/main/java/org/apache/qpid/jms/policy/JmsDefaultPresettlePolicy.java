@@ -59,6 +59,8 @@ public class JmsDefaultPresettlePolicy implements JmsPresettlePolicy {
     public boolean isConsumerPresttled(JmsSession session, JmsDestination destination) {
         if (session.isTransacted()) {
             return false;
+        } else if (session.isNoAcknowledge()) {
+            return true;
         } else if (destination != null && (presettleAll || presettleConsumers)) {
             return true;
         } else if (destination != null && destination.isQueue() && presettleQueueConsumers) {

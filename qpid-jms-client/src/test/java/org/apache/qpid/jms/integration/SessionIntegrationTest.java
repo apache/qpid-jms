@@ -32,6 +32,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -87,6 +90,7 @@ import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.apache.qpid.proton.amqp.messaging.Modified;
 import org.apache.qpid.proton.amqp.messaging.Released;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -96,6 +100,8 @@ import org.slf4j.LoggerFactory;
 public class SessionIntegrationTest extends QpidJmsTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(SessionIntegrationTest.class);
+
+    private static final int INDIVIDUAL_ACK = 101;
 
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
@@ -2125,6 +2131,55 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             testPeer.expectClose();
             connection.close();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testAcknowledgeIndividualMessages()  throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(INDIVIDUAL_ACK);
+            Queue queue = session.createQueue("myQueue");
+
+            int msgCount = 5;
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType(null), msgCount, false, false,
+                    Matchers.greaterThanOrEqualTo(UnsignedInteger.valueOf(msgCount)), 1, false, true);
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+
+            List<Message> messages = new ArrayList<>();
+            Message lastReceivedMessage = null;
+            for (int i = 0; i < msgCount; i++) {
+                lastReceivedMessage = messageConsumer.receive(3000);
+                assertNotNull("Message " + i + " was not received", lastReceivedMessage);
+                messages.add(lastReceivedMessage);
+
+                assertEquals("unexpected message number property", i, lastReceivedMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER));
+            }
+
+            // Acknowledge the messages in a random order, verify only that messages disposition arrives each time.
+            Random rand = new Random();
+            for (int i = 0; i < msgCount; i++) {
+                Message msg = messages.remove(rand.nextInt(msgCount - i));
+
+                int deliveryNumber =  msg.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1;
+
+                testPeer.expectDisposition(true, new AcceptedMatcher(), deliveryNumber, deliveryNumber);
+
+                msg.acknowledge();
+
+                testPeer.waitForAllHandlersToComplete(3000);
+            }
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
         }
     }
 

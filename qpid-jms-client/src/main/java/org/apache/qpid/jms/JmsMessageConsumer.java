@@ -474,6 +474,8 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         try {
             if (acknowledgementMode == Session.CLIENT_ACKNOWLEDGE) {
                 envelope.getMessage().setAcknowledgeCallback(new JmsAcknowledgeCallback(session));
+            } else if (session.isIndividualAcknowledge()) {
+                envelope.getMessage().setAcknowledgeCallback(new JmsAcknowledgeCallback(session, envelope));
             }
 
             if (envelope.isEnqueueFirst()) {

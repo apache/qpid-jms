@@ -104,6 +104,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
     private static final Logger LOG = LoggerFactory.getLogger(JmsSession.class);
 
+    private static final int INDIVIDUAL_ACKNOWLEDGE = 101;
     private static final int ARTEMIS_PRE_ACKNOWLEDGE = 100;
     private static final int NO_ACKNOWLEDGE = 257;
 
@@ -938,6 +939,25 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         this.connection.acknowledge(sessionInfo.getId(), ackType);
     }
 
+    /**
+     * Acknowledge a specific delivered message in this Session as consumed.  This
+     * method is usually only called when the Session is in the individual ack mode.
+     *
+     * @param ackType
+     *      The type of acknowledgement being done.
+     * @param envelope
+     *      The message envelope.
+     *
+     * @throws JMSException if an error occurs while the acknowledge is processed.
+     */
+    void acknowledgeIndividual(ACK_TYPE ackType, JmsInboundMessageDispatch envelope) throws JMSException {
+        if (isTransacted()) {
+            throw new IllegalStateException("Message acknowledge called inside a transacted Session");
+        }
+
+        this.connection.acknowledge(envelope, ackType);
+    }
+
     public boolean isClosed() {
         return closed.get();
     }
@@ -986,6 +1006,15 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     public boolean isNoAcknowledge() {
         return acknowledgementMode == NO_ACKNOWLEDGE ||
                acknowledgementMode == ARTEMIS_PRE_ACKNOWLEDGE;
+    }
+
+    /**
+     * Checks whether the session used individual acknowledgment mode.
+     *
+     * @return true if the session uses individual acknowledgment.
+     */
+    public boolean isIndividualAcknowledge() {
+        return acknowledgementMode == INDIVIDUAL_ACKNOWLEDGE;
     }
 
     protected void checkClosed() throws IllegalStateException {
@@ -1239,6 +1268,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             case JMSContext.CLIENT_ACKNOWLEDGE:
             case JMSContext.DUPS_OK_ACKNOWLEDGE:
             case JMSContext.SESSION_TRANSACTED:
+            case INDIVIDUAL_ACKNOWLEDGE:
             case ARTEMIS_PRE_ACKNOWLEDGE:
             case NO_ACKNOWLEDGE:
                 return;

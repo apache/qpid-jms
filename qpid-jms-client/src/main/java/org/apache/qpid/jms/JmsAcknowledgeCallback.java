@@ -21,13 +21,23 @@ import static org.apache.qpid.jms.message.JmsMessageSupport.lookupAckTypeForDisp
 
 import javax.jms.JMSException;
 
+import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
+import org.apache.qpid.jms.message.JmsMessage;
+import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+
 public final class JmsAcknowledgeCallback {
 
     private final JmsSession session;
+    private final JmsInboundMessageDispatch envelope;
     private int ackType;
 
     public JmsAcknowledgeCallback(JmsSession session) {
+        this(session, null);
+    }
+
+    public JmsAcknowledgeCallback(JmsSession session, JmsInboundMessageDispatch envelope) {
         this.session = session;
+        this.envelope = envelope;
     }
 
     public void acknowledge() throws JMSException {
@@ -35,7 +45,12 @@ public final class JmsAcknowledgeCallback {
             throw new javax.jms.IllegalStateException("Session closed.");
         }
 
-        session.acknowledge(lookupAckTypeForDisposition(getAckType()));
+        ACK_TYPE dispositionType = lookupAckTypeForDisposition(getAckType());
+        if(envelope == null) {
+            session.acknowledge(dispositionType);
+        } else {
+            session.acknowledgeIndividual(dispositionType, envelope);
+        }
     }
 
     /**

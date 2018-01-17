@@ -25,8 +25,6 @@ import java.util.ArrayList;
 import java.util.ListIterator;
 import java.util.concurrent.ScheduledFuture;
 
-import javax.jms.JMSException;
-
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.exceptions.JmsExceptionSupport;
@@ -249,18 +247,14 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     }
 
     /**
-     * Called to acknowledge a given delivery.  Depending on the Ack Mode that
-     * the consumer was created with this method can acknowledge more than just
-     * the target delivery.
+     * Called to acknowledge a given delivery.
      *
      * @param envelope
      *        the delivery that is to be acknowledged.
      * @param ackType
-     *        the type of acknowledgment to perform.
-     *
-     * @throws JMSException if an error occurs accessing the Message properties.
+     *        the type of acknowledgement to perform.
      */
-    public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) throws JMSException {
+    public void acknowledge(JmsInboundMessageDispatch envelope, ACK_TYPE ackType) {
         Delivery delivery = null;
 
         if (envelope.getProviderHint() instanceof Delivery) {

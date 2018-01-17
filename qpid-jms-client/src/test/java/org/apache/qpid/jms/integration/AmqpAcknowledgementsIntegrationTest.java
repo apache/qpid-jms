@@ -19,10 +19,14 @@
 package org.apache.qpid.jms.integration;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -43,11 +47,14 @@ import org.apache.qpid.jms.test.testpeer.matchers.AcceptedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ModifiedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.RejectedMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.ReleasedMatcher;
+import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 
 public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
 
+    private static final int INDIVIDUAL_ACK = 101;
     private static final int SKIP = -1;
     private static final int INVALID = 99;
 
@@ -269,6 +276,79 @@ public class AmqpAcknowledgementsIntegrationTest extends QpidJmsTestCase {
                 lastReceivedMessage.get().acknowledge();
             } else {
                 lastReceivedMessage.get().acknowledge();
+            }
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testAcknowledgeIndividualMessages()  throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            testPeer.expectBegin();
+
+            Session session = connection.createSession(INDIVIDUAL_ACK);
+            Queue queue = session.createQueue("myQueue");
+
+            int msgCount = 6;
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType(null), msgCount, false, false,
+                    Matchers.greaterThanOrEqualTo(UnsignedInteger.valueOf(msgCount)), 1, false, true);
+
+            MessageConsumer messageConsumer = session.createConsumer(queue);
+
+            List<Message> messages = new ArrayList<>();
+            Message lastReceivedMessage = null;
+            for (int i = 0; i < msgCount; i++) {
+                lastReceivedMessage = messageConsumer.receive(3000);
+                assertNotNull("Message " + i + " was not received", lastReceivedMessage);
+                messages.add(lastReceivedMessage);
+
+                assertEquals("unexpected message number property", i, lastReceivedMessage.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER));
+            }
+
+            List<Integer> ackTypes = new ArrayList<>();
+            ackTypes.add(SKIP);
+            ackTypes.add(JmsMessageSupport.ACCEPTED);
+            ackTypes.add(JmsMessageSupport.REJECTED);
+            ackTypes.add(JmsMessageSupport.RELEASED);
+            ackTypes.add(JmsMessageSupport.MODIFIED_FAILED);
+            ackTypes.add(JmsMessageSupport.MODIFIED_FAILED_UNDELIVERABLE);
+
+            Matcher<?>[] dispositionMatchers = new Matcher<?>[msgCount];
+            dispositionMatchers[0] = null;
+            dispositionMatchers[JmsMessageSupport.ACCEPTED] = new AcceptedMatcher();
+            dispositionMatchers[JmsMessageSupport.REJECTED] = new RejectedMatcher();
+            dispositionMatchers[JmsMessageSupport.RELEASED] = new ReleasedMatcher();
+            dispositionMatchers[JmsMessageSupport.MODIFIED_FAILED] = new ModifiedMatcher().withDeliveryFailed(equalTo(true));
+            dispositionMatchers[JmsMessageSupport.MODIFIED_FAILED_UNDELIVERABLE] = new ModifiedMatcher().withDeliveryFailed(equalTo(true)).withUndeliverableHere(equalTo(true));
+
+            // Acknowledge the messages in a random order with random amqp ack type set (leaving one message without
+            // any specific set, to check it accepts), verify the individual dispositions have expected delivery state.
+            Random rand = new Random();
+            for (int i = 0; i < msgCount; i++) {
+                Message msg = messages.remove(rand.nextInt(msgCount - i));
+
+                int deliveryNumber =  msg.getIntProperty(TestAmqpPeer.MESSAGE_NUMBER) + 1;
+                int ackType = ackTypes.remove(rand.nextInt(msgCount - i));
+
+                if(ackType != SKIP) {
+                    msg.setIntProperty(JmsMessageSupport.JMS_AMQP_ACK_TYPE, ackType);
+
+                    testPeer.expectDisposition(true, dispositionMatchers[ackType], deliveryNumber, deliveryNumber);
+                } else {
+                    testPeer.expectDisposition(true, new AcceptedMatcher(), deliveryNumber, deliveryNumber);
+                }
+
+                msg.acknowledge();
+
+                testPeer.waitForAllHandlersToComplete(3000);
             }
 
             testPeer.expectClose();

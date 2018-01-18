@@ -173,7 +173,7 @@ The complete set of SSL Transport options is listed below:
 + **transport.trustStoreLocation**  default is to read from the system property "javax.net.ssl.trustStore"
 + **transport.trustStorePassword**  default is to read from the system property "javax.net.ssl.trustStorePassword"
 + **transport.keyStoreType** The type of keyStore being used. Default is to read from the system property "javax.net.ssl.keyStoreType" If not set then default is "JKS".
-+ **transport.trustStoreType** The type of trustStore being used. Default is to read from the system property "javax.net.ssl.trustStoreType" If not set then default is "JKS". 
++ **transport.trustStoreType** The type of trustStore being used. Default is to read from the system property "javax.net.ssl.trustStoreType" If not set then default is "JKS".
 + **transport.storeType** This will set both the keystoreType and trustStoreType to the same value. If not set then the keyStoreType and trustStoreType will default to the values specified above.
 + **transport.contextProtocol** The protocol argument used when getting an SSLContext. Default is "TLS".
 + **transport.enabledCipherSuites** The cipher suites to enable, comma separated. No default, meaning the context default ciphers are used. Any disabled ciphers are removed from this.
@@ -275,6 +275,21 @@ When debugging some issues, it may sometimes be useful to enable additional prot
 + Set the environment variable (not Java system property) *PN_TRACE_FRM* to *true*, which will cause Proton to emit frame logging to stdout.
 + Add the option *amqp.traceFrames=true* to your connection URI to have the client add a protocol tracer to Proton, and configure the *org.apache.qpid.jms.provider.amqp.FRAMES* Logger to *TRACE* level to include the output in your logs.
 
+## Extended Session Acknowledgement modes
+
+The client supports two additional session acknowledgement modes beyond the standard JMS specification modes.
+
+### Individual Acknowledge
+
+In this mode messages must be acknowledged individually by the application via the Message#acknowledge() method used when the Session is in CLIENT_ACKNOWLEDGE mode.  Unlike with CLIENT_ACKNOWLEDGE mode only the target message will be acknowledged, all other delivered messages remain un-acknowledged.  The integer value used to activate this mode is *101*.
+
+        connection.createSession(false, 101);
+
+### No Acknowledge
+
+In this mode messages are accepted at the server before being dispatched to the client, and no acknowledgement is performed by the client.  The client supports two integer values to activate this mode, *100* and *257*.
+
+        connection.createSession(false, 100);
 
 ## Authenticating using Kerberos
 

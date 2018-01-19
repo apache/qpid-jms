@@ -97,6 +97,11 @@ public class NoAckSessionIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testNoAckSessionAppliedToTopicAltMode() throws Exception {
+        doTestConsumerWithPresettleOptions(257, Topic.class);
+    }
+
+    @Test(timeout = 20000)
     public void testNoAckSessionAppliedToQueue() throws Exception {
         doTestConsumerWithPresettleOptions(100, Queue.class);
     }

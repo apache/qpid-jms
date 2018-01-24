@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.security.Principal;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -84,7 +85,10 @@ public class GssapiMechanism extends AbstractMechanism {
 
                 @Override
                 public byte[] run() throws Exception {
-                    saslClient = Sasl.createSaslClient(new String[]{NAME}, null, protocol, serverName, null, null);
+                    Map<String, String> props = new HashMap<>();
+                    props.put("javax.security.sasl.server.authentication", "true");
+
+                    saslClient = Sasl.createSaslClient(new String[]{NAME}, null, protocol, serverName, props, null);
                     if (saslClient.hasInitialResponse()) {
                         return saslClient.evaluateChallenge(new byte[0]);
                     }

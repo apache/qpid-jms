@@ -583,7 +583,7 @@ public class TestAmqpPeer implements AutoCloseable
             }
         });
 
-        final SaslChallengeFrame challengeFrame = new SaslChallengeFrame();
+        final SaslChallengeFrame challengeFrame1 = new SaslChallengeFrame();
 
         SaslInitMatcher saslInitMatcher = new SaslInitMatcher()
                 .withMechanism(equalTo(GSSAPI))
@@ -601,19 +601,20 @@ public class TestAmqpPeer implements AutoCloseable
                         final Binary binary = (Binary) o;
                         // validate via sasl
                         try {
-                            byte[] token = Subject.doAs(serverSubject, new PrivilegedExceptionAction<byte[]>() {
+                            byte[] challenge1data = Subject.doAs(serverSubject, new PrivilegedExceptionAction<byte[]>() {
                                 @Override
                                 public byte[] run() throws Exception {
-                                    LOGGER.info("Evaluate Response.. size:" + binary.getLength());
+                                    LOGGER.info("Evaluate Initial Response.. size:" + binary.getLength());
                                     return saslServer.evaluateResponse(binary.getArray());
                                 }
                             });
 
-                            challengeFrame.setChallenge(new Binary(token));
+                            LOGGER.info("Creating challenge 1.. size: " + challenge1data.length);
+                            challengeFrame1.setChallenge(new Binary(challenge1data));
 
                         } catch (PrivilegedActionException e) {
-                            e.printStackTrace();
-                            throw new RuntimeException("failed to eval response", e);
+                            LOGGER.error("Unexpected error during processing initial response", e);
+                            throw new RuntimeException("Failed to eval initial response", e);
                         }
                         LOGGER.info("Complete:" + saslServer.isComplete());
 
@@ -622,17 +623,62 @@ public class TestAmqpPeer implements AutoCloseable
                 }).onCompletion(new AmqpPeerRunnable() {
                     @Override
                     public void run() {
-                        LOGGER.info("Send challenge..");
+                        LOGGER.info("Send challenge 1..");
                         TestAmqpPeer.this.sendFrame(
                                 FrameType.SASL, 0,
-                                challengeFrame,
+                                challengeFrame1,
                                 null,
                                 false, 0);
                     }
                 });
 
         AtomicBoolean succeeded = new AtomicBoolean(false);
-        SaslResponseMatcher responseMatcher = new SaslResponseMatcher().withResponse(new BaseMatcher<Binary>() {
+
+        final SaslChallengeFrame challengeFrame2 = new SaslChallengeFrame();
+
+        SaslResponseMatcher responseMatcher1 = new SaslResponseMatcher().withResponse(new BaseMatcher<Binary>() {
+            @Override
+            public void describeTo(Description description) {}
+
+            @Override
+            public boolean matches(Object o) {
+                final Binary responseBinary1 = (Binary) o;
+                // validate via sasl
+
+                byte[] challenge2data = null;
+                try {
+                    challenge2data = Subject.doAs(serverSubject, new PrivilegedExceptionAction<byte[]>() {
+                        @Override
+                        public byte[] run() throws Exception {
+                            LOGGER.info("Evaluate challenge response 1.. size:" + responseBinary1.getLength());
+                            return saslServer.evaluateResponse(responseBinary1.getArray());
+                        }
+                    });
+                } catch (PrivilegedActionException e) {
+                    LOGGER.error("Unexpected error during processing challenge response 1", e);
+                    throw new RuntimeException("failed to evaluate challenge response 1", e);
+                }
+
+                LOGGER.info("Creating challenge 2.. size: " + challenge2data.length);
+                challengeFrame2.setChallenge(new Binary(challenge2data));
+
+                LOGGER.info("Complete:" + saslServer.isComplete());
+
+                return true;
+            }
+        }).onCompletion(new AmqpPeerRunnable() {
+            @Override
+            public void run() {
+                LOGGER.info("Send challenge 2..");
+                TestAmqpPeer.this.sendFrame(
+                        FrameType.SASL, 0,
+                        challengeFrame2,
+                        null,
+                        false, 0);
+            }
+        });
+
+        SaslResponseMatcher responseMatcher2 = new SaslResponseMatcher().withResponse(new BaseMatcher<Binary>() {
             @Override
             public void describeTo(Description description) {}
 
@@ -646,13 +692,13 @@ public class TestAmqpPeer implements AutoCloseable
                     additionalData = Subject.doAs(serverSubject, new PrivilegedExceptionAction<byte[]>() {
                         @Override
                         public byte[] run() throws Exception {
-                            LOGGER.info("Evaluate response.. size:" + binary.getLength());
+                            LOGGER.info("Evaluate challenge response 2.. size:" + binary.getLength());
                             return saslServer.evaluateResponse(binary.getArray());
                         }
                     });
                 } catch (PrivilegedActionException e) {
-                    e.printStackTrace();
-                    throw new RuntimeException("failed to evaluate challenge response", e);
+                    LOGGER.error("Unexpected error during processing challenge response 2", e);
+                    throw new RuntimeException("failed to evaluate challenge response 2", e);
                 }
 
                 boolean complete = saslServer.isComplete();
@@ -662,7 +708,7 @@ public class TestAmqpPeer implements AutoCloseable
                     LOGGER.info("Authorized ID: " + saslServer.getAuthorizationID());
                 }
 
-                LOGGER.info("Complete:" + complete + ", expectedAuthID:" + expectedAuthId +", additionalData:" + additionalData);
+                LOGGER.info("Complete:" + complete + ", expectedAuthID:" + expectedAuthId +", additionalData:" + Arrays.toString(additionalData));
 
                 if(complete && expectedAuthId && additionalData == null) {
                     succeeded.set(true);
@@ -695,7 +741,8 @@ public class TestAmqpPeer implements AutoCloseable
         });
 
         addHandler(saslInitMatcher);
-        addHandler(responseMatcher);
+        addHandler(responseMatcher1);
+        addHandler(responseMatcher2);
         addHandler(new HeaderHandlerImpl(AmqpHeader.HEADER, AmqpHeader.HEADER));
     }
 

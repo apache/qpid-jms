@@ -88,7 +88,7 @@ public class AmqpSaslAuthenticator {
 
     public void handleSaslChallenge(Sasl sasl, Transport transport) {
         try {
-            if (sasl.pending() != 0) {
+            if (sasl.pending() >= 0) {
                 byte[] challenge = new byte[sasl.pending()];
                 sasl.recv(challenge, 0, challenge.length);
                 byte[] response = mechanism.getChallengeResponse(challenge);

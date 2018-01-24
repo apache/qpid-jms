@@ -171,6 +171,22 @@ public class AmqpSaslAuthenticatorTest {
         assertTrue(authenticator.getFailureCause().getMessage().contains("SASL exchange not completed"));
     }
 
+    @Test
+    public void testEmptyChallengeIsProcessedForResponse() throws Exception {
+        Mechanism mechanism = new TestSaslMechanism(INITIAL_RESPONSE,
+                                                    EMPTY_BYTES, EMPTY_BYTES);
+        AmqpSaslAuthenticator authenticator = new AmqpSaslAuthenticator(mechanismName -> mechanism);
+
+        when(sasl.getState()).thenReturn(SaslState.PN_SASL_IDLE);
+        authenticator.handleSaslMechanisms(sasl, transport);
+        verifySaslMockReceived(sasl, INITIAL_RESPONSE);
+
+        when(sasl.getState()).thenReturn(SaslState.PN_SASL_STEP);
+        configureSaslMockToProduce(sasl, EMPTY_BYTES);
+        authenticator.handleSaslChallenge(sasl, transport);
+        verifySaslMockReceived(sasl, EMPTY_BYTES);
+    }
+
     private void verifySaslMockReceived(final Sasl sasl, final byte[] response) {
         verify(sasl).send(response, 0, response.length);
     }

@@ -41,3 +41,4 @@ There is some basic documentation in the qpid-jms-docs module.
 After building the modules, src and binary distribution assemblies can be found at:
 
     apache-qpid-jms/target
+

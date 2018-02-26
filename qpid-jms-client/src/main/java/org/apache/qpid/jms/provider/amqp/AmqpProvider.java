@@ -80,6 +80,7 @@ import org.apache.qpid.proton.engine.SaslListener;
 import org.apache.qpid.proton.engine.impl.CollectorImpl;
 import org.apache.qpid.proton.engine.impl.ProtocolTracer;
 import org.apache.qpid.proton.engine.impl.TransportImpl;
+import org.apache.qpid.proton.engine.impl.TransportInternal;
 import org.apache.qpid.proton.framing.TransportFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -178,6 +179,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
                 try {
                     protonTransport.setEmitFlowEventOnSend(false);
+
+                    try {
+                        ((TransportInternal) protonTransport).setUseReadOnlyOutputBuffer(false);
+                    } catch (NoSuchMethodError nsme) {
+                        // using a version at runtime where the optimisation isn't available, ignore
+                        LOG.trace("Proton output buffer optimisation unavailable");
+                    }
 
                     if (getMaxFrameSize() > 0) {
                         protonTransport.setMaxFrameSize(getMaxFrameSize());

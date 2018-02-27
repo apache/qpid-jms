@@ -245,6 +245,7 @@
           <configuration>
             <autoVersionSubmodules>true</autoVersionSubmodules>
             <tagNameFormat>@{project.version}</tagNameFormat>
+            <pushChanges>true</pushChanges>
           </configuration>
         </plugin>
         <plugin>

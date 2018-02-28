@@ -101,7 +101,7 @@ import io.netty.util.ReferenceCountUtil;
  * All work within this Provider is serialized to a single Thread.  Any asynchronous exceptions
  * will be dispatched from that Thread and all in-bound requests are handled there as well.
  */
-public class AmqpProvider implements Provider, TransportListener , AmqpResourceParent, SaslListener {
+public class AmqpProvider implements Provider, TransportListener , AmqpResourceParent {
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpProvider.class);
 
@@ -214,7 +214,36 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         }
 
                         sasl.setRemoteHostname(hostname);
-                        sasl.setListener(AmqpProvider.this);
+                        sasl.setListener(new SaslListener() {
+
+                            @Override
+                            public void onSaslMechanisms(Sasl sasl, org.apache.qpid.proton.engine.Transport transport) {
+                                authenticator.handleSaslMechanisms(sasl, transport);
+                                checkSaslAuthenticationState();
+                            }
+
+                            @Override
+                            public void onSaslChallenge(Sasl sasl, org.apache.qpid.proton.engine.Transport transport) {
+                                authenticator.handleSaslChallenge(sasl, transport);
+                                checkSaslAuthenticationState();
+                            }
+
+                            @Override
+                            public void onSaslOutcome(Sasl sasl, org.apache.qpid.proton.engine.Transport transport) {
+                                authenticator.handleSaslOutcome(sasl, transport);
+                                checkSaslAuthenticationState();
+                            }
+
+                            @Override
+                            public void onSaslInit(Sasl sasl, org.apache.qpid.proton.engine.Transport transport) {
+                                // Server only event
+                            }
+
+                            @Override
+                            public void onSaslResponse(Sasl sasl, org.apache.qpid.proton.engine.Transport transport) {
+                                // Server only event
+                            }
+                        });
 
                         authenticator = new AmqpSaslAuthenticator((remoteMechanisms) -> findSaslMechanism(remoteMechanisms));
 
@@ -874,34 +903,6 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                 }
             });
         }
-    }
-
-    @Override
-    public void onSaslMechanisms(Sasl sasl, org.apache.qpid.proton.engine.Transport transport) {
-        authenticator.handleSaslMechanisms(sasl, transport);
-        checkSaslAuthenticationState();
-    }
-
-    @Override
-    public void onSaslChallenge(Sasl sasl, org.apache.qpid.proton.engine.Transport transport) {
-        authenticator.handleSaslChallenge(sasl, transport);
-        checkSaslAuthenticationState();
-    }
-
-    @Override
-    public void onSaslOutcome(Sasl sasl, org.apache.qpid.proton.engine.Transport transport) {
-        authenticator.handleSaslOutcome(sasl, transport);
-        checkSaslAuthenticationState();
-    }
-
-    @Override
-    public void onSaslInit(Sasl sasl, org.apache.qpid.proton.engine.Transport transport) {
-        // Server only event
-    }
-
-    @Override
-    public void onSaslResponse(Sasl sasl, org.apache.qpid.proton.engine.Transport transport) {
-        // Server only event
     }
 
     private void checkSaslAuthenticationState() {

@@ -20,22 +20,6 @@
  */
 package org.apache.qpid.jms.integration;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
-
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.jms.JMSSecurityException;
-import javax.jms.JMSSecurityRuntimeException;
-import javax.net.ssl.SSLContext;
-
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -45,6 +29,21 @@ import org.apache.qpid.proton.amqp.Symbol;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.JMSSecurityException;
+import javax.jms.JMSSecurityRuntimeException;
+import javax.net.ssl.SSLContext;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 public class SaslIntegrationTest extends QpidJmsTestCase {
 
@@ -109,6 +108,34 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
             String pass = "qwerty123456";
 
             testPeer.expectSaslPlain(user, pass);
+            testPeer.expectOpen();
+
+            // Each connection creates a session for managing temporary destinations etc
+            testPeer.expectBegin();
+
+            ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort());
+            Connection connection = factory.createConnection(user, pass);
+            // Set a clientID to provoke the actual AMQP connection process to occur.
+            connection.setClientID("clientName");
+
+            testPeer.waitForAllHandlersToComplete(1000);
+            assertNull(testPeer.getThrowable());
+
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
+
+
+    @Test(timeout = 20000)
+    public void testSaslXOauth2Connection() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            // Expect a PLAIN connection
+            String user = "user";
+            String pass = "eyB1c2VyPSJ1c2VyIiB9";
+
+            testPeer.expectSaslXOauth2(user, pass);
             testPeer.expectOpen();
 
             // Each connection creates a session for managing temporary destinations etc

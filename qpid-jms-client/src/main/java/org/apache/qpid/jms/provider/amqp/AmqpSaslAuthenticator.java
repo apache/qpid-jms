@@ -16,14 +16,13 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
-import java.util.function.Function;
-
-import javax.jms.JMSSecurityException;
-import javax.jms.JMSSecurityRuntimeException;
-
 import org.apache.qpid.jms.sasl.Mechanism;
 import org.apache.qpid.proton.engine.Sasl;
 import org.apache.qpid.proton.engine.Transport;
+
+import java.util.function.Function;
+import javax.jms.JMSSecurityException;
+import javax.jms.JMSSecurityRuntimeException;
 
 /**
  * Manage the SASL authentication process
@@ -121,11 +120,14 @@ public class AmqpSaslAuthenticator {
     //----- Internal support methods -----------------------------------------//
 
     private void handleSaslFail() {
+        StringBuilder message = new StringBuilder("Client failed to authenticate");
         if (mechanism != null) {
-            recordFailure("Client failed to authenticate using SASL: " + mechanism.getName(), null);
-        } else {
-            recordFailure("Client failed to authenticate", null);
+            message.append(" using SASL: ").append(mechanism.getName());
+            if (mechanism.getAdditionalFailureInformation() != null) {
+                message.append(" (").append(mechanism.getAdditionalFailureInformation()).append(")");
+            }
         }
+        recordFailure(message.toString(), null);
     }
 
     private void handleSaslCompletion(Sasl sasl) {

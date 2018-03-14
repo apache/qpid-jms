@@ -155,4 +155,14 @@ public interface Mechanism extends Comparable<Mechanism> {
      * @return true if this Mechanism is enabled by default.
      */
     boolean isEnabledByDefault();
+
+    /**
+     * Allows a mechanism to report additional information on the reason for
+     * authentication failure (e.g. provided in a challenge from the server)
+     *
+     * @return information on the reason for failure, or null if no such information is available
+     */
+    default String getAdditionalFailureInformation() {
+        return null;
+    }
 }

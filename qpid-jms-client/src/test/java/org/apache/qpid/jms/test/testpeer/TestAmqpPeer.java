@@ -140,6 +140,7 @@ public class TestAmqpPeer implements AutoCloseable
     private static final Symbol EXTERNAL = Symbol.valueOf("EXTERNAL");
     private static final Symbol PLAIN = Symbol.valueOf("PLAIN");
     private static final Symbol GSSAPI = Symbol.valueOf("GSSAPI");
+    private static final Symbol XOAUTH2 = Symbol.valueOf("XOAUTH2");
     private static final UnsignedByte SASL_OK = UnsignedByte.valueOf((byte)0);
     private static final UnsignedByte SASL_FAIL_AUTH = UnsignedByte.valueOf((byte)1);
     private static final int CONNECTION_CHANNEL = 0;
@@ -757,6 +758,25 @@ public class TestAmqpPeer implements AutoCloseable
         Matcher<Binary> initialResponseMatcher = equalTo(new Binary(data));
 
         expectSaslAuthentication(PLAIN, initialResponseMatcher, null, true, false);
+    }
+
+    public void expectSaslXOauth2(String username, String password)
+    {
+        byte[] usernameBytes = username.getBytes(StandardCharsets.UTF_8);
+        byte[] passwordBytes = password.getBytes(StandardCharsets.UTF_8);
+        byte[] data = new byte[usernameBytes.length+passwordBytes.length+20];
+
+        System.arraycopy("user=".getBytes(StandardCharsets.US_ASCII), 0, data, 0, 5);
+        System.arraycopy(usernameBytes, 0, data, 5, usernameBytes.length);
+        data[5+usernameBytes.length] = 1;
+        System.arraycopy("auth=Bearer ".getBytes(StandardCharsets.US_ASCII), 0, data, 6+usernameBytes.length, 12);
+        System.arraycopy(passwordBytes, 0, data, 18 + usernameBytes.length, passwordBytes.length);
+        data[data.length-2] = 1;
+        data[data.length-1] = 1;
+
+        Matcher<Binary> initialResponseMatcher = equalTo(new Binary(data));
+
+        expectSaslAuthentication(XOAUTH2, initialResponseMatcher, null, true, false);
     }
 
     public void expectSaslExternal()

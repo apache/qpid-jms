@@ -33,13 +33,14 @@ public interface Mechanism extends Comparable<Mechanism> {
      */
     public enum PRIORITY {
         LOWEST(0),
-        LOWER(1),
-        LOW(2),
-        MEDIUM(3),
-        HIGH(4),
-        HIGHER(5),
-        HIGHER_STILL(6),
-        HIGHEST(7);
+        LOWER_STILL(1),
+        LOWER(2),
+        LOW(3),
+        MEDIUM(4),
+        HIGH(5),
+        HIGHER(6),
+        HIGHER_STILL(7),
+        HIGHEST(8);
 
         private final int value;
 

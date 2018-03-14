@@ -31,7 +31,7 @@ public class XOauth2Mechanism extends AbstractMechanism {
 
     @Override
     public int getPriority() {
-        return PRIORITY.LOWEST.getValue();
+        return PRIORITY.LOWER_STILL.getValue();
     }
 
     @Override

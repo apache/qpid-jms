@@ -32,6 +32,9 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
@@ -55,6 +58,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     private static final Symbol SCRAM_SHA_1 = Symbol.valueOf("SCRAM-SHA-1");
     private static final Symbol SCRAM_SHA_256 = Symbol.valueOf("SCRAM-SHA-256");
     private static final Symbol EXTERNAL = Symbol.valueOf("EXTERNAL");
+    private static final Symbol XOAUTH2 = Symbol.valueOf("XOAUTH2");
 
     private static final String BROKER_JKS_KEYSTORE = "src/test/resources/broker-jks.keystore";
     private static final String BROKER_JKS_TRUSTSTORE = "src/test/resources/broker-jks.truststore";
@@ -126,12 +130,11 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-
     @Test(timeout = 20000)
     public void testSaslXOauth2Connection() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
-            // Expect a PLAIN connection
+            // Expect a XOAUTH2 connection
             String user = "user";
             String pass = "eyB1c2VyPSJ1c2VyIiB9";
 
@@ -253,6 +256,12 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 20000)
     public void testScramSha256SelectedWhenCredentialsPresent() throws Exception {
         doMechanismSelectedTestImpl("username", "password", SCRAM_SHA_256, new Symbol[] {SCRAM_SHA_256, SCRAM_SHA_1, CRAM_MD5, PLAIN, ANONYMOUS}, false);
+    }
+
+    @Test(timeout = 20000)
+    public void testXoauth2SelectedWhenCredentialsPresent() throws Exception {
+        String token = Base64.getEncoder().encodeToString("token".getBytes(StandardCharsets.US_ASCII));
+        doMechanismSelectedTestImpl("username", token, XOAUTH2, new Symbol[] {XOAUTH2, ANONYMOUS}, false);
     }
 
     private void doMechanismSelectedTestImpl(String username, String password, Symbol clientSelectedMech, Symbol[] serverMechs, boolean wait) throws Exception {

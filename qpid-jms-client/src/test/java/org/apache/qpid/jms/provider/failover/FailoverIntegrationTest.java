@@ -16,7 +16,11 @@
  */
 package org.apache.qpid.jms.provider.failover;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
@@ -177,7 +181,11 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             originalPeer.expectOpen();
             originalPeer.expectBegin();
 
-            final JmsConnection connection = establishAnonymousConnecton(originalPeer, rejectingPeer, finalPeer);
+            long ird = 0;
+            long rd = 2000;
+            long start = System.currentTimeMillis();
+
+            final JmsConnection connection = establishAnonymousConnecton("failover.initialReconnectDelay=" + ird + "&failover.reconnectDelay=" + rd + "&failover.maxReconnectAttempts=10", originalPeer, rejectingPeer, finalPeer);
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
                 public void onConnectionEstablished(URI remoteURI) {
@@ -201,7 +209,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             assertEquals("should not yet have connected to final peer", 1L, finalConnected.getCount());
 
             // Set expectations on rejecting and final peer
-            rejectingPeer.expectSaslHeaderThenDrop();
+            rejectingPeer.rejectConnect(AmqpError.NOT_FOUND, "Resource could not be located", null);
 
             finalPeer.expectSaslAnonymous();
             finalPeer.expectOpen();
@@ -213,6 +221,11 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             rejectingPeer.waitForAllHandlersToComplete(2000);
 
             assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            long end = System.currentTimeMillis();
+
+            long margin = 2000;
+            assertThat("Elapsed time outwith expected range for reconnect", end - start,
+                    both(greaterThanOrEqualTo(ird + rd)).and(lessThanOrEqualTo(ird + rd + margin)));
 
             // Shut it down
             finalPeer.expectClose();

@@ -670,6 +670,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 }
 
                 Throwable failure = null;
+                Provider provider = null;
 
                 long reconnectAttempts = reconnectControl.recordNextAttempt();
 
@@ -682,7 +683,6 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                                 continue;
                             }
 
-                            Provider provider = null;
                             try {
                                 LOG.debug("Connection attempt:[{}] to: {} in-progress", reconnectAttempts, target);
                                 provider = ProviderFactory.create(target);
@@ -695,6 +695,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                                 try {
                                     if (provider != null) {
                                         provider.close();
+                                        provider = null;
                                     }
                                 } catch (Throwable ex) {}
                             }
@@ -708,7 +709,8 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     LOG.info("Connection attempt:[{}] failed abnormally.", reconnectAttempts);
                     failure = failure == null ? unknownFailure : failure;
                 } finally {
-                    if (failure != null) {
+                    if (provider == null) {
+                        LOG.trace("Connection attempt:[{}] failed error: {}", reconnectControl.reconnectAttempts, failure.getMessage());
                         if (reconnectControl.isLimitExceeded()) {
                             reportReconnectFailure(failure);
                         } else {
@@ -815,6 +817,9 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     private void processAlternates(List<URI> alternates) {
         if (!alternates.isEmpty()) {
             List<URI> newRemotes = new ArrayList<URI>(alternates);
+
+            LOG.debug("Processing alternates uris:{} with new set: {}", uris, newRemotes);
+
             switch (amqpOpenServerListAction) {
                 case ADD:
                     try {
@@ -841,6 +846,8 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                     // Shouldn't get here, but do nothing if we do.
                     break;
             }
+
+            LOG.debug("Processing alternates done new uris:{}", uris);
         }
     }
 

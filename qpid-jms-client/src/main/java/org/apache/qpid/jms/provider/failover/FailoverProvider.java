@@ -695,9 +695,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                                 try {
                                     if (provider != null) {
                                         provider.close();
-                                        provider = null;
                                     }
-                                } catch (Throwable ex) {}
+                                } catch (Throwable ex) {
+                                } finally {
+                                    provider = null;
+                                }
                             }
                         }
                     } else {

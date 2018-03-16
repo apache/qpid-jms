@@ -155,7 +155,9 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         try {
             provider.connect(connectionInfo);
         } catch (Exception ex) {
-            LOG.error("Failed to connect to remote at: {}", connectionInfo.getConfiguredURI());
+            URI remoteURI = connectionInfo.getConfiguredURI();
+            LOG.error("Failed to connect to remote at: {}",
+                remoteURI.getScheme() + "://" + remoteURI.getHost() + ":" + remoteURI.getPort());
             LOG.trace("Error: ", ex);
             try {
                 provider.close();

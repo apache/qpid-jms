@@ -686,13 +686,15 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                             }
 
                             try {
-                                LOG.debug("Connection attempt:[{}] to: {} in-progress", reconnectAttempts, target);
+                                LOG.debug("Connection attempt:[{}] to: {} in-progress", reconnectAttempts,
+                                    target.getScheme() + "://" + target.getHost() + ":" + target.getPort());
                                 provider = ProviderFactory.create(target);
                                 provider.connect(connectionInfo);
                                 initializeNewConnection(provider);
                                 return;
                             } catch (Throwable e) {
-                                LOG.info("Connection attempt:[{}] to: {} failed", reconnectAttempts, target);
+                                LOG.info("Connection attempt:[{}] to: {} failed", reconnectAttempts,
+                                    target.getScheme() + "://" + target.getHost() + ":" + target.getPort());
                                 failure = e;
                                 try {
                                     if (provider != null) {

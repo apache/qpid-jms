@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.ConcurrentModificationException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -679,7 +680,8 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                         for (int i = 0; i < uris.size(); ++i) {
                             URI target = uris.getNext();
                             if (target == null) {
-                                LOG.warn("Failover URI collection unexpectedly modified during connection attempt.");
+                                LOG.trace("Failover URI collection unexpectedly modified during connection attempt.");
+                                failure = new ConcurrentModificationException("Failover URIs changed unexpectedly");
                                 continue;
                             }
 
@@ -708,7 +710,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                             "No remote URI available for reconnection during connection attempt: " + reconnectAttempts);
                     }
                 } catch (Throwable unknownFailure) {
-                    LOG.info("Connection attempt:[{}] failed abnormally.", reconnectAttempts);
+                    LOG.warn("Connection attempt:[{}] failed abnormally.", reconnectAttempts);
                     failure = failure == null ? unknownFailure : failure;
                 } finally {
                     if (provider == null) {

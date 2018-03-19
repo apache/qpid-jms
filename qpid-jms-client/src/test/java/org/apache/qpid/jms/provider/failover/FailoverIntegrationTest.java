@@ -1564,6 +1564,79 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Test(timeout=20000)
+    public void testTxCommitThrowsAfterMaxReconnectsWhenNoDischargeResponseSent() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+
+            final CountDownLatch testConnected = new CountDownLatch(1);
+            final CountDownLatch failedConnection = new CountDownLatch(1);
+
+            // Create a peer to connect to, then one to reconnect to
+            final String testPeerURI = createPeerURI(testPeer);
+
+            LOG.info("test peer is at: {}", testPeerURI);
+
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+
+            final JmsConnection connection = establishAnonymousConnecton(
+                "failover.maxReconnectAttempts=10&failover.useReconnectBackOff=false", testPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (testPeerURI.equals(remoteURI.toString())) {
+                        testConnected.countDown();
+                    }
+                }
+
+                @Override
+                public void onConnectionFailure(Throwable cause) {
+                    LOG.info("Connection Failed: {}", cause);
+                    failedConnection.countDown();
+                }
+            });
+            connection.start();
+
+            assertTrue("Should connect to test peer", testConnected.await(5, TimeUnit.SECONDS));
+
+            testPeer.expectBegin();
+            testPeer.expectCoordinatorAttach();
+
+            // First expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a Declared disposition state containing the txnId.
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+            testPeer.expectDeclare(txnId);
+
+            // The session should send a commit but we don't respond, then drop the connection
+            // and check that the commit is failed due to dropped connection.
+            testPeer.expectDischargeButDoNotRespond(txnId, false);
+            testPeer.expectDeclareButDoNotRespond();
+
+            testPeer.remotelyCloseConnection(true, ConnectionError.CONNECTION_FORCED, "Server is going away", 100);
+
+            // --- Failover should handle the connection close ---------------//
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+
+            try {
+                session.commit();
+                fail("Commit should have thrown an exception");
+            } catch (JMSException jmsEx) {
+                LOG.debug("Commit threw: ", jmsEx);
+            }
+
+            assertTrue("Should reported failed", failedConnection.await(5, TimeUnit.SECONDS));
+
+            try {
+                connection.close();
+            } catch (JMSException jmsEx) {}
+
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
     private JmsConnection establishAnonymousConnecton(TestAmqpPeer... peers) throws JMSException {
         return establishAnonymousConnecton(null, null, peers);
     }

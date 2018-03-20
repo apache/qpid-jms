@@ -1326,7 +1326,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 return false;
             }
 
-            return reconnectAttemptLimit() != 0;
+            return !isLimitExceeded();
         }
 
         private int reconnectAttemptLimit() {

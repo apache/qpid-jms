@@ -274,6 +274,12 @@ public class TestAmqpPeer implements AutoCloseable
         return _emptyFrameCount.get();
     }
 
+    public void purgeExpectations() {
+        synchronized (_handlersLock) {
+            _handlers.clear();
+        }
+    }
+
     void receiveHeader(byte[] header)
     {
         Handler handler = getFirstHandler();

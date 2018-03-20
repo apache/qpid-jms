@@ -1637,6 +1637,79 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Test(timeout = 20000)
+    public void testDropAndRejectAfterwardsHonorsMax() throws Exception {
+        try (TestAmqpPeer firstPeer = new TestAmqpPeer();
+             TestAmqpPeer secondPeer = new TestAmqpPeer();
+             TestAmqpPeer thirdPeer = new TestAmqpPeer();
+             TestAmqpPeer fourthPeer = new TestAmqpPeer()) {
+
+            final CountDownLatch testConnected = new CountDownLatch(1);
+            final CountDownLatch failedConnection = new CountDownLatch(1);
+
+            // Create a peer to connect to, then one to reconnect to
+            final String testPeerURI = createPeerURI(firstPeer);
+
+            LOG.info("First peer is at: {}", firstPeer);
+            LOG.info("Second peer is at: {}", secondPeer);
+            LOG.info("Third peer is at: {}", thirdPeer);
+            LOG.info("Fourth peer is at: {}", fourthPeer);
+
+            firstPeer.expectSaslAnonymous();
+            firstPeer.expectOpen();
+            firstPeer.expectBegin();
+            firstPeer.remotelyCloseConnection(true, ConnectionError.CONNECTION_FORCED, "Server is going away", 100);
+
+            secondPeer.rejectConnect(AmqpError.NOT_FOUND, "Resource could not be located", null);
+            thirdPeer.rejectConnect(AmqpError.NOT_FOUND, "Resource could not be located", null);
+
+            // This shouldn't get hit, but if it does accept the connect so we don't pass the failed
+            // to connect assertion.
+            fourthPeer.expectSaslAnonymous();
+            fourthPeer.expectOpen();
+            fourthPeer.expectBegin();
+            fourthPeer.expectClose();
+
+            final JmsConnection connection = establishAnonymousConnecton(
+                "failover.maxReconnectAttempts=2&failover.useReconnectBackOff=false", firstPeer, secondPeer, thirdPeer, fourthPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (testPeerURI.equals(remoteURI.toString())) {
+                        testConnected.countDown();
+                    }
+                }
+
+                @Override
+                public void onConnectionFailure(Throwable cause) {
+                    LOG.info("Connection Failed: {}", cause);
+                    failedConnection.countDown();
+                }
+            });
+            connection.start();
+
+            assertTrue("Should connect to test peer", testConnected.await(5, TimeUnit.SECONDS));
+
+            // --- Failover should handle the connection close ---------------//
+
+            assertTrue("Should reported failed", failedConnection.await(5, TimeUnit.SECONDS));
+
+            try {
+                connection.close();
+            } catch (JMSException jmsEx) {}
+
+            secondPeer.waitForAllHandlersToCompleteNoAssert(2000);
+            thirdPeer.waitForAllHandlersToComplete(2000);
+
+            try {
+                fourthPeer.purgeExpectations();
+                fourthPeer.close();
+                fail("Should have not executed any handlers.");
+            } catch (Throwable t) {}
+        }
+    }
+
     private JmsConnection establishAnonymousConnecton(TestAmqpPeer... peers) throws JMSException {
         return establishAnonymousConnecton(null, null, peers);
     }

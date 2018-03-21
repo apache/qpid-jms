@@ -56,6 +56,7 @@ import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.JmsOperationTimedOutException;
+import org.apache.qpid.jms.JmsResourceNotFoundException;
 import org.apache.qpid.jms.JmsSendTimedOutException;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -1648,12 +1649,12 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             final CountDownLatch failedConnection = new CountDownLatch(1);
 
             // Create a peer to connect to, then one to reconnect to
-            final String testPeerURI = createPeerURI(firstPeer);
+            final String firstPeerURI = createPeerURI(firstPeer);
 
-            LOG.info("First peer is at: {}", firstPeer);
-            LOG.info("Second peer is at: {}", secondPeer);
-            LOG.info("Third peer is at: {}", thirdPeer);
-            LOG.info("Fourth peer is at: {}", fourthPeer);
+            LOG.info("First peer is at: {}", firstPeerURI);
+            LOG.info("Second peer is at: {}", createPeerURI(secondPeer));
+            LOG.info("Third peer is at: {}", createPeerURI(thirdPeer));
+            LOG.info("Fourth peer is at: {}", createPeerURI(fourthPeer));
 
             firstPeer.expectSaslAnonymous();
             firstPeer.expectOpen();
@@ -1676,7 +1677,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                 @Override
                 public void onConnectionEstablished(URI remoteURI) {
                     LOG.info("Connection Established: {}", remoteURI);
-                    if (testPeerURI.equals(remoteURI.toString())) {
+                    if (firstPeerURI.equals(remoteURI.toString())) {
                         testConnected.countDown();
                     }
                 }
@@ -1689,7 +1690,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to test peer", testConnected.await(5, TimeUnit.SECONDS));
+            assertTrue("Should connect to first peer", testConnected.await(5, TimeUnit.SECONDS));
 
             // --- Failover should handle the connection close ---------------//
 
@@ -1700,7 +1701,69 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             } catch (JMSException jmsEx) {}
 
             secondPeer.waitForAllHandlersToCompleteNoAssert(2000);
-            thirdPeer.waitForAllHandlersToComplete(2000);
+            thirdPeer.waitForAllHandlersToCompleteNoAssert(2000);
+
+            try {
+                fourthPeer.purgeExpectations();
+                fourthPeer.close();
+                fail("Should have not executed any handlers.");
+            } catch (Throwable t) {}
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testStartMaxReconnectAttemptsTriggeredWhenRemotesAreRejecting() throws Exception {
+        try (TestAmqpPeer firstPeer = new TestAmqpPeer();
+             TestAmqpPeer secondPeer = new TestAmqpPeer();
+             TestAmqpPeer thirdPeer = new TestAmqpPeer();
+             TestAmqpPeer fourthPeer = new TestAmqpPeer()) {
+
+            final CountDownLatch failedConnection = new CountDownLatch(1);
+
+            LOG.info("First peer is at: {}", createPeerURI(firstPeer));
+            LOG.info("Second peer is at: {}", createPeerURI(secondPeer));
+            LOG.info("Third peer is at: {}", createPeerURI(thirdPeer));
+            LOG.info("Fourth peer is at: {}", createPeerURI(fourthPeer));
+
+            firstPeer.rejectConnect(AmqpError.NOT_FOUND, "Resource could not be located", null);
+            secondPeer.rejectConnect(AmqpError.NOT_FOUND, "Resource could not be located", null);
+            thirdPeer.rejectConnect(AmqpError.NOT_FOUND, "Resource could not be located", null);
+
+            // This shouldn't get hit, but if it does accept the connect so we don't pass the failed
+            // to connect assertion.
+            fourthPeer.expectSaslAnonymous();
+            fourthPeer.expectOpen();
+            fourthPeer.expectBegin();
+            fourthPeer.expectClose();
+
+            final JmsConnection connection = establishAnonymousConnecton(
+                "failover.startupMaxReconnectAttempts=3&failover.reconnectDelay=15&failover.useReconnectBackOff=false",
+                firstPeer, secondPeer, thirdPeer, fourthPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+
+                @Override
+                public void onConnectionFailure(Throwable cause) {
+                    LOG.info("Connection Failed: {}", cause);
+                    failedConnection.countDown();
+                }
+            });
+
+            try {
+                connection.start();
+                fail("Should not be able to connect");
+            } catch (JmsResourceNotFoundException jmsrnfe) {}
+
+            // --- Failover should handle the connection close ---------------//
+
+            assertTrue("Should reported failed", failedConnection.await(5, TimeUnit.SECONDS));
+
+            try {
+                connection.close();
+            } catch (JMSException jmsEx) {}
+
+            firstPeer.waitForAllHandlersToCompleteNoAssert(2000);
+            secondPeer.waitForAllHandlersToCompleteNoAssert(2000);
+            thirdPeer.waitForAllHandlersToCompleteNoAssert(2000);
 
             try {
                 fourthPeer.purgeExpectations();

@@ -614,17 +614,23 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
                         // Stage 5: Let the client know that connection has restored.
                         listener.onConnectionRestored(provider.getRemoteURI());
+
+                        // Last step: Send pending actions.
+                        List<FailoverRequest> pending = new ArrayList<FailoverRequest>(requests.values());
+                        for (FailoverRequest request : pending) {
+                            request.run();
+                        }
+
+                        reconnectControl.connectionEstablished();
                     } else {
                         processAlternates(provider.getAlternateURIs());
-                    }
 
-                    // Last step: Send pending actions.
-                    List<FailoverRequest> pending = new ArrayList<FailoverRequest>(requests.values());
-                    for (FailoverRequest request : pending) {
-                        request.run();
+                        // Last step: Send pending actions.
+                        List<FailoverRequest> pending = new ArrayList<FailoverRequest>(requests.values());
+                        for (FailoverRequest request : pending) {
+                            request.run();
+                        }
                     }
-
-                    reconnectControl.recordConnected();
 
                     // Cancel timeout processing since we are connected again.  We waited until
                     // now for the case where we are continually getting bounced from otherwise
@@ -1201,16 +1207,13 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
         @Override
         public void onSuccess() {
-            serializer.execute(new Runnable() {
-                @Override
-                public void run() {
-                    LOG.trace("First connection requst has completed:");
-                    FailoverProvider.this.messageFactory.set(provider.getMessageFactory());
-                    processAlternates(provider.getAlternateURIs());
-                    listener.onConnectionEstablished(provider.getRemoteURI());
-                    reconnectControl.signalRecoveryRequired();
-                    CreateConnectionRequest.this.signalConnected();
-                }
+            serializer.execute(() -> {
+                LOG.trace("First connection requst has completed:");
+                FailoverProvider.this.messageFactory.set(provider.getMessageFactory());
+                processAlternates(provider.getAlternateURIs());
+                listener.onConnectionEstablished(provider.getRemoteURI());
+                reconnectControl.connectionEstablished();
+                CreateConnectionRequest.this.signalConnected();
             });
         }
 
@@ -1221,14 +1224,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 super.onFailure(result);
             } else {
                 LOG.debug("Request received error: {}", result.getMessage());
-                serializer.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        // If we managed to receive an Open frame it might contain
-                        // a failover update so process it before handling the error.
-                        processAlternates(provider.getAlternateURIs());
-                        handleProviderFailure(IOExceptionSupport.create(result));
-                    }
+                serializer.execute(() -> {
+                    // If we managed to receive an Open frame it might contain
+                    // a failover update so process it before handling the error.
+                    processAlternates(provider.getAlternateURIs());
+                    handleProviderFailure(IOExceptionSupport.create(result));
                 });
             }
         }
@@ -1290,7 +1290,8 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             }
         }
 
-        public void recordConnected() {
+        public void connectionEstablished() {
+            recoveryRequired = true;
             nextReconnectDelay = -1;
             reconnectAttempts = 0;
             uris.connected();
@@ -1302,10 +1303,6 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
         public boolean isRecoveryRequired() {
             return recoveryRequired;
-        }
-
-        public void signalRecoveryRequired() {
-            recoveryRequired = true;
         }
 
         public boolean isLimitExceeded() {

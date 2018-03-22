@@ -1770,11 +1770,13 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             secondPeer.waitForAllHandlersToCompleteNoAssert(2000);
             thirdPeer.waitForAllHandlersToCompleteNoAssert(2000);
 
-            try {
-                fourthPeer.purgeExpectations();
-                fourthPeer.close();
-                fail("Should have not executed any handlers.");
-            } catch (Throwable t) {}
+            // Shut down last peer and verify no connection made to it
+            fourthPeer.purgeExpectations();
+            fourthPeer.close();
+            assertNotNull("Peer 1 should have accepted a TCP connection", firstPeer.getClientSocket());
+            assertNotNull("Peer 2 should have accepted a TCP connection", secondPeer.getClientSocket());
+            assertNotNull("Peer 3 should have accepted a TCP connection", thirdPeer.getClientSocket());
+            assertNull("Peer 4 should not have accepted any TCP connection", fourthPeer.getClientSocket());
         }
     }
 
@@ -1832,11 +1834,13 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             secondPeer.waitForAllHandlersToCompleteNoAssert(2000);
             thirdPeer.waitForAllHandlersToCompleteNoAssert(2000);
 
-            try {
-                fourthPeer.purgeExpectations();
-                fourthPeer.close();
-                fail("Should have not executed any handlers.");
-            } catch (Throwable t) {}
+            // Shut down last peer and verify no connection made to it
+            fourthPeer.purgeExpectations();
+            fourthPeer.close();
+            assertNotNull("Peer 1 should have accepted a TCP connection", firstPeer.getClientSocket());
+            assertNotNull("Peer 2 should have accepted a TCP connection", secondPeer.getClientSocket());
+            assertNotNull("Peer 3 should have accepted a TCP connection", thirdPeer.getClientSocket());
+            assertNull("Peer 4 should not have accepted any TCP connection", fourthPeer.getClientSocket());
         }
     }
 

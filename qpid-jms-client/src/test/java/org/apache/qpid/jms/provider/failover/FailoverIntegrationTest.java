@@ -16,7 +16,11 @@
  */
 package org.apache.qpid.jms.provider.failover;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
@@ -147,6 +151,82 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             Message message = consumer.receive(2000);
 
             assertNotNull(message);
+
+            // Shut it down
+            finalPeer.expectClose();
+            connection.close();
+            finalPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverHandlesDropThenRejectionCloseAfterConnect() throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer rejectingPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final CountDownLatch originalConnected = new CountDownLatch(1);
+            final CountDownLatch finalConnected = new CountDownLatch(1);
+
+            // Create a peer to connect to, one to fail to reconnect to, and a final one to reconnect to
+            final String originalURI = createPeerURI(originalPeer);
+            final String rejectingURI = createPeerURI(rejectingPeer);
+            final String finalURI = createPeerURI(finalPeer);
+
+            LOG.info("Original peer is at: {}", originalURI);
+            LOG.info("Rejecting peer is at: {}", rejectingURI);
+            LOG.info("Final peer is at: {}", finalURI);
+
+            // Connect to the first
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
+            originalPeer.expectBegin();
+
+            long ird = 0;
+            long rd = 2000;
+            long start = System.currentTimeMillis();
+
+            final JmsConnection connection = establishAnonymousConnecton("failover.initialReconnectDelay=" + ird + "&failover.reconnectDelay=" + rd + "&failover.maxReconnectAttempts=10", originalPeer, rejectingPeer, finalPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (originalURI.equals(remoteURI.toString())) {
+                        originalConnected.countDown();
+                    }
+                }
+
+                @Override
+                public void onConnectionRestored(URI remoteURI) {
+                    LOG.info("Connection Restored: {}", remoteURI);
+                    if (finalURI.equals(remoteURI.toString())) {
+                        finalConnected.countDown();
+                    }
+                }
+            });
+            connection.start();
+
+            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+            assertEquals("should not yet have connected to final peer", 1L, finalConnected.getCount());
+
+            // Set expectations on rejecting and final peer
+            rejectingPeer.rejectConnect(AmqpError.NOT_FOUND, "Resource could not be located", null);
+
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
+            finalPeer.expectBegin();
+
+            // Close the original peer and wait for things to shake out.
+            originalPeer.close();
+
+            rejectingPeer.waitForAllHandlersToComplete(2000);
+
+            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+            long end = System.currentTimeMillis();
+
+            long margin = 2000;
+            assertThat("Elapsed time outwith expected range for reconnect", end - start,
+                    both(greaterThanOrEqualTo(ird + rd)).and(lessThanOrEqualTo(ird + rd + margin)));
 
             // Shut it down
             finalPeer.expectClose();

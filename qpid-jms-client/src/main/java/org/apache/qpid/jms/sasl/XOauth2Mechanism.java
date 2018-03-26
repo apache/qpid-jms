@@ -18,7 +18,7 @@ package org.apache.qpid.jms.sasl;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
-import java.util.Base64;
+import java.util.regex.Pattern;
 
 /**
  * Implements the SASL XOAUTH2 authentication Mechanism .
@@ -27,6 +27,7 @@ import java.util.Base64;
  */
 public class XOauth2Mechanism extends AbstractMechanism {
 
+    private static final Pattern ACCESS_TOKEN_PATTERN = Pattern.compile("^[\\x20-\\x7F]+$");
     private String additionalFailureInformation;
 
     @Override
@@ -78,12 +79,7 @@ public class XOauth2Mechanism extends AbstractMechanism {
     @Override
     public boolean isApplicable(String username, String password, Principal localPrincipal) {
         if(username != null && username.length() > 0 && password != null && password.length() > 0) {
-            try {
-                Base64.getDecoder().decode(password);
-                return true;
-            } catch (IllegalArgumentException e) {
-                return false;
-            }
+            return ACCESS_TOKEN_PATTERN.matcher(password).matches();
         } else {
             return false;
         }

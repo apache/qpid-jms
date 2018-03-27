@@ -91,11 +91,12 @@ public class XOauth2MechanismTest {
         assertFalse("Should not be applicable with empty token", mech.isApplicable("user", "", null));
     }
 
+    /** RFC6749 defines the OAUTH2 an access token as comprising VSCHAR elements (\x20-7E) */
     @Test
-    public void testIsNotApplicableWithNonBase64Token() {
+    public void testIsNotApplicableWithIllegalAccessToken() {
         XOauth2Mechanism mech = new XOauth2Mechanism();
 
-        assertFalse("Should not be applicable with non base64 token", mech.isApplicable("user", "not base 64", null));
+        assertFalse("Should not be applicable with non vschars", mech.isApplicable("user", "illegalChar\000", null));
     }
 
 
@@ -110,14 +111,14 @@ public class XOauth2MechanismTest {
     public void testIsApplicableWithUserAndToken() {
         XOauth2Mechanism mech = new XOauth2Mechanism();
 
-        assertTrue("Should be applicable with user and token", mech.isApplicable("user", "YmFzZSA2NA==", null));
+        assertTrue("Should be applicable with user and token", mech.isApplicable("user", "2YotnFZFEjr1zCsicMWpAA", null));
     }
 
     @Test
     public void testIsApplicableWithUserAndPasswordAndPrincipal() {
         XOauth2Mechanism mech = new XOauth2Mechanism();
 
-        assertTrue("Should be applicable with user and token and principal", mech.isApplicable("user", "YmFzZSA2NA==", new Principal() {
+        assertTrue("Should be applicable with user and token and principal", mech.isApplicable("user", "2YotnFZFEjr1zCsicMWpAA", new Principal() {
             @Override
             public String getName() {
                 return "name";

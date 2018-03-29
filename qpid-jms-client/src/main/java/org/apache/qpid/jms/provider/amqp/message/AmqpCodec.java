@@ -28,7 +28,6 @@ import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.SERIA
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.isContentType;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
@@ -50,6 +49,7 @@ import org.apache.qpid.proton.amqp.messaging.Section;
 import org.apache.qpid.proton.codec.AMQPDefinedTypes;
 import org.apache.qpid.proton.codec.DecoderImpl;
 import org.apache.qpid.proton.codec.EncoderImpl;
+import org.apache.qpid.proton.codec.ReadableBuffer;
 import org.apache.qpid.proton.codec.WritableBuffer;
 
 import io.netty.buffer.ByteBuf;
@@ -196,11 +196,10 @@ public final class AmqpCodec {
      *
      * @throws IOException if an error occurs while creating the message objects.
      */
-    public static AmqpJmsMessageFacade decodeMessage(AmqpConsumer consumer, ByteBuf messageBytes) throws IOException {
+    public static AmqpJmsMessageFacade decodeMessage(AmqpConsumer consumer, ReadableBuffer messageBytes) throws IOException {
 
         DecoderImpl decoder = getDecoder();
-        ByteBuffer buffer = messageBytes.nioBuffer();
-        decoder.setByteBuffer(buffer);
+        decoder.setBuffer(messageBytes);
 
         Header header = null;
         DeliveryAnnotations deliveryAnnotations = null;
@@ -211,13 +210,13 @@ public final class AmqpCodec {
         Footer footer = null;
         Section section = null;
 
-        if (buffer.hasRemaining()) {
+        if (messageBytes.hasRemaining()) {
             section = (Section) decoder.readObject();
         }
 
         if (section instanceof Header) {
             header = (Header) section;
-            if (buffer.hasRemaining()) {
+            if (messageBytes.hasRemaining()) {
                 section = (Section) decoder.readObject();
             } else {
                 section = null;
@@ -227,7 +226,7 @@ public final class AmqpCodec {
         if (section instanceof DeliveryAnnotations) {
             deliveryAnnotations = (DeliveryAnnotations) section;
 
-            if (buffer.hasRemaining()) {
+            if (messageBytes.hasRemaining()) {
                 section = (Section) decoder.readObject();
             } else {
                 section = null;
@@ -237,7 +236,7 @@ public final class AmqpCodec {
         if (section instanceof MessageAnnotations) {
             messageAnnotations = (MessageAnnotations) section;
 
-            if (buffer.hasRemaining()) {
+            if (messageBytes.hasRemaining()) {
                 section = (Section) decoder.readObject();
             } else {
                 section = null;
@@ -247,7 +246,7 @@ public final class AmqpCodec {
         if (section instanceof Properties) {
             properties = (Properties) section;
 
-            if (buffer.hasRemaining()) {
+            if (messageBytes.hasRemaining()) {
                 section = (Section) decoder.readObject();
             } else {
                 section = null;
@@ -257,7 +256,7 @@ public final class AmqpCodec {
         if (section instanceof ApplicationProperties) {
             applicationProperties = (ApplicationProperties) section;
 
-            if (buffer.hasRemaining()) {
+            if (messageBytes.hasRemaining()) {
                 section = (Section) decoder.readObject();
             } else {
                 section = null;
@@ -267,7 +266,7 @@ public final class AmqpCodec {
         if (section != null && !(section instanceof Footer)) {
             body = section;
 
-            if (buffer.hasRemaining()) {
+            if (messageBytes.hasRemaining()) {
                 section = (Section) decoder.readObject();
             } else {
                 section = null;
@@ -279,7 +278,6 @@ public final class AmqpCodec {
         }
 
         decoder.setByteBuffer(null);
-        messageBytes.resetReaderIndex();
 
         // First we try the easy way, if the annotation is there we don't have to work hard.
         AmqpJmsMessageFacade result = createFromMsgAnnotation(messageAnnotations);

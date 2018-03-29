@@ -32,6 +32,7 @@ import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
 import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.amqp.message.AmqpReadableBuffer;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
 import org.apache.qpid.proton.amqp.messaging.Modified;
@@ -138,7 +139,7 @@ public class AmqpFixedProducer extends AmqpProducer {
 
         // Write the already encoded AMQP message into the Sender
         ByteBuf encoded = (ByteBuf) envelope.getPayload();
-        getEndpoint().send(encoded.array(), encoded.arrayOffset() + encoded.readerIndex(), encoded.readableBytes());
+        getEndpoint().sendNoCopy(new AmqpReadableBuffer(encoded.duplicate()));
 
         AmqpProvider provider = getParent().getProvider();
 

@@ -16,14 +16,15 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
+import java.nio.ByteBuffer;
 import java.util.Map;
 
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
+import org.apache.qpid.proton.codec.ReadableBuffer;
 import org.apache.qpid.proton.message.Message;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 /**
  * Support class containing constant values and static methods that are
@@ -179,7 +180,7 @@ public final class AmqpMessageSupport {
      *
      * @return a buffer containing the wire level representation of the input Message.
      */
-    public static ByteBuf encodeMessage(Message message) {
+    public static ReadableBuffer encodeMessage(Message message) {
         final int BUFFER_SIZE = 4096;
         byte[] encodedMessage = new byte[BUFFER_SIZE];
         int encodedSize = 0;
@@ -192,6 +193,6 @@ public final class AmqpMessageSupport {
             }
         }
 
-        return Unpooled.wrappedBuffer(encodedMessage, 0, encodedSize);
+        return ReadableBuffer.ByteBufferReader.wrap(ByteBuffer.wrap(encodedMessage, 0, encodedSize));
     }
 }

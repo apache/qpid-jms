@@ -47,9 +47,6 @@ import org.apache.qpid.proton.engine.Receiver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-
 /**
  * AMQP Consumer object that is used to manage JMS MessageConsumer semantics.
  */
@@ -57,12 +54,9 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
     private static final Logger LOG = LoggerFactory.getLogger(AmqpConsumer.class);
 
-    private static final int INITIAL_BUFFER_CAPACITY = 1024 * 128;
-
     protected final AmqpSession session;
     protected AsyncResult stopRequest;
     protected AsyncResult pullRequest;
-    protected final ByteBuf incomingBuffer = Unpooled.buffer(INITIAL_BUFFER_CAPACITY);
     protected long incomingSequence;
     protected long deliveredCount;
     protected boolean deferredClose;
@@ -485,7 +479,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
         JmsMessage message = null;
         try {
-            message = AmqpCodec.decodeMessage(this, unwrapIncomingMessage(incoming)).asJmsMessage();
+            message = AmqpCodec.decodeMessage(this, getEndpoint().recv()).asJmsMessage();
         } catch (Exception e) {
             LOG.warn("Error on transform: {}", e.getMessage());
             // TODO - We could signal provider error but not sure we want to fail
@@ -495,8 +489,6 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             //        a bytes messages as a fall back.
             settleDelivery(incoming, MODIFIED_FAILED_UNDELIVERABLE);
             return false;
-        } finally {
-            incomingBuffer.clear();
         }
 
         try {
@@ -583,24 +575,6 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                 LOG.error("Provider listener is not set, message will be dropped: {}", envelope);
             }
         }
-    }
-
-    protected ByteBuf unwrapIncomingMessage(Delivery incoming) {
-        int count;
-
-        // Attempt to preemptively size the buffer for the incoming delivery.
-        if (incomingBuffer.capacity() < incoming.available()) {
-            incomingBuffer.capacity(incoming.available());
-        }
-
-        while ((count = getEndpoint().recv(incomingBuffer.array(), incomingBuffer.writerIndex(), incomingBuffer.writableBytes())) > 0) {
-            incomingBuffer.writerIndex(incomingBuffer.writerIndex() + count);
-            if (!incomingBuffer.isWritable()) {
-                incomingBuffer.capacity((int) (incomingBuffer.capacity() * 1.5));
-            }
-        }
-
-        return incomingBuffer;
     }
 
     public void preCommit() {

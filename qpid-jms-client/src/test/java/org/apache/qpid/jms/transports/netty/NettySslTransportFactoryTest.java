@@ -26,6 +26,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.net.URI;
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.List;
 
@@ -61,6 +62,8 @@ public class NettySslTransportFactoryTest {
     public static final boolean CUSTOM_TRUST_ALL = true;
     public static final boolean CUSTOM_VERIFY_HOST = false;
     public static final String CUSTOM_KEY_ALIAS = "myTestAlias";
+    public static final String CUSTOM_TRUST_STORE_LOCATION = "/home/user/store";
+    public static final String CUSTOM_TRUST_STORE_PASSWORD = "pass+word";
 
     @Test
     public void testCreateWithDefaultOptions() throws Exception {
@@ -232,5 +235,24 @@ public class NettySslTransportFactoryTest {
 
         assertEquals(CUSTOM_STORE_TYPE_PKCS12, sslOptions.getKeyStoreType());
         assertEquals(CUSTOM_STORE_TYPE, sslOptions.getTrustStoreType());
+    }
+
+    @Test
+    public void testUrlEncodedTransportValues() throws Exception {
+        URI BASE_URI = new URI("tcp://localhost:5672");
+        final String encodedLocation = URLEncoder.encode(CUSTOM_TRUST_STORE_LOCATION, "utf-8");
+        final String encodedPassword = URLEncoder.encode(CUSTOM_TRUST_STORE_PASSWORD, "utf-8");
+        URI configuredURI = new URI(BASE_URI.toString() + "?" +
+                "transport.trustStoreLocation=" + encodedLocation + "&" +
+                "transport.trustStorePassword=" + encodedPassword);
+
+        NettySslTransportFactory factory = new NettySslTransportFactory();
+        Transport transport = factory.createTransport(configuredURI);
+        TransportOptions options = transport.getTransportOptions();
+        assertTrue(options instanceof TransportSslOptions);
+        TransportSslOptions sslOptions = (TransportSslOptions) options;
+
+        assertEquals(CUSTOM_TRUST_STORE_LOCATION, sslOptions.getTrustStoreLocation());
+        assertEquals(CUSTOM_TRUST_STORE_PASSWORD, sslOptions.getTrustStorePassword());
     }
 }

@@ -48,7 +48,7 @@ public abstract class TransportFactory {
      * @throws Exception if an error occurs while creating the Transport instance.
      */
     public Transport createTransport(URI remoteURI) throws Exception {
-        Map<String, String> map = PropertyUtil.parseQuery(remoteURI.getQuery());
+        Map<String, String> map = PropertyUtil.parseQuery(remoteURI);
         Map<String, String> transportURIOptions = PropertyUtil.filterProperties(map, "transport.");
 
         remoteURI = PropertyUtil.replaceQuery(remoteURI, map);

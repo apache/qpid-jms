@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
@@ -126,5 +127,18 @@ public class AmqpProviderFactoryTest extends QpidJmsTestCase {
         assertEquals(true, amqpProvider.isTraceBytes());
         assertEquals(true, amqpProvider.isTraceFrames());
         assertEquals(32, amqpProvider.getChannelMax());
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateProviderEncodedVhost() throws IOException, Exception {
+        URI configuredURI = new URI(peerURI.toString() +
+            "?amqp.vhost=" + URLEncoder.encode("v+host", "utf-8"));
+        Provider provider = AmqpProviderFactory.create(configuredURI);
+        assertNotNull(provider);
+        assertTrue(provider instanceof AmqpProvider);
+
+        AmqpProvider amqpProvider = (AmqpProvider) provider;
+
+        assertEquals("v+host", amqpProvider.getVhost());
     }
 }

@@ -38,7 +38,7 @@ public class AmqpProviderFactory extends ProviderFactory {
     @Override
     public AmqpProvider createProvider(URI remoteURI) throws Exception {
 
-        Map<String, String> map = PropertyUtil.parseQuery(remoteURI.getQuery());
+        Map<String, String> map = PropertyUtil.parseQuery(remoteURI);
         Map<String, String> providerOptions = PropertyUtil.filterProperties(map, "amqp.");
 
         // Clear off any amqp.X values from the transport before creation.

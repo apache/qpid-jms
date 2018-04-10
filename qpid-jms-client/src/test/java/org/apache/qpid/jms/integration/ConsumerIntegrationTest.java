@@ -21,6 +21,7 @@ package org.apache.qpid.jms.integration;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -141,7 +142,15 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final AtomicBoolean consumerClosed = new AtomicBoolean();
+            final AtomicBoolean exceptionFired = new AtomicBoolean();
+
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setExceptionListener(new ExceptionListener() {
+                @Override
+                public void onException(JMSException exception) {
+                    exceptionFired.set(true);
+                }
+            });
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
                 public void onConsumerClosed(MessageConsumer consumer, Throwable exception) {
@@ -181,6 +190,76 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             }, 10000, 10));
 
             assertTrue("Consumer closed callback didn't trigger", consumerClosed.get());
+            assertFalse("JMS Exception listener shouldn't fire with no MessageListener", exceptionFired.get());
+
+            // Try closing it explicitly, should effectively no-op in client.
+            // The test peer will throw during close if it sends anything.
+            consumer.close();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testRemotelyCloseConsumerWithMessageListenerFiresJMSExceptionListener() throws Exception {
+        final String BREAD_CRUMB = "ErrorMessage";
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final AtomicBoolean consumerClosed = new AtomicBoolean();
+            final AtomicBoolean exceptionFired = new AtomicBoolean();
+
+            JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
+            connection.setExceptionListener(new ExceptionListener() {
+                @Override
+                public void onException(JMSException exception) {
+                    LOG.trace("JMS ExceptionListener: ", exception);
+                    exceptionFired.set(true);
+                }
+            });
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConsumerClosed(MessageConsumer consumer, Throwable exception) {
+                    consumerClosed.set(true);
+                }
+            });
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            // Create a consumer, then remotely end it afterwards.
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlow();
+            testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(true, true, AmqpError.RESOURCE_DELETED, BREAD_CRUMB, 10);
+
+            Queue queue = session.createQueue("myQueue");
+            final MessageConsumer consumer = session.createConsumer(queue);
+            consumer.setMessageListener(new MessageListener() {
+
+                @Override
+                public void onMessage(Message message) {
+                }
+            });
+
+            // Verify the consumer gets marked closed
+            testPeer.waitForAllHandlersToComplete(1000);
+            assertTrue("consumer never closed.", Wait.waitFor(new Wait.Condition() {
+                @Override
+                public boolean isSatisified() throws Exception {
+                    try {
+                        consumer.getMessageListener();
+                    } catch (IllegalStateException jmsise) {
+                        if (jmsise.getCause() != null) {
+                            String message = jmsise.getCause().getMessage();
+                            return message.contains(AmqpError.RESOURCE_DELETED.toString()) &&
+                                   message.contains(BREAD_CRUMB);
+                        } else {
+                            return false;
+                        }
+                    }
+                    return false;
+                }
+            }, 10000, 10));
+
+            assertTrue("Consumer closed callback didn't trigger", consumerClosed.get());
+            assertTrue("JMS Exception listener shouldn't fire with no MessageListener", exceptionFired.get());
 
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.

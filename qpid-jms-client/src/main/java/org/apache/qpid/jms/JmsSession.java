@@ -355,6 +355,9 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         LOG.info("A JMS MessageConsumer has been closed: {}", resource);
 
         JmsMessageConsumer consumer = consumers.get(resource.getId());
+        if (consumer.hasMessageListener()) {
+            connection.onAsyncException(JmsExceptionSupport.create(cause));
+        }
 
         try {
             if (consumer != null) {

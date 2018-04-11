@@ -1048,7 +1048,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
         }
     }
 
-    @Test // (timeout=20000)
+    @Test(timeout=20000)
     public void testMessageListenerCallsConnectionStopThrowsIllegalStateException() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicReference<Exception> asyncError = new AtomicReference<Exception>(null);
@@ -1159,6 +1159,67 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             testPeer.expectClose();
             connection.close();
 
+            testPeer.waitForAllHandlersToComplete(2000);
+        }
+    }
+
+    @Test(timeout=20000)
+    public void testMessageListenerClosesItsConsumer() throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch exceptionListenerFired = new CountDownLatch(1);
+        final AtomicReference<Throwable> error = new AtomicReference<>();
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+            connection.start();
+
+            connection.setExceptionListener(new ExceptionListener() {
+                @Override
+                public void onException(JMSException exception) {
+                    LOG.trace("JMS ExceptionListener: ", exception);
+                    exceptionListenerFired.countDown();
+                }
+            });
+
+            testPeer.expectBegin();
+
+            final Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue destination = session.createQueue(getTestName());
+            connection.start();
+
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType("content"), 1);
+
+            MessageConsumer consumer = session.createConsumer(destination);
+
+            testPeer.expectLinkFlow(true, true, equalTo(UnsignedInteger.valueOf(JmsDefaultPrefetchPolicy.DEFAULT_QUEUE_PREFETCH -1)));
+            testPeer.expectDisposition(true, new AcceptedMatcher());
+            testPeer.expectDetach(true, true, true);
+
+            consumer.setMessageListener(new MessageListener() {
+                @Override
+                public void onMessage(Message m) {
+                    try {
+                        consumer.close();
+                    } catch (Throwable t) {
+                        error.set(t);
+                        LOG.error("Unexpected error during close", t);
+                    }
+
+                    latch.countDown();
+                    LOG.debug("Async consumer got Message: {}", m);
+                }
+            });
+
+            assertTrue("Process not completed within given timeout", latch.await(3000, TimeUnit.MILLISECONDS));
+            assertNull("No error expected during close", error.get());
+
+            testPeer.waitForAllHandlersToComplete(2000);
+
+            testPeer.expectClose();
+            connection.close();
+
+            assertFalse("JMS Exception listener shouldn't have fired", exceptionListenerFired.await(20, TimeUnit.MILLISECONDS));
             testPeer.waitForAllHandlersToComplete(2000);
         }
     }

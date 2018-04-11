@@ -141,20 +141,20 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
         final String BREAD_CRUMB = "ErrorMessage";
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            final AtomicBoolean consumerClosed = new AtomicBoolean();
-            final AtomicBoolean exceptionFired = new AtomicBoolean();
+            CountDownLatch consumerClosed = new CountDownLatch(1);
+            CountDownLatch exceptionFired = new CountDownLatch(1);
 
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
             connection.setExceptionListener(new ExceptionListener() {
                 @Override
                 public void onException(JMSException exception) {
-                    exceptionFired.set(true);
+                    exceptionFired.countDown();
                 }
             });
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
                 public void onConsumerClosed(MessageConsumer consumer, Throwable exception) {
-                    consumerClosed.set(true);
+                    consumerClosed.countDown();
                 }
             });
 
@@ -189,8 +189,8 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
                 }
             }, 10000, 10));
 
-            assertTrue("Consumer closed callback didn't trigger", consumerClosed.get());
-            assertFalse("JMS Exception listener shouldn't fire with no MessageListener", exceptionFired.get());
+            assertTrue("Consumer closed callback didn't trigger", consumerClosed.await(2000, TimeUnit.MILLISECONDS));
+            assertFalse("JMS Exception listener shouldn't fire with no MessageListener", exceptionFired.await(20, TimeUnit.MILLISECONDS));
 
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.
@@ -203,21 +203,21 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
         final String BREAD_CRUMB = "ErrorMessage";
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
-            final AtomicBoolean consumerClosed = new AtomicBoolean();
-            final AtomicBoolean exceptionFired = new AtomicBoolean();
+            CountDownLatch consumerClosed = new CountDownLatch(1);
+            CountDownLatch exceptionFired = new CountDownLatch(1);
 
             JmsConnection connection = (JmsConnection) testFixture.establishConnecton(testPeer);
             connection.setExceptionListener(new ExceptionListener() {
                 @Override
                 public void onException(JMSException exception) {
                     LOG.trace("JMS ExceptionListener: ", exception);
-                    exceptionFired.set(true);
+                    exceptionFired.countDown();
                 }
             });
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
                 public void onConsumerClosed(MessageConsumer consumer, Throwable exception) {
-                    consumerClosed.set(true);
+                    consumerClosed.countDown();
                 }
             });
 
@@ -258,8 +258,8 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
                 }
             }, 10000, 10));
 
-            assertTrue("Consumer closed callback didn't trigger", consumerClosed.get());
-            assertTrue("JMS Exception listener shouldn't fire with no MessageListener", exceptionFired.get());
+            assertTrue("Consumer closed callback didn't trigger",  consumerClosed.await(2000, TimeUnit.MILLISECONDS));
+            assertTrue("JMS Exception listener should have fired with a MessageListener", exceptionFired.await(2000, TimeUnit.MILLISECONDS));
 
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.

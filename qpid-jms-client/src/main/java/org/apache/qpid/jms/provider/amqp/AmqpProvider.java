@@ -812,17 +812,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         TRACE_BYTES.info("Received: {}", ByteBufUtil.hexDump(input));
                     }
 
-                    ByteBuffer source = input.nioBuffer();
-
                     do {
-                        ByteBuffer buffer = protonTransport.getInputBuffer();
-                        int limit = Math.min(buffer.remaining(), source.remaining());
-                        ByteBuffer duplicate = source.duplicate();
-                        duplicate.limit(source.position() + limit);
-                        buffer.put(duplicate);
-                        protonTransport.processInput().checkIsOk();
-                        source.position(source.position() + limit);
-                    } while (source.hasRemaining());
+                        ByteBuffer buffer = protonTransport.tail();
+                        int chunkSize = Math.min(buffer.remaining(), input.readableBytes());
+                        buffer.limit(buffer.position() + chunkSize);
+                        input.readBytes(buffer);
+                        protonTransport.process();
+                    } while (input.isReadable());
 
                     ReferenceCountUtil.release(input);
 
@@ -832,7 +828,6 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     pumpToProtonTransport();
                 } catch (Throwable t) {
                     LOG.warn("Caught problem during data processing: {}", t.getMessage(), t);
-
                     fireProviderException(t);
                 }
             }

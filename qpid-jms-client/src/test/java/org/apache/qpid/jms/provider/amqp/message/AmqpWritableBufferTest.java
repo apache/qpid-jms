@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 
+import org.apache.qpid.proton.codec.ReadableBuffer;
 import org.junit.Test;
 
 import io.netty.buffer.ByteBuf;
@@ -109,6 +110,36 @@ public class AmqpWritableBufferTest {
     public void testPutByteBuf() {
         ByteBuf input = Unpooled.buffer();
         input.writeByte((byte) 1);
+
+        ByteBuf buffer = Unpooled.buffer(1024);
+        AmqpWritableBuffer writable = new AmqpWritableBuffer(buffer);
+
+        assertEquals(0, writable.position());
+        writable.put(input);
+        assertEquals(1, writable.position());
+    }
+
+    @Test
+    public void testPutReadableBuffer() {
+        doPutReadableBufferTestImpl(true);
+        doPutReadableBufferTestImpl(false);
+    }
+
+    private void doPutReadableBufferTestImpl(boolean readOnly) {
+        ByteBuffer buf = ByteBuffer.allocate(1024);
+        buf.put((byte) 1);
+        buf.flip();
+        if(readOnly) {
+            buf = buf.asReadOnlyBuffer();
+        }
+
+        ReadableBuffer input = new ReadableBuffer.ByteBufferReader(buf);
+
+        if(readOnly) {
+            assertFalse("Expected buffer not to hasArray()", input.hasArray());
+        } else {
+            assertTrue("Expected buffer to hasArray()", input.hasArray());
+        }
 
         ByteBuf buffer = Unpooled.buffer(1024);
         AmqpWritableBuffer writable = new AmqpWritableBuffer(buffer);

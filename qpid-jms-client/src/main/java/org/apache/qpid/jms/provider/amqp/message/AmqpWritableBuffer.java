@@ -18,6 +18,7 @@ package org.apache.qpid.jms.provider.amqp.message;
 
 import java.nio.ByteBuffer;
 
+import org.apache.qpid.proton.codec.ReadableBuffer;
 import org.apache.qpid.proton.codec.WritableBuffer;
 
 import io.netty.buffer.ByteBuf;
@@ -111,5 +112,10 @@ public class AmqpWritableBuffer implements WritableBuffer {
     @Override
     public int limit() {
         return nettyBuffer.capacity();
+    }
+
+    @Override
+    public void put(ReadableBuffer buffer) {
+        buffer.get(this);
     }
 }

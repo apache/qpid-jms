@@ -252,7 +252,7 @@ public class JmsConnectionConsumer implements ConnectionConsumer, JmsMessageDisp
                 if (session instanceof JmsSession) {
                     ((JmsSession) session).enqueueInSession(envelope);
                 } else {
-                    LOG.warn("ServerSession provided an onknown JMS Session type to this connection consumer: {}", session);
+                    LOG.warn("ServerSession provided an unknown JMS Session type to this ConnectionConsumer: {}", session);
                 }
 
                 serverSession.start();

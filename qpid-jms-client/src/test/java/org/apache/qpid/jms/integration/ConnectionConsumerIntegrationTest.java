@@ -84,12 +84,12 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
-    public void testConnectionConsumerDispatchesToSessionConnectionSratedBeforeCreate() throws Exception {
+    public void testConnectionConsumerDispatchesToSessionConnectionStartedBeforeCreate() throws Exception {
         doTestConnectionConsumerDispatchesToSession(true);
     }
 
     @Test(timeout = 20000)
-    public void testConnectionConsumerDispatchesToSessionConnectionSratedAfterCreate() throws Exception {
+    public void testConnectionConsumerDispatchesToSessionConnectionStartedAfterCreate() throws Exception {
         doTestConnectionConsumerDispatchesToSession(false);
     }
 
@@ -133,6 +133,7 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
             }
 
             assertTrue("Message didn't arrive in time", messageArrived.await(10, TimeUnit.SECONDS));
+            testPeer.waitForAllHandlersToComplete(2000);
 
             testPeer.expectDetach(true, true, true);
             consumer.close();
@@ -239,6 +240,7 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
             connection.start();
 
             assertTrue("Message didn't arrive in time", messagesArrived.await(10, TimeUnit.SECONDS));
+            testPeer.waitForAllHandlersToComplete(2000);
 
             testPeer.expectDetach(true, true, true);
             consumer.close();
@@ -301,6 +303,7 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
             connection.start();
 
             assertTrue("Message didn't arrive in time", messagesArrived.await(10, TimeUnit.SECONDS));
+            testPeer.waitForAllHandlersToComplete(2000);
 
             testPeer.expectDetach(true, true, true);
             consumer.close();

@@ -21,6 +21,8 @@
 package org.apache.qpid.jms.test.testpeer.matchers.sections;
 
 
+import static org.hamcrest.MatcherAssert.assertThat;
+
 import org.apache.qpid.proton.amqp.Binary;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -44,6 +46,8 @@ public class TransferPayloadCompositeMatcher extends TypeSafeMatcher<Binary>
     private String _msgContentMatcherFailureDescription;
     private ApplicationPropertiesSectionMatcher _appPropsMatcher;
     private String _appPropsMatcherFailureDescription;
+    private Matcher<Integer> _payloadLengthMatcher;
+    private String _payloadLenthMatcherFailureDescription;
 
     public TransferPayloadCompositeMatcher()
     {
@@ -54,6 +58,21 @@ public class TransferPayloadCompositeMatcher extends TypeSafeMatcher<Binary>
     {
         int origLength = receivedBinary.getLength();
         int bytesConsumed = 0;
+
+        // Length Matcher
+        if(_payloadLengthMatcher != null)
+        {
+            try
+            {
+                assertThat("Payload length should match", origLength, _payloadLengthMatcher);
+            }
+            catch(Throwable t)
+            {
+                _payloadLenthMatcherFailureDescription = "\nPayload Lenfth Matcher generated throwable: " + t;
+
+                return false;
+            }
+        }
 
         //MessageHeader Section
         if(_msgHeadersMatcher != null)
@@ -156,6 +175,14 @@ public class TransferPayloadCompositeMatcher extends TypeSafeMatcher<Binary>
     {
         mismatchDescription.appendText("\nActual encoded form of the full Transfer frame payload: ").appendValue(item);
 
+        //Payload Length
+        if(_payloadLenthMatcherFailureDescription != null)
+        {
+            mismatchDescription.appendText("\nPayloadLengthMatcherFailed!");
+            mismatchDescription.appendText(_payloadLenthMatcherFailureDescription);
+            return;
+        }
+
         //MessageHeaders Section
         if(_msgHeaderMatcherFailureDescription != null)
         {
@@ -220,5 +247,10 @@ public class TransferPayloadCompositeMatcher extends TypeSafeMatcher<Binary>
     public void setMessageContentMatcher(Matcher<Binary> msgContentMatcher)
     {
         _msgContentMatcher = msgContentMatcher;
+    }
+
+    public void setPayloadLengthMatcher(Matcher<Integer> payloadLengthMatcher)
+    {
+        _payloadLengthMatcher = payloadLengthMatcher;
     }
 }

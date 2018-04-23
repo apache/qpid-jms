@@ -189,6 +189,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
                     if (getMaxFrameSize() > 0) {
                         protonTransport.setMaxFrameSize(getMaxFrameSize());
+                        protonTransport.setOutboundFrameSizeLimit(getMaxFrameSize());
                     }
 
                     protonTransport.setChannelMax(getChannelMax());

@@ -329,7 +329,7 @@ class TestFrameParser
                                 payload = null;
                             }
 
-                            _peer.receiveFrame(type, channel, describedType, payload);
+                            _peer.receiveFrame(type, channel, size, describedType, payload);
                         }
                         else
                         {

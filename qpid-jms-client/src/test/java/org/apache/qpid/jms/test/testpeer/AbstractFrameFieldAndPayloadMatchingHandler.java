@@ -42,21 +42,25 @@ public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends Abstra
 
     private AmqpPeerRunnable _onCompletion;
 
+    private int _expectedFrameSize;
+
     protected AbstractFrameFieldAndPayloadMatchingHandler(FrameType frameType,
                                                 int channel,
+                                                int frameSize,
                                                 UnsignedLong numericDescriptor,
                                                 Symbol symbolicDescriptor)
     {
         super(numericDescriptor, symbolicDescriptor);
         _frameType = frameType;
         _expectedChannel = channel;
+        _expectedFrameSize = frameSize;
     }
 
     protected abstract void verifyPayload(Binary payload) throws AssertionError;
 
     @SuppressWarnings("unchecked")
     @Override
-    public final void frame(int type, int ch, DescribedType dt, Binary payload, TestAmqpPeer peer)
+    public final void frame(int type, int ch, int frameSize, DescribedType dt, Binary payload, TestAmqpPeer peer)
     {
         if(type == _frameType.ordinal()
            && (_expectedChannel == ANY_CHANNEL || _expectedChannel == ch)
@@ -83,6 +87,14 @@ public abstract class AbstractFrameFieldAndPayloadMatchingHandler extends Abstra
             {
                 LOGGER.error("Failure when verifying frame payload", ae);
                 peer.assertionFailed(ae);
+            }
+
+            if(_expectedFrameSize != 0 && _expectedFrameSize != frameSize) {
+                throw new IllegalArgumentException(String.format(
+                        "Frame size was not as expected. Expected: " +
+                        "type=%s, channel=%s, size=%s, descriptor=%s/%s but got: " +
+                        "type=%s, channel=%s, size=%s",
+                        _frameType.ordinal(), expectedChannelString(), _expectedFrameSize, getNumericDescriptor(), getSymbolicDescriptor(), type, ch, frameSize));
             }
 
             if(_onCompletion != null)

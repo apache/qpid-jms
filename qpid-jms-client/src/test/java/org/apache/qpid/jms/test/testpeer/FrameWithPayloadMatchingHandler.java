@@ -35,7 +35,16 @@ public class FrameWithPayloadMatchingHandler extends AbstractFrameFieldAndPayloa
                                                 UnsignedLong numericDescriptor,
                                                 Symbol symbolicDescriptor)
     {
-        super(frameType, channel, numericDescriptor, symbolicDescriptor);
+        super(frameType, channel, 0, numericDescriptor, symbolicDescriptor);
+    }
+
+    protected FrameWithPayloadMatchingHandler(FrameType frameType,
+                                                int channel,
+                                                int frameSize,
+                                                UnsignedLong numericDescriptor,
+                                                Symbol symbolicDescriptor)
+    {
+        super(frameType, channel, frameSize, numericDescriptor, symbolicDescriptor);
     }
 
     public void setPayloadMatcher(Matcher<Binary> payloadMatcher)

@@ -201,7 +201,7 @@ These options apply to the behaviour of certain AMQP functionality.
 + **amqp.vhost** The vhost to connect to. Used to populate the Sasl and Open hostname fields. Default is the main hostname from the Connection URI.
 + **amqp.saslLayer** Controls whether connections should use a SASL layer or not. Default is true.
 + **amqp.saslMechanisms** Which SASL mechanism(s) the client should allow selection of, if offered by the server and usable with the configured credentials. Comma separated if specifying more than 1 mechanism. The clients supported mechanisms are currently EXTERNAL, SCRAM-SHA-256, SCRAM-SHA-1, CRAM-MD5, PLAIN, XOAUTH2, ANONYMOUS, and GSSAPI for Kerberos.  Default is to allow selection from all mechanisms except GSSAPI, which must be specified here to enable.
-+ **amqp.maxFrameSize** The max-frame-size value in bytes that is advertised to the peer. Default is 1048576.
++ **amqp.maxFrameSize** The connection max-frame-size value in bytes. Default is 1048576.
 + **amqp.drainTimeout** The time in milliseconds that the client will wait for a response from the remote when a consumer drain request is made. If no response is seen in the allotted timeout period the link will be considered failed and the associated consumer will be closed. Default is 60000.
 + **amqp.allowNonSecureRedirects** Controls whether an AMQP connection will allow for a redirect to an alternative host over a connection that is not secure when the existing connection is secure, e.g. redirecting an SSL connection to a raw TCP connection.  This value defaults to false.
 

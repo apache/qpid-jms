@@ -30,7 +30,7 @@ public class FrameWithNoPayloadMatchingHandler extends AbstractFrameFieldAndPayl
                                                 UnsignedLong numericDescriptor,
                                                 Symbol symbolicDescriptor)
     {
-        super(frameType, channel, numericDescriptor, symbolicDescriptor);
+        super(frameType, channel, 0, numericDescriptor, symbolicDescriptor);
     }
 
     @Override

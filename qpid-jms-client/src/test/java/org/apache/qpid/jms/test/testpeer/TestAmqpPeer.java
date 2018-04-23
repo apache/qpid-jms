@@ -294,7 +294,7 @@ public class TestAmqpPeer implements AutoCloseable
         }
     }
 
-    void receiveFrame(int type, int channel, DescribedType describedType, Binary payload)
+    void receiveFrame(int type, int channel, int frameSize, DescribedType describedType, Binary payload)
     {
         Handler handler = getFirstHandler();
         if(handler == null)
@@ -307,7 +307,7 @@ public class TestAmqpPeer implements AutoCloseable
 
         if(handler instanceof FrameHandler)
         {
-            ((FrameHandler)handler).frame(type, channel, describedType, payload, this);
+            ((FrameHandler)handler).frame(type, channel, frameSize, describedType, payload, this);
             removeFirstHandler();
         }
         else
@@ -2063,16 +2063,27 @@ public class TestAmqpPeer implements AutoCloseable
         expectTransfer(expectedPayloadMatcher, nullValue(), false, true, new Accepted(), true);
     }
 
+    public void expectTransfer(int frameSize)
+    {
+        expectTransfer(null, nullValue(), false, true, new Accepted(), true, frameSize);
+    }
+
     public void expectTransfer(Matcher<Binary> expectedPayloadMatcher, Matcher<?> stateMatcher, boolean settled,
                                ListDescribedType responseState, boolean responseSettled)
     {
         expectTransfer(expectedPayloadMatcher, stateMatcher, settled, true, responseState, responseSettled);
     }
 
-    //TODO: fix responseState to only admit applicable types.
     public void expectTransfer(Matcher<Binary> expectedPayloadMatcher, Matcher<?> stateMatcher, boolean settled,
                                boolean sendResponseDisposition, ListDescribedType responseState, boolean responseSettled)
     {
+        expectTransfer(expectedPayloadMatcher, stateMatcher, settled, sendResponseDisposition, responseState, responseSettled, 0);
+    }
+
+    //TODO: fix responseState to only admit applicable types.
+    public void expectTransfer(Matcher<Binary> expectedPayloadMatcher, Matcher<?> stateMatcher, boolean settled,
+            boolean sendResponseDisposition, ListDescribedType responseState, boolean responseSettled, int frameSize)
+{
         Matcher<Boolean> settledMatcher = null;
         if(settled)
         {
@@ -2083,7 +2094,7 @@ public class TestAmqpPeer implements AutoCloseable
             settledMatcher = Matchers.anyOf(equalTo(false), nullValue());
         }
 
-        final TransferMatcher transferMatcher = new TransferMatcher();
+        final TransferMatcher transferMatcher = new TransferMatcher(frameSize);
         transferMatcher.setPayloadMatcher(expectedPayloadMatcher);
         transferMatcher.withSettled(settledMatcher);
         transferMatcher.withState(stateMatcher);
@@ -2121,7 +2132,7 @@ public class TestAmqpPeer implements AutoCloseable
     {
         Matcher<Boolean> settledMatcher = Matchers.anyOf(equalTo(false), nullValue());
 
-        final TransferMatcher transferMatcher = new TransferMatcher();
+        final TransferMatcher transferMatcher = new TransferMatcher(0);
         transferMatcher.setPayloadMatcher(expectedPayloadMatcher);
         transferMatcher.withSettled(settledMatcher);
         transferMatcher.withState(nullValue());

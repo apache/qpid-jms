@@ -48,10 +48,14 @@ public class TransferMatcher extends FrameWithPayloadMatchingHandler
         BATCHABLE,
     }
 
-    public TransferMatcher()
+    /**
+     * @param frameSize the size to check, or 0 if not to check the size.
+     */
+    public TransferMatcher(int frameSize)
     {
         super(FrameType.AMQP,
               ANY_CHANNEL,
+              frameSize,
               UnsignedLong.valueOf(0x0000000000000014L),
               Symbol.valueOf("amqp:transfer:list"));
     }

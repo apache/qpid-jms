@@ -42,11 +42,13 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.ExceptionListener;
@@ -374,6 +376,61 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectClose();
             connection.close();
         }
+    }
+
+    @Test(timeout = 20000)
+    public void testMaxFrameSizeInfluencesOutgoingFrameSize() throws Exception {
+        doMaxFrameSizeInfluencesOutgoingFrameSizeTestImpl(1000, 10001, 11);
+        doMaxFrameSizeInfluencesOutgoingFrameSizeTestImpl(1500, 6001, 5);
+    }
+
+    private void doMaxFrameSizeInfluencesOutgoingFrameSizeTestImpl(int frameSize, int bytesPayloadSize, int numFrames) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            testPeer.expectSaslLayerDisabledConnect(equalTo(UnsignedInteger.valueOf(frameSize)));
+            // Each connection creates a session for managing temporary destinations etc
+            testPeer.expectBegin();
+
+            String uri = "amqp://localhost:" + testPeer.getServerPort() + "?amqp.saslLayer=false&amqp.maxFrameSize=" + frameSize;
+            ConnectionFactory factory = new JmsConnectionFactory(uri);
+            Connection connection = factory.createConnection();
+
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            MessageProducer producer = session.createProducer(queue);
+
+            // Expect n-1 transfers of maxFrameSize
+            for (int i = 1; i < numFrames; i++) {
+                testPeer.expectTransfer(frameSize);
+            }
+            // Plus one more of unknown size (framing overhead).
+            testPeer.expectTransfer(0);
+
+            // Send the message
+            byte[] orig = createBytePyload(bytesPayloadSize);
+            BytesMessage message = session.createBytesMessage();
+            message.writeBytes(orig);
+
+            producer.send(message);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    private static byte[] createBytePyload(int sizeInBytes) {
+        Random rand = new Random(System.currentTimeMillis());
+
+        byte[] payload = new byte[sizeInBytes];
+        for (int i = 0; i < sizeInBytes; i++) {
+            payload[i] = (byte) (64 + 1 + rand.nextInt(9));
+        }
+
+        return payload;
     }
 
     @Test(timeout = 20000)

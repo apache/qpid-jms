@@ -22,7 +22,6 @@ import static org.apache.qpid.jms.message.JmsMessageSupport.lookupAckTypeForDisp
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
-import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 
 public final class JmsAcknowledgeCallback {

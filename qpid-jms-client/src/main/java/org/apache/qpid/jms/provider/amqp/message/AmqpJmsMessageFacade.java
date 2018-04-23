@@ -974,7 +974,6 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
     void setApplicationProperties(ApplicationProperties applicationProperties) {
         if (applicationProperties != null) {
             this.applicationPropertiesMap = applicationProperties.getValue();

@@ -16,6 +16,8 @@
  */
 package org.apache.qpid.jms;
 
+import static org.apache.qpid.jms.message.JmsMessageSupport.lookupAckTypeForDisposition;
+
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -23,7 +25,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 
 import javax.jms.ConnectionConsumer;
 import javax.jms.IllegalStateException;
@@ -33,8 +38,11 @@ import javax.jms.ServerSessionPool;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
+import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.meta.JmsResource.ResourceState;
+import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
+import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.util.MessageQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +63,7 @@ public class JmsConnectionConsumer implements ConnectionConsumer, JmsMessageDisp
 
     private final Lock stateLock = new ReentrantLock();
     private final Lock dispatchLock = new ReentrantLock();
+    private final ReadWriteLock deliveringLock = new ReentrantReadWriteLock(true);
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final AtomicReference<Throwable> failureCause = new AtomicReference<>();
     private final ScheduledThreadPoolExecutor dispatcher;
@@ -131,8 +140,13 @@ public class JmsConnectionConsumer implements ConnectionConsumer, JmsMessageDisp
      * @throws JMSException if an error occurs during the consumer close operation.
      */
     protected void doClose() throws JMSException {
-        shutdown();
-        this.connection.destroyResource(consumerInfo);
+        deliveringLock.writeLock().lock();
+        try {
+            shutdown();
+            this.connection.destroyResource(consumerInfo);
+        } finally {
+            deliveringLock.writeLock().unlock();
+        }
     }
 
     protected void shutdown() throws JMSException {
@@ -250,7 +264,7 @@ public class JmsConnectionConsumer implements ConnectionConsumer, JmsMessageDisp
                 JmsInboundMessageDispatch envelope = messageQueue.dequeueNoWait();
 
                 if (session instanceof JmsSession) {
-                    ((JmsSession) session).enqueueInSession(envelope);
+                    ((JmsSession) session).enqueueInSession(new DeliveryTask(envelope));
                 } else {
                     LOG.warn("ServerSession provided an unknown JMS Session type to this ConnectionConsumer: {}", session);
                 }
@@ -286,4 +300,59 @@ public class JmsConnectionConsumer implements ConnectionConsumer, JmsMessageDisp
             }
         }
     }
-}
+
+    private final class DeliveryTask implements Consumer<JmsSession> {
+
+        private final JmsInboundMessageDispatch envelope;
+
+        public DeliveryTask(JmsInboundMessageDispatch envelope) {
+            this.envelope = envelope;
+        }
+
+        @Override
+        public void accept(JmsSession session) {
+            deliveringLock.readLock().lock();
+
+            try {
+                if (closed.get()) {
+                    return;  // Message has been released.
+                }
+
+                JmsMessage copy = null;
+
+                if (envelope.getMessage().isExpired()) {
+                    LOG.trace("{} filtered expired message: {}", envelope.getConsumerId(), envelope);
+                    session.acknowledge(envelope, ACK_TYPE.MODIFIED_FAILED_UNDELIVERABLE);
+                } else if (session.redeliveryExceeded(envelope)) {
+                    LOG.trace("{} filtered message with excessive redelivery count: {}", envelope.getConsumerId(), envelope);
+                    JmsRedeliveryPolicy redeliveryPolicy = envelope.getConsumerInfo().getRedeliveryPolicy();
+                    session.acknowledge(envelope, lookupAckTypeForDisposition(redeliveryPolicy.getOutcome(envelope.getConsumerInfo().getDestination())));
+                } else {
+                    boolean deliveryFailed = false;
+
+                    copy = session.acknowledge(envelope, ACK_TYPE.DELIVERED).getMessage().copy();
+
+                    session.clearSessionRecovered();
+
+                    try {
+                        session.getMessageListener().onMessage(copy);
+                    } catch (RuntimeException rte) {
+                        deliveryFailed = true;
+                    }
+
+                    if (!session.isSessionRecovered()) {
+                        if (!deliveryFailed) {
+                            session.acknowledge(envelope, ACK_TYPE.ACCEPTED);
+                        } else {
+                            session.acknowledge(envelope, ACK_TYPE.RELEASED);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                getConnection().onAsyncException(e);
+            } finally {
+                deliveringLock.readLock().unlock();
+            }
+        }
+    }
+ }

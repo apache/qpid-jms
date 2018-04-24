@@ -16,11 +16,10 @@
  */
 package org.apache.qpid.jms;
 
-import static org.apache.qpid.jms.message.JmsMessageSupport.lookupAckTypeForDisposition;
-
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
@@ -38,6 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
 import javax.jms.BytesMessage;
 import javax.jms.CompletionListener;
@@ -94,8 +94,6 @@ import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.selector.SelectorParser;
 import org.apache.qpid.jms.selector.filter.FilterException;
-import org.apache.qpid.jms.util.FifoMessageQueue;
-import org.apache.qpid.jms.util.MessageQueue;
 import org.apache.qpid.jms.util.NoOpExecutor;
 import org.apache.qpid.jms.util.QpidJMSThreadFactory;
 import org.slf4j.Logger;
@@ -117,7 +115,9 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     private final Map<JmsProducerId, JmsMessageProducer> producers = new ConcurrentHashMap<JmsProducerId, JmsMessageProducer>();
     private final Map<JmsConsumerId, JmsMessageConsumer> consumers = new ConcurrentHashMap<JmsConsumerId, JmsMessageConsumer>();
     private MessageListener messageListener;
-    private final MessageQueue sessionQueue = new FifoMessageQueue(16);
+
+    private final java.util.Queue<Consumer<JmsSession>> sessionQueue = new ArrayDeque<>();
+
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean started = new AtomicBoolean();
     private final JmsSessionInfo sessionInfo;
@@ -728,42 +728,9 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             throw new RuntimeException(ex);
         }
 
-        JmsInboundMessageDispatch envelope = null;
-        while ((envelope = sessionQueue.dequeueNoWait()) != null) {
-            try {
-                JmsMessage copy = null;
-
-                if (envelope.getMessage().isExpired()) {
-                    LOG.trace("{} filtered expired message: {}", envelope.getConsumerId(), envelope);
-                    acknowledge(envelope, ACK_TYPE.MODIFIED_FAILED_UNDELIVERABLE);
-                } else if (redeliveryExceeded(envelope)) {
-                    LOG.trace("{} filtered message with excessive redelivery count: {}", envelope.getConsumerId(), envelope);
-                    JmsRedeliveryPolicy redeliveryPolicy = envelope.getConsumerInfo().getRedeliveryPolicy();
-                    acknowledge(envelope, lookupAckTypeForDisposition(redeliveryPolicy.getOutcome(envelope.getConsumerInfo().getDestination())));
-                } else {
-                    boolean deliveryFailed = false;
-
-                    copy = acknowledge(envelope, ACK_TYPE.DELIVERED).getMessage().copy();
-
-                    clearSessionRecovered();
-
-                    try {
-                        messageListener.onMessage(copy);
-                    } catch (RuntimeException rte) {
-                        deliveryFailed = true;
-                    }
-
-                    if (!isSessionRecovered()) {
-                        if (!deliveryFailed) {
-                            acknowledge(envelope, ACK_TYPE.ACCEPTED);
-                        } else {
-                            acknowledge(envelope, ACK_TYPE.RELEASED);
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                getConnection().onException(e);
-            }
+        Consumer<JmsSession> dispatcher = null;
+        while ((dispatcher = sessionQueue.poll()) != null) {
+            dispatcher.accept(this);
         }
     }
 
@@ -1108,8 +1075,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             for (JmsMessageConsumer consumer : consumers.values()) {
                 consumer.start();
             }
-
-            sessionQueue.start();
         }
     }
 
@@ -1119,8 +1084,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         for (JmsMessageConsumer consumer : consumers.values()) {
             consumer.stop();
         }
-
-        sessionQueue.stop();
 
         synchronized (sessionInfo) {
             if (deliveryExecutor != null) {
@@ -1423,8 +1386,8 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         }
     }
 
-    void enqueueInSession(JmsInboundMessageDispatch envelope) {
-        sessionQueue.enqueue(envelope);
+    void enqueueInSession(Consumer<JmsSession> dispatcher) {
+        sessionQueue.add(dispatcher);
     }
 
     //----- Asynchronous Send Helpers ----------------------------------------//

@@ -16,18 +16,10 @@
  */
 package org.apache.qpid.jms.transports.netty;
 
-import org.apache.qpid.jms.transports.TransportOptions;
-import org.apache.qpid.jms.transports.TransportSslOptions;
-
 /**
  * Creates a Netty based SSL transport.
  */
 public class NettySslTransportFactory extends NettyTcpTransportFactory {
-
-    @Override
-    protected TransportOptions doCreateTransportOptions() {
-        return new TransportSslOptions();
-    }
 
     @Override
     public String getName() {

@@ -21,6 +21,8 @@ import static org.apache.qpid.jms.provider.amqp.AmqpSupport.OPEN_HOSTNAME;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.PATH;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.PORT;
 import static org.apache.qpid.jms.provider.amqp.AmqpSupport.SCHEME;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -34,6 +36,7 @@ import javax.jms.Connection;
 import javax.jms.InvalidClientIDException;
 import javax.jms.Session;
 
+import org.apache.qpid.jms.JmsConnectionExtensions;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.transports.TransportOptions;
@@ -46,6 +49,8 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler.HandshakeComplete;
 
 /**
  * Test Client connection to Mock AMQP server.
@@ -294,6 +299,43 @@ public class NettyTcpToMockServerTest extends QpidJmsTestCase {
         }
     }
 
+    @Test(timeout = 60000)
+    public void testConnectToWSServerWithHttpHeaderConnectionExtensions() throws Exception {
+        try (NettySimpleAmqpServer server = createWSServer(createServerOptions())) {
+            server.start();
+
+            JmsConnectionFactory cf = new JmsConnectionFactory(createConnectionURI(server));
+            cf.setExtension(JmsConnectionExtensions.HTTP_HEADERS_OVERRIDE.toString(), (connection) -> {
+                Map<String, String> headers = new HashMap<>();
+
+                headers.put("test-header1", "FOO");
+                headers.put("test-header2", "BAR");
+
+                return headers;
+            });
+
+            Connection connection = null;
+            try {
+                connection = cf.createConnection();
+                connection.start();
+
+                assertNotNull(server.getHandshakeComplete());
+
+                HandshakeComplete handshake = server.getHandshakeComplete();
+                assertTrue(handshake.requestHeaders().contains("test-header1"));
+                assertTrue(handshake.requestHeaders().contains("test-header2"));
+
+                assertEquals("FOO", handshake.requestHeaders().get("test-header1"));
+                assertEquals("BAR", handshake.requestHeaders().get("test-header2"));
+            } catch (Exception ex) {
+                LOG.error("Caught exception while attempting to connect");
+                fail("Should be able to connect in this simple test");
+            } finally {
+                connection.close();
+            }
+        }
+    }
+
     protected URI createConnectionURI(NettyServer server) throws Exception {
         return createConnectionURI(server, null);
     }
@@ -328,10 +370,10 @@ public class NettyTcpToMockServerTest extends QpidJmsTestCase {
     }
 
     protected NettySimpleAmqpServer createServer(TransportOptions options, boolean needClientAuth) {
-        return new NettySimpleAmqpServer(options, needClientAuth);
+        return new NettySimpleAmqpServer(options, false, needClientAuth);
     }
 
     protected NettySimpleAmqpServer createWSServer(TransportOptions options) {
-        return new NettySimpleAmqpServer(options, false, true);
+        return new NettySimpleAmqpServer(options, false, false, true);
     }
 }

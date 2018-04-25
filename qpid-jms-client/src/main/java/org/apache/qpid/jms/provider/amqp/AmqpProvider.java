@@ -37,6 +37,7 @@ import javax.jms.JMSException;
 import javax.jms.JMSSecurityRuntimeException;
 import javax.net.ssl.SSLContext;
 
+import org.apache.qpid.jms.JmsConnectionExtensions;
 import org.apache.qpid.jms.JmsTemporaryDestination;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessageFactory;
@@ -197,10 +198,26 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     protonTransport.bind(protonConnection);
                     protonConnection.collect(protonCollector);
 
-                    SSLContext sslContextOverride = connectionInfo.getSslContextOverride();
+                    final SSLContext sslContextOverride;
+                    if (connectionInfo.getExtensionMap().containsKey(JmsConnectionExtensions.SSL_CONTEXT)) {
+                        sslContextOverride =
+                            (SSLContext) connectionInfo.getExtensionMap().get(JmsConnectionExtensions.SSL_CONTEXT).apply(connectionInfo.getConnection());
+                    } else {
+                        sslContextOverride = null;
+                    }
 
                     transport.setTransportListener(AmqpProvider.this);
                     transport.setMaxFrameSize(maxFrameSize);
+
+                    if (connectionInfo.getExtensionMap().containsKey(JmsConnectionExtensions.HTTP_HEADERS_OVERRIDE)) {
+                        @SuppressWarnings({ "unchecked" })
+                        Map<String, String> headers = (Map<String, String>)
+                            connectionInfo.getExtensionMap().get(JmsConnectionExtensions.HTTP_HEADERS_OVERRIDE).apply(connectionInfo.getConnection());
+                        if (headers != null) {
+                            transport.getTransportOptions().getHttpHeaders().putAll(headers);
+                        }
+                    }
+
                     transport.connect(sslContextOverride);
 
                     if (saslLayer) {
@@ -1427,11 +1444,25 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     private Mechanism findSaslMechanism(String[] remoteMechanisms) throws JMSSecurityRuntimeException {
 
-        Mechanism mechanism = SaslMechanismFinder.findMatchingMechanism(
-            connectionInfo.getUsername(), connectionInfo.getPassword(), transport.getLocalPrincipal(), saslMechanisms, remoteMechanisms);
+        final String username;
+        if (connectionInfo.getExtensionMap().containsKey(JmsConnectionExtensions.USERNAME_OVERRIDE)) {
+            username = (String) connectionInfo.getExtensionMap().get(JmsConnectionExtensions.USERNAME_OVERRIDE).apply(connectionInfo.getConnection());
+        } else {
+            username = connectionInfo.getUsername();
+        }
 
-        mechanism.setUsername(connectionInfo.getUsername());
-        mechanism.setPassword(connectionInfo.getPassword());
+        final String password;
+        if (connectionInfo.getExtensionMap().containsKey(JmsConnectionExtensions.PASSWORD_OVERRIDE)) {
+            password = (String) connectionInfo.getExtensionMap().get(JmsConnectionExtensions.PASSWORD_OVERRIDE).apply(connectionInfo.getConnection());
+        } else {
+            password = connectionInfo.getPassword();
+        }
+
+        Mechanism mechanism = SaslMechanismFinder.findMatchingMechanism(
+            username, password, transport.getLocalPrincipal(), saslMechanisms, remoteMechanisms);
+
+        mechanism.setUsername(username);
+        mechanism.setPassword(password);
 
         try {
             Map<String, String> saslOptions = PropertyUtil.filterProperties(PropertyUtil.parseQuery(getRemoteURI()), "sasl.options.");

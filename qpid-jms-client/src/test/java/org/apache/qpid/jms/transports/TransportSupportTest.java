@@ -68,7 +68,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     @Test
     public void testLegacySslProtocolsDisabledByDefault() throws Exception {
-        TransportSslOptions options = createJksSslOptions(null);
+        TransportOptions options = createJksSslOptions(null);
 
         SSLContext context = TransportSupport.createSslContext(options);
         assertNotNull(context);
@@ -83,7 +83,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     @Test
     public void testCreateSslContextJksStore() throws Exception {
-        TransportSslOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions();
 
         SSLContext context = TransportSupport.createSslContext(options);
         assertNotNull(context);
@@ -93,7 +93,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     @Test
     public void testCreateSslContextJksStoreWithConfiguredContextProtocol() throws Exception {
-        TransportSslOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions();
         String contextProtocol = "TLSv1.2";
         options.setContextProtocol(contextProtocol);
 
@@ -105,42 +105,42 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     @Test(expected = UnrecoverableKeyException.class)
     public void testCreateSslContextNoKeyStorePassword() throws Exception {
-        TransportSslOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions();
         options.setKeyStorePassword(null);
         TransportSupport.createSslContext(options);
     }
 
     @Test(expected = IOException.class)
     public void testCreateSslContextWrongKeyStorePassword() throws Exception {
-        TransportSslOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions();
         options.setKeyStorePassword("wrong");
         TransportSupport.createSslContext(options);
     }
 
     @Test(expected = IOException.class)
     public void testCreateSslContextBadPathToKeyStore() throws Exception {
-        TransportSslOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions();
         options.setKeyStoreLocation(CLIENT_JKS_KEYSTORE + ".bad");
         TransportSupport.createSslContext(options);
     }
 
     @Test(expected = IOException.class)
     public void testCreateSslContextWrongTrustStorePassword() throws Exception {
-        TransportSslOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions();
         options.setTrustStorePassword("wrong");
         TransportSupport.createSslContext(options);
     }
 
     @Test(expected = IOException.class)
     public void testCreateSslContextBadPathToTrustStore() throws Exception {
-        TransportSslOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions();
         options.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE + ".bad");
         TransportSupport.createSslContext(options);
     }
 
     @Test
     public void testCreateSslContextJceksStore() throws Exception {
-        TransportSslOptions options = createJceksSslOptions();
+        TransportOptions options = createJceksSslOptions();
 
         SSLContext context = TransportSupport.createSslContext(options);
         assertNotNull(context);
@@ -150,7 +150,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     @Test
     public void testCreateSslContextPkcs12Store() throws Exception {
-        TransportSslOptions options = createPkcs12SslOptions();
+        TransportOptions options = createPkcs12SslOptions();
 
         SSLContext context = TransportSupport.createSslContext(options);
         assertNotNull(context);
@@ -160,14 +160,14 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     @Test(expected = IOException.class)
     public void testCreateSslContextIncorrectStoreType() throws Exception {
-        TransportSslOptions options = createPkcs12SslOptions();
+        TransportOptions options = createPkcs12SslOptions();
         options.setStoreType(KEYSTORE_JCEKS_TYPE);
         TransportSupport.createSslContext(options);
     }
 
     @Test
     public void testCreateSslEngineFromPkcs12Store() throws Exception {
-        TransportSslOptions options = createPkcs12SslOptions();
+        TransportOptions options = createPkcs12SslOptions();
 
         SSLContext context = TransportSupport.createSslContext(options);
         assertNotNull(context);
@@ -181,7 +181,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     @Test
     public void testCreateSslEngineFromPkcs12StoreWithExplicitEnabledProtocols() throws Exception {
-        TransportSslOptions options = createPkcs12SslOptions(ENABLED_PROTOCOLS);
+        TransportOptions options = createPkcs12SslOptions(ENABLED_PROTOCOLS);
 
         SSLContext context = TransportSupport.createSslContext(options);
         assertNotNull(context);
@@ -194,7 +194,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     @Test
     public void testCreateSslEngineFromJksStore() throws Exception {
-        TransportSslOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions();
 
         SSLContext context = TransportSupport.createSslContext(options);
         assertNotNull(context);
@@ -208,7 +208,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     @Test
     public void testCreateSslEngineFromJksStoreWithExplicitEnabledProtocols() throws Exception {
-        TransportSslOptions options = createJksSslOptions(ENABLED_PROTOCOLS);
+        TransportOptions options = createJksSslOptions(ENABLED_PROTOCOLS);
 
         SSLContext context = TransportSupport.createSslContext(options);
         assertNotNull(context);
@@ -222,7 +222,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
     @Test
     public void testCreateSslEngineFromJksStoreWithExplicitDisabledProtocols() throws Exception {
         // Discover the default enabled protocols
-        TransportSslOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createSSLEngineDirectly(options);
         String[] protocols = directEngine.getEnabledProtocols();
         assertTrue("There were no initial protocols to choose from!", protocols.length > 0);
@@ -242,7 +242,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
     @Test
     public void testCreateSslEngineFromJksStoreWithExplicitEnabledAndDisabledProtocols() throws Exception {
         // Discover the default enabled protocols
-        TransportSslOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createSSLEngineDirectly(options);
         String[] protocols = directEngine.getEnabledProtocols();
         assertTrue("There were no initial protocols to choose from!", protocols.length > 1);
@@ -266,7 +266,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
     @Test
     public void testCreateSslEngineFromJksStoreWithExplicitEnabledCiphers() throws Exception {
         // Discover the default enabled ciphers
-        TransportSslOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createSSLEngineDirectly(options);
         String[] ciphers = directEngine.getEnabledCipherSuites();
         assertTrue("There were no initial ciphers to choose from!", ciphers.length > 0);
@@ -286,7 +286,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
     @Test
     public void testCreateSslEngineFromJksStoreWithExplicitDisabledCiphers() throws Exception {
         // Discover the default enabled ciphers
-        TransportSslOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createSSLEngineDirectly(options);
         String[] ciphers = directEngine.getEnabledCipherSuites();
         assertTrue("There were no initial ciphers to choose from!", ciphers.length > 0);
@@ -306,7 +306,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
     @Test
     public void testCreateSslEngineFromJksStoreWithExplicitEnabledAndDisabledCiphers() throws Exception {
         // Discover the default enabled ciphers
-        TransportSslOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createSSLEngineDirectly(options);
         String[] ciphers = directEngine.getEnabledCipherSuites();
         assertTrue("There werent enough initial ciphers to choose from!", ciphers.length > 1);
@@ -329,7 +329,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     @Test
     public void testCreateSslEngineFromJceksStore() throws Exception {
-        TransportSslOptions options = createJceksSslOptions();
+        TransportOptions options = createJceksSslOptions();
 
         SSLContext context = TransportSupport.createSslContext(options);
         assertNotNull(context);
@@ -343,7 +343,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     @Test
     public void testCreateSslEngineFromJceksStoreWithExplicitEnabledProtocols() throws Exception {
-        TransportSslOptions options = createJceksSslOptions(ENABLED_PROTOCOLS);
+        TransportOptions options = createJceksSslOptions(ENABLED_PROTOCOLS);
 
         SSLContext context = TransportSupport.createSslContext(options);
         assertNotNull(context);
@@ -356,7 +356,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     @Test
     public void testCreateSslEngineWithVerifyHost() throws Exception {
-        TransportSslOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions();
         options.setVerifyHost(true);
 
         SSLContext context = TransportSupport.createSslContext(options);
@@ -370,7 +370,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     @Test
     public void testCreateSslEngineWithoutVerifyHost() throws Exception {
-        TransportSslOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions();
         options.setVerifyHost(false);
 
         SSLContext context = TransportSupport.createSslContext(options);
@@ -384,7 +384,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     @Test
     public void testCreateSslContextWithKeyAliasWhichDoesntExist() throws Exception {
-        TransportSslOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions();
         options.setKeyAlias(ALIAS_DOES_NOT_EXIST);
 
         try {
@@ -397,7 +397,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     @Test
     public void testCreateSslContextWithKeyAliasWhichRepresentsNonKeyEntry() throws Exception {
-        TransportSslOptions options = createJksSslOptions();
+        TransportOptions options = createJksSslOptions();
         options.setKeyAlias(ALIAS_CA_CERT);
 
         try {
@@ -408,12 +408,12 @@ public class TransportSupportTest extends QpidJmsTestCase {
         }
     }
 
-    private TransportSslOptions createJksSslOptions() {
+    private TransportOptions createJksSslOptions() {
         return createJksSslOptions(null);
     }
 
-    private TransportSslOptions createJksSslOptions(String[] enabledProtocols) {
-        TransportSslOptions options = new TransportSslOptions();
+    private TransportOptions createJksSslOptions(String[] enabledProtocols) {
+        TransportOptions options = new TransportOptions();
 
         options.setKeyStoreLocation(CLIENT_JKS_KEYSTORE);
         options.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE);
@@ -427,12 +427,12 @@ public class TransportSupportTest extends QpidJmsTestCase {
         return options;
     }
 
-    private TransportSslOptions createJceksSslOptions() {
+    private TransportOptions createJceksSslOptions() {
         return createJceksSslOptions(null);
     }
 
-    private TransportSslOptions createJceksSslOptions(String[] enabledProtocols) {
-        TransportSslOptions options = new TransportSslOptions();
+    private TransportOptions createJceksSslOptions(String[] enabledProtocols) {
+        TransportOptions options = new TransportOptions();
 
         options.setKeyStoreLocation(CLIENT_JCEKS_KEYSTORE);
         options.setTrustStoreLocation(CLIENT_JCEKS_TRUSTSTORE);
@@ -446,12 +446,12 @@ public class TransportSupportTest extends QpidJmsTestCase {
         return options;
     }
 
-    private TransportSslOptions createPkcs12SslOptions() {
+    private TransportOptions createPkcs12SslOptions() {
         return createPkcs12SslOptions(null);
     }
 
-    private TransportSslOptions createPkcs12SslOptions(String[] enabledProtocols) {
-        TransportSslOptions options = new TransportSslOptions();
+    private TransportOptions createPkcs12SslOptions(String[] enabledProtocols) {
+        TransportOptions options = new TransportOptions();
 
         options.setKeyStoreLocation(CLIENT_PKCS12_KEYSTORE);
         options.setTrustStoreLocation(CLIENT_PKCS12_TRUSTSTORE);
@@ -465,10 +465,9 @@ public class TransportSupportTest extends QpidJmsTestCase {
         return options;
     }
 
-    private SSLEngine createSSLEngineDirectly(TransportSslOptions options) throws Exception {
+    private SSLEngine createSSLEngineDirectly(TransportOptions options) throws Exception {
         SSLContext context = TransportSupport.createSslContext(options);
         SSLEngine engine = context.createSSLEngine();
         return engine;
     }
-
 }

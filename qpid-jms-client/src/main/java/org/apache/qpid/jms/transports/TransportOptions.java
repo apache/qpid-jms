@@ -16,8 +16,16 @@
  */
 package org.apache.qpid.jms.transports;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.net.ssl.SSLContext;
+
 /**
- * Encapsulates all the TCP Transport options in one configuration object.
+ * Encapsulates all the Transport options in one configuration object.
  */
 public class TransportOptions implements Cloneable {
 
@@ -33,6 +41,19 @@ public class TransportOptions implements Cloneable {
     public static final boolean DEFAULT_USE_EPOLL = true;
     public static final boolean DEFAULT_USE_KQUEUE = false;
     public static final boolean DEFAULT_TRACE_BYTES = false;
+    public static final String DEFAULT_STORE_TYPE = "jks";
+    public static final String DEFAULT_CONTEXT_PROTOCOL = "TLS";
+    public static final boolean DEFAULT_TRUST_ALL = false;
+    public static final boolean DEFAULT_VERIFY_HOST = true;
+    public static final List<String> DEFAULT_DISABLED_PROTOCOLS = Collections.unmodifiableList(Arrays.asList(new String[]{"SSLv2Hello", "SSLv3"}));
+    public static final int DEFAULT_SSL_PORT = 5671;
+
+    private static final String JAVAX_NET_SSL_KEY_STORE = "javax.net.ssl.keyStore";
+    private static final String JAVAX_NET_SSL_KEY_STORE_TYPE = "javax.net.ssl.keyStoreType";
+    private static final String JAVAX_NET_SSL_KEY_STORE_PASSWORD = "javax.net.ssl.keyStorePassword";
+    private static final String JAVAX_NET_SSL_TRUST_STORE = "javax.net.ssl.trustStore";
+    private static final String JAVAX_NET_SSL_TRUST_STORE_TYPE = "javax.net.ssl.trustStoreType";
+    private static final String JAVAX_NET_SSL_TRUST_STORE_PASSWORD = "javax.net.ssl.trustStorePassword";
 
     private int sendBufferSize = DEFAULT_SEND_BUFFER_SIZE;
     private int receiveBufferSize = DEFAULT_RECEIVE_BUFFER_SIZE;
@@ -46,6 +67,40 @@ public class TransportOptions implements Cloneable {
     private boolean useEpoll = DEFAULT_USE_EPOLL;
     private boolean useKQueue = DEFAULT_USE_KQUEUE;
     private boolean traceBytes = DEFAULT_TRACE_BYTES;
+
+    private String keyStoreLocation;
+    private String keyStorePassword;
+    private String trustStoreLocation;
+    private String trustStorePassword;
+    private String keyStoreType;
+    private String trustStoreType;
+    private String[] enabledCipherSuites;
+    private String[] disabledCipherSuites;
+    private String[] enabledProtocols;
+    private String[] disabledProtocols = DEFAULT_DISABLED_PROTOCOLS.toArray(new String[0]);
+    private String contextProtocol = DEFAULT_CONTEXT_PROTOCOL;
+
+    private boolean trustAll = DEFAULT_TRUST_ALL;
+    private boolean verifyHost = DEFAULT_VERIFY_HOST;
+    private String keyAlias;
+    private int defaultSslPort = DEFAULT_SSL_PORT;
+    private SSLContext sslContextOverride;
+
+    private final Map<String, String> httpHeaders = new HashMap<>();
+
+    public TransportOptions() {
+        setKeyStoreLocation(System.getProperty(JAVAX_NET_SSL_KEY_STORE));
+        setKeyStoreType(System.getProperty(JAVAX_NET_SSL_KEY_STORE_TYPE, DEFAULT_STORE_TYPE));
+        setKeyStorePassword(System.getProperty(JAVAX_NET_SSL_KEY_STORE_PASSWORD));
+        setTrustStoreLocation(System.getProperty(JAVAX_NET_SSL_TRUST_STORE));
+        setTrustStoreType(System.getProperty(JAVAX_NET_SSL_TRUST_STORE_TYPE, DEFAULT_STORE_TYPE));
+        setTrustStorePassword(System.getProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD));
+    }
+
+    @Override
+    public TransportOptions clone() {
+        return copyOptions(new TransportOptions());
+    }
 
     /**
      * @return the currently set send buffer size in bytes.
@@ -219,13 +274,242 @@ public class TransportOptions implements Cloneable {
         this.traceBytes = traceBytes;
     }
 
-    @Override
-    public TransportOptions clone() {
-        return copyOptions(new TransportOptions());
+    /**
+     * @return the keyStoreLocation currently configured.
+     */
+    public String getKeyStoreLocation() {
+        return keyStoreLocation;
     }
 
-    public boolean isSSL() {
-        return false;
+    /**
+     * Sets the location on disk of the key store to use.
+     *
+     * @param keyStoreLocation
+     *        the keyStoreLocation to use to create the key manager.
+     */
+    public void setKeyStoreLocation(String keyStoreLocation) {
+        this.keyStoreLocation = keyStoreLocation;
+    }
+
+    /**
+     * @return the keyStorePassword
+     */
+    public String getKeyStorePassword() {
+        return keyStorePassword;
+    }
+
+    /**
+     * @param keyStorePassword the keyStorePassword to set
+     */
+    public void setKeyStorePassword(String keyStorePassword) {
+        this.keyStorePassword = keyStorePassword;
+    }
+
+    /**
+     * @return the trustStoreLocation
+     */
+    public String getTrustStoreLocation() {
+        return trustStoreLocation;
+    }
+
+    /**
+     * @param trustStoreLocation the trustStoreLocation to set
+     */
+    public void setTrustStoreLocation(String trustStoreLocation) {
+        this.trustStoreLocation = trustStoreLocation;
+    }
+
+    /**
+     * @return the trustStorePassword
+     */
+    public String getTrustStorePassword() {
+        return trustStorePassword;
+    }
+
+    /**
+     * @param trustStorePassword the trustStorePassword to set
+     */
+    public void setTrustStorePassword(String trustStorePassword) {
+        this.trustStorePassword = trustStorePassword;
+    }
+
+    /**
+     * @param storeType
+     *        the format that the store files are encoded in.
+     */
+    public void setStoreType(String storeType) {
+        setKeyStoreType(storeType);
+        setTrustStoreType(storeType);
+    }
+
+    /**
+     * @return the keyStoreType
+     */
+    public String getKeyStoreType() {
+        return keyStoreType;
+    }
+
+    /**
+     * @param keyStoreType
+     *        the format that the keyStore file is encoded in
+     */
+    public void setKeyStoreType(String keyStoreType) {
+        this.keyStoreType = keyStoreType;
+    }
+
+    /**
+     * @return the trustStoreType
+     */
+    public String getTrustStoreType() {
+        return trustStoreType;
+    }
+
+    /**
+     * @param trustStoreType
+     *        the format that the trustStore file is encoded in
+     */
+    public void setTrustStoreType(String trustStoreType) {
+        this.trustStoreType = trustStoreType;
+    }
+
+    /**
+     * @return the enabledCipherSuites
+     */
+    public String[] getEnabledCipherSuites() {
+        return enabledCipherSuites;
+    }
+
+    /**
+     * @param enabledCipherSuites the enabledCipherSuites to set
+     */
+    public void setEnabledCipherSuites(String[] enabledCipherSuites) {
+        this.enabledCipherSuites = enabledCipherSuites;
+    }
+
+    /**
+     * @return the disabledCipherSuites
+     */
+    public String[] getDisabledCipherSuites() {
+        return disabledCipherSuites;
+    }
+
+    /**
+     * @param disabledCipherSuites the disabledCipherSuites to set
+     */
+    public void setDisabledCipherSuites(String[] disabledCipherSuites) {
+        this.disabledCipherSuites = disabledCipherSuites;
+    }
+
+    /**
+     * @return the enabledProtocols or null if the defaults should be used
+     */
+    public String[] getEnabledProtocols() {
+        return enabledProtocols;
+    }
+
+    /**
+     * The protocols to be set as enabled.
+     *
+     * @param enabledProtocols the enabled protocols to set, or null if the defaults should be used.
+     */
+    public void setEnabledProtocols(String[] enabledProtocols) {
+        this.enabledProtocols = enabledProtocols;
+    }
+
+    /**
+     * @return the protocols to disable or null if none should be
+     */
+    public String[] getDisabledProtocols() {
+        return disabledProtocols;
+    }
+
+    /**
+     * The protocols to be disable.
+     *
+     * @param disabledProtocols the protocols to disable, or null if none should be.
+     */
+    public void setDisabledProtocols(String[] disabledProtocols) {
+        this.disabledProtocols = disabledProtocols;
+    }
+
+    /**
+    * @return the context protocol to use
+    */
+    public String getContextProtocol() {
+        return contextProtocol;
+    }
+
+    /**
+     * The protocol value to use when creating an SSLContext via
+     * SSLContext.getInstance(protocol).
+     *
+     * @param contextProtocol the context protocol to use.
+     */
+    public void setContextProtocol(String contextProtocol) {
+        this.contextProtocol = contextProtocol;
+    }
+
+    /**
+     * @return the trustAll
+     */
+    public boolean isTrustAll() {
+        return trustAll;
+    }
+
+    /**
+     * @param trustAll the trustAll to set
+     */
+    public void setTrustAll(boolean trustAll) {
+        this.trustAll = trustAll;
+    }
+
+    /**
+     * @return the verifyHost
+     */
+    public boolean isVerifyHost() {
+        return verifyHost;
+    }
+
+    /**
+     * @param verifyHost the verifyHost to set
+     */
+    public void setVerifyHost(boolean verifyHost) {
+        this.verifyHost = verifyHost;
+    }
+
+    /**
+     * @return the key alias
+     */
+    public String getKeyAlias() {
+        return keyAlias;
+    }
+
+    /**
+     * @param keyAlias the key alias to use
+     */
+    public void setKeyAlias(String keyAlias) {
+        this.keyAlias = keyAlias;
+    }
+
+    public int getDefaultSslPort() {
+        return defaultSslPort;
+    }
+
+    public void setDefaultSslPort(int defaultSslPort) {
+        this.defaultSslPort = defaultSslPort;
+    }
+
+    public void setSslContextOverride(SSLContext sslContextOverride) {
+        this.sslContextOverride = sslContextOverride;
+    }
+
+    public SSLContext getSslContextOverride() {
+        return sslContextOverride;
+    }
+
+    // TODO - Expose headers ( ? getWSHeaders : getAuthHeaders ...
+    public Map<String, String> getHttpHeaders() {
+        return httpHeaders;
     }
 
     protected TransportOptions copyOptions(TransportOptions copy) {
@@ -240,6 +524,22 @@ public class TransportOptions implements Cloneable {
         copy.setDefaultTcpPort(getDefaultTcpPort());
         copy.setUseEpoll(isUseEpoll());
         copy.setTraceBytes(isTraceBytes());
+        copy.setKeyStoreLocation(getKeyStoreLocation());
+        copy.setKeyStorePassword(getKeyStorePassword());
+        copy.setTrustStoreLocation(getTrustStoreLocation());
+        copy.setTrustStorePassword(getTrustStorePassword());
+        copy.setKeyStoreType(getKeyStoreType());
+        copy.setTrustStoreType(getTrustStoreType());
+        copy.setEnabledCipherSuites(getEnabledCipherSuites());
+        copy.setDisabledCipherSuites(getDisabledCipherSuites());
+        copy.setEnabledProtocols(getEnabledProtocols());
+        copy.setDisabledProtocols(getDisabledProtocols());
+        copy.setTrustAll(isTrustAll());
+        copy.setVerifyHost(isVerifyHost());
+        copy.setKeyAlias(getKeyAlias());
+        copy.setContextProtocol(getContextProtocol());
+        copy.setDefaultSslPort(getDefaultSslPort());
+        copy.setSslContextOverride(getSslContextOverride());
 
         return copy;
     }

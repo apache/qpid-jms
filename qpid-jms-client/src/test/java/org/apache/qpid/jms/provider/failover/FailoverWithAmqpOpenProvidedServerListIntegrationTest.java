@@ -41,7 +41,7 @@ import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
-import org.apache.qpid.jms.transports.TransportSslOptions;
+import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
 import org.apache.qpid.jms.util.PropertyUtil;
 import org.apache.qpid.jms.util.URISupport;
@@ -399,7 +399,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
      */
     @Test(timeout = 20000)
     public void testFailoverUsingSSLConfiguredBySystemProperties() throws Exception {
-        TransportSslOptions serverSslOptions = new TransportSslOptions();
+        TransportOptions serverSslOptions = new TransportOptions();
         serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
         serverSslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
         serverSslOptions.setKeyStorePassword(PASSWORD);
@@ -508,7 +508,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
      */
     @Test(timeout = 20000)
     public void testFailoverUsingSSLConfiguredByTransportOptions() throws Exception {
-        TransportSslOptions sslOptions = new TransportSslOptions();
+        TransportOptions sslOptions = new TransportOptions();
         sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
         sslOptions.setKeyStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
@@ -627,7 +627,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
      */
     @Test(timeout = 20000)
     public void testFailoverUsingSSLConfiguredByNestedTransportOptions() throws Exception {
-        TransportSslOptions sslOptions = new TransportSslOptions();
+        TransportOptions sslOptions = new TransportOptions();
         sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
         sslOptions.setKeyStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
@@ -746,7 +746,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
      */
     @Test(timeout = 20000)
     public void testFailoverUsingSSLConfiguredByCustomSSLContext() throws Exception {
-        TransportSslOptions serverSslOptions = new TransportSslOptions();
+        TransportOptions serverSslOptions = new TransportOptions();
         serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
         serverSslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
         serverSslOptions.setKeyStorePassword(PASSWORD);
@@ -755,7 +755,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
 
         SSLContext serverSslContext = TransportSupport.createSslContext(serverSslOptions);
 
-        TransportSslOptions clientSslOptions = new TransportSslOptions();
+        TransportOptions clientSslOptions = new TransportOptions();
         clientSslOptions.setKeyStoreLocation(CLIENT_JKS_KEYSTORE);
         clientSslOptions.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE);
         clientSslOptions.setKeyStorePassword(PASSWORD);
@@ -885,7 +885,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
 
     private void doTestFailoverHandlingOfInsecureRedirectAdvertisement(boolean allow) throws Exception {
 
-        TransportSslOptions serverSslOptions = new TransportSslOptions();
+        TransportOptions serverSslOptions = new TransportOptions();
         serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
         serverSslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
         serverSslOptions.setKeyStorePassword(PASSWORD);
@@ -992,7 +992,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
 
     private void doTestFailoverAcceptsUpdateUsingTransportSchemes(String transportScheme, String expected) throws Exception {
 
-        TransportSslOptions serverSslOptions = new TransportSslOptions();
+        TransportOptions serverSslOptions = new TransportOptions();
         serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
         serverSslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
         serverSslOptions.setKeyStorePassword(PASSWORD);

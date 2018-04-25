@@ -32,12 +32,12 @@ public class NettyEchoServer extends NettyServer {
 
     private static final Logger LOG = LoggerFactory.getLogger(NettyEchoServer.class);
 
-    public NettyEchoServer(TransportOptions options, boolean needClientAuth) {
-        super(options, needClientAuth);
+    public NettyEchoServer(TransportOptions options, boolean secure, boolean needClientAuth) {
+        super(options, secure, needClientAuth);
     }
 
-    public NettyEchoServer(TransportOptions options, boolean needClientAuth, boolean webSocketServer) {
-        super(options, needClientAuth, webSocketServer);
+    public NettyEchoServer(TransportOptions options, boolean secure, boolean needClientAuth, boolean webSocketServer) {
+        super(options, secure, needClientAuth, webSocketServer);
     }
 
     @Override

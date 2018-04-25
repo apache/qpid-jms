@@ -20,15 +20,11 @@
  */
 package org.apache.qpid.jms.integration;
 
-import org.apache.qpid.jms.JmsConnectionFactory;
-import org.apache.qpid.jms.test.QpidJmsTestCase;
-import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
-import org.apache.qpid.jms.transports.TransportSslOptions;
-import org.apache.qpid.jms.transports.TransportSupport;
-import org.apache.qpid.proton.amqp.Symbol;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -42,11 +38,16 @@ import javax.jms.JMSSecurityException;
 import javax.jms.JMSSecurityRuntimeException;
 import javax.net.ssl.SSLContext;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import org.apache.qpid.jms.JmsConnectionExtensions;
+import org.apache.qpid.jms.JmsConnectionFactory;
+import org.apache.qpid.jms.test.QpidJmsTestCase;
+import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
+import org.apache.qpid.jms.transports.TransportOptions;
+import org.apache.qpid.jms.transports.TransportSupport;
+import org.apache.qpid.proton.amqp.Symbol;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SaslIntegrationTest extends QpidJmsTestCase {
 
@@ -68,7 +69,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 20000)
     public void testSaslExternalConnection() throws Exception {
-        TransportSslOptions sslOptions = new TransportSslOptions();
+        TransportOptions sslOptions = new TransportOptions();
         sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
         sslOptions.setKeyStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
@@ -300,7 +301,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     }
 
     private void doMechanismSelectedExternalTestImpl(boolean requireClientCert, Symbol clientSelectedMech, Symbol[] serverMechs) throws Exception {
-        TransportSslOptions sslOptions = new TransportSslOptions();
+        TransportOptions sslOptions = new TransportOptions();
         sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
         sslOptions.setKeyStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
@@ -446,6 +447,97 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
             }
 
             testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testUserOnlyExtensionsApplied() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            // Expect a PLAIN connection
+            final String user = "user";
+            final String pass = "qwerty123456";
+
+            testPeer.expectSaslPlain(user, pass);
+            testPeer.expectOpen();
+
+            // Each connection creates a session for managing temporary destinations etc
+            testPeer.expectBegin();
+
+            JmsConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort());
+
+            factory.setExtension(JmsConnectionExtensions.USERNAME_OVERRIDE.toString(), (connection) -> { return user; });
+
+            Connection connection = factory.createConnection(null, pass);
+            // Set a clientID to provoke the actual AMQP connection process to occur.
+            connection.setClientID("clientName");
+
+            testPeer.waitForAllHandlersToComplete(1000);
+            assertNull(testPeer.getThrowable());
+
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testPasswordOnlyExtensionsApplied() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            // Expect a PLAIN connection
+            final String user = "user";
+            final String pass = "qwerty123456";
+
+            testPeer.expectSaslPlain(user, pass);
+            testPeer.expectOpen();
+
+            // Each connection creates a session for managing temporary destinations etc
+            testPeer.expectBegin();
+
+            JmsConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort());
+
+            factory.setExtension(JmsConnectionExtensions.PASSWORD_OVERRIDE.toString(), (connection) -> { return pass; });
+
+            Connection connection = factory.createConnection(user, null);
+            // Set a clientID to provoke the actual AMQP connection process to occur.
+            connection.setClientID("clientName");
+
+            testPeer.waitForAllHandlersToComplete(1000);
+            assertNull(testPeer.getThrowable());
+
+            testPeer.expectClose();
+            connection.close();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testUserAndPasswordExtensionsApplied() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            // Expect a PLAIN connection
+            final String user = "user";
+            final String pass = "qwerty123456";
+
+            testPeer.expectSaslPlain(user, pass);
+            testPeer.expectOpen();
+
+            // Each connection creates a session for managing temporary destinations etc
+            testPeer.expectBegin();
+
+            JmsConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort());
+
+            factory.setExtension(JmsConnectionExtensions.USERNAME_OVERRIDE.toString(), (connection) -> { return user; });
+            factory.setExtension(JmsConnectionExtensions.PASSWORD_OVERRIDE.toString(), (connection) -> { return pass; });
+
+            Connection connection = factory.createConnection();
+            // Set a clientID to provoke the actual AMQP connection process to occur.
+            connection.setClientID("clientName");
+
+            testPeer.waitForAllHandlersToComplete(1000);
+            assertNull(testPeer.getThrowable());
+
+            testPeer.expectClose();
+            connection.close();
         }
     }
 }

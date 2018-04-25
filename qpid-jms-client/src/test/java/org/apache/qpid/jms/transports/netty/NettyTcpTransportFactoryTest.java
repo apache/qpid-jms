@@ -81,6 +81,13 @@ public class NettyTcpTransportFactoryTest {
         factory.createTransport(BASE_URI);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateTransportWithHttpHeaders() throws Exception {
+        URI BASE_URI = new URI("tcp://localhost:5672?transport.httpHeaders=A");
+        NettyTcpTransportFactory factory = new NettyTcpTransportFactory();
+        factory.createTransport(BASE_URI);
+    }
+
     @Test(expected = IOException.class)
     public void testCreateWithBadKey() throws Exception {
         URI BASE_URI = new URI("tcp://localhost:5672?transport.trafficClass=4096");

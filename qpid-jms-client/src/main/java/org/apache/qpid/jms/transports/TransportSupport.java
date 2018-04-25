@@ -16,8 +16,6 @@
  */
 package org.apache.qpid.jms.transports;
 
-import io.netty.handler.ssl.SslHandler;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -44,6 +42,8 @@ import javax.net.ssl.X509TrustManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.netty.handler.ssl.SslHandler;
+
 /**
  * Static class that provides various utility methods used by Transport implementations.
  */
@@ -68,7 +68,7 @@ public class TransportSupport {
      *
      * @throws Exception if an error occurs while creating the SslHandler instance.
      */
-    public static SslHandler createSslHandler(URI remote, TransportSslOptions options) throws Exception {
+    public static SslHandler createSslHandler(URI remote, TransportOptions options) throws Exception {
         SSLContext sslContext = options.getSslContextOverride();
         if(sslContext == null) {
             sslContext = createSslContext(options);
@@ -90,7 +90,7 @@ public class TransportSupport {
      *
      * @throws Exception if an error occurs while creating the context.
      */
-    public static SSLContext createSslContext(TransportSslOptions options) throws Exception {
+    public static SSLContext createSslContext(TransportOptions options) throws Exception {
         try {
             String contextProtocol = options.getContextProtocol();
             LOG.trace("Getting SSLContext instance using protocol: {}", contextProtocol);
@@ -114,13 +114,13 @@ public class TransportSupport {
      * @param context
      *        the SSLContext to use when creating the engine.
      * @param options
-     *        the TransportSslOptions to use to configure the new SSLEngine.
+     *        the TransportOptions to use to configure the new SSLEngine.
      *
      * @return a new SSLEngine instance in client mode.
      *
      * @throws Exception if an error occurs while creating the new SSLEngine.
      */
-    public static SSLEngine createSslEngine(SSLContext context, TransportSslOptions options) throws Exception {
+    public static SSLEngine createSslEngine(SSLContext context, TransportOptions options) throws Exception {
         return createSslEngine(null, context, options);
     }
 
@@ -133,13 +133,13 @@ public class TransportSupport {
      * @param context
      *        the SSLContext to use when creating the engine.
      * @param options
-     *        the TransportSslOptions to use to configure the new SSLEngine.
+     *        the TransportOptions to use to configure the new SSLEngine.
      *
      * @return a new SSLEngine instance in client mode.
      *
      * @throws Exception if an error occurs while creating the new SSLEngine.
      */
-    public static SSLEngine createSslEngine(URI remote, SSLContext context, TransportSslOptions options) throws Exception {
+    public static SSLEngine createSslEngine(URI remote, SSLContext context, TransportOptions options) throws Exception {
         SSLEngine engine = null;
         if(remote == null) {
             engine = context.createSSLEngine();
@@ -160,7 +160,7 @@ public class TransportSupport {
         return engine;
     }
 
-    private static String[] buildEnabledProtocols(SSLEngine engine, TransportSslOptions options) {
+    private static String[] buildEnabledProtocols(SSLEngine engine, TransportOptions options) {
         List<String> enabledProtocols = new ArrayList<String>();
 
         if (options.getEnabledProtocols() != null) {
@@ -185,7 +185,7 @@ public class TransportSupport {
         return enabledProtocols.toArray(new String[0]);
     }
 
-    private static String[] buildEnabledCipherSuites(SSLEngine engine, TransportSslOptions options) {
+    private static String[] buildEnabledCipherSuites(SSLEngine engine, TransportOptions options) {
         List<String> enabledCipherSuites = new ArrayList<String>();
 
         if (options.getEnabledCipherSuites() != null) {
@@ -210,7 +210,7 @@ public class TransportSupport {
         return enabledCipherSuites.toArray(new String[0]);
     }
 
-    private static TrustManager[] loadTrustManagers(TransportSslOptions options) throws Exception {
+    private static TrustManager[] loadTrustManagers(TransportOptions options) throws Exception {
         if (options.isTrustAll()) {
             return new TrustManager[] { createTrustAllTrustManager() };
         }
@@ -233,7 +233,7 @@ public class TransportSupport {
         return fact.getTrustManagers();
     }
 
-    private static KeyManager[] loadKeyManagers(TransportSslOptions options) throws Exception {
+    private static KeyManager[] loadKeyManagers(TransportOptions options) throws Exception {
         if (options.getKeyStoreLocation() == null) {
             return null;
         }

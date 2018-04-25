@@ -31,7 +31,6 @@ import java.security.cert.X509Certificate;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
-import org.apache.qpid.jms.transports.TransportSslOptions;
 import org.apache.qpid.jms.util.QpidJMSTestRunner;
 import org.apache.qpid.jms.util.Repeat;
 import org.junit.Test;
@@ -110,7 +109,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             int port = server.getServerPort();
             URI serverLocation = new URI("tcp://localhost:" + port);
 
-            TransportSslOptions options = new TransportSslOptions();
+            TransportOptions options = new TransportOptions();
 
             options.setTrustStoreLocation(OTHER_CA_TRUSTSTORE);
             options.setTrustStorePassword(PASSWORD);
@@ -157,7 +156,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
     @Test(timeout = 60 * 1000)
     public void testConnectWithNeedClientAuth() throws Exception {
-        TransportSslOptions serverOptions = createServerOptions();
+        TransportOptions serverOptions = createServerOptions();
 
         try (NettyEchoServer server = createEchoServer(serverOptions, true)) {
             server.start();
@@ -165,7 +164,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             int port = server.getServerPort();
             URI serverLocation = new URI("tcp://localhost:" + port);
 
-            TransportSslOptions clientOptions = createClientOptions();
+            TransportOptions clientOptions = createClientOptions();
 
             NettyTcpTransport transport = createTransport(serverLocation, testListener, clientOptions);
             try {
@@ -195,7 +194,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     }
 
     private void doClientAuthAliasTestImpl(String alias, String expectedDN) throws Exception, URISyntaxException, IOException, InterruptedException {
-        TransportSslOptions serverOptions = createServerOptions();
+        TransportOptions serverOptions = createServerOptions();
 
         try (NettyEchoServer server = createEchoServer(serverOptions, true)) {
             server.start();
@@ -203,7 +202,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             int port = server.getServerPort();
             URI serverLocation = new URI("tcp://localhost:" + port);
 
-            TransportSslOptions clientOptions = createClientOptions();
+            TransportOptions clientOptions = createClientOptions();
             clientOptions.setKeyStoreLocation(CLIENT_MULTI_KEYSTORE);
             clientOptions.setKeyAlias(alias);
 
@@ -244,7 +243,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     }
 
     private void doConnectToServerVerifyHostTestImpl(boolean verifyHost) throws Exception, URISyntaxException, IOException, InterruptedException {
-        TransportSslOptions serverOptions = createServerOptions();
+        TransportOptions serverOptions = createServerOptions();
         serverOptions.setKeyStoreLocation(SERVER_WRONG_HOST_KEYSTORE);
 
         try (NettyEchoServer server = createEchoServer(serverOptions)) {
@@ -253,7 +252,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             int port = server.getServerPort();
             URI serverLocation = new URI("tcp://localhost:" + port);
 
-            TransportSslOptions clientOptions = createClientOptionsIsVerify(verifyHost);
+            TransportOptions clientOptions = createClientOptionsIsVerify(verifyHost);
 
             if (verifyHost) {
                 assertTrue("Expected verifyHost to be true", clientOptions.isVerifyHost());
@@ -288,16 +287,26 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
     @Override
     protected NettyTcpTransport createTransport(URI serverLocation, TransportListener listener, TransportOptions options) {
-        return new NettyTcpTransport(listener, serverLocation, options);
+        return new NettyTcpTransport(listener, serverLocation, options, true);
     }
 
     @Override
-    protected TransportSslOptions createClientOptions() {
+	protected NettyEchoServer createEchoServer(TransportOptions options) {
+        return createEchoServer(options, false);
+    }
+
+    @Override
+	protected NettyEchoServer createEchoServer(TransportOptions options, boolean needClientAuth) {
+        return new NettyEchoServer(options, true, needClientAuth);
+    }
+
+    @Override
+    protected TransportOptions createClientOptions() {
         return createClientOptionsIsVerify(false);
     }
 
-    protected TransportSslOptions createClientOptionsIsVerify(boolean verifyHost) {
-        TransportSslOptions options = new TransportSslOptions();
+    protected TransportOptions createClientOptionsIsVerify(boolean verifyHost) {
+        TransportOptions options = new TransportOptions();
 
         options.setKeyStoreLocation(CLIENT_KEYSTORE);
         options.setKeyStorePassword(PASSWORD);
@@ -310,8 +319,8 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     }
 
     @Override
-    protected TransportSslOptions createServerOptions() {
-        TransportSslOptions options = new TransportSslOptions();
+    protected TransportOptions createServerOptions() {
+        TransportOptions options = new TransportOptions();
 
         options.setKeyStoreLocation(SERVER_KEYSTORE);
         options.setKeyStorePassword(PASSWORD);
@@ -323,8 +332,8 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
         return options;
     }
 
-    protected TransportSslOptions createClientOptionsWithoutTrustStore(boolean trustAll) {
-        TransportSslOptions options = new TransportSslOptions();
+    protected TransportOptions createClientOptionsWithoutTrustStore(boolean trustAll) {
+        TransportOptions options = new TransportOptions();
 
         options.setStoreType(KEYSTORE_TYPE);
         options.setTrustAll(trustAll);

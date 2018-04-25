@@ -39,10 +39,11 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
+import org.apache.qpid.jms.JmsConnectionExtensions;
 import org.apache.qpid.jms.JmsConnectionFactory;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
-import org.apache.qpid.jms.transports.TransportSslOptions;
+import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
 import org.junit.Test;
 
@@ -82,7 +83,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 20000)
     public void testCreateAndCloseSslConnection() throws Exception {
-        TransportSslOptions sslOptions = new TransportSslOptions();
+        TransportOptions sslOptions = new TransportOptions();
         sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
         sslOptions.setKeyStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
@@ -104,7 +105,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 20000)
     public void testCreateSslConnectionWithServerSendingPreemptiveData() throws Exception {
-        TransportSslOptions serverSslOptions = new TransportSslOptions();
+        TransportOptions serverSslOptions = new TransportOptions();
         serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
         serverSslOptions.setKeyStorePassword(PASSWORD);
         serverSslOptions.setVerifyHost(false);
@@ -135,7 +136,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 20000)
     public void testCreateAndCloseSslConnectionWithClientAuth() throws Exception {
-        TransportSslOptions sslOptions = new TransportSslOptions();
+        TransportOptions sslOptions = new TransportOptions();
         sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
         sslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
         sslOptions.setKeyStorePassword(PASSWORD);
@@ -167,7 +168,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
     }
 
     private void doConnectionWithAliasTestImpl(String alias, String expectedDN) throws Exception, JMSException, SSLPeerUnverifiedException, IOException {
-        TransportSslOptions sslOptions = new TransportSslOptions();
+        TransportOptions sslOptions = new TransportOptions();
         sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
         sslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
         sslOptions.setKeyStorePassword(PASSWORD);
@@ -212,7 +213,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
     }
 
     private void doCreateConnectionWithInvalidAliasTestImpl(String alias) throws Exception, IOException {
-        TransportSslOptions sslOptions = new TransportSslOptions();
+        TransportOptions sslOptions = new TransportOptions();
         sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
         sslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
         sslOptions.setKeyStorePassword(PASSWORD);
@@ -254,13 +255,24 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         assertNotEquals(CLIENT_DN, CLIENT2_DN);
 
         // Connect providing the Client 1 details via context override, expect Client1 DN.
-        doConnectionWithSslContextOverride(CLIENT_JKS_KEYSTORE, CLIENT_DN);
+        doConnectionWithSslContextOverride(CLIENT_JKS_KEYSTORE, CLIENT_DN, false);
         // Connect providing the Client 2 details via context override, expect Client2 DN instead.
-        doConnectionWithSslContextOverride(CLIENT2_JKS_KEYSTORE, CLIENT2_DN);
+        doConnectionWithSslContextOverride(CLIENT2_JKS_KEYSTORE, CLIENT2_DN, false);
     }
 
-    private void doConnectionWithSslContextOverride(String clientKeyStorePath, String expectedDN) throws Exception {
-        TransportSslOptions serverSslOptions = new TransportSslOptions();
+    @Test(timeout = 20000)
+    public void testCreateConnectionWithSslContextOverrideByExtension() throws Exception {
+        assertNotEquals(CLIENT_JKS_KEYSTORE, CLIENT2_JKS_KEYSTORE);
+        assertNotEquals(CLIENT_DN, CLIENT2_DN);
+
+        // Connect providing the Client 1 details via context override, expect Client1 DN.
+        doConnectionWithSslContextOverride(CLIENT_JKS_KEYSTORE, CLIENT_DN, true);
+        // Connect providing the Client 2 details via context override, expect Client2 DN instead.
+        doConnectionWithSslContextOverride(CLIENT2_JKS_KEYSTORE, CLIENT2_DN, true);
+    }
+
+    private void doConnectionWithSslContextOverride(String clientKeyStorePath, String expectedDN, boolean useExtension) throws Exception {
+        TransportOptions serverSslOptions = new TransportOptions();
         serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
         serverSslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
         serverSslOptions.setKeyStorePassword(PASSWORD);
@@ -269,17 +281,26 @@ public class SslIntegrationTest extends QpidJmsTestCase {
 
         SSLContext serverContext = TransportSupport.createSslContext(serverSslOptions);
 
-        TransportSslOptions clientSslOptions = new TransportSslOptions();
+        TransportOptions clientSslOptions = new TransportOptions();
         clientSslOptions.setKeyStoreLocation(clientKeyStorePath);
         clientSslOptions.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE);
         clientSslOptions.setKeyStorePassword(PASSWORD);
         clientSslOptions.setTrustStorePassword(PASSWORD);
 
-        SSLContext clientContext = TransportSupport.createSslContext(clientSslOptions);
-
         try (TestAmqpPeer testPeer = new TestAmqpPeer(serverContext, true);) {
             JmsConnectionFactory factory = new JmsConnectionFactory("amqps://localhost:" + testPeer.getServerPort());
-            factory.setSslContext(clientContext);
+
+            if (useExtension) {
+                factory.setExtension(JmsConnectionExtensions.SSL_CONTEXT.toString(), (options) -> {
+                    try {
+                        return TransportSupport.createSslContext(clientSslOptions);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e.getMessage(), e);
+                    }
+                });
+            } else {
+                factory.setSslContext(TransportSupport.createSslContext(clientSslOptions));
+            }
 
             testPeer.expectSaslPlain("guest", "guest");
             testPeer.expectOpen();
@@ -321,7 +342,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         // Connect without providing a context, expect Client1 DN.
         doConnectionWithSslContextOverrideAndURIConfig(null, CLIENT_DN);
 
-        TransportSslOptions clientSslOptions = new TransportSslOptions();
+        TransportOptions clientSslOptions = new TransportOptions();
         clientSslOptions.setKeyStoreLocation(CLIENT2_JKS_KEYSTORE);
         clientSslOptions.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE);
         clientSslOptions.setKeyStorePassword(PASSWORD);
@@ -334,7 +355,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
     }
 
     private void doConnectionWithSslContextOverrideAndURIConfig(SSLContext clientContext, String expectedDN) throws Exception {
-        TransportSslOptions serverSslOptions = new TransportSslOptions();
+        TransportOptions serverSslOptions = new TransportOptions();
         serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
         serverSslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
         serverSslOptions.setKeyStorePassword(PASSWORD);
@@ -442,7 +463,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
     }
 
     private void doConfigureStoresWithSslSystemPropertiesTestImpl(String expectedDN, boolean usePkcs12Store) throws Exception {
-        TransportSslOptions serverSslOptions = new TransportSslOptions();
+        TransportOptions serverSslOptions = new TransportOptions();
 
         if (!usePkcs12Store) {
             serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);

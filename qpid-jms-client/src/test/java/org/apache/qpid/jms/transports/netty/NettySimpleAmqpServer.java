@@ -85,16 +85,16 @@ public class NettySimpleAmqpServer extends NettyServer {
     private boolean allowNonSaslConnections;
     private ConnectionIntercepter connectionIntercepter;
 
-    public NettySimpleAmqpServer(TransportOptions options) {
+    public NettySimpleAmqpServer(TransportOptions options, boolean secure) {
         this(options, false, false);
     }
 
-    public NettySimpleAmqpServer(TransportOptions options, boolean needClientAuth) {
-        this(options, needClientAuth, false);
+    public NettySimpleAmqpServer(TransportOptions options, boolean secure, boolean needClientAuth) {
+        this(options, secure, needClientAuth, false);
     }
 
-    public NettySimpleAmqpServer(TransportOptions options, boolean needClientAuth, boolean webSocketServer) {
-        super(options, needClientAuth, webSocketServer);
+    public NettySimpleAmqpServer(TransportOptions options, boolean secure, boolean needClientAuth, boolean webSocketServer) {
+        super(options, secure, needClientAuth, webSocketServer);
 
         this.serializer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
 

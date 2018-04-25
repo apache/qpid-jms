@@ -649,9 +649,9 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
     protected Transport createTransport(URI serverLocation, TransportListener listener, TransportOptions options) {
         if (listener == null) {
-            return new NettyTcpTransport(serverLocation, options);
+            return new NettyTcpTransport(serverLocation, options, false);
         } else {
-            return new NettyTcpTransport(listener, serverLocation, options);
+            return new NettyTcpTransport(listener, serverLocation, options, false);
         }
     }
 
@@ -676,7 +676,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
     }
 
     protected NettyEchoServer createEchoServer(TransportOptions options, boolean needClientAuth) {
-        return new NettyEchoServer(options, needClientAuth);
+        return new NettyEchoServer(options, false, needClientAuth, false);
     }
 
     public class NettyTransportListener implements TransportListener {

@@ -25,7 +25,7 @@ import javax.net.ssl.SSLContext;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.broker.SslContext;
 import org.apache.activemq.broker.TransportConnector;
-import org.apache.qpid.jms.transports.TransportSslOptions;
+import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
 import org.junit.After;
 import org.junit.Before;
@@ -53,7 +53,7 @@ public class JmsSSLConnectionTest {
         brokerService.setUseJmx(false);
 
         // Setup broker SSL context...
-        TransportSslOptions sslOptions = new TransportSslOptions();
+        TransportOptions sslOptions = new TransportOptions();
         sslOptions.setKeyStoreLocation(KEYSTORE);
         sslOptions.setKeyStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);

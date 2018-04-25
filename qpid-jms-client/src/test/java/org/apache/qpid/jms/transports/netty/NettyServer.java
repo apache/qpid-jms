@@ -31,7 +31,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import org.apache.qpid.jms.transports.TransportOptions;
-import org.apache.qpid.jms.transports.TransportSslOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +61,7 @@ import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
+import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler.HandshakeComplete;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
@@ -83,6 +83,7 @@ public abstract class NettyServer implements AutoCloseable {
     private EventLoopGroup workerGroup;
     private Channel serverChannel;
     private final TransportOptions options;
+    private final boolean secure;
     private int serverPort;
     private final boolean needClientAuth;
     private final boolean webSocketServer;
@@ -90,25 +91,27 @@ public abstract class NettyServer implements AutoCloseable {
     private String webSocketPath = WEBSOCKET_PATH;
     private volatile boolean fragmentWrites;
     private volatile SslHandler sslHandler;
+    private volatile HandshakeComplete handshakeComplete;
 
     private final AtomicBoolean started = new AtomicBoolean();
 
-    public NettyServer(TransportOptions options) {
-        this(options, false);
+    public NettyServer(TransportOptions options, boolean secure) {
+        this(options, secure, false);
     }
 
-    public NettyServer(TransportOptions options, boolean needClientAuth) {
-        this(options, needClientAuth, false);
+    public NettyServer(TransportOptions options, boolean secure, boolean needClientAuth) {
+        this(options, secure, needClientAuth, false);
     }
 
-    public NettyServer(TransportOptions options, boolean needClientAuth, boolean webSocketServer) {
+    public NettyServer(TransportOptions options, boolean secure, boolean needClientAuth, boolean webSocketServer) {
+        this.secure = secure;
         this.options = options;
         this.needClientAuth = needClientAuth;
         this.webSocketServer = webSocketServer;
     }
 
     public boolean isSecureServer() {
-        return options instanceof TransportSslOptions;
+        return secure;
     }
 
     public boolean isWebSocketServer() {
@@ -141,6 +144,10 @@ public abstract class NettyServer implements AutoCloseable {
 
     public boolean isFragmentWrites() {
         return fragmentWrites;
+    }
+
+    public HandshakeComplete getHandshakeComplete() {
+        return handshakeComplete;
     }
 
     protected URI getConnectionURI() throws Exception {
@@ -193,10 +200,9 @@ public abstract class NettyServer implements AutoCloseable {
 
                 @Override
                 public void initChannel(Channel ch) throws Exception {
-                    if (options instanceof TransportSslOptions) {
-                        TransportSslOptions sslOptions = (TransportSslOptions) options;
-                        SSLContext context = TransportSupport.createSslContext(sslOptions);
-                        SSLEngine engine = TransportSupport.createSslEngine(context, sslOptions);
+                    if (isSecureServer()) {
+                        SSLContext context = TransportSupport.createSslContext(options);
+                        SSLEngine engine = TransportSupport.createSslEngine(context, options);
                         engine.setUseClientMode(false);
                         engine.setNeedClientAuth(needClientAuth);
                         sslHandler = new SslHandler(engine);
@@ -273,7 +279,7 @@ public abstract class NettyServer implements AutoCloseable {
         public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
             LOG.trace("NettyServerHandler: Channel write: {}", msg);
             if (isWebSocketServer() && msg instanceof ByteBuf) {
-                if(isFragmentWrites()) {
+                if (isFragmentWrites()) {
                     ByteBuf orig = (ByteBuf) msg;
                     int origIndex = orig.readerIndex();
                     int split = orig.readableBytes()/2;
@@ -298,6 +304,13 @@ public abstract class NettyServer implements AutoCloseable {
     }
 
     private class NettyServerInboundHandler extends ChannelInboundHandlerAdapter  {
+
+        @Override
+        public void userEventTriggered(ChannelHandlerContext context, Object payload) {
+            if (payload instanceof HandshakeComplete) {
+                handshakeComplete = (HandshakeComplete) payload;
+            }
+        }
 
         @Override
         public void channelActive(final ChannelHandlerContext ctx) {

@@ -18,9 +18,13 @@ package org.apache.qpid.jms.meta;
 
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.util.EnumMap;
+import java.util.function.Function;
 
-import javax.net.ssl.SSLContext;
+import javax.jms.Connection;
 
+import org.apache.qpid.jms.JmsConnection;
+import org.apache.qpid.jms.JmsConnectionExtensions;
 import org.apache.qpid.jms.policy.JmsDefaultDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultMessageIDPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
@@ -45,7 +49,9 @@ public final class JmsConnectionInfo extends JmsAbstractResource implements Comp
     public static final long DEFAULT_REQUEST_TIMEOUT = INFINITE;
 
     private final JmsConnectionId connectionId;
+    private final EnumMap<JmsConnectionExtensions, Function<Connection, Object>> extensionMap = new EnumMap<>(JmsConnectionExtensions.class);
 
+    private JmsConnection connection;
     private URI configuredURI;
     private URI connectedURI;
     private String clientId;
@@ -77,7 +83,6 @@ public final class JmsConnectionInfo extends JmsAbstractResource implements Comp
     private JmsDeserializationPolicy deserializationPolicy;
 
     private volatile byte[] encodedUserId;
-    private SSLContext sslContextOverride;
 
     public JmsConnectionInfo(JmsConnectionId connectionId) {
         if (connectionId == null) {
@@ -322,20 +327,6 @@ public final class JmsConnectionInfo extends JmsAbstractResource implements Comp
         this.messageIDPolicy = messageIDPolicy;
     }
 
-    /**
-     * SSLContext to use for SSL/TLS connections. Overrides URI/System property transport configuration.
-     *
-     * @param sslContextOverride
-     *      the sslContext to use, or null to respect the URI/System property configuration again.
-     */
-    public void setSslContextOverride(SSLContext sslContextOverride) {
-        this.sslContextOverride = sslContextOverride;
-    }
-
-    public SSLContext getSslContextOverride() {
-        return sslContextOverride;
-    }
-
     public boolean isPopulateJMSXUserID() {
         return populateJMSXUserID;
     }
@@ -377,6 +368,18 @@ public final class JmsConnectionInfo extends JmsAbstractResource implements Comp
 
     public void setAwaitClientID(boolean awaitClientID) {
         this.awaitClientID = awaitClientID;
+    }
+
+    public EnumMap<JmsConnectionExtensions, Function<Connection, Object>> getExtensionMap() {
+        return extensionMap;
+    }
+
+    public JmsConnection getConnection() {
+        return connection;
+    }
+
+    public void setConnection(JmsConnection connection) {
+        this.connection = connection;
     }
 
     @Override

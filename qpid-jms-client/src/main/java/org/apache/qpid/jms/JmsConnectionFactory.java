@@ -20,7 +20,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.EnumMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -71,6 +73,8 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     private static String DEFAULT_REMOTE_URI;
 
+    private final EnumMap<JmsConnectionExtensions, Function<Connection, Object>> extensionMap = new EnumMap<>(JmsConnectionExtensions.class);
+
     private URI remoteURI;
     private String username;
     private String password;
@@ -103,8 +107,6 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private JmsPresettlePolicy presettlePolicy = new JmsDefaultPresettlePolicy();
     private JmsMessageIDPolicy messageIDPolicy = new JmsDefaultMessageIDPolicy();
     private JmsDeserializationPolicy deserializationPolicy = new JmsDefaultDeserializationPolicy();
-
-    private SSLContext sslContext;
 
     public JmsConnectionFactory() {
     }
@@ -263,7 +265,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
             connectionInfo.setPresettlePolicy(presettlePolicy.copy());
             connectionInfo.setRedeliveryPolicy(redeliveryPolicy.copy());
             connectionInfo.setDeserializationPolicy(deserializationPolicy.copy());
-            connectionInfo.setSslContextOverride(sslContext);
+            connectionInfo.getExtensionMap().putAll(extensionMap);
 
             // Set properties to make additional configuration changes
             PropertyUtil.setProperties(connectionInfo, properties);
@@ -869,7 +871,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      *      the sslContext to use, or null to respect the URI/System property configuration again.
      */
     public void setSslContext(SSLContext sslContext) {
-        this.sslContext = sslContext;
+        this.extensionMap.put(JmsConnectionExtensions.SSL_CONTEXT, (connection) -> sslContext);
     }
 
     public boolean isAwaitClientID() {
@@ -910,6 +912,28 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     public void setUseDaemonThread(boolean useDaemonThread) {
         this.useDaemonThread = useDaemonThread;
+    }
+
+    /**
+     * Provides an entry point for extensions to be configured on this {@link ConnectionFactory}.
+     * <p>
+     * If a previous extension with the same name is present it is replaced with the new value or
+     * cleared if the value is null.
+     *
+     * @param extensionName
+     * 		The name of the extension point being added.
+     * @param extension
+     * 		The Function that implements the extension.
+     *
+     * @see JmsConnectionExtensions
+     */
+    public void setExtension(String extensionName, Function<Connection, Object> extension) {
+        JmsConnectionExtensions extensionKey = JmsConnectionExtensions.fromString(extensionName);
+        if (extension == null) {
+            extensionMap.remove(extensionKey);
+        } else {
+            extensionMap.put(extensionKey, extension);
+        }
     }
 
     //----- Static Methods ---------------------------------------------------//

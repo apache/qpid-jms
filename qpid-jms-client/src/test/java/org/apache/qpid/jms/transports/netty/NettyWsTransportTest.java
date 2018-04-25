@@ -18,6 +18,7 @@ package org.apache.qpid.jms.transports.netty;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -37,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler.HandshakeComplete;
 
 /**
  * Test the Netty based WebSocket Transport
@@ -47,15 +49,15 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
 
     @Override
     protected NettyEchoServer createEchoServer(TransportOptions options, boolean needClientAuth) {
-        return new NettyEchoServer(options, needClientAuth, true);
+        return new NettyEchoServer(options, false, needClientAuth, true);
     }
 
     @Override
     protected Transport createTransport(URI serverLocation, TransportListener listener, TransportOptions options) {
         if (listener == null) {
-            return new NettyWsTransport(serverLocation, options);
+            return new NettyWsTransport(serverLocation, options, false);
         } else {
-            return new NettyWsTransport(listener, serverLocation, options);
+            return new NettyWsTransport(listener, serverLocation, options, false);
         }
     }
 
@@ -315,5 +317,67 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
                 }
             }, 10000, 50));
         }
+    }
+
+    @Test(timeout = 30000)
+    public void testCreateWithHttpHeadersSpecified() throws Exception {
+        URI BASE_URI = new URI("ws://localhost:5672?" +
+                "transport.ws.httpHeader.first=FOO&" +
+                "transport.ws.httpHeader.second=BAR");
+
+        NettyWsTransportFactory factory = new NettyWsTransportFactory();
+
+        Transport transport = factory.createTransport(BASE_URI);
+
+        assertNotNull(transport);
+        assertTrue(transport instanceof NettyWsTransport);
+        assertFalse(transport.isConnected());
+
+        TransportOptions options = transport.getTransportOptions();
+        assertNotNull(options);
+
+        assertTrue(options.getHttpHeaders().containsKey("first"));
+        assertTrue(options.getHttpHeaders().containsKey("second"));
+
+        assertEquals("FOO", options.getHttpHeaders().get("first"));
+        assertEquals("BAR", options.getHttpHeaders().get("second"));
+    }
+
+    @Test(timeout = 60 * 1000)
+    public void testConfiguredHttpHeadersArriveAtServer() throws Exception {
+        try (NettyEchoServer server = createEchoServer(createServerOptions())) {
+            server.start();
+
+            int port = server.getServerPort();
+            URI serverLocation = new URI("tcp://localhost:" + port);
+
+            TransportOptions clientOptions = createClientOptions();
+            clientOptions.getHttpHeaders().put("test-header1", "FOO");
+            clientOptions.getHttpHeaders().put("test-header2", "BAR");
+
+            Transport transport = createTransport(serverLocation, testListener, clientOptions);
+            try {
+                transport.connect(null);
+                LOG.info("Connected to server:{} as expected.", serverLocation);
+            } catch (Exception e) {
+                fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
+            }
+
+            assertTrue(transport.isConnected());
+            assertEquals(serverLocation, transport.getRemoteLocation());
+
+            HandshakeComplete handshake = server.getHandshakeComplete();
+            assertTrue(handshake.requestHeaders().contains("test-header1"));
+            assertTrue(handshake.requestHeaders().contains("test-header2"));
+
+            assertEquals("FOO", handshake.requestHeaders().get("test-header1"));
+            assertEquals("BAR", handshake.requestHeaders().get("test-header2"));
+
+            transport.close();
+        }
+
+        assertTrue(!transportClosed);  // Normal shutdown does not trigger the event.
+        assertTrue(exceptions.isEmpty());
+        assertTrue(data.isEmpty());
     }
 }

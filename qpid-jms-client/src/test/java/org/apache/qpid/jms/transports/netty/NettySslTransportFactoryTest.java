@@ -32,7 +32,6 @@ import java.util.List;
 
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportOptions;
-import org.apache.qpid.jms.transports.TransportSslOptions;
 import org.junit.Test;
 
 /**
@@ -90,18 +89,15 @@ public class NettySslTransportFactoryTest {
         assertEquals(TransportOptions.DEFAULT_SO_LINGER, options.getSoLinger());
         assertEquals(TransportOptions.DEFAULT_SO_TIMEOUT, options.getSoTimeout());
 
-        assertTrue(options instanceof TransportSslOptions);
-        TransportSslOptions sslOptions = (TransportSslOptions) options;
+        assertEquals(TransportOptions.DEFAULT_CONTEXT_PROTOCOL, options.getContextProtocol());
+        assertNull(options.getEnabledProtocols());
+        assertArrayEquals(TransportOptions.DEFAULT_DISABLED_PROTOCOLS.toArray(new String[0]), options.getDisabledProtocols());
+        assertNull(options.getEnabledCipherSuites());
 
-        assertEquals(TransportSslOptions.DEFAULT_CONTEXT_PROTOCOL, sslOptions.getContextProtocol());
-        assertNull(sslOptions.getEnabledProtocols());
-        assertArrayEquals(TransportSslOptions.DEFAULT_DISABLED_PROTOCOLS.toArray(new String[0]), sslOptions.getDisabledProtocols());
-        assertNull(sslOptions.getEnabledCipherSuites());
-
-        assertEquals(TransportSslOptions.DEFAULT_STORE_TYPE, sslOptions.getKeyStoreType());
-        assertEquals(TransportSslOptions.DEFAULT_STORE_TYPE, sslOptions.getTrustStoreType());
-        assertEquals(TransportSslOptions.DEFAULT_VERIFY_HOST, sslOptions.isVerifyHost());
-        assertNull(sslOptions.getKeyAlias());
+        assertEquals(TransportOptions.DEFAULT_STORE_TYPE, options.getKeyStoreType());
+        assertEquals(TransportOptions.DEFAULT_STORE_TYPE, options.getTrustStoreType());
+        assertEquals(TransportOptions.DEFAULT_VERIFY_HOST, options.isVerifyHost());
+        assertNull(options.getKeyAlias());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -162,8 +158,8 @@ public class NettySslTransportFactoryTest {
         assertEquals(CUSTOM_SO_LINGER, options.getSoLinger());
         assertEquals(CUSTOM_SO_TIMEOUT, options.getSoTimeout());
 
-        assertTrue(options instanceof TransportSslOptions);
-        TransportSslOptions sslOptions = (TransportSslOptions) options;
+        assertTrue(options instanceof TransportOptions);
+        TransportOptions sslOptions = options;
 
         List<String> enabledProtocols = Arrays.asList(sslOptions.getEnabledProtocols());
         List<String> customProtocols = Arrays.asList(CUSTOM_ENABLED_PROTOCOLS);
@@ -197,11 +193,11 @@ public class NettySslTransportFactoryTest {
         NettySslTransportFactory factory = new NettySslTransportFactory();
         Transport transport = factory.createTransport(configuredURI);
         TransportOptions options = transport.getTransportOptions();
-        assertTrue(options instanceof TransportSslOptions);
-        TransportSslOptions sslOptions = (TransportSslOptions) options;
+        assertTrue(options instanceof TransportOptions);
+        TransportOptions sslOptions = options;
 
         assertEquals(CUSTOM_STORE_TYPE, sslOptions.getKeyStoreType());
-        assertEquals(TransportSslOptions.DEFAULT_STORE_TYPE, sslOptions.getTrustStoreType());
+        assertEquals(TransportOptions.DEFAULT_STORE_TYPE, sslOptions.getTrustStoreType());
     }
 
     @Test
@@ -213,10 +209,10 @@ public class NettySslTransportFactoryTest {
         NettySslTransportFactory factory = new NettySslTransportFactory();
         Transport transport = factory.createTransport(configuredURI);
         TransportOptions options = transport.getTransportOptions();
-        assertTrue(options instanceof TransportSslOptions);
-        TransportSslOptions sslOptions = (TransportSslOptions) options;
+        assertTrue(options instanceof TransportOptions);
+        TransportOptions sslOptions = options;
 
-        assertEquals(TransportSslOptions.DEFAULT_STORE_TYPE, sslOptions.getKeyStoreType());
+        assertEquals(TransportOptions.DEFAULT_STORE_TYPE, sslOptions.getKeyStoreType());
         assertEquals(CUSTOM_STORE_TYPE, sslOptions.getTrustStoreType());
     }
 
@@ -230,11 +226,10 @@ public class NettySslTransportFactoryTest {
         NettySslTransportFactory factory = new NettySslTransportFactory();
         Transport transport = factory.createTransport(configuredURI);
         TransportOptions options = transport.getTransportOptions();
-        assertTrue(options instanceof TransportSslOptions);
-        TransportSslOptions sslOptions = (TransportSslOptions) options;
+        assertTrue(options instanceof TransportOptions);
 
-        assertEquals(CUSTOM_STORE_TYPE_PKCS12, sslOptions.getKeyStoreType());
-        assertEquals(CUSTOM_STORE_TYPE, sslOptions.getTrustStoreType());
+        assertEquals(CUSTOM_STORE_TYPE_PKCS12, options.getKeyStoreType());
+        assertEquals(CUSTOM_STORE_TYPE, options.getTrustStoreType());
     }
 
     @Test
@@ -249,8 +244,8 @@ public class NettySslTransportFactoryTest {
         NettySslTransportFactory factory = new NettySslTransportFactory();
         Transport transport = factory.createTransport(configuredURI);
         TransportOptions options = transport.getTransportOptions();
-        assertTrue(options instanceof TransportSslOptions);
-        TransportSslOptions sslOptions = (TransportSslOptions) options;
+        assertTrue(options instanceof TransportOptions);
+        TransportOptions sslOptions = options;
 
         assertEquals(CUSTOM_TRUST_STORE_LOCATION, sslOptions.getTrustStoreLocation());
         assertEquals(CUSTOM_TRUST_STORE_PASSWORD, sslOptions.getTrustStorePassword());

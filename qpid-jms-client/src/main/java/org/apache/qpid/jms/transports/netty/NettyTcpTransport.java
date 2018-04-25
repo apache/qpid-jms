@@ -28,7 +28,6 @@ import javax.net.ssl.SSLContext;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
-import org.apache.qpid.jms.transports.TransportSslOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.slf4j.Logger;
@@ -77,6 +76,7 @@ public class NettyTcpTransport implements Transport {
     protected TransportListener listener;
     protected int maxFrameSize = DEFAULT_MAX_FRAME_SIZE;
 
+    private final boolean secure;
     private final TransportOptions options;
     private final URI remote;
     private final AtomicBoolean connected = new AtomicBoolean();
@@ -91,9 +91,11 @@ public class NettyTcpTransport implements Transport {
      *        the URI that defines the remote resource to connect to.
      * @param options
      *        the transport options used to configure the socket connection.
+     * @param secure
+     * 		  should the transport enable an SSL layer.
      */
-    public NettyTcpTransport(URI remoteLocation, TransportOptions options) {
-        this(null, remoteLocation, options);
+    public NettyTcpTransport(URI remoteLocation, TransportOptions options, boolean secure) {
+        this(null, remoteLocation, options, secure);
     }
 
     /**
@@ -105,8 +107,10 @@ public class NettyTcpTransport implements Transport {
      *        the URI that defines the remote resource to connect to.
      * @param options
      *        the transport options used to configure the socket connection.
+     * @param secure
+     * 		  should the transport enable an SSL layer.
      */
-    public NettyTcpTransport(TransportListener listener, URI remoteLocation, TransportOptions options) {
+    public NettyTcpTransport(TransportListener listener, URI remoteLocation, TransportOptions options, boolean secure) {
         if (options == null) {
             throw new IllegalArgumentException("Transport Options cannot be null");
         }
@@ -115,6 +119,7 @@ public class NettyTcpTransport implements Transport {
             throw new IllegalArgumentException("Transport remote location cannot be null");
         }
 
+        this.secure = secure;
         this.options = options;
         this.listener = listener;
         this.remote = remoteLocation;
@@ -127,13 +132,12 @@ public class NettyTcpTransport implements Transport {
             throw new IllegalStateException("A transport listener must be set before connection attempts.");
         }
 
+        getTransportOptions().setSslContextOverride(sslContextOverride);
+
         final SslHandler sslHandler;
         if (isSecure()) {
             try {
-                TransportSslOptions sslOptions = getSslOptions();
-                sslOptions.setSslContextOverride(sslContextOverride);
-
-                sslHandler = TransportSupport.createSslHandler(getRemoteLocation(), sslOptions);
+                sslHandler = TransportSupport.createSslHandler(getRemoteLocation(), getTransportOptions());
             } catch (Exception ex) {
                 // TODO: can we stop it throwing Exception?
                 throw IOExceptionSupport.create(ex);
@@ -229,7 +233,7 @@ public class NettyTcpTransport implements Transport {
 
     @Override
     public boolean isSecure() {
-        return options.isSSL();
+        return secure;
     }
 
     @Override
@@ -322,7 +326,7 @@ public class NettyTcpTransport implements Transport {
         if (remote.getPort() != -1) {
             return remote.getPort();
         } else {
-            return isSecure() ? getSslOptions().getDefaultSslPort() : getTransportOptions().getDefaultTcpPort();
+            return isSecure() ? getTransportOptions().getDefaultSslPort() : getTransportOptions().getDefaultTcpPort();
         }
     }
 
@@ -402,10 +406,6 @@ public class NettyTcpTransport implements Transport {
         channel = failedChannel;
         connected.set(false);
         connectLatch.countDown();
-    }
-
-    private TransportSslOptions getSslOptions() {
-        return (TransportSslOptions) getTransportOptions();
     }
 
     private void configureNetty(Bootstrap bootstrap, TransportOptions options) {

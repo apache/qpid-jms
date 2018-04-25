@@ -53,17 +53,7 @@ public abstract class TransportFactory {
 
         remoteURI = PropertyUtil.replaceQuery(remoteURI, map);
 
-        TransportOptions transportOptions = doCreateTransportOptions();
-
-        Map<String, String> unused = PropertyUtil.setProperties(transportOptions, transportURIOptions);
-        if (!unused.isEmpty()) {
-            String msg = " Not all transport options could be set on the " + getName() +
-                         " Transport. Check the options are spelled correctly." +
-                         " Unused parameters=[" + unused + "]." +
-                         " This provider instance cannot be started.";
-            throw new IllegalArgumentException(msg);
-        }
-
+        TransportOptions transportOptions = applyTransportConfiguration(doCreateTransportOptions(), transportURIOptions);
         Transport result = doCreateTransport(remoteURI, transportOptions);
 
         return result;
@@ -77,6 +67,29 @@ public abstract class TransportFactory {
      */
     protected TransportOptions doCreateTransportOptions() {
         return new TransportOptions();
+    }
+
+    /**
+     * Apply URI options to a freshly created {@link TransportOptions} instance which will be used
+     * when the actual {@link Transport} is created.
+     *
+     * @param transportOptions
+     * 		The {@link TransportOptions} instance to configure.
+     * @param transportURIOptions
+     * 		The URI options to apply to the given {@link TransportOptions}.
+     * @return
+     */
+    protected TransportOptions applyTransportConfiguration(TransportOptions transportOptions, Map<String, String> transportURIOptions) {
+        Map<String, String> unused = PropertyUtil.setProperties(transportOptions, transportURIOptions);
+        if (!unused.isEmpty()) {
+            String msg = " Not all transport options could be set on the " + getName() +
+                         " Transport. Check the options are spelled correctly." +
+                         " Unused parameters=[" + unused + "]." +
+                         " This provider instance cannot be started.";
+            throw new IllegalArgumentException(msg);
+        }
+
+        return transportOptions;
     }
 
     /**

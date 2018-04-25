@@ -17,9 +17,11 @@
 package org.apache.qpid.jms.transports.netty;
 
 import java.net.URI;
+import java.util.Map;
 
 import org.apache.qpid.jms.transports.TransportFactory;
 import org.apache.qpid.jms.transports.TransportOptions;
+import org.apache.qpid.jms.util.PropertyUtil;
 
 /**
  * Factory for creating the Netty based WebSocket Transport.
@@ -28,11 +30,24 @@ public class NettyWsTransportFactory extends TransportFactory {
 
     @Override
     protected NettyTcpTransport doCreateTransport(URI remoteURI, TransportOptions transportOptions) throws Exception {
-        return new NettyWsTransport(remoteURI, transportOptions);
+        return new NettyWsTransport(remoteURI, transportOptions, isSecure());
     }
 
     @Override
     public String getName() {
         return "WS";
+    }
+
+    @Override
+    protected TransportOptions applyTransportConfiguration(TransportOptions transportOptions, Map<String, String> transportURIOptions) {
+        // WS Transport allows HTTP Headers in its configuration using a prefix "transport.ws.httpHeader.X=Y"
+        Map<String, String> httpHeaders =
+            PropertyUtil.filterProperties(transportURIOptions, "ws.httpHeader.");
+
+        // We have no way to validate what was configured so apply them all and let the user sort
+        // out any resulting mess if the connection should fail.
+        transportOptions.getHttpHeaders().putAll(httpHeaders);
+
+        return super.applyTransportConfiguration(transportOptions, transportURIOptions);
     }
 }

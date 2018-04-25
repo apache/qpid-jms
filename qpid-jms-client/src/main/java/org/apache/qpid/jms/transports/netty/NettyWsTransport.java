@@ -19,6 +19,7 @@ package org.apache.qpid.jms.transports.netty;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 import org.apache.qpid.jms.transports.TransportListener;
 import org.apache.qpid.jms.transports.TransportOptions;
@@ -60,9 +61,11 @@ public class NettyWsTransport extends NettyTcpTransport {
      *        the URI that defines the remote resource to connect to.
      * @param options
      *        the transport options used to configure the socket connection.
+     * @param secure
+     * 		  should the transport enable an SSL layer.
      */
-    public NettyWsTransport(URI remoteLocation, TransportOptions options) {
-        super(null, remoteLocation, options);
+    public NettyWsTransport(URI remoteLocation, TransportOptions options, boolean secure) {
+        super(null, remoteLocation, options, secure);
     }
 
     /**
@@ -74,9 +77,11 @@ public class NettyWsTransport extends NettyTcpTransport {
      *        the URI that defines the remote resource to connect to.
      * @param options
      *        the transport options used to configure the socket connection.
+     * @param secure
+     * 		  should the transport enable an SSL layer.
      */
-    public NettyWsTransport(TransportListener listener, URI remoteLocation, TransportOptions options) {
-        super(listener, remoteLocation, options);
+    public NettyWsTransport(TransportListener listener, URI remoteLocation, TransportOptions options, boolean secure) {
+        super(listener, remoteLocation, options, secure);
     }
 
     @Override
@@ -115,9 +120,16 @@ public class NettyWsTransport extends NettyTcpTransport {
         private final WebSocketClientHandshaker handshaker;
 
         public NettyWebSocketTransportHandler() {
+            DefaultHttpHeaders headers = new DefaultHttpHeaders();
+
+            getTransportOptions().getHttpHeaders();
+            for (Map.Entry<String, String> entry : getTransportOptions().getHttpHeaders().entrySet()) {
+                headers.set(entry.getKey(), entry.getValue());
+            }
+
             handshaker = WebSocketClientHandshakerFactory.newHandshaker(
                 getRemoteLocation(), WebSocketVersion.V13, AMQP_SUB_PROTOCOL,
-                true, new DefaultHttpHeaders(), getMaxFrameSize());
+                true, headers, getMaxFrameSize());
         }
 
         @Override

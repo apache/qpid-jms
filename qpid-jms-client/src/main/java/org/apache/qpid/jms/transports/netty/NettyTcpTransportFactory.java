@@ -28,7 +28,7 @@ public class NettyTcpTransportFactory extends TransportFactory {
 
     @Override
     protected NettyTcpTransport doCreateTransport(URI remoteURI, TransportOptions transportOptions) throws Exception {
-        return new NettyTcpTransport(remoteURI, transportOptions);
+        return new NettyTcpTransport(remoteURI, transportOptions, isSecure());
     }
 
     @Override

@@ -28,15 +28,15 @@ public class NettyWssTransportTest extends NettySslTransportTest {
 
     @Override
     protected NettyEchoServer createEchoServer(TransportOptions options, boolean needClientAuth) {
-        return new NettyEchoServer(options, needClientAuth, true);
+        return new NettyEchoServer(options, true, needClientAuth, true);
     }
 
     @Override
     protected NettyTcpTransport createTransport(URI serverLocation, TransportListener listener, TransportOptions options) {
         if (listener == null) {
-            return new NettyWsTransport(serverLocation, options);
+            return new NettyWsTransport(serverLocation, options, true);
         } else {
-            return new NettyWsTransport(listener, serverLocation, options);
+            return new NettyWsTransport(listener, serverLocation, options, true);
         }
     }
 }

@@ -148,6 +148,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         }
 
         this.connectionInfo = connectionInfo;
+        this.connectionInfo.setConnection(this);
     }
 
     JmsConnection connect() throws JMSException {

@@ -62,7 +62,7 @@ public class FailoverSocketLevelAcceptFailures extends QpidJmsTestCase {
     }
 
     @Test(timeout = 40000)
-    public void testFailoverHandlesRedirection() throws Exception {
+    public void testFailoverHandlesSocketNotAccepted() throws Exception {
         final String remoteURI = "failover:(amqp://localhost:" + server.getLocalPort() +
             ")?jms.connectTimeout=666&failover.maxReconnectAttempts=1&failover.startupMaxReconnectAttempts=1";
 

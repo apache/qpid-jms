@@ -30,7 +30,7 @@ import javax.net.ssl.SSLContext;
  * SSLContext or updating an authentication token from an external provider on each attempt
  * to connect to a remote.
  * <p>
- * The extensions take the form of a Function<Connection, Object> passed into the ConnectionFactory
+ * The extensions take the form of a Function&lt;Connection, Object&gt; passed into the ConnectionFactory
  * using the {@link JmsConnectionFactory#setExtension(String, Function)}.
  */
 public enum JmsConnectionExtensions {
@@ -46,7 +46,7 @@ public enum JmsConnectionExtensions {
      * The extension function takes the form of a Function defined as the following:
      * <ul>
      *   <li>
-     *     {@link Function}<{@link Connection}, {@link SSLContext}>
+     *     {@link Function}&lt;{@link Connection}, {@link SSLContext}&gt;
      *   </li>
      * </ul>
      */
@@ -63,7 +63,7 @@ public enum JmsConnectionExtensions {
      * The extension function takes the form of a Function defined as the following:
      * <ul>
      *   <li>
-     *     {@link Function}<{@link Connection}, {@link String}>
+     *     {@link Function}&lt;{@link Connection}, {@link String}&gt;
      *   </li>
      * </ul>
      */
@@ -80,7 +80,7 @@ public enum JmsConnectionExtensions {
      * The extension function takes the form of a Function defined as the following:
      * <ul>
      *   <li>
-     *     {@link Function}<{@link Connection}, {@link String}>
+     *     {@link Function}&lt;{@link Connection}, {@link String}&gt;
      *   </li>
      * </ul>
      */
@@ -98,7 +98,7 @@ public enum JmsConnectionExtensions {
      * The extension function takes the form of a Function defined as the following:
      * <ul>
      *   <li>
-     *     {@link Function}<{@link Connection}, {@link Map}
+     *     {@link Function}&lt;{@link Connection}, {@link Map}&gt;
      *   </li>
      * </ul>
      */

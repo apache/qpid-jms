@@ -192,6 +192,9 @@ A simple WS[S] based client URI is shown below:
 
     amqpws[s]://myhost.mydomain:5671/[optional-path]
 
+The WS Transport can be configured to add additional HTTP Headers during the WebSocket upgrade request using URI options for each HTTP header and value to be added, an example is shown below:
+
+    amqpws[s]://myhost.mydomain:5671/[optional-path]?transport.ws.httpHeader.<Header>=<Value>
 
 ### AMQP Configuration options
 

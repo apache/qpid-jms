@@ -50,6 +50,7 @@ import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler.HandshakeComplete;
 
 /**
@@ -321,12 +322,15 @@ public class NettyTcpToMockServerTest extends QpidJmsTestCase {
 
                 assertNotNull(server.getHandshakeComplete());
 
+                assertTrue("HandshakeCompletion not set within given time", server.awaitHandshakeCompletion(2000));
                 HandshakeComplete handshake = server.getHandshakeComplete();
-                assertTrue(handshake.requestHeaders().contains("test-header1"));
-                assertTrue(handshake.requestHeaders().contains("test-header2"));
+                HttpHeaders requestHeaders = handshake.requestHeaders();
 
-                assertEquals("FOO", handshake.requestHeaders().get("test-header1"));
-                assertEquals("BAR", handshake.requestHeaders().get("test-header2"));
+                assertTrue(requestHeaders.contains("test-header1"));
+                assertTrue(requestHeaders.contains("test-header2"));
+
+                assertEquals("FOO", requestHeaders.get("test-header1"));
+                assertEquals("BAR", requestHeaders.get("test-header2"));
             } catch (Exception ex) {
                 LOG.error("Caught exception while attempting to connect");
                 fail("Should be able to connect in this simple test");

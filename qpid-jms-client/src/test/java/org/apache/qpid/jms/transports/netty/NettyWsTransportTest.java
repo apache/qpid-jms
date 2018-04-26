@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler.HandshakeComplete;
 
 /**
@@ -366,12 +367,15 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
             assertTrue(transport.isConnected());
             assertEquals(serverLocation, transport.getRemoteLocation());
 
+            assertTrue("HandshakeCompletion not set within given time", server.awaitHandshakeCompletion(2000));
             HandshakeComplete handshake = server.getHandshakeComplete();
-            assertTrue(handshake.requestHeaders().contains("test-header1"));
-            assertTrue(handshake.requestHeaders().contains("test-header2"));
+            HttpHeaders requestHeaders = handshake.requestHeaders();
 
-            assertEquals("FOO", handshake.requestHeaders().get("test-header1"));
-            assertEquals("BAR", handshake.requestHeaders().get("test-header2"));
+            assertTrue(requestHeaders.contains("test-header1"));
+            assertTrue(requestHeaders.contains("test-header2"));
+
+            assertEquals("FOO", requestHeaders.get("test-header1"));
+            assertEquals("BAR", requestHeaders.get("test-header2"));
 
             transport.close();
         }

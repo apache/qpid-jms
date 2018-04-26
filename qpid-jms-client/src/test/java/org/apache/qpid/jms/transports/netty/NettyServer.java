@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -92,6 +93,7 @@ public abstract class NettyServer implements AutoCloseable {
     private volatile boolean fragmentWrites;
     private volatile SslHandler sslHandler;
     private volatile HandshakeComplete handshakeComplete;
+    private final CountDownLatch handshakeCompletion = new CountDownLatch(1);
 
     private final AtomicBoolean started = new AtomicBoolean();
 
@@ -144,6 +146,10 @@ public abstract class NettyServer implements AutoCloseable {
 
     public boolean isFragmentWrites() {
         return fragmentWrites;
+    }
+
+    public boolean awaitHandshakeCompletion(long delayMs) throws InterruptedException {
+        return handshakeCompletion.await(delayMs, TimeUnit.MILLISECONDS);
     }
 
     public HandshakeComplete getHandshakeComplete() {
@@ -309,6 +315,7 @@ public abstract class NettyServer implements AutoCloseable {
         public void userEventTriggered(ChannelHandlerContext context, Object payload) {
             if (payload instanceof HandshakeComplete) {
                 handshakeComplete = (HandshakeComplete) payload;
+                handshakeCompletion.countDown();
             }
         }
 

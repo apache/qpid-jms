@@ -369,6 +369,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
 
             assertTrue("HandshakeCompletion not set within given time", server.awaitHandshakeCompletion(2000));
             HandshakeComplete handshake = server.getHandshakeComplete();
+            assertNotNull("completion should not be null", handshake);
             HttpHeaders requestHeaders = handshake.requestHeaders();
 
             assertTrue(requestHeaders.contains("test-header1"));

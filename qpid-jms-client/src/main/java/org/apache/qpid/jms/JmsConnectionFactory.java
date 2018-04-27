@@ -22,7 +22,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.EnumMap;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -73,7 +73,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
 
     private static String DEFAULT_REMOTE_URI;
 
-    private final EnumMap<JmsConnectionExtensions, Function<Connection, Object>> extensionMap = new EnumMap<>(JmsConnectionExtensions.class);
+    private final EnumMap<JmsConnectionExtensions, BiFunction<Connection, URI, Object>> extensionMap = new EnumMap<>(JmsConnectionExtensions.class);
 
     private URI remoteURI;
     private String username;
@@ -871,7 +871,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      *      the sslContext to use, or null to respect the URI/System property configuration again.
      */
     public void setSslContext(SSLContext sslContext) {
-        this.extensionMap.put(JmsConnectionExtensions.SSL_CONTEXT, (connection) -> sslContext);
+        this.extensionMap.put(JmsConnectionExtensions.SSL_CONTEXT, (connection, remoteURI) -> sslContext);
     }
 
     public boolean isAwaitClientID() {
@@ -927,7 +927,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      *
      * @see JmsConnectionExtensions
      */
-    public void setExtension(String extensionName, Function<Connection, Object> extension) {
+    public void setExtension(String extensionName, BiFunction<Connection, URI, Object> extension) {
         JmsConnectionExtensions extensionKey = JmsConnectionExtensions.fromString(extensionName);
         if (extension == null) {
             extensionMap.remove(extensionKey);

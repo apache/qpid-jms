@@ -19,7 +19,7 @@ package org.apache.qpid.jms.meta;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.EnumMap;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import javax.jms.Connection;
 
@@ -49,7 +49,7 @@ public final class JmsConnectionInfo extends JmsAbstractResource implements Comp
     public static final long DEFAULT_REQUEST_TIMEOUT = INFINITE;
 
     private final JmsConnectionId connectionId;
-    private final EnumMap<JmsConnectionExtensions, Function<Connection, Object>> extensionMap = new EnumMap<>(JmsConnectionExtensions.class);
+    private final EnumMap<JmsConnectionExtensions, BiFunction<Connection, URI, Object>> extensionMap = new EnumMap<>(JmsConnectionExtensions.class);
 
     private JmsConnection connection;
     private URI configuredURI;
@@ -370,7 +370,7 @@ public final class JmsConnectionInfo extends JmsAbstractResource implements Comp
         this.awaitClientID = awaitClientID;
     }
 
-    public EnumMap<JmsConnectionExtensions, Function<Connection, Object>> getExtensionMap() {
+    public EnumMap<JmsConnectionExtensions, BiFunction<Connection, URI, Object>> getExtensionMap() {
         return extensionMap;
     }
 

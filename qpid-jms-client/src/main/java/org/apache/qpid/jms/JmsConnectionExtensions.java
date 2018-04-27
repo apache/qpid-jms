@@ -16,8 +16,9 @@
  */
 package org.apache.qpid.jms;
 
+import java.net.URI;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import javax.jms.Connection;
 import javax.net.ssl.SSLContext;
@@ -31,7 +32,7 @@ import javax.net.ssl.SSLContext;
  * to connect to a remote.
  * <p>
  * The extensions take the form of a Function&lt;Connection, Object&gt; passed into the ConnectionFactory
- * using the {@link JmsConnectionFactory#setExtension(String, Function)}.
+ * using the {@link JmsConnectionFactory#setExtension(String, BiFunction)}.
  */
 public enum JmsConnectionExtensions {
 
@@ -43,10 +44,10 @@ public enum JmsConnectionExtensions {
      * to the location/credentials/type of SSL key/trust stores and whether to trust all
      * certificates or use a particular keyAlias.
      * <p>
-     * The extension function takes the form of a Function defined as the following:
+     * The extension function takes the form of a BiFunction defined as the following:
      * <ul>
      *   <li>
-     *     {@link Function}&lt;{@link Connection}, {@link SSLContext}&gt;
+     *     {@link BiFunction}&lt;{@link Connection}, {@link URI}, {@link SSLContext}&gt;
      *   </li>
      * </ul>
      */
@@ -60,10 +61,10 @@ public enum JmsConnectionExtensions {
      * to the user name provided to the remote for authentication.  This method will be invoked
      * on each connection authentication attempt in the presence of a failover configuration.
      * <p>
-     * The extension function takes the form of a Function defined as the following:
+     * The extension function takes the form of a BiFunction defined as the following:
      * <ul>
      *   <li>
-     *     {@link Function}&lt;{@link Connection}, {@link String}&gt;
+     *     {@link BiFunction}&lt;{@link Connection}, {@link URI}, {@link String}&gt;
      *   </li>
      * </ul>
      */
@@ -77,10 +78,10 @@ public enum JmsConnectionExtensions {
      * to the password provided to the remote for authentication.  This method will be invoked
      * on each connection authentication attempt in the presence of a failover configuration.
      * <p>
-     * The extension function takes the form of a Function defined as the following:
+     * The extension function takes the form of a BiFunction defined as the following:
      * <ul>
      *   <li>
-     *     {@link Function}&lt;{@link Connection}, {@link String}&gt;
+     *     {@link BiFunction}&lt;{@link Connection}, {@link URI}, {@link String}&gt;
      *   </li>
      * </ul>
      */
@@ -95,10 +96,10 @@ public enum JmsConnectionExtensions {
      * to the HTTP headers provided to the remote for authentication.  This method will be invoked
      * on each connection authentication attempt in the presence of a failover configuration.
      * <p>
-     * The extension function takes the form of a Function defined as the following:
+     * The extension function takes the form of a BiFunction defined as the following:
      * <ul>
      *   <li>
-     *     {@link Function}&lt;{@link Connection}, {@link Map}&gt;
+     *     {@link BiFunction}&lt;{@link Connection}, {@link URI}, {@link Map}&gt;
      *   </li>
      * </ul>
      */

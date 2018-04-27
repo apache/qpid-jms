@@ -26,10 +26,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -454,6 +456,9 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     public void testUserOnlyExtensionsApplied() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
+            final AtomicReference<Connection> connectionRef = new AtomicReference<>();
+            final AtomicReference<URI> remoteURIRef = new AtomicReference<>();
+
             // Expect a PLAIN connection
             final String user = "user";
             final String pass = "qwerty123456";
@@ -464,9 +469,16 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin();
 
-            JmsConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort());
+            final URI remoteURI = new URI("amqp://localhost:" + testPeer.getServerPort());
 
-            factory.setExtension(JmsConnectionExtensions.USERNAME_OVERRIDE.toString(), (connection) -> { return user; });
+            JmsConnectionFactory factory = new JmsConnectionFactory(remoteURI);
+
+            factory.setExtension(JmsConnectionExtensions.USERNAME_OVERRIDE.toString(), (connection, uri) -> {
+                connectionRef.set(connection);
+                remoteURIRef.set(uri);
+
+                return user;
+            });
 
             Connection connection = factory.createConnection(null, pass);
             // Set a clientID to provoke the actual AMQP connection process to occur.
@@ -474,6 +486,9 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
 
             testPeer.waitForAllHandlersToComplete(1000);
             assertNull(testPeer.getThrowable());
+
+            assertEquals(connection, connectionRef.get());
+            assertEquals(remoteURI, remoteURIRef.get());
 
             testPeer.expectClose();
             connection.close();
@@ -484,6 +499,9 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     public void testPasswordOnlyExtensionsApplied() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
+            final AtomicReference<Connection> connectionRef = new AtomicReference<>();
+            final AtomicReference<URI> remoteURIRef = new AtomicReference<>();
+
             // Expect a PLAIN connection
             final String user = "user";
             final String pass = "qwerty123456";
@@ -494,9 +512,16 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
             // Each connection creates a session for managing temporary destinations etc
             testPeer.expectBegin();
 
-            JmsConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort());
+            final URI remoteURI = new URI("amqp://localhost:" + testPeer.getServerPort());
 
-            factory.setExtension(JmsConnectionExtensions.PASSWORD_OVERRIDE.toString(), (connection) -> { return pass; });
+            JmsConnectionFactory factory = new JmsConnectionFactory(remoteURI);
+
+            factory.setExtension(JmsConnectionExtensions.PASSWORD_OVERRIDE.toString(), (connection, uri) -> {
+                connectionRef.set(connection);
+                remoteURIRef.set(uri);
+
+                return pass;
+            });
 
             Connection connection = factory.createConnection(user, null);
             // Set a clientID to provoke the actual AMQP connection process to occur.
@@ -504,6 +529,9 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
 
             testPeer.waitForAllHandlersToComplete(1000);
             assertNull(testPeer.getThrowable());
+
+            assertEquals(connection, connectionRef.get());
+            assertEquals(remoteURI, remoteURIRef.get());
 
             testPeer.expectClose();
             connection.close();
@@ -526,8 +554,8 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
 
             JmsConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort());
 
-            factory.setExtension(JmsConnectionExtensions.USERNAME_OVERRIDE.toString(), (connection) -> { return user; });
-            factory.setExtension(JmsConnectionExtensions.PASSWORD_OVERRIDE.toString(), (connection) -> { return pass; });
+            factory.setExtension(JmsConnectionExtensions.USERNAME_OVERRIDE.toString(), (connection, uri) -> { return user; });
+            factory.setExtension(JmsConnectionExtensions.PASSWORD_OVERRIDE.toString(), (connection, uri) -> { return pass; });
 
             Connection connection = factory.createConnection();
             // Set a clientID to provoke the actual AMQP connection process to occur.

@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.Connection;
 import javax.jms.InvalidClientIDException;
@@ -305,8 +306,12 @@ public class NettyTcpToMockServerTest extends QpidJmsTestCase {
         try (NettySimpleAmqpServer server = createWSServer(createServerOptions())) {
             server.start();
 
+            AtomicReference<URI> remoteURI = new AtomicReference<URI>();
+
             JmsConnectionFactory cf = new JmsConnectionFactory(createConnectionURI(server));
-            cf.setExtension(JmsConnectionExtensions.HTTP_HEADERS_OVERRIDE.toString(), (connection) -> {
+            cf.setExtension(JmsConnectionExtensions.HTTP_HEADERS_OVERRIDE.toString(), (connection, uri) -> {
+                remoteURI.set(uri);
+
                 Map<String, String> headers = new HashMap<>();
 
                 headers.put("test-header1", "FOO");
@@ -320,7 +325,6 @@ public class NettyTcpToMockServerTest extends QpidJmsTestCase {
                 connection = cf.createConnection();
                 connection.start();
 
-
                 assertTrue("HandshakeCompletion not set within given time", server.awaitHandshakeCompletion(2000));
                 HandshakeComplete handshake = server.getHandshakeComplete();
                 assertNotNull("completion should not be null", handshake);
@@ -331,6 +335,9 @@ public class NettyTcpToMockServerTest extends QpidJmsTestCase {
 
                 assertEquals("FOO", requestHeaders.get("test-header1"));
                 assertEquals("BAR", requestHeaders.get("test-header2"));
+
+                assertNotNull(remoteURI.get());
+                assertEquals(server.getConnectionURI(), remoteURI.get());
             } catch (Exception ex) {
                 LOG.error("Caught exception while attempting to connect");
                 fail("Should be able to connect in this simple test");

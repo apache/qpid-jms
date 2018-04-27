@@ -291,7 +291,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
             JmsConnectionFactory factory = new JmsConnectionFactory("amqps://localhost:" + testPeer.getServerPort());
 
             if (useExtension) {
-                factory.setExtension(JmsConnectionExtensions.SSL_CONTEXT.toString(), (options) -> {
+                factory.setExtension(JmsConnectionExtensions.SSL_CONTEXT.toString(), (options, uri) -> {
                     try {
                         return TransportSupport.createSslContext(clientSslOptions);
                     } catch (Exception e) {

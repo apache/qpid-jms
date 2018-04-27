@@ -201,7 +201,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     final SSLContext sslContextOverride;
                     if (connectionInfo.getExtensionMap().containsKey(JmsConnectionExtensions.SSL_CONTEXT)) {
                         sslContextOverride =
-                            (SSLContext) connectionInfo.getExtensionMap().get(JmsConnectionExtensions.SSL_CONTEXT).apply(connectionInfo.getConnection());
+                            (SSLContext) connectionInfo.getExtensionMap().get(
+                                JmsConnectionExtensions.SSL_CONTEXT).apply(connectionInfo.getConnection(), transport.getRemoteLocation());
                     } else {
                         sslContextOverride = null;
                     }
@@ -212,7 +213,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     if (connectionInfo.getExtensionMap().containsKey(JmsConnectionExtensions.HTTP_HEADERS_OVERRIDE)) {
                         @SuppressWarnings({ "unchecked" })
                         Map<String, String> headers = (Map<String, String>)
-                            connectionInfo.getExtensionMap().get(JmsConnectionExtensions.HTTP_HEADERS_OVERRIDE).apply(connectionInfo.getConnection());
+                            connectionInfo.getExtensionMap().get(
+                                JmsConnectionExtensions.HTTP_HEADERS_OVERRIDE).apply(connectionInfo.getConnection(), transport.getRemoteLocation());
                         if (headers != null) {
                             transport.getTransportOptions().getHttpHeaders().putAll(headers);
                         }
@@ -1446,14 +1448,16 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
         final String username;
         if (connectionInfo.getExtensionMap().containsKey(JmsConnectionExtensions.USERNAME_OVERRIDE)) {
-            username = (String) connectionInfo.getExtensionMap().get(JmsConnectionExtensions.USERNAME_OVERRIDE).apply(connectionInfo.getConnection());
+            username = (String) connectionInfo.getExtensionMap().get(
+                JmsConnectionExtensions.USERNAME_OVERRIDE).apply(connectionInfo.getConnection(), transport.getRemoteLocation());
         } else {
             username = connectionInfo.getUsername();
         }
 
         final String password;
         if (connectionInfo.getExtensionMap().containsKey(JmsConnectionExtensions.PASSWORD_OVERRIDE)) {
-            password = (String) connectionInfo.getExtensionMap().get(JmsConnectionExtensions.PASSWORD_OVERRIDE).apply(connectionInfo.getConnection());
+            password = (String) connectionInfo.getExtensionMap().get(
+                JmsConnectionExtensions.PASSWORD_OVERRIDE).apply(connectionInfo.getConnection(), transport.getRemoteLocation());
         } else {
             password = connectionInfo.getPassword();
         }

@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.provider.mock;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.qpid.jms.meta.JmsResource;
@@ -45,14 +46,10 @@ public class MockProviderStats {
     private final AtomicInteger unsubscribeCalls = new AtomicInteger();
     private final AtomicInteger pullCalls = new AtomicInteger();
 
-    private final ConcurrentHashMap<Class<? extends JmsResource>, AtomicInteger> resourceCreateCalls =
-        new ConcurrentHashMap<Class<? extends JmsResource>, AtomicInteger>();
-    private final ConcurrentHashMap<Class<? extends JmsResource>, AtomicInteger> resourceStartCalls =
-        new ConcurrentHashMap<Class<? extends JmsResource>, AtomicInteger>();
-    private final ConcurrentHashMap<Class<? extends JmsResource>, AtomicInteger> resourceStopCalls =
-        new ConcurrentHashMap<Class<? extends JmsResource>, AtomicInteger>();
-    private final ConcurrentHashMap<Class<? extends JmsResource>, AtomicInteger> resourceDestroyCalls =
-        new ConcurrentHashMap<Class<? extends JmsResource>, AtomicInteger>();
+    private final ConcurrentMap<Class<? extends JmsResource>, AtomicInteger> resourceCreateCalls = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Class<? extends JmsResource>, AtomicInteger> resourceStartCalls = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Class<? extends JmsResource>, AtomicInteger> resourceStopCalls = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Class<? extends JmsResource>, AtomicInteger> resourceDestroyCalls = new ConcurrentHashMap<>();
 
     public MockProviderStats() {
         this(null);
@@ -117,7 +114,7 @@ public class MockProviderStats {
         }
 
         createResourceCalls.incrementAndGet();
-        AtomicInteger count = resourceCreateCalls.get(resource);
+        AtomicInteger count = resourceCreateCalls.get(resource.getClass());
         if (count != null) {
             count.incrementAndGet();
         } else {
@@ -144,7 +141,7 @@ public class MockProviderStats {
         }
 
         startResourceCalls.incrementAndGet();
-        AtomicInteger count = resourceStartCalls.get(resource);
+        AtomicInteger count = resourceStartCalls.get(resource.getClass());
         if (count != null) {
             count.incrementAndGet();
         } else {
@@ -171,7 +168,7 @@ public class MockProviderStats {
         }
 
         stopResourceCalls.incrementAndGet();
-        AtomicInteger count = resourceStopCalls.get(resource);
+        AtomicInteger count = resourceStopCalls.get(resource.getClass());
         if (count != null) {
             count.incrementAndGet();
         } else {
@@ -198,7 +195,7 @@ public class MockProviderStats {
         }
 
         destroyResourceCalls.incrementAndGet();
-        AtomicInteger count = resourceDestroyCalls.get(resource);
+        AtomicInteger count = resourceDestroyCalls.get(resource.getClass());
         if (count != null) {
             count.incrementAndGet();
         } else {

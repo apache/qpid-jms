@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -101,6 +102,8 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
             short myShort = 25;
             String myStringKey = "myString";
             String myString = myStringKey;
+            String myEmptyStringKey = "myEmtpyString";
+            String myNullStringKey = "myNullString";
 
             Map<String, Object> map = new LinkedHashMap<String, Object>();
             map.put(myBoolKey, myBool);
@@ -113,6 +116,8 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
             map.put(myLongKey, myLong);
             map.put(myShortKey, myShort);
             map.put(myStringKey, myString);
+            map.put(myEmptyStringKey, "");
+            map.put(myNullStringKey, null);
 
             MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
             msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE, AmqpMessageSupport.JMS_MAP_MESSAGE);
@@ -123,7 +128,6 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlowRespondWithTransfer(null, msgAnnotations, null, null, amqpValueSectionContent);
             testPeer.expectDispositionThatIsAcceptedAndSettled();
-            testPeer.expectClose();
 
             MessageConsumer messageConsumer = session.createConsumer(queue);
             Message receivedMessage = messageConsumer.receive(3000);
@@ -144,6 +148,8 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
             assertEquals("Unexpected long value", myLong, receivedMapMessage.getLong(myLongKey));
             assertEquals("Unexpected short value", myShort, receivedMapMessage.getShort(myShortKey));
             assertEquals("Unexpected UTF value", myString, receivedMapMessage.getString(myStringKey));
+            assertEquals("Unexpected value", "", receivedMapMessage.getString(myEmptyStringKey));
+            assertNull("Unexpected value", receivedMapMessage.getString(myNullStringKey));
 
             assertTrue(receivedMapMessage.isBodyAssignableTo(Map.class));
             assertTrue(receivedMapMessage.isBodyAssignableTo(Object.class));
@@ -158,6 +164,7 @@ public class MapMessageIntegrationTest extends QpidJmsTestCase {
             } catch (MessageFormatException mfe) {
             }
 
+            testPeer.expectClose();
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(3000);

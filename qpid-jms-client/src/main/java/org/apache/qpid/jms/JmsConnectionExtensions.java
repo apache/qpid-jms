@@ -31,7 +31,7 @@ import javax.net.ssl.SSLContext;
  * SSLContext or updating an authentication token from an external provider on each attempt
  * to connect to a remote.
  * <p>
- * The extensions take the form of a Function&lt;Connection, URI, Object&gt; passed into the
+ * The extensions take the form of a BiFunction&lt;Connection, URI, Object&gt; passed into the
  * ConnectionFactory using the {@link JmsConnectionFactory#setExtension(String, BiFunction)}.
  */
 public enum JmsConnectionExtensions {

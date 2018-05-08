@@ -6,5 +6,5 @@ URI options, see the docs directory.
 
 For examples of using the client, see the examples directory.
 
-The client arifacts and required dependencies can be found
+The client artifacts and required dependencies can be found
 in the lib directory.

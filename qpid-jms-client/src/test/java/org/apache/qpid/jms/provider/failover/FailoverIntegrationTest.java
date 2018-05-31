@@ -1864,13 +1864,20 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             LOG.info("Original peer is at: {}", originalURI);
             LOG.info("Final peer is at: {}", finalURI);
 
-            // Connect to the first peer
+            // Expect connection to the first peer (and have it drop)
             originalPeer.expectSaslAnonymous();
             originalPeer.expectOpen();
             originalPeer.expectBegin();
             originalPeer.expectReceiverAttach();
             originalPeer.expectLinkFlow();
             originalPeer.dropAfterLastHandler();
+
+            // --- Post Failover Expectations of FinalPeer --- //
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
+            finalPeer.expectBegin();
+            finalPeer.expectReceiverAttach();
+            finalPeer.expectLinkFlow();
 
             final JmsConnection connection = establishAnonymousConnecton(originalPeer, finalPeer);
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
@@ -1897,18 +1904,10 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
 
-            // --- Post Failover Expectations of FinalPeer --- //
-
-            finalPeer.expectSaslAnonymous();
-            finalPeer.expectOpen();
-            finalPeer.expectBegin();
-            finalPeer.expectReceiverAttach();
-            finalPeer.expectLinkFlow();
-            finalPeer.expectClose();
-
             assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
 
             // Shut it down
+            finalPeer.expectClose();
             connection.close();
 
             finalPeer.waitForAllHandlersToComplete(1000);

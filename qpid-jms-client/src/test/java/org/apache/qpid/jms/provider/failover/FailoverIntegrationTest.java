@@ -30,6 +30,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
@@ -39,11 +40,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.jms.CompletionListener;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
+import javax.jms.ExceptionListener;
+import javax.jms.IllegalStateException;
 import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.JMSSecurityException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.QueueBrowser;
@@ -62,6 +66,7 @@ import org.apache.qpid.jms.JmsResourceNotFoundException;
 import org.apache.qpid.jms.JmsSendTimedOutException;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
+import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.basictypes.ConnectionError;
@@ -76,6 +81,7 @@ import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompos
 import org.apache.qpid.jms.util.StopWatch;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
+import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -1911,6 +1917,93 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             finalPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testRemotelyCloseConsumerWithMessageListenerFiresJMSExceptionListener() throws Exception {
+        Symbol errorCondition = AmqpError.RESOURCE_DELETED;
+        String errorDescription = "testRemotelyCloseConsumerWithMessageListenerFiresJMSExceptionListener";
+
+        doRemotelyCloseConsumerWithMessageListenerFiresJMSExceptionListenerTestImpl(errorCondition, errorDescription);
+    }
+
+    @Test(timeout = 20000)
+    public void testRemotelyCloseConsumerWithMessageListenerWithoutErrorFiresJMSExceptionListener() throws Exception {
+        // As above but with the peer not including any error condition in its consumer close
+        doRemotelyCloseConsumerWithMessageListenerFiresJMSExceptionListenerTestImpl(null, null);
+    }
+
+    private void doRemotelyCloseConsumerWithMessageListenerFiresJMSExceptionListenerTestImpl(Symbol errorCondition,
+            String errorDescription) throws JMSException, InterruptedException, Exception, IOException {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            CountDownLatch consumerClosed = new CountDownLatch(1);
+            CountDownLatch exceptionListenerFired = new CountDownLatch(1);
+
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+            final JmsConnection connection = establishAnonymousConnecton("failover.maxReconnectAttempts=1", testPeer);
+            connection.setExceptionListener(new ExceptionListener() {
+                @Override
+                public void onException(JMSException exception) {
+                    LOG.trace("JMS ExceptionListener: ", exception);
+                    exceptionListenerFired.countDown();
+                }
+            });
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConsumerClosed(MessageConsumer consumer, Throwable exception) {
+                    consumerClosed.countDown();
+                }
+            });
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            // Create a consumer, then remotely end it afterwards.
+            testPeer.expectReceiverAttach();
+            testPeer.expectLinkFlow();
+            testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(true, true, errorCondition, errorDescription, 25);
+
+            Queue queue = session.createQueue("myQueue");
+            final MessageConsumer consumer = session.createConsumer(queue);
+            consumer.setMessageListener(new MessageListener() {
+                @Override
+                public void onMessage(Message message) {
+                }
+            });
+
+            // Verify the consumer gets marked closed
+            testPeer.waitForAllHandlersToComplete(1000);
+            assertTrue("consumer never closed.", Wait.waitFor(new Wait.Condition() {
+                @Override
+                public boolean isSatisified() throws Exception {
+                    try {
+                        consumer.getMessageListener();
+                    } catch (IllegalStateException jmsise) {
+                        if (jmsise.getCause() != null) {
+                            String message = jmsise.getCause().getMessage();
+                            if(errorCondition != null) {
+                                return message.contains(errorCondition.toString()) &&
+                                        message.contains(errorDescription);
+                            } else {
+                                return message.contains("Unknown error from remote peer");
+                            }
+                        } else {
+                            return false;
+                        }
+                    }
+                    return false;
+                }
+            }, 5000, 10));
+
+            assertTrue("Consumer closed callback didn't trigger",  consumerClosed.await(2000, TimeUnit.MILLISECONDS));
+            assertTrue("JMS Exception listener should have fired with a MessageListener", exceptionListenerFired.await(2000, TimeUnit.MILLISECONDS));
+
+            // Try closing it explicitly, should effectively no-op in client.
+            // The test peer will throw during close if it sends anything.
+            consumer.close();
         }
     }
 

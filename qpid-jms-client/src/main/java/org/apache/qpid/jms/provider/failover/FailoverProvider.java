@@ -811,6 +811,15 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     }
 
     @Override
+    public void onResourceClosed(JmsResource resource, Throwable cause) {
+        if (closingConnection.get() || closed.get() || failed.get()) {
+            return;
+        }
+
+        listener.onResourceClosed(resource, cause);
+    }
+
+    @Override
     public void onProviderException(final Exception ex) {
         if (closingConnection.get() || closed.get() || failed.get()) {
             return;
@@ -825,6 +834,8 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             }
         });
     }
+
+    //--------------- Processing for server-provided alternate URIs  ---------//
 
     private void processAlternates(List<URI> alternates) {
         if (!alternates.isEmpty()) {

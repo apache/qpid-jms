@@ -28,9 +28,13 @@ import javax.jms.JMSContext;
 import javax.jms.JMSProducer;
 import javax.jms.Message;
 import javax.jms.Queue;
+import javax.jms.Topic;
 
+import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
+import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
+import org.apache.qpid.jms.test.testpeer.matchers.TargetMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.ApplicationPropertiesSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
@@ -65,14 +69,40 @@ public class JMSProducerIntegrationTest extends QpidJmsTestCase {
     private static final double DOUBLE_PROP_VALUE = Double.MAX_VALUE;
 
     @Test(timeout = 20000)
-    public void testCreateProducer() throws Exception {
+    public void testCreateProducerAndSend() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             JMSContext context = testFixture.createJMSContext(testPeer, SERVER_ANONYMOUS_RELAY);
             testPeer.expectBegin();
-            testPeer.expectSenderAttach();
+
+            //Expect a link to the anonymous relay node
+            TargetMatcher targetMatcher = new TargetMatcher();
+            targetMatcher.withAddress(nullValue());
+            targetMatcher.withDynamic(nullValue());//default = false
+            targetMatcher.withDurable(nullValue());//default = none/0
+            testPeer.expectSenderAttach(targetMatcher, false, false);
 
             JMSProducer producer = context.createProducer();
             assertNotNull(producer);
+
+            String topicName = "testCreateProducerAndSend";
+            Topic topic = context.createTopic(topicName);
+
+            // Verify sent message contains expected destination address and dest type annotation
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            Symbol annotationKey = AmqpMessageSupport.getSymbol(AmqpDestinationHelper.JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+            msgAnnotationsMatcher.withEntry(annotationKey, equalTo(AmqpDestinationHelper.TOPIC_TYPE));
+
+            MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true).withTo(equalTo(topicName));
+
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(new MessageHeaderSectionMatcher(true).withDurable(equalTo(true)));
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+            messageMatcher.setPropertiesMatcher(propsMatcher);
+
+            testPeer.expectTransfer(messageMatcher);
+
+            Message message = context.createMessage();
+            producer.send(topic, message);
 
             testPeer.expectEnd();
             testPeer.expectClose();

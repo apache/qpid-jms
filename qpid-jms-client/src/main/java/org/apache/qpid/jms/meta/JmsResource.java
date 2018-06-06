@@ -25,7 +25,8 @@ public interface JmsResource {
     enum ResourceState {
         INITIALIZED,
         OPEN,
-        CLOSED;
+        CLOSED,
+        REMOTELY_CLOSED;
     }
 
     /**

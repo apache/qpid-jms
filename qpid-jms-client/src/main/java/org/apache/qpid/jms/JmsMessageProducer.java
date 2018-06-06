@@ -16,6 +16,7 @@
  */
 package org.apache.qpid.jms;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -355,10 +356,18 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
     }
 
     protected void onConnectionRecovery(Provider provider) throws Exception {
-        if (producerInfo.isOpen()) {
+        if (!producerInfo.isClosed()) {
             ProviderFuture request = new ProviderFuture();
-            provider.create(producerInfo, request);
-            request.sync();
+            try {
+                provider.create(producerInfo, request);
+                request.sync();
+            } catch (IOException ioe) {
+                if (connection.isCloseLinksThatFailOnReconnect()) {
+                    session.producerClosed(producerInfo, ioe);
+                } else {
+                    throw ioe;
+                }
+            }
         }
     }
 

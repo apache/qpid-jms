@@ -69,6 +69,7 @@ public final class JmsConnectionInfo extends JmsAbstractResource implements Comp
     private boolean populateJMSXUserID;
     private boolean useDaemonThread;
     private boolean awaitClientID = true;
+    private boolean closeLinksThatFailOnReconnect;
     private long sendTimeout = DEFAULT_SEND_TIMEOUT;
     private long requestTimeout = DEFAULT_REQUEST_TIMEOUT;
     private long connectTimeout = DEFAULT_CONNECT_TIMEOUT;
@@ -114,6 +115,7 @@ public final class JmsConnectionInfo extends JmsAbstractResource implements Comp
         copy.connectTimeout = connectTimeout;
         copy.validatePropertyNames = validatePropertyNames;
         copy.useDaemonThread = useDaemonThread;
+        copy.closeLinksThatFailOnReconnect = closeLinksThatFailOnReconnect;
         copy.messageIDPolicy = getMessageIDPolicy().copy();
         copy.prefetchPolicy = getPrefetchPolicy().copy();
         copy.redeliveryPolicy = getRedeliveryPolicy().copy();
@@ -368,6 +370,14 @@ public final class JmsConnectionInfo extends JmsAbstractResource implements Comp
 
     public void setAwaitClientID(boolean awaitClientID) {
         this.awaitClientID = awaitClientID;
+    }
+
+    public boolean isCloseLinksThatFailOnReconnect() {
+        return closeLinksThatFailOnReconnect;
+    }
+
+    public void setCloseLinksThatFailOnReconnect(boolean closeLinksThatFailOnReconnect) {
+        this.closeLinksThatFailOnReconnect = closeLinksThatFailOnReconnect;
     }
 
     public EnumMap<JmsConnectionExtensions, BiFunction<Connection, URI, Object>> getExtensionMap() {

@@ -1337,7 +1337,7 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
     }
 
     protected void onConnectionRecovery(Provider provider) throws Exception {
-        if (sessionInfo.isOpen()) {
+        if (!sessionInfo.isClosed()) {
             ProviderFuture request = new ProviderFuture();
             provider.create(sessionInfo, request);
             request.sync();

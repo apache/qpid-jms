@@ -33,7 +33,7 @@ public abstract class JmsAbstractResource implements JmsResource {
         this.state = state;
     }
 
-    public boolean isOpen() {
-        return ResourceState.OPEN.equals(state);
+    public boolean isClosed() {
+        return ResourceState.CLOSED.equals(state);
     }
 }

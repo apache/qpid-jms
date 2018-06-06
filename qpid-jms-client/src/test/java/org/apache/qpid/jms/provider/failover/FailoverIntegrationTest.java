@@ -30,11 +30,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.CompletionListener;
@@ -1934,8 +1934,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         doRemotelyCloseConsumerWithMessageListenerFiresJMSExceptionListenerTestImpl(null, null);
     }
 
-    private void doRemotelyCloseConsumerWithMessageListenerFiresJMSExceptionListenerTestImpl(Symbol errorCondition,
-            String errorDescription) throws JMSException, InterruptedException, Exception, IOException {
+    private void doRemotelyCloseConsumerWithMessageListenerFiresJMSExceptionListenerTestImpl(Symbol errorCondition, String errorDescription) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             CountDownLatch consumerClosed = new CountDownLatch(1);
             CountDownLatch exceptionListenerFired = new CountDownLatch(1);
@@ -1943,6 +1942,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             testPeer.expectSaslAnonymous();
             testPeer.expectOpen();
             testPeer.expectBegin();
+
             final JmsConnection connection = establishAnonymousConnecton("failover.maxReconnectAttempts=1", testPeer);
             connection.setExceptionListener(new ExceptionListener() {
                 @Override
@@ -2004,6 +2004,483 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.
             consumer.close();
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverCannotRecreateConsumerFailsConnectionAndRetries() throws Exception {
+        Symbol errorCondition = AmqpError.RESOURCE_DELETED;
+        String errorDescription = "testFailoverCannotRecreateConsumerFailsConnectionAndRetries";
+
+        doTestFailoverCannotRecreateConsumerFailsConnectionAndRetries(errorCondition, errorDescription);
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverCannotRecreateConsumerFailsConnectionAndRetriesNoErrorConditionGiven() throws Exception {
+        doTestFailoverCannotRecreateConsumerFailsConnectionAndRetries(null, null);
+    }
+
+    private void doTestFailoverCannotRecreateConsumerFailsConnectionAndRetries(Symbol errorCondition, String errorMessage) throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer rejectingPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final CountDownLatch originalConnected = new CountDownLatch(1);
+            final CountDownLatch finalConnected = new CountDownLatch(1);
+            final AtomicBoolean exceptionListenerFired = new AtomicBoolean();
+
+            // Create a peer to connect to, then one to reconnect to
+            final String originalURI = createPeerURI(originalPeer);
+            final String rejectingURI = createPeerURI(rejectingPeer);
+            final String finalURI = createPeerURI(finalPeer);
+
+            LOG.info("Original peer is at: {}", originalURI);
+            LOG.info("Rejecting peer is at: {}", rejectingURI);
+            LOG.info("Final peer is at: {}", finalURI);
+
+            // Expect connection to the first peer (and have it drop)
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
+            originalPeer.expectBegin();
+            originalPeer.expectBegin();
+            originalPeer.expectReceiverAttach();
+            originalPeer.expectLinkFlow();
+            originalPeer.dropAfterLastHandler();
+
+            // --- Post Failover Expectations of Rejecting --- //
+            rejectingPeer.expectSaslAnonymous();
+            rejectingPeer.expectOpen();
+            rejectingPeer.expectBegin();
+            rejectingPeer.expectBegin();
+            rejectingPeer.expectReceiverAttach(notNullValue(), notNullValue(), false, true, false, false, errorCondition, errorMessage);
+            // --- Client will clean up connection and then reconnect to next peer --- //
+            rejectingPeer.expectDetach(true, false, false);
+            rejectingPeer.expectClose();
+
+            // --- Post Failover Expectations of FinalPeer --- //
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
+            finalPeer.expectBegin();
+            finalPeer.expectBegin();
+            finalPeer.expectReceiverAttach();
+            finalPeer.expectLinkFlow();
+
+            final JmsConnection connection = establishAnonymousConnecton(originalPeer, rejectingPeer, finalPeer);
+            connection.setExceptionListener(new ExceptionListener() {
+                @Override
+                public void onException(JMSException exception) {
+                    LOG.trace("JMS ExceptionListener: ", exception);
+                    exceptionListenerFired.set(true);
+                }
+            });
+
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (originalURI.equals(remoteURI.toString())) {
+                        originalConnected.countDown();
+                    }
+                }
+
+                @Override
+                public void onConnectionRestored(URI remoteURI) {
+                    LOG.info("Connection Restored: {}", remoteURI);
+                    if (finalURI.equals(remoteURI.toString())) {
+                        finalConnected.countDown();
+                    }
+                }
+            });
+            connection.start();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            final MessageConsumer consumer = session.createConsumer(queue);
+            consumer.setMessageListener(new MessageListener() {
+                @Override
+                public void onMessage(Message message) {
+                }
+            });
+
+            finalPeer.waitForAllHandlersToComplete(1000);
+
+            assertTrue("Should connect to original peer", originalConnected.await(3, TimeUnit.SECONDS));
+            assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
+            assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.get());
+
+            // Check that consumer isn't closed
+            try {
+                consumer.getMessageListener();
+            } catch (JMSException ex) {
+                fail("Consumer should be in open state and not throw here.");
+            }
+
+            // Shut it down
+            finalPeer.expectClose();
+            connection.close();
+
+            finalPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverCannotRecreateProducerFailsConnectionAndRetries() throws Exception {
+        Symbol errorCondition = AmqpError.RESOURCE_DELETED;
+        String errorDescription = "testFailoverCannotRecreateProducerFailsConnectionAndRetries";
+
+        doTestFailoverCannotRecreateProducerFailsConnectionAndRetries(errorCondition, errorDescription);
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverCannotRecreateProducerFailsConnectionAndRetriesNoErrorConditionGiven() throws Exception {
+        doTestFailoverCannotRecreateProducerFailsConnectionAndRetries(null, null);
+    }
+
+    private void doTestFailoverCannotRecreateProducerFailsConnectionAndRetries(Symbol errorCondition, String errorMessage) throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer rejectingPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final CountDownLatch originalConnected = new CountDownLatch(1);
+            final CountDownLatch finalConnected = new CountDownLatch(1);
+            final AtomicBoolean exceptionListenerFired = new AtomicBoolean();
+
+            // Create a peer to connect to, then one to reconnect to
+            final String originalURI = createPeerURI(originalPeer);
+            final String rejectingURI = createPeerURI(rejectingPeer);
+            final String finalURI = createPeerURI(finalPeer);
+
+            LOG.info("Original peer is at: {}", originalURI);
+            LOG.info("Rejecting peer is at: {}", rejectingURI);
+            LOG.info("Final peer is at: {}", finalURI);
+
+            // Expect connection to the first peer (and have it drop)
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
+            originalPeer.expectBegin();
+            originalPeer.expectBegin();
+            originalPeer.expectSenderAttach();
+            originalPeer.dropAfterLastHandler();
+
+            // --- Post Failover Expectations of Rejecting --- //
+            rejectingPeer.expectSaslAnonymous();
+            rejectingPeer.expectOpen();
+            rejectingPeer.expectBegin();
+            rejectingPeer.expectBegin();
+            rejectingPeer.expectSenderAttach(notNullValue(), notNullValue(), true, false, false, -1, errorCondition, errorMessage);
+            // --- Client will clean up connection and then reconnect to next peer --- //
+            rejectingPeer.expectDetach(true, false, false);
+            rejectingPeer.expectClose();
+
+            // --- Post Failover Expectations of FinalPeer --- //
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
+            finalPeer.expectBegin();
+            finalPeer.expectBegin();
+            finalPeer.expectSenderAttach();
+
+            final JmsConnection connection = establishAnonymousConnecton(originalPeer, rejectingPeer, finalPeer);
+            connection.setExceptionListener(new ExceptionListener() {
+                @Override
+                public void onException(JMSException exception) {
+                    LOG.trace("JMS ExceptionListener: ", exception);
+                    exceptionListenerFired.set(true);
+                }
+            });
+
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (originalURI.equals(remoteURI.toString())) {
+                        originalConnected.countDown();
+                    }
+                }
+
+                @Override
+                public void onConnectionRestored(URI remoteURI) {
+                    LOG.info("Connection Restored: {}", remoteURI);
+                    if (finalURI.equals(remoteURI.toString())) {
+                        finalConnected.countDown();
+                    }
+                }
+            });
+            connection.start();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            final MessageProducer producer = session.createProducer(queue);
+
+            finalPeer.waitForAllHandlersToComplete(1000);
+
+            assertTrue("Should connect to original peer", originalConnected.await(3, TimeUnit.SECONDS));
+            assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
+            assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.get());
+
+            // Check that producer isn't closed
+            try {
+                producer.getDestination();
+            } catch (JMSException ex) {
+                fail("Producer should be in open state and not throw here.");
+            }
+
+            // Shut it down
+            finalPeer.expectClose();
+            connection.close();
+
+            finalPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverCannotRecreateConsumerWithCloseFailedLinksEnabled() throws Exception {
+        Symbol errorCondition = AmqpError.RESOURCE_DELETED;
+        String errorDescription = "testFailoverCannotRecreateConsumerWithCloseFailedLinksEnabled";
+
+        doTestFailoverCannotRecreateConsumerWithCloseFailedLinksEnabled(true, errorCondition, errorDescription);
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverCannotRecreateConsumerWithCloseFailedLinksEnabledNoMessageListener() throws Exception {
+        Symbol errorCondition = AmqpError.RESOURCE_DELETED;
+        String errorDescription = "testFailoverCannotRecreateConsumerWithCloseFailedLinksEnabled";
+
+        doTestFailoverCannotRecreateConsumerWithCloseFailedLinksEnabled(false, errorCondition, errorDescription);
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverCannotRecreateConsumerWithCloseFailedLinksEnabledNoErrorConditionGiven() throws Exception {
+        doTestFailoverCannotRecreateConsumerWithCloseFailedLinksEnabled(true, null, null);
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverCannotRecreateConsumerWithCloseFailedLinksEnabledNoErrorConditionGivenNoMessageListener() throws Exception {
+        doTestFailoverCannotRecreateConsumerWithCloseFailedLinksEnabled(false, null, null);
+    }
+
+    private void doTestFailoverCannotRecreateConsumerWithCloseFailedLinksEnabled(boolean addListener, Symbol errorCondition, String errorDescription) throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final CountDownLatch originalConnected = new CountDownLatch(1);
+            final CountDownLatch finalConnected = new CountDownLatch(1);
+            final CountDownLatch exceptionListenerFired = new CountDownLatch(1);
+
+            // Create a peer to connect to, then one to reconnect to
+            final String originalURI = createPeerURI(originalPeer);
+            final String finalURI = createPeerURI(finalPeer);
+
+            LOG.info("Original peer is at: {}", originalURI);
+            LOG.info("Final peer is at: {}", finalURI);
+
+            // Expect connection to the first peer (and have it drop)
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
+            originalPeer.expectBegin();
+            originalPeer.expectBegin();
+            originalPeer.expectReceiverAttach();
+            originalPeer.expectLinkFlow();
+            originalPeer.dropAfterLastHandler();
+
+            // --- Post Failover Expectations of Rejecting --- //
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
+            finalPeer.expectBegin();
+            finalPeer.expectBegin();
+            finalPeer.expectReceiverAttach(notNullValue(), notNullValue(), false, true, false, false, errorCondition, errorDescription);
+            finalPeer.expectDetach(true, false, false);
+
+            final JmsConnection connection = establishAnonymousConnecton("jms.closeLinksThatFailOnReconnect=true", originalPeer, finalPeer);
+            connection.setExceptionListener(new ExceptionListener() {
+                @Override
+                public void onException(JMSException exception) {
+                    LOG.trace("JMS ExceptionListener: ", exception);
+                    exceptionListenerFired.countDown();
+                }
+            });
+
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (originalURI.equals(remoteURI.toString())) {
+                        originalConnected.countDown();
+                    }
+                }
+
+                @Override
+                public void onConnectionRestored(URI remoteURI) {
+                    LOG.info("Connection Restored: {}", remoteURI);
+                    if (finalURI.equals(remoteURI.toString())) {
+                        finalConnected.countDown();
+                    }
+                }
+            });
+            connection.start();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            final MessageConsumer consumer = session.createConsumer(queue);
+            if (addListener) {
+                consumer.setMessageListener(new MessageListener() {
+                    @Override
+                    public void onMessage(Message message) {
+                    }
+                });
+            }
+
+            finalPeer.waitForAllHandlersToComplete(1000);
+
+            assertTrue("Should connect to original peer", originalConnected.await(3, TimeUnit.SECONDS));
+            assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
+
+            if (addListener) {
+                assertTrue("JMS Exception listener should have fired with a MessageListener", exceptionListenerFired.await(2, TimeUnit.SECONDS));
+
+                // Verify the consumer gets marked closed
+                assertTrue("consumer never closed.", Wait.waitFor(new Wait.Condition() {
+                    @Override
+                    public boolean isSatisified() throws Exception {
+                        try {
+                            consumer.getMessageListener();
+                        } catch (IllegalStateException jmsise) {
+                            if (jmsise.getCause() != null) {
+                                String message = jmsise.getCause().getMessage();
+                                if (errorCondition != null) {
+                                    return message.contains(errorCondition.toString()) &&
+                                            message.contains(errorDescription);
+                                } else {
+                                    return message.contains("Link creation was refused");
+                                }
+                            } else {
+                                return false;
+                            }
+                        }
+                        return false;
+                    }
+                }, 5000, 10));
+            } else {
+                assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.getCount() == 0);
+            }
+
+            // Shut it down
+            finalPeer.expectClose();
+            connection.close();
+
+            finalPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverCannotRecreateProducerWithCloseFailedLinksEnabled() throws Exception {
+        Symbol errorCondition = AmqpError.RESOURCE_DELETED;
+        String errorDescription = "testFailoverCannotRecreateProducerWithCloseFailedLinksEnabled";
+
+        doTestFailoverCannotRecreateWithCloseFailedLinksEnabled(errorCondition, errorDescription);
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverCannotRecreateProducerWithCloseFailedLinksEnabledNoErrorConditionGiven() throws Exception {
+        doTestFailoverCannotRecreateWithCloseFailedLinksEnabled(null, null);
+    }
+
+    private void doTestFailoverCannotRecreateWithCloseFailedLinksEnabled(Symbol errorCondition, String errorDescription) throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final CountDownLatch originalConnected = new CountDownLatch(1);
+            final CountDownLatch finalConnected = new CountDownLatch(1);
+            final AtomicBoolean exceptionListenerFired = new AtomicBoolean();
+
+            // Create a peer to connect to, then one to reconnect to
+            final String originalURI = createPeerURI(originalPeer);
+            final String finalURI = createPeerURI(finalPeer);
+
+            LOG.info("Original peer is at: {}", originalURI);
+            LOG.info("Final peer is at: {}", finalURI);
+
+            // Expect connection to the first peer (and have it drop)
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
+            originalPeer.expectBegin();
+            originalPeer.expectBegin();
+            originalPeer.expectSenderAttach();
+            originalPeer.dropAfterLastHandler();
+
+            // --- Post Failover Expectations of Rejecting --- //
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
+            finalPeer.expectBegin();
+            finalPeer.expectBegin();
+            finalPeer.expectSenderAttach(notNullValue(), notNullValue(), true, false, false, -1, errorCondition, errorDescription);
+            finalPeer.expectDetach(true, false, false);
+
+            final JmsConnection connection = establishAnonymousConnecton("jms.closeLinksThatFailOnReconnect=true", originalPeer, finalPeer);
+            connection.setExceptionListener(new ExceptionListener() {
+                @Override
+                public void onException(JMSException exception) {
+                    LOG.trace("JMS ExceptionListener: ", exception);
+                    exceptionListenerFired.set(true);
+                }
+            });
+
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (originalURI.equals(remoteURI.toString())) {
+                        originalConnected.countDown();
+                    }
+                }
+
+                @Override
+                public void onConnectionRestored(URI remoteURI) {
+                    LOG.info("Connection Restored: {}", remoteURI);
+                    if (finalURI.equals(remoteURI.toString())) {
+                        finalConnected.countDown();
+                    }
+                }
+            });
+            connection.start();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            final MessageProducer producer = session.createProducer(queue);
+
+            finalPeer.waitForAllHandlersToComplete(1000);
+
+            assertTrue("Should connect to original peer", originalConnected.await(3, TimeUnit.SECONDS));
+            assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
+            assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.get());
+
+            // Verify the producer gets marked closed
+            assertTrue("producer never closed.", Wait.waitFor(new Wait.Condition() {
+                @Override
+                public boolean isSatisified() throws Exception {
+                    try {
+                        producer.getDestination();
+                    } catch (IllegalStateException jmsise) {
+                        if (jmsise.getCause() != null) {
+                            String message = jmsise.getCause().getMessage();
+                            if (errorCondition != null) {
+                                return message.contains(errorCondition.toString()) &&
+                                        message.contains(errorDescription);
+                            } else {
+                                return message.contains("Link creation was refused");
+                            }
+                        } else {
+                            return false;
+                        }
+                    }
+                    return false;
+                }
+            }, 5000, 10));
+
+            // Shut it down
+            finalPeer.expectClose();
+            connection.close();
+
+            finalPeer.waitForAllHandlersToComplete(1000);
         }
     }
 

@@ -29,6 +29,7 @@ import javax.jms.ConnectionFactory;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSContext;
 import javax.jms.JMSException;
+import javax.jms.MessageListener;
 import javax.jms.QueueConnection;
 import javax.jms.QueueConnectionFactory;
 import javax.jms.TopicConnection;
@@ -87,6 +88,7 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
     private boolean receiveLocalOnly;
     private boolean receiveNoWaitLocalOnly;
     private boolean populateJMSXUserID;
+    private boolean closeLinksThatFailOnReconnect;
     private String queuePrefix = null;
     private String topicPrefix = null;
     private boolean validatePropertyNames = true;
@@ -912,6 +914,33 @@ public class JmsConnectionFactory extends JNDIStorable implements ConnectionFact
      */
     public void setUseDaemonThread(boolean useDaemonThread) {
         this.useDaemonThread = useDaemonThread;
+    }
+
+
+    /**
+     * @return whether links that fail to be created during failover reconnect are closed or not.
+     */
+    public boolean isCloseLinksThatFailOnReconnect() {
+        return closeLinksThatFailOnReconnect;
+    }
+
+    /**
+     * Controls how the client manages errors on recreation of a link (producer / consumer) during
+     * a failover reconnect attempt (defaults to false).
+     * <p>
+     * When false the failure of a link recreation operation while reestablishing a failed connection
+     * results in the client failing that reconnect attempt and retrying the entire connection process
+     * again.  This can be disabled by setting this option to true in which case the client will close
+     * the producer or consumer associated with the failed link create attempt and continue rebuilding
+     * the client resources for the newly reestablished connection.  When failing a consumer link the
+     * client will trigger the {@link ExceptionListener} assigned to the Connection if the link that failed
+     * was a consumer and that consumer had an associated JMS {@link MessageListener}.
+     *
+     * @param closeLinksThatFailOnReconnect
+     * 		whether to close links that fail to establish on failover reconnect.
+     */
+    public void setCloseLinksThatFailOnReconnect(boolean closeLinksThatFailOnReconnect) {
+        this.closeLinksThatFailOnReconnect = closeLinksThatFailOnReconnect;
     }
 
     /**

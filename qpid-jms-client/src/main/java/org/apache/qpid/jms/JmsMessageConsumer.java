@@ -18,6 +18,7 @@ package org.apache.qpid.jms;
 
 import static org.apache.qpid.jms.message.JmsMessageSupport.lookupAckTypeForDisposition;
 
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
@@ -649,15 +650,23 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
     }
 
     protected void onConnectionRecovery(Provider provider) throws Exception {
-        if (consumerInfo.isOpen()) {
+        if (!consumerInfo.isClosed()) {
             ProviderFuture request = new ProviderFuture();
-            provider.create(consumerInfo, request);
-            request.sync();
+            try {
+                provider.create(consumerInfo, request);
+                request.sync();
+            } catch (IOException ioe) {
+                if (connection.isCloseLinksThatFailOnReconnect()) {
+                    session.consumerClosed(consumerInfo, ioe);
+                } else {
+                    throw ioe;
+                }
+            }
         }
     }
 
     protected void onConnectionRecovered(Provider provider) throws Exception {
-        if (consumerInfo.isOpen()) {
+        if (!consumerInfo.isClosed()) {
             ProviderFuture request = new ProviderFuture();
             provider.start(consumerInfo, request);
             request.sync();

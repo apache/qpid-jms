@@ -175,7 +175,7 @@ public abstract class AmqpResourceBuilder<TARGET extends AmqpResource, PARENT ex
         // If the resource being built is closed during the creation process
         // then this is always an error.
 
-        resourceInfo.setState(ResourceState.CLOSED);
+        resourceInfo.setState(ResourceState.REMOTELY_CLOSED);
 
         // Perform any post processing relating to closure during creation attempt
         afterClosed(getResource(), getResourceInfo());

@@ -256,6 +256,8 @@ public abstract class AmqpAbstractResource<R extends JmsResource, E extends Endp
 
     @Override
     public void processRemoteClose(AmqpProvider provider) throws IOException {
+        getResourceInfo().setState(ResourceState.REMOTELY_CLOSED);
+
         if (isAwaitingClose()) {
             closeResource(provider, null, true); // Close was expected so ignore any endpoint errors.
         } else {

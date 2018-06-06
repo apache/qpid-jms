@@ -1170,6 +1170,14 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         return connectionInfo.isUseDaemonThread();
     }
 
+    public boolean isCloseLinksThatFailOnReconnect() {
+        return connectionInfo.isCloseLinksThatFailOnReconnect();
+    }
+
+    public void setCloseLinksThatFailOnReconnect(boolean closeLinksThatFailOnReconnect) {
+        connectionInfo.setCloseLinksThatFailOnReconnect(closeLinksThatFailOnReconnect);
+    }
+
     //----- Async event handlers ---------------------------------------------//
 
     @Override
@@ -1264,7 +1272,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
         for (JmsConnectionConsumer connectionConsumer : connectionConsumers.values()) {
             JmsConsumerInfo consumerInfo = connectionConsumer.getConsumerInfo();
-            if (consumerInfo.isOpen()) {
+            if (!consumerInfo.isClosed()) {
                 request = new ProviderFuture();
                 provider.create(consumerInfo, request);
                 request.sync();
@@ -1285,7 +1293,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
         for (JmsConnectionConsumer connectionConsumer : connectionConsumers.values()) {
             JmsConsumerInfo consumerInfo = connectionConsumer.getConsumerInfo();
-            if (consumerInfo.isOpen()) {
+            if (!consumerInfo.isClosed()) {
                 ProviderFuture request = new ProviderFuture();
                 provider.start(consumerInfo, request);
                 request.sync();

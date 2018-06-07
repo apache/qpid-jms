@@ -1414,20 +1414,24 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             while (pending.hasNext()) {
                 SendCompletion completion = pending.next();
 
-                if (!completion.hasCompleted()) {
-                    if (producerId == null || producerId.equals(completion.envelope.getProducerId())) {
+                if (producerId == null || producerId.equals(completion.envelope.getProducerId())) {
+                    if (!completion.hasCompleted()) {
                         completion.markAsFailed(failureCause);
                     }
-                }
 
-                try {
-                    completion.signalCompletion();
-                } catch (Throwable error) {
-                    LOG.trace("Signaled completion of send: {}", completion.envelope);
+                    try {
+                        completion.signalCompletion();
+                    } catch (Throwable error) {
+                    } finally {
+                        LOG.trace("Signaled completion of send: {}", completion.envelope);
+                    }
                 }
             }
 
-            asyncSendQueue.clear();
+            // Only clear on non-discriminating variant to avoid losing track of completions.
+            if (producerId == null) {
+                asyncSendQueue.clear();
+            }
         }
     }
 
@@ -1530,6 +1534,8 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         }
 
         public void signalCompletion() {
+            envelope.getMessage().onSendComplete();  // Ensure message is returned as readable.
+
             if (failureCause == null) {
                 listener.onCompletion(envelope.getMessage());
             } else {

@@ -77,7 +77,9 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescri
 import org.apache.qpid.jms.test.testpeer.matchers.SourceMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.types.EncodedAmqpValueMatcher;
 import org.apache.qpid.jms.util.StopWatch;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
@@ -2063,7 +2065,12 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             finalPeer.expectBegin();
             finalPeer.expectBegin();
             finalPeer.expectReceiverAttach();
-            finalPeer.expectLinkFlow();
+            final String expectedMessageContent = "myTextMessage";
+            finalPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType(expectedMessageContent));
+            finalPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            AtomicReference<Message> msgRef = new AtomicReference<>();
+            final CountDownLatch msgReceived = new CountDownLatch(1);
 
             final JmsConnection connection = establishAnonymousConnecton(originalPeer, rejectingPeer, finalPeer);
             connection.setExceptionListener(new ExceptionListener() {
@@ -2099,6 +2106,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             consumer.setMessageListener(new MessageListener() {
                 @Override
                 public void onMessage(Message message) {
+                    msgRef.set(message);
+                    msgReceived.countDown();
                 }
             });
 
@@ -2106,7 +2115,12 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             assertTrue("Should connect to original peer", originalConnected.await(3, TimeUnit.SECONDS));
             assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
-            assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.get());
+
+            // Check message arrives
+            assertTrue("The onMessage listener should have fired", msgReceived.await(3, TimeUnit.SECONDS));
+            Message msg = msgRef.get();
+            assertTrue("Expected an instance of TextMessage, got: " + msg, msg instanceof TextMessage);
+            assertEquals("Unexpected msg content", expectedMessageContent, ((TextMessage) msg).getText());
 
             // Check that consumer isn't closed
             try {
@@ -2114,6 +2128,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             } catch (JMSException ex) {
                 fail("Consumer should be in open state and not throw here.");
             }
+
+            assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.get());
 
             // Shut it down
             finalPeer.expectClose();
@@ -2215,7 +2231,6 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             assertTrue("Should connect to original peer", originalConnected.await(3, TimeUnit.SECONDS));
             assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
-            assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.get());
 
             // Check that producer isn't closed
             try {
@@ -2223,6 +2238,20 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             } catch (JMSException ex) {
                 fail("Producer should be in open state and not throw here.");
             }
+
+            // Send a message
+            String messageContent = "myMessage";
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(new MessageHeaderSectionMatcher(true));
+            messageMatcher.setMessageAnnotationsMatcher(new MessageAnnotationsSectionMatcher(true));
+            messageMatcher.setPropertiesMatcher(new MessagePropertiesSectionMatcher(true));
+            messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(messageContent));
+            finalPeer.expectTransfer(messageMatcher);
+
+            Message message = session.createTextMessage(messageContent);
+            producer.send(message);
+
+            assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.get());
 
             // Shut it down
             finalPeer.expectClose();
@@ -2243,7 +2272,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
     @Test(timeout = 20000)
     public void testFailoverCannotRecreateConsumerWithCloseFailedLinksEnabledNoMessageListener() throws Exception {
         Symbol errorCondition = AmqpError.RESOURCE_DELETED;
-        String errorDescription = "testFailoverCannotRecreateConsumerWithCloseFailedLinksEnabled";
+        String errorDescription = "testFailoverCannotRecreateConsumerWithCloseFailedLinksEnabledNoMessageListener";
 
         doTestFailoverCannotRecreateConsumerWithCloseFailedLinksEnabled(false, errorCondition, errorDescription);
     }
@@ -2334,33 +2363,34 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             assertTrue("Should connect to original peer", originalConnected.await(3, TimeUnit.SECONDS));
             assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
 
+            // Verify the consumer gets marked closed
+            assertTrue("consumer never closed.", Wait.waitFor(new Wait.Condition() {
+                @Override
+                public boolean isSatisified() throws Exception {
+                    try {
+                        consumer.getMessageListener();
+                    } catch (IllegalStateException jmsise) {
+                        if (jmsise.getCause() != null) {
+                            String message = jmsise.getCause().getMessage();
+                            if (errorCondition != null) {
+                                return message.contains(errorCondition.toString()) &&
+                                        message.contains(errorDescription);
+                            } else {
+                                return message.contains("Link creation was refused");
+                            }
+                        } else {
+                            return false;
+                        }
+                    }
+                    return false;
+                }
+            }, 5000, 10));
+
+            // Verify the exception listener behaviour
             if (addListener) {
                 assertTrue("JMS Exception listener should have fired with a MessageListener", exceptionListenerFired.await(2, TimeUnit.SECONDS));
-
-                // Verify the consumer gets marked closed
-                assertTrue("consumer never closed.", Wait.waitFor(new Wait.Condition() {
-                    @Override
-                    public boolean isSatisified() throws Exception {
-                        try {
-                            consumer.getMessageListener();
-                        } catch (IllegalStateException jmsise) {
-                            if (jmsise.getCause() != null) {
-                                String message = jmsise.getCause().getMessage();
-                                if (errorCondition != null) {
-                                    return message.contains(errorCondition.toString()) &&
-                                            message.contains(errorDescription);
-                                } else {
-                                    return message.contains("Link creation was refused");
-                                }
-                            } else {
-                                return false;
-                            }
-                        }
-                        return false;
-                    }
-                }, 5000, 10));
             } else {
-                assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.getCount() == 0);
+                assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.await(10, TimeUnit.MILLISECONDS));
             }
 
             // Shut it down
@@ -2451,7 +2481,6 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             assertTrue("Should connect to original peer", originalConnected.await(3, TimeUnit.SECONDS));
             assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
-            assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.get());
 
             // Verify the producer gets marked closed
             assertTrue("producer never closed.", Wait.waitFor(new Wait.Condition() {
@@ -2475,6 +2504,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                     return false;
                 }
             }, 5000, 10));
+
+            assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.get());
 
             // Shut it down
             finalPeer.expectClose();

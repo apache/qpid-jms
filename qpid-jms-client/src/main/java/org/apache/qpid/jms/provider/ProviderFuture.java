@@ -19,7 +19,7 @@ package org.apache.qpid.jms.provider;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import org.apache.qpid.jms.util.IOExceptionSupport;
 
@@ -28,10 +28,15 @@ import org.apache.qpid.jms.util.IOExceptionSupport;
  */
 public class ProviderFuture implements AsyncResult {
 
-    private final AtomicBoolean completer = new AtomicBoolean();
+    private static final AtomicIntegerFieldUpdater<ProviderFuture> COMPLETE_UPDATER =
+            AtomicIntegerFieldUpdater.newUpdater(ProviderFuture.class, "complete");
+
     private final CountDownLatch latch = new CountDownLatch(1);
     private final ProviderSynchronization synchronization;
     private volatile Throwable error;
+
+    @SuppressWarnings("unused")
+    private volatile int complete;
 
     public ProviderFuture() {
         this(null);
@@ -48,7 +53,7 @@ public class ProviderFuture implements AsyncResult {
 
     @Override
     public void onFailure(Throwable result) {
-        if (completer.compareAndSet(false, true)) {
+        if (COMPLETE_UPDATER.compareAndSet(this, 0, 1)) {
             error = result;
             if (synchronization != null) {
                 synchronization.onPendingFailure(error);
@@ -59,7 +64,7 @@ public class ProviderFuture implements AsyncResult {
 
     @Override
     public void onSuccess() {
-        if (completer.compareAndSet(false, true)) {
+        if (COMPLETE_UPDATER.compareAndSet(this, 0, 1)) {
             if (synchronization != null) {
                 synchronization.onPendingSuccess();
             }

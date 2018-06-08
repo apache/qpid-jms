@@ -137,7 +137,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertTrue("Should have a remote URI after connect", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return provider.getRemoteURI() != null;
             }
         }, TimeUnit.SECONDS.toMillis(20), 10));
@@ -152,7 +152,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         assertTrue("Should have a mock scheme after connect", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 LOG.info("FailoverProvider: toString = {}", provider.toString());
                 return provider.toString().contains("mock://");
             }

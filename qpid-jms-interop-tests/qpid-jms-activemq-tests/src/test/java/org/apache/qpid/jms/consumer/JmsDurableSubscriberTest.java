@@ -316,14 +316,14 @@ public class JmsDurableSubscriberTest extends AmqpTestSupport {
         assertTrue("Should have no durables.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getDurableTopicSubscribers().length == 0;
             }
         }));
         assertTrue("Should have an inactive sub.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getInactiveDurableTopicSubscribers().length == 1;
             }
         }));

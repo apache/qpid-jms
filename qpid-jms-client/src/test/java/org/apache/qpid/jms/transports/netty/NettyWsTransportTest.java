@@ -158,7 +158,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
 
             assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     LOG.debug("Checking completion: read {} expecting {}", bytesRead.get(), FRAME_SIZE);
                     return bytesRead.get() == FRAME_SIZE || !transport.isConnected();
                 }
@@ -209,7 +209,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
 
             assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     LOG.debug("Checking completion: read {} expecting {}", bytesRead.get(), FRAME_SIZE);
                     return bytesRead.get() == FRAME_SIZE || !transport.isConnected();
                 }
@@ -306,7 +306,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
 
             assertTrue("Transport should have lost connection", Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     try {
                         transport.send(sendBuffer);
                     } catch (IOException e) {

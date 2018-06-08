@@ -397,7 +397,7 @@ public class ConnectionConsumerIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
             assertTrue("consumer never closed.", Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     try {
                         consumer.getServerSessionPool();
                     } catch (IllegalStateException jmsise) {

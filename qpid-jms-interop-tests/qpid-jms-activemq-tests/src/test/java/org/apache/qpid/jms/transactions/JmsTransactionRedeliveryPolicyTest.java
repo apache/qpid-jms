@@ -95,7 +95,7 @@ public class JmsTransactionRedeliveryPolicyTest extends AmqpTestSupport {
         assertTrue("Message should get DLQ'd", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return queueView.getQueueSize() == 0;
             }
         }));
@@ -151,7 +151,7 @@ public class JmsTransactionRedeliveryPolicyTest extends AmqpTestSupport {
         assertTrue("Message should get DLQ'd", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return queueView.getQueueSize() == 0;
             }
         }));

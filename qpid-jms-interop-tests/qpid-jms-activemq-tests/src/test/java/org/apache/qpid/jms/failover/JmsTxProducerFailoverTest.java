@@ -76,7 +76,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
         assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
@@ -84,7 +84,7 @@ public class JmsTxProducerFailoverTest extends AmqpTestSupport {
         assertTrue("Should have a recovered producer.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getQueueProducers().length == 1;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));

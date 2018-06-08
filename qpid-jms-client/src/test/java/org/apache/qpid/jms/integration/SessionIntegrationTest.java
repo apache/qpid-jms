@@ -1698,7 +1698,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             // Verify the producers get marked closed
             assertTrue("producer never closed.", Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     try {
                         producer.getDestination();
                     } catch (IllegalStateException jmsise) {
@@ -1716,7 +1716,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             assertTrue("producer2 never closed.", Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     try {
                         producer2.getDestination();
                     } catch (IllegalStateException jmsise) {
@@ -1897,7 +1897,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
             assertTrue("consumer never closed.", Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     try {
                         consumer.getMessageListener();
                     } catch (IllegalStateException jmsise) {
@@ -1915,7 +1915,7 @@ public class SessionIntegrationTest extends QpidJmsTestCase {
 
             assertTrue("consumer2 never closed.", Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     try {
                         consumer2.getMessageListener();
                     } catch (IllegalStateException jmsise) {

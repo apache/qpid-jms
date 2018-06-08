@@ -54,7 +54,7 @@ public class JmsMessageProducerFailedTest extends JmsMessageProducerClosedTest {
         assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return !jmsConnection.isConnected();
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(2)));

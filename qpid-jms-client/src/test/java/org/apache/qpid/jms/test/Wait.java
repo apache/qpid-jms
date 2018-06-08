@@ -24,7 +24,7 @@ public class Wait {
     public static final long SLEEP_MILLIS = 200;
 
     public interface Condition {
-        boolean isSatisified() throws Exception;
+        boolean isSatisfied() throws Exception;
     }
 
     public static boolean waitFor(Condition condition) throws Exception {
@@ -36,13 +36,12 @@ public class Wait {
     }
 
     public static boolean waitFor(final Condition condition, final long duration, final long sleepMillis) throws Exception {
-
         final long expiry = System.currentTimeMillis() + duration;
-        boolean conditionSatisified = condition.isSatisified();
-        while (!conditionSatisified && System.currentTimeMillis() < expiry) {
+        boolean conditionSatisfied = condition.isSatisfied();
+        while (!conditionSatisfied && System.currentTimeMillis() < expiry) {
             TimeUnit.MILLISECONDS.sleep(sleepMillis);
-            conditionSatisified = condition.isSatisified();
+            conditionSatisfied = condition.isSatisfied();
         }
-        return conditionSatisified;
+        return conditionSatisfied;
     }
 }

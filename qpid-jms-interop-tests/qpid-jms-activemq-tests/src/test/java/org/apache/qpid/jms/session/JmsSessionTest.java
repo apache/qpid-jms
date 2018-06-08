@@ -109,7 +109,7 @@ public class JmsSessionTest extends AmqpTestSupport {
         assertTrue("Temp Queue should be deleted.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return broker.getTemporaryQueues().length == 0;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
@@ -144,7 +144,7 @@ public class JmsSessionTest extends AmqpTestSupport {
         assertTrue("Temp Topic should be deleted.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return broker.getTemporaryTopics().length == 0;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));

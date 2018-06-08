@@ -72,7 +72,7 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
         assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
@@ -80,7 +80,7 @@ public class JmsTxConsumerFailoverTest extends AmqpTestSupport {
         assertTrue("Should have a recovered consumer.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getQueueSubscribers().length == 1;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));

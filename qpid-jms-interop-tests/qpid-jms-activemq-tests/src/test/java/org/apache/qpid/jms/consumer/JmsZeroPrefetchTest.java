@@ -79,7 +79,7 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
         assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return queueView.getQueueSize() == 0;
             }
         }));
@@ -106,7 +106,7 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
         assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return queueView.getQueueSize() == 1;
             }
         }));
@@ -138,7 +138,7 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
         assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return queueView.getQueueSize() == 1;
             }
         }));
@@ -195,7 +195,7 @@ public class JmsZeroPrefetchTest extends AmqpTestSupport {
         assertTrue(Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return queueView.getQueueSize() == 1;
             }
         }));

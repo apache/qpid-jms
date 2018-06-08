@@ -579,7 +579,7 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
             assertTrue("connection never closed.", Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     return !((JmsConnection) connection).isConnected();
                 }
             }, 10000, 10));

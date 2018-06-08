@@ -943,7 +943,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
             assertTrue("producer never closed.", Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     try {
                         producer.getDestination();
                     } catch (Exception ex) {

@@ -120,7 +120,7 @@ public class JmsProducerFlowControlFailIfNoSpaceTest extends AmqpTestSupport {
         assertTrue("Should have got an error from no space.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return !exceptions.isEmpty();
             }
         }));

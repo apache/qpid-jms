@@ -92,7 +92,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 0;
             }
         }));
@@ -118,7 +118,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertTrue("Published message not consumed.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 0;
             }
         }));
@@ -152,7 +152,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertTrue("Listener not notified of correct number of messages.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return available.get() == MSG_COUNT;
             }
         }));
@@ -165,7 +165,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 0;
             }
         }));
@@ -390,7 +390,7 @@ public class JmsMessageConsumerTest extends AmqpTestSupport {
         assertTrue("Queue did not get all expected messages", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 2;
             }
         }));

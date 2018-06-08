@@ -172,7 +172,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
             assertTrue("consumer never closed.", Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     try {
                         consumer.getMessageListener();
                     } catch (IllegalStateException jmsise) {
@@ -241,7 +241,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
             assertTrue("consumer never closed.", Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     try {
                         consumer.getMessageListener();
                     } catch (IllegalStateException jmsise) {
@@ -919,7 +919,7 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
             assertTrue("Consumer should close", Wait.waitFor(new Wait.Condition() {
 
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     try {
                         consumer.getMessageSelector();
                         return false;

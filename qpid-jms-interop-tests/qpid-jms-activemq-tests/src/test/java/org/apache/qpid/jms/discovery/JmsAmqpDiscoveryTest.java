@@ -101,7 +101,7 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
         assertTrue("connection never connected.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return jmsConnection.isConnected();
             }
         }));
@@ -115,7 +115,7 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
         assertTrue("connection never connected.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return jmsConnection.isConnected();
             }
         }));
@@ -134,7 +134,7 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
         assertTrue("connection never connected.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return jmsConnection.isConnected();
             }
         }));
@@ -153,7 +153,7 @@ public class JmsAmqpDiscoveryTest extends AmqpTestSupport implements JmsConnecti
         assertTrue("connection never connected.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return jmsConnection.isConnected();
             }
         }));

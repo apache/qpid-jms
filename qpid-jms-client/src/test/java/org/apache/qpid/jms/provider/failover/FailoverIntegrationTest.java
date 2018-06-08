@@ -1980,7 +1980,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
             assertTrue("consumer never closed.", Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     try {
                         consumer.getMessageListener();
                     } catch (IllegalStateException jmsise) {
@@ -2366,7 +2366,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             // Verify the consumer gets marked closed
             assertTrue("consumer never closed.", Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     try {
                         consumer.getMessageListener();
                     } catch (IllegalStateException jmsise) {
@@ -2485,7 +2485,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             // Verify the producer gets marked closed
             assertTrue("producer never closed.", Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     try {
                         producer.getDestination();
                     } catch (IllegalStateException jmsise) {

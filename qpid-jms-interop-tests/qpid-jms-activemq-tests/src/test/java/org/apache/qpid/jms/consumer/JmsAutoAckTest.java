@@ -62,7 +62,7 @@ public class JmsAutoAckTest extends AmqpTestSupport {
         assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 0;
             }
         }));
@@ -94,7 +94,7 @@ public class JmsAutoAckTest extends AmqpTestSupport {
         assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 0;
             }
         }));

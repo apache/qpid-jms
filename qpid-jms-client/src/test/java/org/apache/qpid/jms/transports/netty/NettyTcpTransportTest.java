@@ -262,7 +262,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
             assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     LOG.debug("Checking completion: read {} expecting {}", bytesRead.get(), (FRAME_SIZE * CONNECTION_COUNT));
                     return bytesRead.get() == (FRAME_SIZE * CONNECTION_COUNT);
                 }
@@ -302,7 +302,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
         final Transport connectedTransport = transport;
         assertTrue(Wait.waitFor(new Wait.Condition() {
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return !connectedTransport.isConnected();
             }
         }, 10000, 50));
@@ -371,7 +371,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
             assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     return !data.isEmpty();
                 }
             }, 10000, 50));
@@ -424,7 +424,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
             assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     return bytesRead.get() == (byteCount * iterations);
                 }
             }, 10000, 50));

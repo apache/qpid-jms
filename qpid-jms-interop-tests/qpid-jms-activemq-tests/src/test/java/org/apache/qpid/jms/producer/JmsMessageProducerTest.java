@@ -139,7 +139,7 @@ public class JmsMessageProducerTest extends AmqpTestSupport {
         assertTrue("Should all make it to the Queue.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == MSG_COUNT;
             }
         }));

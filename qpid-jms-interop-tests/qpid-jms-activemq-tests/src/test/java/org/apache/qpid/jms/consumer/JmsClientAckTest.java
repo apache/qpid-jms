@@ -76,7 +76,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 0;
             }
         }));
@@ -111,7 +111,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 0;
             }
         }));
@@ -147,7 +147,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 0;
             }
         }));
@@ -182,7 +182,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 0;
             }
         }));
@@ -225,7 +225,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 0;
             }
         }));
@@ -271,7 +271,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         assertTrue("Not all messages appear as in-flight.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getInFlightCount() == MSG_COUNT;
             }
         }));
@@ -281,7 +281,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 0;
             }
         }));
@@ -499,7 +499,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         assertTrue("Queue didn't receive all messages", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == MESSAGE_COUNT;
             }
         }));
@@ -534,7 +534,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 0;
             }
         }));
@@ -559,7 +559,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         assertTrue("Queue didn't receive all messages", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == MESSAGE_COUNT;
             }
         }));
@@ -587,7 +587,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
                         boolean consumed = Wait.waitFor(new Wait.Condition() {
 
                             @Override
-                            public boolean isSatisified() throws Exception {
+                            public boolean isSatisfied() throws Exception {
                                 return proxy.getQueueSize() == MESSAGE_COUNT - messagesConsumed.get();
                             }
                         }, 10000, 20);
@@ -608,7 +608,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         assertTrue("Not all messages could be consumed, got " + messagesConsumed.get(), Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 LOG.info("Are we complete: error:{} nessages read:{}", failure.get(), messagesConsumed.get());
                 return failure.get() != null || messagesConsumed.get() == MESSAGE_COUNT;
             }
@@ -619,7 +619,7 @@ public class JmsClientAckTest extends AmqpTestSupport {
         assertTrue("Queued message not consumed.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == 0;
             }
         }));

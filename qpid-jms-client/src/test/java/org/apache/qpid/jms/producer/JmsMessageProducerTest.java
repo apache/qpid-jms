@@ -465,7 +465,7 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertTrue("Not all sends made it to the remote", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return remotePoor.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
         }));
@@ -475,7 +475,7 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertTrue("Not all completions triggered", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return listener.getCompletedSends().size() == MESSAGE_COUNT;
             }
         }));
@@ -506,7 +506,7 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertTrue("Not all sends made it to the remote", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return remotePoor.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
         }));
@@ -523,7 +523,7 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertTrue("Not all completions triggered", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return listener.getCompletedSends().size() == MESSAGE_COUNT;
             }
         }));
@@ -553,7 +553,7 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertTrue("Not all messages sent", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return remotePoor.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
         }));
@@ -562,7 +562,7 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertTrue("Not all completions triggered", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return listener.getFailedSends().size() == MESSAGE_COUNT;
             }
         }));
@@ -593,7 +593,7 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertTrue("Not all sends made it to the remote", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return remotePoor.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
         }));
@@ -610,7 +610,7 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertTrue("Not all failures triggered", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return listener.getFailedSends().size() == MESSAGE_COUNT;
             }
         }));
@@ -641,7 +641,7 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertTrue("Not all sends made it to the remote", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return remotePoor.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
         }));
@@ -664,7 +664,7 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertTrue("Not all completions triggered", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return listener.getCombinedSends().size() == MESSAGE_COUNT;
             }
         }));
@@ -713,7 +713,7 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertTrue("Not all sends made it to the remote", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return remotePoor.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
         }));
@@ -763,7 +763,7 @@ public class JmsMessageProducerTest extends JmsConnectionTestSupport {
         assertTrue("Not all sends made it to the remote", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return remotePoor.getPendingCompletions(destination).size() == MESSAGE_COUNT;
             }
         }));

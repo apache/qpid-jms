@@ -147,7 +147,7 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
         assertTrue("Should connect to secondary URI.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 URI current = connection.getConnectedURI();
                 if (current != null && current.equals(brokers.get(1))) {
                     return true;
@@ -181,7 +181,7 @@ public class JmsOfflineBehaviorTests extends AmqpTestSupport {
         assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));

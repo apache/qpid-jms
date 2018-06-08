@@ -166,7 +166,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
@@ -174,7 +174,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         assertTrue("Should one new Queue Subscription.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getQueueSubscribers().length == 1;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
@@ -182,7 +182,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         assertTrue("Should one new Queue Producer.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getQueueProducers().length == 1;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
@@ -208,7 +208,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
@@ -216,7 +216,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         assertTrue("Should have no inactive subscribers.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getInactiveDurableTopicSubscribers().length == 0;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
@@ -224,7 +224,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         assertTrue("Should have one durable sub.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getDurableTopicSubscribers().length == 1;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
@@ -255,7 +255,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         assertTrue("Should have all messages sent.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == MSG_COUNT;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
@@ -309,7 +309,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
@@ -317,7 +317,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         assertTrue("Should have a recovered producer.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getQueueProducers().length == 1;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
@@ -327,7 +327,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         assertTrue("Should have all messages sent.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return proxy.getQueueSize() == MSG_COUNT;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
@@ -377,7 +377,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
@@ -385,7 +385,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         assertTrue("Should one new Queue Subscription.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getQueueSubscribers().length == 1;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));
@@ -437,7 +437,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         assertTrue("Should have a new connection.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getCurrentConnectionsCount() == 1;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(100)));
@@ -445,7 +445,7 @@ public class JmsFailoverTest extends AmqpTestSupport {
         assertTrue("Should one new Queue Subscription.", Wait.waitFor(new Wait.Condition() {
 
             @Override
-            public boolean isSatisified() throws Exception {
+            public boolean isSatisfied() throws Exception {
                 return brokerService.getAdminView().getQueueSubscribers().length == 1;
             }
         }, TimeUnit.SECONDS.toMillis(30), TimeUnit.MILLISECONDS.toMillis(50)));

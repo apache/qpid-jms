@@ -193,7 +193,7 @@ public class IdleTimeoutIntegrationTest extends QpidJmsTestCase {
 
             boolean failed = Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     return connection.isFailed();
                 }
             }, 10000, 10);

@@ -102,7 +102,7 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
             testPeer.waitForAllHandlersToComplete(1000);
             assertTrue("JMSConsumer never closed.", Wait.waitFor(new Wait.Condition() {
                 @Override
-                public boolean isSatisified() throws Exception {
+                public boolean isSatisfied() throws Exception {
                     try {
                         consumer.getMessageListener();
                     } catch (IllegalStateRuntimeException jmsise) {

@@ -56,6 +56,7 @@ import javax.jms.Session;
 import javax.jms.TemporaryTopic;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
+import javax.jms.TransactionRolledBackException;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
@@ -73,8 +74,10 @@ import org.apache.qpid.jms.test.testpeer.basictypes.ConnectionError;
 import org.apache.qpid.jms.test.testpeer.basictypes.TerminusDurability;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Rejected;
+import org.apache.qpid.jms.test.testpeer.describedtypes.TransactionalState;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.SourceMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.TransactionalStateMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageAnnotationsSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessageHeaderSectionMatcher;
 import org.apache.qpid.jms.test.testpeer.matchers.sections.MessagePropertiesSectionMatcher;
@@ -2509,6 +2512,136 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             // Shut it down
             finalPeer.expectClose();
+            connection.close();
+
+            finalPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testInDoubtTransactionFromFailoverCompletesAsyncCompletions() throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final CountDownLatch originalConnected = new CountDownLatch(1);
+            final CountDownLatch finalConnected = new CountDownLatch(1);
+
+            // Create a peer to connect to, then one to reconnect to
+            final String originalURI = createPeerURI(originalPeer);
+            final String finalURI = createPeerURI(finalPeer);
+
+            LOG.info("Original peer is at: {}", originalURI);
+            LOG.info("Final peer is at: {}", finalURI);
+
+            Binary txnId = new Binary(new byte[]{ (byte) 5, (byte) 6, (byte) 7, (byte) 8});
+
+            // Expect the message which was sent under the current transaction. Check it carries
+            // TransactionalState with the above txnId but has no outcome. Respond with a
+            // TransactionalState with Accepted outcome.
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(new MessageHeaderSectionMatcher(true));
+            messageMatcher.setMessageAnnotationsMatcher(new MessageAnnotationsSectionMatcher(true));
+
+            TransactionalStateMatcher stateMatcher = new TransactionalStateMatcher();
+            stateMatcher.withTxnId(equalTo(txnId));
+            stateMatcher.withOutcome(nullValue());
+
+            TransactionalState txState = new TransactionalState();
+            txState.setTxnId(txnId);
+            txState.setOutcome(new Accepted());
+
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
+            originalPeer.expectBegin();
+            originalPeer.expectBegin();
+            originalPeer.expectCoordinatorAttach();
+            // First expect an unsettled 'declare' transfer to the txn coordinator, and
+            // reply with a Declared disposition state containing the txnId.
+            originalPeer.expectDeclare(txnId);
+            originalPeer.expectSenderAttach();
+            originalPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+            originalPeer.dropAfterLastHandler(10);
+
+            // --- Post Failover Expectations of sender --- //
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
+            finalPeer.expectBegin();
+            finalPeer.expectBegin();
+            finalPeer.expectCoordinatorAttach();
+            finalPeer.expectDeclare(txnId);
+            finalPeer.expectSenderAttach();
+            // Attempt to commit the in-doubt TX will result in rollback and a new TX will be started.
+            finalPeer.expectDischarge(txnId, true);
+            finalPeer.expectDeclare(txnId);
+            // this rollback comes from the session being closed on connection close.
+            finalPeer.expectDischarge(txnId, true);
+            finalPeer.expectClose();
+
+            final JmsConnection connection = establishAnonymousConnecton(originalPeer, finalPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (originalURI.equals(remoteURI.toString())) {
+                        originalConnected.countDown();
+                    }
+                }
+
+                @Override
+                public void onConnectionRestored(URI remoteURI) {
+                    LOG.info("Connection Restored: {}", remoteURI);
+                    if (finalURI.equals(remoteURI.toString())) {
+                        finalConnected.countDown();
+                    }
+                }
+            });
+            connection.start();
+
+            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            Queue queue = session.createQueue("myQueue");
+
+            MessageProducer producer = session.createProducer(queue);
+
+            // Create and transfer a new message
+            String text = "myMessage";
+
+            TextMessage message = session.createTextMessage(text);
+            TestJmsCompletionListener listener1 = new TestJmsCompletionListener();
+            TestJmsCompletionListener listener2 = new TestJmsCompletionListener();
+
+            try {
+                producer.send(message, listener1);
+            } catch (JMSException jmsEx) {
+                fail("Should not have failed the async completion send.");
+            }
+
+            assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
+
+            // This should fire after reconnect without an error, if it fires with an error at
+            // any time then something is wrong.
+            assertTrue("Did not get async callback for send #1", listener1.awaitCompletion(5, TimeUnit.SECONDS));
+            assertNull("Completion of send #1 should not have been on error", listener1.exception);
+            assertNotNull(listener1.message);
+            assertTrue(listener1.message instanceof TextMessage);
+
+            try {
+                producer.send(message, listener2);
+            } catch (JMSException jmsEx) {
+                fail("Should not have failed the async completion send.");
+            }
+
+            assertTrue("Did not get async callback for send #2", listener2.awaitCompletion(5, TimeUnit.SECONDS));
+            assertNull("Completion of send #2 should not have been on error", listener2.exception);
+            assertNotNull(listener2.message);
+            assertTrue(listener2.message instanceof TextMessage);
+
+            try {
+                session.commit();
+                fail("Transaction should have been rolled back");
+            } catch (TransactionRolledBackException txrbex) {}
+
             connection.close();
 
             finalPeer.waitForAllHandlersToComplete(1000);

@@ -60,6 +60,10 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
         lock.readLock().lock();
         try {
             if (isInDoubt()) {
+                // Ensure that asynchronous completions get signaled while TX is in doubt
+                if (envelope.isCompletionRequired()) {
+                    connection.onCompletedMessageSend(envelope);
+                }
                 return;
             }
 

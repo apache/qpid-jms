@@ -56,10 +56,14 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
     }
 
     @Override
-    public void send(JmsConnection connection, final JmsOutboundMessageDispatch envelope) throws JMSException {
+    public void send(JmsConnection connection, final JmsOutboundMessageDispatch envelope, ProviderSynchronization outcome) throws JMSException {
         lock.readLock().lock();
         try {
             if (isInDoubt()) {
+                // Need to signal that the request is going to pass before completing
+                if (outcome != null) {
+                    outcome.onPendingSuccess();
+                }
                 // Ensure that asynchronous completions get signaled while TX is in doubt
                 if (envelope.isCompletionRequired()) {
                     connection.onCompletedMessageSend(envelope);
@@ -74,12 +78,18 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                 public void onPendingSuccess() {
                     LOG.trace("TX:{} has performed a send.", getTransactionId());
                     participants.put(envelope.getProducerId(), envelope.getProducerId());
+                    if (outcome != null) {
+                        outcome.onPendingSuccess();
+                    }
                 }
 
                 @Override
                 public void onPendingFailure(Throwable cause) {
                     LOG.trace("TX:{} has a failed send.", getTransactionId());
                     participants.put(envelope.getProducerId(), envelope.getProducerId());
+                    if (outcome != null) {
+                        outcome.onPendingFailure(cause);
+                    }
                 }
             });
         } finally {

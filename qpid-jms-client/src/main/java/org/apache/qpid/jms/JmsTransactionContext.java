@@ -24,6 +24,7 @@ import org.apache.qpid.jms.meta.JmsResourceId;
 import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.ProviderSynchronization;
 
 /**
  * A Transaction Context is used to track and manage the state of a
@@ -55,10 +56,12 @@ public interface JmsTransactionContext {
      *        the connection that will be do the send of the message
      * @param envelope
      *        the envelope that contains the message to be sent.
+     * @param outcome
+     * 	      Synchronization used to set state prior to completion of the send call.
      *
      * @throws JMSException if an error occurs during the send.
      */
-    void send(JmsConnection connection, JmsOutboundMessageDispatch envelope) throws JMSException;
+    void send(JmsConnection connection, JmsOutboundMessageDispatch envelope, ProviderSynchronization outcome) throws JMSException;
 
     /**
      * @return if the currently transaction has been marked as being in an unknown state.

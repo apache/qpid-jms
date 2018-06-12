@@ -92,6 +92,7 @@ import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
+import org.apache.qpid.jms.provider.ProviderSynchronization;
 import org.apache.qpid.jms.selector.SelectorParser;
 import org.apache.qpid.jms.selector.filter.FilterException;
 import org.apache.qpid.jms.util.NoOpExecutor;
@@ -889,26 +890,24 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
                 outbound.onSendComplete();
             }
 
-            SendCompletion completion = null;
             if (envelope.isCompletionRequired()) {
-                completion = new SendCompletion(envelope, listener);
-                asyncSendQueue.addLast(completion);
-            }
+                transactionContext.send(connection, envelope, new ProviderSynchronization() {
 
-            try {
-                transactionContext.send(connection, envelope);
-            } catch (JMSException jmsEx) {
-                // If the synchronous portion of the send fails the completion be
-                // notified but might depending on the circumstances of the failures,
-                // remove it from the queue and check if is is already completed.
-                if (completion != null) {
-                    asyncSendQueue.remove(completion);
-                    if (completion.hasCompleted()) {
-                        return;
+                    @Override
+                    public void onPendingSuccess() {
+                        // Provider accepted the send request so new we place the marker in
+                        // the queue so that it can be completed asynchronously.
+                        asyncSendQueue.addLast(new SendCompletion(envelope, listener));
                     }
-                }
 
-                throw jmsEx;
+                    @Override
+                    public void onPendingFailure(Throwable cause) {
+                        // Provider has rejected the send request so we will throw the
+                        // exception that is to follow so no completion will be needed.
+                    }
+                });
+            } else {
+                transactionContext.send(connection, envelope, null);
             }
         } finally {
             sendLock.unlock();

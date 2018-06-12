@@ -24,6 +24,7 @@ import org.apache.qpid.jms.meta.JmsResourceId;
 import org.apache.qpid.jms.meta.JmsTransactionId;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.ProviderSynchronization;
 
 /**
  * Used in non-transacted JMS Sessions to throw proper errors indicating
@@ -32,8 +33,8 @@ import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 public class JmsNoTxTransactionContext implements JmsTransactionContext {
 
     @Override
-    public void send(JmsConnection connection, JmsOutboundMessageDispatch envelope) throws JMSException {
-        connection.send(envelope);
+    public void send(JmsConnection connection, JmsOutboundMessageDispatch envelope, ProviderSynchronization outcome) throws JMSException {
+        connection.send(envelope, outcome);
     }
 
     @Override

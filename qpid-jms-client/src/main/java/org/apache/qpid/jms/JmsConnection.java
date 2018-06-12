@@ -760,10 +760,6 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         }
     }
 
-    void send(JmsOutboundMessageDispatch envelope) throws JMSException {
-        send(envelope, null);
-    }
-
     void send(JmsOutboundMessageDispatch envelope, ProviderSynchronization synchronization) throws JMSException {
         checkClosedOrFailed();
 

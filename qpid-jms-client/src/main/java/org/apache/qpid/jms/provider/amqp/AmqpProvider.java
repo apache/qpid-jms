@@ -58,6 +58,7 @@ import org.apache.qpid.jms.provider.NoOpAsyncResult;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderClosedException;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.ProviderFailedException;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpClosedConnectionBuilder;
@@ -135,6 +136,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     private final URI remoteURI;
     private final AtomicBoolean closed = new AtomicBoolean();
+    private volatile Throwable failureCause;
     private ScheduledThreadPoolExecutor serializer;
     private final org.apache.qpid.proton.engine.Transport protonTransport =
         org.apache.qpid.proton.engine.Transport.Factory.create();
@@ -166,7 +168,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     @Override
     public void connect(final JmsConnectionInfo connectionInfo) throws IOException {
-        checkClosed();
+        checkClosedOrFailed();
 
         final ProviderFuture connectRequest = new ProviderFuture();
 
@@ -288,7 +290,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     @Override
     public void start() throws IOException, IllegalStateException {
-        checkClosed();
+        checkClosedOrFailed();
 
         if (listener == null) {
             throw new IllegalStateException("No ProviderListener registered.");
@@ -381,13 +383,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     @Override
     public void create(final JmsResource resource, final AsyncResult request) throws IOException, JMSException {
-        checkClosed();
+        checkClosedOrFailed();
         serializer.execute(new Runnable() {
 
             @Override
             public void run() {
                 try {
-                    checkClosed();
+                    checkClosedOrFailed();
                     resource.visit(new JmsResourceVistor() {
                         @Override
                         public void processSessionInfo(JmsSessionInfo sessionInfo) throws Exception {
@@ -465,13 +467,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     @Override
     public void start(final JmsResource resource, final AsyncResult request) throws IOException {
-        checkClosed();
+        checkClosedOrFailed();
         serializer.execute(new Runnable() {
 
             @Override
             public void run() {
                 try {
-                    checkClosed();
+                    checkClosedOrFailed();
                     resource.visit(new JmsDefaultResourceVisitor() {
 
                         @Override
@@ -492,13 +494,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     @Override
     public void stop(final JmsResource resource, final AsyncResult request) throws IOException {
-        checkClosed();
+        checkClosedOrFailed();
         serializer.execute(new Runnable() {
 
             @Override
             public void run() {
                 try {
-                    checkClosed();
+                    checkClosedOrFailed();
                     resource.visit(new JmsDefaultResourceVisitor() {
 
                         @Override
@@ -519,13 +521,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     @Override
     public void destroy(final JmsResource resource, final AsyncResult request) throws IOException {
-        checkClosed();
+        checkClosedOrFailed();
         serializer.execute(new Runnable() {
 
             @Override
             public void run() {
                 try {
-                    checkClosed();
+                    checkClosedOrFailed();
                     resource.visit(new JmsDefaultResourceVisitor() {
 
                         @Override
@@ -621,13 +623,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     @Override
     public void send(final JmsOutboundMessageDispatch envelope, final AsyncResult request) throws IOException {
-        checkClosed();
+        checkClosedOrFailed();
         serializer.execute(new Runnable() {
 
             @Override
             public void run() {
                 try {
-                    checkClosed();
+                    checkClosedOrFailed();
 
                     JmsProducerId producerId = envelope.getProducerId();
                     AmqpProducer producer = null;
@@ -649,13 +651,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     @Override
     public void acknowledge(final JmsSessionId sessionId, final ACK_TYPE ackType, final AsyncResult request) throws IOException {
-        checkClosed();
+        checkClosedOrFailed();
         serializer.execute(new Runnable() {
 
             @Override
             public void run() {
                 try {
-                    checkClosed();
+                    checkClosedOrFailed();
                     AmqpSession amqpSession = connection.getSession(sessionId);
                     amqpSession.acknowledge(ackType);
                     pumpToProtonTransport(request);
@@ -669,13 +671,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     @Override
     public void acknowledge(final JmsInboundMessageDispatch envelope, final ACK_TYPE ackType, final AsyncResult request) throws IOException {
-        checkClosed();
+        checkClosedOrFailed();
         serializer.execute(new Runnable() {
 
             @Override
             public void run() {
                 try {
-                    checkClosed();
+                    checkClosedOrFailed();
 
                     JmsConsumerId consumerId = envelope.getConsumerId();
                     AmqpConsumer consumer = null;
@@ -705,13 +707,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     @Override
     public void commit(final JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionId, final AsyncResult request) throws IOException {
-        checkClosed();
+        checkClosedOrFailed();
         serializer.execute(new Runnable() {
 
             @Override
             public void run() {
                 try {
-                    checkClosed();
+                    checkClosedOrFailed();
                     AmqpSession session = connection.getSession(transactionInfo.getSessionId());
                     session.commit(transactionInfo, nextTransactionId, request);
                     pumpToProtonTransport(request);
@@ -724,13 +726,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     @Override
     public void rollback(final JmsTransactionInfo transactionInfo, JmsTransactionInfo nextTransactionId, final AsyncResult request) throws IOException {
-        checkClosed();
+        checkClosedOrFailed();
         serializer.execute(new Runnable() {
 
             @Override
             public void run() {
                 try {
-                    checkClosed();
+                    checkClosedOrFailed();
                     AmqpSession session = connection.getSession(transactionInfo.getSessionId());
                     session.rollback(transactionInfo, nextTransactionId, request);
                     pumpToProtonTransport(request);
@@ -743,13 +745,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     @Override
     public void recover(final JmsSessionId sessionId, final AsyncResult request) throws IOException {
-        checkClosed();
+        checkClosedOrFailed();
         serializer.execute(new Runnable() {
 
             @Override
             public void run() {
                 try {
-                    checkClosed();
+                    checkClosedOrFailed();
                     AmqpSession session = connection.getSession(sessionId);
                     session.recover();
                     pumpToProtonTransport(request);
@@ -763,13 +765,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     @Override
     public void unsubscribe(final String subscription, final AsyncResult request) throws IOException {
-        checkClosed();
+        checkClosedOrFailed();
         serializer.execute(new Runnable() {
 
             @Override
             public void run() {
                 try {
-                    checkClosed();
+                    checkClosedOrFailed();
                     connection.unsubscribe(subscription, request);
                     pumpToProtonTransport(request);
                 } catch (Throwable t) {
@@ -781,13 +783,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     @Override
     public void pull(final JmsConsumerId consumerId, final long timeout, final AsyncResult request) throws IOException {
-        checkClosed();
+        checkClosedOrFailed();
         serializer.execute(new Runnable() {
 
             @Override
             public void run() {
                 try {
-                    checkClosed();
+                    checkClosedOrFailed();
                     AmqpConsumer consumer = null;
 
                     if (consumerId.getProviderHint() instanceof AmqpConsumer) {
@@ -1102,6 +1104,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
             nextIdleTimeoutCheck.cancel(true);
             nextIdleTimeoutCheck = null;
         }
+
+        failureCause = ex;
 
         ProviderListener listener = this.listener;
         if (listener != null) {
@@ -1438,9 +1442,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     //----- Internal implementation ------------------------------------------//
 
-    private void checkClosed() throws ProviderClosedException {
+    private void checkClosedOrFailed() throws ProviderClosedException, ProviderFailedException {
         if (closed.get()) {
             throw new ProviderClosedException("This Provider is already closed");
+        }
+
+        if (failureCause != null) {
+            throw new ProviderFailedException("The Provider has failed", failureCause);
         }
     }
 

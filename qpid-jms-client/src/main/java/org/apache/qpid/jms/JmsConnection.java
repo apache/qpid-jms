@@ -78,6 +78,7 @@ import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderClosedException;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.ProviderFailedException;
 import org.apache.qpid.jms.provider.ProviderFuture;
 import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.ProviderSynchronization;
@@ -229,8 +230,8 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
                             }
                             LOG.debug("Failed destroying Connection resource: {}", ex.getMessage());
                         }
-                    } catch(ProviderClosedException pce) {
-                        LOG.debug("Ignoring provider closed exception during connection close");
+                    } catch(ProviderClosedException | ProviderFailedException pfe) {
+                        LOG.debug("Ignoring provider exception during connection close");
                     } finally {
                         requests.remove(request);
                     }

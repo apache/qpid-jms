@@ -58,10 +58,12 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
+import javax.jms.ResourceAllocationException;
 import javax.jms.Session;
 
 import org.apache.qpid.jms.JmsConnection;
 import org.apache.qpid.jms.JmsConnectionFactory;
+import org.apache.qpid.jms.JmsConnectionRemotelyClosedException;
 import org.apache.qpid.jms.JmsDefaultConnectionListener;
 import org.apache.qpid.jms.provider.ProviderRedirectedException;
 import org.apache.qpid.jms.provider.amqp.AmqpSupport;
@@ -71,6 +73,7 @@ import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.basictypes.ConnectionError;
 import org.apache.qpid.jms.test.testpeer.matchers.CoordinatorMatcher;
+import org.apache.qpid.jms.test.testpeer.matchers.sections.TransferPayloadCompositeMatcher;
 import org.apache.qpid.jms.util.MetaDataSupport;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
@@ -645,7 +648,44 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             try {
                 producer.send(message);
                 fail("Expected exception to be thrown");
-            } catch (JMSException jmse) {
+            } catch (ResourceAllocationException jmse) {
+                // Expected
+                assertNotNull("Expected exception to have a message", jmse.getMessage());
+                assertTrue("Expected breadcrumb to be present in message", jmse.getMessage().contains(BREAD_CRUMB));
+            }
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(3000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void  testRemotelyEndConnectionWithSessionWithProducerWithSendWaitingOnOutcome() throws Exception {
+        final String BREAD_CRUMB = "ErrorMessageBreadCrumb";
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            Connection connection = testFixture.establishConnecton(testPeer);
+
+            testPeer.expectBegin();
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            // Expect producer creation, don't give it credit.
+            testPeer.expectSenderAttach();
+            testPeer.expectTransferButDoNotRespond(new TransferPayloadCompositeMatcher());
+
+            // Producer has no credit so the send should block waiting for it.
+            testPeer.remotelyCloseConnection(true, ConnectionError.CONNECTION_FORCED, BREAD_CRUMB, 50);
+
+            Queue queue = session.createQueue("myQueue");
+            final MessageProducer producer = session.createProducer(queue);
+
+            Message message = session.createTextMessage("myMessage");
+
+            try {
+                producer.send(message);
+                fail("Expected exception to be thrown");
+            } catch (JmsConnectionRemotelyClosedException jmse) {
                 // Expected
                 assertNotNull("Expected exception to have a message", jmse.getMessage());
                 assertTrue("Expected breadcrumb to be present in message", jmse.getMessage().contains(BREAD_CRUMB));

@@ -26,6 +26,7 @@ import javax.jms.JMSSecurityException;
 import javax.jms.ResourceAllocationException;
 import javax.jms.TransactionRolledBackException;
 
+import org.apache.qpid.jms.JmsConnectionRemotelyClosedException;
 import org.apache.qpid.jms.JmsResourceNotFoundException;
 import org.apache.qpid.jms.provider.ProviderRedirectedException;
 import org.apache.qpid.proton.amqp.Symbol;
@@ -143,6 +144,8 @@ public class AmqpSupport {
                 remoteError = new JMSSecurityException(message);
             } else if (error.equals(AmqpError.RESOURCE_LIMIT_EXCEEDED)) {
                 remoteError = new ResourceAllocationException(message);
+            } else if (error.equals(ConnectionError.CONNECTION_FORCED)) {
+                remoteError = new JmsConnectionRemotelyClosedException(message);
             } else if (error.equals(AmqpError.NOT_FOUND)) {
                 if (endpoint instanceof Connection) {
                     remoteError = new JmsResourceNotFoundException(message);

@@ -1,5 +1,5 @@
 # The various SSL stores and certificates were created with the following commands:
-# Seems to require the JDK8 keytool.
+# Requires JDK 8+ keytool command.
 
 # Clean up existing files
 # -----------------------

@@ -122,6 +122,11 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
         doReceiveBasicBytesMessageUsingDataSectionTestImpl("type/unknown", false);
     }
 
+    @Test(timeout = 20000)
+    public void testReceiveBasicBytesMessageUsingDataSectionWithContentTypeNotSetNoTypeAnnotation() throws Exception {
+        doReceiveBasicBytesMessageUsingDataSectionTestImpl(null, false);
+    }
+
     private void doReceiveBasicBytesMessageUsingDataSectionTestImpl(String contentType, boolean typeAnnotation) throws JMSException, InterruptedException, Exception, IOException {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);

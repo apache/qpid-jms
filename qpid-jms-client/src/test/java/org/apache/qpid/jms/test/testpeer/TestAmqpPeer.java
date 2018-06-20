@@ -1795,6 +1795,26 @@ public class TestAmqpPeer implements AutoCloseable
             final boolean sendSettled,
             boolean addMessageNumberProperty)
     {
+        expectLinkFlowAndSendBackMessages(headerDescribedType, messageAnnotationsDescribedType, propertiesDescribedType,
+                                                appPropertiesDescribedType, content, count, drain, sendDrainFlowResponse,
+                                                creditMatcher, nextIncomingId, sendSettled, addMessageNumberProperty, 0, false);
+    }
+
+    public void expectLinkFlowAndSendBackMessages(final HeaderDescribedType headerDescribedType,
+            final MessageAnnotationsDescribedType messageAnnotationsDescribedType,
+            final PropertiesDescribedType propertiesDescribedType,
+            ApplicationPropertiesDescribedType appPropertiesDescribedType,
+            final DescribedType content,
+            final int count,
+            final boolean drain,
+            final boolean sendDrainFlowResponse,
+            Matcher<UnsignedInteger> creditMatcher,
+            final Integer nextIncomingId,
+            final boolean sendSettled,
+            boolean addMessageNumberProperty,
+            int msgPayloadPerFrame,
+            boolean sendFinalTransferFrameWithoutPayload)
+    {
         if (nextIncomingId == null && count > 0)
         {
             throw new IllegalArgumentException("The remote NextIncomingId must be specified if transfers have been requested");
@@ -1843,29 +1863,56 @@ public class TestAmqpPeer implements AutoCloseable
                 appPropertiesDescribedType.setApplicationProperty(MESSAGE_NUMBER, i);
             }
 
-            final TransferFrame transferResponse = new TransferFrame()
-            .setDeliveryId(UnsignedInteger.valueOf(nextId))
-            .setDeliveryTag(dtag)
-            .setMessageFormat(UnsignedInteger.ZERO)
-            .setSettled(sendSettled);
 
             Binary payload = prepareTransferPayload(headerDescribedType, messageAnnotationsDescribedType,
                     propertiesDescribedType, appPropertiesDescribedType, content);
 
-            // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
-            final FrameSender transferResponseSender = new FrameSender(this, FrameType.AMQP, -1, transferResponse, payload);
-            transferResponseSender.setValueProvider(new ValueProvider()
-            {
-                @Override
-                public void setValues()
-                {
-                    transferResponse.setHandle(flowMatcher.getReceivedHandle());
-                    transferResponseSender.setChannel(flowMatcher.getActualChannel());
+            int length = payload.getLength();
+            int sent = 0;
+
+            while (sent < length) {
+                final TransferFrame transferFrame = new TransferFrame()
+                        .setDeliveryId(UnsignedInteger.valueOf(nextId))
+                        .setDeliveryTag(dtag)
+                        .setMessageFormat(UnsignedInteger.ZERO)
+                        .setSettled(sendSettled);
+
+                int remaining = length - sent;
+                Binary chunk;
+                if(msgPayloadPerFrame != 0 && msgPayloadPerFrame < length) {
+                    int chunkSize = Math.min(msgPayloadPerFrame, remaining);
+                    chunk = payload.subBinary(sent, chunkSize);
+                    sent += chunkSize;
+                } else {
+                    chunk = payload;
+                    sent = length;
                 }
-            });
+
+                if(sent < length || (sent == length && sendFinalTransferFrameWithoutPayload)) {
+                    // Indicate more frames if there is payload left, or we want to send a final transfer without payload
+                    transferFrame.setMore(true);
+                }
+
+                // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+                final FrameSender transferResponseSender = new FrameSender(this, FrameType.AMQP, -1, transferFrame, chunk);
+                transferResponseSender.setValueProvider(new ValueProvider()
+                {
+                    @Override
+                    public void setValues()
+                    {
+                        transferFrame.setHandle(flowMatcher.getReceivedHandle());
+                        transferResponseSender.setChannel(flowMatcher.getActualChannel());
+                    }
+                });
+
+                composite.add(transferResponseSender);
+            }
+
+            if(sendFinalTransferFrameWithoutPayload) {
+                sendEmptyFinalTransfer(composite, flowMatcher, nextId, dtag, sendSettled);
+            }
 
             addComposite = true;
-            composite.add(transferResponseSender);
         }
 
         if(drain && sendDrainFlowResponse)
@@ -1900,6 +1947,28 @@ public class TestAmqpPeer implements AutoCloseable
         }
 
         addHandler(flowMatcher);
+    }
+
+    private void sendEmptyFinalTransfer(CompositeAmqpPeerRunnable composite, final FlowMatcher flowMatcher, final int deliveryId, Binary dTag, final boolean settled) {
+        final TransferFrame transferFrame = new TransferFrame()
+                .setDeliveryId(UnsignedInteger.valueOf(deliveryId))
+                .setDeliveryTag(dTag)
+                .setMessageFormat(UnsignedInteger.ZERO)
+                .setSettled(settled);
+
+        // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
+        final FrameSender finalEmptyTransferSender = new FrameSender(this, FrameType.AMQP, -1, transferFrame, null);
+        finalEmptyTransferSender.setValueProvider(new ValueProvider()
+        {
+            @Override
+            public void setValues()
+            {
+                transferFrame.setHandle(flowMatcher.getReceivedHandle());
+                finalEmptyTransferSender.setChannel(flowMatcher.getActualChannel());
+            }
+        });
+
+        composite.add(finalEmptyTransferSender);
     }
 
     public void expectLinkFlowThenPerformUnexpectedDeliveryCountAdvanceThenCreditTopupThenTransfers(final int prefetch, final int topUp, final int messageCount)
@@ -2017,6 +2086,9 @@ public class TestAmqpPeer implements AutoCloseable
         return nid.add(UnsignedInteger.valueOf(sentCount));
     }
 
+    /**
+     * Encodes and returns transfer payload Binary, or null if no message sections were supplied.
+     */
     private Binary prepareTransferPayload(final HeaderDescribedType headerDescribedType,
                                           final MessageAnnotationsDescribedType messageAnnotationsDescribedType,
                                           final PropertiesDescribedType propertiesDescribedType,
@@ -2024,33 +2096,46 @@ public class TestAmqpPeer implements AutoCloseable
                                           final DescribedType content)
     {
         Data payloadData = Data.Factory.create();
+        boolean hasSection = false;
 
         if(headerDescribedType != null)
         {
+            hasSection = true;
             payloadData.putDescribedType(headerDescribedType);
         }
 
         if(messageAnnotationsDescribedType != null)
         {
+            hasSection = true;
             payloadData.putDescribedType(messageAnnotationsDescribedType);
         }
 
         if(propertiesDescribedType != null)
         {
+            hasSection = true;
             payloadData.putDescribedType(propertiesDescribedType);
         }
 
         if(appPropertiesDescribedType != null)
         {
+            hasSection = true;
             payloadData.putDescribedType(appPropertiesDescribedType);
         }
 
         if(content != null)
         {
+            hasSection = true;
             payloadData.putDescribedType(content);
         }
 
-        return payloadData.encode();
+        if (hasSection)
+        {
+            return payloadData.encode();
+        }
+        else
+        {
+            return null;
+        }
     }
 
     public void expectTransferButDoNotRespond(Matcher<Binary> expectedPayloadMatcher)

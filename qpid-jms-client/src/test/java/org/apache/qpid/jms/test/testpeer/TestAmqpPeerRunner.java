@@ -40,6 +40,7 @@ class TestAmqpPeerRunner implements Runnable
     private static final Logger LOGGER = LoggerFactory.getLogger(TestAmqpPeerRunner.class);
 
     private static final int PORT = 25672;
+    private static final int TRACE_FRAME_PAYLOAD_LENGTH = Integer.getInteger("testPeerSendingTraceFramePayloadLength", 1024);
 
     private final ServerSocket _serverSocket;
     private final boolean useFixedPort = Boolean.getBoolean("testPeerUsesFixedPort");
@@ -207,7 +208,13 @@ class TestAmqpPeerRunner implements Runnable
 
     public void sendBytes(byte[] bytes)
     {
-        LOGGER.debug("Sending: {} ({} bytes)", new Binary(bytes), bytes.length);
+        if(bytes.length > TRACE_FRAME_PAYLOAD_LENGTH) {
+            Binary print = new Binary(bytes, 0, TRACE_FRAME_PAYLOAD_LENGTH);
+            LOGGER.debug("Sending: {}...(truncated) ({} bytes)", print, bytes.length);
+        } else {
+            LOGGER.debug("Sending: {} ({} bytes)", new Binary(bytes), bytes.length);
+        }
+
         try
         {
             _networkOutputStream.write(bytes);

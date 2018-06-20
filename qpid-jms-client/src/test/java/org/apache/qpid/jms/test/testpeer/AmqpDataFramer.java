@@ -52,8 +52,16 @@ public class AmqpDataFramer
 
         if(payload != null)
         {
-            //TODO grow buffer if needed rather than throw BOE
-            buffer.put(payload.asByteBuffer());
+            ByteBuffer framePayload = payload.asByteBuffer();
+
+            if(framePayload.remaining() > buffer.remaining()) {
+                ByteBuffer oldBuffer = buffer;
+                buffer = ByteBuffer.allocate(oldBuffer.position() + framePayload.remaining());
+                oldBuffer.flip();
+                buffer.put(oldBuffer);
+            }
+
+            buffer.put(framePayload);
         }
 
         int frameSize = buffer.position();

@@ -124,6 +124,120 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testFailoverHandlesConnectErrorInvalidField() throws Exception {
+
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final CountDownLatch finalConnected = new CountDownLatch(1);
+            final String finalURI = createPeerURI(finalPeer);
+            final DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+            originalPeer.rejectConnect(AmqpError.INVALID_FIELD, "Client ID already in use", null);
+
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
+            finalPeer.expectBegin();
+
+            final JmsConnection connection = establishAnonymousConnecton(originalPeer, finalPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (finalURI.equals(remoteURI.toString())) {
+                        finalConnected.countDown();
+                    }
+                }
+            });
+
+            try {
+                connection.start();
+            } catch (Exception ex) {
+                fail("Should not have thrown an Exception: " + ex);
+            }
+
+            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+
+            finalPeer.expectBegin();
+            finalPeer.expectReceiverAttach();
+            finalPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent);
+            finalPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            MessageConsumer consumer = session.createConsumer(queue);
+            Message message = consumer.receive(2000);
+
+            assertNotNull(message);
+
+            // Shut it down
+            finalPeer.expectClose();
+            connection.close();
+            finalPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverHandlesConnectErrorInvalidFieldOnReconnect() throws Exception {
+
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer rejectingPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final CountDownLatch finalConnected = new CountDownLatch(1);
+            final String finalURI = createPeerURI(finalPeer);
+            final DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
+
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
+            originalPeer.expectBegin();
+            originalPeer.dropAfterLastHandler(10);
+
+            rejectingPeer.rejectConnect(AmqpError.INVALID_FIELD, "Client ID already in use", null);
+
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
+            finalPeer.expectBegin();
+
+            final JmsConnection connection = establishAnonymousConnecton(originalPeer, rejectingPeer, finalPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionRestored(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (finalURI.equals(remoteURI.toString())) {
+                        finalConnected.countDown();
+                    }
+                }
+            });
+
+            try {
+                connection.start();
+            } catch (Exception ex) {
+                fail("Should not have thrown an Exception: " + ex);
+            }
+
+            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+
+            finalPeer.expectBegin();
+            finalPeer.expectReceiverAttach();
+            finalPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent);
+            finalPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            MessageConsumer consumer = session.createConsumer(queue);
+            Message message = consumer.receive(2000);
+
+            assertNotNull(message);
+
+            // Shut it down
+            finalPeer.expectClose();
+            connection.close();
+            finalPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
     public void testFailoverHandlesConnectErrorNotFound() throws Exception {
 
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();

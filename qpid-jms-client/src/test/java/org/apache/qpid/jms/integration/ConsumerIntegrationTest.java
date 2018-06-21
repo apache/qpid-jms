@@ -220,6 +220,9 @@ public class ConsumerIntegrationTest extends QpidJmsTestCase {
                 }
             });
 
+            // Use a zero prefetch to allow setMessageListener to not race link close
+            ((JmsDefaultPrefetchPolicy) connection.getPrefetchPolicy()).setAll(0);
+
             testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 

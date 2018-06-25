@@ -592,8 +592,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
                     } catch (Throwable t) {
                         problem.set(t);
                         LOG.error("Problem in sending thread", t);
-                    }
-                    finally {
+                    } finally {
                         senderCompleted.countDown();
                     }
                 }
@@ -625,6 +624,108 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             // Shut it down
             finalPeer.expectClose();
+            connection.close();
+            finalPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverHandlesRemoteCloseBeforeDispositionRecieived() throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final CountDownLatch originalConnected = new CountDownLatch(1);
+            final CountDownLatch finalConnected = new CountDownLatch(1);
+
+            // Create a peer to connect to, then one to reconnect to
+            final String originalURI = createPeerURI(originalPeer);
+            final String finalURI = createPeerURI(finalPeer);
+
+            LOG.info("Original peer is at: {}", originalURI);
+            LOG.info("Final peer is at: {}", finalURI);
+
+            // Connect to the first peer
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
+            originalPeer.expectBegin();
+            originalPeer.expectBegin();
+            originalPeer.expectSenderAttach();
+
+            final JmsConnection connection = establishAnonymousConnecton(originalPeer, finalPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (originalURI.equals(remoteURI.toString())) {
+                        originalConnected.countDown();
+                    }
+                }
+
+                @Override
+                public void onConnectionRestored(URI remoteURI) {
+                    LOG.info("Connection Restored: {}", remoteURI);
+                    if (finalURI.equals(remoteURI.toString())) {
+                        finalConnected.countDown();
+                    }
+                }
+            });
+            connection.start();
+
+            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            final MessageProducer producer = session.createProducer(queue);
+
+            MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
+            MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(headersMatcher);
+            messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
+
+            final Message message = session.createTextMessage();
+
+            final CountDownLatch senderCompleted = new CountDownLatch(1);
+            final AtomicReference<Throwable> problem = new AtomicReference<Throwable>();
+
+            // Have the peer expect the message but NOT send any disposition for it
+            originalPeer.expectTransfer(messageMatcher, nullValue(), false, false, null, true);
+            originalPeer.remotelyCloseConnection(true, ConnectionError.CONNECTION_FORCED, "Server is going away", 5);
+
+            Thread runner = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        producer.send(message);
+                    } catch (Throwable t) {
+                        problem.set(t);
+                        LOG.error("Problem in sending thread", t);
+                    } finally {
+                        senderCompleted.countDown();
+                    }
+                }
+            });
+            runner.start();
+
+            // Wait for the message to have been sent and received by peer
+            originalPeer.waitForAllHandlersToComplete(3000);
+
+            // Set the secondary peer to expect connection restoration, this time send disposition accepting the message
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
+            finalPeer.expectBegin();
+            finalPeer.expectBegin();
+            finalPeer.expectSenderAttach();
+            finalPeer.expectTransfer(messageMatcher, nullValue(), false, true, new Accepted(), true);
+            finalPeer.expectClose();
+
+            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+
+            boolean await = senderCompleted.await(5, TimeUnit.SECONDS);
+            Throwable t = problem.get();
+            assertTrue("Sender thread should have completed. Problem: " + t, await);
+
             connection.close();
             finalPeer.waitForAllHandlersToComplete(1000);
         }

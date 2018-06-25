@@ -16,13 +16,15 @@
  */
 package org.apache.qpid.jms.provider;
 
-import java.io.IOException;
-
-public class ProviderClosedException extends IOException {
+public class ProviderClosedException extends ProviderException {
 
     private static final long serialVersionUID = 1L;
 
     public ProviderClosedException(String message) {
         super(message);
+    }
+
+    public ProviderClosedException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

@@ -16,6 +16,7 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,9 +30,12 @@ import javax.jms.JMSException;
 import org.apache.qpid.jms.JmsDestination;
 import org.apache.qpid.jms.JmsTemporaryDestination;
 import org.apache.qpid.jms.meta.JmsConnectionInfo;
+import org.apache.qpid.jms.meta.JmsResource.ResourceState;
 import org.apache.qpid.jms.meta.JmsSessionId;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
+import org.apache.qpid.jms.provider.ProviderException;
+import org.apache.qpid.jms.provider.ProviderResourceClosedException;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpSessionBuilder;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpTemporaryDestinationBuilder;
 import org.apache.qpid.jms.provider.amqp.message.AmqpJmsMessageFactory;
@@ -133,6 +137,23 @@ public class AmqpConnection extends AmqpAbstractResource<JmsConnectionInfo, Conn
         List<AmqpTemporaryDestination> tempDestsList = new ArrayList<>(tempDests.values());
         for (AmqpTemporaryDestination tempDest : tempDestsList) {
             tempDest.handleResourceClosure(provider, cause);
+        }
+    }
+
+    @Override
+    public void processRemoteClose(AmqpProvider provider) throws IOException {
+        getResourceInfo().setState(ResourceState.REMOTELY_CLOSED);
+
+        if (isAwaitingClose()) {
+            closeResource(provider, null, true); // Close was expected so ignore any endpoint errors.
+        } else {
+            Exception cause = AmqpSupport.convertToException(provider, getEndpoint(), getEndpoint().getRemoteCondition());
+
+            if (!(cause instanceof ProviderException)) {
+                cause = new ProviderResourceClosedException(cause.getMessage(), cause);
+            }
+
+            closeResource(provider, cause, true);
         }
     }
 

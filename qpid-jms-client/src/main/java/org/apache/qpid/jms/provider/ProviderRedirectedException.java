@@ -23,7 +23,7 @@ import java.net.URI;
  * {@link IOException} derivative that defines that the remote peer has requested that this
  * connection be redirected to some alternative peer.
  */
-public class ProviderRedirectedException extends IOException {
+public class ProviderRedirectedException extends ProviderException {
 
     private static final long serialVersionUID = 5872211116061710369L;
 

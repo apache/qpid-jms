@@ -16,15 +16,15 @@
  */
 package org.apache.qpid.jms.provider;
 
-public class ProviderFailedException extends ProviderException {
+public class ProviderResourceClosedException extends ProviderException {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 5601827103553513599L;
 
-    public ProviderFailedException(String message) {
+    public ProviderResourceClosedException(String message) {
         super(message);
     }
 
-    public ProviderFailedException(String message, Throwable cause) {
+    public ProviderResourceClosedException(String message, Throwable cause) {
         super(message, cause);
     }
 }

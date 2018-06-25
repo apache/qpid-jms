@@ -138,7 +138,7 @@ public class ProviderFuture implements AsyncResult {
                 final long elapsed = System.nanoTime() - startTime;
                 final long diff = elapsed - timeout;
 
-                if (diff > 0) {
+                if (diff >= 0) {
                     failOnError();
                     return isComplete();
                 }

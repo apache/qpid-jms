@@ -670,11 +670,10 @@ public class ConnectionIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin();
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            // Expect producer creation, don't give it credit.
+            // Expect producer creation, and a message to be sent, but don't return a disposition.
+            // Instead, close the connection.
             testPeer.expectSenderAttach();
             testPeer.expectTransferButDoNotRespond(new TransferPayloadCompositeMatcher());
-
-            // Producer has no credit so the send should block waiting for it.
             testPeer.remotelyCloseConnection(true, ConnectionError.CONNECTION_FORCED, BREAD_CRUMB, 50);
 
             Queue queue = session.createQueue("myQueue");

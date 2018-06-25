@@ -32,6 +32,8 @@ import static org.junit.Assert.fail;
 
 import java.net.URI;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -66,6 +68,7 @@ import org.apache.qpid.jms.JmsQueue;
 import org.apache.qpid.jms.JmsResourceNotFoundException;
 import org.apache.qpid.jms.JmsSendTimedOutException;
 import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
+import org.apache.qpid.jms.provider.amqp.AmqpSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
@@ -125,7 +128,16 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 20000)
     public void testFailoverHandlesConnectErrorInvalidField() throws Exception {
+        doFailoverHandlesConnectErrorInvalidFieldTestImpl(false);
+    }
 
+    @Test(timeout = 20000)
+    public void testFailoverHandlesConnectErrorInvalidFieldWithContainerIdHint() throws Exception {
+        // As above but also including hint that the container-id is the invalid field, i.e invalid ClientID
+        doFailoverHandlesConnectErrorInvalidFieldTestImpl(true);
+    }
+
+    private void doFailoverHandlesConnectErrorInvalidFieldTestImpl(boolean includeContainerIdHint) throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
 
@@ -133,7 +145,13 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             final String finalURI = createPeerURI(finalPeer);
             final DescribedType amqpValueNullContent = new AmqpValueDescribedType(null);
 
-            originalPeer.rejectConnect(AmqpError.INVALID_FIELD, "Client ID already in use", null);
+            Map<Symbol, Object> errorInfo = null;
+            if (includeContainerIdHint) {
+                errorInfo = new HashMap<Symbol, Object>();
+                errorInfo.put(AmqpSupport.INVALID_FIELD, AmqpSupport.CONTAINER_ID);
+            }
+
+            originalPeer.rejectConnect(AmqpError.INVALID_FIELD, "Client ID already in use", errorInfo);
 
             finalPeer.expectSaslAnonymous();
             finalPeer.expectOpen();
@@ -179,7 +197,16 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 20000)
     public void testFailoverHandlesConnectErrorInvalidFieldOnReconnect() throws Exception {
+        doFailoverHandlesConnectErrorInvalidFieldOnReconnectTestImpl(false);
+    }
 
+    @Test(timeout = 20000)
+    public void testFailoverHandlesConnectErrorInvalidFieldOnReconnectWithContainerIdHint() throws Exception {
+        // As above but also including hint that the container-id is the invalid field, i.e invalid ClientID
+        doFailoverHandlesConnectErrorInvalidFieldOnReconnectTestImpl(true);
+    }
+
+    private void doFailoverHandlesConnectErrorInvalidFieldOnReconnectTestImpl(boolean includeContainerIdHint) throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
              TestAmqpPeer rejectingPeer = new TestAmqpPeer();
              TestAmqpPeer finalPeer = new TestAmqpPeer();) {
@@ -193,7 +220,12 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             originalPeer.expectBegin();
             originalPeer.dropAfterLastHandler(10);
 
-            rejectingPeer.rejectConnect(AmqpError.INVALID_FIELD, "Client ID already in use", null);
+            Map<Symbol, Object> errorInfo = null;
+            if (includeContainerIdHint) {
+                errorInfo = new HashMap<Symbol, Object>();
+                errorInfo.put(AmqpSupport.INVALID_FIELD, AmqpSupport.CONTAINER_ID);
+            }
+            rejectingPeer.rejectConnect(AmqpError.INVALID_FIELD, "Client ID already in use", errorInfo);
 
             finalPeer.expectSaslAnonymous();
             finalPeer.expectOpen();

@@ -51,6 +51,17 @@ public class ProviderFutureTest {
         }
     }
 
+    @Test(timeout = 90000)
+    public void testTimedSync() {
+        ProviderFuture future = new ProviderFuture();
+
+        try {
+            assertFalse(future.sync(1, TimeUnit.SECONDS));
+        } catch (IOException cause) {
+            fail("Should throw an error");
+        }
+    }
+
     @Test(timeout = 10000)
     public void testOnFailure() {
         ProviderFuture future = new ProviderFuture();

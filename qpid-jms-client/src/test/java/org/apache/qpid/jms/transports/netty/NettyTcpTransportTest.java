@@ -253,7 +253,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 Transport transport = createTransport(serverLocation, testListener, createClientOptions());
                 try {
                     transport.connect(null);
-                    transport.send(sendBuffer.copy());
+                    transport.writeAndFlush(sendBuffer.copy());
                     transports.add(transport);
                 } catch (Exception e) {
                     fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
@@ -334,7 +334,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
             assertTrue(transport.isConnected());
 
-            transport.send(Unpooled.buffer(0));
+            transport.writeAndFlush(Unpooled.buffer(0));
 
             transport.close();
         }
@@ -367,7 +367,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 sendBuffer.writeByte('A');
             }
 
-            transport.send(sendBuffer);
+            transport.writeAndFlush(sendBuffer);
 
             assertTrue(Wait.waitFor(new Wait.Condition() {
                 @Override
@@ -419,7 +419,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
             }
 
             for (int i = 0; i < iterations; ++i) {
-                transport.send(sendBuffer.copy());
+                transport.writeAndFlush(sendBuffer.copy());
             }
 
             assertTrue(Wait.waitFor(new Wait.Condition() {
@@ -460,7 +460,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
 
             ByteBuf sendBuffer = Unpooled.buffer(10);
             try {
-                transport.send(sendBuffer);
+                transport.writeAndFlush(sendBuffer);
                 fail("Should throw on send of closed transport");
             } catch (IOException ex) {
             }
@@ -497,7 +497,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
                 transport.close();
 
                 try {
-                    transport.send(sendBuffer);
+                    transport.writeAndFlush(sendBuffer);
                     fail("Should throw on send of closed transport");
                 } catch (IOException ex) {
                 }

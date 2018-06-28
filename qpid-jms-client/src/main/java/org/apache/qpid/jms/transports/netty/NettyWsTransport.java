@@ -85,7 +85,7 @@ public class NettyWsTransport extends NettyTcpTransport {
     }
 
     @Override
-    public void send(ByteBuf output) throws IOException {
+    public void write(ByteBuf output) throws IOException {
         checkConnected();
         int length = output.readableBytes();
         if (length == 0) {
@@ -93,6 +93,19 @@ public class NettyWsTransport extends NettyTcpTransport {
         }
 
         LOG.trace("Attempted write of: {} bytes", length);
+
+        channel.write(new BinaryWebSocketFrame(output));
+    }
+
+    @Override
+    public void writeAndFlush(ByteBuf output) throws IOException {
+        checkConnected();
+        int length = output.readableBytes();
+        if (length == 0) {
+            return;
+        }
+
+        LOG.trace("Attempted write and flush of: {} bytes", length);
 
         channel.writeAndFlush(new BinaryWebSocketFrame(output));
     }

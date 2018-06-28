@@ -151,7 +151,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
                 transport.setMaxFrameSize(FRAME_SIZE);
                 transport.connect(null);
                 transports.add(transport);
-                transport.send(sendBuffer.copy());
+                transport.writeAndFlush(sendBuffer.copy());
             } catch (Exception e) {
                 fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
             }
@@ -202,7 +202,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
                 transport.setMaxFrameSize(FRAME_SIZE);
                 transport.connect(null);
                 transports.add(transport);
-                transport.send(sendBuffer.copy());
+                transport.writeAndFlush(sendBuffer.copy());
             } catch (Exception e) {
                 fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
             }
@@ -263,7 +263,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
                 transport.setMaxFrameSize(FRAME_SIZE / 2);
                 transport.connect(null);
                 transports.add(transport);
-                transport.send(sendBuffer.copy());
+                transport.writeAndFlush(sendBuffer.copy());
             } catch (Exception e) {
                 fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
             }
@@ -299,7 +299,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
                 transport.setMaxFrameSize(FRAME_SIZE);
                 transport.connect(null);
                 transports.add(transport);
-                transport.send(sendBuffer.copy());
+                transport.writeAndFlush(sendBuffer.copy());
             } catch (Exception e) {
                 fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
             }
@@ -308,7 +308,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
                 @Override
                 public boolean isSatisfied() throws Exception {
                     try {
-                        transport.send(sendBuffer);
+                        transport.writeAndFlush(sendBuffer);
                     } catch (IOException e) {
                         LOG.info("Transport send caught error:", e);
                         return true;

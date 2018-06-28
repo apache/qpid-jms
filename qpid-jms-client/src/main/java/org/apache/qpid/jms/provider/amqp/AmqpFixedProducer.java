@@ -166,7 +166,7 @@ public class AmqpFixedProducer extends AmqpProducer {
 
         // Put it on the wire and let it fail if the connection is broken, if it does
         // get written then continue on to determine when we should complete it.
-        if (provider.pumpToProtonTransport(request)) {
+        if (provider.pumpToProtonTransport(request, false)) {
             // For presettled messages we can just mark as successful and we are done, but
             // for any other message we still track it until the remote settles.  If the send
             // was tagged as asynchronous we must mark the original request as complete but
@@ -177,6 +177,8 @@ public class AmqpFixedProducer extends AmqpProducer {
             } else if (envelope.isSendAsync()) {
                 send.getOriginalRequest().onSuccess();
             }
+
+            provider.getTransport().flush();
         }
     }
 

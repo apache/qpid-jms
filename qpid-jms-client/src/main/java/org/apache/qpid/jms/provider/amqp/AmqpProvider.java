@@ -116,6 +116,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private static final AtomicInteger PROVIDER_SEQUENCE = new AtomicInteger();
     private static final NoOpAsyncResult NOOP_REQUEST = new NoOpAsyncResult();
 
+    private static final int DEFAULT_MAX_WRITE_BYTES_BEFORE_FLUSH = 128 * 1024;
+
     private volatile ProviderListener listener;
     private volatile AmqpConnection connection;
     private AmqpSaslAuthenticator authenticator;
@@ -131,6 +133,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private int drainTimeout = 60000;
     private long sessionOutoingWindow = -1; // Use proton default
     private int maxFrameSize = DEFAULT_MAX_FRAME_SIZE;
+    private int maxWriteBytesBeforeFlush = DEFAULT_MAX_WRITE_BYTES_BEFORE_FLUSH;
 
     private boolean allowNonSecureRedirects;
 
@@ -695,8 +698,9 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         request.onSuccess();
                         pumpToProtonTransport(request);
                     } else {
-                        pumpToProtonTransport(request);
+                        pumpToProtonTransport(request, false);
                         request.onSuccess();
+                        transport.flush();
                     }
                 } catch (Throwable t) {
                     request.onFailure(t);
@@ -1037,12 +1041,18 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     }
 
     protected boolean pumpToProtonTransport() {
-        return pumpToProtonTransport(NOOP_REQUEST);
+        return pumpToProtonTransport(NOOP_REQUEST, true);
     }
 
     protected boolean pumpToProtonTransport(AsyncResult request) {
+        return pumpToProtonTransport(request, true);
+    }
+
+    protected boolean pumpToProtonTransport(AsyncResult request, boolean flush) {
         try {
             boolean done = false;
+            int bytesWritten = 0;
+
             while (!done) {
                 ByteBuffer toWrite = protonTransport.getOutputBuffer();
                 if (toWrite != null && toWrite.hasRemaining()) {
@@ -1053,11 +1063,21 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         TRACE_BYTES.info("Sending: {}", ByteBufUtil.hexDump(outbound));
                     }
 
-                    transport.send(outbound);
+                    bytesWritten += outbound.readableBytes();
+                    if (flush && bytesWritten >= getMaxWriteBytesBeforeFlush()) {
+                        transport.flush();
+                        bytesWritten = 0;
+                    }
+
+                    transport.write(outbound);
                     protonTransport.outputConsumed();
                 } else {
                     done = true;
                 }
+            }
+
+            if (flush && bytesWritten > 0) {
+                transport.flush();
             }
         } catch (IOException e) {
             fireProviderException(e);
@@ -1252,6 +1272,21 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     public int getMaxFrameSize() {
         return maxFrameSize;
+    }
+
+    public int getMaxWriteBytesBeforeFlush() {
+        return maxWriteBytesBeforeFlush;
+    }
+
+    /**
+     * Sets the maximum number of bytes that will be written on a large set of batched writes
+     * before a flush is requested on the {@link Transport}.
+     *
+     * @param maxWriteBytesBeforeFlush
+     * 		number of bytes written before a flush is requested.
+     */
+    public void setMaxWriteBytesBeforeFlush(int maxWriteBytesBeforeFlush) {
+        this.maxWriteBytesBeforeFlush = maxWriteBytesBeforeFlush;
     }
 
     /**

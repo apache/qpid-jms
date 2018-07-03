@@ -130,6 +130,8 @@
             <Bundle-SymbolicName>org.apache.qpid.jms.client</Bundle-SymbolicName>
             <Export-Package>org.apache.qpid.jms.*</Export-Package>
             <Import-Package>
+            io.netty.channel.epoll;resolution:="optional";version="[4.1.0,4.2.0)",
+            io.netty.channel.kqueue;resolution:="optional";version="[4.1.0,4.2.0)",
             io.netty.*;version="[4.1.0,4.2.0)",
             org.apache.qpid.proton.*;version="[0.27.1,0.28.0)",
             *</Import-Package>

@@ -489,7 +489,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
 
             connection.createSession();
 
-            primaryPeer.waitForAllHandlersToComplete(100);
+            primaryPeer.waitForAllHandlersToComplete(1000);
             primaryPeer.close();
 
             assertTrue("Should connect to backup peer", connectedToBackup.await(5, TimeUnit.SECONDS));
@@ -607,7 +607,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
 
             connection.createSession();
 
-            primaryPeer.waitForAllHandlersToComplete(100);
+            primaryPeer.waitForAllHandlersToComplete(1000);
             primaryPeer.close();
 
             assertTrue("Should connect to backup peer", connectedToBackup.await(5, TimeUnit.SECONDS));
@@ -726,7 +726,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
 
             connection.createSession();
 
-            primaryPeer.waitForAllHandlersToComplete(100);
+            primaryPeer.waitForAllHandlersToComplete(1000);
             primaryPeer.close();
 
             assertTrue("Should connect to backup peer", connectedToBackup.await(5, TimeUnit.SECONDS));
@@ -850,7 +850,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
 
             connection.createSession();
 
-            primaryPeer.waitForAllHandlersToComplete(100);
+            primaryPeer.waitForAllHandlersToComplete(1000);
             primaryPeer.close();
 
             assertTrue("Should connect to backup peer", connectedToBackup.await(5, TimeUnit.SECONDS));

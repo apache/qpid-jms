@@ -94,7 +94,7 @@ public class NettyWsTransport extends NettyTcpTransport {
 
         LOG.trace("Attempted write of: {} bytes", length);
 
-        channel.write(new BinaryWebSocketFrame(output));
+        channel.write(new BinaryWebSocketFrame(output), channel.voidPromise());
     }
 
     @Override
@@ -107,7 +107,7 @@ public class NettyWsTransport extends NettyTcpTransport {
 
         LOG.trace("Attempted write and flush of: {} bytes", length);
 
-        channel.writeAndFlush(new BinaryWebSocketFrame(output));
+        channel.writeAndFlush(new BinaryWebSocketFrame(output), channel.voidPromise());
     }
 
     @Override

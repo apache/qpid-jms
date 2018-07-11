@@ -107,18 +107,18 @@ public class AmqpFixedProducer extends AmqpProducer {
             blocked.put(envelope.getMessageId(), send);
             getParent().getProvider().pumpToProtonTransport(request);
         } else {
-            doSend(envelope, request);
+            // If the transaction has failed due to remote termination etc then we just indicate
+            // the send has succeeded until the a new transaction is started.
+            if (session.isTransacted() && session.isTransactionFailed()) {
+                request.onSuccess();
+                return;
+            }
+
+            doSend(envelope, new InFlightSend(envelope, request));
         }
     }
 
-    private void doSend(JmsOutboundMessageDispatch envelope, AsyncResult request) throws IOException, JMSException {
-        // If the transaction has failed due to remote termination etc then we just indicate
-        // the send has succeeded until the a new transaction is started.
-        if (session.isTransacted() && session.isTransactionFailed()) {
-            request.onSuccess();
-            return;
-        }
-
+    private void doSend(JmsOutboundMessageDispatch envelope, InFlightSend send) throws IOException, JMSException {
         LOG.trace("Producer sending message: {}", envelope);
 
         boolean presettle = envelope.isPresettle() || isPresettle();
@@ -143,15 +143,8 @@ public class AmqpFixedProducer extends AmqpProducer {
 
         AmqpProvider provider = getParent().getProvider();
 
-        InFlightSend send = null;
-        if (request instanceof InFlightSend) {
-            send = (InFlightSend) request;
-        } else {
-            send = new InFlightSend(envelope, request);
-
-            if (!presettle && getSendTimeout() != JmsConnectionInfo.INFINITE) {
-                send.requestTimeout = getParent().getProvider().scheduleRequestTimeout(send, getSendTimeout(), send);
-            }
+        if (!presettle && getSendTimeout() != JmsConnectionInfo.INFINITE && send.requestTimeout == null) {
+            send.requestTimeout = getParent().getProvider().scheduleRequestTimeout(send, getSendTimeout(), send);
         }
 
         if (presettle) {
@@ -166,7 +159,7 @@ public class AmqpFixedProducer extends AmqpProducer {
 
         // Put it on the wire and let it fail if the connection is broken, if it does
         // get written then continue on to determine when we should complete it.
-        if (provider.pumpToProtonTransport(request, false)) {
+        if (provider.pumpToProtonTransport(send, false)) {
             // For presettled messages we can just mark as successful and we are done, but
             // for any other message we still track it until the remote settles.  If the send
             // was tagged as asynchronous we must mark the original request as complete but
@@ -190,6 +183,13 @@ public class AmqpFixedProducer extends AmqpProducer {
                 LOG.trace("Dispatching previously held send");
                 InFlightSend held = blockedSends.next();
                 try {
+                    // If the transaction has failed due to remote termination etc then we just indicate
+                    // the send has succeeded until the a new transaction is started.
+                    if (session.isTransacted() && session.isTransactionFailed()) {
+                        held.onSuccess();
+                        return;
+                    }
+
                     doSend(held.getEnvelope(), held);
                 } catch (JMSException e) {
                     throw IOExceptionSupport.create(e);

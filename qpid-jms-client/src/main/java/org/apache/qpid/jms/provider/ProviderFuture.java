@@ -47,7 +47,7 @@ public class ProviderFuture implements AsyncResult {
             AtomicIntegerFieldUpdater.newUpdater(ProviderFuture.class,"state");
 
     private volatile int state = INCOMPLETE;
-    private volatile Throwable error;
+    private Throwable error;
 
     private int waiting;
 

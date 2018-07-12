@@ -94,15 +94,13 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
     }
 
     public AmqpProducer getProducer(JmsProducerInfo producerInfo) {
-        return getProducer(producerInfo.getId());
-    }
+        JmsProducerId producerId = producerInfo.getId();
 
-    public AmqpProducer getProducer(JmsProducerId producerId) {
         if (producerId.getProviderHint() instanceof AmqpProducer) {
             return (AmqpProducer) producerId.getProviderHint();
         }
 
-        return null;
+        return producers.get(producerId);
     }
 
     public void createConsumer(JmsConsumerInfo consumerInfo, AsyncResult request) {
@@ -111,13 +109,12 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
     }
 
     public AmqpConsumer getConsumer(JmsConsumerInfo consumerInfo) {
-        return getConsumer(consumerInfo.getId());
-    }
+        JmsConsumerId consumerId = consumerInfo.getId();
 
-    public AmqpConsumer getConsumer(JmsConsumerId consumerId) {
         if (consumerId.getProviderHint() instanceof AmqpConsumer) {
             return (AmqpConsumer) consumerId.getProviderHint();
         }
+
         return consumers.get(consumerId);
     }
 

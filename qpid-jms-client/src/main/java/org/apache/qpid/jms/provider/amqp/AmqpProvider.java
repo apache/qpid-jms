@@ -89,7 +89,6 @@ import org.slf4j.LoggerFactory;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
-import io.netty.util.ReferenceCountUtil;
 
 /**
  * An AMQP v1.0 Provider.
@@ -633,17 +632,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
             public void run() {
                 try {
                     checkClosedOrFailed();
-
                     JmsProducerId producerId = envelope.getProducerId();
-                    AmqpProducer producer = null;
-
-                    if (producerId.getProviderHint() instanceof AmqpFixedProducer) {
-                        producer = (AmqpFixedProducer) producerId.getProviderHint();
-                    } else {
-                        AmqpSession session = connection.getSession(producerId.getParentId());
-                        producer = session.getProducer(producerId);
-                    }
-
+                    AmqpProducer producer = (AmqpProducer) producerId.getProviderHint();
                     producer.send(envelope, request);
                 } catch (Throwable t) {
                     request.onFailure(t);
@@ -683,14 +673,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                     checkClosedOrFailed();
 
                     JmsConsumerId consumerId = envelope.getConsumerId();
-                    AmqpConsumer consumer = null;
-
-                    if (consumerId.getProviderHint() instanceof AmqpConsumer) {
-                        consumer = (AmqpConsumer) consumerId.getProviderHint();
-                    } else {
-                        AmqpSession session = connection.getSession(consumerId.getParentId());
-                        consumer = session.getConsumer(consumerId);
-                    }
+                    AmqpConsumer consumer = (AmqpConsumer) consumerId.getProviderHint();
 
                     consumer.acknowledge(envelope, ackType);
 
@@ -794,15 +777,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
             public void run() {
                 try {
                     checkClosedOrFailed();
-                    AmqpConsumer consumer = null;
-
-                    if (consumerId.getProviderHint() instanceof AmqpConsumer) {
-                        consumer = (AmqpConsumer) consumerId.getProviderHint();
-                    } else {
-                        AmqpSession session = connection.getSession(consumerId.getParentId());
-                        consumer = session.getConsumer(consumerId);
-                    }
-
+                    AmqpConsumer consumer = (AmqpConsumer) consumerId.getProviderHint();
                     consumer.pull(timeout, request);
                     pumpToProtonTransport(request);
                 } catch (Throwable t) {
@@ -834,7 +809,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     public void onData(final ByteBuf input) {
 
         // We need to retain until the serializer gets around to processing it.
-        ReferenceCountUtil.retain(input);
+        input.retain();
 
         serializer.execute(new Runnable() {
 
@@ -853,7 +828,8 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
                         protonTransport.process();
                     } while (input.isReadable());
 
-                    ReferenceCountUtil.release(input);
+                    // Free for pooled memory to be put back now.
+                    input.release();
 
                     // Process the state changes from the latest data and then answer back
                     // any pending updates to the Broker.

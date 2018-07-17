@@ -1141,6 +1141,70 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testFailoverHandlesDropAfterSessionCloseRequested() throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer()) {
+
+            final CountDownLatch originalConnected = new CountDownLatch(1);
+
+            final String originalURI = createPeerURI(originalPeer);
+
+            LOG.info("Original peer is at: {}", originalURI);
+
+            // Connect to the first peer
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
+            originalPeer.expectBegin();
+
+            final JmsConnection connection = establishAnonymousConnecton(originalPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (originalURI.equals(remoteURI.toString())) {
+                        originalConnected.countDown();
+                    }
+                }
+            });
+            connection.start();
+
+            assertTrue("Should connect to original peer", originalConnected.await(5, TimeUnit.SECONDS));
+
+            originalPeer.expectBegin();
+            originalPeer.expectEnd(false);
+            originalPeer.dropAfterLastHandler();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            
+            final CountDownLatch sessionCloseCompleted = new CountDownLatch(1);
+            final AtomicBoolean sessionClosedThrew = new AtomicBoolean();
+            Thread sessionCloseThread = new Thread(new Runnable() {
+				
+				@Override
+				public void run() {
+		            try {
+		            	session.close();
+		            	LOG.debug("Close of session returned ok");
+		            } catch (JMSException jmsEx) {
+		            	LOG.warn("Should not throw on session close when connection drops.", jmsEx);
+		            	sessionClosedThrew.set(true);
+		            } finally {
+		            	sessionCloseCompleted.countDown();
+		            }
+				}
+			}, "Session close thread");
+
+            sessionCloseThread.start();
+
+            originalPeer.waitForAllHandlersToComplete(2000);
+
+            assertTrue("Session close should have completed by now", sessionCloseCompleted.await(3, TimeUnit.SECONDS));
+            assertFalse("Session close should have completed normally", sessionClosedThrew.get());
+            
+            connection.close();
+        }
+    }
+
+    @Test(timeout = 20000)
     public void testCreateConsumerFailsWhenLinkRefusedAndAttachResponseWriteIsNotDeferred() throws Exception {
         doCreateConsumerFailsWhenLinkRefusedTestImpl(false);
     }

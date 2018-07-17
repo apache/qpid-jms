@@ -554,6 +554,12 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 if (listener != null) {
                     listener.onConnectionInterrupted(failedURI);
                 }
+                
+                if (!requests.isEmpty()) {
+                	for (FailoverRequest request : requests.values()) {
+                		request.whenOffline(cause);
+                	}
+                }
 
                 // Start watching for request timeouts while we are offline, unless we already are.
                 if (requestTimeoutTask == null) {

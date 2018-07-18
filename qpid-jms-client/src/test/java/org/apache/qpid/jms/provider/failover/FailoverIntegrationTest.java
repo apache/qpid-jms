@@ -1174,24 +1174,24 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             originalPeer.dropAfterLastHandler();
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            
+
             final CountDownLatch sessionCloseCompleted = new CountDownLatch(1);
             final AtomicBoolean sessionClosedThrew = new AtomicBoolean();
             Thread sessionCloseThread = new Thread(new Runnable() {
-				
-				@Override
-				public void run() {
-		            try {
-		            	session.close();
-		            	LOG.debug("Close of session returned ok");
-		            } catch (JMSException jmsEx) {
-		            	LOG.warn("Should not throw on session close when connection drops.", jmsEx);
-		            	sessionClosedThrew.set(true);
-		            } finally {
-		            	sessionCloseCompleted.countDown();
-		            }
-				}
-			}, "Session close thread");
+
+                @Override
+                public void run() {
+                    try {
+                        session.close();
+                        LOG.debug("Close of session returned ok");
+                    } catch (JMSException jmsEx) {
+                        LOG.warn("Should not throw on session close when connection drops.", jmsEx);
+                        sessionClosedThrew.set(true);
+                    } finally {
+                        sessionCloseCompleted.countDown();
+                    }
+                }
+            }, "Session close thread");
 
             sessionCloseThread.start();
 
@@ -1199,7 +1199,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
             assertTrue("Session close should have completed by now", sessionCloseCompleted.await(3, TimeUnit.SECONDS));
             assertFalse("Session close should have completed normally", sessionClosedThrew.get());
-            
+
             connection.close();
         }
     }
@@ -2637,7 +2637,8 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             finalPeer.expectReceiverAttach(notNullValue(), notNullValue(), false, true, false, false, errorCondition, errorDescription);
             finalPeer.expectDetach(true, false, false);
 
-            final JmsConnection connection = establishAnonymousConnecton("jms.closeLinksThatFailOnReconnect=true", originalPeer, finalPeer);
+            final JmsConnection connection = establishAnonymousConnecton(
+                "jms.prefetchPolicy.all=0&jms.closeLinksThatFailOnReconnect=true", originalPeer, finalPeer);
             connection.setExceptionListener(new ExceptionListener() {
                 @Override
                 public void onException(JMSException exception) {

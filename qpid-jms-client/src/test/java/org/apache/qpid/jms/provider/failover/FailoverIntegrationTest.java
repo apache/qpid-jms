@@ -1962,7 +1962,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout=20000)
-    public void testTxCommitThrowsAfterMaxReconnectsWhenNoDischargeResponseSent() throws Exception {
+    public void testTxCommitThrowsWhenNoDischargeResponseSentAndConnectionDrops() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
 
             final CountDownLatch testConnected = new CountDownLatch(1);
@@ -1978,7 +1978,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin();
 
             final JmsConnection connection = establishAnonymousConnecton(
-                "failover.maxReconnectAttempts=10&failover.useReconnectBackOff=false", testPeer);
+                "failover.maxReconnectAttempts=3&failover.useReconnectBackOff=false", testPeer);
             connection.addConnectionListener(new JmsDefaultConnectionListener() {
                 @Override
                 public void onConnectionEstablished(URI remoteURI) {
@@ -1996,7 +1996,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
             connection.start();
 
-            assertTrue("Should connect to test peer", testConnected.await(5, TimeUnit.SECONDS));
+            assertTrue("Should connect to test peer", testConnected.await(6, TimeUnit.SECONDS));
 
             testPeer.expectBegin();
             testPeer.expectCoordinatorAttach();

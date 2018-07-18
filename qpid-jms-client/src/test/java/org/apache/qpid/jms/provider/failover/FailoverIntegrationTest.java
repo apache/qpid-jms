@@ -2637,8 +2637,15 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             finalPeer.expectReceiverAttach(notNullValue(), notNullValue(), false, true, false, false, errorCondition, errorDescription);
             finalPeer.expectDetach(true, false, false);
 
+            final int prefetch;
+            if (addListener) {
+                prefetch = 0;
+            } else {
+                prefetch = 1;
+            }
+
             final JmsConnection connection = establishAnonymousConnecton(
-                "jms.prefetchPolicy.all=0&jms.closeLinksThatFailOnReconnect=true", originalPeer, finalPeer);
+                "jms.prefetchPolicy.all="+ prefetch + "&jms.closeLinksThatFailOnReconnect=true", originalPeer, finalPeer);
             connection.setExceptionListener(new ExceptionListener() {
                 @Override
                 public void onException(JMSException exception) {

@@ -651,7 +651,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
 
     protected void onConnectionRecovery(Provider provider) throws Exception {
         if (!consumerInfo.isClosed()) {
-            ProviderFuture request = new ProviderFuture();
+            ProviderFuture request = provider.newProviderFuture();
             try {
                 provider.create(consumerInfo, request);
                 request.sync();
@@ -667,7 +667,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
 
     protected void onConnectionRecovered(Provider provider) throws Exception {
         if (!consumerInfo.isClosed()) {
-            ProviderFuture request = new ProviderFuture();
+            ProviderFuture request = provider.newProviderFuture();
             provider.start(consumerInfo, request);
             request.sync();
         }

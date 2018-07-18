@@ -340,6 +340,27 @@ public interface Provider {
     JmsMessageFactory getMessageFactory();
 
     /**
+     * Gets a ProviderFuture instance from the Provider for use in performing Provider calls
+     * that require an asynchronous completion to know when the call to the provider has succeeded
+     * or failed.
+     *
+     * @return a ProviderFuture for use in calling Provider methods that require a completion object.
+     */
+    ProviderFuture newProviderFuture();
+
+    /**
+     * Gets a ProviderFuture instance from the Provider for use in performing Provider calls
+     * that require an asynchronous completion to know when the call to the provider has succeeded
+     * or failed.
+     *
+     * @param synchronization
+     * 		A {@link ProviderSynchronization} to assign to the resulting {@link ProviderFuture}.
+     *
+     * @return a ProviderFuture for use in calling Provider methods that require a completion object.
+     */
+    ProviderFuture newProviderFuture(ProviderSynchronization synchronization);
+
+    /**
      * Sets the listener of events from this Provider instance.
      *
      * @param listener
@@ -353,4 +374,5 @@ public interface Provider {
      * @return the currently set ProviderListener instance.
      */
     ProviderListener getProviderListener();
+
 }

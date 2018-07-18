@@ -52,8 +52,10 @@ import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFactory;
 import org.apache.qpid.jms.provider.ProviderFuture;
+import org.apache.qpid.jms.provider.ProviderFutureFactory;
 import org.apache.qpid.jms.provider.ProviderListener;
 import org.apache.qpid.jms.provider.ProviderRedirectedException;
+import org.apache.qpid.jms.provider.ProviderSynchronization;
 import org.apache.qpid.jms.provider.WrappedAsyncResult;
 import org.apache.qpid.jms.util.IOExceptionSupport;
 import org.apache.qpid.jms.util.QpidJMSThreadFactory;
@@ -100,6 +102,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     private final Map<Long, FailoverRequest> requests = new LinkedHashMap<Long, FailoverRequest>();
     private final DefaultProviderListener closedListener = new DefaultProviderListener();
     private final AtomicReference<JmsMessageFactory> messageFactory = new AtomicReference<JmsMessageFactory>();
+    private final ProviderFutureFactory futureFactory;
 
     // Current state of connection / reconnection
     private final ReconnectControls reconnectControl = new ReconnectControls();
@@ -124,16 +127,17 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
     private FailoverServerListAction amqpOpenServerListAction = FailoverServerListAction.REPLACE;
 
-    public FailoverProvider(Map<String, String> nestedOptions) {
-        this(null, nestedOptions);
+    public FailoverProvider(Map<String, String> nestedOptions, ProviderFutureFactory futureFactory) {
+        this(null, nestedOptions, futureFactory);
     }
 
-    public FailoverProvider(List<URI> uris) {
-        this(uris, null);
+    public FailoverProvider(List<URI> uris, ProviderFutureFactory futureFactory) {
+        this(uris, null, futureFactory);
     }
 
-    public FailoverProvider(List<URI> uris, Map<String, String> nestedOptions) {
+    public FailoverProvider(List<URI> uris, Map<String, String> nestedOptions, ProviderFutureFactory futureFactory) {
         this.uris = new FailoverUriPool(uris, nestedOptions);
+        this.futureFactory = futureFactory;
 
         serializer = new ScheduledThreadPoolExecutor(1, new QpidJMSThreadFactory("FailoverProvider: serialization thread", true));
         serializer.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
@@ -167,7 +171,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            final ProviderFuture request = new ProviderFuture();
+            final ProviderFuture request = futureFactory.createFuture();
             serializer.execute(new Runnable() {
 
                 @Override
@@ -700,7 +704,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                             try {
                                 LOG.debug("Connection attempt:[{}] to: {} in-progress", reconnectAttempts,
                                     target.getScheme() + "://" + target.getHost() + ":" + target.getPort());
-                                provider = ProviderFactory.create(target);
+                                provider = ProviderFactory.create(target, futureFactory);
                                 provider.connect(connectionInfo);
                                 initializeNewConnection(provider);
                                 return;
@@ -1042,6 +1046,16 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
     public Map<String, String> getNestedOptions() {
         return uris.getNestedOptions();
+    }
+
+    @Override
+    public ProviderFuture newProviderFuture() {
+        return futureFactory.createFuture();
+    }
+
+    @Override
+    public ProviderFuture newProviderFuture(ProviderSynchronization synchronization) {
+        return futureFactory.createFuture(synchronization);
     }
 
     @Override

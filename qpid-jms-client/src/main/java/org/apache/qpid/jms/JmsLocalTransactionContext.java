@@ -350,7 +350,7 @@ public class JmsLocalTransactionContext implements JmsTransactionContext {
                 // current transaction we must mark it as in-doubt so that a commit attempt
                 // will then roll it back.
                 transactionInfo = getNextTransactionInfo();
-                ProviderFuture request = new ProviderFuture(new ProviderSynchronization() {
+                ProviderFuture request = provider.newProviderFuture(new ProviderSynchronization() {
 
                     @Override
                     public void onPendingSuccess() {

@@ -48,6 +48,21 @@ public abstract class ProviderFactory {
     public abstract Provider createProvider(URI remoteURI) throws Exception;
 
     /**
+     * Creates an instance of the given AsyncProvider and configures it using the
+     * properties set on the given remote broker URI.
+     *
+     * @param remoteURI
+     *        The URI used to connect to a remote Broker.
+     * @param futureFactory
+     * 		  The {@link ProviderFutureFactory} to use when creating the new {@link Provider}.
+     *
+     * @return a new AsyncProvider instance.
+     *
+     * @throws Exception if an error occurs while creating the Provider instance.
+     */
+    public abstract Provider createProvider(URI remoteURI, ProviderFutureFactory futureFactory) throws Exception;
+
+    /**
      * @return the name of this Provider.
      */
     public abstract String getName();
@@ -64,11 +79,28 @@ public abstract class ProviderFactory {
      * @throws Exception if an error occurs while creating the AsyncProvider instance.
      */
     public static Provider create(URI remoteURI) throws Exception {
+        return create(remoteURI, null);
+    }
+
+    /**
+     * Static create method that performs the ProviderFactory search and handles the
+     * configuration and setup.
+     *
+     * @param remoteURI
+     *        the URI of the remote peer.
+     * @param futureFactory
+     * 		  the {@link ProviderFutureFactory} to use when building the new {@link Provider}.
+     *
+     * @return a new AsyncProvider instance that is ready for use.
+     *
+     * @throws Exception if an error occurs while creating the AsyncProvider instance.
+     */
+    public static Provider create(URI remoteURI, ProviderFutureFactory futureFactory) throws Exception {
         Provider result = null;
 
         try {
             ProviderFactory factory = findProviderFactory(remoteURI);
-            result = factory.createProvider(remoteURI);
+            result = factory.createProvider(remoteURI, futureFactory);
         } catch (Exception ex) {
             LOG.error("Failed to create Provider instance for {}, due to: {}", remoteURI.getScheme(), ex);
             LOG.trace("Error: ", ex);

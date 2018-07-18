@@ -214,7 +214,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
                 }
 
                 if (isConnected() && !isFailed()) {
-                    ProviderFuture request = new ProviderFuture();
+                    ProviderFuture request = provider.newProviderFuture();
                     requests.put(request, request);
                     try {
                         provider.destroy(connectionInfo, request);
@@ -684,7 +684,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture(synchronization);
+            ProviderFuture request = provider.newProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.create(resource, request);
@@ -705,7 +705,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture(synchronization);
+            ProviderFuture request = provider.newProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.start(resource, request);
@@ -726,7 +726,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture(synchronization);
+            ProviderFuture request = provider.newProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.stop(resource, request);
@@ -747,7 +747,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture(synchronization);
+            ProviderFuture request = provider.newProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.destroy(resource, request);
@@ -764,7 +764,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture(synchronization);
+            ProviderFuture request = provider.newProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.send(envelope, request);
@@ -785,7 +785,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture(synchronization);
+            ProviderFuture request = provider.newProviderFuture(synchronization);
             provider.acknowledge(envelope, ackType, request);
             request.sync();
         } catch (Exception ioe) {
@@ -801,7 +801,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture(synchronization);
+            ProviderFuture request = provider.newProviderFuture(synchronization);
             provider.acknowledge(sessionId, ackType, request);
             request.sync();
         } catch (Exception ioe) {
@@ -817,7 +817,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture(synchronization);
+            ProviderFuture request = provider.newProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.unsubscribe(name, request);
@@ -838,7 +838,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture(synchronization);
+            ProviderFuture request = provider.newProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.commit(transactionInfo, nextTransactionId, request);
@@ -859,7 +859,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture(synchronization);
+            ProviderFuture request = provider.newProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.rollback(transactionInfo, nextTransactionId, request);
@@ -880,7 +880,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture(synchronization);
+            ProviderFuture request = provider.newProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.recover(sessionId, request);
@@ -901,7 +901,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         checkClosedOrFailed();
 
         try {
-            ProviderFuture request = new ProviderFuture(synchronization);
+            ProviderFuture request = provider.newProviderFuture(synchronization);
             requests.put(request, request);
             try {
                 provider.pull(consumerId, timeout, request);
@@ -1256,12 +1256,12 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
     public void onConnectionRecovery(Provider provider) throws Exception {
         LOG.debug("Connection {} is starting recovery.", connectionInfo.getId());
 
-        ProviderFuture request = new ProviderFuture();
+        ProviderFuture request = provider.newProviderFuture();
         provider.create(connectionInfo, request);
         request.sync();
 
         for (JmsTemporaryDestination tempDestination : tempDestinations.values()) {
-            request = new ProviderFuture();
+            request = provider.newProviderFuture();
             provider.create(tempDestination, request);
             request.sync();
         }
@@ -1269,7 +1269,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         for (JmsConnectionConsumer connectionConsumer : connectionConsumers.values()) {
             JmsConsumerInfo consumerInfo = connectionConsumer.getConsumerInfo();
             if (!consumerInfo.isClosed()) {
-                request = new ProviderFuture();
+                request = provider.newProviderFuture();
                 provider.create(consumerInfo, request);
                 request.sync();
             }
@@ -1290,7 +1290,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         for (JmsConnectionConsumer connectionConsumer : connectionConsumers.values()) {
             JmsConsumerInfo consumerInfo = connectionConsumer.getConsumerInfo();
             if (!consumerInfo.isClosed()) {
-                ProviderFuture request = new ProviderFuture();
+                ProviderFuture request = provider.newProviderFuture();
                 provider.start(consumerInfo, request);
                 request.sync();
             }

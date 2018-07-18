@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.Map;
 
 import org.apache.qpid.jms.provider.ProviderFactory;
+import org.apache.qpid.jms.provider.ProviderFutureFactory;
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportFactory;
 import org.apache.qpid.jms.util.PropertyUtil;
@@ -37,19 +38,40 @@ public class AmqpProviderFactory extends ProviderFactory {
 
     @Override
     public AmqpProvider createProvider(URI remoteURI) throws Exception {
+        return createProvider(remoteURI, null);
+    }
 
+    @Override
+    public AmqpProvider createProvider(URI remoteURI, ProviderFutureFactory futureFactory) throws Exception {
         Map<String, String> map = PropertyUtil.parseQuery(remoteURI);
-        Map<String, String> providerOptions = PropertyUtil.filterProperties(map, "amqp.");
 
-        // Clear off any amqp.X values from the transport before creation.
+        // Clear off any amqp.X and provider.X values from the transport before creation.
+        Map<String, String> amqpProviderOptions = PropertyUtil.filterProperties(map, "amqp.");
+        Map<String, String> providerOptions = PropertyUtil.filterProperties(map, "provider.");
+
         Transport transport = TransportFactory.create(getTransportScheme(), PropertyUtil.replaceQuery(remoteURI, map));
 
-        AmqpProvider result = new AmqpProvider(remoteURI, transport);
+        // If we have been given a futures factory to use then we ignore any URI options indicating
+        // what to create and just go with what we are given.
+        if (futureFactory == null) {
+            // Create a configured ProviderFutureFactory for use by the resulting AmqpProvider
+            futureFactory = ProviderFutureFactory.create(providerOptions);
+            if (!providerOptions.isEmpty()) {
+                String msg = ""
+                    + " Not all Provider options could be applied during AMQP Provider creation."
+                    + " Check the options are spelled correctly."
+                    + " Unused parameters=[" + providerOptions + "]."
+                    + " This provider instance cannot be started.";
+                throw new IllegalArgumentException(msg);
+            }
+        }
 
-        Map<String, String> unused = PropertyUtil.setProperties(result, providerOptions);
+        AmqpProvider result = new AmqpProvider(remoteURI, transport, futureFactory);
+
+        Map<String, String> unused = PropertyUtil.setProperties(result, amqpProviderOptions);
         if (!unused.isEmpty()) {
             String msg = ""
-                + " Not all provider options could be set on the AMQP Provider."
+                + " Not all AMQP provider options could be set on the AMQP Provider."
                 + " Check the options are spelled correctly."
                 + " Unused parameters=[" + unused + "]."
                 + " This provider instance cannot be started.";

@@ -47,6 +47,7 @@ import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.meta.JmsSessionInfo;
 import org.apache.qpid.jms.provider.DefaultProviderListener;
 import org.apache.qpid.jms.provider.ProviderFuture;
+import org.apache.qpid.jms.provider.ProviderFutureFactory;
 import org.apache.qpid.jms.test.Wait;
 import org.junit.After;
 import org.junit.Before;
@@ -60,6 +61,8 @@ import org.slf4j.LoggerFactory;
 public class FailoverProviderTest extends FailoverProviderTestSupport {
 
     private static final Logger LOG = LoggerFactory.getLogger(FailoverProviderTest.class);
+
+    private final ProviderFutureFactory futuresFactory = ProviderFutureFactory.create(Collections.emptyMap());
 
     private List<URI> uris;
     private FailoverProvider provider;
@@ -91,7 +94,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
 
     @Test(timeout = 30000)
     public void testCreateProviderOnlyUris() {
-        provider = new FailoverProvider(uris);
+        provider = new FailoverProvider(uris, futuresFactory);
         assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, provider.isRandomize());
         assertNull(provider.getRemoteURI());
         assertNotNull(provider.getNestedOptions());
@@ -103,7 +106,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         Map<String, String> options = new HashMap<String, String>();
         options.put("transport.tcpNoDelay", "true");
 
-        provider = new FailoverProvider(options);
+        provider = new FailoverProvider(options, futuresFactory);
         assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, provider.isRandomize());
         assertNull(provider.getRemoteURI());
         assertNotNull(provider.getNestedOptions());
@@ -113,7 +116,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
 
     @Test(timeout = 30000)
     public void testCreateProviderWithNestedOptions() {
-        provider = new FailoverProvider(uris, Collections.<String, String>emptyMap());
+        provider = new FailoverProvider(uris, Collections.<String, String>emptyMap(), futuresFactory);
         assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, provider.isRandomize());
         assertNull(provider.getRemoteURI());
         assertNotNull(provider.getNestedOptions());
@@ -122,7 +125,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
 
     @Test(timeout = 30000)
     public void testProviderListener() {
-        provider = new FailoverProvider(uris, Collections.<String, String>emptyMap());
+        provider = new FailoverProvider(uris, Collections.<String, String>emptyMap(), futuresFactory);
         assertNull(provider.getProviderListener());
         provider.setProviderListener(new DefaultProviderListener());
         assertNotNull(provider.getProviderListener());
@@ -130,7 +133,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
 
     @Test(timeout = 30000)
     public void testGetRemoteURI() throws Exception {
-        provider = new FailoverProvider(uris, Collections.<String, String>emptyMap());
+        provider = new FailoverProvider(uris, Collections.<String, String>emptyMap(), futuresFactory);
 
         assertNull(provider.getRemoteURI());
         provider.connect(connection);
@@ -145,7 +148,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
 
     @Test(timeout = 30000)
     public void testToString() throws Exception {
-        provider = new FailoverProvider(uris, Collections.<String, String>emptyMap());
+        provider = new FailoverProvider(uris, Collections.<String, String>emptyMap(), futuresFactory);
 
         assertNotNull(provider.toString());
         provider.connect(connection);
@@ -161,7 +164,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
 
     @Test(timeout = 30000)
     public void testConnectToMock() throws Exception {
-        provider = new FailoverProvider(uris, Collections.<String, String>emptyMap());
+        provider = new FailoverProvider(uris, Collections.<String, String>emptyMap(), futuresFactory);
         assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, provider.isRandomize());
         assertNull(provider.getRemoteURI());
 
@@ -177,7 +180,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
 
         provider.connect(connection);
 
-        ProviderFuture request = new ProviderFuture();
+        ProviderFuture request = provider.newProviderFuture();
         provider.create(createConnectionInfo(), request);
 
         request.sync(10, TimeUnit.SECONDS);
@@ -192,7 +195,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
 
     @Test(timeout = 30000)
     public void testCannotStartWithoutListener() throws Exception {
-        provider = new FailoverProvider(uris, Collections.<String, String>emptyMap());
+        provider = new FailoverProvider(uris, Collections.<String, String>emptyMap(), futuresFactory);
         assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, provider.isRandomize());
         assertNull(provider.getRemoteURI());
         provider.connect(connection);
@@ -421,7 +424,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         final long SEND_TIMEOUT = TimeUnit.SECONDS.toMillis(6);
         final long REQUEST_TIMEOUT = TimeUnit.SECONDS.toMillis(7);
 
-        provider = new FailoverProvider(uris, Collections.<String, String>emptyMap());
+        provider = new FailoverProvider(uris, Collections.<String, String>emptyMap(), futuresFactory);
         provider.setProviderListener(new DefaultProviderListener() {
 
             @Override
@@ -439,7 +442,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         connectionInfo.setSendTimeout(SEND_TIMEOUT);
         connectionInfo.setRequestTimeout(REQUEST_TIMEOUT);
 
-        ProviderFuture request = new ProviderFuture();
+        ProviderFuture request = provider.newProviderFuture();
         provider.create(connectionInfo, request);
         request.sync();
 
@@ -450,13 +453,13 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
 
     @Test(timeout = 30000)
     public void testAmqpOpenServerListActionDefault() {
-        provider = new FailoverProvider(uris);
+        provider = new FailoverProvider(uris, futuresFactory);
         assertEquals("REPLACE", provider.getAmqpOpenServerListAction());
     }
 
     @Test(timeout = 30000)
     public void testSetGetAmqpOpenServerListAction() {
-        provider = new FailoverProvider(uris);
+        provider = new FailoverProvider(uris, futuresFactory);
         String action = "ADD";
         assertFalse(action.equals(provider.getAmqpOpenServerListAction()));
 
@@ -466,7 +469,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
 
     @Test(timeout = 30000)
     public void testSetInvalidAmqpOpenServerListActionThrowsIAE() {
-        provider = new FailoverProvider(uris);
+        provider = new FailoverProvider(uris, futuresFactory);
         try {
             provider.setAmqpOpenServerListAction("invalid");
             fail("no exception was thrown");

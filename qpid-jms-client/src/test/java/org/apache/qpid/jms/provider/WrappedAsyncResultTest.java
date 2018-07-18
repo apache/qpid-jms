@@ -21,10 +21,13 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.Collections;
 
 import org.junit.Test;
 
 public class WrappedAsyncResultTest {
+
+    private final ProviderFutureFactory futuresFactory = ProviderFutureFactory.create(Collections.emptyMap());
 
     @Test
     public void testCreateWithNull() {
@@ -35,7 +38,7 @@ public class WrappedAsyncResultTest {
 
     @Test
     public void testGetWrapped() {
-        ProviderFuture future = new ProviderFuture();
+        ProviderFuture future = futuresFactory.createFuture();
         WrappedAsyncResult wrapped = new WrappedAsyncResult(future) {};
 
         assertSame(wrapped.getWrappedRequest(), future);
@@ -43,7 +46,7 @@ public class WrappedAsyncResultTest {
 
     @Test
     public void testOnSuccessPassthrough() {
-        ProviderFuture future = new ProviderFuture();
+        ProviderFuture future = futuresFactory.createFuture();
         WrappedAsyncResult wrapped = new WrappedAsyncResult(future) {};
 
         assertFalse(future.isComplete());
@@ -55,7 +58,7 @@ public class WrappedAsyncResultTest {
 
     @Test
     public void testOnFailurePassthrough() {
-        ProviderFuture future = new ProviderFuture();
+        ProviderFuture future = futuresFactory.createFuture();
         WrappedAsyncResult wrapped = new WrappedAsyncResult(future) {};
 
         assertFalse(future.isComplete());

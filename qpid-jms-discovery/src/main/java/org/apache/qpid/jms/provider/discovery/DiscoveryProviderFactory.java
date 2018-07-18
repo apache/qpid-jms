@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderFactory;
+import org.apache.qpid.jms.provider.ProviderFutureFactory;
 import org.apache.qpid.jms.provider.failover.FailoverProvider;
 import org.apache.qpid.jms.provider.failover.FailoverProviderFactory;
 import org.apache.qpid.jms.util.PropertyUtil;
@@ -45,8 +46,14 @@ public class DiscoveryProviderFactory extends ProviderFactory {
      */
     public static final String DISCOVERY_DISCOVERED_OPTION_PREFIX_ADON = "discovered.";
 
+
     @Override
     public Provider createProvider(URI remoteURI) throws Exception {
+        return createProvider(remoteURI, null);
+    }
+
+    @Override
+    public Provider createProvider(URI remoteURI, ProviderFutureFactory futureFactory) throws Exception {
 
         CompositeData composite = URISupport.parseComposite(remoteURI);
         Map<String, String> options = composite.getParameters();
@@ -67,8 +74,24 @@ public class DiscoveryProviderFactory extends ProviderFactory {
         nestedOptions.putAll(failoverNestedOptions);
         nestedOptions.putAll(discoveredOptions);
 
+        Map<String, String> providerOptions = PropertyUtil.filterProperties(options, "provider.");
+        // If we have been given a futures factory to use then we ignore any URI options indicating
+        // what to create and just go with what we are given.
+        if (futureFactory == null) {
+            // Create a configured ProviderFutureFactory for use by the resulting AmqpProvider
+            futureFactory = ProviderFutureFactory.create(providerOptions);
+            if (!providerOptions.isEmpty()) {
+                String msg = ""
+                    + " Not all Provider options could be applied during Failover Provider creation."
+                    + " Check the options are spelled correctly."
+                    + " Unused parameters=[" + providerOptions + "]."
+                    + " This provider instance cannot be started.";
+                throw new IllegalArgumentException(msg);
+            }
+        }
+
         // Failover will apply the nested options to each URI while attempting to connect.
-        FailoverProvider failover = new FailoverProvider(nestedOptions);
+        FailoverProvider failover = new FailoverProvider(nestedOptions, futureFactory);
         Map<String, String> leftOverDiscoveryOptions = PropertyUtil.setProperties(failover, mainOptions);
 
         DiscoveryProvider discovery = new DiscoveryProvider(remoteURI, failover);

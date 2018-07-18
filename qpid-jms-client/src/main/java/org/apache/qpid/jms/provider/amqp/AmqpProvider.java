@@ -60,7 +60,9 @@ import org.apache.qpid.jms.provider.ProviderClosedException;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFailedException;
 import org.apache.qpid.jms.provider.ProviderFuture;
+import org.apache.qpid.jms.provider.ProviderFutureFactory;
 import org.apache.qpid.jms.provider.ProviderListener;
+import org.apache.qpid.jms.provider.ProviderSynchronization;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpClosedConnectionBuilder;
 import org.apache.qpid.jms.provider.amqp.builders.AmqpConnectionBuilder;
 import org.apache.qpid.jms.sasl.Mechanism;
@@ -145,6 +147,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private final Collector protonCollector = new CollectorImpl();
     private final Connection protonConnection = Connection.Factory.create();
 
+    private final ProviderFutureFactory futureFactory;
     private AsyncResult connectionRequest;
     private ScheduledFuture<?> nextIdleTimeoutCheck;
 
@@ -155,10 +158,13 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
      *        The URI of the AMQP broker this Provider instance will connect to.
      * @param transport
      * 		  The underlying Transport that will be used for wire level communications.
+     * @param futureFactory
+     * 		  The ProviderFutureFactory to use when futures are requested.
      */
-    public AmqpProvider(URI remoteURI, Transport transport) {
+    public AmqpProvider(URI remoteURI, Transport transport, ProviderFutureFactory futureFactory) {
         this.remoteURI = remoteURI;
         this.transport = transport;
+        this.futureFactory = futureFactory;
 
         serializer = new ScheduledThreadPoolExecutor(1, new QpidJMSThreadFactory(
             "AmqpProvider :(" + PROVIDER_SEQUENCE.incrementAndGet() + "):[" +
@@ -172,7 +178,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     public void connect(final JmsConnectionInfo connectionInfo) throws IOException {
         checkClosedOrFailed();
 
-        final ProviderFuture connectRequest = new ProviderFuture();
+        final ProviderFuture connectRequest = futureFactory.createFuture();
 
         serializer.execute(new Runnable() {
 
@@ -302,15 +308,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            final ProviderFuture request = new ProviderFuture() {
-
-                @Override
-                public void onFailure(Throwable result) {
-                    // During close it is fine if the close call fails
-                    // this in unrecoverable so we just log the event.
-                    onSuccess();
-                }
-            };
+            final ProviderFuture request = futureFactory.createUnfailableFuture();
 
             serializer.execute(new Runnable() {
 
@@ -1136,6 +1134,16 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
             throw new RuntimeException("Message Factory is not accessible when not connected.");
         }
         return connection.getAmqpMessageFactory();
+    }
+
+    @Override
+    public ProviderFuture newProviderFuture() {
+        return futureFactory.createFuture();
+    }
+
+    @Override
+    public ProviderFuture newProviderFuture(ProviderSynchronization synchronization) {
+        return futureFactory.createFuture(synchronization);
     }
 
     public void setTraceFrames(boolean trace) {

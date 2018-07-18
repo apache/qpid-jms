@@ -146,6 +146,16 @@ public class ProviderWrapper<E extends Provider> implements Provider, ProviderLi
     }
 
     @Override
+    public ProviderFuture newProviderFuture() {
+        return next.newProviderFuture();
+    }
+
+    @Override
+    public ProviderFuture newProviderFuture(ProviderSynchronization synchronization) {
+        return next.newProviderFuture(synchronization);
+    }
+
+    @Override
     public void setProviderListener(ProviderListener listener) {
         this.listener = listener;
     }

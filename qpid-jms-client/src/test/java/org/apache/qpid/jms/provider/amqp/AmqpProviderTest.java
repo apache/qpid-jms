@@ -323,7 +323,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
                 fail("Should have thrown an IOException when closed.");
             } catch (IOException ex) {}
 
-            ProviderFuture request = new ProviderFuture();
+            ProviderFuture request = provider.newProviderFuture();
             try {
                 provider.unsubscribe("subscription-name", request);
                 fail("Should have thrown an IOException when closed.");
@@ -360,7 +360,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
             connectionInfo.setSendTimeout(SEND_TIMEOUT);
             connectionInfo.setRequestTimeout(REQUEST_TIMEOUT);
 
-            ProviderFuture request = new ProviderFuture();
+            ProviderFuture request = provider.newProviderFuture();
             provider.create(connectionInfo, request);
             request.sync();
 
@@ -415,7 +415,7 @@ public class AmqpProviderTest extends QpidJmsTestCase {
             };
 
             assertFalse("Error should not yet be thrown", errorThrown.get());
-            ProviderFuture request = new ProviderFuture();
+            ProviderFuture request = provider.newProviderFuture();
 
             switch(operation) {
             case CREATE:

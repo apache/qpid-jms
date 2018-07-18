@@ -43,7 +43,9 @@ import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderClosedException;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
+import org.apache.qpid.jms.provider.ProviderFutureFactory;
 import org.apache.qpid.jms.provider.ProviderListener;
+import org.apache.qpid.jms.provider.ProviderSynchronization;
 import org.apache.qpid.jms.provider.amqp.AmqpProvider;
 import org.apache.qpid.jms.util.ThreadPoolUtils;
 import org.slf4j.Logger;
@@ -66,6 +68,7 @@ public class MockProvider implements Provider {
     private final ScheduledThreadPoolExecutor serializer;
     private final AtomicBoolean closed = new AtomicBoolean();
     private final MockRemotePeer context;
+    private final ProviderFutureFactory futureFactory;
 
     private long connectTimeout = JmsConnectionInfo.DEFAULT_CONNECT_TIMEOUT;
     private long closeTimeout = JmsConnectionInfo.DEFAULT_CLOSE_TIMEOUT;
@@ -73,11 +76,12 @@ public class MockProvider implements Provider {
     private MockProviderListener eventListener;
     private ProviderListener listener;
 
-    public MockProvider(URI remoteURI, MockProviderConfiguration configuration, MockRemotePeer context) {
+    public MockProvider(URI remoteURI, MockProviderConfiguration configuration, MockRemotePeer context, ProviderFutureFactory futureFactory) {
         this.remoteURI = remoteURI;
         this.configuration = configuration;
         this.context = context;
         this.stats = new MockProviderStats(context != null ? context.getContextStats() : null);
+        this.futureFactory = futureFactory;
 
         serializer = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
 
@@ -129,7 +133,7 @@ public class MockProvider implements Provider {
         if (closed.compareAndSet(false, true)) {
             stats.recordCloseAttempt();
 
-            final ProviderFuture request = new ProviderFuture();
+            final ProviderFuture request = futureFactory.createFuture();
             serializer.execute(new Runnable() {
 
                 @Override
@@ -511,6 +515,16 @@ public class MockProvider implements Provider {
 
     public void setConnectTimeout(long connectTimeout) {
         this.connectTimeout = connectTimeout;
+    }
+
+    @Override
+    public ProviderFuture newProviderFuture() {
+        return futureFactory.createFuture();
+    }
+
+    @Override
+    public ProviderFuture newProviderFuture(ProviderSynchronization synchronization) {
+        return futureFactory.createFuture(synchronization);
     }
 
     //----- Implementation details -------------------------------------------//

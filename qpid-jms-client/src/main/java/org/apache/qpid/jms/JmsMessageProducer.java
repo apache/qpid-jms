@@ -357,7 +357,7 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
 
     protected void onConnectionRecovery(Provider provider) throws Exception {
         if (!producerInfo.isClosed()) {
-            ProviderFuture request = new ProviderFuture();
+            ProviderFuture request = provider.newProviderFuture();
             try {
                 provider.create(producerInfo, request);
                 request.sync();

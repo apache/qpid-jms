@@ -22,17 +22,41 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
+@RunWith(Parameterized.class)
 public class ProviderFutureTest {
+
+    private final ProviderFutureFactory futuresFactory;
+
+    @Parameters(name = "{index}: futureType={0}")
+    public static Collection<Object> data() {
+        return Arrays.asList(new Object[] {
+                 "conservative", "balanced", "progressive" }
+           );
+    }
+
+    public ProviderFutureTest(String futureTypeName) {
+        Map<String, String> options = new HashMap<>();
+        options.put("futureType", futureTypeName);
+
+        futuresFactory = ProviderFutureFactory.create(options);
+    }
 
     @Test
     public void testIsComplete() {
-        ProviderFuture future = new ProviderFuture();
+        ProviderFuture future = futuresFactory.createFuture();
 
         assertFalse(future.isComplete());
         future.onSuccess();
@@ -41,7 +65,7 @@ public class ProviderFutureTest {
 
     @Test(timeout = 10000)
     public void testOnSuccess() {
-        ProviderFuture future = new ProviderFuture();
+        ProviderFuture future = futuresFactory.createFuture();
 
         future.onSuccess();
         try {
@@ -53,7 +77,7 @@ public class ProviderFutureTest {
 
     @Test(timeout = 90000)
     public void testTimedSync() {
-        ProviderFuture future = new ProviderFuture();
+        ProviderFuture future = futuresFactory.createFuture();
 
         try {
             assertFalse(future.sync(1, TimeUnit.SECONDS));
@@ -64,7 +88,7 @@ public class ProviderFutureTest {
 
     @Test(timeout = 10000)
     public void testOnFailure() {
-        ProviderFuture future = new ProviderFuture();
+        ProviderFuture future = futuresFactory.createFuture();
         IOException ex = new IOException();
 
         future.onFailure(ex);
@@ -79,7 +103,7 @@ public class ProviderFutureTest {
     @Test(timeout = 10000)
     public void testOnSuccessCallsSynchronization() {
         final AtomicBoolean syncCalled = new AtomicBoolean(false);
-        ProviderFuture future = new ProviderFuture(new ProviderSynchronization() {
+        ProviderFuture future = futuresFactory.createFuture(new ProviderSynchronization() {
 
             @Override
             public void onPendingSuccess() {
@@ -104,7 +128,7 @@ public class ProviderFutureTest {
     @Test(timeout = 10000)
     public void testOnFailureCallsSynchronization() {
         final AtomicBoolean syncCalled = new AtomicBoolean(false);
-        ProviderFuture future = new ProviderFuture(new ProviderSynchronization() {
+        ProviderFuture future = futuresFactory.createFuture(new ProviderSynchronization() {
 
             @Override
             public void onPendingSuccess() {
@@ -131,7 +155,7 @@ public class ProviderFutureTest {
 
     @Test(timeout = 10000)
     public void testSuccessfulStateIsFixed() {
-        ProviderFuture future = new ProviderFuture();
+        ProviderFuture future = futuresFactory.createFuture();
         IOException ex = new IOException();
 
         future.onSuccess();
@@ -145,7 +169,7 @@ public class ProviderFutureTest {
 
     @Test(timeout = 10000)
     public void testFailedStateIsFixed() {
-        ProviderFuture future = new ProviderFuture();
+        ProviderFuture future = futuresFactory.createFuture();
         IOException ex = new IOException();
 
         future.onFailure(ex);
@@ -160,7 +184,7 @@ public class ProviderFutureTest {
 
     @Test(timeout = 10000)
     public void testSyncHandlesInterruption() throws InterruptedException {
-        final ProviderFuture future = new ProviderFuture();
+        ProviderFuture future = futuresFactory.createFuture();
 
         final CountDownLatch syncing = new CountDownLatch(1);
         final CountDownLatch done = new CountDownLatch(1);
@@ -193,7 +217,7 @@ public class ProviderFutureTest {
 
     @Test(timeout = 10000)
     public void testTimedSyncHandlesInterruption() throws InterruptedException {
-        final ProviderFuture future = new ProviderFuture();
+        ProviderFuture future = futuresFactory.createFuture();
 
         final CountDownLatch syncing = new CountDownLatch(1);
         final CountDownLatch done = new CountDownLatch(1);

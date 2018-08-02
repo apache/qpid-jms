@@ -406,7 +406,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
         serverSslOptions.setTrustStorePassword(PASSWORD);
         serverSslOptions.setVerifyHost(false);
 
-        SSLContext serverSslContext = TransportSupport.createSslContext(serverSslOptions);
+        SSLContext serverSslContext = TransportSupport.createJdkSslContext(serverSslOptions);
 
         setSslSystemPropertiesForCurrentTest(CLIENT_JKS_KEYSTORE, PASSWORD, CLIENT_JKS_TRUSTSTORE, PASSWORD);
 
@@ -513,7 +513,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
         sslOptions.setKeyStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
 
-        SSLContext serverSslContext = TransportSupport.createSslContext(sslOptions);
+        SSLContext serverSslContext = TransportSupport.createJdkSslContext(sslOptions);
 
         try (TestAmqpPeer primaryPeer = new TestAmqpPeer(serverSslContext, false);
              TestAmqpPeer backupPeer = new TestAmqpPeer(serverSslContext, false);) {
@@ -632,7 +632,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
         sslOptions.setKeyStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
 
-        SSLContext serverSslContext = TransportSupport.createSslContext(sslOptions);
+        SSLContext serverSslContext = TransportSupport.createJdkSslContext(sslOptions);
 
         try (TestAmqpPeer primaryPeer = new TestAmqpPeer(serverSslContext, false);
              TestAmqpPeer backupPeer = new TestAmqpPeer(serverSslContext, false);) {
@@ -753,7 +753,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
         serverSslOptions.setTrustStorePassword(PASSWORD);
         serverSslOptions.setVerifyHost(false);
 
-        SSLContext serverSslContext = TransportSupport.createSslContext(serverSslOptions);
+        SSLContext serverSslContext = TransportSupport.createJdkSslContext(serverSslOptions);
 
         TransportOptions clientSslOptions = new TransportOptions();
         clientSslOptions.setKeyStoreLocation(CLIENT_JKS_KEYSTORE);
@@ -761,7 +761,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
         clientSslOptions.setKeyStorePassword(PASSWORD);
         clientSslOptions.setTrustStorePassword(PASSWORD);
 
-        SSLContext clientSslContext = TransportSupport.createSslContext(clientSslOptions);
+        SSLContext clientSslContext = TransportSupport.createJdkSslContext(clientSslOptions);
 
         try (TestAmqpPeer primaryPeer = new TestAmqpPeer(serverSslContext, false);
              TestAmqpPeer backupPeer = new TestAmqpPeer(serverSslContext, false);) {
@@ -892,7 +892,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
         serverSslOptions.setTrustStorePassword(PASSWORD);
         serverSslOptions.setVerifyHost(false);
 
-        SSLContext serverSslContext = TransportSupport.createSslContext(serverSslOptions);
+        SSLContext serverSslContext = TransportSupport.createJdkSslContext(serverSslOptions);
 
         setSslSystemPropertiesForCurrentTest(CLIENT_JKS_KEYSTORE, PASSWORD, CLIENT_JKS_TRUSTSTORE, PASSWORD);
 
@@ -999,7 +999,7 @@ public class FailoverWithAmqpOpenProvidedServerListIntegrationTest extends QpidJ
         serverSslOptions.setTrustStorePassword(PASSWORD);
         serverSslOptions.setVerifyHost(false);
 
-        SSLContext serverSslContext = TransportSupport.createSslContext(serverSslOptions);
+        SSLContext serverSslContext = TransportSupport.createJdkSslContext(serverSslOptions);
 
         setSslSystemPropertiesForCurrentTest(CLIENT_JKS_KEYSTORE, PASSWORD, CLIENT_JKS_TRUSTSTORE, PASSWORD);
 

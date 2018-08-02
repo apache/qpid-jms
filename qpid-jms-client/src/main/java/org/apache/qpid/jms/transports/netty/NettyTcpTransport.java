@@ -134,18 +134,6 @@ public class NettyTcpTransport implements Transport {
 
         getTransportOptions().setSslContextOverride(sslContextOverride);
 
-        final SslHandler sslHandler;
-        if (isSecure()) {
-            try {
-                sslHandler = TransportSupport.createSslHandler(getRemoteLocation(), getTransportOptions());
-            } catch (Exception ex) {
-                // TODO: can we stop it throwing Exception?
-                throw IOExceptionSupport.create(ex);
-            }
-        } else {
-            sslHandler = null;
-        }
-
         boolean useKQueue = getTransportOptions().isUseKQueue() && KQueue.isAvailable();
         boolean useEpoll = getTransportOptions().isUseEpoll() && Epoll.isAvailable();
 
@@ -172,7 +160,7 @@ public class NettyTcpTransport implements Transport {
         bootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
             public void initChannel(Channel connectedChannel) throws Exception {
-                configureChannel(connectedChannel, sslHandler);
+                configureChannel(connectedChannel);
             }
         });
 
@@ -440,9 +428,16 @@ public class NettyTcpTransport implements Transport {
         }
     }
 
-    private void configureChannel(final Channel channel, final SslHandler sslHandler) throws Exception {
+    private void configureChannel(final Channel channel) throws Exception {
         if (isSecure()) {
-            channel.pipeline().addLast(sslHandler);
+            final SslHandler sslHandler;
+            try {
+                sslHandler = TransportSupport.createSslHandler(channel.alloc(), getRemoteLocation(), getTransportOptions());
+            } catch (Exception ex) {
+                throw IOExceptionSupport.create(ex);
+            }
+
+            channel.pipeline().addLast("ssl", sslHandler);
         }
 
         if (getTransportOptions().isTraceBytes()) {

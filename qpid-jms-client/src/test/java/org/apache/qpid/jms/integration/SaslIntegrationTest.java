@@ -83,7 +83,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
                              "transport.keyStoreLocation=" + CLIENT_JKS_KEYSTORE + "&" +
                              "transport.keyStorePassword=" + PASSWORD;
 
-        SSLContext context = TransportSupport.createSslContext(sslOptions);
+        SSLContext context = TransportSupport.createJdkSslContext(sslOptions);
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer(context, true);) {
             // Expect an EXTERNAL connection
@@ -312,7 +312,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
             sslOptions.setTrustStorePassword(PASSWORD);
         }
 
-        SSLContext context = TransportSupport.createSslContext(sslOptions);
+        SSLContext context = TransportSupport.createJdkSslContext(sslOptions);
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer(context, requireClientCert);) {
             String connOptions = "?transport.trustStoreLocation=" + CLIENT_JKS_TRUSTSTORE + "&" +

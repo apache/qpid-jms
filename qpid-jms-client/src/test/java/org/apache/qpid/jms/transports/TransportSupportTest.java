@@ -23,9 +23,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.IOException;
 import java.security.UnrecoverableKeyException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -34,6 +36,12 @@ import javax.net.ssl.SSLEngine;
 
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.junit.Test;
+
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.handler.ssl.OpenSsl;
+import io.netty.handler.ssl.OpenSslEngine;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslHandler;
 
 /**
  * Tests for the TransportSupport class.
@@ -63,17 +71,20 @@ public class TransportSupportTest extends QpidJmsTestCase {
 
     public static final String[] ENABLED_PROTOCOLS = new String[] { "TLSv1" };
 
+    // Currently the OpenSSL implementation cannot disable SSLv2Hello
+    public static final String[] ENABLED_OPENSSL_PROTOCOLS = new String[] { "SSLv2Hello", "TLSv1" };
+
     private static final String ALIAS_DOES_NOT_EXIST = "alias.does.not.exist";
     private static final String ALIAS_CA_CERT = "ca";
 
     @Test
-    public void testLegacySslProtocolsDisabledByDefault() throws Exception {
+    public void testLegacySslProtocolsDisabledByDefaultJDK() throws Exception {
         TransportOptions options = createJksSslOptions(null);
 
-        SSLContext context = TransportSupport.createSslContext(options);
+        SSLContext context = TransportSupport.createJdkSslContext(options);
         assertNotNull(context);
 
-        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        SSLEngine engine = TransportSupport.createJdkSslEngine(null, context, options);
         assertNotNull(engine);
 
         List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
@@ -82,97 +93,231 @@ public class TransportSupportTest extends QpidJmsTestCase {
     }
 
     @Test
-    public void testCreateSslContextJksStore() throws Exception {
+    public void testLegacySslProtocolsDisabledByDefaultOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        TransportOptions options = createJksSslOptions(null);
+
+        SslContext context = TransportSupport.createOpenSslContext(options);
+        assertNotNull(context);
+
+        SSLEngine engine = TransportSupport.createOpenSslEngine(PooledByteBufAllocator.DEFAULT, null, context, options);
+        assertNotNull(engine);
+
+        List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
+        assertFalse("SSLv3 should not be enabled by default", engineProtocols.contains("SSLv3"));
+
+        // TODO - Netty is currently unable to disable OpenSSL SSLv2Hello so we are stuck with it for now.
+        // assertFalse("SSLv2Hello should not be enabled by default", engineProtocols.contains("SSLv2Hello"));
+    }
+
+    @Test
+    public void testCreateSslContextJksStoreJDK() throws Exception {
         TransportOptions options = createJksSslOptions();
 
-        SSLContext context = TransportSupport.createSslContext(options);
+        SSLContext context = TransportSupport.createJdkSslContext(options);
         assertNotNull(context);
 
         assertEquals("TLS", context.getProtocol());
     }
 
     @Test
-    public void testCreateSslContextJksStoreWithConfiguredContextProtocol() throws Exception {
+    public void testCreateSslContextJksStoreOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        TransportOptions options = createJksSslOptions();
+
+        SslContext context = TransportSupport.createOpenSslContext(options);
+        assertNotNull(context);
+
+        // TODO There is no means currently of getting the protocol from the netty SslContext.
+        // assertEquals("TLS", context.getProtocol());
+    }
+
+    @Test
+    public void testCreateSslContextJksStoreWithConfiguredContextProtocolJDK() throws Exception {
         TransportOptions options = createJksSslOptions();
         String contextProtocol = "TLSv1.2";
         options.setContextProtocol(contextProtocol);
 
-        SSLContext context = TransportSupport.createSslContext(options);
+        SSLContext context = TransportSupport.createJdkSslContext(options);
         assertNotNull(context);
 
         assertEquals(contextProtocol, context.getProtocol());
     }
 
+    @Test
+    public void testCreateSslContextJksStoreWithConfiguredContextProtocolOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        TransportOptions options = createJksSslOptions();
+        String contextProtocol = "TLSv1.2";
+        options.setContextProtocol(contextProtocol);
+
+        SslContext context = TransportSupport.createOpenSslContext(options);
+        assertNotNull(context);
+
+        // TODO There is no means currently of getting the protocol from the netty SslContext.
+        // assertEquals(contextProtocol, context.getProtocol());
+    }
+
     @Test(expected = UnrecoverableKeyException.class)
-    public void testCreateSslContextNoKeyStorePassword() throws Exception {
+    public void testCreateSslContextNoKeyStorePasswordJDK() throws Exception {
         TransportOptions options = createJksSslOptions();
         options.setKeyStorePassword(null);
-        TransportSupport.createSslContext(options);
+        TransportSupport.createJdkSslContext(options);
+    }
+
+    @Test(expected = UnrecoverableKeyException.class)
+    public void testCreateSslContextNoKeyStorePasswordOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        TransportOptions options = createJksSslOptions();
+        options.setKeyStorePassword(null);
+        TransportSupport.createOpenSslContext(options);
     }
 
     @Test(expected = IOException.class)
-    public void testCreateSslContextWrongKeyStorePassword() throws Exception {
+    public void testCreateSslContextWrongKeyStorePasswordJDK() throws Exception {
         TransportOptions options = createJksSslOptions();
         options.setKeyStorePassword("wrong");
-        TransportSupport.createSslContext(options);
+        TransportSupport.createJdkSslContext(options);
     }
 
     @Test(expected = IOException.class)
-    public void testCreateSslContextBadPathToKeyStore() throws Exception {
+    public void testCreateSslContextWrongKeyStorePasswordOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        TransportOptions options = createJksSslOptions();
+        options.setKeyStorePassword("wrong");
+        TransportSupport.createOpenSslContext(options);
+    }
+
+    @Test(expected = IOException.class)
+    public void testCreateSslContextBadPathToKeyStoreJDK() throws Exception {
         TransportOptions options = createJksSslOptions();
         options.setKeyStoreLocation(CLIENT_JKS_KEYSTORE + ".bad");
-        TransportSupport.createSslContext(options);
+        TransportSupport.createJdkSslContext(options);
     }
 
     @Test(expected = IOException.class)
-    public void testCreateSslContextWrongTrustStorePassword() throws Exception {
+    public void testCreateSslContextBadPathToKeyStoreOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        TransportOptions options = createJksSslOptions();
+        options.setKeyStoreLocation(CLIENT_JKS_KEYSTORE + ".bad");
+        TransportSupport.createOpenSslContext(options);
+    }
+
+    @Test(expected = IOException.class)
+    public void testCreateSslContextWrongTrustStorePasswordJDK() throws Exception {
         TransportOptions options = createJksSslOptions();
         options.setTrustStorePassword("wrong");
-        TransportSupport.createSslContext(options);
+        TransportSupport.createJdkSslContext(options);
     }
 
     @Test(expected = IOException.class)
-    public void testCreateSslContextBadPathToTrustStore() throws Exception {
+    public void testCreateSslContextWrongTrustStorePasswordOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        TransportOptions options = createJksSslOptions();
+        options.setTrustStorePassword("wrong");
+        TransportSupport.createOpenSslContext(options);
+    }
+
+    @Test(expected = IOException.class)
+    public void testCreateSslContextBadPathToTrustStoreJDK() throws Exception {
         TransportOptions options = createJksSslOptions();
         options.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE + ".bad");
-        TransportSupport.createSslContext(options);
-    }
-
-    @Test
-    public void testCreateSslContextJceksStore() throws Exception {
-        TransportOptions options = createJceksSslOptions();
-
-        SSLContext context = TransportSupport.createSslContext(options);
-        assertNotNull(context);
-
-        assertEquals("TLS", context.getProtocol());
-    }
-
-    @Test
-    public void testCreateSslContextPkcs12Store() throws Exception {
-        TransportOptions options = createPkcs12SslOptions();
-
-        SSLContext context = TransportSupport.createSslContext(options);
-        assertNotNull(context);
-
-        assertEquals("TLS", context.getProtocol());
+        TransportSupport.createJdkSslContext(options);
     }
 
     @Test(expected = IOException.class)
-    public void testCreateSslContextIncorrectStoreType() throws Exception {
+    public void testCreateSslContextBadPathToTrustStoreOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        TransportOptions options = createJksSslOptions();
+        options.setTrustStoreLocation(CLIENT_JKS_TRUSTSTORE + ".bad");
+        TransportSupport.createOpenSslContext(options);
+    }
+
+    @Test
+    public void testCreateSslContextJceksStoreJDK() throws Exception {
+        TransportOptions options = createJceksSslOptions();
+
+        SSLContext context = TransportSupport.createJdkSslContext(options);
+        assertNotNull(context);
+
+        assertEquals("TLS", context.getProtocol());
+    }
+
+    @Test
+    public void testCreateSslContextJceksStoreOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        TransportOptions options = createJceksSslOptions();
+
+        SslContext context = TransportSupport.createOpenSslContext(options);
+        assertNotNull(context);
+        assertTrue(context.isClient());
+    }
+
+    @Test
+    public void testCreateSslContextPkcs12StoreJDK() throws Exception {
+        TransportOptions options = createPkcs12SslOptions();
+
+        SSLContext context = TransportSupport.createJdkSslContext(options);
+        assertNotNull(context);
+
+        assertEquals("TLS", context.getProtocol());
+    }
+
+    @Test
+    public void testCreateSslContextPkcs12StoreOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        TransportOptions options = createPkcs12SslOptions();
+
+        SslContext context = TransportSupport.createOpenSslContext(options);
+        assertNotNull(context);
+        assertTrue(context.isClient());
+    }
+
+    @Test(expected = IOException.class)
+    public void testCreateSslContextIncorrectStoreTypeJDK() throws Exception {
         TransportOptions options = createPkcs12SslOptions();
         options.setStoreType(KEYSTORE_JCEKS_TYPE);
-        TransportSupport.createSslContext(options);
+        TransportSupport.createJdkSslContext(options);
+    }
+
+    @Test(expected = IOException.class)
+    public void testCreateSslContextIncorrectStoreTypeOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        TransportOptions options = createPkcs12SslOptions();
+        options.setStoreType(KEYSTORE_JCEKS_TYPE);
+        TransportSupport.createOpenSslContext(options);
     }
 
     @Test
-    public void testCreateSslEngineFromPkcs12Store() throws Exception {
+    public void testCreateSslEngineFromPkcs12StoreJDK() throws Exception {
         TransportOptions options = createPkcs12SslOptions();
 
-        SSLContext context = TransportSupport.createSslContext(options);
+        SSLContext context = TransportSupport.createJdkSslContext(options);
         assertNotNull(context);
 
-        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        SSLEngine engine = TransportSupport.createJdkSslEngine(null, context, options);
         assertNotNull(engine);
 
         List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
@@ -180,26 +325,59 @@ public class TransportSupportTest extends QpidJmsTestCase {
     }
 
     @Test
-    public void testCreateSslEngineFromPkcs12StoreWithExplicitEnabledProtocols() throws Exception {
+    public void testCreateSslEngineFromPkcs12StoreOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        TransportOptions options = createPkcs12SslOptions();
+
+        SslContext context = TransportSupport.createOpenSslContext(options);
+        assertNotNull(context);
+
+        SSLEngine engine = TransportSupport.createOpenSslEngine(PooledByteBufAllocator.DEFAULT, null, context, options);
+        assertNotNull(engine);
+
+        List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
+        assertFalse(engineProtocols.isEmpty());
+    }
+
+    @Test
+    public void testCreateSslEngineFromPkcs12StoreWithExplicitEnabledProtocolsJDK() throws Exception {
         TransportOptions options = createPkcs12SslOptions(ENABLED_PROTOCOLS);
 
-        SSLContext context = TransportSupport.createSslContext(options);
+        SSLContext context = TransportSupport.createJdkSslContext(options);
         assertNotNull(context);
 
-        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        SSLEngine engine = TransportSupport.createJdkSslEngine(null, context, options);
         assertNotNull(engine);
 
         assertArrayEquals("Enabled protocols not as expected", ENABLED_PROTOCOLS, engine.getEnabledProtocols());
     }
 
     @Test
-    public void testCreateSslEngineFromJksStore() throws Exception {
-        TransportOptions options = createJksSslOptions();
+    public void testCreateSslEngineFromPkcs12StoreWithExplicitEnabledProtocolsOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-        SSLContext context = TransportSupport.createSslContext(options);
+        TransportOptions options = createPkcs12SslOptions(ENABLED_PROTOCOLS);
+
+        SslContext context = TransportSupport.createOpenSslContext(options);
         assertNotNull(context);
 
-        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        SSLEngine engine = TransportSupport.createOpenSslEngine(PooledByteBufAllocator.DEFAULT, null, context, options);
+        assertNotNull(engine);
+
+        assertArrayEquals("Enabled protocols not as expected", ENABLED_OPENSSL_PROTOCOLS, engine.getEnabledProtocols());
+    }
+
+    @Test
+    public void testCreateSslEngineFromJksStoreJDK() throws Exception {
+        TransportOptions options = createJksSslOptions();
+
+        SSLContext context = TransportSupport.createJdkSslContext(options);
+        assertNotNull(context);
+
+        SSLEngine engine = TransportSupport.createJdkSslEngine(null, context, options);
         assertNotNull(engine);
 
         List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
@@ -207,20 +385,53 @@ public class TransportSupportTest extends QpidJmsTestCase {
     }
 
     @Test
-    public void testCreateSslEngineFromJksStoreWithExplicitEnabledProtocols() throws Exception {
-        TransportOptions options = createJksSslOptions(ENABLED_PROTOCOLS);
+    public void testCreateSslEngineFromJksStoreOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-        SSLContext context = TransportSupport.createSslContext(options);
+        TransportOptions options = createJksSslOptions();
+
+        SslContext context = TransportSupport.createOpenSslContext(options);
         assertNotNull(context);
 
-        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        SSLEngine engine = TransportSupport.createOpenSslEngine(PooledByteBufAllocator.DEFAULT, null, context, options);
+        assertNotNull(engine);
+
+        List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
+        assertFalse(engineProtocols.isEmpty());
+    }
+
+    @Test
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledProtocolsJDK() throws Exception {
+        TransportOptions options = createJksSslOptions(ENABLED_PROTOCOLS);
+
+        SSLContext context = TransportSupport.createJdkSslContext(options);
+        assertNotNull(context);
+
+        SSLEngine engine = TransportSupport.createJdkSslEngine(null, context, options);
         assertNotNull(engine);
 
         assertArrayEquals("Enabled protocols not as expected", ENABLED_PROTOCOLS, engine.getEnabledProtocols());
     }
 
     @Test
-    public void testCreateSslEngineFromJksStoreWithExplicitDisabledProtocols() throws Exception {
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledProtocolsOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        TransportOptions options = createJksSslOptions(ENABLED_PROTOCOLS);
+
+        SslContext context = TransportSupport.createOpenSslContext(options);
+        assertNotNull(context);
+
+        SSLEngine engine = TransportSupport.createOpenSslEngine(PooledByteBufAllocator.DEFAULT, null, context, options);
+        assertNotNull(engine);
+
+        assertArrayEquals("Enabled protocols not as expected", ENABLED_OPENSSL_PROTOCOLS, engine.getEnabledProtocols());
+    }
+
+    @Test
+    public void testCreateSslEngineFromJksStoreWithExplicitDisabledProtocolsJDK() throws Exception {
         // Discover the default enabled protocols
         TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createSSLEngineDirectly(options);
@@ -231,8 +442,8 @@ public class TransportSupportTest extends QpidJmsTestCase {
         String[] disabledProtocol = new String[] { protocols[protocols.length - 1] };
         String[] trimmedProtocols = Arrays.copyOf(protocols, protocols.length - 1);
         options.setDisabledProtocols(disabledProtocol);
-        SSLContext context = TransportSupport.createSslContext(options);
-        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        SSLContext context = TransportSupport.createJdkSslContext(options);
+        SSLEngine engine = TransportSupport.createJdkSslEngine(null, context, options);
 
         // verify the option took effect
         assertNotNull(engine);
@@ -240,7 +451,30 @@ public class TransportSupportTest extends QpidJmsTestCase {
     }
 
     @Test
-    public void testCreateSslEngineFromJksStoreWithExplicitEnabledAndDisabledProtocols() throws Exception {
+    public void testCreateSslEngineFromJksStoreWithExplicitDisabledProtocolsOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        // Discover the default enabled protocols
+        TransportOptions options = createJksSslOptions();
+        SSLEngine directEngine = createOpenSSLEngineDirectly(options);
+        String[] protocols = directEngine.getEnabledProtocols();
+        assertTrue("There were no initial protocols to choose from!", protocols.length > 0);
+
+        // Pull out one to disable specifically
+        String[] disabledProtocol = new String[] { protocols[protocols.length - 1] };
+        String[] trimmedProtocols = Arrays.copyOf(protocols, protocols.length - 1);
+        options.setDisabledProtocols(disabledProtocol);
+        SslContext context = TransportSupport.createOpenSslContext(options);
+        SSLEngine engine = TransportSupport.createOpenSslEngine(PooledByteBufAllocator.DEFAULT, null, context, options);
+
+        // verify the option took effect
+        assertNotNull(engine);
+        assertArrayEquals("Enabled protocols not as expected", trimmedProtocols, engine.getEnabledProtocols());
+    }
+
+    @Test
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledAndDisabledProtocolsJDK() throws Exception {
         // Discover the default enabled protocols
         TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createSSLEngineDirectly(options);
@@ -255,8 +489,8 @@ public class TransportSupportTest extends QpidJmsTestCase {
         String[] remainingProtocols = new String[] { protocol2 };
         options.setEnabledProtocols(enabledProtocols);
         options.setDisabledProtocols(disabledProtocol);
-        SSLContext context = TransportSupport.createSslContext(options);
-        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        SSLContext context = TransportSupport.createJdkSslContext(options);
+        SSLEngine engine = TransportSupport.createJdkSslEngine(null, context, options);
 
         // verify the option took effect, that the disabled protocols were removed from the enabled list.
         assertNotNull(engine);
@@ -264,7 +498,43 @@ public class TransportSupportTest extends QpidJmsTestCase {
     }
 
     @Test
-    public void testCreateSslEngineFromJksStoreWithExplicitEnabledCiphers() throws Exception {
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledAndDisabledProtocolsOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        // Discover the default enabled protocols
+        TransportOptions options = createJksSslOptions();
+        SSLEngine directEngine = createOpenSSLEngineDirectly(options);
+        String[] protocols = directEngine.getEnabledProtocols();
+        assertTrue("There were no initial protocols to choose from!", protocols.length > 1);
+
+        // Pull out two to enable, and one to disable specifically
+        String protocol1 = protocols[0];
+        String protocol2 = protocols[1];
+        String[] enabledProtocols = new String[] { protocol1, protocol2 };
+        String[] disabledProtocol = new String[] { protocol1 };
+        String[] remainingProtocols = new String[] { protocol2 };
+        options.setEnabledProtocols(enabledProtocols);
+        options.setDisabledProtocols(disabledProtocol);
+        SslContext context = TransportSupport.createOpenSslContext(options);
+        SSLEngine engine = TransportSupport.createOpenSslEngine(PooledByteBufAllocator.DEFAULT, null, context, options);
+
+        // Because Netty cannot currently disable SSLv2Hello in OpenSSL we need to account for it popping up.
+        ArrayList<String> remainingProtocolsList = new ArrayList<>(Arrays.asList(remainingProtocols));
+        if (!remainingProtocolsList.contains("SSLv2Hello")) {
+            remainingProtocolsList.add(0, "SSLv2Hello");
+        }
+
+        remainingProtocols = remainingProtocolsList.toArray(new String[remainingProtocolsList.size()]);
+
+        // verify the option took effect, that the disabled protocols were removed from the enabled list.
+        assertNotNull(engine);
+        assertEquals("Enabled protocols not as expected", remainingProtocolsList.size(), engine.getEnabledProtocols().length);
+        assertTrue("Enabled protocols not as expected", remainingProtocolsList.containsAll(Arrays.asList(engine.getEnabledProtocols())));
+    }
+
+    @Test
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledCiphersJDK() throws Exception {
         // Discover the default enabled ciphers
         TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createSSLEngineDirectly(options);
@@ -275,8 +545,8 @@ public class TransportSupportTest extends QpidJmsTestCase {
         String cipher = ciphers[0];
         String[] enabledCipher = new String[] { cipher };
         options.setEnabledCipherSuites(enabledCipher);
-        SSLContext context = TransportSupport.createSslContext(options);
-        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        SSLContext context = TransportSupport.createJdkSslContext(options);
+        SSLEngine engine = TransportSupport.createJdkSslEngine(null, context, options);
 
         // verify the option took effect
         assertNotNull(engine);
@@ -284,7 +554,30 @@ public class TransportSupportTest extends QpidJmsTestCase {
     }
 
     @Test
-    public void testCreateSslEngineFromJksStoreWithExplicitDisabledCiphers() throws Exception {
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledCiphersOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        // Discover the default enabled ciphers
+        TransportOptions options = createJksSslOptions();
+        SSLEngine directEngine = createOpenSSLEngineDirectly(options);
+        String[] ciphers = directEngine.getEnabledCipherSuites();
+        assertTrue("There were no initial ciphers to choose from!", ciphers.length > 0);
+
+        // Pull out one to enable specifically
+        String cipher = ciphers[0];
+        String[] enabledCipher = new String[] { cipher };
+        options.setEnabledCipherSuites(enabledCipher);
+        SslContext context = TransportSupport.createOpenSslContext(options);
+        SSLEngine engine = TransportSupport.createOpenSslEngine(PooledByteBufAllocator.DEFAULT, null, context, options);
+
+        // verify the option took effect
+        assertNotNull(engine);
+        assertArrayEquals("Enabled ciphers not as expected", enabledCipher, engine.getEnabledCipherSuites());
+    }
+
+    @Test
+    public void testCreateSslEngineFromJksStoreWithExplicitDisabledCiphersJDK() throws Exception {
         // Discover the default enabled ciphers
         TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createSSLEngineDirectly(options);
@@ -295,8 +588,8 @@ public class TransportSupportTest extends QpidJmsTestCase {
         String[] disabledCipher = new String[] { ciphers[ciphers.length - 1] };
         String[] trimmedCiphers = Arrays.copyOf(ciphers, ciphers.length - 1);
         options.setDisabledCipherSuites(disabledCipher);
-        SSLContext context = TransportSupport.createSslContext(options);
-        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        SSLContext context = TransportSupport.createJdkSslContext(options);
+        SSLEngine engine = TransportSupport.createJdkSslEngine(null, context, options);
 
         // verify the option took effect
         assertNotNull(engine);
@@ -304,7 +597,30 @@ public class TransportSupportTest extends QpidJmsTestCase {
     }
 
     @Test
-    public void testCreateSslEngineFromJksStoreWithExplicitEnabledAndDisabledCiphers() throws Exception {
+    public void testCreateSslEngineFromJksStoreWithExplicitDisabledCiphersOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        // Discover the default enabled ciphers
+        TransportOptions options = createJksSslOptions();
+        SSLEngine directEngine = createOpenSSLEngineDirectly(options);
+        String[] ciphers = directEngine.getEnabledCipherSuites();
+        assertTrue("There were no initial ciphers to choose from!", ciphers.length > 0);
+
+        // Pull out one to disable specifically
+        String[] disabledCipher = new String[] { ciphers[ciphers.length - 1] };
+        String[] trimmedCiphers = Arrays.copyOf(ciphers, ciphers.length - 1);
+        options.setDisabledCipherSuites(disabledCipher);
+        SslContext context = TransportSupport.createOpenSslContext(options);
+        SSLEngine engine = TransportSupport.createOpenSslEngine(PooledByteBufAllocator.DEFAULT, null, context, options);
+
+        // verify the option took effect
+        assertNotNull(engine);
+        assertArrayEquals("Enabled ciphers not as expected", trimmedCiphers, engine.getEnabledCipherSuites());
+    }
+
+    @Test
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledAndDisabledCiphersJDK() throws Exception {
         // Discover the default enabled ciphers
         TransportOptions options = createJksSslOptions();
         SSLEngine directEngine = createSSLEngineDirectly(options);
@@ -319,8 +635,8 @@ public class TransportSupportTest extends QpidJmsTestCase {
         String[] remainingCipher = new String[] { cipher2 };
         options.setEnabledCipherSuites(enabledCiphers);
         options.setDisabledCipherSuites(disabledCipher);
-        SSLContext context = TransportSupport.createSslContext(options);
-        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        SSLContext context = TransportSupport.createJdkSslContext(options);
+        SSLEngine engine = TransportSupport.createJdkSslEngine(null, context, options);
 
         // verify the option took effect, that the disabled ciphers were removed from the enabled list.
         assertNotNull(engine);
@@ -328,13 +644,40 @@ public class TransportSupportTest extends QpidJmsTestCase {
     }
 
     @Test
-    public void testCreateSslEngineFromJceksStore() throws Exception {
+    public void testCreateSslEngineFromJksStoreWithExplicitEnabledAndDisabledCiphersOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        // Discover the default enabled ciphers
+        TransportOptions options = createJksSslOptions();
+        SSLEngine directEngine = createOpenSSLEngineDirectly(options);
+        String[] ciphers = directEngine.getEnabledCipherSuites();
+        assertTrue("There werent enough initial ciphers to choose from!", ciphers.length > 1);
+
+        // Pull out two to enable, and one to disable specifically
+        String cipher1 = ciphers[0];
+        String cipher2 = ciphers[1];
+        String[] enabledCiphers = new String[] { cipher1, cipher2 };
+        String[] disabledCipher = new String[] { cipher1 };
+        String[] remainingCipher = new String[] { cipher2 };
+        options.setEnabledCipherSuites(enabledCiphers);
+        options.setDisabledCipherSuites(disabledCipher);
+        SslContext context = TransportSupport.createOpenSslContext(options);
+        SSLEngine engine = TransportSupport.createOpenSslEngine(PooledByteBufAllocator.DEFAULT, null, context, options);
+
+        // verify the option took effect, that the disabled ciphers were removed from the enabled list.
+        assertNotNull(engine);
+        assertArrayEquals("Enabled ciphers not as expected", remainingCipher, engine.getEnabledCipherSuites());
+    }
+
+    @Test
+    public void testCreateSslEngineFromJceksStoreJDK() throws Exception {
         TransportOptions options = createJceksSslOptions();
 
-        SSLContext context = TransportSupport.createSslContext(options);
+        SSLContext context = TransportSupport.createJdkSslContext(options);
         assertNotNull(context);
 
-        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        SSLEngine engine = TransportSupport.createJdkSslEngine(null, context, options);
         assertNotNull(engine);
 
         List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
@@ -342,41 +685,112 @@ public class TransportSupportTest extends QpidJmsTestCase {
     }
 
     @Test
-    public void testCreateSslEngineFromJceksStoreWithExplicitEnabledProtocols() throws Exception {
-        TransportOptions options = createJceksSslOptions(ENABLED_PROTOCOLS);
+    public void testCreateSslEngineFromJceksStoreOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
 
-        SSLContext context = TransportSupport.createSslContext(options);
+        TransportOptions options = createJceksSslOptions();
+
+        SslContext context = TransportSupport.createOpenSslContext(options);
         assertNotNull(context);
 
-        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        SSLEngine engine = TransportSupport.createOpenSslEngine(PooledByteBufAllocator.DEFAULT, null, context, options);
+        assertNotNull(engine);
+
+        List<String> engineProtocols = Arrays.asList(engine.getEnabledProtocols());
+        assertFalse(engineProtocols.isEmpty());
+    }
+
+    @Test
+    public void testCreateSslEngineFromJceksStoreWithExplicitEnabledProtocolsJDK() throws Exception {
+        TransportOptions options = createJceksSslOptions(ENABLED_PROTOCOLS);
+
+        SSLContext context = TransportSupport.createJdkSslContext(options);
+        assertNotNull(context);
+
+        SSLEngine engine = TransportSupport.createJdkSslEngine(null, context, options);
         assertNotNull(engine);
 
         assertArrayEquals("Enabled protocols not as expected", ENABLED_PROTOCOLS, engine.getEnabledProtocols());
     }
 
     @Test
-    public void testCreateSslEngineWithVerifyHost() throws Exception {
+    public void testCreateSslEngineFromJceksStoreWithExplicitEnabledProtocolsOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        // Try and disable all but the one we really want but for now expect that this one plus SSLv2Hello
+        // is going to come back until the netty code can successfully disable them all.
+        TransportOptions options = createJceksSslOptions(ENABLED_PROTOCOLS);
+
+        SslContext context = TransportSupport.createOpenSslContext(options);
+        assertNotNull(context);
+
+        SSLEngine engine = TransportSupport.createOpenSslEngine(PooledByteBufAllocator.DEFAULT, null, context, options);
+        assertNotNull(engine);
+
+        assertArrayEquals("Enabled protocols not as expected", ENABLED_OPENSSL_PROTOCOLS, engine.getEnabledProtocols());
+    }
+
+    @Test
+    public void testCreateSslEngineWithVerifyHostJDK() throws Exception {
         TransportOptions options = createJksSslOptions();
         options.setVerifyHost(true);
 
-        SSLContext context = TransportSupport.createSslContext(options);
+        SSLContext context = TransportSupport.createJdkSslContext(options);
         assertNotNull(context);
 
-        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        SSLEngine engine = TransportSupport.createJdkSslEngine(null, context, options);
         assertNotNull(engine);
 
         assertEquals("HTTPS", engine.getSSLParameters().getEndpointIdentificationAlgorithm());
     }
 
     @Test
-    public void testCreateSslEngineWithoutVerifyHost() throws Exception {
+    public void testCreateSslEngineWithVerifyHostOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+        assumeTrue(OpenSsl.supportsHostnameValidation());
+
+        TransportOptions options = createJksSslOptions();
+        options.setVerifyHost(true);
+
+        SslContext context = TransportSupport.createOpenSslContext(options);
+        assertNotNull(context);
+
+        SSLEngine engine = TransportSupport.createOpenSslEngine(PooledByteBufAllocator.DEFAULT, null, context, options);
+        assertNotNull(engine);
+
+        assertEquals("HTTPS", engine.getSSLParameters().getEndpointIdentificationAlgorithm());
+    }
+
+    @Test
+    public void testCreateSslEngineWithoutVerifyHostJDK() throws Exception {
         TransportOptions options = createJksSslOptions();
         options.setVerifyHost(false);
 
-        SSLContext context = TransportSupport.createSslContext(options);
+        SSLContext context = TransportSupport.createJdkSslContext(options);
         assertNotNull(context);
 
-        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+        SSLEngine engine = TransportSupport.createJdkSslEngine(null, context, options);
+        assertNotNull(engine);
+
+        assertNull(engine.getSSLParameters().getEndpointIdentificationAlgorithm());
+    }
+
+    @Test
+    public void testCreateSslEngineWithoutVerifyHostOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+        assumeTrue(OpenSsl.supportsHostnameValidation());
+
+        TransportOptions options = createJksSslOptions();
+        options.setVerifyHost(false);
+
+        SslContext context = TransportSupport.createOpenSslContext(options);
+        assertNotNull(context);
+
+        SSLEngine engine = TransportSupport.createOpenSslEngine(PooledByteBufAllocator.DEFAULT, null, context, options);
         assertNotNull(engine);
 
         assertNull(engine.getSSLParameters().getEndpointIdentificationAlgorithm());
@@ -388,7 +802,7 @@ public class TransportSupportTest extends QpidJmsTestCase {
         options.setKeyAlias(ALIAS_DOES_NOT_EXIST);
 
         try {
-            TransportSupport.createSslContext(options);
+            TransportSupport.createJdkSslContext(options);
             fail("Expected exception to be thrown");
         } catch (IllegalArgumentException iae) {
             // Expected
@@ -401,11 +815,94 @@ public class TransportSupportTest extends QpidJmsTestCase {
         options.setKeyAlias(ALIAS_CA_CERT);
 
         try {
-            TransportSupport.createSslContext(options);
+            TransportSupport.createJdkSslContext(options);
             fail("Expected exception to be thrown");
         } catch (IllegalArgumentException iae) {
             // Expected
         }
+    }
+
+    @Test(timeout = 100000)
+    public void testIsOpenSSLPossible() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        TransportOptions options = new TransportOptions();
+        options.setUseOpenSSL(false);
+        assertFalse(TransportSupport.isOpenSSLPossible(options));
+
+        options.setUseOpenSSL(true);
+        assertTrue(TransportSupport.isOpenSSLPossible(options));
+    }
+
+    @Test(timeout = 100000)
+    public void testIsOpenSSLPossibleWhenHostNameVerificationConfigured() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+        assumeTrue(OpenSsl.supportsHostnameValidation());
+
+        TransportOptions options = new TransportOptions();
+        options.setUseOpenSSL(true);
+
+        options.setVerifyHost(false);
+        assertTrue(TransportSupport.isOpenSSLPossible(options));
+
+        options.setVerifyHost(true);
+        assertTrue(TransportSupport.isOpenSSLPossible(options));
+    }
+
+    @Test(timeout = 100000)
+    public void testIsOpenSSLPossibleWhenKeyAliasIsSpecified() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+        assumeTrue(OpenSsl.supportsHostnameValidation());
+
+        TransportOptions options = new TransportOptions();
+        options.setUseOpenSSL(true);
+        options.setKeyAlias("alias");
+
+        assertFalse(TransportSupport.isOpenSSLPossible(options));
+    }
+
+    @Test(timeout = 100000)
+    public void testCreateSslHandlerJDK() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        TransportOptions options = new TransportOptions();
+        options.setUseOpenSSL(false);
+
+        SslHandler handler = TransportSupport.createSslHandler(null, null, options);
+        assertNotNull(handler);
+        assertFalse(handler.engine() instanceof OpenSslEngine);
+    }
+
+    @Test(timeout = 100000)
+    public void testCreateSslHandlerOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        TransportOptions options = new TransportOptions();
+        options.setUseOpenSSL(true);
+
+        SslHandler handler = TransportSupport.createSslHandler(PooledByteBufAllocator.DEFAULT, null, options);
+        assertNotNull(handler);
+        assertTrue(handler.engine() instanceof OpenSslEngine);
+    }
+
+    @Test(timeout = 100000)
+    public void testCreateOpenSSLEngineFailsWhenAllocatorMissing() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        TransportOptions options = new TransportOptions();
+        options.setUseOpenSSL(true);
+
+        SslContext context = TransportSupport.createOpenSslContext(options);
+        try {
+            TransportSupport.createOpenSslEngine(null, null, context, options);
+            fail("Should throw IllegalArgumentException for null allocator.");
+        } catch (IllegalArgumentException iae) {}
     }
 
     private TransportOptions createJksSslOptions() {
@@ -466,8 +963,14 @@ public class TransportSupportTest extends QpidJmsTestCase {
     }
 
     private SSLEngine createSSLEngineDirectly(TransportOptions options) throws Exception {
-        SSLContext context = TransportSupport.createSslContext(options);
+        SSLContext context = TransportSupport.createJdkSslContext(options);
         SSLEngine engine = context.createSSLEngine();
+        return engine;
+    }
+
+    private SSLEngine createOpenSSLEngineDirectly(TransportOptions options) throws Exception {
+        SslContext context = TransportSupport.createOpenSslContext(options);
+        SSLEngine engine = context.newEngine(PooledByteBufAllocator.DEFAULT);
         return engine;
     }
 }

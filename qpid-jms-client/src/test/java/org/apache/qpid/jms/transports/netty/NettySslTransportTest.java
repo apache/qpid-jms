@@ -291,12 +291,12 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     }
 
     @Override
-	protected NettyEchoServer createEchoServer(TransportOptions options) {
+    protected NettyEchoServer createEchoServer(TransportOptions options) {
         return createEchoServer(options, false);
     }
 
     @Override
-	protected NettyEchoServer createEchoServer(TransportOptions options, boolean needClientAuth) {
+    protected NettyEchoServer createEchoServer(TransportOptions options, boolean needClientAuth) {
         return new NettyEchoServer(options, true, needClientAuth);
     }
 
@@ -322,6 +322,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
     protected TransportOptions createServerOptions() {
         TransportOptions options = new TransportOptions();
 
+        // Run the server in JDK mode for now to validate cross compatibility
         options.setKeyStoreLocation(SERVER_KEYSTORE);
         options.setKeyStorePassword(PASSWORD);
         options.setTrustStoreLocation(SERVER_TRUSTSTORE);

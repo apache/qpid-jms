@@ -207,8 +207,8 @@ public abstract class NettyServer implements AutoCloseable {
                 @Override
                 public void initChannel(Channel ch) throws Exception {
                     if (isSecureServer()) {
-                        SSLContext context = TransportSupport.createSslContext(options);
-                        SSLEngine engine = TransportSupport.createSslEngine(context, options);
+                        SSLContext context = TransportSupport.createJdkSslContext(options);
+                        SSLEngine engine = TransportSupport.createJdkSslEngine(null, context, options);
                         engine.setUseClientMode(false);
                         engine.setNeedClientAuth(needClientAuth);
                         sslHandler = new SslHandler(engine);

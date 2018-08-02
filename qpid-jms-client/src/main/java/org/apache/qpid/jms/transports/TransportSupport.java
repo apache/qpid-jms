@@ -23,8 +23,6 @@ import java.net.URI;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.SecureRandom;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,12 +35,18 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedKeyManager;
-import javax.net.ssl.X509TrustManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.handler.ssl.OpenSsl;
+import io.netty.handler.ssl.OpenSslX509KeyManagerFactory;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.ssl.SslProvider;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 
 /**
  * Static class that provides various utility methods used by Transport implementations.
@@ -52,6 +56,38 @@ public class TransportSupport {
     private static final Logger LOG = LoggerFactory.getLogger(TransportSupport.class);
 
     /**
+     * Determines if Netty OpenSSL support is available and applicable based on the configuration
+     * in the given TransportOptions instance.
+     *
+     * @param options
+     * 		  The configuration of the Transport being created.
+     *
+     * @return true if OpenSSL support is available and usable given the requested configuration.
+     */
+    public static boolean isOpenSSLPossible(TransportOptions options) {
+        boolean result = false;
+
+        if (options.isUseOpenSSL()) {
+            if (!OpenSsl.isAvailable()) {
+                LOG.debug("OpenSSL could not be enabled because a suitable implementation could not be found.", OpenSsl.unavailabilityCause());
+            } else if (options.getSslContextOverride() != null) {
+                LOG.debug("OpenSSL could not be enabled due to user SSLContext being supplied.");
+            } else if (!OpenSsl.supportsKeyManagerFactory()) {
+                LOG.debug("OpenSSL could not be enabled because the version provided doesn allow a KeyManagerFactory to be used");
+            } else if (options.isVerifyHost() && !OpenSsl.supportsHostnameValidation()) {
+                LOG.debug("OpenSSL could not be enabled due to verifyHost being enabled but not supported by the provided OpenSSL version.");
+            } else if (options.getKeyAlias() != null) {
+                LOG.debug("OpenSSL could not be enabled because a keyAlias is set and that feature is not supported for OpenSSL");
+            } else {
+                LOG.debug("OpenSSL Enabled: Version {} of OpenSSL will be used", OpenSsl.versionString());
+                result = true;
+            }
+        }
+
+        return result;
+    }
+
+    /**
      * Creates a Netty SslHandler instance for use in Transports that require
      * an SSL encoder / decoder.
      *
@@ -59,6 +95,8 @@ public class TransportSupport {
      * when creating the handler. If they do not, an SSLContext will first be created
      * using the other option values.
      *
+     * @param allocator
+     *		  The Netty Buffer Allocator to use is Netty resources need to be created.
      * @param remote
      *        The URI of the remote peer that the SslHandler will be used against.
      * @param options
@@ -68,19 +106,28 @@ public class TransportSupport {
      *
      * @throws Exception if an error occurs while creating the SslHandler instance.
      */
-    public static SslHandler createSslHandler(URI remote, TransportOptions options) throws Exception {
-        SSLContext sslContext = options.getSslContextOverride();
-        if(sslContext == null) {
-            sslContext = createSslContext(options);
-        }
+    public static SslHandler createSslHandler(ByteBufAllocator allocator, URI remote, TransportOptions options) throws Exception {
+        final SSLEngine sslEngine;
 
-        SSLEngine sslEngine = createSslEngine(remote, sslContext, options);
+        if (isOpenSSLPossible(options)) {
+            SslContext sslContext = createOpenSslContext(options);
+            sslEngine = createOpenSslEngine(allocator, remote, sslContext, options);
+        } else {
+            SSLContext sslContext = options.getSslContextOverride();
+            if (sslContext == null) {
+                sslContext = createJdkSslContext(options);
+            }
+
+            sslEngine = createJdkSslEngine(remote, sslContext, options);
+        }
 
         return new SslHandler(sslEngine);
     }
 
+    //----- JDK SSL Support Methods ------------------------------------------//
+
     /**
-     * Create a new SSLContext using the options specific in the given TransportSslOptions
+     * Create a new SSLContext using the options specific in the given TransportOptions
      * instance.
      *
      * @param options
@@ -90,12 +137,13 @@ public class TransportSupport {
      *
      * @throws Exception if an error occurs while creating the context.
      */
-    public static SSLContext createSslContext(TransportOptions options) throws Exception {
+    public static SSLContext createJdkSslContext(TransportOptions options) throws Exception {
         try {
             String contextProtocol = options.getContextProtocol();
             LOG.trace("Getting SSLContext instance using protocol: {}", contextProtocol);
 
             SSLContext context = SSLContext.getInstance(contextProtocol);
+
             KeyManager[] keyMgrs = loadKeyManagers(options);
             TrustManager[] trustManagers = loadTrustManagers(options);
 
@@ -108,25 +156,8 @@ public class TransportSupport {
     }
 
     /**
-     * Create a new SSLEngine instance in client mode from the given SSLContext and
-     * TransportSslOptions instances.
-     *
-     * @param context
-     *        the SSLContext to use when creating the engine.
-     * @param options
-     *        the TransportOptions to use to configure the new SSLEngine.
-     *
-     * @return a new SSLEngine instance in client mode.
-     *
-     * @throws Exception if an error occurs while creating the new SSLEngine.
-     */
-    public static SSLEngine createSslEngine(SSLContext context, TransportOptions options) throws Exception {
-        return createSslEngine(null, context, options);
-    }
-
-    /**
-     * Create a new SSLEngine instance in client mode from the given SSLContext and
-     * TransportSslOptions instances.
+     * Create a new JDK SSLEngine instance in client mode from the given SSLContext and
+     * TransportOptions instances.
      *
      * @param remote
      *        the URI of the remote peer that will be used to initialize the engine, may be null if none should.
@@ -139,9 +170,9 @@ public class TransportSupport {
      *
      * @throws Exception if an error occurs while creating the new SSLEngine.
      */
-    public static SSLEngine createSslEngine(URI remote, SSLContext context, TransportOptions options) throws Exception {
+    public static SSLEngine createJdkSslEngine(URI remote, SSLContext context, TransportOptions options) throws Exception {
         SSLEngine engine = null;
-        if(remote == null) {
+        if (remote == null) {
             engine = context.createSSLEngine();
         } else {
             engine = context.createSSLEngine(remote.getHost(), remote.getPort());
@@ -159,6 +190,91 @@ public class TransportSupport {
 
         return engine;
     }
+
+    //----- OpenSSL Support Methods ------------------------------------------//
+
+    /**
+     * Create a new Netty SslContext using the options specific in the given TransportOptions
+     * instance.
+     *
+     * @param options
+     *        the configured options used to create the SslContext.
+     *
+     * @return a new SslContext instance.
+     *
+     * @throws Exception if an error occurs while creating the context.
+     */
+    public static SslContext createOpenSslContext(TransportOptions options) throws Exception {
+        try {
+            String contextProtocol = options.getContextProtocol();
+            LOG.trace("Getting SslContext instance using protocol: {}", contextProtocol);
+
+            KeyManagerFactory keyManagerFactory = loadKeyManagerFactory(options, SslProvider.OPENSSL);
+            TrustManagerFactory trustManagerFactory = loadTrustManagerFactory(options);
+            SslContextBuilder builder = SslContextBuilder.forClient().sslProvider(SslProvider.OPENSSL);
+
+            // TODO - There is oddly no way in Netty right now to get the set of supported protocols
+            //        when creating the SslContext or really even when creating the SSLEngine.  Seems
+            //        like an oversight, for now we call it with TLSv1.2 so it looks like we did something.
+            if (options.getContextProtocol().equals(TransportOptions.DEFAULT_CONTEXT_PROTOCOL)) {
+                builder.protocols("TLSv1.2");
+            } else {
+                builder.protocols(options.getContextProtocol());
+            }
+            builder.keyManager(keyManagerFactory);
+            builder.trustManager(trustManagerFactory);
+
+            return builder.build();
+        } catch (Exception e) {
+            LOG.error("Failed to create SslContext: {}", e, e);
+            throw e;
+        }
+    }
+
+    /**
+     * Create a new OpenSSL SSLEngine instance in client mode from the given SSLContext and
+     * TransportOptions instances.
+     *
+     * @param allocator
+     *		  the Netty ByteBufAllocator to use to create the OpenSSL engine
+     * @param remote
+     *        the URI of the remote peer that will be used to initialize the engine, may be null if none should.
+     * @param context
+     *        the Netty SslContext to use when creating the engine.
+     * @param options
+     *        the TransportOptions to use to configure the new SSLEngine.
+     *
+     * @return a new Netty managed SSLEngine instance in client mode.
+     *
+     * @throws Exception if an error occurs while creating the new SSLEngine.
+     */
+    public static SSLEngine createOpenSslEngine(ByteBufAllocator allocator, URI remote, SslContext context, TransportOptions options) throws Exception {
+        SSLEngine engine = null;
+
+        if (allocator == null) {
+            throw new IllegalArgumentException("OpenSSL engine requires a valid ByteBufAllocator to operate");
+        }
+
+        if (remote == null) {
+            engine = context.newEngine(allocator);
+        } else {
+            engine = context.newEngine(allocator, remote.getHost(), remote.getPort());
+        }
+
+        engine.setEnabledProtocols(buildEnabledProtocols(engine, options));
+        engine.setEnabledCipherSuites(buildEnabledCipherSuites(engine, options));
+        engine.setUseClientMode(true);
+
+        if (options.isVerifyHost()) {
+            SSLParameters sslParameters = engine.getSSLParameters();
+            sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+            engine.setSSLParameters(sslParameters);
+        }
+
+        return engine;
+    }
+
+    //----- Internal support methods -----------------------------------------//
 
     private static String[] buildEnabledProtocols(SSLEngine engine, TransportOptions options) {
         List<String> enabledProtocols = new ArrayList<String>();
@@ -211,8 +327,17 @@ public class TransportSupport {
     }
 
     private static TrustManager[] loadTrustManagers(TransportOptions options) throws Exception {
+        TrustManagerFactory factory = loadTrustManagerFactory(options);
+        if (factory != null) {
+            return factory.getTrustManagers();
+        } else {
+            return null;
+        }
+    }
+
+    private static TrustManagerFactory loadTrustManagerFactory(TransportOptions options) throws Exception {
         if (options.isTrustAll()) {
-            return new TrustManager[] { createTrustAllTrustManager() };
+            return InsecureTrustManagerFactory.INSTANCE;
         }
 
         if (options.getTrustStoreLocation() == null) {
@@ -230,7 +355,7 @@ public class TransportSupport {
         KeyStore trustStore = loadStore(storeLocation, storePassword, storeType);
         fact.init(trustStore);
 
-        return fact.getTrustManagers();
+        return fact;
     }
 
     private static KeyManager[] loadKeyManagers(TransportOptions options) throws Exception {
@@ -256,6 +381,30 @@ public class TransportSupport {
             validateAlias(keyStore, alias);
             return wrapKeyManagers(alias, fact.getKeyManagers());
         }
+    }
+
+    private static KeyManagerFactory loadKeyManagerFactory(TransportOptions options, SslProvider provider) throws Exception {
+        if (options.getKeyStoreLocation() == null) {
+            return null;
+        }
+
+        final KeyManagerFactory factory;
+        if (provider.equals(SslProvider.JDK)) {
+            factory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        } else {
+            factory = new OpenSslX509KeyManagerFactory();
+        }
+
+        String storeLocation = options.getKeyStoreLocation();
+        String storePassword = options.getKeyStorePassword();
+        String storeType = options.getKeyStoreType();
+
+        LOG.trace("Attempt to load KeyStore from location {} of type {}", storeLocation, storeType);
+
+        KeyStore keyStore = loadStore(storeLocation, storePassword, storeType);
+        factory.init(keyStore, storePassword != null ? storePassword.toCharArray() : null);
+
+        return factory;
     }
 
     private static KeyManager[] wrapKeyManagers(String alias, KeyManager[] origKeyManagers) {
@@ -289,22 +438,5 @@ public class TransportSupport {
         }
 
         return store;
-    }
-
-    private static TrustManager createTrustAllTrustManager() {
-        return new X509TrustManager() {
-            @Override
-            public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-            }
-
-            @Override
-            public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-            }
-
-            @Override
-            public X509Certificate[] getAcceptedIssuers() {
-                return new X509Certificate[0];
-            }
-        };
     }
 }

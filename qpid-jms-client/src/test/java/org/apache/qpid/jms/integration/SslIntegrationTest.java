@@ -26,6 +26,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -46,6 +47,8 @@ import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
 import org.junit.Test;
+
+import io.netty.handler.ssl.OpenSsl;
 
 public class SslIntegrationTest extends QpidJmsTestCase {
 
@@ -82,17 +85,30 @@ public class SslIntegrationTest extends QpidJmsTestCase {
     private final IntegrationTestFixture testFixture = new IntegrationTestFixture();
 
     @Test(timeout = 20000)
-    public void testCreateAndCloseSslConnection() throws Exception {
+    public void testCreateAndCloseSslConnectionJDK() throws Exception {
+        testCreateAndCloseSslConnection(false);
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateAndCloseSslConnectionOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        testCreateAndCloseSslConnection(true);
+    }
+
+    private void testCreateAndCloseSslConnection(boolean openSSL) throws Exception {
         TransportOptions sslOptions = new TransportOptions();
         sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
         sslOptions.setKeyStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
 
-        SSLContext context = TransportSupport.createSslContext(sslOptions);
+        SSLContext context = TransportSupport.createJdkSslContext(sslOptions);
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer(context, false);) {
             String connOptions = "?transport.trustStoreLocation=" + CLIENT_JKS_TRUSTSTORE + "&" +
-                                 "transport.trustStorePassword=" + PASSWORD;
+                                 "transport.trustStorePassword=" + PASSWORD + "&" +
+                                 "transport.useOpenSSL=" + openSSL;
             Connection connection = testFixture.establishConnecton(testPeer, true, connOptions, null, null, true);
 
             Socket socket = testPeer.getClientSocket();
@@ -104,13 +120,25 @@ public class SslIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
-    public void testCreateSslConnectionWithServerSendingPreemptiveData() throws Exception {
+    public void testCreateSslConnectionWithServerSendingPreemptiveDataJDK() throws Exception {
+        doTestCreateSslConnectionWithServerSendingPreemptiveData(false);
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateSslConnectionWithServerSendingPreemptiveDataOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        doTestCreateSslConnectionWithServerSendingPreemptiveData(true);
+    }
+
+    private void doTestCreateSslConnectionWithServerSendingPreemptiveData(boolean openSSL) throws Exception {
         TransportOptions serverSslOptions = new TransportOptions();
         serverSslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
         serverSslOptions.setKeyStorePassword(PASSWORD);
         serverSslOptions.setVerifyHost(false);
 
-        SSLContext serverSslContext = TransportSupport.createSslContext(serverSslOptions);
+        SSLContext serverSslContext = TransportSupport.createJdkSslContext(serverSslOptions);
 
         boolean sendServerSaslHeaderPreEmptively = true;
         try (TestAmqpPeer testPeer = new TestAmqpPeer(serverSslContext, false, sendServerSaslHeaderPreEmptively);) {
@@ -120,7 +148,8 @@ public class SslIntegrationTest extends QpidJmsTestCase {
             testPeer.expectBegin();
 
             String connOptions = "?transport.trustStoreLocation=" + CLIENT_JKS_TRUSTSTORE + "&" +
-                                  "transport.trustStorePassword=" + PASSWORD;
+                                  "transport.trustStorePassword=" + PASSWORD + "&" +
+                                  "transport.useOpenSSL=" + openSSL;
 
             JmsConnectionFactory factory = new JmsConnectionFactory("amqps://localhost:" + testPeer.getServerPort() + connOptions);
             Connection connection = factory.createConnection();
@@ -135,7 +164,19 @@ public class SslIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
-    public void testCreateAndCloseSslConnectionWithClientAuth() throws Exception {
+    public void testCreateAndCloseSslConnectionWithClientAuthJDK() throws Exception {
+        doTestCreateAndCloseSslConnectionWithClientAuth(false);
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateAndCloseSslConnectionWithClientAuthOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        doTestCreateAndCloseSslConnectionWithClientAuth(true);
+    }
+
+    private void doTestCreateAndCloseSslConnectionWithClientAuth(boolean openSSL) throws Exception {
         TransportOptions sslOptions = new TransportOptions();
         sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
         sslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
@@ -143,13 +184,14 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         sslOptions.setTrustStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
 
-        SSLContext context = TransportSupport.createSslContext(sslOptions);
+        SSLContext context = TransportSupport.createJdkSslContext(sslOptions);
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer(context, true);) {
             String connOptions = "?transport.keyStoreLocation=" + CLIENT_MULTI_KEYSTORE + "&" +
                                  "transport.keyStorePassword=" + PASSWORD + "&" +
                                  "transport.trustStoreLocation=" + CLIENT_JKS_TRUSTSTORE + "&" +
-                                 "transport.trustStorePassword=" + PASSWORD;
+                                 "transport.trustStorePassword=" + PASSWORD + "&" +
+                                 "transport.useOpenSSL=" + openSSL;
             Connection connection = testFixture.establishConnecton(testPeer, true, connOptions, null, null, true);
 
             Socket socket = testPeer.getClientSocket();
@@ -162,12 +204,21 @@ public class SslIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
-    public void testCreateAndCloseSslConnectionWithAlias() throws Exception {
-        doConnectionWithAliasTestImpl(CLIENT_KEY_ALIAS, CLIENT_DN);
-        doConnectionWithAliasTestImpl(CLIENT2_KEY_ALIAS, CLIENT2_DN);
+    public void testCreateAndCloseSslConnectionWithAliasJDK() throws Exception {
+        doConnectionWithAliasTestImpl(CLIENT_KEY_ALIAS, CLIENT_DN, false);
+        doConnectionWithAliasTestImpl(CLIENT2_KEY_ALIAS, CLIENT2_DN, false);
     }
 
-    private void doConnectionWithAliasTestImpl(String alias, String expectedDN) throws Exception, JMSException, SSLPeerUnverifiedException, IOException {
+    @Test(timeout = 20000)
+    public void testCreateAndCloseSslConnectionWithAliasOpenSSL() throws Exception {
+        assumeTrue(OpenSsl.isAvailable());
+        assumeTrue(OpenSsl.supportsKeyManagerFactory());
+
+        doConnectionWithAliasTestImpl(CLIENT_KEY_ALIAS, CLIENT_DN, true);
+        doConnectionWithAliasTestImpl(CLIENT2_KEY_ALIAS, CLIENT2_DN, true);
+    }
+
+    private void doConnectionWithAliasTestImpl(String alias, String expectedDN, boolean requestOpenSSL) throws Exception, JMSException, SSLPeerUnverifiedException, IOException {
         TransportOptions sslOptions = new TransportOptions();
         sslOptions.setKeyStoreLocation(BROKER_JKS_KEYSTORE);
         sslOptions.setTrustStoreLocation(BROKER_JKS_TRUSTSTORE);
@@ -175,14 +226,16 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         sslOptions.setTrustStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
 
-        SSLContext context = TransportSupport.createSslContext(sslOptions);
+        SSLContext context = TransportSupport.createJdkSslContext(sslOptions);
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer(context, true);) {
             String connOptions = "?transport.keyStoreLocation=" + CLIENT_MULTI_KEYSTORE + "&" +
                                  "transport.keyStorePassword=" + PASSWORD + "&" +
                                  "transport.trustStoreLocation=" + CLIENT_JKS_TRUSTSTORE + "&" +
                                  "transport.trustStorePassword=" + PASSWORD + "&" +
-                                 "transport.keyAlias=" + alias;
+                                 "transport.keyAlias=" + alias + "&" +
+                                 "transport.useOpenSSL=" + requestOpenSSL;
+
             Connection connection = testFixture.establishConnecton(testPeer, true, connOptions, null, null, true);
 
             Socket socket = testPeer.getClientSocket();
@@ -220,7 +273,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         sslOptions.setTrustStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
 
-        SSLContext context = TransportSupport.createSslContext(sslOptions);
+        SSLContext context = TransportSupport.createJdkSslContext(sslOptions);
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer(context, true);) {
             String connOptions = "?transport.keyStoreLocation=" + CLIENT_MULTI_KEYSTORE + "&" +
@@ -279,7 +332,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         serverSslOptions.setTrustStorePassword(PASSWORD);
         serverSslOptions.setVerifyHost(false);
 
-        SSLContext serverContext = TransportSupport.createSslContext(serverSslOptions);
+        SSLContext serverContext = TransportSupport.createJdkSslContext(serverSslOptions);
 
         TransportOptions clientSslOptions = new TransportOptions();
         clientSslOptions.setKeyStoreLocation(clientKeyStorePath);
@@ -293,13 +346,13 @@ public class SslIntegrationTest extends QpidJmsTestCase {
             if (useExtension) {
                 factory.setExtension(JmsConnectionExtensions.SSL_CONTEXT.toString(), (options, uri) -> {
                     try {
-                        return TransportSupport.createSslContext(clientSslOptions);
+                        return TransportSupport.createJdkSslContext(clientSslOptions);
                     } catch (Exception e) {
                         throw new RuntimeException(e.getMessage(), e);
                     }
                 });
             } else {
-                factory.setSslContext(TransportSupport.createSslContext(clientSslOptions));
+                factory.setSslContext(TransportSupport.createJdkSslContext(clientSslOptions));
             }
 
             testPeer.expectSaslPlain("guest", "guest");
@@ -348,7 +401,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         clientSslOptions.setKeyStorePassword(PASSWORD);
         clientSslOptions.setTrustStorePassword(PASSWORD);
 
-        SSLContext clientContext = TransportSupport.createSslContext(clientSslOptions);
+        SSLContext clientContext = TransportSupport.createJdkSslContext(clientSslOptions);
 
         // Connect providing the Client 2 details via context override, expect Client2 DN instead.
         doConnectionWithSslContextOverrideAndURIConfig(clientContext, CLIENT2_DN);
@@ -362,7 +415,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
         serverSslOptions.setTrustStorePassword(PASSWORD);
         serverSslOptions.setVerifyHost(false);
 
-        SSLContext serverContext = TransportSupport.createSslContext(serverSslOptions);
+        SSLContext serverContext = TransportSupport.createJdkSslContext(serverSslOptions);
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer(serverContext, true);) {
             String connOptions = "?transport.keyStoreLocation=" + CLIENT_JKS_KEYSTORE + "&" +
@@ -481,7 +534,7 @@ public class SslIntegrationTest extends QpidJmsTestCase {
             serverSslOptions.setVerifyHost(false);
         }
 
-        SSLContext serverSslContext = TransportSupport.createSslContext(serverSslOptions);
+        SSLContext serverSslContext = TransportSupport.createJdkSslContext(serverSslOptions);
 
         try (TestAmqpPeer testPeer = new TestAmqpPeer(serverSslContext, true);) {
             Connection connection = testFixture.establishConnecton(testPeer, true, null, null, null, true);

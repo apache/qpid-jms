@@ -47,6 +47,7 @@ public class TransportOptions implements Cloneable {
     public static final boolean DEFAULT_VERIFY_HOST = true;
     public static final List<String> DEFAULT_DISABLED_PROTOCOLS = Collections.unmodifiableList(Arrays.asList(new String[]{"SSLv2Hello", "SSLv3"}));
     public static final int DEFAULT_SSL_PORT = 5671;
+    public static final boolean DEFAULT_USE_OPENSSL = false;
 
     private static final String JAVAX_NET_SSL_KEY_STORE = "javax.net.ssl.keyStore";
     private static final String JAVAX_NET_SSL_KEY_STORE_TYPE = "javax.net.ssl.keyStoreType";
@@ -67,6 +68,7 @@ public class TransportOptions implements Cloneable {
     private boolean useEpoll = DEFAULT_USE_EPOLL;
     private boolean useKQueue = DEFAULT_USE_KQUEUE;
     private boolean traceBytes = DEFAULT_TRACE_BYTES;
+    private boolean useOpenSSL = DEFAULT_USE_OPENSSL;
 
     private String keyStoreLocation;
     private String keyStorePassword;
@@ -512,6 +514,21 @@ public class TransportOptions implements Cloneable {
         return httpHeaders;
     }
 
+    /**
+     * @return true if OpenSSL support is enabled for this Transport.
+     */
+    public boolean isUseOpenSSL() {
+        return useOpenSSL;
+    }
+
+    /**
+     * @param useOpenSSL
+     * 		Configure if the transport should attempt to use OpenSSL
+     */
+    public void setUseOpenSSL(boolean useOpenSSL) {
+        this.useOpenSSL = useOpenSSL;
+    }
+
     protected TransportOptions copyOptions(TransportOptions copy) {
         copy.setConnectTimeout(getConnectTimeout());
         copy.setReceiveBufferSize(getReceiveBufferSize());
@@ -540,6 +557,7 @@ public class TransportOptions implements Cloneable {
         copy.setContextProtocol(getContextProtocol());
         copy.setDefaultSslPort(getDefaultSslPort());
         copy.setSslContextOverride(getSslContextOverride());
+        copy.setUseOpenSSL(isUseOpenSSL());
 
         return copy;
     }

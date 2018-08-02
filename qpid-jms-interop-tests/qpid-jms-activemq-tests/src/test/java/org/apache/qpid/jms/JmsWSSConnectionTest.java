@@ -65,7 +65,7 @@ public class JmsWSSConnectionTest {
         sslOptions.setKeyStorePassword(PASSWORD);
         sslOptions.setVerifyHost(false);
 
-        SSLContext sslContext = TransportSupport.createSslContext(sslOptions);
+        SSLContext sslContext = TransportSupport.createJdkSslContext(sslOptions);
 
         final SslContext brokerContext = new SslContext();
         brokerContext.setSSLContext(sslContext);

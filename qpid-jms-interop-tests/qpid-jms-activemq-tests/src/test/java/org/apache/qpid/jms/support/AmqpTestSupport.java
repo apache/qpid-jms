@@ -81,7 +81,7 @@ public class AmqpTestSupport extends QpidJmsTestSupport {
             port = portMap.get("amqp");
         }
         TransportConnector connector = brokerService.addConnector(
-            "amqp://0.0.0.0:" + port +
+            "amqp://127.0.0.1:" + port +
             "?transport.transformer=" + getAmqpTransformer() +
             "&transport.socketBufferSize=" + getSocketBufferSize() +
             "&transport.tcpNoDelay=true" +

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -99,7 +100,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
     private final AtomicBoolean failed = new AtomicBoolean();
     private final AtomicBoolean closingConnection = new AtomicBoolean(false);
     private final AtomicLong requestId = new AtomicLong();
-    private final Map<Long, FailoverRequest> requests = new LinkedHashMap<Long, FailoverRequest>();
+    private final Map<Long, FailoverRequest> requests = Collections.synchronizedMap(new LinkedHashMap<Long, FailoverRequest>());
     private final DefaultProviderListener closedListener = new DefaultProviderListener();
     private final AtomicReference<JmsMessageFactory> messageFactory = new AtomicReference<JmsMessageFactory>();
     private final ProviderFutureFactory futureFactory;
@@ -178,9 +179,14 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 public void run() {
                     try {
                         IOException error = failureCause != null ? failureCause : new IOException("Connection closed");
-                        List<FailoverRequest> pending = new ArrayList<FailoverRequest>(requests.values());
+                        final List<FailoverRequest> pending;
+                        synchronized (requests) {
+                            pending = new ArrayList<FailoverRequest>(requests.values());
+                        }
                         for (FailoverRequest request : pending) {
-                            request.onFailure(error);
+                            if (!request.isComplete()) {
+                                request.onFailure(error);
+                            }
                         }
 
                         if (requestTimeoutTask != null) {
@@ -558,11 +564,13 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 if (listener != null) {
                     listener.onConnectionInterrupted(failedURI);
                 }
-                
-                if (!requests.isEmpty()) {
-                	for (FailoverRequest request : requests.values()) {
-                		request.whenOffline(cause);
-                	}
+
+                final List<FailoverRequest> pending;
+                synchronized (requests) {
+                    pending = new ArrayList<FailoverRequest>(requests.values());
+                }
+                for (FailoverRequest request : pending) {
+                    request.whenOffline(cause);
                 }
 
                 // Start watching for request timeouts while we are offline, unless we already are.
@@ -626,9 +634,14 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                         listener.onConnectionRestored(provider.getRemoteURI());
 
                         // Last step: Send pending actions.
-                        List<FailoverRequest> pending = new ArrayList<FailoverRequest>(requests.values());
+                        final List<FailoverRequest> pending;
+                        synchronized (requests) {
+                            pending = new ArrayList<FailoverRequest>(requests.values());
+                        }
                         for (FailoverRequest request : pending) {
-                            request.run();
+                            if (!request.isComplete()) {
+                                request.run();
+                            }
                         }
 
                         reconnectControl.connectionEstablished();
@@ -636,9 +649,14 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                         processAlternates(provider.getAlternateURIs());
 
                         // Last step: Send pending actions.
-                        List<FailoverRequest> pending = new ArrayList<FailoverRequest>(requests.values());
+                        final List<FailoverRequest> pending;
+                        synchronized (requests) {
+                            pending = new ArrayList<FailoverRequest>(requests.values());
+                        }
                         for (FailoverRequest request : pending) {
-                            request.run();
+                            if (!request.isComplete()) {
+                                request.run();
+                            }
                         }
                     }
 
@@ -1084,8 +1102,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
 
         @Override
         public void run() {
-            List<FailoverRequest> copied = new ArrayList<FailoverRequest>(requests.values());
-            for (FailoverRequest request : copied) {
+            final List<FailoverRequest> pending;
+            synchronized (requests) {
+                pending = new ArrayList<FailoverRequest>(requests.values());
+            }
+            for (FailoverRequest request : pending) {
                 if (request.isExpired()) {
                     LOG.trace("Task {} has timed out, sending failure notice.", request);
                     request.onFailure(request.createTimedOutException());

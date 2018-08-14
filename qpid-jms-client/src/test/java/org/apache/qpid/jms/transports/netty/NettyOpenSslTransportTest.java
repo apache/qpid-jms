@@ -99,7 +99,7 @@ public class NettyOpenSslTransportTest extends NettySslTransportTest {
     }
 
     @Test(timeout = 60 * 1000)
-    public void testConnectToServerWithUserSppliedSSLContextWorksWhenOpenSSLRequested() throws Exception {
+    public void testConnectToServerWithUserSuppliedSSLContextWorksWhenOpenSSLRequested() throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
 

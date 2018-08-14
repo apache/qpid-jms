@@ -73,11 +73,11 @@ public class TransportSupport {
             } else if (options.getSslContextOverride() != null) {
                 LOG.debug("OpenSSL could not be enabled due to user SSLContext being supplied.");
             } else if (!OpenSsl.supportsKeyManagerFactory()) {
-                LOG.debug("OpenSSL could not be enabled because the version provided doesn allow a KeyManagerFactory to be used");
+                LOG.debug("OpenSSL could not be enabled because the version provided does not allow a KeyManagerFactory to be used.");
             } else if (options.isVerifyHost() && !OpenSsl.supportsHostnameValidation()) {
                 LOG.debug("OpenSSL could not be enabled due to verifyHost being enabled but not supported by the provided OpenSSL version.");
             } else if (options.getKeyAlias() != null) {
-                LOG.debug("OpenSSL could not be enabled because a keyAlias is set and that feature is not supported for OpenSSL");
+                LOG.debug("OpenSSL could not be enabled because a keyAlias is set and that feature is not supported for OpenSSL.");
             } else {
                 LOG.debug("OpenSSL Enabled: Version {} of OpenSSL will be used", OpenSsl.versionString());
                 result = true;
@@ -96,7 +96,7 @@ public class TransportSupport {
      * using the other option values.
      *
      * @param allocator
-     *		  The Netty Buffer Allocator to use is Netty resources need to be created.
+     *		  The Netty Buffer Allocator to use when Netty resources need to be created.
      * @param remote
      *        The URI of the remote peer that the SslHandler will be used against.
      * @param options

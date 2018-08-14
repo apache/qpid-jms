@@ -226,7 +226,7 @@ public class TransportOptions implements Cloneable {
 
 
     /**
-     * @return the true if use of of the netty epoll transport is used.
+     * @return true if the netty epoll transport can be used if available on this platform.
      */
     public boolean isUseEpoll() {
         return useEpoll;
@@ -243,7 +243,7 @@ public class TransportOptions implements Cloneable {
     }
 
     /**
-     * @return the true if use of of the netty kqueue transport is used.
+     * @return true if the netty kqueue transport can be used if available on this platform.
      */
     public boolean isUseKQueue() {
         return useKQueue;
@@ -515,7 +515,7 @@ public class TransportOptions implements Cloneable {
     }
 
     /**
-     * @return true if OpenSSL support is enabled for this Transport.
+     * @return true if the netty OpenSSL support can be used if available.
      */
     public boolean isUseOpenSSL() {
         return useOpenSSL;
@@ -523,7 +523,7 @@ public class TransportOptions implements Cloneable {
 
     /**
      * @param useOpenSSL
-     * 		Configure if the transport should attempt to use OpenSSL
+     * 		Configure if the transport should attempt to use OpenSSL support if available.
      */
     public void setUseOpenSSL(boolean useOpenSSL) {
         this.useOpenSSL = useOpenSSL;

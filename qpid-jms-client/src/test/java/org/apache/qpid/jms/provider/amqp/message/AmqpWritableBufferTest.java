@@ -22,6 +22,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.qpid.proton.codec.ReadableBuffer;
 import org.junit.Test;
@@ -117,6 +118,19 @@ public class AmqpWritableBufferTest {
         assertEquals(0, writable.position());
         writable.put(input);
         assertEquals(1, writable.position());
+    }
+
+    @Test
+    public void testPutString() {
+        String ascii = new String("ASCII");
+
+        ByteBuf buffer = Unpooled.buffer(1024);
+        AmqpWritableBuffer writable = new AmqpWritableBuffer(buffer);
+
+        assertEquals(0, writable.position());
+        writable.put(ascii);
+        assertEquals(ascii.length(), writable.position());
+        assertEquals(ascii, writable.getBuffer().toString(StandardCharsets.UTF_8));
     }
 
     @Test

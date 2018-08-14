@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.provider.amqp.message;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.qpid.proton.codec.ReadableBuffer;
 import org.apache.qpid.proton.codec.WritableBuffer;
@@ -87,6 +88,11 @@ public class AmqpWritableBuffer implements WritableBuffer {
     @Override
     public void putLong(long l) {
         nettyBuffer.writeLong(l);
+    }
+
+    @Override
+    public void put(String value) {
+        nettyBuffer.writeCharSequence(value, StandardCharsets.UTF_8);
     }
 
     @Override

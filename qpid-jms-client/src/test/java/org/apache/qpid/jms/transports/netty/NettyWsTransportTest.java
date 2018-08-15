@@ -308,7 +308,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
                 @Override
                 public boolean isSatisfied() throws Exception {
                     try {
-                        transport.writeAndFlush(sendBuffer);
+                        transport.writeAndFlush(sendBuffer.copy());
                     } catch (IOException e) {
                         LOG.info("Transport send caught error:", e);
                         return true;
@@ -316,7 +316,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
 
                     return false;
                 }
-            }, 10000, 50));
+            }, 10000, 10));
         }
     }
 

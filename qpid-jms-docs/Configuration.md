@@ -175,7 +175,7 @@ The complete set of SSL Transport options is listed below:
 + **transport.keyStoreType** The type of keyStore being used. Default is to read from the system property "javax.net.ssl.keyStoreType" If not set then default is "JKS".
 + **transport.trustStoreType** The type of trustStore being used. Default is to read from the system property "javax.net.ssl.trustStoreType" If not set then default is "JKS".
 + **transport.storeType** This will set both the keystoreType and trustStoreType to the same value. If not set then the keyStoreType and trustStoreType will default to the values specified above.
-+ **transport.contextProtocol** The protocol argument used when getting an SSLContext. Default is "TLS".
++ **transport.contextProtocol** The protocol argument used when getting an SSLContext. Default is TLS, or TLSv1.2 if using OpenSSL.
 + **transport.enabledCipherSuites** The cipher suites to enable, comma separated. No default, meaning the context default ciphers are used. Any disabled ciphers are removed from this.
 + **transport.disabledCipherSuites** The cipher suites to disable, comma separated. Ciphers listed here are removed from the enabled ciphers. No default.
 + **transport.enabledProtocols** The protocols to enable, comma separated. No default, meaning the context default protocols are used. Any disabled protocols are removed from this.
@@ -183,6 +183,7 @@ The complete set of SSL Transport options is listed below:
 + **transport.trustAll** Whether to trust the provided server certificate implicitly, regardless of any configured trust store. Defaults to false.
 + **transport.verifyHost** Whether to verify that the hostname being connected to matches with the provided server certificate. Defaults to true.
 + **transport.keyAlias** The alias to use when selecting a keypair from the keystore if required to send a client certificate to the server. No default.
++ **transport.useOpenSSL** When true the transport will attempt to use native OpenSSL libraries for SSL connections if possible based on the SSL configuration and available OpenSSL libraries on the classpath.  Refer to the section [Enabling OpenSSL support](#enabling-openssl-support) for more information.
 
 ### Websocket Transport Configuration options
 
@@ -238,7 +239,6 @@ The failover URI also supports defining 'nested' options as a means of specifyin
     failover:(amqp://host1:5672,amqp://host2:5672)?jms.clientID=foo&failover.nested.amqp.vhost=myhost
 
 
-
 ### Discovery Configuration options
 
 The client has an optional Discovery module, which provides a customised failover layer where the broker URIs to connect to are not given in the initial URI, but discovered as the client operates via associated discovery agents. There are currently two discovery agent implementations, a file watcher that loads URIs from a file, and a multicast listener that works with ActiveMQ 5 brokers which have been configured to broadcast their broker addresses for listening clients.
@@ -266,6 +266,17 @@ The URI options for the multicast discovery agent are listed below:
 
 + **group** Controls which multicast group messages are listened for on. The default value is "default".
 
+### Enabling OpenSSL support
+
+SSL connections can be configured to use a native OpenSSL implementation which can provide increased performance. To use this support the transport ***useOpenSSL*** option must be enabled and the OpenSSL support libraries must be configured on the classpath.  The client tests make use of an uber jar containing static libraries for multiple platforms based on Google's boringssl project libraries.  To include this dependency in your own project you might include the maven dependency as follows:
+
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-tcnative-boringssl-static</artifactId>
+      <version>${netty-tcnative-version}</version>
+    </dependency>
+
+The Netty project provides other options to choose from when using OpenSSL libraries which are documented on the Netty site.  [https://netty.io/wiki/forked-tomcat-native.html](https://netty.io/wiki/forked-tomcat-native.html)
 
 ## Logging
 

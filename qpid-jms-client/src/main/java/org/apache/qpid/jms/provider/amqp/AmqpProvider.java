@@ -82,10 +82,8 @@ import org.apache.qpid.proton.engine.Event.Type;
 import org.apache.qpid.proton.engine.Sasl;
 import org.apache.qpid.proton.engine.SaslListener;
 import org.apache.qpid.proton.engine.impl.CollectorImpl;
-import org.apache.qpid.proton.engine.impl.ProtocolTracer;
 import org.apache.qpid.proton.engine.impl.TransportImpl;
 import org.apache.qpid.proton.engine.impl.TransportInternal;
-import org.apache.qpid.proton.framing.TransportFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,6 +123,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
     private final Transport transport;
     private String vhost;
     private boolean traceFrames;
+    private int traceFramesPayloadLimit = AmqpProtocolTracer.DEFAULT_PAYLOAD_STRING_LIMIT;
     private boolean traceBytes;
     private boolean saslLayer = true;
     private Set<String> saslMechanisms;
@@ -789,17 +788,7 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     private void updateTracer() {
         if (isTraceFrames()) {
-            ((TransportImpl) protonTransport).setProtocolTracer(new ProtocolTracer() {
-                @Override
-                public void receivedFrame(TransportFrame transportFrame) {
-                    TRACE_FRAMES.trace("RECV: {}", transportFrame.getBody());
-                }
-
-                @Override
-                public void sentFrame(TransportFrame transportFrame) {
-                    TRACE_FRAMES.trace("SENT: {}", transportFrame.getBody());
-                }
-            });
+            ((TransportImpl) protonTransport).setProtocolTracer(new AmqpProtocolTracer(TRACE_FRAMES, traceFramesPayloadLimit));
         }
     }
 
@@ -1153,6 +1142,14 @@ public class AmqpProvider implements Provider, TransportListener , AmqpResourceP
 
     public boolean isTraceFrames() {
         return this.traceFrames;
+    }
+
+    public int getTraceFramesPayloadLimit() {
+        return traceFramesPayloadLimit;
+    }
+
+    public void setTraceFramesPayloadLimit(int traceFramesPayloadLimit) {
+        this.traceFramesPayloadLimit = traceFramesPayloadLimit;
     }
 
     public void setTraceBytes(boolean trace) {

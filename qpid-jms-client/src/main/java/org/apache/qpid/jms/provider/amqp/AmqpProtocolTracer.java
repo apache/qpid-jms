@@ -43,12 +43,12 @@ public class AmqpProtocolTracer implements ProtocolTracer {
 
     @Override
     public void receivedFrame(TransportFrame transportFrame) {
-        logger.trace("RECV: {} {}", transportFrame.getBody(), formatPayload(transportFrame));
+        logger.trace("RECV: {}{}", transportFrame.getBody(), formatPayload(transportFrame));
     }
 
     @Override
     public void sentFrame(TransportFrame transportFrame) {
-        logger.trace("SENT: {} {}", transportFrame.getBody(), formatPayload(transportFrame));
+        logger.trace("SENT: {}{}", transportFrame.getBody(), formatPayload(transportFrame));
     }
 
     private String formatPayload(TransportFrame frame) {

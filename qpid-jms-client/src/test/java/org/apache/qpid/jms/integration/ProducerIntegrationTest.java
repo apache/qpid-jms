@@ -2840,7 +2840,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
                 fail("No expected exception for this send.");
             }
 
-            testPeer.waitForAllHandlersToComplete(100);
+            testPeer.waitForAllHandlersToComplete(2000);
 
             assertFalse("Should not get async callback", listener.awaitCompletion(10, TimeUnit.MILLISECONDS));
 
@@ -2893,7 +2893,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
 
             MessageProducer producer = session.createProducer(queue);
-            testPeer.waitForAllHandlersToComplete(100);
+            testPeer.waitForAllHandlersToComplete(2000);
 
             assertTrue("Producer should have been closed", producerClosed.await(2, TimeUnit.SECONDS));
 
@@ -2947,7 +2947,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
 
             MessageProducer producer = session.createProducer(queue);
-            testPeer.waitForAllHandlersToComplete(100);
+            testPeer.waitForAllHandlersToComplete(2000);
 
             assertTrue("Session should have been closed", sessionClosed.await(2, TimeUnit.SECONDS));
 

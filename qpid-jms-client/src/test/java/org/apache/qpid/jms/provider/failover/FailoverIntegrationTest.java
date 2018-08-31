@@ -92,6 +92,7 @@ import org.apache.qpid.jms.util.StopWatch;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -104,9 +105,15 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(FailoverIntegrationTest.class);
 
-    @Test(timeout = 20000)
-    public void testConnectSecurityViolation() throws Exception {
+    private static final Symbol ANONYMOUS = Symbol.valueOf("ANONYMOUS");
+    private static final Symbol PLAIN = Symbol.valueOf("PLAIN");
+    private static final UnsignedByte SASL_FAIL_AUTH = UnsignedByte.valueOf((byte) 1);
+    private static final UnsignedByte SASL_SYS = UnsignedByte.valueOf((byte) 2);
+    private static final UnsignedByte SASL_SYS_PERM = UnsignedByte.valueOf((byte) 3);
+    private static final UnsignedByte SASL_SYS_TEMP = UnsignedByte.valueOf((byte) 4);
 
+    @Test(timeout = 20000)
+    public void testConnectThrowsSecurityViolationOnFailureFromOpen() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
             testPeer.rejectConnect(AmqpError.UNAUTHORIZED_ACCESS, "Anonymous connections not allowed", null);
@@ -123,6 +130,318 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             connection.close();
 
             testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testConnectThrowsSecurityViolationOnFailureFromSaslWithClientID() throws Exception {
+        doConnectThrowsSecurityViolationOnFailureFromSaslWithOrExplicitlyWithoutClientIDTestImpl(true, SASL_FAIL_AUTH);
+        doConnectThrowsSecurityViolationOnFailureFromSaslWithOrExplicitlyWithoutClientIDTestImpl(true, SASL_SYS);
+        doConnectThrowsSecurityViolationOnFailureFromSaslWithOrExplicitlyWithoutClientIDTestImpl(true, SASL_SYS_PERM);
+    }
+
+    @Test(timeout = 20000)
+    public void testConnectThrowsSecurityViolationOnFailureFromSaslExplicitlyWithoutClientID() throws Exception {
+        doConnectThrowsSecurityViolationOnFailureFromSaslWithOrExplicitlyWithoutClientIDTestImpl(false, SASL_FAIL_AUTH);
+        doConnectThrowsSecurityViolationOnFailureFromSaslWithOrExplicitlyWithoutClientIDTestImpl(false, SASL_SYS);
+        doConnectThrowsSecurityViolationOnFailureFromSaslWithOrExplicitlyWithoutClientIDTestImpl(false, SASL_SYS_PERM);
+    }
+
+    private void doConnectThrowsSecurityViolationOnFailureFromSaslWithOrExplicitlyWithoutClientIDTestImpl(boolean clientID, UnsignedByte saslFailureCode) throws Exception {
+        String optionString;
+        if(clientID) {
+            optionString = "?jms.clientID=myClientID";
+        } else {
+            optionString = "?jms.awaitClientID=false";
+        }
+
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            testPeer.expectSaslFailingExchange(new Symbol[] {PLAIN, ANONYMOUS}, PLAIN, saslFailureCode);
+
+            ConnectionFactory factory = new JmsConnectionFactory("failover:(amqp://localhost:" + testPeer.getServerPort() + ")" + optionString);
+
+            try {
+                factory.createConnection("username", "password");
+                fail("Excepted exception to be thrown");
+            }catch (JMSSecurityException jmsse) {
+                LOG.info("Caught expected security exception: {}", jmsse.getMessage());
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testConnectThrowsSecurityViolationOnFailureFromSaslImplicitlyWithoutClientID() throws Exception {
+        doConnectThrowsSecurityViolationOnFailureFromSaslImplicitlyWithoutClientIDTestImpl(SASL_FAIL_AUTH);
+        doConnectThrowsSecurityViolationOnFailureFromSaslImplicitlyWithoutClientIDTestImpl(SASL_SYS);
+        doConnectThrowsSecurityViolationOnFailureFromSaslImplicitlyWithoutClientIDTestImpl(SASL_SYS_PERM);
+    }
+
+    private void doConnectThrowsSecurityViolationOnFailureFromSaslImplicitlyWithoutClientIDTestImpl(UnsignedByte saslFailureCode) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            testPeer.expectSaslFailingExchange(new Symbol[] {PLAIN, ANONYMOUS}, PLAIN, saslFailureCode);
+
+            ConnectionFactory factory = new JmsConnectionFactory("failover:(amqp://localhost:" + testPeer.getServerPort() + ")");
+            Connection connection = factory.createConnection("username", "password");
+
+            try {
+                connection.start();
+                fail("Excepted exception to be thrown");
+            }catch (JMSSecurityException jmsse) {
+                LOG.info("Caught expected security exception: {}", jmsse.getMessage());
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testConnectHandlesSaslTempFailure() throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final CountDownLatch finalConnected = new CountDownLatch(1);
+            final String finalURI = createPeerURI(finalPeer);
+
+            originalPeer.expectSaslFailingExchange(new Symbol[] { ANONYMOUS }, ANONYMOUS, SASL_SYS_TEMP);
+
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
+            finalPeer.expectBegin();
+
+            final JmsConnection connection = establishAnonymousConnecton(originalPeer, finalPeer);
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (finalURI.equals(remoteURI.toString())) {
+                        finalConnected.countDown();
+                    }
+                }
+            });
+
+            try {
+                connection.start();
+            } catch (Exception ex) {
+                fail("Should not have thrown an Exception: " + ex);
+            }
+
+            assertTrue("Should connect to final peer", finalConnected.await(5, TimeUnit.SECONDS));
+
+            String content = "myContent";
+            final DescribedType amqpValueNullContent = new AmqpValueDescribedType(content);
+
+            finalPeer.expectBegin();
+            finalPeer.expectReceiverAttach();
+            finalPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, amqpValueNullContent);
+            finalPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            MessageConsumer consumer = session.createConsumer(queue);
+            Message message = consumer.receive(2000);
+
+            finalPeer.expectClose();
+            connection.close();
+            finalPeer.waitForAllHandlersToComplete(1000);
+
+            assertNotNull(message);
+            assertTrue(message instanceof TextMessage);
+            assertEquals(content, ((TextMessage) message).getText());
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverStopsOnNonTemporarySaslFailure() throws Exception {
+        doFailoverStopsOnNonTemporarySaslFailureTestImpl(SASL_FAIL_AUTH);
+        doFailoverStopsOnNonTemporarySaslFailureTestImpl(SASL_SYS);
+        doFailoverStopsOnNonTemporarySaslFailureTestImpl(SASL_SYS_PERM);
+    }
+
+    private void doFailoverStopsOnNonTemporarySaslFailureTestImpl(UnsignedByte saslFailureCode) throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer rejectingPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final CountDownLatch originalConnected = new CountDownLatch(1);
+            final CountDownLatch exceptionListenerFired = new CountDownLatch(1);
+            final AtomicReference<Throwable> failure = new AtomicReference<>();
+
+            // Create a peer to connect to, then one to reconnect to
+            final String originalURI = createPeerURI(originalPeer);
+            final String rejectingURI = createPeerURI(rejectingPeer);
+            final String finalURI = createPeerURI(finalPeer);
+
+            LOG.info("Original peer is at: {}", originalURI);
+            LOG.info("Rejecting peer is at: {}", rejectingURI);
+            LOG.info("Final peer is at: {}", finalURI);
+
+            // Expect connection to the first peer (and have it drop)
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
+            originalPeer.expectBegin();
+            originalPeer.expectBegin();
+            originalPeer.expectReceiverAttach();
+            originalPeer.expectLinkFlow();
+            originalPeer.dropAfterLastHandler();
+
+            // --- Post Failover Expectations of Rejecting Peer--- //
+            rejectingPeer.expectSaslFailingExchange(new Symbol[] { ANONYMOUS }, ANONYMOUS, saslFailureCode);
+
+            // --- Post Failover Expectations of FinalPeer --- //
+            // This shouldn't get hit, but if it does accept the connect so we don't pass the failed
+            // to connect assertion.
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
+            finalPeer.expectBegin();
+            finalPeer.expectBegin();
+
+            final JmsConnection connection = establishAnonymousConnecton(originalPeer, rejectingPeer, finalPeer);
+            connection.setExceptionListener(new ExceptionListener() {
+                @Override
+                public void onException(JMSException exception) {
+                    LOG.trace("JMS ExceptionListener: ", exception);
+                    failure.compareAndSet(null, exception);
+                    exceptionListenerFired.countDown();
+                }
+            });
+
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (originalURI.equals(remoteURI.toString())) {
+                        originalConnected.countDown();
+                    }
+                }
+            });
+            connection.start();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            final MessageConsumer consumer = session.createConsumer(queue);
+
+            assertTrue("Should connect to original peer", originalConnected.await(3, TimeUnit.SECONDS));
+
+            assertTrue("The ExceptionListener should have been alerted", exceptionListenerFired.await(3, TimeUnit.SECONDS));
+            Throwable ex = failure.get();
+            assertTrue("Unexpected failure exception: " + ex, ex instanceof JMSSecurityException);
+
+            // Verify the consumer gets marked closed
+            assertTrue("consumer never closed.", Wait.waitFor(new Wait.Condition() {
+                @Override
+                public boolean isSatisfied() throws Exception {
+                    try {
+                        consumer.getMessageSelector();
+                    } catch (IllegalStateException jmsise) {
+                        return true;
+                    }
+                    return false;
+                }
+            }, 5000, 5));
+
+            // Shut down last peer and verify no connection made to it
+            finalPeer.purgeExpectations();
+            finalPeer.close();
+            assertNotNull("First peer should have accepted a TCP connection", originalPeer.getClientSocket());
+            assertNotNull("Rejecting peer should have accepted a TCP connection", rejectingPeer.getClientSocket());
+            assertNull("Final peer should not have accepted any TCP connection", finalPeer.getClientSocket());
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverHandlesTemporarySaslFailure() throws Exception {
+        try (TestAmqpPeer originalPeer = new TestAmqpPeer();
+             TestAmqpPeer rejectingPeer = new TestAmqpPeer();
+             TestAmqpPeer finalPeer = new TestAmqpPeer();) {
+
+            final CountDownLatch originalConnected = new CountDownLatch(1);
+            final CountDownLatch finalConnected = new CountDownLatch(1);
+            final AtomicBoolean exceptionListenerFired = new AtomicBoolean();
+
+            // Create a peer to connect to, then one to reconnect to
+            final String originalURI = createPeerURI(originalPeer);
+            final String rejectingURI = createPeerURI(rejectingPeer);
+            final String finalURI = createPeerURI(finalPeer);
+
+            LOG.info("Original peer is at: {}", originalURI);
+            LOG.info("Rejecting peer is at: {}", rejectingURI);
+            LOG.info("Final peer is at: {}", finalURI);
+
+            // Expect connection to the first peer (and have it drop)
+            originalPeer.expectSaslAnonymous();
+            originalPeer.expectOpen();
+            originalPeer.expectBegin();
+            originalPeer.expectBegin();
+            originalPeer.expectReceiverAttach();
+            originalPeer.expectLinkFlow();
+            originalPeer.dropAfterLastHandler();
+
+            // --- Post Failover Expectations of Rejecting --- //
+            rejectingPeer.expectSaslFailingExchange(new Symbol[] { ANONYMOUS }, ANONYMOUS, SASL_SYS_TEMP);
+
+            // --- Post Failover Expectations of FinalPeer --- //
+            finalPeer.expectSaslAnonymous();
+            finalPeer.expectOpen();
+            finalPeer.expectBegin();
+            finalPeer.expectBegin();
+            finalPeer.expectReceiverAttach();
+            final String expectedMessageContent = "myTextMessage";
+            finalPeer.expectLinkFlowRespondWithTransfer(null, null, null, null, new AmqpValueDescribedType(expectedMessageContent));
+
+            final JmsConnection connection = establishAnonymousConnecton(originalPeer, rejectingPeer, finalPeer);
+            connection.setExceptionListener(new ExceptionListener() {
+                @Override
+                public void onException(JMSException exception) {
+                    LOG.trace("JMS ExceptionListener: ", exception);
+                    exceptionListenerFired.set(true);
+                }
+            });
+
+            connection.addConnectionListener(new JmsDefaultConnectionListener() {
+                @Override
+                public void onConnectionEstablished(URI remoteURI) {
+                    LOG.info("Connection Established: {}", remoteURI);
+                    if (originalURI.equals(remoteURI.toString())) {
+                        originalConnected.countDown();
+                    }
+                }
+
+                @Override
+                public void onConnectionRestored(URI remoteURI) {
+                    LOG.info("Connection Restored: {}", remoteURI);
+                    if (finalURI.equals(remoteURI.toString())) {
+                        finalConnected.countDown();
+                    }
+                }
+            });
+            connection.start();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+            final MessageConsumer consumer = session.createConsumer(queue);
+
+            finalPeer.waitForAllHandlersToComplete(2000);
+
+            assertTrue("Should connect to original peer", originalConnected.await(3, TimeUnit.SECONDS));
+            assertTrue("Should connect to final peer", finalConnected.await(3, TimeUnit.SECONDS));
+
+            // Check message arrives
+            finalPeer.expectDispositionThatIsAcceptedAndSettled();
+
+            Message msg = consumer.receive(5000);
+            assertTrue("Expected an instance of TextMessage, got: " + msg, msg instanceof TextMessage);
+            assertEquals("Unexpected msg content", expectedMessageContent, ((TextMessage) msg).getText());
+
+            assertFalse("The ExceptionListener should not have been alerted", exceptionListenerFired.get());
+
+            // Shut it down
+            finalPeer.expectClose();
+            connection.close();
+
+            finalPeer.waitForAllHandlersToComplete(1000);
         }
     }
 

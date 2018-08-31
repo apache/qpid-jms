@@ -16,8 +16,10 @@
  */
 package org.apache.qpid.jms.provider.amqp;
 
+import org.apache.qpid.jms.exceptions.JMSSecuritySaslException;
 import org.apache.qpid.jms.sasl.Mechanism;
 import org.apache.qpid.proton.engine.Sasl;
+import org.apache.qpid.proton.engine.Sasl.SaslOutcome;
 import org.apache.qpid.proton.engine.Transport;
 
 import java.util.function.Function;
@@ -104,7 +106,7 @@ public class AmqpSaslAuthenticator {
         try {
             switch (sasl.getState()) {
                 case PN_SASL_FAIL:
-                    handleSaslFail();
+                    handleSaslFail(sasl);
                     break;
                 case PN_SASL_PASS:
                     handleSaslCompletion(sasl);
@@ -119,7 +121,7 @@ public class AmqpSaslAuthenticator {
 
     //----- Internal support methods -----------------------------------------//
 
-    private void handleSaslFail() {
+    private void handleSaslFail(Sasl sasl) {
         StringBuilder message = new StringBuilder("Client failed to authenticate");
         if (mechanism != null) {
             message.append(" using SASL: ").append(mechanism.getName());
@@ -127,7 +129,13 @@ public class AmqpSaslAuthenticator {
                 message.append(" (").append(mechanism.getAdditionalFailureInformation()).append(")");
             }
         }
-        recordFailure(message.toString(), null);
+
+        SaslOutcome outcome = sasl.getOutcome();
+        if(outcome.equals(SaslOutcome.PN_SASL_TEMP)) {
+            message.append(", due to temporary system error.");
+        }
+
+        recordFailure(message.toString(), null, outcome.getCode());
     }
 
     private void handleSaslCompletion(Sasl sasl) {
@@ -145,7 +153,11 @@ public class AmqpSaslAuthenticator {
     }
 
     private void recordFailure(String message, Throwable cause) {
-        failureCause = new JMSSecurityException(message);
+        recordFailure(message, cause, SaslOutcome.PN_SASL_NONE.getCode());
+    }
+
+    private void recordFailure(String message, Throwable cause, int outcome) {
+        failureCause = new JMSSecuritySaslException(message, outcome);
         if (cause instanceof Exception) {
             failureCause.setLinkedException((Exception) cause);
         }

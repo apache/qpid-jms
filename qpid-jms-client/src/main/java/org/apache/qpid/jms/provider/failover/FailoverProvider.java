@@ -39,6 +39,7 @@ import javax.jms.TransactionRolledBackException;
 
 import org.apache.qpid.jms.JmsOperationTimedOutException;
 import org.apache.qpid.jms.JmsSendTimedOutException;
+import org.apache.qpid.jms.exceptions.JMSSecuritySaslException;
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 import org.apache.qpid.jms.message.JmsMessageFactory;
 import org.apache.qpid.jms.message.JmsOutboundMessageDispatch;
@@ -738,6 +739,11 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                                 } finally {
                                     provider = null;
                                 }
+
+                                if(reconnectControl.isStoppageCause(e)) {
+                                    LOG.trace("Stopping attempt due to type of failure");
+                                    break;
+                                }
                             }
                         }
                     } else {
@@ -751,7 +757,7 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
                 } finally {
                     if (provider == null) {
                         LOG.trace("Connection attempt:[{}] failed error: {}", reconnectControl.reconnectAttempts, failure.getMessage());
-                        if (reconnectControl.isLimitExceeded()) {
+                        if (!reconnectControl.isReconnectAllowed(failure)) {
                             reportReconnectFailure(failure);
                         } else {
                             reconnectControl.scheduleReconnect(this);
@@ -1366,16 +1372,27 @@ public class FailoverProvider extends DefaultProviderListener implements Provide
             return false;
         }
 
-        public boolean isReconnectAllowed(IOException cause) {
+        public boolean isReconnectAllowed(Throwable cause) {
             // If a connection attempts fail due to Security errors than
             // we abort reconnection as there is a configuration issue and
             // we want to avoid a spinning reconnect cycle that can never
             // complete.
-            if (cause.getCause() instanceof JMSSecurityException) {
+            if(isStoppageCause(cause)) {
                 return false;
             }
 
             return !isLimitExceeded();
+        }
+
+        private boolean isStoppageCause(Throwable cause) {
+            if(cause.getCause() instanceof JMSSecuritySaslException) {
+                JMSSecuritySaslException saslFailure = (JMSSecuritySaslException) cause.getCause();
+                return !saslFailure.isSysTempFailure();
+            } else if (cause.getCause() instanceof JMSSecurityException ) {
+                return true;
+            }
+
+            return false;
         }
 
         private int reconnectAttemptLimit() {

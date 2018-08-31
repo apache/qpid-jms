@@ -47,6 +47,7 @@ import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.transports.TransportOptions;
 import org.apache.qpid.jms.transports.TransportSupport;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,6 +63,11 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     private static final Symbol SCRAM_SHA_256 = Symbol.valueOf("SCRAM-SHA-256");
     private static final Symbol EXTERNAL = Symbol.valueOf("EXTERNAL");
     private static final Symbol XOAUTH2 = Symbol.valueOf("XOAUTH2");
+
+    private static final UnsignedByte SASL_FAIL_AUTH = UnsignedByte.valueOf((byte) 1);
+    private static final UnsignedByte SASL_SYS = UnsignedByte.valueOf((byte) 2);
+    private static final UnsignedByte SASL_SYS_PERM = UnsignedByte.valueOf((byte) 3);
+    private static final UnsignedByte SASL_SYS_TEMP = UnsignedByte.valueOf((byte) 4);
 
     private static final String BROKER_JKS_KEYSTORE = "src/test/resources/broker-jks.keystore";
     private static final String BROKER_JKS_TRUSTSTORE = "src/test/resources/broker-jks.truststore";
@@ -225,6 +231,32 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Test(timeout = 20000)
+    public void testSaslFailureCodes() throws Exception {
+        doSaslFailureCodesTestImpl(SASL_FAIL_AUTH);
+        doSaslFailureCodesTestImpl(SASL_SYS);
+        doSaslFailureCodesTestImpl(SASL_SYS_PERM);
+        doSaslFailureCodesTestImpl(SASL_SYS_TEMP);
+    }
+
+    private void doSaslFailureCodesTestImpl(UnsignedByte saslFailureCode) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+
+            testPeer.expectSaslFailingExchange(new Symbol[] {PLAIN, ANONYMOUS}, PLAIN, saslFailureCode);
+
+            ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + "?jms.clientID=myClientID");
+
+            try {
+                factory.createConnection("username", "password");
+                fail("Excepted exception to be thrown");
+            }catch (JMSSecurityException jmsse) {
+                LOG.info("Caught expected security exception: {}", jmsse.getMessage());
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
     /**
      * Add a small delay after the SASL process fails, test peer will throw if
      * any unexpected frames arrive, such as erroneous open+close.
@@ -270,7 +302,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     private void doMechanismSelectedTestImpl(String username, String password, Symbol clientSelectedMech, Symbol[] serverMechs, boolean wait) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
-            testPeer.expectFailingSaslAuthentication(serverMechs, clientSelectedMech);
+            testPeer.expectSaslFailingAuthentication(serverMechs, clientSelectedMech);
 
             ConnectionFactory factory = new JmsConnectionFactory("amqp://localhost:" + testPeer.getServerPort() + "?jms.clientID=myclientid");
             try {
@@ -323,7 +355,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
                                "transport.keyStorePassword=" + PASSWORD;
             }
 
-            testPeer.expectFailingSaslAuthentication(serverMechs, clientSelectedMech);
+            testPeer.expectSaslFailingAuthentication(serverMechs, clientSelectedMech);
 
             JmsConnectionFactory factory = new JmsConnectionFactory("amqps://localhost:" + testPeer.getServerPort() + connOptions);
             try {
@@ -385,7 +417,7 @@ public class SaslIntegrationTest extends QpidJmsTestCase {
     private void doMechanismSelectionRestrictedTestImpl(String username, String password, Symbol clientSelectedMech, Symbol[] serverMechs, String mechanismsOptionValue) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
-            testPeer.expectFailingSaslAuthentication(serverMechs, clientSelectedMech);
+            testPeer.expectSaslFailingAuthentication(serverMechs, clientSelectedMech);
 
             String uriOptions = "?jms.clientID=myclientid";
             if(mechanismsOptionValue != null) {

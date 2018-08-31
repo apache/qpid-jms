@@ -36,8 +36,10 @@ import java.util.function.Function;
 import javax.jms.JMSSecurityRuntimeException;
 import javax.security.sasl.SaslException;
 
+import org.apache.qpid.jms.exceptions.JMSSecuritySaslException;
 import org.apache.qpid.jms.sasl.Mechanism;
 import org.apache.qpid.proton.engine.Sasl;
+import org.apache.qpid.proton.engine.Sasl.SaslOutcome;
 import org.apache.qpid.proton.engine.Sasl.SaslState;
 import org.apache.qpid.proton.engine.Transport;
 import org.junit.Before;
@@ -137,12 +139,34 @@ public class AmqpSaslAuthenticatorTest {
         verifySaslMockReceived(sasl, INITIAL_RESPONSE);
 
         when(sasl.getState()).thenReturn(SaslState.PN_SASL_FAIL);
+        when(sasl.getOutcome()).thenReturn(SaslOutcome.PN_SASL_AUTH);
         authenticator.handleSaslOutcome(sasl, transport);
 
         assertTrue(authenticator.isComplete());
         assertFalse(authenticator.wasSuccessful());
         assertNotNull(authenticator.getFailureCause());
         assertTrue(authenticator.getFailureCause().getMessage().contains("Client failed to authenticate"));
+        assertFalse(authenticator.getFailureCause().getMessage().contains("due to temporary system error"));
+    }
+
+    @Test
+    public void testPeerSignalsAuthenticationSysTemp() throws Exception {
+        Mechanism mechanism = new TestSaslMechanism(INITIAL_RESPONSE);
+        AmqpSaslAuthenticator authenticator = new AmqpSaslAuthenticator(mechanismName -> mechanism);
+
+        authenticator.handleSaslMechanisms(sasl, transport);
+        verifySaslMockReceived(sasl, INITIAL_RESPONSE);
+
+        when(sasl.getState()).thenReturn(SaslState.PN_SASL_FAIL);
+        when(sasl.getOutcome()).thenReturn(SaslOutcome.PN_SASL_TEMP);
+        authenticator.handleSaslOutcome(sasl, transport);
+
+        assertTrue(authenticator.isComplete());
+        assertFalse(authenticator.wasSuccessful());
+        assertNotNull(authenticator.getFailureCause());
+        assertTrue(authenticator.getFailureCause() instanceof JMSSecuritySaslException);
+        assertTrue(authenticator.getFailureCause().getMessage().contains("Client failed to authenticate"));
+        assertTrue(authenticator.getFailureCause().getMessage().contains("due to temporary system error"));
     }
 
     @Test

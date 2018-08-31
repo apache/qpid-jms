@@ -141,8 +141,9 @@ public class TestAmqpPeer implements AutoCloseable
     private static final Symbol PLAIN = Symbol.valueOf("PLAIN");
     private static final Symbol GSSAPI = Symbol.valueOf("GSSAPI");
     private static final Symbol XOAUTH2 = Symbol.valueOf("XOAUTH2");
-    private static final UnsignedByte SASL_OK = UnsignedByte.valueOf((byte)0);
-    private static final UnsignedByte SASL_FAIL_AUTH = UnsignedByte.valueOf((byte)1);
+    private static final UnsignedByte SASL_OK = UnsignedByte.valueOf((byte) 0);
+    private static final UnsignedByte SASL_FAIL_AUTH = UnsignedByte.valueOf((byte) 1);
+    private static final UnsignedByte SASL_SYS_TEMP = UnsignedByte.valueOf((byte) 4);
     private static final int CONNECTION_CHANNEL = 0;
     private static final int DEFAULT_PRODUCER_CREDIT = 100;
     private static final Symbol[] DEFAULT_DESIRED_CAPABILITIES = new Symbol[] { SOLE_CONNECTION_CAPABILITY, DELAYED_DELIVERY, ANONYMOUS_RELAY, SHARED_SUBS};
@@ -817,13 +818,22 @@ public class TestAmqpPeer implements AutoCloseable
         expectSaslAuthentication(ANONYMOUS, equalTo(new Binary(new byte[0])), null, true, true);
     }
 
-    public void expectFailingSaslAuthentication(Symbol[] serverMechs, Symbol clientSelectedMech)
+    public void expectSaslFailingAuthentication(Symbol[] serverMechs, Symbol clientSelectedMech)
+    {
+        expectSaslFailingExchange(serverMechs, clientSelectedMech, SASL_FAIL_AUTH);
+    }
+
+    public void expectSaslFailingExchange(Symbol[] serverMechs, Symbol clientSelectedMech, UnsignedByte saslFailureAuthCode)
     {
         SaslMechanismsFrame saslMechanismsFrame = new SaslMechanismsFrame().setSaslServerMechanisms(serverMechs);
         addHandler(new HeaderHandlerImpl(AmqpHeader.SASL_HEADER, AmqpHeader.SASL_HEADER,
                                             new FrameSender(
                                                     this, FrameType.SASL, 0,
                                                     saslMechanismsFrame, null)));
+
+        if(saslFailureAuthCode.compareTo(SASL_FAIL_AUTH) < 0 || saslFailureAuthCode.compareTo(SASL_SYS_TEMP) > 0) {
+            throw new IllegalArgumentException("A valid failing SASL code must be supplied");
+        }
 
         SaslInitMatcher saslInitMatcher = new SaslInitMatcher().withMechanism(equalTo(clientSelectedMech));
         saslInitMatcher.onCompletion(new AmqpPeerRunnable()
@@ -833,7 +843,7 @@ public class TestAmqpPeer implements AutoCloseable
             {
                 TestAmqpPeer.this.sendFrame(
                         FrameType.SASL, 0,
-                        new SaslOutcomeFrame().setCode(SASL_FAIL_AUTH),
+                        new SaslOutcomeFrame().setCode(saslFailureAuthCode),
                         null,
                         false, 0);
                 _driverRunnable.expectHeader();

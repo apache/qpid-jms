@@ -248,7 +248,7 @@ public class SaslGssApiIntegrationTest extends QpidJmsTestCase {
     private void doMechanismSelectedTestImpl(String username, String password, Symbol clientSelectedMech, Symbol[] serverMechs, boolean enableGssapiExplicitly) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
 
-            testPeer.expectFailingSaslAuthentication(serverMechs, clientSelectedMech);
+            testPeer.expectSaslFailingAuthentication(serverMechs, clientSelectedMech);
 
             String uriOptions = "?jms.clientID=myclientid";
             if(enableGssapiExplicitly) {

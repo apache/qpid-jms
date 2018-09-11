@@ -53,6 +53,7 @@ import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.QueueBrowser;
+import javax.jms.ResourceAllocationException;
 import javax.jms.ServerSessionPool;
 import javax.jms.Session;
 import javax.jms.TemporaryTopic;
@@ -71,12 +72,15 @@ import org.apache.qpid.jms.policy.JmsDefaultPrefetchPolicy;
 import org.apache.qpid.jms.provider.amqp.AmqpSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.Wait;
+import org.apache.qpid.jms.test.testpeer.ListDescribedType;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.basictypes.AmqpError;
 import org.apache.qpid.jms.test.testpeer.basictypes.ConnectionError;
 import org.apache.qpid.jms.test.testpeer.basictypes.TerminusDurability;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Accepted;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Modified;
 import org.apache.qpid.jms.test.testpeer.describedtypes.Rejected;
+import org.apache.qpid.jms.test.testpeer.describedtypes.Released;
 import org.apache.qpid.jms.test.testpeer.describedtypes.TransactionalState;
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.AmqpValueDescribedType;
 import org.apache.qpid.jms.test.testpeer.matchers.SourceMatcher;
@@ -94,6 +98,8 @@ import org.apache.qpid.proton.amqp.DescribedType;
 import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedByte;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -1921,6 +1927,169 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
+    public void testFailoverPassthroughOfCompletedSyncSend() throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final Connection connection = establishAnonymousConnecton(testPeer);
+
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            MessageProducer producer = session.createProducer(queue);
+
+            //Do a warmup
+            String messageContent1 = "myMessage1";
+            TransferPayloadCompositeMatcher messageMatcher1 = new TransferPayloadCompositeMatcher();
+            messageMatcher1.setHeadersMatcher(new MessageHeaderSectionMatcher(true));
+            messageMatcher1.setMessageAnnotationsMatcher(new MessageAnnotationsSectionMatcher(true));
+            messageMatcher1.setPropertiesMatcher(new MessagePropertiesSectionMatcher(true));
+            messageMatcher1.setMessageContentMatcher(new EncodedAmqpValueMatcher(messageContent1));
+
+            testPeer.expectTransfer(messageMatcher1);
+
+            TextMessage message1 = session.createTextMessage(messageContent1);
+            producer.send(message1);
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            // Create and send a new message, which is accepted
+            String messageContent2 = "myMessage2";
+            long delay = 15;
+            TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
+            messageMatcher.setHeadersMatcher(new MessageHeaderSectionMatcher(true));
+            messageMatcher.setMessageAnnotationsMatcher(new MessageAnnotationsSectionMatcher(true));
+            messageMatcher.setPropertiesMatcher(new MessagePropertiesSectionMatcher(true));
+            messageMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(messageContent2));
+
+            testPeer.expectTransfer(messageMatcher, nullValue(), false, true, new Accepted(), true, 0, delay);
+            testPeer.expectClose();
+
+            TextMessage message2 = session.createTextMessage(messageContent2);
+
+            long start = System.currentTimeMillis();
+            producer.send(message2);
+
+            long elapsed = System.currentTimeMillis() - start;
+            MatcherAssert.assertThat("Send call should have taken at least the disposition delay", elapsed, Matchers.greaterThan(delay));
+
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverPassthroughOfRejectedSyncSend() throws Exception {
+        Rejected failingState = new Rejected();
+        org.apache.qpid.jms.test.testpeer.describedtypes.Error rejectError = new org.apache.qpid.jms.test.testpeer.describedtypes.Error();
+        rejectError.setCondition(AmqpError.RESOURCE_LIMIT_EXCEEDED);
+        rejectError.setDescription("RLE description");
+        failingState.setError(rejectError);
+
+        doFailoverPassthroughOfFailingSyncSendTestImpl(failingState, true);
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverPassthroughOfReleasedSyncSend() throws Exception {
+        doFailoverPassthroughOfFailingSyncSendTestImpl(new Released(), false);
+    }
+
+    @Test(timeout = 20000)
+    public void testFailoverPassthroughOfModifiedFailedSyncSend() throws Exception {
+        Modified failingState = new Modified();
+        failingState.setDeliveryFailed(true);
+
+        doFailoverPassthroughOfFailingSyncSendTestImpl(failingState, false);
+    }
+
+    private void doFailoverPassthroughOfFailingSyncSendTestImpl(ListDescribedType failingState, boolean inspectException) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
+            final Connection connection = establishAnonymousConnecton(testPeer);
+
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+            testPeer.expectBegin();
+            testPeer.expectBegin();
+            testPeer.expectSenderAttach();
+
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session.createQueue("myQueue");
+
+            MessageProducer producer = session.createProducer(queue);
+
+            //Do a warmup that succeeds
+            String messageContent1 = "myMessage1";
+            TransferPayloadCompositeMatcher messageMatcher1 = new TransferPayloadCompositeMatcher();
+            messageMatcher1.setHeadersMatcher(new MessageHeaderSectionMatcher(true));
+            messageMatcher1.setMessageAnnotationsMatcher(new MessageAnnotationsSectionMatcher(true));
+            messageMatcher1.setPropertiesMatcher(new MessagePropertiesSectionMatcher(true));
+            messageMatcher1.setMessageContentMatcher(new EncodedAmqpValueMatcher(messageContent1));
+
+            testPeer.expectTransfer(messageMatcher1);
+
+            TextMessage message1 = session.createTextMessage(messageContent1);
+            producer.send(message1);
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            // Create and send a new message, which fails as it is not accepted
+            assertFalse(failingState instanceof Accepted);
+
+            String messageContent2 = "myMessage2";
+            TransferPayloadCompositeMatcher messageMatcher2 = new TransferPayloadCompositeMatcher();
+            messageMatcher2.setHeadersMatcher(new MessageHeaderSectionMatcher(true));
+            messageMatcher2.setMessageAnnotationsMatcher(new MessageAnnotationsSectionMatcher(true));
+            messageMatcher2.setPropertiesMatcher(new MessagePropertiesSectionMatcher(true));
+            messageMatcher2.setMessageContentMatcher(new EncodedAmqpValueMatcher(messageContent2));
+
+            long delay = 15;
+            testPeer.expectTransfer(messageMatcher2, nullValue(), false, true, failingState, true, 0, delay);
+
+            TextMessage message2 = session.createTextMessage(messageContent2);
+
+            long start = System.currentTimeMillis();
+            try {
+                producer.send(message2);
+                fail("Expected an exception for this send.");
+            } catch (JMSException jmse) {
+                //Expected
+                long elapsed = System.currentTimeMillis() - start;
+                MatcherAssert.assertThat("Send call should have taken at least the disposition delay", elapsed, Matchers.greaterThan(delay));
+
+                if(inspectException) {
+                    assertTrue(jmse instanceof ResourceAllocationException);
+                    assertTrue(jmse.getMessage().contains("RLE description"));
+                }
+            }
+
+            testPeer.waitForAllHandlersToComplete(1000);
+
+            //Do a final send that succeeds
+            String messageContent3 = "myMessage3";
+            TransferPayloadCompositeMatcher messageMatcher3 = new TransferPayloadCompositeMatcher();
+            messageMatcher3.setHeadersMatcher(new MessageHeaderSectionMatcher(true));
+            messageMatcher3.setMessageAnnotationsMatcher(new MessageAnnotationsSectionMatcher(true));
+            messageMatcher3.setPropertiesMatcher(new MessagePropertiesSectionMatcher(true));
+            messageMatcher3.setMessageContentMatcher(new EncodedAmqpValueMatcher(messageContent3));
+
+            testPeer.expectTransfer(messageMatcher3);
+
+            TextMessage message3 = session.createTextMessage(messageContent3);
+            producer.send(message3);
+
+            testPeer.expectClose();
+            connection.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
     public void testFailoverPassthroughOfCompletedAsyncSend() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final Connection connection = establishAnonymousConnecton(
@@ -1959,7 +2128,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
     }
 
     @Test(timeout = 20000)
-    public void testFalioverPassthroughOfRejectedAsyncCompletionSend() throws Exception {
+    public void testFailoverPassthroughOfRejectedAsyncCompletionSend() throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             final JmsConnection connection = establishAnonymousConnecton(
                 "failover.reconnectDelay=2000&failover.maxReconnectAttempts=5", testPeer);

@@ -2160,7 +2160,7 @@ public class TestAmqpPeer implements AutoCloseable
 
     public void expectTransfer(int frameSize)
     {
-        expectTransfer(null, nullValue(), false, true, new Accepted(), true, frameSize);
+        expectTransfer(null, nullValue(), false, true, new Accepted(), true, frameSize, 0);
     }
 
     public void expectTransfer(Matcher<Binary> expectedPayloadMatcher, Matcher<?> stateMatcher, boolean settled,
@@ -2172,13 +2172,13 @@ public class TestAmqpPeer implements AutoCloseable
     public void expectTransfer(Matcher<Binary> expectedPayloadMatcher, Matcher<?> stateMatcher, boolean settled,
                                boolean sendResponseDisposition, ListDescribedType responseState, boolean responseSettled)
     {
-        expectTransfer(expectedPayloadMatcher, stateMatcher, settled, sendResponseDisposition, responseState, responseSettled, 0);
+        expectTransfer(expectedPayloadMatcher, stateMatcher, settled, sendResponseDisposition, responseState, responseSettled, 0, 0);
     }
 
     //TODO: fix responseState to only admit applicable types.
     public void expectTransfer(Matcher<Binary> expectedPayloadMatcher, Matcher<?> stateMatcher, boolean settled,
-            boolean sendResponseDisposition, ListDescribedType responseState, boolean responseSettled, int frameSize)
-{
+            boolean sendResponseDisposition, ListDescribedType responseState, boolean responseSettled, int frameSize, long dispositionDelay)
+    {
         Matcher<Boolean> settledMatcher = null;
         if(settled)
         {
@@ -2202,6 +2202,7 @@ public class TestAmqpPeer implements AutoCloseable
 
             // The response frame channel will be dynamically set based on the incoming frame. Using the -1 is an illegal placeholder.
             final FrameSender dispositionFrameSender = new FrameSender(this, FrameType.AMQP, -1, dispositionResponse, null);
+            dispositionFrameSender.setSendDelay(dispositionDelay);
             dispositionFrameSender.setValueProvider(new ValueProvider()
             {
                 @Override

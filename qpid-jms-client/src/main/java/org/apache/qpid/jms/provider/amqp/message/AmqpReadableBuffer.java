@@ -58,7 +58,7 @@ public class AmqpReadableBuffer implements ReadableBuffer {
 
     @Override
     public int arrayOffset() {
-        return buffer.arrayOffset() + buffer.readerIndex();
+        return buffer.arrayOffset();
     }
 
     @Override

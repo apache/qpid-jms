@@ -1975,7 +1975,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             producer.send(message2);
 
             long elapsed = System.currentTimeMillis() - start;
-            MatcherAssert.assertThat("Send call should have taken at least the disposition delay", elapsed, Matchers.greaterThan(delay));
+            MatcherAssert.assertThat("Send call should have taken at least the disposition delay", elapsed, Matchers.greaterThanOrEqualTo(delay));
 
             connection.close();
 
@@ -2059,9 +2059,9 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             } catch (JMSException jmse) {
                 //Expected
                 long elapsed = System.currentTimeMillis() - start;
-                MatcherAssert.assertThat("Send call should have taken at least the disposition delay", elapsed, Matchers.greaterThan(delay));
+                MatcherAssert.assertThat("Send call should have taken at least the disposition delay", elapsed, Matchers.greaterThanOrEqualTo(delay));
 
-                if(inspectException) {
+                if (inspectException) {
                     assertTrue(jmse instanceof ResourceAllocationException);
                     assertTrue(jmse.getMessage().contains("RLE description"));
                 }

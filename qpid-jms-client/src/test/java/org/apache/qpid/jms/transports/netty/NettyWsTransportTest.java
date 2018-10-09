@@ -75,7 +75,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
 
             Transport transport = createTransport(serverLocation, testListener, createClientOptions());
             try {
-                transport.connect(null);
+                transport.connect(null, null);
                 LOG.info("Connected to server:{} as expected.", serverLocation);
             } catch (Exception e) {
                 fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
@@ -110,7 +110,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
 
             Transport transport = createTransport(serverLocation, testListener, createClientOptions());
             try {
-                transport.connect(null);
+                transport.connect(null, null);
                 fail("Should have failed to connect to the server: " + serverLocation);
             } catch (Exception e) {
                 LOG.info("Failed to connect to: {} as expected.", serverLocation);
@@ -149,7 +149,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
             try {
                 // The transport should allow for the size of data we sent.
                 transport.setMaxFrameSize(FRAME_SIZE);
-                transport.connect(null);
+                transport.connect(null, null);
                 transports.add(transport);
                 transport.writeAndFlush(sendBuffer.copy());
             } catch (Exception e) {
@@ -200,7 +200,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
             Transport transport = createTransport(serverLocation, wsListener, createClientOptions);
             try {
                 transport.setMaxFrameSize(FRAME_SIZE);
-                transport.connect(null);
+                transport.connect(null, null);
                 transports.add(transport);
                 transport.writeAndFlush(sendBuffer.copy());
             } catch (Exception e) {
@@ -261,7 +261,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
                 // Transport can't receive anything bigger so it should fail the connection
                 // when data arrives that is larger than this value.
                 transport.setMaxFrameSize(FRAME_SIZE / 2);
-                transport.connect(null);
+                transport.connect(null, null);
                 transports.add(transport);
                 transport.writeAndFlush(sendBuffer.copy());
             } catch (Exception e) {
@@ -297,7 +297,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
             try {
                 // Transport allows bigger frames in so that server is the one causing the failure.
                 transport.setMaxFrameSize(FRAME_SIZE);
-                transport.connect(null);
+                transport.connect(null, null);
                 transports.add(transport);
                 transport.writeAndFlush(sendBuffer.copy());
             } catch (Exception e) {
@@ -358,7 +358,7 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
 
             Transport transport = createTransport(serverLocation, testListener, clientOptions);
             try {
-                transport.connect(null);
+                transport.connect(null, null);
                 LOG.info("Connected to server:{} as expected.", serverLocation);
             } catch (Exception e) {
                 fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);

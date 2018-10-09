@@ -77,7 +77,7 @@ public class NettyOpenSslTransportTest extends NettySslTransportTest {
 
             Transport transport = createTransport(serverLocation, testListener, options);
             try {
-                transport.connect(null);
+                transport.connect(null, null);
                 LOG.info("Connected to server:{} as expected.", serverLocation);
             } catch (Exception e) {
                 fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);
@@ -125,7 +125,7 @@ public class NettyOpenSslTransportTest extends NettySslTransportTest {
 
             Transport transport = createTransport(serverLocation, testListener, options);
             try {
-                transport.connect(sslContext);
+                transport.connect(null, sslContext);
                 LOG.info("Connected to server:{} as expected.", serverLocation);
             } catch (Exception e) {
                 fail("Should have connected to the server at " + serverLocation + " but got exception: " + e);

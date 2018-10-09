@@ -26,6 +26,7 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.ProviderException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -377,27 +378,32 @@ public class AmqpProviderTest extends QpidJmsTestCase {
 
     @Test(timeout = 20000)
     public void testErrorDuringCreateResourceFailsRequest() throws Exception {
-        doErrorDuringOperationFailsRequesTTestImpl(Op.CREATE);
+        doErrorDuringOperationFailsRequestTestImpl(Op.CREATE);
     }
 
     @Test(timeout = 20000)
     public void testErrorDuringStartResourceFailsRequest() throws Exception {
-        doErrorDuringOperationFailsRequesTTestImpl(Op.START);
+        doErrorDuringOperationFailsRequestTestImpl(Op.START);
     }
 
     @Test(timeout = 20000)
     public void testErrorDuringStopResourceFailsRequest() throws Exception {
-        doErrorDuringOperationFailsRequesTTestImpl(Op.STOP);
+        doErrorDuringOperationFailsRequestTestImpl(Op.STOP);
     }
 
     @Test(timeout = 20000)
     public void testErrorDuringDestroyResourceFailsRequest() throws Exception {
-        doErrorDuringOperationFailsRequesTTestImpl(Op.DESTROY);
+        doErrorDuringOperationFailsRequestTestImpl(Op.DESTROY);
     }
 
-    private void doErrorDuringOperationFailsRequesTTestImpl(Op operation) throws Exception {
+    private void doErrorDuringOperationFailsRequestTestImpl(Op operation) throws Exception {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+            testPeer.expectSaslAnonymous();
+            testPeer.expectOpen();
+            testPeer.expectClose();
+
             provider = new AmqpProviderFactory().createProvider(getPeerURI(testPeer));
+            provider.connect(connectionInfo);
 
             final AtomicBoolean errorThrown = new AtomicBoolean();
             JmsResource resourceInfo = new JmsAbstractResource() {
@@ -442,6 +448,94 @@ public class AmqpProviderTest extends QpidJmsTestCase {
             }
 
             assertTrue("Error should have been thrown", errorThrown.get());
+
+            provider.close();
+
+            testPeer.waitForAllHandlersToComplete(1000);
+        }
+    }
+
+    @Test(timeout = 20000)
+    public void testCreateResourceFailsWhenNoConnectCalled() throws Exception {
+        doErrorDuringOperationFailsWhenNoConnectCalledTestImpl(Op.CREATE);
+    }
+
+    @Test(timeout = 20000)
+    public void testStartResourceFailsWhenNoConnectCalled() throws Exception {
+        doErrorDuringOperationFailsWhenNoConnectCalledTestImpl(Op.START);
+    }
+
+    @Test(timeout = 20000)
+    public void testStopResourceFailsWhenNoConnectCalled() throws Exception {
+        doErrorDuringOperationFailsWhenNoConnectCalledTestImpl(Op.STOP);
+    }
+
+    @Test(timeout = 20000)
+    public void testDestroyResourceFailsWhenNoConnectCalled() throws Exception {
+        doErrorDuringOperationFailsWhenNoConnectCalledTestImpl(Op.DESTROY);
+    }
+
+    private void doErrorDuringOperationFailsWhenNoConnectCalledTestImpl(Op operation) throws Exception {
+        try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
+
+            provider = new AmqpProviderFactory().createProvider(getPeerURI(testPeer));
+
+            final AtomicBoolean errorThrown = new AtomicBoolean();
+            JmsResource resourceInfo = new JmsAbstractResource() {
+                @Override
+                public void visit(JmsResourceVistor visitor) {
+                    errorThrown.set(true);
+                    throw new Error("Deliberate error for testing");
+                }
+
+                @Override
+                public JmsResourceId getId() {
+                    return new JmsAbstractResourceId() {
+                    };
+                }
+            };
+
+            assertFalse("Error should not have been thrown", errorThrown.get());
+            ProviderFuture request = provider.newProviderFuture();
+
+            switch(operation) {
+            case CREATE:
+                try {
+                    provider.create(resourceInfo, request);
+                    fail("Request should have failed");
+                } catch (ProviderException e) {
+                    // Expected
+                }
+                break;
+            case START:
+                try {
+                    provider.start(resourceInfo, request);
+                    fail("Request should have failed");
+                } catch (ProviderException e) {
+                    // Expected
+                }
+                break;
+            case STOP:
+                try {
+                    provider.stop(resourceInfo, request);
+                    fail("Request should have failed");
+                } catch (ProviderException e) {
+                    // Expected
+                }
+                break;
+            case DESTROY:
+                try {
+                    provider.destroy(resourceInfo, request);
+                    fail("Request should have failed");
+                } catch (ProviderException e) {
+                    // Expected
+                }
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected operation given");
+            }
+
+            assertFalse("Error should not have been thrown", errorThrown.get());
 
             provider.close();
 

@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.Principal;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -74,6 +76,7 @@ public class NettyTcpTransport implements Transport {
     protected EventLoopGroup group;
     protected Channel channel;
     protected TransportListener listener;
+    protected ThreadFactory ioThreadfactory;
     protected int maxFrameSize = DEFAULT_MAX_FRAME_SIZE;
 
     private final boolean secure;
@@ -126,26 +129,27 @@ public class NettyTcpTransport implements Transport {
     }
 
     @Override
-    public void connect(SSLContext sslContextOverride) throws IOException {
+    public ScheduledExecutorService connect(final Runnable initRoutine, SSLContext sslContextOverride) throws IOException {
+        if (closed.get()) {
+            throw new IllegalStateException("Transport has already been closed");
+        }
 
         if (listener == null) {
             throw new IllegalStateException("A transport listener must be set before connection attempts.");
         }
-
-        getTransportOptions().setSslContextOverride(sslContextOverride);
 
         boolean useKQueue = getTransportOptions().isUseKQueue() && KQueue.isAvailable();
         boolean useEpoll = getTransportOptions().isUseEpoll() && Epoll.isAvailable();
 
         if (useKQueue) {
             LOG.trace("Netty Transport using KQueue mode");
-            group = new KQueueEventLoopGroup(1);
+            group = new KQueueEventLoopGroup(1, ioThreadfactory);
         } else if (useEpoll) {
             LOG.trace("Netty Transport using Epoll mode");
-            group = new EpollEventLoopGroup(1);
+            group = new EpollEventLoopGroup(1, ioThreadfactory);
         } else {
             LOG.trace("Netty Transport using NIO mode");
-            group = new NioEventLoopGroup(1);
+            group = new NioEventLoopGroup(1, ioThreadfactory);
         }
 
         bootstrap = new Bootstrap();
@@ -160,11 +164,19 @@ public class NettyTcpTransport implements Transport {
         bootstrap.handler(new ChannelInitializer<Channel>() {
             @Override
             public void initChannel(Channel connectedChannel) throws Exception {
+                if (initRoutine != null) {
+                    try {
+                        initRoutine.run();
+                    } catch (Throwable initError) {
+                        failureCause = IOExceptionSupport.create(initError);
+                    }
+                }
                 configureChannel(connectedChannel);
             }
         });
 
         configureNetty(bootstrap, getTransportOptions());
+        getTransportOptions().setSslContextOverride(sslContextOverride);
 
         ChannelFuture future = bootstrap.connect(getRemoteHost(), getRemotePort());
         future.addListener(new ChannelFutureListener() {
@@ -202,16 +214,14 @@ public class NettyTcpTransport implements Transport {
             throw failureCause;
         } else {
             // Connected, allow any held async error to fire now and close the transport.
-            channel.eventLoop().execute(new Runnable() {
-
-                @Override
-                public void run() {
-                    if (failureCause != null) {
-                        channel.pipeline().fireExceptionCaught(failureCause);
-                    }
+            channel.eventLoop().execute(() -> {
+                if (failureCause != null) {
+                    channel.pipeline().fireExceptionCaught(failureCause);
                 }
             });
         }
+
+        return group;
     }
 
     @Override
@@ -316,6 +326,20 @@ public class NettyTcpTransport implements Transport {
         return maxFrameSize;
     }
 
+    @Override
+    public ThreadFactory getThreadFactory() {
+        return ioThreadfactory;
+    }
+
+    @Override
+    public void setThreadFactory(ThreadFactory factory) {
+        if (isConnected() || channel != null) {
+            throw new IllegalStateException("Cannot set IO ThreadFactory after Transport connect");
+        }
+
+        this.ioThreadfactory = factory;
+    }
+
     //----- Internal implementation details, can be overridden as needed -----//
 
     protected String getRemoteHost() {
@@ -349,7 +373,13 @@ public class NettyTcpTransport implements Transport {
         LOG.trace("Channel has gone inactive! Channel is {}", channel);
         if (connected.compareAndSet(true, false) && !closed.get()) {
             LOG.trace("Firing onTransportClosed listener");
-            listener.onTransportClosed();
+            if (channel.eventLoop().inEventLoop()) {
+                listener.onTransportClosed();
+            } else {
+                channel.eventLoop().execute(() -> {
+                    listener.onTransportClosed();
+                });
+            }
         }
     }
 
@@ -357,10 +387,20 @@ public class NettyTcpTransport implements Transport {
         LOG.trace("Exception on channel! Channel is {}", channel);
         if (connected.compareAndSet(true, false) && !closed.get()) {
             LOG.trace("Firing onTransportError listener");
-            if (failureCause != null) {
-                listener.onTransportError(failureCause);
+            if (channel.eventLoop().inEventLoop()) {
+                if (failureCause != null) {
+                    listener.onTransportError(failureCause);
+                } else {
+                    listener.onTransportError(cause);
+                }
             } else {
-                listener.onTransportError(cause);
+                channel.eventLoop().execute(() -> {
+                    if (failureCause != null) {
+                        listener.onTransportError(failureCause);
+                    } else {
+                        listener.onTransportError(cause);
+                    }
+                });
             }
         } else {
             // Hold the first failure for later dispatch if connect succeeds.
@@ -498,8 +538,15 @@ public class NettyTcpTransport implements Transport {
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, ByteBuf buffer) throws Exception {
-            LOG.trace("New data read: {} bytes incoming: {}", buffer.readableBytes(), buffer);
-            listener.onData(buffer);
+            LOG.trace("New data read: {} bytes incomsing: {}", buffer.readableBytes(), buffer);
+            // Avoid all doubts to the contrary
+            if (channel.eventLoop().inEventLoop()) {
+                listener.onData(buffer);
+            } else {
+                channel.eventLoop().execute(() -> {
+                    listener.onData(buffer);
+                });
+            }
         }
     }
 }

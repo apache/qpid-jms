@@ -20,8 +20,6 @@ import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_B
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
@@ -100,7 +98,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
     }
 
     @Override
-    public InputStream getInputStream() throws JMSException {
+    public ByteBufInputStream getInputStream() throws JMSException {
         if (bytesOut != null) {
             throw new IllegalStateException("Body is being written to, cannot perform a read.");
         }
@@ -116,7 +114,7 @@ public class AmqpJmsBytesMessageFacade extends AmqpJmsMessageFacade implements J
     }
 
     @Override
-    public OutputStream getOutputStream() throws JMSException {
+    public ByteBufOutputStream getOutputStream() throws JMSException {
         if (bytesIn != null) {
             throw new IllegalStateException("Body is being read from, cannot perform a write.");
         }

@@ -24,8 +24,6 @@ import static org.junit.Assert.fail;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.List;
@@ -38,6 +36,8 @@ import javax.jms.MessageFormatException;
 import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
 
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
 import org.apache.qpid.jms.message.facade.JmsBytesMessageFacade;
 import org.apache.qpid.jms.message.facade.test.JmsTestBytesMessageFacade;
 import org.apache.qpid.jms.message.facade.test.JmsTestMessageFactory;
@@ -699,7 +699,7 @@ public class JmsBytesMessageTest {
     @Test
     public void testReadMethodsCaptureEOFExceptionThrowsMessageEOFEx() throws Exception {
         JmsBytesMessageFacade facade = Mockito.mock(JmsBytesMessageFacade.class);
-        InputStream bytesIn = Mockito.mock(InputStream.class);
+        ByteBufInputStream bytesIn = Mockito.mock(ByteBufInputStream.class);
         Mockito.when(facade.getInputStream()).thenReturn(bytesIn);
 
         Mockito.when(bytesIn.read()).thenThrow(new EOFException());
@@ -791,7 +791,7 @@ public class JmsBytesMessageTest {
     @Test
     public void testReadMethodsCaptureIOExceptionThrowsJMSEx() throws Exception {
         JmsBytesMessageFacade facade = Mockito.mock(JmsBytesMessageFacade.class);
-        InputStream bytesIn = Mockito.mock(InputStream.class);
+        ByteBufInputStream bytesIn = Mockito.mock(ByteBufInputStream.class);
         Mockito.when(facade.getInputStream()).thenReturn(bytesIn);
 
         Mockito.when(bytesIn.read()).thenThrow(new IOException());
@@ -883,7 +883,7 @@ public class JmsBytesMessageTest {
     @Test
     public void testWriteMethodsCaptureIOExceptionThrowsJMSEx() throws Exception {
         JmsBytesMessageFacade facade = Mockito.mock(JmsBytesMessageFacade.class);
-        OutputStream bytesOut = Mockito.mock(OutputStream.class);
+        ByteBufOutputStream bytesOut = Mockito.mock(ByteBufOutputStream.class);
         Mockito.when(facade.getOutputStream()).thenReturn(bytesOut);
 
         Mockito.doThrow(new IOException()).when(bytesOut).write(Mockito.anyByte());

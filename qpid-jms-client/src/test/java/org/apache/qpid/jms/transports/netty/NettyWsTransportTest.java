@@ -317,6 +317,8 @@ public class NettyWsTransportTest extends NettyTcpTransportTest {
                     return false;
                 }
             }, 10000, 10));
+
+            transport.close();
         }
     }
 

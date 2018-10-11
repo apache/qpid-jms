@@ -562,7 +562,7 @@ public class NettyTcpTransportTest extends QpidJmsTestCase {
             transport.close();
         }
 
-        assertTrue(transportClosed);  // Normal shutdown does not trigger the event.
+        assertFalse(transportClosed);  // Normal shutdown does not trigger the event.
         assertTrue(exceptions.isEmpty());
         assertTrue(data.isEmpty());
     }

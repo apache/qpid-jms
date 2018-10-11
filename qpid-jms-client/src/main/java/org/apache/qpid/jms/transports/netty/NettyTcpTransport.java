@@ -168,7 +168,9 @@ public class NettyTcpTransport implements Transport {
                     try {
                         initRoutine.run();
                     } catch (Throwable initError) {
-                        failureCause = IOExceptionSupport.create(initError);
+                        LOG.warn("Error during initialization of channel from provided initialization routine");
+                        connectionFailed(connectedChannel, IOExceptionSupport.create(initError));
+                        throw initError;
                     }
                 }
                 configureChannel(connectedChannel);
@@ -202,13 +204,6 @@ public class NettyTcpTransport implements Transport {
             if (channel != null) {
                 channel.close().syncUninterruptibly();
                 channel = null;
-            }
-            if (group != null) {
-                Future<?> fut = group.shutdownGracefully(0, SHUTDOWN_TIMEOUT, TimeUnit.MILLISECONDS);
-                if (!fut.awaitUninterruptibly(2 * SHUTDOWN_TIMEOUT)) {
-                    LOG.trace("Channel group shutdown failed to complete in allotted time");
-                }
-                group = null;
             }
 
             throw failureCause;

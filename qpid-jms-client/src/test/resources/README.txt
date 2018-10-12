@@ -1,6 +1,7 @@
 # The various SSL stores and certificates were created with the following commands:
 # Requires use of JDK 8+ keytool command.
 
+
 # Clean up existing files
 # -----------------------
 rm -f *.crt *.csr *.keystore *.truststore

@@ -71,7 +71,7 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
     @Override
     protected Receiver createEndpoint(JmsConsumerInfo resourceInfo) {
         JmsDestination destination = resourceInfo.getDestination();
-        String address = AmqpDestinationHelper.INSTANCE.getDestinationAddress(destination, getParent().getConnection());
+        String address = AmqpDestinationHelper.getDestinationAddress(destination, getParent().getConnection());
 
         Source source = new Source();
         source.setAddress(address);
@@ -124,7 +124,7 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
         }
         receiver.setReceiverSettleMode(ReceiverSettleMode.FIRST);
 
-        if(validateSharedSubsLinkCapability) {
+        if (validateSharedSubsLinkCapability) {
             receiver.setDesiredCapabilities(new Symbol[] { AmqpSupport.SHARED_SUBS });
         }
 
@@ -221,7 +221,7 @@ public class AmqpConsumerBuilder extends AmqpResourceBuilder<AmqpConsumer, AmqpS
         // Capabilities
         LinkedList<Symbol> capabilities = new LinkedList<>();
 
-        Symbol typeCapability =  AmqpDestinationHelper.INSTANCE.toTypeCapability(resourceInfo.getDestination());
+        Symbol typeCapability =  AmqpDestinationHelper.toTypeCapability(resourceInfo.getDestination());
         if(typeCapability != null){
             capabilities.add(typeCapability);
         }

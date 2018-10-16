@@ -36,12 +36,12 @@ public final class AmqpMessageSupport {
      * Attribute used to mark the class type of JMS message that a particular message
      * instance represents, used internally by the client.
      */
-    public static final String JMS_MSG_TYPE = "x-opt-jms-msg-type";
+    public static final Symbol JMS_MSG_TYPE = Symbol.valueOf("x-opt-jms-msg-type");
 
     /**
      * Attribute used to mark the Application defined delivery time assigned to the message
      */
-    public static final String JMS_DELIVERY_TIME = "x-opt-delivery-time";
+    public static final Symbol JMS_DELIVERY_TIME = Symbol.valueOf("x-opt-delivery-time");
 
     /**
      * Value mapping for JMS_MSG_TYPE which indicates the message is a generic JMS Message
@@ -86,31 +86,19 @@ public final class AmqpMessageSupport {
     /**
      * Content type used to mark Data sections as containing a serialized java object.
      */
-    public static final String SERIALIZED_JAVA_OBJECT_CONTENT_TYPE = "application/x-java-serialized-object";
+    public static final Symbol SERIALIZED_JAVA_OBJECT_CONTENT_TYPE = Symbol.valueOf("application/x-java-serialized-object");
 
     /**
      * Content type used to mark Data sections as containing arbitrary bytes.
      */
-    public static final String OCTET_STREAM_CONTENT_TYPE = "application/octet-stream";
+    public static final Symbol OCTET_STREAM_CONTENT_TYPE = Symbol.valueOf("application/octet-stream");
 
     // For support of old string destination type annotations
-    public static final String LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-to-type";
-    public static final String LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL_NAME = "x-opt-reply-type";
+    public static final Symbol LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL = Symbol.valueOf("x-opt-to-type");
+    public static final Symbol LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL = Symbol.valueOf("x-opt-reply-type");
     public static final String LEGACY_QUEUE_ATTRIBUTE = "queue";
     public static final String LEGACY_TOPIC_ATTRIBUTE = "topic";
     public static final String LEGACY_TEMPORARY_ATTRIBUTE = "temporary";
-
-    /**
-     * Lookup and return the correct Proton Symbol instance based on the given key.
-     *
-     * @param key
-     *        the String value name of the Symbol to locate.
-     *
-     * @return the Symbol value that matches the given key.
-     */
-    public static Symbol getSymbol(String key) {
-        return Symbol.valueOf(key);
-    }
 
     /**
      * Safe way to access message annotations which will check internal structure and
@@ -118,16 +106,16 @@ public final class AmqpMessageSupport {
      * are present.
      *
      * @param key
-     *        the String key to use to lookup an annotation.
+     *        the Symbol key to use to lookup an annotation.
      * @param messageAnnotations
      *        the AMQP message annotations object that is being examined.
      *
      * @return the given annotation value or null if not present in the message.
      */
-    public static Object getMessageAnnotation(String key, MessageAnnotations messageAnnotations) {
+    public static Object getMessageAnnotation(Symbol key, MessageAnnotations messageAnnotations) {
         if (messageAnnotations != null && messageAnnotations.getValue() != null) {
             Map<Symbol, Object> annotations = messageAnnotations.getValue();
-            return annotations.get(AmqpMessageSupport.getSymbol(key));
+            return annotations.get(key);
         }
 
         return null;
@@ -145,13 +133,13 @@ public final class AmqpMessageSupport {
      *
      * @return true if content type matches
      */
-    public static boolean isContentType(String contentType, Symbol messageContentType) {
+    public static boolean isContentType(Symbol contentType, Symbol messageContentType) {
         if (contentType == null) {
             return messageContentType == null;
         } else if (messageContentType == null) {
             return false;
         } else {
-            return contentType.equals(messageContentType.toString());
+            return contentType.equals(messageContentType);
         }
     }
 

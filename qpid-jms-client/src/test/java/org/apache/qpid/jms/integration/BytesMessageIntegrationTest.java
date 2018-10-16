@@ -79,9 +79,9 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
 
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true).withDurable(equalTo(true));
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
-            msgAnnotationsMatcher.withEntry(Symbol.valueOf(AmqpMessageSupport.JMS_MSG_TYPE), equalTo(AmqpMessageSupport.JMS_BYTES_MESSAGE));
+            msgAnnotationsMatcher.withEntry(AmqpMessageSupport.JMS_MSG_TYPE, equalTo(AmqpMessageSupport.JMS_BYTES_MESSAGE));
             MessagePropertiesSectionMatcher propertiesMatcher = new MessagePropertiesSectionMatcher(true);
-            propertiesMatcher.withContentType(equalTo(Symbol.valueOf(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE)));
+            propertiesMatcher.withContentType(equalTo(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE));
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
             messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
@@ -114,12 +114,12 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
 
     @Test(timeout = 20000)
     public void testReceiveBasicBytesMessageUsingDataSectionWithContentTypeEmptyNoTypeAnnotation() throws Exception {
-        doReceiveBasicBytesMessageUsingDataSectionTestImpl("", false);
+        doReceiveBasicBytesMessageUsingDataSectionTestImpl(Symbol.valueOf(""), false);
     }
 
     @Test(timeout = 20000)
     public void testReceiveBasicBytesMessageUsingDataSectionWithContentTypeUnknownNoTypeAnnotation() throws Exception {
-        doReceiveBasicBytesMessageUsingDataSectionTestImpl("type/unknown", false);
+        doReceiveBasicBytesMessageUsingDataSectionTestImpl(Symbol.valueOf("type/unknown"), false);
     }
 
     @Test(timeout = 20000)
@@ -127,7 +127,7 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
         doReceiveBasicBytesMessageUsingDataSectionTestImpl(null, false);
     }
 
-    private void doReceiveBasicBytesMessageUsingDataSectionTestImpl(String contentType, boolean typeAnnotation) throws JMSException, InterruptedException, Exception, IOException {
+    private void doReceiveBasicBytesMessageUsingDataSectionTestImpl(Symbol contentType, boolean typeAnnotation) throws JMSException, InterruptedException, Exception, IOException {
         try (TestAmqpPeer testPeer = new TestAmqpPeer();) {
             Connection connection = testFixture.establishConnecton(testPeer);
             connection.start();
@@ -138,12 +138,12 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
             Queue queue = session.createQueue("myQueue");
 
             PropertiesDescribedType properties = new PropertiesDescribedType();
-            properties.setContentType(Symbol.valueOf(contentType));
+            properties.setContentType(contentType);
 
             MessageAnnotationsDescribedType msgAnnotations = null;
             if (typeAnnotation) {
                 msgAnnotations = new MessageAnnotationsDescribedType();
-                msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE, AmqpMessageSupport.JMS_BYTES_MESSAGE);
+                msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE.toString(), AmqpMessageSupport.JMS_BYTES_MESSAGE);
             }
 
             final byte[] expectedContent = "expectedContent".getBytes();
@@ -196,11 +196,11 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
             // Prepare an AMQP message for the test peer to send, containing the content type and
             // a data body section populated with expected bytes for use as a JMS BytesMessage
             PropertiesDescribedType properties = new PropertiesDescribedType();
-            Symbol contentType = Symbol.valueOf(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE);
+            Symbol contentType = AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE;
             properties.setContentType(contentType);
 
             MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
-            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE, AmqpMessageSupport.JMS_BYTES_MESSAGE);
+            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE.toString(), AmqpMessageSupport.JMS_BYTES_MESSAGE);
 
             boolean myBool = true;
             byte myByte = 4;
@@ -298,11 +298,11 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
             Queue queue = session.createQueue("myQueue");
 
             PropertiesDescribedType properties = new PropertiesDescribedType();
-            properties.setContentType(Symbol.valueOf(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE));
+            properties.setContentType(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE);
 
             MessageAnnotationsDescribedType msgAnnotations = null;
             msgAnnotations = new MessageAnnotationsDescribedType();
-            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE, AmqpMessageSupport.JMS_BYTES_MESSAGE);
+            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE.toString(), AmqpMessageSupport.JMS_BYTES_MESSAGE);
 
             final byte[] expectedContent = "expectedContent".getBytes();
             DescribedType dataContent = new DataDescribedType(new Binary(expectedContent));
@@ -439,9 +439,9 @@ public class BytesMessageIntegrationTest extends QpidJmsTestCase {
 
             MessageHeaderSectionMatcher headersMatcher = new MessageHeaderSectionMatcher(true);
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
-            msgAnnotationsMatcher.withEntry(Symbol.valueOf(AmqpMessageSupport.JMS_MSG_TYPE), equalTo(AmqpMessageSupport.JMS_BYTES_MESSAGE));
+            msgAnnotationsMatcher.withEntry(AmqpMessageSupport.JMS_MSG_TYPE, equalTo(AmqpMessageSupport.JMS_BYTES_MESSAGE));
             MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true);
-            propsMatcher.withContentType(equalTo(Symbol.valueOf(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE)));
+            propsMatcher.withContentType(equalTo(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE));
             TransferPayloadCompositeMatcher messageMatcher = new TransferPayloadCompositeMatcher();
             messageMatcher.setHeadersMatcher(headersMatcher);
             messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);

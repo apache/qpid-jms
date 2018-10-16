@@ -19,7 +19,6 @@ package org.apache.qpid.jms.provider.amqp.message;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_AMQP_TTL;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_DELIVERY_TIME;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MESSAGE;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MSG_TYPE;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -87,7 +86,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     public void initialize(AmqpConnection connection) {
         this.connection = connection;
 
-        setMessageAnnotation(JMS_MSG_TYPE, getJmsMsgType());
+        setMessageAnnotation(AmqpMessageSupport.JMS_MSG_TYPE, getJmsMsgType());
         setPersistent(true);
         initializeEmptyBody();
     }
@@ -132,17 +131,17 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
      * value is omitted so we return null here, subclasses should override this to return the
      * correct content type value for their payload.
      *
-     * @return a String value indicating the message content type.
+     * @return a Symbol value indicating the message content type.
      */
-    public String getContentType() {
+    public Symbol getContentType() {
         if (properties != null && properties.getContentType() != null) {
-            return properties.getContentType().toString();
+            return properties.getContentType();
         }
 
         return null;
     }
 
-    public void setContentType(String value) {
+    public void setContentType(Symbol value) {
         if (properties == null) {
             if (value == null) {
                 return;
@@ -150,7 +149,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             lazyCreateProperties();
         }
 
-        properties.setContentType(Symbol.valueOf(value));
+        properties.setContentType(value);
     }
 
     @Override
@@ -227,7 +226,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
         header.setTimeToLive(ttl);
 
-        setMessageAnnotation(JMS_MSG_TYPE, getJmsMsgType());
+        setMessageAnnotation(AmqpMessageSupport.JMS_MSG_TYPE, getJmsMsgType());
     }
 
     @Override
@@ -303,7 +302,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             underlying = properties.getMessageId();
         }
 
-        return AmqpMessageIdHelper.INSTANCE.toMessageIdString(underlying);
+        return AmqpMessageIdHelper.toMessageIdString(underlying);
     }
 
     @Override
@@ -326,7 +325,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public void setMessageId(String messageId) throws IdConversionException {
-        Object value = AmqpMessageIdHelper.INSTANCE.toIdObject(messageId);
+        Object value = AmqpMessageIdHelper.toIdObject(messageId);
 
         if (properties == null) {
             if (value == null) {
@@ -374,7 +373,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
             return null;
         }
 
-        return AmqpMessageIdHelper.INSTANCE.toCorrelationIdString(properties.getCorrelationId());
+        return AmqpMessageIdHelper.toCorrelationIdString(properties.getCorrelationId());
     }
 
     @Override
@@ -382,9 +381,9 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         Object idObject = null;
 
         if (correlationId != null) {
-            if (AmqpMessageIdHelper.INSTANCE.hasMessageIdPrefix(correlationId)) {
+            if (AmqpMessageIdHelper.hasMessageIdPrefix(correlationId)) {
                 // JMSMessageID value, process it for possible type conversion
-                idObject = AmqpMessageIdHelper.INSTANCE.toIdObject(correlationId);
+                idObject = AmqpMessageIdHelper.toIdObject(correlationId);
             } else {
                 idObject = correlationId;
             }
@@ -606,7 +605,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     @Override
     public JmsDestination getDestination() {
         if (destination == null) {
-            this.destination = AmqpDestinationHelper.INSTANCE.getJmsDestination(this, consumerDestination);
+            this.destination = AmqpDestinationHelper.getJmsDestination(this, consumerDestination);
         }
 
         return destination;
@@ -616,13 +615,13 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     public void setDestination(JmsDestination destination) {
         this.destination = destination;
         lazyCreateMessageAnnotations();
-        AmqpDestinationHelper.INSTANCE.setToAddressFromDestination(this, destination);
+        AmqpDestinationHelper.setToAddressFromDestination(this, destination);
     }
 
     @Override
     public JmsDestination getReplyTo() {
         if (replyTo == null) {
-            replyTo = AmqpDestinationHelper.INSTANCE.getJmsReplyTo(this, consumerDestination);
+            replyTo = AmqpDestinationHelper.getJmsReplyTo(this, consumerDestination);
         }
 
         return replyTo;
@@ -632,7 +631,7 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     public void setReplyTo(JmsDestination replyTo) {
         this.replyTo = replyTo;
         lazyCreateMessageAnnotations();
-        AmqpDestinationHelper.INSTANCE.setReplyToAddressFromDestination(this, replyTo);
+        AmqpDestinationHelper.setReplyToAddressFromDestination(this, replyTo);
     }
 
     public void setReplyToGroupId(String replyToGroupId) {
@@ -781,12 +780,12 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
      *
      * @return true if the annotation is present, false in not or annotations not initialized.
      */
-    boolean messageAnnotationExists(String key) {
+    boolean messageAnnotationExists(Symbol key) {
         if (messageAnnotationsMap == null) {
             return false;
         }
 
-        return messageAnnotationsMap.containsKey(AmqpMessageSupport.getSymbol(key));
+        return messageAnnotationsMap.containsKey(key);
     }
 
     /**
@@ -799,12 +798,12 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
      *
      * @return the value of the annotation if it exists, or null if not set or not accessible.
      */
-    Object getMessageAnnotation(String key) {
+    Object getMessageAnnotation(Symbol key) {
         if (messageAnnotationsMap == null) {
             return null;
         }
 
-        return messageAnnotationsMap.get(AmqpMessageSupport.getSymbol(key));
+        return messageAnnotationsMap.get(key);
     }
 
     /**
@@ -815,12 +814,12 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
      * @param key
      *        the annotation key that is to be removed from the current set.
      */
-    void removeMessageAnnotation(String key) {
+    void removeMessageAnnotation(Symbol key) {
         if (messageAnnotationsMap == null) {
             return;
         }
 
-        messageAnnotationsMap.remove(AmqpMessageSupport.getSymbol(key));
+        messageAnnotationsMap.remove(key);
     }
 
     /**
@@ -832,9 +831,9 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
      * @param value
      *        The new value to set in the annotations of this message.
      */
-    void setMessageAnnotation(String key, Object value) {
+    void setMessageAnnotation(Symbol key, Object value) {
         lazyCreateMessageAnnotations();
-        messageAnnotationsMap.put(AmqpMessageSupport.getSymbol(key), value);
+        messageAnnotationsMap.put(key, value);
     }
 
     /**

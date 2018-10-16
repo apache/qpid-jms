@@ -75,7 +75,7 @@ public class AmqpProducerBuilder extends AmqpResourceBuilder<AmqpProducer, AmqpS
         JmsDestination destination = resourceInfo.getDestination();
         AmqpConnection connection = getParent().getConnection();
 
-        String targetAddress = AmqpDestinationHelper.INSTANCE.getDestinationAddress(destination, connection);
+        String targetAddress = AmqpDestinationHelper.getDestinationAddress(destination, connection);
 
         Symbol[] outcomes = new Symbol[]{ Accepted.DESCRIPTOR_SYMBOL, Rejected.DESCRIPTOR_SYMBOL, Released.DESCRIPTOR_SYMBOL, Modified.DESCRIPTOR_SYMBOL };
         String sourceAddress = resourceInfo.getId().toString();
@@ -86,7 +86,7 @@ public class AmqpProducerBuilder extends AmqpResourceBuilder<AmqpProducer, AmqpS
 
         Target target = new Target();
         target.setAddress(targetAddress);
-        Symbol typeCapability =  AmqpDestinationHelper.INSTANCE.toTypeCapability(destination);
+        Symbol typeCapability =  AmqpDestinationHelper.toTypeCapability(destination);
         if (typeCapability != null) {
             target.setCapabilities(typeCapability);
         }

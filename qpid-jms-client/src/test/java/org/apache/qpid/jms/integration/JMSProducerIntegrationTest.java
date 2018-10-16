@@ -31,7 +31,6 @@ import javax.jms.Queue;
 import javax.jms.Topic;
 
 import org.apache.qpid.jms.provider.amqp.message.AmqpDestinationHelper;
-import org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.jms.test.testpeer.TestAmqpPeer;
 import org.apache.qpid.jms.test.testpeer.matchers.TargetMatcher;
@@ -89,7 +88,7 @@ public class JMSProducerIntegrationTest extends QpidJmsTestCase {
 
             // Verify sent message contains expected destination address and dest type annotation
             MessageAnnotationsSectionMatcher msgAnnotationsMatcher = new MessageAnnotationsSectionMatcher(true);
-            Symbol annotationKey = AmqpMessageSupport.getSymbol(AmqpDestinationHelper.JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL_NAME);
+            Symbol annotationKey = AmqpDestinationHelper.JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL;
             msgAnnotationsMatcher.withEntry(annotationKey, equalTo(AmqpDestinationHelper.TOPIC_TYPE));
 
             MessagePropertiesSectionMatcher propsMatcher = new MessagePropertiesSectionMatcher(true).withTo(equalTo(topicName));

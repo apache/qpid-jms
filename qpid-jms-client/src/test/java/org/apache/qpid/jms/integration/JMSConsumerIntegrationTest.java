@@ -51,7 +51,6 @@ import org.apache.qpid.jms.test.testpeer.describedtypes.sections.MessageAnnotati
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.PropertiesDescribedType;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.DescribedType;
-import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.UnsignedInteger;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -305,7 +304,7 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
             map.put(myStringKey, myString);
 
             MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
-            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE, AmqpMessageSupport.JMS_MAP_MESSAGE);
+            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE.toString(), AmqpMessageSupport.JMS_MAP_MESSAGE);
 
             DescribedType amqpValueSectionContent = new AmqpValueDescribedType(map);
 
@@ -381,7 +380,7 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
             Queue queue = context.createQueue("myQueue");
 
             PropertiesDescribedType properties = new PropertiesDescribedType();
-            properties.setContentType(Symbol.valueOf(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE));
+            properties.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
 
             String expectedContent = "expectedContent";
 
@@ -393,7 +392,7 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
             byte[] bytes = baos.toByteArray();
 
             MessageAnnotationsDescribedType msgAnnotations = new MessageAnnotationsDescribedType();
-            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE, AmqpMessageSupport.JMS_OBJECT_MESSAGE);
+            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE.toString(), AmqpMessageSupport.JMS_OBJECT_MESSAGE);
 
             DescribedType dataContent = new DataDescribedType(new Binary(bytes));
 
@@ -425,11 +424,11 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
             Queue queue = context.createQueue("myQueue");
 
             PropertiesDescribedType properties = new PropertiesDescribedType();
-            properties.setContentType(Symbol.valueOf(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE));
+            properties.setContentType(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE);
 
             MessageAnnotationsDescribedType msgAnnotations = null;
             msgAnnotations = new MessageAnnotationsDescribedType();
-            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE, AmqpMessageSupport.JMS_BYTES_MESSAGE);
+            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE.toString(), AmqpMessageSupport.JMS_BYTES_MESSAGE);
 
             final byte[] expectedContent = "expectedContent".getBytes();
             DescribedType dataContent = new DataDescribedType(new Binary(expectedContent));
@@ -572,11 +571,11 @@ public class JMSConsumerIntegrationTest extends QpidJmsTestCase {
             Queue queue = context.createQueue("myQueue");
 
             PropertiesDescribedType properties = new PropertiesDescribedType();
-            properties.setContentType(Symbol.valueOf(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE));
+            properties.setContentType(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE);
 
             MessageAnnotationsDescribedType msgAnnotations = null;
             msgAnnotations = new MessageAnnotationsDescribedType();
-            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE, AmqpMessageSupport.JMS_BYTES_MESSAGE);
+            msgAnnotations.setSymbolKeyedAnnotation(AmqpMessageSupport.JMS_MSG_TYPE.toString(), AmqpMessageSupport.JMS_BYTES_MESSAGE);
 
             final byte[] expectedContent = "expectedContent".getBytes();
             DescribedType dataContent = new DataDescribedType(new Binary(expectedContent));

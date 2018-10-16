@@ -60,8 +60,8 @@ public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
         assertNotNull("MessageAnnotations section was not present", annotations);
         assertNotNull("MessageAnnotations section value was not present", annotationsMap);
 
-        assertTrue("expected message type annotation to be present", annotationsMap.containsKey(AmqpMessageSupport.getSymbol(AmqpMessageSupport.JMS_MSG_TYPE)));
-        assertEquals("unexpected value for message type annotation value", AmqpMessageSupport.JMS_STREAM_MESSAGE, annotationsMap.get(AmqpMessageSupport.getSymbol(AmqpMessageSupport.JMS_MSG_TYPE)));
+        assertTrue("expected message type annotation to be present", annotationsMap.containsKey(AmqpMessageSupport.JMS_MSG_TYPE));
+        assertEquals("unexpected value for message type annotation value", AmqpMessageSupport.JMS_STREAM_MESSAGE, annotationsMap.get(AmqpMessageSupport.JMS_MSG_TYPE));
     }
 
     @Test

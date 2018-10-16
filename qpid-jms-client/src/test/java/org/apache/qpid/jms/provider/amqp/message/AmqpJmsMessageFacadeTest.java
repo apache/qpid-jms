@@ -1052,7 +1052,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         byte[] bytes = new byte[buf.remaining()];
         buf.get(bytes);
 
-        String converted = "ID:AMQP_BINARY:" + new AmqpMessageIdHelper().convertBinaryToHexString(bytes);
+        String converted = "ID:AMQP_BINARY:" + AmqpMessageIdHelper.convertBinaryToHexString(bytes);
 
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
         amqpMessageFacade.setCorrelationId(converted);
@@ -1156,7 +1156,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     public void testGetCorrelationIdOnReceivedMessageWithBinary() {
         Binary testCorrelationId = createBinaryId();
         String expected = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_BINARY_PREFIX +
-                            AmqpMessageIdHelper.INSTANCE.convertBinaryToHexString(testCorrelationId.getArray());
+                            AmqpMessageIdHelper.convertBinaryToHexString(testCorrelationId.getArray());
         correlationIdOnReceivedMessageTestImpl(testCorrelationId, expected, false);
     }
 
@@ -1287,7 +1287,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     public void testGetMessageIdOnReceivedMessageWithBinary() {
         Binary testMessageId = createBinaryId();
         String expected = AmqpMessageIdHelper.JMS_ID_PREFIX + AmqpMessageIdHelper.AMQP_BINARY_PREFIX +
-                            AmqpMessageIdHelper.INSTANCE.convertBinaryToHexString(testMessageId.getArray());
+                            AmqpMessageIdHelper.convertBinaryToHexString(testMessageId.getArray());
         messageIdOnReceivedMessageTestImpl(testMessageId, expected);
     }
 
@@ -1662,7 +1662,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();;
 
         assertNotNull(amqpMessageFacade.getMessageAnnotations());
-        Symbol annotationKey = AmqpMessageSupport.getSymbol(AmqpMessageSupport.JMS_MSG_TYPE);
+        Symbol annotationKey = AmqpMessageSupport.JMS_MSG_TYPE;
         assertEquals(AmqpMessageSupport.JMS_MESSAGE, amqpMessageFacade.getMessageAnnotations().getValue().get(annotationKey));
     }
 
@@ -1671,13 +1671,12 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();;
 
         assertNotNull(amqpMessageFacade.getMessageAnnotations());
-        Symbol annotationKey = AmqpMessageSupport.getSymbol(AmqpMessageSupport.JMS_DELIVERY_TIME);
-        assertNull(amqpMessageFacade.getMessageAnnotations().getValue().get(annotationKey));
+        assertNull(amqpMessageFacade.getMessageAnnotations().getValue().get(AmqpMessageSupport.JMS_DELIVERY_TIME));
     }
 
     @Test
     public void testMessageAnnotationExistsUsingReceivedMessageWithoutMessageAnnotationsSection() {
-        String symbolKeyName = "myTestSymbolName";
+        Symbol symbolKeyName = Symbol.valueOf("myTestSymbolName");
 
         Message message = Proton.message();
 
@@ -1688,24 +1687,24 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
     @Test
     public void testMessageAnnotationExistsUsingReceivedMessageWithMessageAnnotationsSection() {
-        String symbolKeyName = "myTestSymbolName";
+        Symbol symbolKeyName = Symbol.valueOf("myTestSymbolName");
         String value = "myTestValue";
 
         Message message = Proton.message();
 
         Map<Symbol, Object> annotationsMap = new HashMap<Symbol, Object>();
-        annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
+        annotationsMap.put(symbolKeyName, value);
         message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
 
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
         assertTrue(amqpMessageFacade.messageAnnotationExists(symbolKeyName));
-        assertFalse(amqpMessageFacade.messageAnnotationExists("otherName"));
+        assertFalse(amqpMessageFacade.messageAnnotationExists(Symbol.valueOf("otherName")));
     }
 
     @Test
     public void testGetMessageAnnotationUsingReceivedMessageWithoutMessageAnnotationsSection() {
-        String symbolKeyName = "myTestSymbolName";
+        Symbol symbolKeyName = Symbol.valueOf("myTestSymbolName");
 
         Message message = Proton.message();
 
@@ -1716,25 +1715,25 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
     @Test
     public void testGetMessageAnnotationUsingReceivedMessage() {
-        String symbolKeyName = "myTestSymbolName";
+        Symbol symbolKeyName = Symbol.valueOf("myTestSymbolName");
         String value = "myTestValue";
 
         Message message = Proton.message();
 
         Map<Symbol, Object> annotationsMap = new HashMap<Symbol, Object>();
-        annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
+        annotationsMap.put(symbolKeyName, value);
         message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
 
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
         assertEquals(value, amqpMessageFacade.getMessageAnnotation(symbolKeyName));
-        assertNull(amqpMessageFacade.getMessageAnnotation("otherName"));
+        assertNull(amqpMessageFacade.getMessageAnnotation(Symbol.valueOf("otherName")));
     }
 
     @Test
     public void testSetMessageAnnotationsOnNewMessage() {
-        String symbolKeyName = "myTestSymbolName";
-        String symbolKeyName2 = "myTestSymbolName2";
+        Symbol symbolKeyName = Symbol.valueOf("myTestSymbolName");
+        Symbol symbolKeyName2 = Symbol.valueOf("myTestSymbolName2");
         String value = "myTestValue";
 
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();
@@ -1745,14 +1744,14 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         MessageAnnotations underlyingAnnotations = amqpMessageFacade.getMessageAnnotations();
         assertNotNull(underlyingAnnotations);
 
-        assertTrue(underlyingAnnotations.getValue().containsKey(Symbol.valueOf(symbolKeyName)));
-        assertEquals(value, underlyingAnnotations.getValue().get(Symbol.valueOf(symbolKeyName)));
+        assertTrue(underlyingAnnotations.getValue().containsKey(symbolKeyName));
+        assertEquals(value, underlyingAnnotations.getValue().get(symbolKeyName));
 
         // set another
         amqpMessageFacade.setMessageAnnotation(symbolKeyName2, value);
 
-        assertTrue(underlyingAnnotations.getValue().containsKey(Symbol.valueOf(symbolKeyName)));
-        assertTrue(underlyingAnnotations.getValue().containsKey(Symbol.valueOf(symbolKeyName2)));
+        assertTrue(underlyingAnnotations.getValue().containsKey(symbolKeyName));
+        assertTrue(underlyingAnnotations.getValue().containsKey(symbolKeyName2));
     }
 
     @Test
@@ -1767,19 +1766,19 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
     @Test
     public void testRemoveMessageAnnotation() {
-        String symbolKeyName = "myTestSymbolName";
+        Symbol symbolKeyName = Symbol.valueOf("myTestSymbolName");
         String value = "myTestValue";
 
         Message message = Proton.message();
 
         Map<Symbol, Object> annotationsMap = new HashMap<Symbol, Object>();
-        annotationsMap.put(Symbol.valueOf(symbolKeyName), value);
+        annotationsMap.put(symbolKeyName, value);
         message.setMessageAnnotations(new MessageAnnotations(annotationsMap));
 
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
         assertEquals(value, amqpMessageFacade.getMessageAnnotation(symbolKeyName));
-        assertNull(amqpMessageFacade.getMessageAnnotation("otherName"));
+        assertNull(amqpMessageFacade.getMessageAnnotation(Symbol.valueOf("otherName")));
 
         amqpMessageFacade.removeMessageAnnotation(symbolKeyName);
         assertNull(amqpMessageFacade.getMessageAnnotation(symbolKeyName));
@@ -1791,7 +1790,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
 
         AmqpJmsMessageFacade amqpMessageFacade = createReceivedMessageFacade(createMockAmqpConsumer(), message);
 
-        amqpMessageFacade.removeMessageAnnotation("keyName");
+        amqpMessageFacade.removeMessageAnnotation(Symbol.valueOf("keyName"));
     }
 
     @Test
@@ -2180,7 +2179,7 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
         source.setDestination(aQueue);
         source.setReplyTo(tempQueue);
 
-        source.setContentType("Test-ContentType");
+        source.setContentType(Symbol.valueOf("Test-ContentType"));
         source.setCorrelationId("MY-APP-ID");
         source.setExpiration(42L);
         source.setGroupId("TEST-GROUP");

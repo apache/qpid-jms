@@ -35,7 +35,7 @@ public interface JmsMessageIDBuilder {
                     @Override
                     public Object createMessageID(String producerId, long messageSequence) {
                         String messageId = producerId + "-" + messageSequence;
-                        if (!AmqpMessageIdHelper.INSTANCE.hasMessageIdPrefix(messageId)) {
+                        if (!AmqpMessageIdHelper.hasMessageIdPrefix(messageId)) {
                             messageId = AmqpMessageIdHelper.JMS_ID_PREFIX + messageId;
                         }
                         return messageId;

@@ -18,7 +18,6 @@ package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_BYTES_MESSAGE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MSG_TYPE;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.getSymbol;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -69,8 +68,8 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
         assertNotNull("MessageAnnotations section was not present", annotations);
         assertNotNull("MessageAnnotations section value was not present", annotationsMap);
 
-        assertTrue("expected message type annotation to be present", annotationsMap.containsKey(AmqpMessageSupport.getSymbol(JMS_MSG_TYPE)));
-        assertEquals("unexpected value for message type annotation value", JMS_BYTES_MESSAGE, annotationsMap.get(getSymbol(JMS_MSG_TYPE)));
+        assertTrue("expected message type annotation to be present", annotationsMap.containsKey(JMS_MSG_TYPE));
+        assertEquals("unexpected value for message type annotation value", JMS_BYTES_MESSAGE, annotationsMap.get(JMS_MSG_TYPE));
         assertEquals(JMS_BYTES_MESSAGE, amqpBytesMessageFacade.getJmsMsgType());
     }
 

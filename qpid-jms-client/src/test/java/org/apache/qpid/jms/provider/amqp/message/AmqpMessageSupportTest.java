@@ -30,16 +30,11 @@ import org.junit.Test;
 
 public class AmqpMessageSupportTest {
 
+    private static final Symbol TEST_SYMBOL = Symbol.valueOf("x-opt-test");
+
     @Test
     public void testCreate() {
         new AmqpMessageSupport();
-    }
-
-    //---------- getSymbol ---------------------------------------------------//
-
-    @Test
-    public void testGetSymbol() {
-        assertNotNull(AmqpMessageSupport.getSymbol("x-opt-something-or-other"));
     }
 
     //---------- getMessageAnnotation ----------------------------------------//
@@ -47,24 +42,24 @@ public class AmqpMessageSupportTest {
     @Test
     public void testGetMessageAnnotationWhenMessageHasAnnotationsMap() {
         Map<Symbol, Object> messageAnnotationsMap = new HashMap<Symbol,Object>();
-        messageAnnotationsMap.put(Symbol.valueOf("x-opt-test"), Boolean.TRUE);
-        assertNotNull(AmqpMessageSupport.getMessageAnnotation("x-opt-test", new MessageAnnotations(messageAnnotationsMap)));
+        messageAnnotationsMap.put(TEST_SYMBOL, Boolean.TRUE);
+        assertNotNull(AmqpMessageSupport.getMessageAnnotation(TEST_SYMBOL, new MessageAnnotations(messageAnnotationsMap)));
     }
 
     @Test
     public void testGetMessageAnnotationWhenMessageHasEmptyAnnotationsMap() {
         Map<Symbol, Object> messageAnnotationsMap = new HashMap<Symbol,Object>();
-        assertNull(AmqpMessageSupport.getMessageAnnotation("x-opt-test", new MessageAnnotations(messageAnnotationsMap)));
+        assertNull(AmqpMessageSupport.getMessageAnnotation(TEST_SYMBOL, new MessageAnnotations(messageAnnotationsMap)));
     }
 
     @Test
     public void testGetMessageAnnotationWhenMessageAnnotationHasNoAnnotationsMap() {
-        assertNull(AmqpMessageSupport.getMessageAnnotation("x-opt-test", new MessageAnnotations(null)));
+        assertNull(AmqpMessageSupport.getMessageAnnotation(TEST_SYMBOL, new MessageAnnotations(null)));
     }
 
     @Test
     public void testGetMessageAnnotationWhenMessageIsNull() {
-        assertNull(AmqpMessageSupport.getMessageAnnotation("x-opt-test", null));
+        assertNull(AmqpMessageSupport.getMessageAnnotation(TEST_SYMBOL, null));
     }
 
     //---------- isContentType -----------------------------------------------//
@@ -75,22 +70,22 @@ public class AmqpMessageSupportTest {
     }
 
     @Test
-    public void testIsContentTypeWithNonNullStringValueAndNullContentType() {
-        assertFalse(AmqpMessageSupport.isContentType("test", null));
+    public void testIsContentTypeWithNonNullSymbolValueAndNullContentType() {
+        assertFalse(AmqpMessageSupport.isContentType(Symbol.valueOf("test"), null));
     }
 
     @Test
-    public void testIsContentTypeWithNonNullStringValueAndNonNullContentTypeNotEqual() {
-        assertFalse(AmqpMessageSupport.isContentType("test", Symbol.valueOf("fails")));
+    public void testIsContentTypeWithNonNullSymbolValueAndNonNullContentTypeNotEqual() {
+        assertFalse(AmqpMessageSupport.isContentType(Symbol.valueOf("test"), Symbol.valueOf("fails")));
     }
 
     @Test
-    public void testIsContentTypeWithNonNullStringValueAndNonNullContentTypeEqual() {
-        assertTrue(AmqpMessageSupport.isContentType("test", Symbol.valueOf("test")));
+    public void testIsContentTypeWithNonNullSymbolValueAndNonNullContentTypeEqual() {
+        assertTrue(AmqpMessageSupport.isContentType(Symbol.valueOf("test"), Symbol.valueOf("test")));
     }
 
     @Test
-    public void testIsContentTypeWithNullStringValueAndNonNullContentType() {
+    public void testIsContentTypeWithNullSymbolValueAndNonNullContentType() {
         assertFalse(AmqpMessageSupport.isContentType(null, Symbol.valueOf("test")));
     }
 }

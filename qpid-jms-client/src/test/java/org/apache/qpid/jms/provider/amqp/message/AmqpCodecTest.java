@@ -249,7 +249,7 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         Message message = Proton.message();
 
         Map<Symbol, Object> map = new HashMap<Symbol, Object>();
-        map.put(Symbol.valueOf(AmqpMessageSupport.JMS_MSG_TYPE), (byte) -1);
+        map.put(AmqpMessageSupport.JMS_MSG_TYPE, (byte) -1);
 
         MessageAnnotations messageAnnotations = new MessageAnnotations(map);
         message.setMessageAnnotations(messageAnnotations);
@@ -269,7 +269,7 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         Message message = Proton.message();
 
         Map<Symbol, Object> map = new HashMap<Symbol, Object>();
-        map.put(Symbol.valueOf(AmqpMessageSupport.JMS_MSG_TYPE), AmqpMessageSupport.JMS_MESSAGE);
+        map.put(AmqpMessageSupport.JMS_MSG_TYPE, AmqpMessageSupport.JMS_MESSAGE);
 
         MessageAnnotations messageAnnotations = new MessageAnnotations(map);
         message.setMessageAnnotations(messageAnnotations);
@@ -295,7 +295,7 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         Message message = Proton.message();
 
         Map<Symbol, Object> map = new HashMap<Symbol, Object>();
-        map.put(Symbol.valueOf(AmqpMessageSupport.JMS_MSG_TYPE), AmqpMessageSupport.JMS_BYTES_MESSAGE);
+        map.put(AmqpMessageSupport.JMS_MSG_TYPE, AmqpMessageSupport.JMS_BYTES_MESSAGE);
 
         MessageAnnotations messageAnnotations = new MessageAnnotations(map);
         message.setMessageAnnotations(messageAnnotations);
@@ -321,7 +321,7 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         Message message = Proton.message();
 
         Map<Symbol, Object> map = new HashMap<Symbol, Object>();
-        map.put(Symbol.valueOf(AmqpMessageSupport.JMS_MSG_TYPE), AmqpMessageSupport.JMS_TEXT_MESSAGE);
+        map.put(AmqpMessageSupport.JMS_MSG_TYPE, AmqpMessageSupport.JMS_TEXT_MESSAGE);
 
         MessageAnnotations messageAnnotations = new MessageAnnotations(map);
         message.setMessageAnnotations(messageAnnotations);
@@ -366,13 +366,13 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         Message message = Proton.message();
 
         Map<Symbol, Object> map = new HashMap<Symbol, Object>();
-        map.put(Symbol.valueOf(AmqpMessageSupport.JMS_MSG_TYPE), AmqpMessageSupport.JMS_OBJECT_MESSAGE);
+        map.put(AmqpMessageSupport.JMS_MSG_TYPE, AmqpMessageSupport.JMS_OBJECT_MESSAGE);
 
         MessageAnnotations messageAnnotations = new MessageAnnotations(map);
         message.setMessageAnnotations(messageAnnotations);
 
         if (setJavaSerializedContentType) {
-            message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
+            message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE.toString());
         }
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
@@ -404,7 +404,7 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         Message message = Proton.message();
 
         Map<Symbol, Object> map = new HashMap<Symbol, Object>();
-        map.put(Symbol.valueOf(AmqpMessageSupport.JMS_MSG_TYPE), AmqpMessageSupport.JMS_STREAM_MESSAGE);
+        map.put(AmqpMessageSupport.JMS_MSG_TYPE, AmqpMessageSupport.JMS_STREAM_MESSAGE);
 
         MessageAnnotations messageAnnotations = new MessageAnnotations(map);
         message.setMessageAnnotations(messageAnnotations);
@@ -433,7 +433,7 @@ public class AmqpCodecTest extends QpidJmsTestCase {
     @Test
     public void testCreateBytesMessageFromNoBodySectionAndContentType() throws Exception {
         Message message = Proton.message();
-        message.setContentType(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE);
+        message.setContentType(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE.toString());
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
         assertNotNull("Message should not be null", jmsMessage);
@@ -475,7 +475,7 @@ public class AmqpCodecTest extends QpidJmsTestCase {
     @Test
     public void testCreateObjectMessageFromNoBodySectionAndContentType() throws Exception {
         Message message = Proton.message();
-        message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
+        message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE.toString());
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
         assertNotNull("Message should not be null", jmsMessage);
@@ -537,7 +537,7 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         Message message = Proton.message();
         Binary binary = new Binary(new byte[0]);
         message.setBody(new Data(binary));
-        message.setContentType(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE);
+        message.setContentType(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE.toString());
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
         assertNotNull("Message should not be null", jmsMessage);
@@ -606,7 +606,7 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         Message message = Proton.message();
         Binary binary = new Binary(new byte[0]);
         message.setBody(new Data(binary));
-        message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
+        message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE.toString());
 
         JmsMessage jmsMessage = AmqpCodec.decodeMessage(mockConsumer, encodeMessage(message)).asJmsMessage();
         assertNotNull("Message should not be null", jmsMessage);

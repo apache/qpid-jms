@@ -49,7 +49,6 @@ import org.apache.qpid.proton.amqp.UnsignedLong;
  *
  */
 public class AmqpMessageIdHelper {
-    public static final AmqpMessageIdHelper INSTANCE = new AmqpMessageIdHelper();
 
     public static final String AMQP_STRING_PREFIX = "AMQP_STRING:";
     public static final String AMQP_UUID_PREFIX = "AMQP_UUID:";
@@ -73,7 +72,7 @@ public class AmqpMessageIdHelper {
      * @param string the string to check
      * @return true if and only id the string begins with "ID:"
      */
-    public boolean hasMessageIdPrefix(String string) {
+    public static boolean hasMessageIdPrefix(String string) {
         if (string == null) {
             return false;
         }
@@ -81,7 +80,7 @@ public class AmqpMessageIdHelper {
         return string.startsWith(JMS_ID_PREFIX);
     }
 
-    public String toMessageIdString(Object idObject) {
+    public static String toMessageIdString(Object idObject) {
         if (idObject instanceof String) {
             final String stringId = (String) idObject;
 
@@ -105,7 +104,7 @@ public class AmqpMessageIdHelper {
         }
     }
 
-    public String toCorrelationIdString(Object idObject) {
+    public static String toCorrelationIdString(Object idObject) {
 
         if (idObject instanceof String) {
             final String stringId = (String) idObject;
@@ -138,7 +137,7 @@ public class AmqpMessageIdHelper {
      * @param idObject the object to process
      * @return string to be used for the actual JMS ID.
      */
-    private String convertToIdString(Object idObject) {
+    private static String convertToIdString(Object idObject) {
         if (idObject == null) {
             return null;
         }
@@ -161,7 +160,7 @@ public class AmqpMessageIdHelper {
         }
     }
 
-    private boolean hasTypeEncodingPrefix(String stringId, int offset) {
+    private static boolean hasTypeEncodingPrefix(String stringId, int offset) {
         if(!stringId.startsWith(AMQP_PREFIX, offset)){
             return false;
         }
@@ -173,23 +172,23 @@ public class AmqpMessageIdHelper {
                                  hasAmqpNoPrefix(stringId, offset);
     }
 
-    private boolean hasAmqpStringPrefix(String stringId, int offset) {
+    private static boolean hasAmqpStringPrefix(String stringId, int offset) {
         return stringId.startsWith(AMQP_STRING_PREFIX, offset);
     }
 
-    private boolean hasAmqpUlongPrefix(String stringId, int offset) {
+    private static boolean hasAmqpUlongPrefix(String stringId, int offset) {
         return stringId.startsWith(AMQP_ULONG_PREFIX, offset);
     }
 
-    private boolean hasAmqpUuidPrefix(String stringId, int offset) {
+    private static boolean hasAmqpUuidPrefix(String stringId, int offset) {
         return stringId.startsWith(AMQP_UUID_PREFIX, offset);
     }
 
-    private boolean hasAmqpBinaryPrefix(String stringId, int offset) {
+    private static boolean hasAmqpBinaryPrefix(String stringId, int offset) {
         return stringId.startsWith(AMQP_BINARY_PREFIX, offset);
     }
 
-    private boolean hasAmqpNoPrefix(String stringId, int offset) {
+    private static boolean hasAmqpNoPrefix(String stringId, int offset) {
         return stringId.startsWith(AMQP_NO_PREFIX, offset);
     }
 
@@ -199,14 +198,14 @@ public class AmqpMessageIdHelper {
      *
      * @param origId the object to be converted
      * @return the amqp messageId style object
-     * @throws IdConversionException if the provided baseId String indicates an encoded type but can't be converted to that type. 
+     * @throws IdConversionException if the provided baseId String indicates an encoded type but can't be converted to that type.
      */
-    public Object toIdObject(final String origId) throws IdConversionException {
+    public static Object toIdObject(final String origId) throws IdConversionException {
         if (origId == null) {
             return null;
         }
 
-        if(!AmqpMessageIdHelper.INSTANCE.hasMessageIdPrefix(origId)) {
+        if (!AmqpMessageIdHelper.hasMessageIdPrefix(origId)) {
             // We have a string without any "ID:" prefix, it is an
             // application-specific String, use it as-is.
             return origId;
@@ -249,7 +248,7 @@ public class AmqpMessageIdHelper {
      * @return a byte array containing the binary representation
      * @throws IllegalArgumentException if the provided String is a non-even length or contains non-hex characters
      */
-    public byte[] convertHexStringToBinary(String hexString) throws IllegalArgumentException {
+    public static  byte[] convertHexStringToBinary(String hexString) throws IllegalArgumentException {
         int length = hexString.length();
 
         // As each byte needs two characters in the hex encoding, the string must be an even length.
@@ -272,7 +271,7 @@ public class AmqpMessageIdHelper {
         return binary;
     }
 
-    private int hexCharToInt(char ch, String orig) throws IllegalArgumentException {
+    private static  int hexCharToInt(char ch, String orig) throws IllegalArgumentException {
         if (ch >= '0' && ch <= '9') {
             // subtract '0' to get difference in position as an int
             return ch - '0';
@@ -298,7 +297,7 @@ public class AmqpMessageIdHelper {
      * @param bytes binary to convert
      * @return a String containing a hex representation of the bytes
      */
-    public String convertBinaryToHexString(byte[] bytes) {
+    public static String convertBinaryToHexString(byte[] bytes) {
         // Each byte is represented as 2 chars
         StringBuilder builder = new StringBuilder(bytes.length * 2);
 

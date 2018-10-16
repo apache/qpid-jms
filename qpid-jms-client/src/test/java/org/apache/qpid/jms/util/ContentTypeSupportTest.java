@@ -16,7 +16,8 @@
  */
 package org.apache.qpid.jms.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -209,13 +210,13 @@ public class ContentTypeSupportTest {
     @Test
     public void testParseContentTypeWithApplicationOctetStream() throws Exception {
         // Expect null as this is not a textual type
-        doParseContentTypeTestImpl(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE, null);
+        doParseContentTypeTestImpl(AmqpMessageSupport.OCTET_STREAM_CONTENT_TYPE.toString(), null);
     }
 
     @Test
     public void testParseContentTypeWithApplicationJavaSerialized() throws Exception {
         // Expect null as this is not a textual type
-        doParseContentTypeTestImpl(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE, null);
+        doParseContentTypeTestImpl(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE.toString(), null);
     }
 
     private void doParseContentTypeTestImpl(String contentType, Charset expected) throws InvalidContentTypeException {

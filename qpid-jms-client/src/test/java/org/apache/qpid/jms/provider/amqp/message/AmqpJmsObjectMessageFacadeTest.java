@@ -18,7 +18,6 @@ package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MSG_TYPE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_OBJECT_MESSAGE;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.getSymbol;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -62,8 +61,8 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
         assertNotNull("MessageAnnotations section was not present", annotations);
         assertNotNull("MessageAnnotations section value was not present", annotationsMap);
 
-        assertTrue("expected message type annotation to be present", annotationsMap.containsKey(AmqpMessageSupport.getSymbol(JMS_MSG_TYPE)));
-        assertEquals("unexpected value for message type annotation value", JMS_OBJECT_MESSAGE, annotationsMap.get(getSymbol(JMS_MSG_TYPE)));
+        assertTrue("expected message type annotation to be present", annotationsMap.containsKey(JMS_MSG_TYPE));
+        assertEquals("unexpected value for message type annotation value", JMS_OBJECT_MESSAGE, annotationsMap.get(JMS_MSG_TYPE));
         assertEquals(JMS_OBJECT_MESSAGE, amqpObjectMessageFacade.getJmsMsgType());
     }
 
@@ -164,7 +163,7 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
     @Test
     public void testSetObjectWithNullClearsExistingBodySection() throws Exception {
         Message protonMessage = Message.Factory.create();
-        protonMessage.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
+        protonMessage.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE.toString());
         protonMessage.setBody(new Data(new Binary(new byte[0])));
 
         AmqpJmsObjectMessageFacade amqpObjectMessageFacade = createReceivedObjectMessageFacade(createMockAmqpConsumer(), protonMessage);
@@ -184,7 +183,7 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
     @Test
     public void testClearBodyWithExistingSerializedBodySection() throws Exception {
         Message protonMessage = Message.Factory.create();
-        protonMessage.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
+        protonMessage.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE.toString());
         protonMessage.setBody(new Data(new Binary(new byte[0])));
 
         AmqpJmsObjectMessageFacade amqpObjectMessageFacade = createReceivedObjectMessageFacade(createMockAmqpConsumer(), protonMessage);
@@ -246,7 +245,7 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
     private void doGetObjectUsingReceivedMessageWithNoBodySectionReturnsNullTestImpl(boolean amqpTyped) throws IOException, ClassNotFoundException {
         Message message = Message.Factory.create();
         if (!amqpTyped) {
-            message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
+            message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE.toString());
         }
         AmqpJmsObjectMessageFacade amqpObjectMessageFacade = createReceivedObjectMessageFacade(createMockAmqpConsumer(), message);
 
@@ -256,7 +255,7 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
     @Test
     public void testGetObjectUsingReceivedMessageWithDataSectionContainingNothingReturnsNull() throws Exception {
         Message message = Message.Factory.create();
-        message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
+        message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE.toString());
         message.setBody(new Data(null));
 
         AmqpJmsObjectMessageFacade amqpObjectMessageFacade = createReceivedObjectMessageFacade(createMockAmqpConsumer(), message);
@@ -267,7 +266,7 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
     @Test
     public void testGetObjectUsingReceivedMessageWithNonDataNonAmqvValueBinarySectionThrowsISE() throws Exception {
         Message message = Message.Factory.create();
-        message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
+        message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE.toString());
         message.setBody(new AmqpValue("nonBinarySectionContent"));
 
         AmqpJmsObjectMessageFacade amqpObjectMessageFacade = createReceivedObjectMessageFacade(createMockAmqpConsumer(), message);
@@ -304,7 +303,7 @@ public class AmqpJmsObjectMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
 
         Message message = Message.Factory.create();
         if (contentType) {
-            message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE);
+            message.setContentType(AmqpMessageSupport.SERIALIZED_JAVA_OBJECT_CONTENT_TYPE.toString());
             message.setBody(new Data(new Binary(getSerializedBytes(origMap))));
         } else {
             message.setBody(new AmqpValue(origMap));

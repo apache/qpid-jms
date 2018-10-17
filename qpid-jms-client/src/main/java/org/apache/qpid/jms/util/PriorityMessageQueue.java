@@ -50,7 +50,9 @@ public final class PriorityMessageQueue extends AbstractMessageQueue {
         synchronized (getLock()) {
             getList(envelope).addLast(envelope);
             this.size++;
-            getLock().notify();
+            if (hasWaiters()) {
+                getLock().notify();
+            }
         }
     }
 
@@ -59,7 +61,9 @@ public final class PriorityMessageQueue extends AbstractMessageQueue {
         synchronized (getLock()) {
             getList(MAX_PRIORITY).addFirst(envelope);
             this.size++;
-            getLock().notify();
+            if (hasWaiters()) {
+                getLock().notify();
+            }
         }
     }
 

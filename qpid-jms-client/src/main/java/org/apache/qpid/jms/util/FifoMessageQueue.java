@@ -31,14 +31,16 @@ public final class FifoMessageQueue extends AbstractMessageQueue {
     protected final Deque<JmsInboundMessageDispatch> queue;
 
     public FifoMessageQueue(int prefetchSize) {
-        this.queue = new ArrayDeque<JmsInboundMessageDispatch>(prefetchSize);
+        this.queue = new ArrayDeque<JmsInboundMessageDispatch>(Math.max(1, prefetchSize));
     }
 
     @Override
     public void enqueueFirst(JmsInboundMessageDispatch envelope) {
         synchronized (getLock()) {
             queue.addFirst(envelope);
-            getLock().notify();
+            if (hasWaiters()) {
+                getLock().notify();
+            }
         }
     }
 
@@ -46,7 +48,9 @@ public final class FifoMessageQueue extends AbstractMessageQueue {
     public void enqueue(JmsInboundMessageDispatch envelope) {
         synchronized (getLock()) {
             queue.addLast(envelope);
-            getLock().notify();
+            if (hasWaiters()) {
+                getLock().notify();
+            }
         }
     }
 

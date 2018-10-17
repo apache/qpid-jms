@@ -28,6 +28,8 @@ public abstract class AbstractMessageQueue implements MessageQueue {
     private volatile boolean running;
     private final Object lock = new Object();
 
+    private int waiters;
+
     @Override
     public final JmsInboundMessageDispatch peek() {
         synchronized (lock) {
@@ -40,6 +42,7 @@ public abstract class AbstractMessageQueue implements MessageQueue {
         synchronized (lock) {
             // Wait until the consumer is ready to deliver messages.
             while (timeout != 0 && !closed && isEmpty() && running) {
+                waiters++;
                 if (timeout == -1) {
                     lock.wait();
                 } else {
@@ -47,6 +50,7 @@ public abstract class AbstractMessageQueue implements MessageQueue {
                     lock.wait(timeout);
                     timeout = Math.max(timeout + start - System.currentTimeMillis(), 0);
                 }
+                waiters--;
             }
 
             if (closed || !running || isEmpty()) {
@@ -73,7 +77,10 @@ public abstract class AbstractMessageQueue implements MessageQueue {
             if (!closed) {
                 running = true;
             }
-            lock.notifyAll();
+
+            if (hasWaiters()) {
+                lock.notifyAll();
+            }
         }
     }
 
@@ -81,7 +88,9 @@ public abstract class AbstractMessageQueue implements MessageQueue {
     public final void stop() {
         synchronized (lock) {
             running = false;
-            lock.notifyAll();
+            if (hasWaiters()) {
+                lock.notifyAll();
+            }
         }
     }
 
@@ -95,7 +104,9 @@ public abstract class AbstractMessageQueue implements MessageQueue {
         synchronized (lock) {
             running = false;
             closed = true;
-            lock.notifyAll();
+            if (hasWaiters()) {
+                lock.notifyAll();
+            }
         }
     }
 
@@ -107,6 +118,10 @@ public abstract class AbstractMessageQueue implements MessageQueue {
     @Override
     public final Object getLock() {
         return lock;
+    }
+
+    protected boolean hasWaiters() {
+        return waiters > 0;
     }
 
     /**

@@ -311,7 +311,6 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         createJmsConnection();
         int ackMode = getSessionAcknowledgeMode(transacted, acknowledgeMode);
         JmsSession result = new JmsSession(this, getNextSessionId(), ackMode);
-        addSession(result.getSessionInfo(), result);
         if (started.get()) {
             result.start();
         }
@@ -558,7 +557,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         return result;
     }
 
-    protected void removeSession(JmsSessionInfo sessionInfo) throws JMSException {
+    protected void removeSession(JmsSessionInfo sessionInfo) {
         sessions.remove(sessionInfo.getId());
     }
 
@@ -566,7 +565,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
         sessions.put(sessionInfo.getId(), session);
     }
 
-    protected void removeConnectionConsumer(JmsConsumerInfo consumerInfo) throws JMSException {
+    protected void removeConnectionConsumer(JmsConsumerInfo consumerInfo) {
         connectionConsumers.remove(consumerInfo.getId());
     }
 

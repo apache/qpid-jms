@@ -154,7 +154,17 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         sessionInfo.setRedeliveryPolicy(connection.getRedeliveryPolicy().copy());
         sessionInfo.setDeserializationPolicy(connection.getDeserializationPolicy());
 
-        connection.createResource(sessionInfo);
+        connection.createResource(sessionInfo, new ProviderSynchronization() {
+
+            @Override
+            public void onPendingSuccess() {
+                connection.addSession(sessionInfo, JmsSession.this);
+            }
+
+            @Override
+            public void onPendingFailure(Throwable cause) {
+            }
+        });
 
         // We always keep an open TX if transacted so start now.
         try {
@@ -162,7 +172,18 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
         } catch (Exception e) {
             // failed, close the AMQP session before we throw
             try {
-                connection.destroyResource(sessionInfo);
+                connection.destroyResource(sessionInfo, new ProviderSynchronization() {
+
+                    @Override
+                    public void onPendingSuccess() {
+                        connection.removeSession(sessionInfo);
+                    }
+
+                    @Override
+                    public void onPendingFailure(Throwable cause) {
+                        connection.removeSession(sessionInfo);
+                    }
+                });
             } catch (Exception ex) {
                 // Ignore, throw original error
             }
@@ -737,15 +758,11 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
     //----- Session Implementation methods -----------------------------------//
 
-    protected void add(JmsMessageConsumer consumer) throws JMSException {
+    protected void add(JmsMessageConsumer consumer) {
         consumers.put(consumer.getConsumerId(), consumer);
-
-        if (started.get()) {
-            consumer.start();
-        }
     }
 
-    protected void remove(JmsMessageConsumer consumer) throws JMSException {
+    protected void remove(JmsMessageConsumer consumer) {
         consumers.remove(consumer.getConsumerId());
     }
 

@@ -45,6 +45,7 @@ import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
 import org.apache.qpid.jms.provider.ProviderFuture;
+import org.apache.qpid.jms.provider.ProviderSynchronization;
 import org.apache.qpid.jms.util.FifoMessageQueue;
 import org.apache.qpid.jms.util.MessageQueue;
 import org.apache.qpid.jms.util.PriorityMessageQueue;
@@ -115,12 +116,20 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
         consumerInfo.setPresettle(session.getPresettlePolicy().isConsumerPresttled(session, destination));
         consumerInfo.setDeserializationPolicy(deserializationPolicy);
 
-        session.add(this);
-        try {
-            session.getConnection().createResource(consumerInfo);
-        } catch (JMSException jmse) {
-            session.remove(this);
-            throw jmse;
+        session.getConnection().createResource(consumerInfo, new ProviderSynchronization() {
+
+            @Override
+            public void onPendingSuccess() {
+                session.add(JmsMessageConsumer.this);
+            }
+
+            @Override
+            public void onPendingFailure(Throwable cause) {
+            }
+        });
+
+        if (session.isStarted()) {
+            start();
         }
     }
 

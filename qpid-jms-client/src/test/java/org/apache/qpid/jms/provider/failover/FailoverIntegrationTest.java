@@ -1056,6 +1056,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Repeat(repetitions = 1)
     @Test(timeout = 20000)
     public void testFailoverHandlesDropWithModifiedInitialReconnectDelay() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();

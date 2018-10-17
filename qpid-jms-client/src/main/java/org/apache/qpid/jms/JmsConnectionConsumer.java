@@ -43,6 +43,7 @@ import org.apache.qpid.jms.meta.JmsConsumerInfo;
 import org.apache.qpid.jms.meta.JmsResource.ResourceState;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
 import org.apache.qpid.jms.provider.ProviderConstants.ACK_TYPE;
+import org.apache.qpid.jms.provider.ProviderSynchronization;
 import org.apache.qpid.jms.util.MessageQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,13 +89,17 @@ public class JmsConnectionConsumer implements ConnectionConsumer, JmsMessageDisp
         dispatcher.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
         dispatcher.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
 
-        connection.addConnectionConsumer(consumerInfo, this);
-        try {
-            connection.createResource(consumerInfo);
-        } catch (JMSException jmse) {
-            connection.removeConnectionConsumer(consumerInfo);
-            throw jmse;
-        }
+        connection.createResource(consumerInfo, new ProviderSynchronization() {
+
+            @Override
+            public void onPendingSuccess() {
+                connection.addConnectionConsumer(consumerInfo, JmsConnectionConsumer.this);
+            }
+
+            @Override
+            public void onPendingFailure(Throwable cause) {
+            }
+        });
     }
 
     public JmsConnectionConsumer init() throws JMSException {

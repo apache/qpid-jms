@@ -37,6 +37,7 @@ import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.meta.JmsResource.ResourceState;
 import org.apache.qpid.jms.provider.Provider;
 import org.apache.qpid.jms.provider.ProviderFuture;
+import org.apache.qpid.jms.provider.ProviderSynchronization;
 
 /**
  * Implementation of a JMS MessageProducer
@@ -69,13 +70,17 @@ public class JmsMessageProducer implements AutoCloseable, MessageProducer {
         this.producerInfo.setDestination(destination);
         this.producerInfo.setPresettle(session.getPresettlePolicy().isProducerPresttled(session, destination));
 
-        session.add(this);
-        try {
-            session.getConnection().createResource(producerInfo);
-        } catch (JMSException jmse) {
-            session.remove(this);
-            throw jmse;
-        }
+        session.getConnection().createResource(producerInfo, new ProviderSynchronization() {
+
+            @Override
+            public void onPendingSuccess() {
+                session.add(JmsMessageProducer.this);
+            }
+
+            @Override
+            public void onPendingFailure(Throwable cause) {
+            }
+        });
     }
 
     @Override

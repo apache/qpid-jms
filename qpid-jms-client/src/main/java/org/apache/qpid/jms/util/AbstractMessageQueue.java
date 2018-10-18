@@ -43,14 +43,17 @@ public abstract class AbstractMessageQueue implements MessageQueue {
             // Wait until the consumer is ready to deliver messages.
             while (timeout != 0 && !closed && isEmpty() && running) {
                 waiters++;
-                if (timeout == -1) {
-                    lock.wait();
-                } else {
-                    long start = System.currentTimeMillis();
-                    lock.wait(timeout);
-                    timeout = Math.max(timeout + start - System.currentTimeMillis(), 0);
+                try {
+                    if (timeout == -1) {
+                        lock.wait();
+                    } else {
+                        long start = System.currentTimeMillis();
+                        lock.wait(timeout);
+                        timeout = Math.max(timeout + start - System.currentTimeMillis(), 0);
+                    }
+                } finally {
+                    waiters--;
                 }
-                waiters--;
             }
 
             if (closed || !running || isEmpty()) {

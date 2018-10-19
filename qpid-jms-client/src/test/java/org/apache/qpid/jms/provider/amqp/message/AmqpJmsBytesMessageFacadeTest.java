@@ -17,10 +17,10 @@
 package org.apache.qpid.jms.provider.amqp.message;
 
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_BYTES_MESSAGE;
-import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MSG_TYPE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -31,10 +31,8 @@ import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Map;
 
 import org.apache.qpid.proton.amqp.Binary;
-import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
@@ -59,17 +57,13 @@ public class AmqpJmsBytesMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
     // ---------- Test initial state of newly created message -----------------//
 
     @Test
-    public void testNewMessageContainsMessageTypeAnnotation() throws Exception {
+    public void testNewMessageDoesNotContainMessageTypeAnnotation() throws Exception {
         AmqpJmsBytesMessageFacade amqpBytesMessageFacade = createNewBytesMessageFacade();
 
         MessageAnnotations annotations = amqpBytesMessageFacade.getMessageAnnotations();
-        Map<Symbol, Object> annotationsMap = annotations.getValue();
 
-        assertNotNull("MessageAnnotations section was not present", annotations);
-        assertNotNull("MessageAnnotations section value was not present", annotationsMap);
+        assertNull("MessageAnnotations section was present", annotations);
 
-        assertTrue("expected message type annotation to be present", annotationsMap.containsKey(JMS_MSG_TYPE));
-        assertEquals("unexpected value for message type annotation value", JMS_BYTES_MESSAGE, annotationsMap.get(JMS_MSG_TYPE));
         assertEquals(JMS_BYTES_MESSAGE, amqpBytesMessageFacade.getJmsMsgType());
     }
 

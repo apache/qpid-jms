@@ -20,20 +20,20 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_STREAM_MESSAGE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import javax.jms.MessageEOFException;
 
 import org.apache.qpid.proton.amqp.Binary;
-import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
@@ -51,17 +51,13 @@ public class AmqpJmsStreamMessageFacadeTest extends AmqpJmsMessageTypesTestCase 
     }
 
     @Test
-    public void testNewMessageToSendContainsMessageTypeAnnotation() throws Exception {
+    public void testNewMessageToSendDoesnNotContainMessageTypeAnnotation() throws Exception {
         AmqpJmsStreamMessageFacade amqpStreamMessageFacade = createNewStreamMessageFacade();
 
         MessageAnnotations annotations = amqpStreamMessageFacade.getMessageAnnotations();
-        Map<Symbol, Object> annotationsMap = annotations.getValue();
 
-        assertNotNull("MessageAnnotations section was not present", annotations);
-        assertNotNull("MessageAnnotations section value was not present", annotationsMap);
-
-        assertTrue("expected message type annotation to be present", annotationsMap.containsKey(AmqpMessageSupport.JMS_MSG_TYPE));
-        assertEquals("unexpected value for message type annotation value", AmqpMessageSupport.JMS_STREAM_MESSAGE, annotationsMap.get(AmqpMessageSupport.JMS_MSG_TYPE));
+        assertNull("MessageAnnotations section was not present", annotations);
+        assertEquals(JMS_STREAM_MESSAGE, amqpStreamMessageFacade.getJmsMsgType());
     }
 
     @Test

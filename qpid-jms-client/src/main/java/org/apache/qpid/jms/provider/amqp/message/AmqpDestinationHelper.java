@@ -26,6 +26,7 @@ import org.apache.qpid.jms.JmsTemporaryTopic;
 import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.messaging.MessageAnnotations;
 
 /**
  * A set of static utility method useful when mapping JmsDestination types to / from the AMQP
@@ -43,7 +44,7 @@ public class AmqpDestinationHelper {
     public static final Symbol TOPIC_CAPABILITY = Symbol.valueOf("topic");
     public static final Symbol TEMP_QUEUE_CAPABILITY = Symbol.valueOf("temporary-queue");
     public static final Symbol TEMP_TOPIC_CAPABILITY = Symbol.valueOf("temporary-topic");
-    private static final byte UNKNOWN_TYPE = -1;
+    public static final byte UNKNOWN_TYPE = -1;
 
     /**
      * Decode the provided To address, type description, and consumer destination
@@ -157,42 +158,46 @@ public class AmqpDestinationHelper {
         return new JmsQueue(address);
     }
 
-    public static byte setToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
-        String address = getDestinationAddress(destination, message.getConnection());
-        byte typeValue = toTypeAnnotation(destination);
+    public static void setToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
+        message.setToAddress(getDestinationAddress(destination, message.getConnection()));
 
-        message.setToAddress(address);
-
-        // Set or clear the new byte type annotation as appropriate
-        if (address == null || typeValue == UNKNOWN_TYPE) {
-            message.removeMessageAnnotation(JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL);
-        } else {
-            message.setMessageAnnotation(JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL, typeValue);
-        }
+        // Clear any previous annotations about destination type, we will add proper annotations on send
+        message.removeMessageAnnotation(JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL);
 
         // Always clear the legacy string type annotation
         message.removeMessageAnnotation(AmqpMessageSupport.LEGACY_TO_TYPE_MSG_ANNOTATION_SYMBOL);
-
-        return typeValue;
     }
 
-    public static byte setReplyToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
-        String replyToAddress = getDestinationAddress(destination, message.getConnection());
-        byte typeValue = toTypeAnnotation(destination);
+    public static void setReplyToAddressFromDestination(AmqpJmsMessageFacade message, JmsDestination destination) {
+        message.setReplyToAddress(getDestinationAddress(destination, message.getConnection()));
 
-        message.setReplyToAddress(replyToAddress);
-
-        // Set or clear the new byte type annotation as appropriate
-        if (replyToAddress == null || typeValue == UNKNOWN_TYPE) {
-            message.removeMessageAnnotation(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL);
-        } else {
-            message.setMessageAnnotation(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL, typeValue);
-        }
+        // Clear any previous annotations about destination type, we will add proper annotations on send
+        message.removeMessageAnnotation(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL);
 
         // Always clear the legacy string type annotation
         message.removeMessageAnnotation(AmqpMessageSupport.LEGACY_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL);
+    }
 
-        return typeValue;
+    public static void setToAnnotationFromDestination(JmsDestination destination, MessageAnnotations annotations) {
+        byte typeValue = toTypeAnnotation(destination);
+
+        // Set or clear the new byte type annotation as appropriate
+        if (destination == null || typeValue == UNKNOWN_TYPE) {
+            annotations.getValue().remove(JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL);
+        } else {
+            annotations.getValue().put(JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL, typeValue);
+        }
+    }
+
+    public static void setReplyToAnnotationFromDestination(JmsDestination destination, MessageAnnotations annotations) {
+        byte typeValue = toTypeAnnotation(destination);
+
+        // Set or clear the new byte type annotation as appropriate
+        if (destination == null || typeValue == UNKNOWN_TYPE) {
+            annotations.getValue().remove(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL);
+        } else {
+            annotations.getValue().put(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL, typeValue);
+        }
     }
 
     public static String getDestinationAddress(JmsDestination destination, AmqpConnection connection) {
@@ -226,7 +231,7 @@ public class AmqpDestinationHelper {
      * @return the annotation type value, or {@value AmqpDestinationHelper#UNKNOWN_TYPE} if the
      *         supplied destination null or can't be classified
      */
-    private static byte toTypeAnnotation(JmsDestination destination) {
+    static byte toTypeAnnotation(JmsDestination destination) {
         if (destination == null) {
             return UNKNOWN_TYPE;
         }
@@ -266,7 +271,7 @@ public class AmqpDestinationHelper {
         return typeSet;
     }
 
-    private static byte getTypeByte(AmqpJmsMessageFacade message, Symbol annotationName) {
+    static byte getTypeByte(AmqpJmsMessageFacade message, Symbol annotationName) {
         Object typeAnnotation = message.getMessageAnnotation(annotationName);
 
         if (typeAnnotation == null) {

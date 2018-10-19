@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
-import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MSG_TYPE;
 import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_TEXT_MESSAGE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -27,13 +26,11 @@ import static org.junit.Assert.fail;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Map;
 
 import javax.jms.JMSException;
 
 import org.apache.qpid.jms.test.testpeer.describedtypes.sections.DataDescribedType;
 import org.apache.qpid.proton.amqp.Binary;
-import org.apache.qpid.proton.amqp.Symbol;
 import org.apache.qpid.proton.amqp.messaging.AmqpSequence;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
@@ -48,17 +45,10 @@ public class AmqpJmsTextMessageFacadeTest extends AmqpJmsMessageTypesTestCase {
     //---------- Test initial state of newly created message -----------------//
 
     @Test
-    public void testNewMessageToSendContainsMessageTypeAnnotation() throws Exception {
+    public void testNewMessageToSendDoesNotContainMessageTypeAnnotation() throws Exception {
         AmqpJmsTextMessageFacade amqpTextMessageFacade = createNewTextMessageFacade();
 
-        assertNotNull("MessageAnnotations section was not present", amqpTextMessageFacade.getMessageAnnotations());
-
-        Map<Symbol, Object> annotationsMap = amqpTextMessageFacade.getMessageAnnotations().getValue();
-
-        assertNotNull("MessageAnnotations section value was not present", annotationsMap);
-
-        assertTrue("expected message type annotation to be present", annotationsMap.containsKey(JMS_MSG_TYPE));
-        assertEquals("unexpected value for message type annotation value", JMS_TEXT_MESSAGE, annotationsMap.get(JMS_MSG_TYPE));
+        assertNull("MessageAnnotations section was not present", amqpTextMessageFacade.getMessageAnnotations());
         assertEquals(JMS_TEXT_MESSAGE, amqpTextMessageFacade.getJmsMsgType());
     }
 

@@ -86,7 +86,6 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     public void initialize(AmqpConnection connection) {
         this.connection = connection;
 
-        setMessageAnnotation(AmqpMessageSupport.JMS_MSG_TYPE, getJmsMsgType());
         setPersistent(true);
         initializeEmptyBody();
     }
@@ -110,6 +109,10 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         if (getMessageAnnotation(JMS_DELIVERY_TIME) == null) {
             syntheticDeliveryTime = getTimestamp();
         }
+
+        // We now know what type of message this is, so remove this so if resent the
+        // annotations can come from the cache if possible.
+        removeMessageAnnotation(AmqpMessageSupport.JMS_MSG_TYPE);
     }
 
     /**
@@ -214,7 +217,6 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
     @Override
     public void onSend(long producerTtl) throws JMSException {
-
         // Set the ttl field of the Header field if needed, complementing the expiration
         // field of Properties for any peers that only inspect the mutable ttl field.
         long ttl = 0;
@@ -225,8 +227,6 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
         }
 
         header.setTimeToLive(ttl);
-
-        setMessageAnnotation(AmqpMessageSupport.JMS_MSG_TYPE, getJmsMsgType());
     }
 
     @Override
@@ -273,22 +273,22 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
 
         target.setBody(body);
 
-        if (deliveryAnnotationsMap != null) {
+        if (deliveryAnnotationsMap != null && !deliveryAnnotationsMap.isEmpty()) {
             target.lazyCreateDeliveryAnnotations();
             target.deliveryAnnotationsMap.putAll(deliveryAnnotationsMap);
         }
 
-        if (applicationPropertiesMap != null) {
+        if (applicationPropertiesMap != null && !applicationPropertiesMap.isEmpty()) {
             target.lazyCreateApplicationProperties();
             target.applicationPropertiesMap.putAll(applicationPropertiesMap);
         }
 
-        if (messageAnnotationsMap != null) {
+        if (messageAnnotationsMap != null && !messageAnnotationsMap.isEmpty()) {
             target.lazyCreateMessageAnnotations();
             target.messageAnnotationsMap.putAll(messageAnnotationsMap);
         }
 
-        if (footerMap != null) {
+        if (footerMap != null && !footerMap.isEmpty()) {
             target.lazyCreateFooter();
             target.footerMap.putAll(footerMap);
         }
@@ -614,7 +614,6 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     @Override
     public void setDestination(JmsDestination destination) {
         this.destination = destination;
-        lazyCreateMessageAnnotations();
         AmqpDestinationHelper.setToAddressFromDestination(this, destination);
     }
 
@@ -630,7 +629,6 @@ public class AmqpJmsMessageFacade implements JmsMessageFacade {
     @Override
     public void setReplyTo(JmsDestination replyTo) {
         this.replyTo = replyTo;
-        lazyCreateMessageAnnotations();
         AmqpDestinationHelper.setReplyToAddressFromDestination(this, replyTo);
     }
 

@@ -38,6 +38,11 @@ import java.util.UUID;
 
 import javax.jms.DeliveryMode;
 
+import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.JmsQueue;
+import org.apache.qpid.jms.JmsTemporaryQueue;
+import org.apache.qpid.jms.JmsTemporaryTopic;
+import org.apache.qpid.jms.JmsTopic;
 import org.apache.qpid.jms.message.JmsBytesMessage;
 import org.apache.qpid.jms.message.JmsMessage;
 import org.apache.qpid.jms.message.JmsObjectMessage;
@@ -46,6 +51,7 @@ import org.apache.qpid.jms.message.JmsTextMessage;
 import org.apache.qpid.jms.message.facade.JmsMessageFacade;
 import org.apache.qpid.jms.meta.JmsConsumerId;
 import org.apache.qpid.jms.meta.JmsConsumerInfo;
+import org.apache.qpid.jms.provider.amqp.AmqpConnection;
 import org.apache.qpid.jms.provider.amqp.AmqpConsumer;
 import org.apache.qpid.jms.test.QpidJmsTestCase;
 import org.apache.qpid.proton.Proton;
@@ -66,7 +72,9 @@ import org.mockito.Mockito;
 import io.netty.buffer.ByteBuf;
 
 public class AmqpCodecTest extends QpidJmsTestCase {
+
     private AmqpConsumer mockConsumer;
+    private AmqpConnection mockConnection;
 
     @Before
     @Override
@@ -74,6 +82,7 @@ public class AmqpCodecTest extends QpidJmsTestCase {
         super.setUp();
 
         JmsConsumerId consumerId = new JmsConsumerId("ID:MOCK:1", 1, 1);
+        mockConnection = Mockito.mock(AmqpConnection.class);
         mockConsumer = Mockito.mock(AmqpConsumer.class);
         Mockito.when(mockConsumer.getResourceInfo()).thenReturn(new JmsConsumerInfo(consumerId, null));
     }
@@ -400,7 +409,6 @@ public class AmqpCodecTest extends QpidJmsTestCase {
      */
     @Test
     public void testCreateStreamMessageFromMessageTypeAnnotation() throws Exception {
-
         Message message = Proton.message();
 
         Map<Symbol, Object> map = new HashMap<Symbol, Object>();
@@ -876,8 +884,7 @@ public class AmqpCodecTest extends QpidJmsTestCase {
      * @throws Exception if an error occurs during the test.
      */
     @Test
-    public void testCreateObjectMessageMessageFromAmqpSequence() throws Exception
-    {
+    public void testCreateObjectMessageMessageFromAmqpSequence() throws Exception {
         Message message = Proton.message();
         List<String> list = new ArrayList<String>();
         message.setBody(new AmqpSequence(list));
@@ -892,5 +899,134 @@ public class AmqpCodecTest extends QpidJmsTestCase {
 
         AmqpObjectTypeDelegate delegate = ((AmqpJmsObjectMessageFacade) facade).getDelegate();
         assertTrue("Unexpected delegate type: " + delegate, delegate instanceof AmqpTypedObjectDelegate);
+    }
+
+    //----- Message Annotation Handling --------------------------------------//
+
+    public void testJMSMessageWithNoToMessageAnnotationValidity() throws Exception {
+        doTestJMSMessageEncodingAddsProperMessageAnnotations(AmqpMessageSupport.JMS_MESSAGE, AmqpDestinationHelper.UNKNOWN_TYPE, AmqpDestinationHelper.UNKNOWN_TYPE);
+    }
+
+    public void testJMSMessageToQueueMessageAnnotationValidity() throws Exception {
+        doTestJMSMessageEncodingAddsProperMessageAnnotations(AmqpMessageSupport.JMS_BYTES_MESSAGE, AmqpDestinationHelper.QUEUE_TYPE, AmqpDestinationHelper.UNKNOWN_TYPE);
+    }
+
+    public void testJMSMessageToTemporaryQueueMessageAnnotationValidity() throws Exception {
+        doTestJMSMessageEncodingAddsProperMessageAnnotations(AmqpMessageSupport.JMS_MAP_MESSAGE, AmqpDestinationHelper.TEMP_QUEUE_TYPE, AmqpDestinationHelper.UNKNOWN_TYPE);
+    }
+
+    public void testJMSMessageToTopicMessageAnnotationValidity() throws Exception {
+        doTestJMSMessageEncodingAddsProperMessageAnnotations(AmqpMessageSupport.JMS_STREAM_MESSAGE, AmqpDestinationHelper.TOPIC_TYPE, AmqpDestinationHelper.UNKNOWN_TYPE);
+    }
+
+    public void testJMSMessageToTemporaryTopicMessageAnnotationValidity() throws Exception {
+        doTestJMSMessageEncodingAddsProperMessageAnnotations(AmqpMessageSupport.JMS_TEXT_MESSAGE, AmqpDestinationHelper.TEMP_TOPIC_TYPE, AmqpDestinationHelper.UNKNOWN_TYPE);
+    }
+
+    public void testJMSMessageToQueueWithReplyToMessageAnnotationValidity() throws Exception {
+        doTestJMSMessageEncodingAddsProperMessageAnnotations(AmqpMessageSupport.JMS_OBJECT_MESSAGE, AmqpDestinationHelper.QUEUE_TYPE, AmqpDestinationHelper.TEMP_TOPIC_TYPE);
+    }
+
+    public void testJMSMessageToTemporaryQueueWithReplyToMessageAnnotationValidity() throws Exception {
+        doTestJMSMessageEncodingAddsProperMessageAnnotations(AmqpMessageSupport.JMS_TEXT_MESSAGE, AmqpDestinationHelper.TEMP_QUEUE_TYPE, AmqpDestinationHelper.TOPIC_TYPE);
+    }
+
+    public void testJMSMessageToTopicWithReplyToMessageAnnotationValidity() throws Exception {
+        doTestJMSMessageEncodingAddsProperMessageAnnotations(AmqpMessageSupport.JMS_STREAM_MESSAGE, AmqpDestinationHelper.TOPIC_TYPE, AmqpDestinationHelper.TEMP_QUEUE_TYPE);
+    }
+
+    public void testJMSMessageToTemporaryTopicWithReplyToMessageAnnotationValidity() throws Exception {
+        doTestJMSMessageEncodingAddsProperMessageAnnotations(AmqpMessageSupport.JMS_MESSAGE, AmqpDestinationHelper.TEMP_TOPIC_TYPE, AmqpDestinationHelper.QUEUE_TYPE);
+    }
+
+    private void doTestJMSMessageEncodingAddsProperMessageAnnotations(byte msgType, byte toType, byte replyToType) throws Exception {
+        final AmqpJmsMessageFacade message = createMessageFacadeFromTypeId(msgType);
+        final JmsDestination to = createDestinationFromTypeId(toType);
+        final JmsDestination replyTo = createDestinationFromTypeId(replyToType);
+
+        message.setDestination(to);
+        message.setReplyTo(replyTo);
+
+        // Allows the code to run through what should be cached in the TLS portion of the codec
+        // and not be using the globally cached bits, this checks that nothing NPEs or otherwise
+        // fails and should show in test coverage that the cache fill + cache use is exercised.
+        for (int i = 0; i <= 2; ++i) {
+            MessageImpl amqpMessage = (MessageImpl) AmqpMessageSupport.decodeMessage(AmqpCodec.encodeMessage(message));
+
+            MessageAnnotations messageAnnotations = amqpMessage.getMessageAnnotations();
+            assertNotNull(messageAnnotations);
+            assertNotNull(messageAnnotations.getValue());
+
+            Map<Symbol, Object> messageAnnotationsMap = messageAnnotations.getValue();
+
+            assertTrue(messageAnnotationsMap.containsKey(AmqpMessageSupport.JMS_MSG_TYPE));
+            if (toType != AmqpDestinationHelper.UNKNOWN_TYPE) {
+                assertTrue(messageAnnotationsMap.containsKey(AmqpDestinationHelper.JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL));
+                assertEquals(toType, messageAnnotationsMap.get(AmqpDestinationHelper.JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL));
+            } else {
+                assertFalse(messageAnnotationsMap.containsKey(AmqpDestinationHelper.JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL));
+            }
+            if (replyToType != AmqpDestinationHelper.UNKNOWN_TYPE) {
+                assertTrue(messageAnnotationsMap.containsKey(AmqpDestinationHelper.JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL));
+                assertEquals(replyToType, messageAnnotationsMap.get(AmqpDestinationHelper.JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL));
+            } else {
+                assertFalse(messageAnnotationsMap.containsKey(AmqpDestinationHelper.JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL));
+            }
+        }
+    }
+
+    private JmsDestination createDestinationFromTypeId(byte destinationType) {
+        final JmsDestination destination;
+        switch (destinationType) {
+            case AmqpDestinationHelper.QUEUE_TYPE:
+                destination = new JmsQueue("test");
+                break;
+            case AmqpDestinationHelper.TOPIC_TYPE:
+                destination = new JmsTopic("test");
+                break;
+            case AmqpDestinationHelper.TEMP_QUEUE_TYPE:
+                destination = new JmsTemporaryQueue("test");
+                break;
+            case AmqpDestinationHelper.TEMP_TOPIC_TYPE:
+                destination = new JmsTemporaryTopic("test");
+                break;
+            case AmqpDestinationHelper.UNKNOWN_TYPE:
+                destination = null;
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown JMS Destination Type");
+        }
+
+        return destination;
+    }
+
+    private AmqpJmsMessageFacade createMessageFacadeFromTypeId(byte msgType) {
+        final AmqpJmsMessageFacade message;
+        switch (msgType) {
+            case AmqpMessageSupport.JMS_MESSAGE:
+                message = new AmqpJmsMessageFacade();
+                break;
+            case AmqpMessageSupport.JMS_BYTES_MESSAGE:
+                message = new AmqpJmsBytesMessageFacade();
+                break;
+            case AmqpMessageSupport.JMS_MAP_MESSAGE:
+                message = new AmqpJmsMapMessageFacade();
+                break;
+            case AmqpMessageSupport.JMS_OBJECT_MESSAGE:
+                message = new AmqpJmsObjectMessageFacade();
+                break;
+            case AmqpMessageSupport.JMS_STREAM_MESSAGE:
+                message = new AmqpJmsStreamMessageFacade();
+                break;
+            case AmqpMessageSupport.JMS_TEXT_MESSAGE:
+                message = new AmqpJmsTextMessageFacade();
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown JMS Message Type");
+        }
+
+        message.initialize(mockConnection);
+
+        return message;
     }
 }

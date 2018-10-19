@@ -735,7 +735,9 @@ public class AmqpDestinationHelperTest {
         AmqpDestinationHelper.setToAddressFromDestination(message, destination);
 
         Mockito.verify(message).setToAddress(testAddress);
-        Mockito.verify(message).setMessageAnnotation(JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL, QUEUE_TYPE);
+        Mockito.verify(message).removeMessageAnnotation(JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL);
+
+        assertNull(message.getMessageAnnotations());
     }
 
     @Test
@@ -749,7 +751,9 @@ public class AmqpDestinationHelperTest {
         AmqpDestinationHelper.setToAddressFromDestination(message, destination);
 
         Mockito.verify(message).setToAddress(testAddress);
-        Mockito.verify(message).setMessageAnnotation(JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL, TOPIC_TYPE);
+        Mockito.verify(message).removeMessageAnnotation(JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL);
+
+        assertNull(message.getMessageAnnotations());
     }
 
     @Test
@@ -761,7 +765,9 @@ public class AmqpDestinationHelperTest {
         AmqpDestinationHelper.setToAddressFromDestination(message, destination);
 
         Mockito.verify(message).setToAddress(testAddress);
-        Mockito.verify(message).setMessageAnnotation(JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL, TEMP_QUEUE_TYPE);
+        Mockito.verify(message).removeMessageAnnotation(JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL);
+
+        assertNull(message.getMessageAnnotations());
     }
 
     @Test
@@ -773,7 +779,9 @@ public class AmqpDestinationHelperTest {
         AmqpDestinationHelper.setToAddressFromDestination(message, destination);
 
         Mockito.verify(message).setToAddress(testAddress);
-        Mockito.verify(message).setMessageAnnotation(JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL, TEMP_TOPIC_TYPE);
+        Mockito.verify(message).removeMessageAnnotation(JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL);
+
+        assertNull(message.getMessageAnnotations());
     }
 
     @Test
@@ -787,6 +795,8 @@ public class AmqpDestinationHelperTest {
 
         Mockito.verify(message).setToAddress(testAddress);
         Mockito.verify(message).removeMessageAnnotation(JMS_DEST_TYPE_MSG_ANNOTATION_SYMBOL);
+
+        assertNull(message.getMessageAnnotations());
     }
 
     //========================================================================//
@@ -823,7 +833,9 @@ public class AmqpDestinationHelperTest {
         AmqpDestinationHelper.setReplyToAddressFromDestination(message, destination);
 
         Mockito.verify(message).setReplyToAddress(testAddress);
-        Mockito.verify(message).setMessageAnnotation(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL, QUEUE_TYPE);
+        Mockito.verify(message).removeMessageAnnotation(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL);
+
+        assertNull(message.getMessageAnnotations());
     }
 
     @Test
@@ -851,7 +863,9 @@ public class AmqpDestinationHelperTest {
         AmqpDestinationHelper.setReplyToAddressFromDestination(message, destination);
 
         Mockito.verify(message).setReplyToAddress(testAddress);
-        Mockito.verify(message).setMessageAnnotation(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL, TOPIC_TYPE);
+        Mockito.verify(message).removeMessageAnnotation(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL);
+
+        assertNull(message.getMessageAnnotations());
     }
 
     @Test
@@ -863,7 +877,9 @@ public class AmqpDestinationHelperTest {
         AmqpDestinationHelper.setReplyToAddressFromDestination(message, destination);
 
         Mockito.verify(message).setReplyToAddress(testAddress);
-        Mockito.verify(message).setMessageAnnotation(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL, TEMP_QUEUE_TYPE);
+        Mockito.verify(message).removeMessageAnnotation(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL);
+
+        assertNull(message.getMessageAnnotations());
     }
 
     @Test
@@ -875,7 +891,9 @@ public class AmqpDestinationHelperTest {
         AmqpDestinationHelper.setReplyToAddressFromDestination(message, destination);
 
         Mockito.verify(message).setReplyToAddress(testAddress);
-        Mockito.verify(message).setMessageAnnotation(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL, TEMP_TOPIC_TYPE);
+        Mockito.verify(message).removeMessageAnnotation(JMS_REPLY_TO_TYPE_MSG_ANNOTATION_SYMBOL);
+
+        assertNull(message.getMessageAnnotations());
     }
 
     @Test

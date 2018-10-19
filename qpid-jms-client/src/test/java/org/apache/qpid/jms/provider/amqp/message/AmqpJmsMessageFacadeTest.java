@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.jms.provider.amqp.message;
 
+import static org.apache.qpid.jms.provider.amqp.message.AmqpMessageSupport.JMS_MESSAGE;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1661,17 +1662,15 @@ public class AmqpJmsMessageFacadeTest extends AmqpJmsMessageTypesTestCase  {
     public void testNewMessageHasUnderlyingMessageAnnotationsSectionWithTypeAnnotation() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();;
 
-        assertNotNull(amqpMessageFacade.getMessageAnnotations());
-        Symbol annotationKey = AmqpMessageSupport.JMS_MSG_TYPE;
-        assertEquals(AmqpMessageSupport.JMS_MESSAGE, amqpMessageFacade.getMessageAnnotations().getValue().get(annotationKey));
+        assertNull(amqpMessageFacade.getMessageAnnotations());
+        assertEquals(JMS_MESSAGE, amqpMessageFacade.getJmsMsgType());
     }
 
     @Test
     public void testNewMessageDoesNotHaveUnderlyingMessageAnnotationsSectionWithDeliveryTime() {
         AmqpJmsMessageFacade amqpMessageFacade = createNewMessageFacade();;
 
-        assertNotNull(amqpMessageFacade.getMessageAnnotations());
-        assertNull(amqpMessageFacade.getMessageAnnotations().getValue().get(AmqpMessageSupport.JMS_DELIVERY_TIME));
+        assertNull(amqpMessageFacade.getMessageAnnotations());
     }
 
     @Test

@@ -162,11 +162,12 @@ public class AmqpProviderTest extends QpidJmsTestCase {
         try (TestAmqpPeer testPeer = new TestAmqpPeer()) {
 
             provider = new AmqpProviderFactory().createProvider(getPeerURI(testPeer));
-
             provider.setSaslLayer(false);
-            provider.connect(connectionInfo);
 
             testPeer.expectSaslLayerDisabledConnect(null);
+
+            provider.connect(connectionInfo);
+
             testPeer.expectClose();
 
             provider.close();

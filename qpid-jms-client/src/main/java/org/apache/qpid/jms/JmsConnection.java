@@ -1321,7 +1321,8 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
     @Override
     public void onConnectionEstablished(final URI remoteURI) {
-        LOG.info("Connection {} connected to remote Broker: {}", connectionInfo.getId(), remoteURI);
+        LOG.info("Connection {} connected to remote Broker: {}://{}:{}",
+                connectionInfo.getId(), remoteURI.getScheme(), remoteURI.getHost(), remoteURI.getPort());
         setMessageFactory(provider.getMessageFactory());
         connectionInfo.setConnectedURI(provider.getRemoteURI());
 

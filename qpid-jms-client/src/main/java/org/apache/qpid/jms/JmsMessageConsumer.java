@@ -100,7 +100,7 @@ public class JmsMessageConsumer implements AutoCloseable, MessageConsumer, JmsMe
             this.messageQueue = new FifoMessageQueue(configuredPrefetch);
         }
 
-        consumerInfo = new JmsConsumerInfo(consumerId, messageQueue);
+        consumerInfo = new JmsConsumerInfo(consumerId, messageQueue, this);
         consumerInfo.setExplicitClientID(connection.isExplicitClientID());
         consumerInfo.setSelector(selector);
         consumerInfo.setDurable(isDurableSubscription());

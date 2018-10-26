@@ -131,7 +131,7 @@ public class AmqpJmsMessageTypesTestCase extends QpidJmsTestCase {
         AmqpConsumer consumer = Mockito.mock(AmqpConsumer.class);
         Mockito.when(consumer.getConnection()).thenReturn(connection);
         Mockito.when(consumer.getDestination()).thenReturn(consumerDestination);
-        Mockito.when(consumer.getResourceInfo()).thenReturn(new JmsConsumerInfo(consumerId, null));
+        Mockito.when(consumer.getResourceInfo()).thenReturn(new JmsConsumerInfo(consumerId, null, null));
         return consumer;
     }
 

@@ -125,18 +125,15 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                 // blocked receive or stop calls that are waiting, unless the consumer is
                 // a participant in a transaction in which case we will just fail the request
                 // and leave the consumer open since the TX needs it to remain active.
-                final ScheduledFuture<?> future = getSession().schedule(new Runnable() {
-                    @Override
-                    public void run() {
-                        LOG.trace("Consumer {} drain request timed out", getConsumerId());
-                        Exception cause = new JmsOperationTimedOutException("Remote did not respond to a drain request in time");
-                        if (session.isTransacted() && session.getTransactionContext().isInTransaction(getConsumerId())) {
-                            stopRequest.onFailure(cause);
-                            stopRequest = null;
-                        } else {
-                            closeResource(session.getProvider(), cause, false);
-                            session.getProvider().pumpToProtonTransport();
-                        }
+                final ScheduledFuture<?> future = getSession().schedule(() -> {
+                    LOG.trace("Consumer {} drain request timed out", getConsumerId());
+                    Exception cause = new JmsOperationTimedOutException("Remote did not respond to a drain request in time");
+                    if (session.isTransacted() && session.getTransactionContext().isInTransaction(getConsumerId())) {
+                        stopRequest.onFailure(cause);
+                        stopRequest = null;
+                    } else {
+                        closeResource(session.getProvider(), cause, false);
+                        session.getProvider().pumpToProtonTransport();
                     }
                 }, getDrainTimeout());
 
@@ -148,14 +145,11 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     private void stopOnSchedule(long timeout, final AsyncResult request) {
         LOG.trace("Consumer {} scheduling stop", getConsumerId());
         // We need to drain the credit if no message(s) arrive to use it.
-        final ScheduledFuture<?> future = getSession().schedule(new Runnable() {
-            @Override
-            public void run() {
-                LOG.trace("Consumer {} running scheduled stop", getConsumerId());
-                if (getEndpoint().getRemoteCredit() != 0) {
-                    stop(request);
-                    session.getProvider().pumpToProtonTransport(request);
-                }
+        final ScheduledFuture<?> future = getSession().schedule(() -> {
+            LOG.trace("Consumer {} running scheduled stop", getConsumerId());
+            if (getEndpoint().getRemoteCredit() != 0) {
+                stop(request);
+                session.getProvider().pumpToProtonTransport(request);
             }
         }, timeout);
 
@@ -500,6 +494,7 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             JmsInboundMessageDispatch envelope = new JmsInboundMessageDispatch(getNextIncomingSequenceNumber());
             envelope.setMessage(message);
             envelope.setConsumerId(getResourceInfo().getId());
+            envelope.setConsumerInfo(getResourceInfo());
             // Store link to delivery in the hint for use in acknowledge requests.
             envelope.setProviderHint(incoming);
             envelope.setMessageId(message.getFacade().getProviderMessageIdObject());

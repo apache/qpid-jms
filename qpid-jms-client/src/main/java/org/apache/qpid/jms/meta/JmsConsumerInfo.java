@@ -17,6 +17,7 @@
 package org.apache.qpid.jms.meta;
 
 import org.apache.qpid.jms.JmsDestination;
+import org.apache.qpid.jms.JmsMessageDispatcher;
 import org.apache.qpid.jms.policy.JmsDefaultDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
 import org.apache.qpid.jms.policy.JmsDeserializationPolicy;
@@ -49,16 +50,19 @@ public final class JmsConsumerInfo extends JmsAbstractResource implements Compar
     // Can be used to track the last consumed message.
     private transient long lastDeliveredSequenceId;
 
-    public JmsConsumerInfo(JmsConsumerId consumerId, MessageQueue messageQueue) {
+    private final JmsMessageDispatcher dispatcher;
+
+    public JmsConsumerInfo(JmsConsumerId consumerId, MessageQueue messageQueue, JmsMessageDispatcher dispatcher) {
         if (consumerId == null) {
             throw new IllegalArgumentException("Consumer ID cannot be null");
         }
         this.consumerId = consumerId;
         this.messageQueue = messageQueue;
+        this.dispatcher = dispatcher;
     }
 
     public JmsConsumerInfo copy() {
-        JmsConsumerInfo info = new JmsConsumerInfo(consumerId, messageQueue);
+        JmsConsumerInfo info = new JmsConsumerInfo(consumerId, messageQueue, dispatcher);
         copy(info);
         return info;
     }
@@ -243,6 +247,10 @@ public final class JmsConsumerInfo extends JmsAbstractResource implements Compar
 
     public void setMaxMessages(int maxMessages) {
         this.maxMessages = maxMessages;
+    }
+
+    public JmsMessageDispatcher getDispatcher() {
+        return dispatcher;
     }
 
     @Override

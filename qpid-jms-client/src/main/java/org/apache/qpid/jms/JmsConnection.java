@@ -469,7 +469,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
             messageQueue = new FifoMessageQueue(configuredPrefetch);
         }
 
-        JmsConsumerInfo consumerInfo = new JmsConsumerInfo(getNextConnectionConsumerId(), messageQueue);
+        JmsConsumerInfo consumerInfo = new JmsConsumerInfo(getNextConnectionConsumerId(), messageQueue, null);
         consumerInfo.setExplicitClientID(isExplicitClientID());
         consumerInfo.setSelector(messageSelector);
         consumerInfo.setDurable(durable);
@@ -1177,36 +1177,37 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
     @Override
     public void onInboundMessage(final JmsInboundMessageDispatch envelope) {
-
         JmsMessage incoming = envelope.getMessage();
         if (incoming != null) {
-            // Ensure incoming Messages are in readonly mode.
+            // Ensure incoming Messages are in read-only mode and configured properly
             incoming.setReadOnlyBody(true);
             incoming.setReadOnlyProperties(true);
-
             incoming.setValidatePropertyNames(isValidatePropertyNames());
         }
 
-        JmsMessageDispatcher dispatcher = sessions.get(envelope.getConsumerId().getParentId());
+        JmsMessageDispatcher dispatcher = null;
+
+        if (envelope.getConsumerInfo() != null && envelope.getConsumerInfo().getDispatcher() != null) {
+            dispatcher = envelope.getConsumerInfo().getDispatcher();
+        } else {
+            dispatcher = sessions.get(envelope.getConsumerId().getParentId());
+            if (dispatcher == null) {
+                dispatcher = connectionConsumers.get(envelope.getConsumerId());
+            }
+        }
+
         if (dispatcher != null) {
             dispatcher.onInboundMessage(envelope);
         } else {
-            dispatcher = connectionConsumers.get(envelope.getConsumerId());
-            if (dispatcher != null) {
-                dispatcher.onInboundMessage(envelope);
-            }
+            LOG.debug("Message inbound with no dispatcher registered for its consumer: {}", envelope.getConsumerId());
         }
 
         // Run the application callbacks on the connection executor to allow the provider to
         // return to its normal processing without waiting for client level processing to finish.
         if (!connectionListeners.isEmpty()) {
             for (final JmsConnectionListener listener : connectionListeners) {
-                executor.submit(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        listener.onInboundMessage(envelope);
-                    }
+                executor.submit(() -> {
+                    listener.onInboundMessage(envelope);
                 });
             }
         }

@@ -24,8 +24,8 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -44,7 +44,7 @@ import org.mockito.Mockito;
  */
 public class PriorityMessageQueueTest {
 
-    private MessageQueue queue;
+    private PriorityMessageQueue queue;
     private final IdGenerator messageId = new IdGenerator();
     private long sequence;
 
@@ -52,11 +52,6 @@ public class PriorityMessageQueueTest {
     public void setUp() {
         queue = new PriorityMessageQueue();
         queue.start();
-    }
-
-    @Test
-    public void testGetLock() {
-        assertNotNull(queue.getLock());
     }
 
     @Test
@@ -188,27 +183,6 @@ public class PriorityMessageQueueTest {
     }
 
     @Test
-    public void testRemoveAll() throws JMSException {
-        List<JmsInboundMessageDispatch> messages = createFullRangePrioritySet();
-        Collections.shuffle(messages);
-
-        for (JmsInboundMessageDispatch envelope: messages) {
-            queue.enqueue(envelope);
-        }
-
-        assertFalse(queue.isEmpty());
-        List<JmsInboundMessageDispatch> result = queue.removeAll();
-        assertTrue(queue.isEmpty());
-
-        assertEquals(10, result.size());
-
-        for (byte i = 9; i >= 0; --i) {
-            JmsInboundMessageDispatch envelope = result.remove(0);
-            assertEquals(i, envelope.getMessage().getJMSPriority());
-        }
-    }
-
-    @Test
     public void testRemoveFirstOnEmptyQueue() {
         assertNull(queue.dequeueNoWait());
     }
@@ -241,47 +215,6 @@ public class PriorityMessageQueueTest {
         assertEquals(4, envelope.getMessage().getJMSPriority());
         envelope = queue.dequeueNoWait();
         assertEquals(1, envelope.getMessage().getJMSPriority());
-
-        assertTrue(queue.isEmpty());
-    }
-
-    @Test
-    public void testPeekOnEmptyQueue() {
-        assertNull(queue.peek());
-    }
-
-    @Test
-    public void testPeekFirst() throws JMSException {
-        List<JmsInboundMessageDispatch> messages = createFullRangePrioritySet();
-
-        for (JmsInboundMessageDispatch envelope: messages) {
-            queue.enqueue(envelope);
-        }
-
-        for (byte i = 9; i >= 0; --i) {
-            JmsInboundMessageDispatch first = queue.peek();
-            assertEquals(i, first.getMessage().getJMSPriority());
-            queue.dequeueNoWait();
-        }
-
-        assertTrue(queue.isEmpty());
-    }
-
-    @Test
-    public void testPeekFirstSparse() throws JMSException {
-        queue.enqueue(createEnvelope(9));
-        queue.enqueue(createEnvelope(4));
-        queue.enqueue(createEnvelope(1));
-
-        JmsInboundMessageDispatch envelope = queue.peek();
-        assertEquals(9, envelope.getMessage().getJMSPriority());
-        queue.dequeueNoWait();
-        envelope = queue.peek();
-        assertEquals(4, envelope.getMessage().getJMSPriority());
-        queue.dequeueNoWait();
-        envelope = queue.peek();
-        assertEquals(1, envelope.getMessage().getJMSPriority());
-        queue.dequeueNoWait();
 
         assertTrue(queue.isEmpty());
     }
@@ -325,6 +258,7 @@ public class PriorityMessageQueueTest {
     }
 
     private void doDequeueWaitsUntilMessageArrivesWhenLockNotifiedTestImpl(int timeout) throws InterruptedException {
+
         final JmsInboundMessageDispatch message = createEnvelope();
         Thread runner = new Thread(new Runnable() {
 
@@ -334,9 +268,13 @@ public class PriorityMessageQueueTest {
                     TimeUnit.MILLISECONDS.sleep(100);
                 } catch (InterruptedException e) {
                 }
-                synchronized (queue.getLock()) {
-                    queue.getLock().notify();
+
+                try {
+                    singalQueue(queue);
+                } catch (Exception e1) {
+                    return;
                 }
+
                 try {
                     TimeUnit.MILLISECONDS.sleep(100);
                 } catch (InterruptedException e) {
@@ -400,18 +338,16 @@ public class PriorityMessageQueueTest {
         queue.enqueue(message);
         queue.enqueue(createEnvelope(1));
 
-        JmsInboundMessageDispatch envelope = queue.peek();
+        JmsInboundMessageDispatch envelope = queue.dequeueNoWait();
         assertEquals(9, envelope.getMessage().getJMSPriority());
-        queue.dequeueNoWait();
-        envelope = queue.peek();
+
+        envelope = queue.dequeueNoWait();
         try {
             envelope.getMessage().getJMSPriority();
             fail("Unreadable priority message should sit at default level");
         } catch (MessageNotReadableException mnre) {}
-        queue.dequeueNoWait();
-        envelope = queue.peek();
+        envelope = queue.dequeueNoWait();
         assertEquals(1, envelope.getMessage().getJMSPriority());
-        queue.dequeueNoWait();
 
         assertTrue(queue.isEmpty());
     }
@@ -457,5 +393,30 @@ public class PriorityMessageQueueTest {
         JmsMessage message = new JmsMessage(facade);
 
         return message;
+    }
+
+    private void singalQueue(PriorityMessageQueue queue) throws Exception {
+        Field lock = null;
+        Class<?> queueType = queue.getClass();
+
+        while (queueType != null && lock == null) {
+            try {
+                lock = queueType.getDeclaredField("lock");
+            } catch (NoSuchFieldException error) {
+                queueType = queueType.getSuperclass();
+                if (Object.class.equals(queueType)) {
+                    queueType = null;
+                }
+            }
+        }
+
+        assertNotNull("MessageQueue implementation unknown", lock);
+        lock.setAccessible(true);
+
+        Object lockView = lock.get(queue);
+
+        synchronized (lockView) {
+            lockView.notify();
+        }
     }
 }

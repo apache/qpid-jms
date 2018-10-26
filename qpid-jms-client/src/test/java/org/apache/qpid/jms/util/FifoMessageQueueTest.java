@@ -23,10 +23,13 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.jms.JMSException;
 
@@ -41,7 +44,7 @@ import org.junit.Test;
  */
 public class FifoMessageQueueTest {
 
-    private MessageQueue queue;
+    private FifoMessageQueue queue;
     private final IdGenerator messageId = new IdGenerator();
     private long sequence;
 
@@ -54,11 +57,6 @@ public class FifoMessageQueueTest {
     @Test
     public void testToString() {
         assertNotNull(queue.toString());
-    }
-
-    @Test
-    public void testGetLock() {
-        assertNotNull(queue.getLock());
     }
 
     @Test
@@ -159,26 +157,6 @@ public class FifoMessageQueueTest {
     }
 
     @Test
-    public void testRemoveAll() throws JMSException {
-        List<JmsInboundMessageDispatch> messages = createFullRangePrioritySet();
-        Collections.shuffle(messages);
-
-        for (JmsInboundMessageDispatch envelope: messages) {
-            queue.enqueue(envelope);
-        }
-
-        assertFalse(queue.isEmpty());
-        List<JmsInboundMessageDispatch> result = queue.removeAll();
-        assertTrue(queue.isEmpty());
-
-        assertEquals(10, result.size());
-
-        for (byte i = 0; i < 10; ++i) {
-            assertEquals(result.get(i), messages.get(i));
-        }
-    }
-
-    @Test
     public void testRemoveFirstOnEmptyQueue() {
         assertNull(queue.dequeueNoWait());
     }
@@ -216,48 +194,6 @@ public class FifoMessageQueueTest {
         assertTrue(queue.isEmpty());
     }
 
-    @Test
-    public void testPeekOnEmptyQueue() {
-        assertNull(queue.peek());
-    }
-
-    @Test
-    public void testPeekFirst() throws JMSException {
-        List<JmsInboundMessageDispatch> messages = createFullRangePrioritySet();
-        Collections.shuffle(messages);
-
-        for (JmsInboundMessageDispatch envelope: messages) {
-            queue.enqueue(envelope);
-        }
-
-        for (byte i = 0; i < 10; ++i) {
-            JmsInboundMessageDispatch first = queue.peek();
-            assertEquals(first, messages.get(i));
-            queue.dequeueNoWait();
-        }
-
-        assertTrue(queue.isEmpty());
-    }
-
-    @Test
-    public void testPeekFirstSparse() throws JMSException {
-        queue.enqueue(createEnvelope(9));
-        queue.enqueue(createEnvelope(4));
-        queue.enqueue(createEnvelope(1));
-
-        JmsInboundMessageDispatch envelope = queue.peek();
-        assertEquals(9, envelope.getMessage().getJMSPriority());
-        queue.dequeueNoWait();
-        envelope = queue.peek();
-        assertEquals(4, envelope.getMessage().getJMSPriority());
-        queue.dequeueNoWait();
-        envelope = queue.peek();
-        assertEquals(1, envelope.getMessage().getJMSPriority());
-        queue.dequeueNoWait();
-
-        assertTrue(queue.isEmpty());
-    }
-
     @Test(timeout = 10000)
     public void testDequeueWaitsUntilMessageArrives() throws InterruptedException {
         final JmsInboundMessageDispatch message = createEnvelope();
@@ -278,16 +214,16 @@ public class FifoMessageQueueTest {
     }
 
     @Test(timeout = 10000)
-    public void testDequeueWaitsUntilMessageArrivesWhenLockNotified() throws InterruptedException {
+    public void testDequeueWaitsUntilMessageArrivesWhenLockNotified() throws Exception {
         doDequeueWaitsUntilMessageArrivesWhenLockNotifiedTestImpl(-1);
     }
 
     @Test(timeout = 10000)
-    public void testTimedDequeueWaitsUntilMessageArrivesWhenLockNotified() throws InterruptedException {
+    public void testTimedDequeueWaitsUntilMessageArrivesWhenLockNotified() throws Exception {
         doDequeueWaitsUntilMessageArrivesWhenLockNotifiedTestImpl(100000);
     }
 
-    private void doDequeueWaitsUntilMessageArrivesWhenLockNotifiedTestImpl(int timeout) throws InterruptedException {
+    private void doDequeueWaitsUntilMessageArrivesWhenLockNotifiedTestImpl(int timeout) throws Exception {
         final JmsInboundMessageDispatch message = createEnvelope();
         Thread runner = new Thread(new Runnable() {
 
@@ -297,9 +233,13 @@ public class FifoMessageQueueTest {
                     TimeUnit.MILLISECONDS.sleep(100);
                 } catch (InterruptedException e) {
                 }
-                synchronized (queue.getLock()) {
-                    queue.getLock().notify();
+
+                try {
+                    singalQueue(queue);
+                } catch (Exception e1) {
+                    return;
                 }
+
                 try {
                     TimeUnit.MILLISECONDS.sleep(100);
                 } catch (InterruptedException e) {
@@ -387,5 +327,37 @@ public class FifoMessageQueueTest {
         JmsMessage message = new JmsMessage(facade);
 
         return message;
+    }
+
+    private void singalQueue(FifoMessageQueue queue) throws Exception {
+        Field lock = null;
+        Field condition = null;
+        Class<?> queueType = queue.getClass();
+
+        while (queueType != null && lock == null) {
+            try {
+                lock = queueType.getDeclaredField("lock");
+                condition = queueType.getDeclaredField("condition");
+            } catch (NoSuchFieldException error) {
+                queueType = queueType.getSuperclass();
+                if (Object.class.equals(queueType)) {
+                    queueType = null;
+                }
+            }
+        }
+
+        assertNotNull("MessageQueue implementation unknown", lock);
+        lock.setAccessible(true);
+        condition.setAccessible(true);
+
+        ReentrantLock lockView = (ReentrantLock) lock.get(queue);
+        Condition conditionView = (Condition) condition.get(queue);
+
+        lockView.lock();
+        try {
+            conditionView.signal();
+        } finally {
+            lockView.unlock();
+        }
     }
 }

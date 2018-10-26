@@ -16,8 +16,6 @@
  */
 package org.apache.qpid.jms.util;
 
-import java.util.List;
-
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 
 /**
@@ -40,18 +38,6 @@ public interface MessageQueue {
      *        The in-bound Message envelope to enqueue.
      */
     void enqueueFirst(JmsInboundMessageDispatch envelope);
-
-    /**
-     * @return true if there are no messages in the queue.
-     */
-    boolean isEmpty();
-
-    /**
-     * Return but do not remove the first element in the Message queue.
-     *
-     * @return the first element in the Queue or null if empty.
-     */
-    JmsInboundMessageDispatch peek();
 
     /**
      * Used to get an enqueued message. The amount of time this method blocks is
@@ -85,14 +71,9 @@ public interface MessageQueue {
 
     /**
      * Stops the Message Queue.  Messages cannot be read from the Queue when it is in
-     * the stopped state and any waiters will be awoken.
+     * the stopped state and any waiters will be woken.
      */
     void stop();
-
-    /**
-     * @return true if the Queue is not in the stopped or closed state.
-     */
-    boolean isRunning();
 
     /**
      * Closes the Message Queue.  No messages can be added or removed from the Queue
@@ -101,9 +82,19 @@ public interface MessageQueue {
     void close();
 
     /**
+     * @return true if the Queue is not in the stopped or closed state.
+     */
+    boolean isRunning();
+
+    /**
      * @return true if the Queue has been closed.
      */
     boolean isClosed();
+
+    /**
+     * @return true if there are no messages in the queue.
+     */
+    boolean isEmpty();
 
     /**
      * Returns the number of Messages currently in the Queue.  This value is only
@@ -118,17 +109,5 @@ public interface MessageQueue {
      * Clears the Queue of any Messages.
      */
     void clear();
-
-    /**
-     * Removes and returns all Messages in the Queue.
-     *
-     * @return a List containing all Messages removed from the Queue.
-     */
-    List<JmsInboundMessageDispatch> removeAll();
-
-    /**
-     * @return the lock object used to protect against concurrent access.
-     */
-    Object getLock();
 
 }

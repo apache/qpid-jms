@@ -16,9 +16,8 @@
  */
 package org.apache.qpid.jms.util;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import javax.jms.JMSException;
 
@@ -29,7 +28,18 @@ import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
  * Queue based on their priority value, except where {@link #enqueueFirst} is
  * used.
  */
-public final class PriorityMessageQueue extends AbstractMessageQueue {
+public final class PriorityMessageQueue implements MessageQueue {
+
+    protected static final AtomicIntegerFieldUpdater<PriorityMessageQueue> STATE_FIELD_UPDATER =
+            AtomicIntegerFieldUpdater.newUpdater(PriorityMessageQueue.class, "state");
+
+    protected static final int CLOSED = 0;
+    protected static final int STOPPED = 1;
+    protected static final int RUNNING = 2;
+
+    private volatile int state = STOPPED;
+
+    protected final Object lock = new Object();
 
     // There are 10 priorities, values 0-9
     private static final Integer MAX_PRIORITY = 9;
@@ -47,43 +57,108 @@ public final class PriorityMessageQueue extends AbstractMessageQueue {
 
     @Override
     public void enqueue(JmsInboundMessageDispatch envelope) {
-        synchronized (getLock()) {
+        synchronized (lock) {
             getList(envelope).addLast(envelope);
             this.size++;
-            if (hasWaiters()) {
-                getLock().notify();
-            }
+            lock.notify();
         }
     }
 
     @Override
     public void enqueueFirst(JmsInboundMessageDispatch envelope) {
-        synchronized (getLock()) {
+        synchronized (lock) {
             getList(MAX_PRIORITY).addFirst(envelope);
             this.size++;
-            if (hasWaiters()) {
-                getLock().notify();
+            lock.notify();
+        }
+    }
+
+    @Override
+    public final JmsInboundMessageDispatch dequeue(long timeout) throws InterruptedException {
+        synchronized (lock) {
+            // Wait until the consumer is ready to deliver messages.
+            while (timeout != 0 && isRunning() && isEmpty()) {
+                if (timeout == -1) {
+                    lock.wait();
+                } else {
+                    long start = System.currentTimeMillis();
+                    lock.wait(timeout);
+                    timeout = Math.max(timeout + start - System.currentTimeMillis(), 0);
+                }
+            }
+
+            if (!isRunning() || isEmpty()) {
+                return null;
+            }
+
+            return removeFirst();
+        }
+    }
+
+    @Override
+    public final JmsInboundMessageDispatch dequeueNoWait() {
+        synchronized (lock) {
+            if (!isRunning() || isEmpty()) {
+                return null;
+            }
+            return removeFirst();
+        }
+    }
+
+    @Override
+    public final void start() {
+        if (STATE_FIELD_UPDATER.compareAndSet(this, STOPPED, RUNNING)) {
+            synchronized (lock) {
+                lock.notifyAll();
             }
         }
     }
 
     @Override
+    public final void stop() {
+        if (STATE_FIELD_UPDATER.compareAndSet(this, RUNNING, STOPPED)) {
+            synchronized (lock) {
+                lock.notifyAll();
+            }
+        }
+    }
+
+    @Override
+    public final void close() {
+        if (STATE_FIELD_UPDATER.getAndSet(this, CLOSED) > CLOSED) {
+            synchronized (lock) {
+                lock.notifyAll();
+            }
+        }
+    }
+
+    @Override
+    public final boolean isRunning() {
+        return state == RUNNING;
+    }
+
+    @Override
+    public final boolean isClosed() {
+        return state == CLOSED;
+    }
+
+    @Override
     public boolean isEmpty() {
-        synchronized (getLock()) {
+        synchronized (lock) {
             return size == 0;
         }
     }
 
     @Override
     public int size() {
-        synchronized (getLock()) {
+        synchronized (lock) {
             return size;
         }
     }
 
     @Override
     public void clear() {
-        synchronized (getLock()) {
+        synchronized (lock) {
             for (int i = 0; i <= MAX_PRIORITY; i++) {
                 lists[i].clear();
             }
@@ -91,41 +166,13 @@ public final class PriorityMessageQueue extends AbstractMessageQueue {
         }
     }
 
-    @Override
-    public List<JmsInboundMessageDispatch> removeAll() {
-        synchronized (getLock()) {
-            ArrayList<JmsInboundMessageDispatch> result = new ArrayList<JmsInboundMessageDispatch>(size());
-            for (int i = MAX_PRIORITY; i >= 0; i--) {
-                List<JmsInboundMessageDispatch> list = lists[i];
-                result.addAll(list);
-                size -= list.size();
-                list.clear();
-            }
-            return result;
-        }
-    }
-
-    @Override
-    protected JmsInboundMessageDispatch removeFirst() {
+    private JmsInboundMessageDispatch removeFirst() {
         if (this.size > 0) {
             for (int i = MAX_PRIORITY; i >= 0; i--) {
                 LinkedList<JmsInboundMessageDispatch> list = lists[i];
                 if (!list.isEmpty()) {
                     this.size--;
                     return list.removeFirst();
-                }
-            }
-        }
-        return null;
-    }
-
-    @Override
-    protected JmsInboundMessageDispatch peekFirst() {
-        if (this.size > 0) {
-            for (int i = MAX_PRIORITY; i >= 0; i--) {
-                LinkedList<JmsInboundMessageDispatch> list = lists[i];
-                if (!list.isEmpty()) {
-                    return list.peekFirst();
                 }
             }
         }

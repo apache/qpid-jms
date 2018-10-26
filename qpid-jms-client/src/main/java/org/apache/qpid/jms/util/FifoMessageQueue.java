@@ -17,16 +17,30 @@
 package org.apache.qpid.jms.util;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
-import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.qpid.jms.message.JmsInboundMessageDispatch;
 
 /**
  * Simple first in / first out Message Queue.
  */
-public final class FifoMessageQueue extends AbstractMessageQueue {
+public final class FifoMessageQueue implements MessageQueue {
+
+    protected static final AtomicIntegerFieldUpdater<FifoMessageQueue> STATE_FIELD_UPDATER =
+            AtomicIntegerFieldUpdater.newUpdater(FifoMessageQueue.class, "state");
+
+    protected static final int CLOSED = 0;
+    protected static final int STOPPED = 1;
+    protected static final int RUNNING = 2;
+
+    private volatile int state = STOPPED;
+
+    protected final ReentrantLock lock = new ReentrantLock();
+    protected final Condition condition = lock.newCondition();
 
     protected final Deque<JmsInboundMessageDispatch> queue;
 
@@ -36,71 +50,149 @@ public final class FifoMessageQueue extends AbstractMessageQueue {
 
     @Override
     public void enqueueFirst(JmsInboundMessageDispatch envelope) {
-        synchronized (getLock()) {
+        lock.lock();
+        try {
             queue.addFirst(envelope);
-            if (hasWaiters()) {
-                getLock().notify();
-            }
+            condition.signal();
+        } finally {
+            lock.unlock();
         }
     }
 
     @Override
     public void enqueue(JmsInboundMessageDispatch envelope) {
-        synchronized (getLock()) {
+        lock.lock();
+        try {
             queue.addLast(envelope);
-            if (hasWaiters()) {
-                getLock().notify();
+            condition.signal();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+
+    @Override
+    public JmsInboundMessageDispatch dequeue(long timeout) throws InterruptedException {
+        lock.lock();
+        try {
+            // Wait until the consumer is ready to deliver messages.
+            while (timeout != 0 && isRunning() && queue.isEmpty()) {
+                if (timeout == -1) {
+                    condition.await();
+                } else {
+                    long start = System.currentTimeMillis();
+                    condition.await(timeout, TimeUnit.MILLISECONDS);
+                    timeout = Math.max(timeout + start - System.currentTimeMillis(), 0);
+                }
+            }
+
+            if (!isRunning()) {
+                return null;
+            }
+
+            return queue.pollFirst();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public final JmsInboundMessageDispatch dequeueNoWait() {
+        lock.lock();
+        try {
+            if (!isRunning()) {
+                return null;
+            }
+
+            return queue.pollFirst();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public final void start() {
+        if (STATE_FIELD_UPDATER.compareAndSet(this, STOPPED, RUNNING)) {
+            lock.lock();
+            try {
+                condition.signalAll();
+            } finally {
+                lock.unlock();
             }
         }
     }
 
     @Override
+    public final void stop() {
+        if (STATE_FIELD_UPDATER.compareAndSet(this, RUNNING, STOPPED)) {
+            lock.lock();
+            try {
+                condition.signalAll();
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
+    @Override
+    public final void close() {
+        if (STATE_FIELD_UPDATER.getAndSet(this, CLOSED) > CLOSED) {
+            lock.lock();
+            try {
+                condition.signalAll();
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
+    @Override
+    public final boolean isRunning() {
+        return state == RUNNING;
+    }
+
+    @Override
+    public final boolean isClosed() {
+        return state == CLOSED;
+    }
+
+    @Override
     public boolean isEmpty() {
-        synchronized (getLock()) {
+        lock.lock();
+        try {
             return queue.isEmpty();
+        } finally {
+            lock.unlock();
         }
     }
 
     @Override
     public int size() {
-        synchronized (getLock()) {
+        lock.lock();
+        try {
             return queue.size();
+        } finally {
+            lock.unlock();
         }
     }
 
     @Override
     public void clear() {
-        synchronized (getLock()) {
+        lock.lock();
+        try {
             queue.clear();
-        }
-    }
-
-    @Override
-    public List<JmsInboundMessageDispatch> removeAll() {
-        synchronized (getLock()) {
-            ArrayList<JmsInboundMessageDispatch> rc = new ArrayList<JmsInboundMessageDispatch>(queue.size());
-            for (JmsInboundMessageDispatch entry : queue) {
-                rc.add(entry);
-            }
-            queue.clear();
-            return rc;
+        } finally {
+            lock.unlock();
         }
     }
 
     @Override
     public String toString() {
-        synchronized (getLock()) {
+        lock.lock();
+        try {
             return queue.toString();
+        } finally {
+            lock.unlock();
         }
-    }
-
-    @Override
-    protected JmsInboundMessageDispatch removeFirst() {
-        return queue.removeFirst();
-    }
-
-    @Override
-    protected JmsInboundMessageDispatch peekFirst() {
-        return queue.peekFirst();
     }
 }

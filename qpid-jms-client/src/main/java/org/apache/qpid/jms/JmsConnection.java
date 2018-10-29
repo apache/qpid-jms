@@ -18,6 +18,7 @@ package org.apache.qpid.jms;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -86,6 +87,7 @@ import org.apache.qpid.jms.util.MessageQueue;
 import org.apache.qpid.jms.util.PriorityMessageQueue;
 import org.apache.qpid.jms.util.QpidJMSThreadFactory;
 import org.apache.qpid.jms.util.ThreadPoolUtils;
+import org.apache.qpid.jms.util.URISupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1322,7 +1324,12 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
 
     @Override
     public void onConnectionEstablished(final URI remoteURI) {
-        LOG.info("Connection {} connected to remote Broker: {}", connectionInfo.getId(), remoteURI);
+        try {
+            LOG.info("Connection {} connected to remote Broker: {}", connectionInfo.getId(), URISupport.removeQuery(remoteURI));
+        } catch (URISyntaxException e) {
+            LOG.info("Connection {} connected to remote Broker: {}", connectionInfo.getId());
+        }
+
         setMessageFactory(provider.getMessageFactory());
         connectionInfo.setConnectedURI(provider.getRemoteURI());
 

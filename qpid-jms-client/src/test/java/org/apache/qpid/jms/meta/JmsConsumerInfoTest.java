@@ -58,12 +58,12 @@ public class JmsConsumerInfoTest {
 
     @Test(expected=IllegalArgumentException.class)
     public void testExceptionWhenCreatedWithNullConnectionId() {
-        new JmsConsumerInfo(null, null, null);
+        new JmsConsumerInfo(null, null);
     }
 
     @Test
     public void testCreateFromConsumerId() {
-        JmsConsumerInfo info = new JmsConsumerInfo(firstId, null, null);
+        JmsConsumerInfo info = new JmsConsumerInfo(firstId, null);
         assertSame(firstId, info.getId());
         assertSame(firstId.getParentId(), info.getParentId());
         assertNotNull(info.toString());
@@ -71,7 +71,7 @@ public class JmsConsumerInfoTest {
 
     @Test
     public void testCopy() {
-        JmsConsumerInfo info = new JmsConsumerInfo(firstId, null, null);
+        JmsConsumerInfo info = new JmsConsumerInfo(firstId, null);
 
         info.setAcknowledgementMode(1);
         info.setBrowser(true);
@@ -108,7 +108,7 @@ public class JmsConsumerInfoTest {
 
     @Test
     public void testIsDurable() {
-        JmsConsumerInfo info = new JmsConsumerInfo(firstId, null, null);
+        JmsConsumerInfo info = new JmsConsumerInfo(firstId, null);
         assertFalse(info.isDurable());
         info.setDurable(true);
         assertTrue(info.isDurable());
@@ -116,7 +116,7 @@ public class JmsConsumerInfoTest {
 
     @Test
     public void testIsExplicitClientID() {
-        JmsConsumerInfo info = new JmsConsumerInfo(firstId, null, null);
+        JmsConsumerInfo info = new JmsConsumerInfo(firstId, null);
         assertFalse(info.isExplicitClientID());
         info.setExplicitClientID(true);
         assertTrue(info.isExplicitClientID());
@@ -124,7 +124,7 @@ public class JmsConsumerInfoTest {
 
     @Test
     public void testIsShared() {
-        JmsConsumerInfo info = new JmsConsumerInfo(firstId, null, null);
+        JmsConsumerInfo info = new JmsConsumerInfo(firstId, null);
         assertFalse(info.isShared());
         info.setShared(true);
         assertTrue(info.isShared());
@@ -134,7 +134,7 @@ public class JmsConsumerInfoTest {
     public void testGetSubscriptionName() {
         String subName = "name";
 
-        JmsConsumerInfo info = new JmsConsumerInfo(firstId, null, null);
+        JmsConsumerInfo info = new JmsConsumerInfo(firstId, null);
         assertNull(info.getSubscriptionName());
         info.setSubscriptionName(subName);
         assertEquals(subName, info.getSubscriptionName());
@@ -142,8 +142,8 @@ public class JmsConsumerInfoTest {
 
     @Test
     public void testCompareTo() {
-        JmsConsumerInfo first = new JmsConsumerInfo(firstId, null, null);
-        JmsConsumerInfo second = new JmsConsumerInfo(secondId, null, null);
+        JmsConsumerInfo first = new JmsConsumerInfo(firstId, null);
+        JmsConsumerInfo second = new JmsConsumerInfo(secondId, null);
 
         assertEquals(-1, first.compareTo(second));
         assertEquals(0, first.compareTo(first));
@@ -152,8 +152,8 @@ public class JmsConsumerInfoTest {
 
     @Test
     public void testHashCode() {
-        JmsConsumerInfo first = new JmsConsumerInfo(firstId, null, null);
-        JmsConsumerInfo second = new JmsConsumerInfo(secondId, null, null);
+        JmsConsumerInfo first = new JmsConsumerInfo(firstId, null);
+        JmsConsumerInfo second = new JmsConsumerInfo(secondId, null);
 
         assertEquals(first.hashCode(), first.hashCode());
         assertEquals(second.hashCode(), second.hashCode());
@@ -164,8 +164,8 @@ public class JmsConsumerInfoTest {
     @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testEqualsCode() {
-        JmsConsumerInfo first = new JmsConsumerInfo(firstId, null, null);
-        JmsConsumerInfo second = new JmsConsumerInfo(secondId, null, null);
+        JmsConsumerInfo first = new JmsConsumerInfo(firstId, null);
+        JmsConsumerInfo second = new JmsConsumerInfo(secondId, null);
 
         assertEquals(first, first);
         assertEquals(second, second);
@@ -179,7 +179,7 @@ public class JmsConsumerInfoTest {
 
     @Test
     public void testVisit() throws Exception {
-        final JmsConsumerInfo first = new JmsConsumerInfo(firstId, null, null);
+        final JmsConsumerInfo first = new JmsConsumerInfo(firstId, null);
 
         final AtomicBoolean visited = new AtomicBoolean();
 
@@ -197,7 +197,7 @@ public class JmsConsumerInfoTest {
 
     @Test
     public void testGetRedeliveryPolicyDefaults() {
-        final JmsConsumerInfo info = new JmsConsumerInfo(firstId, null, null);
+        final JmsConsumerInfo info = new JmsConsumerInfo(firstId, null);
 
         assertNotNull(info.getRedeliveryPolicy());
         info.setRedeliveryPolicy(null);
@@ -207,7 +207,7 @@ public class JmsConsumerInfoTest {
 
     @Test
     public void testIsListener() {
-        JmsConsumerInfo info = new JmsConsumerInfo(firstId, null, null);
+        JmsConsumerInfo info = new JmsConsumerInfo(firstId, null);
         assertFalse(info.isListener());
         info.setListener(true);
         assertTrue(info.isListener());

@@ -45,7 +45,7 @@ public class AmqpSubscriptionTrackerTest {
         JmsConsumerId consumerId = new JmsConsumerId("ID:MOCK:1", 1, consumerIdCounter.incrementAndGet());
         JmsTopic topic = new JmsTopic(topicName);
 
-        JmsConsumerInfo consumerInfo = new JmsConsumerInfo(consumerId, null, null);
+        JmsConsumerInfo consumerInfo = new JmsConsumerInfo(consumerId, null);
 
         consumerInfo.setSubscriptionName(subscriptionName);
         consumerInfo.setDestination(topic);

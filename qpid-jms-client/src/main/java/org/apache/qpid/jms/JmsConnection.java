@@ -471,7 +471,7 @@ public class JmsConnection implements AutoCloseable, Connection, TopicConnection
             messageQueue = new FifoMessageQueue(configuredPrefetch);
         }
 
-        JmsConsumerInfo consumerInfo = new JmsConsumerInfo(getNextConnectionConsumerId(), messageQueue, null);
+        JmsConsumerInfo consumerInfo = new JmsConsumerInfo(getNextConnectionConsumerId(), null);
         consumerInfo.setExplicitClientID(isExplicitClientID());
         consumerInfo.setSelector(messageSelector);
         consumerInfo.setDurable(durable);

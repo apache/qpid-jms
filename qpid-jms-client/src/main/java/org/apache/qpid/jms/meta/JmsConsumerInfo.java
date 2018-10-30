@@ -22,7 +22,6 @@ import org.apache.qpid.jms.policy.JmsDefaultDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsDefaultRedeliveryPolicy;
 import org.apache.qpid.jms.policy.JmsDeserializationPolicy;
 import org.apache.qpid.jms.policy.JmsRedeliveryPolicy;
-import org.apache.qpid.jms.util.MessageQueue;
 
 public final class JmsConsumerInfo extends JmsAbstractResource implements Comparable<JmsConsumerInfo> {
 
@@ -42,7 +41,6 @@ public final class JmsConsumerInfo extends JmsAbstractResource implements Compar
     private boolean connectionConsumer;
     private int maxMessages;
     private volatile boolean listener;
-    private final MessageQueue messageQueue;
 
     private JmsRedeliveryPolicy redeliveryPolicy;
     private JmsDeserializationPolicy deserializationPolicy;
@@ -52,17 +50,16 @@ public final class JmsConsumerInfo extends JmsAbstractResource implements Compar
 
     private final JmsMessageDispatcher dispatcher;
 
-    public JmsConsumerInfo(JmsConsumerId consumerId, MessageQueue messageQueue, JmsMessageDispatcher dispatcher) {
+    public JmsConsumerInfo(JmsConsumerId consumerId, JmsMessageDispatcher dispatcher) {
         if (consumerId == null) {
             throw new IllegalArgumentException("Consumer ID cannot be null");
         }
         this.consumerId = consumerId;
-        this.messageQueue = messageQueue;
         this.dispatcher = dispatcher;
     }
 
     public JmsConsumerInfo copy() {
-        JmsConsumerInfo info = new JmsConsumerInfo(consumerId, messageQueue, dispatcher);
+        JmsConsumerInfo info = new JmsConsumerInfo(consumerId, dispatcher);
         copy(info);
         return info;
     }
@@ -84,10 +81,6 @@ public final class JmsConsumerInfo extends JmsAbstractResource implements Compar
         info.listener = listener;
         info.connectionConsumer = connectionConsumer;
         info.maxMessages = maxMessages;
-    }
-
-    public int getPrefetchedMessageCount() {
-        return messageQueue.size();
     }
 
     @Override

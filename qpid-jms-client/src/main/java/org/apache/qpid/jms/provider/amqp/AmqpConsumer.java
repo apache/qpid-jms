@@ -58,7 +58,8 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
     protected AsyncResult stopRequest;
     protected AsyncResult pullRequest;
     protected long incomingSequence;
-    protected long deliveredCount;
+    protected int deliveredCount;
+    protected int dispatchedCount;
     protected boolean deferredClose;
 
     public AmqpConsumer(AmqpSession session, JmsConsumerInfo info, Receiver receiver) {
@@ -206,28 +207,29 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
             JmsInboundMessageDispatch envelope = (JmsInboundMessageDispatch) current.getContext();
             if (envelope.isDelivered()) {
+                final DeliveryState disposition;
+
                 switch (ackType) {
                     case ACCEPTED:
-                        current.disposition(Accepted.getInstance());
+                        disposition = Accepted.getInstance();
                         break;
                     case RELEASED:
-                        current.disposition(Released.getInstance());
+                        disposition = Released.getInstance();
                         break;
                     case REJECTED:
-                        current.disposition(REJECTED);
+                        disposition = REJECTED;
                         break;
                     case MODIFIED_FAILED:
-                        current.disposition(MODIFIED_FAILED);
+                        disposition = MODIFIED_FAILED;
                         break;
                     case MODIFIED_FAILED_UNDELIVERABLE:
-                        current.disposition(MODIFIED_FAILED_UNDELIVERABLE);
+                        disposition = MODIFIED_FAILED_UNDELIVERABLE;
                         break;
                     default:
                         throw new IllegalArgumentException("Invalid acknowledgement type specified: " + ackType);
                 }
 
-                current.settle();
-                deliveredCount--;
+                handleDisposition(envelope, current, disposition);
             }
         }
 
@@ -252,60 +254,78 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             return;
         }
 
-        if (ackType.equals(ACK_TYPE.DELIVERED)) {
-            LOG.debug("Delivered Ack of message: {}", envelope);
-            deliveredCount++;
-            envelope.setDelivered(true);
-            delivery.setDefaultDeliveryState(MODIFIED_FAILED);
-            sendFlowIfNeeded();
-            return;
-        } else if (ackType.equals(ACK_TYPE.ACCEPTED)) {
-            // A Consumer may not always send a DELIVERED ack so we need to
-            // check to ensure we don't add too much credit to the link.
-            if (!envelope.isDelivered()) {
-                sendFlowIfNeeded();
-            }
-            LOG.debug("Accepted Ack of message: {}", envelope);
-            if (!delivery.remotelySettled()) {
-                if (session.isTransacted() && !getResourceInfo().isBrowser()) {
+        switch (ackType) {
+            case DELIVERED:
+                handleDelivered(envelope, delivery);
+                break;
+            case ACCEPTED:
+                handleAccepted(envelope, delivery);
+                break;
+            case REJECTED:
+                handleDisposition(envelope, delivery, REJECTED);
+                break;
+            case RELEASED:
+                handleDisposition(envelope, delivery, Released.getInstance());
+                break;
+            case MODIFIED_FAILED:
+                handleDisposition(envelope, delivery, MODIFIED_FAILED);
+                break;
+            case MODIFIED_FAILED_UNDELIVERABLE:
+                handleDisposition(envelope, delivery, MODIFIED_FAILED_UNDELIVERABLE);
+                break;
+            default:
+                LOG.warn("Unsupported Ack Type for message: {}", envelope);
+                throw new IllegalArgumentException("Unknown Acknowledgement type");
+        }
 
-                    if (session.isTransactionFailed()) {
-                        LOG.trace("Skipping ack of message {} in failed transaction.", envelope);
-                        return;
-                    }
+        sendFlowIfNeeded();
+        tryCompleteDeferredClose();
+    }
 
-                    Binary txnId = session.getTransactionContext().getAmqpTransactionId();
-                    if (txnId != null) {
-                        delivery.disposition(session.getTransactionContext().getTxnAcceptState());
-                        delivery.settle();
-                        session.getTransactionContext().registerTxConsumer(this);
-                    }
-                } else {
-                    delivery.disposition(Accepted.getInstance());
+    private void handleDelivered(JmsInboundMessageDispatch envelope, Delivery delivery) {
+        LOG.debug("Delivered Ack of message: {}", envelope);
+        deliveredCount++;
+        envelope.setDelivered(true);
+        delivery.setDefaultDeliveryState(MODIFIED_FAILED);
+    }
+
+    private void handleAccepted(JmsInboundMessageDispatch envelope, Delivery delivery) {
+        LOG.debug("Accepted Ack of message: {}", envelope);
+        if (!delivery.remotelySettled()) {
+            if (session.isTransacted() && !getResourceInfo().isBrowser()) {
+
+                if (session.isTransactionFailed()) {
+                    LOG.trace("Skipping ack of message {} in failed transaction.", envelope);
+                    return;
+                }
+
+                Binary txnId = session.getTransactionContext().getAmqpTransactionId();
+                if (txnId != null) {
+                    delivery.disposition(session.getTransactionContext().getTxnAcceptState());
                     delivery.settle();
+                    session.getTransactionContext().registerTxConsumer(this);
                 }
             } else {
+                delivery.disposition(Accepted.getInstance());
                 delivery.settle();
             }
-        } else if (ackType.equals(ACK_TYPE.MODIFIED_FAILED)) {
-            settleDelivery(delivery, MODIFIED_FAILED);
-        } else if (ackType.equals(ACK_TYPE.MODIFIED_FAILED_UNDELIVERABLE)) {
-            settleDelivery(delivery, MODIFIED_FAILED_UNDELIVERABLE);
-        } else if (ackType.equals(ACK_TYPE.REJECTED)) {
-            settleDelivery(delivery, REJECTED);
-        } else if (ackType.equals(ACK_TYPE.RELEASED)) {
-            delivery.disposition(Released.getInstance());
-            delivery.settle();
         } else {
-            LOG.warn("Unsupported Ack Type for message: {}", envelope);
-            return;
+            delivery.settle();
         }
 
         if (envelope.isDelivered()) {
             deliveredCount--;
         }
+        dispatchedCount--;
+    }
 
-        tryCompleteDeferredClose();
+    private void handleDisposition(JmsInboundMessageDispatch envelope, Delivery delivery, DeliveryState outcome) {
+        delivery.disposition(outcome);
+        delivery.settle();
+        if (envelope.isDelivered()) {
+            deliveredCount--;
+        }
+        dispatchedCount--;
     }
 
     /**
@@ -325,11 +345,10 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
 
         int currentCredit = getEndpoint().getCredit();
         if (currentCredit <= prefetchSize * 0.5) {
-            int prefetchedMessageCount = getResourceInfo().getPrefetchedMessageCount();
+            int potentialPrefetch = currentCredit + (dispatchedCount - deliveredCount);
 
-            int potentialPrefetch = currentCredit + prefetchedMessageCount;
             if (potentialPrefetch <= prefetchSize * 0.7) {
-                int additionalCredit = prefetchSize - currentCredit - prefetchedMessageCount;
+                int additionalCredit = prefetchSize - potentialPrefetch;
 
                 LOG.trace("Consumer {} granting additional credit: {}", getConsumerId(), additionalCredit);
                 getEndpoint().flow(additionalCredit);
@@ -376,6 +395,12 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
                 redispatchList.add(envelope);
             }
         }
+
+        // Previously delivered messages should be tagged as dispatched messages again so we
+        // can properly compute the next credit refresh, so subtract them from both the delivered
+        // and dispatched counts and then dispatch them again as a new message.
+        deliveredCount -= redispatchList.size();
+        dispatchedCount -= redispatchList.size();
 
         ListIterator<JmsInboundMessageDispatch> reverseIterator = redispatchList.listIterator(redispatchList.size());
         while (reverseIterator.hasPrevious()) {
@@ -481,7 +506,11 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             //        In the future once the JMS mapping is complete we should be
             //        able to convert everything to some message even if its just
             //        a bytes messages as a fall back.
-            settleDelivery(incoming, MODIFIED_FAILED_UNDELIVERABLE);
+            incoming.disposition(MODIFIED_FAILED_UNDELIVERABLE);
+            incoming.settle();
+            // TODO: this flows credit, which we might not want, e.g if
+            // a drain was issued to stop the link.
+            sendFlowIfNeeded();
             return false;
         }
 
@@ -552,19 +581,12 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
         return "AmqpConsumer { " + getResourceInfo().getId() + " }";
     }
 
-    protected void settleDelivery(Delivery incoming, DeliveryState state) {
-        incoming.disposition(state);
-        incoming.settle();
-        // TODO: this flows credit, which we might not want, e.g if
-        // a drain was issued to stop the link.
-        sendFlowIfNeeded();
-    }
-
     protected void deliver(JmsInboundMessageDispatch envelope) throws Exception {
         if (!deferredClose) {
             ProviderListener listener = session.getProvider().getProviderListener();
             if (listener != null) {
                 LOG.debug("Dispatching received message: {}", envelope);
+                dispatchedCount++;
                 listener.onInboundMessage(envelope);
             } else {
                 LOG.error("Provider listener is not set, message will be dropped: {}", envelope);
@@ -641,15 +663,13 @@ public class AmqpConsumer extends AmqpAbstractResource<JmsConsumerInfo, Receiver
             Delivery current = delivery;
             delivery = delivery.next();
 
-            if (!(current.getContext() instanceof JmsInboundMessageDispatch)) {
+            if (current.getContext() instanceof JmsInboundMessageDispatch) {
+                JmsInboundMessageDispatch envelope = (JmsInboundMessageDispatch) current.getContext();
+                if (!envelope.isDelivered()) {
+                    handleDisposition(envelope, current, Released.getInstance());
+                }
+            } else {
                 LOG.debug("{} Found incomplete delivery with no context during release processing", AmqpConsumer.this);
-                continue;
-            }
-
-            JmsInboundMessageDispatch envelope = (JmsInboundMessageDispatch) current.getContext();
-            if (!envelope.isDelivered()) {
-                current.disposition(Released.getInstance());
-                current.settle();
             }
         }
     }

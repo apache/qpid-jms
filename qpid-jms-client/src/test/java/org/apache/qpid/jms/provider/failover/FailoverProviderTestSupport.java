@@ -78,7 +78,7 @@ public class FailoverProviderTestSupport extends QpidJmsTestCase {
 
     protected JmsConsumerInfo createConsumerInfo(JmsSessionInfo session) {
         JmsConsumerId id = new JmsConsumerId(session.getId(), nextConsumerId.incrementAndGet());
-        JmsConsumerInfo consumer = new JmsConsumerInfo(id, null, null);
+        JmsConsumerInfo consumer = new JmsConsumerInfo(id, null);
         return consumer;
     }
 }

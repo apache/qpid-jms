@@ -48,7 +48,7 @@ public class JmsDefaultResourceVisitorTest {
         JmsDefaultResourceVisitor visitor = new JmsDefaultResourceVisitor();
         visitor.processConnectionInfo(new JmsConnectionInfo(connectionId));
         visitor.processSessionInfo(new JmsSessionInfo(sessionId));
-        visitor.processConsumerInfo(new JmsConsumerInfo(consumerId, null, null));
+        visitor.processConsumerInfo(new JmsConsumerInfo(consumerId, null));
         visitor.processProducerInfo(new JmsProducerInfo(producerId));
         visitor.processDestination(new JmsTemporaryTopic("Test"));
         visitor.processTransactionInfo(new JmsTransactionInfo(sessionId, transactionId));

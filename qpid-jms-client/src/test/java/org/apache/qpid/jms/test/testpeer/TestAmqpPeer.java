@@ -2163,10 +2163,10 @@ public class TestAmqpPeer implements AutoCloseable
         expectTransfer(null, nullValue(), false, true, new Accepted(), true, frameSize, 0);
     }
 
-    public void expectTransfer(Matcher<Binary> expectedPayloadMatcher, Matcher<?> stateMatcher, boolean settled,
+    public void expectTransfer(Matcher<Binary> expectedPayloadMatcher, Matcher<?> stateMatcher,
                                ListDescribedType responseState, boolean responseSettled)
     {
-        expectTransfer(expectedPayloadMatcher, stateMatcher, settled, true, responseState, responseSettled);
+        expectTransfer(expectedPayloadMatcher, stateMatcher, false, true, responseState, responseSettled);
     }
 
     public void expectTransfer(Matcher<Binary> expectedPayloadMatcher, Matcher<?> stateMatcher, boolean settled,
@@ -2281,7 +2281,7 @@ public class TestAmqpPeer implements AutoCloseable
         TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
         declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
 
-        expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+        expectTransfer(declareMatcher, nullValue(), new Declared().setTxnId(txnId), true);
     }
 
     public void expectDeclareButDoNotRespond()
@@ -2297,7 +2297,7 @@ public class TestAmqpPeer implements AutoCloseable
         TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
         declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
 
-        expectTransfer(declareMatcher, nullValue(), false, new Rejected(), true);
+        expectTransfer(declareMatcher, nullValue(), new Rejected(), true);
     }
 
     public void expectDischarge(Binary txnId, boolean dischargeState) {
@@ -2314,7 +2314,7 @@ public class TestAmqpPeer implements AutoCloseable
         TransferPayloadCompositeMatcher dischargeMatcher = new TransferPayloadCompositeMatcher();
         dischargeMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(discharge));
 
-        expectTransfer(dischargeMatcher, nullValue(), false, responseState, true);
+        expectTransfer(dischargeMatcher, nullValue(), responseState, true);
     }
 
     public void expectDischargeButDoNotRespond(Binary txnId, boolean dischargeState) {

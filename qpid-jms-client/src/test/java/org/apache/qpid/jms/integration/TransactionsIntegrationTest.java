@@ -155,7 +155,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             txState.setTxnId(txnId1);
             txState.setOutcome(new Accepted());
 
-            testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+            testPeer.expectTransfer(messageMatcher, stateMatcher, txState, true);
 
             producer.send(session.createMessage());
 
@@ -219,7 +219,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             txState.setTxnId(txnId1);
             txState.setOutcome(new Accepted());
 
-            testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+            testPeer.expectTransfer(messageMatcher, stateMatcher, txState, true);
 
             producer.send(session.createMessage());
 
@@ -250,7 +250,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             txState.setTxnId(txnId2);
             txState.setOutcome(new Accepted());
 
-            testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+            testPeer.expectTransfer(messageMatcher, stateMatcher, txState, true);
             testPeer.expectDischarge(txnId2, true);
 
             producer.send(session.createMessage());
@@ -299,7 +299,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             txState.setTxnId(txnId1);
             txState.setOutcome(new Accepted());
 
-            testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+            testPeer.expectTransfer(messageMatcher, stateMatcher, txState, true);
 
             producer.send(session.createMessage());
 
@@ -329,7 +329,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             txState.setTxnId(txnId2);
             txState.setOutcome(new Accepted());
 
-            testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+            testPeer.expectTransfer(messageMatcher, stateMatcher, txState, true);
             testPeer.expectDischarge(txnId2, true);
 
             producer.send(session.createMessage());
@@ -611,7 +611,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             txState.setTxnId(txnId);
             txState.setOutcome(new Accepted());
 
-            testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+            testPeer.expectTransfer(messageMatcher, stateMatcher, txState, true);
             testPeer.expectDischarge(txnId, true);
 
             producer.send(session.createMessage());
@@ -663,7 +663,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
                 txState.setTxnId(txnId);
                 txState.setOutcome(new Accepted());
 
-                testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+                testPeer.expectTransfer(messageMatcher, stateMatcher, txState, true);
 
                 message.setIntProperty("sequence", i);
 
@@ -832,7 +832,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             txState.setTxnId(txnId);
             txState.setOutcome(new Accepted());
 
-            testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+            testPeer.expectTransfer(messageMatcher, stateMatcher, txState, true);
 
             producer.send(session.createMessage());
 
@@ -899,7 +899,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             txState.setTxnId(txnId);
             txState.setOutcome(new Accepted());
 
-            testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+            testPeer.expectTransfer(messageMatcher, stateMatcher, txState, true);
 
             producer.send(session.createMessage());
 
@@ -1566,7 +1566,7 @@ public class TransactionsIntegrationTest extends QpidJmsTestCase {
             Binary txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
             TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
             declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            testPeer.expectTransfer(declareMatcher, nullValue(), new Declared().setTxnId(txnId), true);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");

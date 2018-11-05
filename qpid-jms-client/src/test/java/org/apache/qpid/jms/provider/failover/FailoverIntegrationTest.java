@@ -2146,7 +2146,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             MessageProducer producer = session.createProducer(queue);
 
             Message message = session.createTextMessage("content");
-            testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), false, new Rejected(), true);
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), new Rejected(), true);
 
             assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
 
@@ -2210,7 +2210,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             }
 
             // Accept one which shouldn't complete until after the others have failed.
-            testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), false, new Accepted(), true);
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), new Accepted(), true);
             testPeer.dropAfterLastHandler();
 
             TestJmsCompletionListener listener = new TestJmsCompletionListener(MSG_COUNT + 1);
@@ -3371,7 +3371,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             // reply with a Declared disposition state containing the txnId.
             originalPeer.expectDeclare(txnId);
             originalPeer.expectSenderAttach();
-            originalPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+            originalPeer.expectTransfer(messageMatcher, stateMatcher, txState, true);
             originalPeer.dropAfterLastHandler(10);
 
             // --- Post Failover Expectations of sender --- //

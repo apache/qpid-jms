@@ -1418,7 +1418,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             MessageProducer producer = session.createProducer(queue);
             Message message = session.createTextMessage("content");
 
-            testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), false, responseState, true);
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), responseState, true);
             testPeer.expectClose();
 
             assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
@@ -1503,7 +1503,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             Message message = session.createTextMessage("content");
 
-            testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), false, responseState, true);
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), responseState, true);
 
             assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
 
@@ -2333,7 +2333,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
 
             Message message = session.createTextMessage("content");
 
-            testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), false, responseState, true);
+            testPeer.expectTransfer(new TransferPayloadCompositeMatcher(), nullValue(), responseState, true);
 
             assertNull("Should not yet have a JMSDestination", message.getJMSDestination());
 
@@ -2504,7 +2504,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             txState.setTxnId(txnId);
             txState.setOutcome(new Accepted());
 
-            testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+            testPeer.expectTransfer(messageMatcher, stateMatcher, txState, true);
             testPeer.expectDischarge(txnId, true);
             testPeer.expectClose();
 
@@ -2575,7 +2575,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             txState.setTxnId(txnId);
             txState.setOutcome(new Accepted());
 
-            testPeer.expectTransfer(messageMatcher, stateMatcher, false, txState, true);
+            testPeer.expectTransfer(messageMatcher, stateMatcher, txState, true);
             testPeer.expectDischarge(txnId, true);
             testPeer.expectClose();
 
@@ -2646,7 +2646,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
 
             testPeer.expectSenderAttach(targetMatcher, false, false);
-            testPeer.expectTransfer(messageMatcher, nullValue(), false, new Rejected(), true);
+            testPeer.expectTransfer(messageMatcher, nullValue(), new Rejected(), true);
             testPeer.expectDetach(true, true, true);
 
             Message message = session.createMessage();
@@ -2708,7 +2708,7 @@ public class ProducerIntegrationTest extends QpidJmsTestCase {
             messageMatcher.setMessageAnnotationsMatcher(msgAnnotationsMatcher);
 
             testPeer.expectSenderAttach(targetMatcher, false, false);
-            testPeer.expectTransfer(messageMatcher, nullValue(), false, new Rejected(), true);
+            testPeer.expectTransfer(messageMatcher, nullValue(), new Rejected(), true);
             testPeer.expectDetach(true, true, true);
 
             // Producer should act as synchronous regardless of asynchronous send setting.

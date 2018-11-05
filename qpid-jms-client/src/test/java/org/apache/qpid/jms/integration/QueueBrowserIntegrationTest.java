@@ -281,7 +281,7 @@ public class QueueBrowserIntegrationTest extends QpidJmsTestCase {
             Binary txnId = new Binary(new byte[]{ (byte) 1, (byte) 2, (byte) 3, (byte) 4});
             TransferPayloadCompositeMatcher declareMatcher = new TransferPayloadCompositeMatcher();
             declareMatcher.setMessageContentMatcher(new EncodedAmqpValueMatcher(new Declare()));
-            testPeer.expectTransfer(declareMatcher, nullValue(), false, new Declared().setTxnId(txnId), true);
+            testPeer.expectTransfer(declareMatcher, nullValue(), new Declared().setTxnId(txnId), true);
 
             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
             Queue queue = session.createQueue("myQueue");

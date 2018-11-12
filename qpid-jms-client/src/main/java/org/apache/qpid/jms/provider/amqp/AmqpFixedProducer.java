@@ -34,13 +34,10 @@ import org.apache.qpid.jms.meta.JmsProducerInfo;
 import org.apache.qpid.jms.provider.AsyncResult;
 import org.apache.qpid.jms.provider.amqp.message.AmqpReadableBuffer;
 import org.apache.qpid.jms.util.IOExceptionSupport;
-import org.apache.qpid.proton.amqp.messaging.Accepted;
-import org.apache.qpid.proton.amqp.messaging.Modified;
-import org.apache.qpid.proton.amqp.messaging.Outcome;
 import org.apache.qpid.proton.amqp.messaging.Rejected;
-import org.apache.qpid.proton.amqp.messaging.Released;
 import org.apache.qpid.proton.amqp.transaction.TransactionalState;
 import org.apache.qpid.proton.amqp.transport.DeliveryState;
+import org.apache.qpid.proton.amqp.transport.DeliveryState.DeliveryStateType;
 import org.apache.qpid.proton.amqp.transport.ErrorCondition;
 import org.apache.qpid.proton.amqp.transport.SenderSettleMode;
 import org.apache.qpid.proton.engine.Delivery;
@@ -211,54 +208,58 @@ public class AmqpFixedProducer extends AmqpProducer {
     public void processDeliveryUpdates(AmqpProvider provider, Delivery delivery) throws IOException {
         DeliveryState state = delivery.getRemoteState();
         if (state != null) {
-
             InFlightSend send = (InFlightSend) delivery.getContext();
 
-            if (state instanceof Accepted) {
+            if (state.getType() == DeliveryStateType.Accepted) {
                 LOG.trace("Outcome of delivery was accepted: {}", delivery);
                 send.onSuccess();
-                super.processDeliveryUpdates(provider, delivery);
-                return;
-            }
-
-            Exception deliveryError = null;
-            Outcome outcome = null;
-
-            if (state instanceof TransactionalState) {
-                LOG.trace("State of delivery is Transactional, retrieving outcome: {}", state);
-                outcome = ((TransactionalState) state).getOutcome();
-            } else if (state instanceof Outcome) {
-                outcome = (Outcome) state;
             } else {
-                LOG.warn("Message send updated with unsupported state: {}", state);
-                outcome = null;
+                applyDeliveryStateUpdate(send, delivery, state);
             }
+        }
 
-            if (outcome instanceof Accepted) {
+        super.processDeliveryUpdates(provider, delivery);
+    }
+
+    private void applyDeliveryStateUpdate(InFlightSend send, Delivery delivery, DeliveryState state) {
+        Exception deliveryError = null;
+        if (state == null) {
+            return;
+        }
+
+        switch (state.getType()) {
+            case Transactional:
+                LOG.trace("State of delivery is Transactional, retrieving outcome: {}", state);
+                applyDeliveryStateUpdate(send, delivery, (DeliveryState) ((TransactionalState) state).getOutcome());
+                break;
+            case Accepted:
                 LOG.trace("Outcome of delivery was accepted: {}", delivery);
                 send.onSuccess();
-            } else if (outcome instanceof Rejected) {
+                break;
+            case Rejected:
                 LOG.trace("Outcome of delivery was rejected: {}", delivery);
-                ErrorCondition remoteError = ((Rejected) outcome).getError();
+                ErrorCondition remoteError = ((Rejected) state).getError();
                 if (remoteError == null) {
                     remoteError = getEndpoint().getRemoteCondition();
                 }
 
                 deliveryError = AmqpSupport.convertToException(getParent().getProvider(), getEndpoint(), remoteError);
-            } else if (outcome instanceof Released) {
+                break;
+            case Released:
                 LOG.trace("Outcome of delivery was released: {}", delivery);
                 deliveryError = new JMSException("Delivery failed: released by receiver");
-            } else if (outcome instanceof Modified) {
+                break;
+            case Modified:
                 LOG.trace("Outcome of delivery was modified: {}", delivery);
                 deliveryError = new JMSException("Delivery failed: failure at remote");
-            }
-
-            if (deliveryError != null) {
-                send.onFailure(deliveryError);
-            }
+                break;
+            default:
+                LOG.warn("Message send updated with unsupported state: {}", state);
         }
 
-        super.processDeliveryUpdates(provider, delivery);
+        if (deliveryError != null) {
+            send.onFailure(deliveryError);
+        }
     }
 
     public AmqpSession getSession() {

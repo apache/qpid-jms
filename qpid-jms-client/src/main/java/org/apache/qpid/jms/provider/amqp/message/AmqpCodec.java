@@ -295,71 +295,36 @@ public final class AmqpCodec {
         Footer footer = null;
         Section section = null;
 
-        if (messageBytes.hasRemaining()) {
+        while (messageBytes.hasRemaining()) {
             section = (Section) decoder.readObject();
-        }
 
-        if (section instanceof Header) {
-            header = (Header) section;
-            if (messageBytes.hasRemaining()) {
-                section = (Section) decoder.readObject();
-            } else {
-                section = null;
+            switch (section.getType()) {
+                case Header:
+                    header = (Header) section;
+                    break;
+                case DeliveryAnnotations:
+                    deliveryAnnotations = (DeliveryAnnotations) section;
+                    break;
+                case MessageAnnotations:
+                    messageAnnotations = (MessageAnnotations) section;
+                    break;
+                case Properties:
+                    properties = (Properties) section;
+                    break;
+                case ApplicationProperties:
+                    applicationProperties = (ApplicationProperties) section;
+                    break;
+                case Data:
+                case AmqpSequence:
+                case AmqpValue:
+                    body = section;
+                    break;
+                case Footer:
+                    footer = (Footer) section;
+                    break;
+                default:
+                    throw new IOException("Unknown Message Section forced decode abort.");
             }
-
-        }
-        if (section instanceof DeliveryAnnotations) {
-            deliveryAnnotations = (DeliveryAnnotations) section;
-
-            if (messageBytes.hasRemaining()) {
-                section = (Section) decoder.readObject();
-            } else {
-                section = null;
-            }
-
-        }
-        if (section instanceof MessageAnnotations) {
-            messageAnnotations = (MessageAnnotations) section;
-
-            if (messageBytes.hasRemaining()) {
-                section = (Section) decoder.readObject();
-            } else {
-                section = null;
-            }
-
-        }
-        if (section instanceof Properties) {
-            properties = (Properties) section;
-
-            if (messageBytes.hasRemaining()) {
-                section = (Section) decoder.readObject();
-            } else {
-                section = null;
-            }
-
-        }
-        if (section instanceof ApplicationProperties) {
-            applicationProperties = (ApplicationProperties) section;
-
-            if (messageBytes.hasRemaining()) {
-                section = (Section) decoder.readObject();
-            } else {
-                section = null;
-            }
-
-        }
-        if (section != null && !(section instanceof Footer)) {
-            body = section;
-
-            if (messageBytes.hasRemaining()) {
-                section = (Section) decoder.readObject();
-            } else {
-                section = null;
-            }
-
-        }
-        if (section instanceof Footer) {
-            footer = (Footer) section;
         }
 
         decoder.setByteBuffer(null);

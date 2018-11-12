@@ -106,6 +106,11 @@ public class AmqpWritableBuffer implements WritableBuffer {
     }
 
     @Override
+    public void ensureRemaining(int remianing) {
+        nettyBuffer.ensureWritable(remianing);
+    }
+
+    @Override
     public int position() {
         return nettyBuffer.writerIndex();
     }

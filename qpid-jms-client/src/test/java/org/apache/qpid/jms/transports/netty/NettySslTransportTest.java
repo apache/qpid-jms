@@ -27,6 +27,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.qpid.jms.transports.Transport;
 import org.apache.qpid.jms.transports.TransportListener;
@@ -178,6 +179,7 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
             assertTrue(transport.isSecure());
 
             // Verify there was a certificate sent to the server
+            assertTrue("Server handshake did not complete in alotted time", server.getSslHandler().handshakeFuture().await(2, TimeUnit.SECONDS));
             assertNotNull(server.getSslHandler().engine().getSession().getPeerCertificates());
 
             transport.close();
@@ -216,6 +218,8 @@ public class NettySslTransportTest extends NettyTcpTransportTest {
 
             assertTrue(transport.isConnected());
             assertTrue(transport.isSecure());
+
+            assertTrue("Server handshake did not complete in alotted time", server.getSslHandler().handshakeFuture().await(2, TimeUnit.SECONDS));
 
             Certificate[] peerCertificates = server.getSslHandler().engine().getSession().getPeerCertificates();
             assertNotNull(peerCertificates);

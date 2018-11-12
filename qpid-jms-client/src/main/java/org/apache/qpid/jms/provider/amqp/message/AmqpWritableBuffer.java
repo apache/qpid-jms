@@ -106,8 +106,8 @@ public class AmqpWritableBuffer implements WritableBuffer {
     }
 
     @Override
-    public void ensureRemaining(int remianing) {
-        nettyBuffer.ensureWritable(remianing);
+    public void ensureRemaining(int remaining) {
+        nettyBuffer.ensureWritable(remaining);
     }
 
     @Override

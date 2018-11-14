@@ -2303,6 +2303,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Repeat(repetitions = 1)
     @Test(timeout = 20000)
     public void testCreateConsumerAfterConnectionDrops() throws Exception {
         try (TestAmqpPeer originalPeer = new TestAmqpPeer();
@@ -2729,6 +2730,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         }
     }
 
+    @Repeat(repetitions = 1)
     @Test(timeout = 20000)
     public void testRemotelyCloseConsumerWithMessageListenerFiresJMSExceptionListener() throws Exception {
         Symbol errorCondition = AmqpError.RESOURCE_DELETED;
@@ -2737,6 +2739,7 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
         doRemotelyCloseConsumerWithMessageListenerFiresJMSExceptionListenerTestImpl(errorCondition, errorDescription);
     }
 
+    @Repeat(repetitions = 1)
     @Test(timeout = 20000)
     public void testRemotelyCloseConsumerWithMessageListenerWithoutErrorFiresJMSExceptionListener() throws Exception {
         // As above but with the peer not including any error condition in its consumer close
@@ -2768,20 +2771,26 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             });
 
             testPeer.expectBegin();
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            testPeer.expectBegin();
+            Session session1 = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Session session2 = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queue = session2.createQueue("myQueue");
 
             // Create a consumer, then remotely end it afterwards.
             testPeer.expectReceiverAttach();
             testPeer.expectLinkFlow();
-            testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(true, true, errorCondition, errorDescription, 25);
+            testPeer.expectEnd();
+            testPeer.remotelyDetachLastOpenedLinkOnLastOpenedSession(true, true, errorCondition, errorDescription, 10);
 
-            Queue queue = session.createQueue("myQueue");
-            final MessageConsumer consumer = session.createConsumer(queue);
+            final MessageConsumer consumer = session2.createConsumer(queue);
             consumer.setMessageListener(new MessageListener() {
                 @Override
                 public void onMessage(Message message) {
                 }
             });
+
+            // Close first session to allow the receiver remote close timing to be deterministic
+            session1.close();
 
             // Verify the consumer gets marked closed
             testPeer.waitForAllHandlersToComplete(1000);
@@ -2813,6 +2822,11 @@ public class FailoverIntegrationTest extends QpidJmsTestCase {
             // Try closing it explicitly, should effectively no-op in client.
             // The test peer will throw during close if it sends anything.
             consumer.close();
+
+            // Shut the connection down
+            testPeer.expectClose();
+            connection.close();
+            testPeer.waitForAllHandlersToComplete(1000);
         }
     }
 

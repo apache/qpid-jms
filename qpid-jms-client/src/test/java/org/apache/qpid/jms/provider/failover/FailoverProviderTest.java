@@ -94,7 +94,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
 
     @Test(timeout = 30000)
     public void testCreateProviderOnlyUris() {
-        provider = new FailoverProvider(uris, futuresFactory);
+        provider = new FailoverProvider(uris, Collections.emptyMap(), futuresFactory);
         assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, provider.isRandomize());
         assertNull(provider.getRemoteURI());
         assertNotNull(provider.getNestedOptions());
@@ -106,7 +106,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
         Map<String, String> options = new HashMap<String, String>();
         options.put("transport.tcpNoDelay", "true");
 
-        provider = new FailoverProvider(options, futuresFactory);
+        provider = new FailoverProvider(Collections.emptyList(), options, futuresFactory);
         assertEquals(FailoverUriPool.DEFAULT_RANDOMIZE_ENABLED, provider.isRandomize());
         assertNull(provider.getRemoteURI());
         assertNotNull(provider.getNestedOptions());
@@ -453,13 +453,13 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
 
     @Test(timeout = 30000)
     public void testAmqpOpenServerListActionDefault() {
-        provider = new FailoverProvider(uris, futuresFactory);
+        provider = new FailoverProvider(uris, Collections.emptyMap(), futuresFactory);
         assertEquals("REPLACE", provider.getAmqpOpenServerListAction());
     }
 
     @Test(timeout = 30000)
     public void testSetGetAmqpOpenServerListAction() {
-        provider = new FailoverProvider(uris, futuresFactory);
+        provider = new FailoverProvider(uris, Collections.emptyMap(), futuresFactory);
         String action = "ADD";
         assertFalse(action.equals(provider.getAmqpOpenServerListAction()));
 
@@ -469,7 +469,7 @@ public class FailoverProviderTest extends FailoverProviderTestSupport {
 
     @Test(timeout = 30000)
     public void testSetInvalidAmqpOpenServerListActionThrowsIAE() {
-        provider = new FailoverProvider(uris, futuresFactory);
+        provider = new FailoverProvider(uris, Collections.emptyMap(), futuresFactory);
         try {
             provider.setAmqpOpenServerListAction("invalid");
             fail("no exception was thrown");

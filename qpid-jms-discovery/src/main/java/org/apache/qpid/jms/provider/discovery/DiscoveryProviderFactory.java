@@ -18,6 +18,7 @@ package org.apache.qpid.jms.provider.discovery;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,7 +92,7 @@ public class DiscoveryProviderFactory extends ProviderFactory {
         }
 
         // Failover will apply the nested options to each URI while attempting to connect.
-        FailoverProvider failover = new FailoverProvider(nestedOptions, futureFactory);
+        FailoverProvider failover = new FailoverProvider(Collections.emptyList(), nestedOptions, futureFactory);
         Map<String, String> leftOverDiscoveryOptions = PropertyUtil.setProperties(failover, mainOptions);
 
         DiscoveryProvider discovery = new DiscoveryProvider(remoteURI, failover);

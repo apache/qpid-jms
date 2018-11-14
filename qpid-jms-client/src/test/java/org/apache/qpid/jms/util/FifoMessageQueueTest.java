@@ -22,14 +22,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 import javax.jms.JMSException;
 
@@ -77,6 +75,43 @@ public class FifoMessageQueueTest {
         queue.close();
         assertTrue(queue.isClosed());
         assertFalse(queue.isRunning());
+        queue.close();
+    }
+
+    @Test(timeout = 10000)
+    public void testCannotEnqueueOverCapacity() {
+        assumeTrue(queue.capacity() >= 4);
+        assertFalse(queue.isClosed());
+        assertTrue(queue.isRunning());
+        JmsInboundMessageDispatch message = createEnvelope();
+        queue.enqueue(message);
+        assertEquals(1, queue.size());
+        final int remaining = queue.capacity() - queue.size();
+        for (int i = 0; i < remaining; i++) {
+            queue.enqueue(message);
+        }
+        assertEquals(queue.capacity(), queue.size());
+        assertFalse(queue.tryEnqueue(message));
+        queue.clear();
+        queue.close();
+    }
+
+    @Test(timeout = 10000)
+    public void testCannotEnqueueOverCapacityUsingEnqueueFirst() {
+        assumeTrue(queue.capacity() >= 4);
+        assertFalse(queue.isClosed());
+        assertTrue(queue.isRunning());
+        JmsInboundMessageDispatch message = createEnvelope();
+        queue.enqueue(message);
+        queue.enqueueFirst(message);
+        assertEquals(2, queue.size());
+        final int remaining = queue.capacity() - queue.size();
+        for (int i = 0; i < remaining; i++) {
+            queue.enqueue(message);
+        }
+        assertEquals(queue.capacity(), queue.size());
+        assertFalse(queue.tryEnqueue(message));
+        queue.clear();
         queue.close();
     }
 
@@ -235,7 +270,7 @@ public class FifoMessageQueueTest {
                 }
 
                 try {
-                    singalQueue(queue);
+                    queue.signalNotEmpty();
                 } catch (Exception e1) {
                     return;
                 }
@@ -329,35 +364,4 @@ public class FifoMessageQueueTest {
         return message;
     }
 
-    private void singalQueue(FifoMessageQueue queue) throws Exception {
-        Field lock = null;
-        Field condition = null;
-        Class<?> queueType = queue.getClass();
-
-        while (queueType != null && lock == null) {
-            try {
-                lock = queueType.getDeclaredField("lock");
-                condition = queueType.getDeclaredField("condition");
-            } catch (NoSuchFieldException error) {
-                queueType = queueType.getSuperclass();
-                if (Object.class.equals(queueType)) {
-                    queueType = null;
-                }
-            }
-        }
-
-        assertNotNull("MessageQueue implementation unknown", lock);
-        lock.setAccessible(true);
-        condition.setAccessible(true);
-
-        ReentrantLock lockView = (ReentrantLock) lock.get(queue);
-        Condition conditionView = (Condition) condition.get(queue);
-
-        lockView.lock();
-        try {
-            conditionView.signal();
-        } finally {
-            lockView.unlock();
-        }
-    }
 }

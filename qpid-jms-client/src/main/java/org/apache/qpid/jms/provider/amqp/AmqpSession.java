@@ -71,7 +71,10 @@ public class AmqpSession extends AmqpAbstractResource<JmsSessionInfo, Session> i
      *      controls the acknowledgement that is applied to each message.
      */
     public void acknowledge(final ACK_TYPE ackType) {
-        for (AmqpConsumer consumer : consumers.values()) {
+        // A consumer whose close was deferred will be closed and removed from the consumers
+        // map so we must copy the entries to safely traverse the collection during this operation.
+        List<AmqpConsumer> consumers = new ArrayList<>(this.consumers.values());
+        for (AmqpConsumer consumer : consumers) {
             consumer.acknowledge(ackType);
         }
     }

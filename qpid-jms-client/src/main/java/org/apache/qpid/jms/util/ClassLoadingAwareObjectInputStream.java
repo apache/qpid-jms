@@ -143,7 +143,7 @@ public class ClassLoadingAwareObjectInputStream extends ObjectInputStream {
      *
      * @param name
      *        the name of the class to load
-     * @return the class or <tt>null</tt> if it could not be loaded
+     * @return the class or <code>null</code> if it could not be loaded
      */
     public static Class<?> loadSimpleType(String name) {
         if ("java.lang.byte[]".equals(name) || "byte[]".equals(name)) {

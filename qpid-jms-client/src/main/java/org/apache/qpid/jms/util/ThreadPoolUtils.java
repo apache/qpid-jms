@@ -97,7 +97,7 @@ public final class ThreadPoolUtils {
      * Will try to perform an orderly shutdown by giving the running threads time to complete
      * tasks, before going more aggressively by doing a
      * {@link #shutdownNow(java.util.concurrent.ExecutorService)} which forces a shutdown. The
-     * parameter <tt>shutdownAwaitTermination</tt> is used as timeout value waiting for orderly
+     * parameter <code>shutdownAwaitTermination</code> is used as timeout value waiting for orderly
      * shutdown to complete normally, before going aggressively.
      *
      * @param executorService
@@ -170,7 +170,7 @@ public final class ThreadPoolUtils {
      * @param shutdownAwaitTermination
      *        time in millis to use as timeout
      *
-     * @return <tt>true</tt> if the pool is terminated, or <tt>false</tt> if we timed out
+     * @return <code>true</code> if the pool is terminated, or <code>false</code> if we timed out
      *
      * @throws InterruptedException
      *         is thrown if we are interrupted during the waiting

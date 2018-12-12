@@ -305,7 +305,6 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
             connection.destroyResource(sessionInfo);
         } catch (JmsConnectionFailedException jmsex) {
         }
-        connection.removeSession(sessionInfo);
         if (interrupted) {
             Thread.currentThread().interrupt();
         }
@@ -328,34 +327,38 @@ public class JmsSession implements AutoCloseable, Session, QueueSession, TopicSe
 
     protected void shutdown(Throwable cause) throws JMSException {
         if (closed.compareAndSet(false, true)) {
-            sessionInfo.setState(ResourceState.CLOSED);
-            setFailureCause(cause);
-            stop();
+            try {
+                sessionInfo.setState(ResourceState.CLOSED);
+                setFailureCause(cause);
+                stop();
 
-            for (JmsMessageConsumer consumer : new ArrayList<JmsMessageConsumer>(this.consumers.values())) {
-                consumer.shutdown(cause);
-            }
-
-            for (JmsMessageProducer producer : new ArrayList<JmsMessageProducer>(this.producers.values())) {
-                producer.shutdown(cause);
-            }
-
-            transactionContext.shutdown();
-
-            // Ensure that no asynchronous completion sends remain blocked after close.
-            synchronized (sessionInfo) {
-                if (cause == null) {
-                    cause = new JMSException("Session closed remotely before message transfer result was notified");
+                for (JmsMessageConsumer consumer : new ArrayList<JmsMessageConsumer>(this.consumers.values())) {
+                    consumer.shutdown(cause);
                 }
 
-                getCompletionExecutor().execute(new FailOrCompleteAsyncCompletionsTask(JmsExceptionSupport.create(cause)));
-                getCompletionExecutor().shutdown();
-            }
+                for (JmsMessageProducer producer : new ArrayList<JmsMessageProducer>(this.producers.values())) {
+                    producer.shutdown(cause);
+                }
 
-            try {
-                getCompletionExecutor().awaitTermination(connection.getCloseTimeout(), TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                LOG.trace("Session close awaiting send completions was interrupted");
+                transactionContext.shutdown();
+
+                // Ensure that no asynchronous completion sends remain blocked after close.
+                synchronized (sessionInfo) {
+                    if (cause == null) {
+                        cause = new JMSException("Session closed remotely before message transfer result was notified");
+                    }
+
+                    getCompletionExecutor().execute(new FailOrCompleteAsyncCompletionsTask(JmsExceptionSupport.create(cause)));
+                    getCompletionExecutor().shutdown();
+                }
+
+                try {
+                    getCompletionExecutor().awaitTermination(connection.getCloseTimeout(), TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    LOG.trace("Session close awaiting send completions was interrupted");
+                }
+            } finally {
+                connection.removeSession(sessionInfo);
             }
         }
     }
